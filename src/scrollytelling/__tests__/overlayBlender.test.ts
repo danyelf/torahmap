@@ -17,7 +17,7 @@ import {
   testOverlay,
 } from '../../__tests__/helpers/fixtures';
 import { getDefaultColor } from '../../itemColoring';
-import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
+import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../../constants';
 
 // The tools a stop can name, as a text hands them over: the overlays these
 // tests register, and search.
@@ -490,7 +490,7 @@ describe('a stop whose overlay data is missing', () => {
 
 describe('a stop that searches', () => {
   const grey = DIMMED_GREY[0];
-  const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
+  const DIM = SEARCH_NON_MATCH_DIM;
 
   beforeEach(() => {
     registerOverlay(multiColorOverlay);

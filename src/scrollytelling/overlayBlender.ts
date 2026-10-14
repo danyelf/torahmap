@@ -1,10 +1,14 @@
+import {
+  type MapItem,
+  type VerseColor,
+  type Picture,
+  still,
+  type ColorLayer,
+} from '@torahmap/engine';
 import type { StoryStop } from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
-import type { MapItem, VerseColor } from '../types';
 import type { Overlay } from '../overlays/types.ts';
-import type { Picture } from '../geometry.ts';
 import { fillDefaultColors, toolsPicture } from '../itemColoring';
-import { still, type ColorLayer } from './colorBlending';
 import { validateOverlayParams, type UrlParamValues } from '@torahmap/link';
 import { NO_OVERLAY } from '../overlays/types.ts';
 import { settingsFromLink } from '../overlays/settings.ts';

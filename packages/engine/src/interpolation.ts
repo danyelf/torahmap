@@ -1,5 +1,5 @@
 import type { Color } from '@torahmap/utils';
-import type { CameraPosition, EasingName } from '@torahmap/stories';
+import type { CameraPosition, EasingName } from './types.ts';
 
 export const easingFunctions: Record<EasingName, (t: number) => number> = {
   linear: (t) => t,

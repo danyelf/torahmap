@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapPoint } from '../../mapPoint';
+import { mapPoint } from '../src/index.ts';
 
 describe('mapPoint', () => {
   it('is the window point when the map starts at the window corner', () => {

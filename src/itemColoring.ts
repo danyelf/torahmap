@@ -1,12 +1,10 @@
 // Colour computation for spatial items
 
+import { type SpatialItem, type VerseColor, type Picture, sameItem } from '@torahmap/engine';
 import { type Color, seededRandom, brighten } from '@torahmap/utils';
-import type { SpatialItem, VerseColor } from './types';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
-import type { Picture } from './geometry';
 import type { ColorSource } from './scrollytelling/driver';
-import { sameItem } from './items.ts';
-import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
+import { DEFAULT_BRIGHTNESS, SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
 
 /**
  * Default gray for a verse with no overlay color, brightness-varied by a
@@ -14,8 +12,7 @@ import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constan
  */
 export function getDefaultColor(verseIndex: number): Color {
   const brightness =
-    HIGHLIGHT_CONSTANTS.MIN_BRIGHTNESS +
-    seededRandom(verseIndex * 3) * HIGHLIGHT_CONSTANTS.BRIGHTNESS_RANGE;
+    DEFAULT_BRIGHTNESS.MIN + seededRandom(verseIndex * 3) * DEFAULT_BRIGHTNESS.RANGE;
   return [brightness, brightness, brightness];
 }
 
@@ -30,7 +27,7 @@ function brightenBands(color: VerseColor, factor: number): VerseColor {
  * painted its base colour by fillDefaultColors.
  *
  * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
- * layers are on: `SEARCH_WITH_OVERLAY.NON_MATCH_DIM` (the default) while
+ * layers are on: `SEARCH_NON_MATCH_DIM` (the default) while
  * search leads, 1 while the overlay leads; it does nothing with search alone,
  * which always dims to its own grey. With both on, a square neither colours
  * dims from its `base` colour.
@@ -40,7 +37,7 @@ export function combineLayers(
   search: readonly (VerseColor | null)[] | null,
   overlay: readonly (VerseColor | null)[] | null,
   base: (index: number) => VerseColor,
-  nonMatchDim: number = SEARCH_WITH_OVERLAY.NON_MATCH_DIM,
+  nonMatchDim: number = SEARCH_NON_MATCH_DIM,
 ): Picture<VerseColor | null> {
   const colors: (VerseColor | null)[] = new Array(count);
   const rings: (VerseColor | null)[] = new Array(count).fill(null);

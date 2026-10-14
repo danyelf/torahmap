@@ -7,9 +7,9 @@ import {
   animateCameraTo,
   CAMERA_GLIDE_MS,
   type Camera,
-} from '../../camera';
-import { worldToScreen } from '../helpers/worldToScreen';
-import { ZOOM } from '../helpers/fixtures';
+  worldToScreen,
+} from '../src/index.ts';
+import { ZOOM } from './fixtures.ts';
 
 const VERSE = { x: 400, y: 300, size: 6 };
 const FOCUS = { x: 300, y: 400 };

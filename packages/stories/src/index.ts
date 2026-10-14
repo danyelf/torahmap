@@ -1,12 +1,4 @@
-export type {
-  CameraPosition,
-  CameraRef,
-  StoryStop,
-  StoryData,
-  EasingName,
-  Story,
-} from './types.ts';
-export { EASINGS, DEFAULT_EASING } from './types.ts';
+export type { CameraRef, StoryStop, StoryData, Story } from './types.ts';
 export {
   parseStoryMarkdown,
   writeStopComment,

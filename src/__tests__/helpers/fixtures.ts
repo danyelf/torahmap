@@ -9,10 +9,6 @@ import type { Loaded } from '../../dataFiles';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../tanakh/search/data';
 import type { StoryStop } from '@torahmap/stories';
-import type { ZoomRange } from '@torahmap/link';
-
-/** A text's zoom range, for tests of the code that keeps to one. */
-export const ZOOM: ZoomRange = { min: 0.1, max: 10, start: 1 };
 
 export function createStoryStop(overrides: Partial<StoryStop> = {}): StoryStop {
   return { id: 's', text: 'Text.', camera: 'initial', overlay: null, ...overrides };
@@ -261,17 +257,6 @@ export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
     (name) => [DICTIONARY_FILES[name], EMPTY_DICTIONARY_FILES[name]] as const,
   ),
 ]);
-
-export const TEST_COLORS = {
-  RED: [1, 0, 0] as [number, number, number],
-  GREEN: [0, 1, 0] as [number, number, number],
-  BLUE: [0, 0, 1] as [number, number, number],
-  WHITE: [1, 1, 1] as [number, number, number],
-  BLACK: [0, 0, 0] as [number, number, number],
-  GRAY: [0.5, 0.5, 0.5] as [number, number, number],
-  YELLOW: [1, 1, 0] as [number, number, number],
-  PURPLE: [0.5, 0, 0.5] as [number, number, number],
-};
 
 export const SAMPLE_TROP_MARKS = {
   TIPCHA: '\u0596',

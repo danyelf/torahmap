@@ -2,8 +2,7 @@
 // blending two; the reader; or a timed ease from what was on screen to where
 // the story is.
 
-import type { Picture } from '../geometry';
-import type { CameraPosition } from '@torahmap/stories';
+import type { Picture, CameraPosition } from '@torahmap/engine';
 import type { ResolvedStoryStop } from './types';
 
 /**

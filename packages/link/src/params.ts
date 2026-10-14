@@ -1,5 +1,7 @@
 // Validating a link's parameters: the view's own, and each overlay's against its declaration.
 
+import type { ZoomRange } from '@torahmap/engine';
+
 /**
  * The kinds of value an overlay parameter can hold. The overlay picks a kind;
  * this module decides what that kind allows.
@@ -194,16 +196,6 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   // The one assertion in the chain, and the place it belongs: the loop above
   // is what makes the claim true, and every caller inherits it from here.
   return values as UrlParamValues<S>;
-}
-
-/**
- * A text's zooms: the range its camera allows, which is the range a link may
- * carry, to two decimals; and `start`, the zoom a link leaves out.
- */
-export interface ZoomRange {
-  readonly min: number;
-  readonly max: number;
-  readonly start: number;
 }
 
 const MAX_PAN_POSITION = 1000000;

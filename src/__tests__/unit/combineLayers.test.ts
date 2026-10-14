@@ -6,14 +6,14 @@ import {
   getDefaultColor,
   toolsPicture,
 } from '../../itemColoring';
-import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
+import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../../constants';
 import { createVerse, testOverlay } from '../helpers/fixtures';
 
 const CYAN: Color = [0.1, 0.7, 0.8];
 const ORANGE: Color = [1, 0.5, 0];
 const RED: Color = [1, 0, 0];
 const BLUE: Color = [0, 0, 1];
-const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
+const DIM = SEARCH_NON_MATCH_DIM;
 const scaled = (c: Color, f: number): Color => [c[0] * f, c[1] * f, c[2] * f];
 // What search alone has always drawn a verse it does not match as.
 const ALONE = DIMMED_GREY[0];

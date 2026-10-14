@@ -1,6 +1,6 @@
+import { indexItems } from '@torahmap/engine';
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { indexItems } from '../../items.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
 import { parseVerseId } from '@torahmap/link/tanakh';
 import { STORIES } from '@torahmap/stories/tanakh';

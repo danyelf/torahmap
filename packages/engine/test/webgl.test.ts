@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initWebGL, createProgram } from '../../webgl';
-import { VERSE_ATTRIBUTES } from '../../geometry';
-import { createMockWebGL2Context, createMockCanvas } from '../helpers';
+import { initWebGL, createProgram, VERSE_ATTRIBUTES } from '../src/index.ts';
+import { createMockWebGL2Context, createMockCanvas } from './mocks.ts';
 
 const shaderSourceOf = (gl: WebGL2RenderingContext, call: number): string =>
   (gl.shaderSource as any).mock.calls[call][1];

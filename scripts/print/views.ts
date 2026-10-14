@@ -1,8 +1,8 @@
 // What each print shows: every verse's position and colours, the titles, and
 // the key, as plain data for draw().
 
+import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '@torahmap/engine';
 import { readFileSync } from 'node:fs';
-import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '../../src/geometry.ts';
 import { loadNamedFiles } from '../../src/dataFiles.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '../../src/verseTexts.ts';
 import {

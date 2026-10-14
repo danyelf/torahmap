@@ -5,9 +5,9 @@ import { createBookLabels, createSectionLabels, updateLabelPositions } from '../
 import { createMapTitle, updateMapTitlePosition } from '../mapTitle.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from '../verseTexts.ts';
 import { initBookData } from '../constants/books.ts';
-import { createCamera } from '../camera.ts';
 import { getDefaultColor } from '../itemColoring.ts';
 import { popupText } from './popup.ts';
+import { createCamera } from './camera.ts';
 import { reportError } from '../analytics.ts';
 import { STORIES } from '@torahmap/stories/tanakh';
 import { resolveStops } from './stories.ts';

@@ -1,5 +1,5 @@
+import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from '@torahmap/engine';
 import { linkKind, type OverlayParams, type UrlParamValues, type UrlState } from '@torahmap/link';
-import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from './camera.ts';
 import type { Frame } from './frame.ts';
 import { NO_OVERLAY } from './overlays/types.ts';
 

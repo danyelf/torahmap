@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { TanakhIdentity } from '../../types';
 import {
   createRenderContext,
   createRenderState,
@@ -8,10 +7,11 @@ import {
   renderOutline,
   type RenderContext,
   type RenderState,
-} from '../../rendering';
-import type { Camera } from '../../camera';
-import { SEARCH_WITH_OVERLAY } from '../../constants';
-import { createMockCanvas, createVerse, createVerses } from '../helpers';
+  type Camera,
+  RINGS,
+} from '../src/index.ts';
+import { createMockCanvas } from './mocks.ts';
+import { createItem, createItems } from './fixtures.ts';
 
 describe('rendering', () => {
   describe('createRenderContext', () => {
@@ -64,7 +64,7 @@ describe('rendering', () => {
     });
 
     it('creates render state with buffer and verses', () => {
-      const verses = createVerses(5);
+      const verses = createItems(5);
       const state = createRenderState(context, verses, 2.0);
 
       expect(state.buffer).toBeDefined();
@@ -73,7 +73,7 @@ describe('rendering', () => {
     });
 
     it('initializes outline buffers as null', () => {
-      const verses = createVerses(3);
+      const verses = createItems(3);
       const state = createRenderState(context, verses, 1.0);
 
       expect(state.outlineBuffer).toBeNull();
@@ -81,7 +81,7 @@ describe('rendering', () => {
     });
 
     it('creates buffer via WebGL createBuffer', () => {
-      const verses = createVerses(2);
+      const verses = createItems(2);
       createRenderState(context, verses, 1.0);
 
       expect(gl.createBuffer).toHaveBeenCalled();
@@ -95,7 +95,7 @@ describe('rendering', () => {
     });
 
     it('stores device pixel ratio correctly', () => {
-      const verses = createVerses(1);
+      const verses = createItems(1);
 
       const state1 = createRenderState(context, verses, 1.0);
       const state2 = createRenderState(context, verses, 2.0);
@@ -107,7 +107,7 @@ describe('rendering', () => {
     });
 
     it('uploads geometry to GPU via bufferData', () => {
-      const verses = createVerses(3);
+      const verses = createItems(3);
       createRenderState(context, verses, 1.0);
 
       expect(gl.bindBuffer).toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe('rendering', () => {
     });
 
     it('points every verse attribute at the buffer, read once per verse', () => {
-      const state = createRenderState(context, createVerses(3), 1.0);
+      const state = createRenderState(context, createItems(3), 1.0);
 
       expect(gl.bindVertexArray).toHaveBeenNthCalledWith(1, state.vertexArray);
       expect(gl.bindBuffer).toHaveBeenLastCalledWith(gl.ARRAY_BUFFER, state.buffer);
@@ -129,12 +129,12 @@ describe('rendering', () => {
 
   describe('rebuildGeometry', () => {
     let gl: WebGL2RenderingContext;
-    let state: RenderState<TanakhIdentity>;
+    let state: RenderState<object>;
 
     beforeEach(() => {
       const context = createRenderContext(createMockCanvas());
       gl = context.gl;
-      const verses = createVerses(5);
+      const verses = createItems(5);
       state = createRenderState(context, verses, 1.0);
       vi.clearAllMocks(); // Clear calls from createRenderState
     });
@@ -147,7 +147,7 @@ describe('rendering', () => {
     });
 
     it('uses verses from state', () => {
-      // Update verse colors (TypeScript: these properties don't exist on TanakhLayout,
+      // Update verse colors (TypeScript: these properties don't exist on MapItem,
       // but the test is checking that rebuildGeometry uses state.verses)
       (state.verses[0] as any).color = [1, 0, 0];
       (state.verses[1] as any).color = [0, 1, 0];
@@ -177,13 +177,13 @@ describe('rendering', () => {
 
   describe('render', () => {
     let context: RenderContext;
-    let state: RenderState<TanakhIdentity>;
+    let state: RenderState<object>;
     let camera: Camera;
 
     beforeEach(() => {
       const canvas = createMockCanvas();
       context = createRenderContext(canvas);
-      const verses = createVerses(10);
+      const verses = createItems(10);
       state = createRenderState(context, verses, 2.0);
       camera = { x: 100, y: 200, zoom: 1.5 };
       vi.clearAllMocks();
@@ -226,7 +226,7 @@ describe('rendering', () => {
     it('hands the shader the ring in device pixels', () => {
       render(context, state, camera, null, null);
 
-      const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
+      const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = RINGS;
       expect(context.gl.uniform3f).toHaveBeenCalledWith(
         context.programs.main.uniforms.ring,
         RING_OUTSIDE_PX * 2,
@@ -352,16 +352,16 @@ describe('rendering', () => {
 
   describe('renderOutline', () => {
     let context: RenderContext;
-    let state: RenderState<TanakhIdentity>;
+    let state: RenderState<object>;
     let camera: Camera;
-    let verse: ReturnType<typeof createVerse>;
+    let verse: ReturnType<typeof createItem>;
 
     beforeEach(() => {
       const canvas = createMockCanvas();
       context = createRenderContext(canvas);
-      state = createRenderState(context, createVerses(5), 2.0);
+      state = createRenderState(context, createItems(5), 2.0);
       camera = { x: 50, y: 100, zoom: 1.0 };
-      verse = createVerse({ x: 10, y: 20, size: 6 });
+      verse = createItem({ x: 10, y: 20, size: 6 });
       vi.clearAllMocks();
     });
 
@@ -451,8 +451,8 @@ describe('rendering', () => {
     });
 
     it('handles different verse sizes', () => {
-      const smallVerse = createVerse({ size: 4 });
-      const largeVerse = createVerse({ size: 10 });
+      const smallVerse = createItem({ size: 4 });
+      const largeVerse = createItem({ size: 10 });
 
       expect(() =>
         renderOutline(context, state, smallVerse, [1, 0, 0], null, camera),
@@ -496,7 +496,7 @@ describe('rendering', () => {
   describe('RenderState immutability', () => {
     it('does not modify verses array when creating state', () => {
       const context = createRenderContext(createMockCanvas());
-      const verses = createVerses(3);
+      const verses = createItems(3);
       const versesCopy = [...verses];
 
       createRenderState(context, verses, 1.0);
@@ -507,7 +507,7 @@ describe('rendering', () => {
     it('does not modify verses when rebuilding geometry', () => {
       const context = createRenderContext(createMockCanvas());
       const gl = context.gl;
-      const verses = createVerses(3);
+      const verses = createItems(3);
       const state = createRenderState(context, verses, 1.0);
       const versesCopy = [...verses.map((v) => ({ ...v }))];
 
@@ -521,7 +521,7 @@ describe('rendering', () => {
     it('renders with different camera positions', () => {
       const canvas = createMockCanvas();
       const context = createRenderContext(canvas);
-      const verses = createVerses(5);
+      const verses = createItems(5);
       const state = createRenderState(context, verses, 1.0);
 
       const cameras: Camera[] = [
@@ -545,7 +545,7 @@ describe('rendering', () => {
     it('applies zoom correctly with different dpr values', () => {
       const canvas = createMockCanvas();
       const context = createRenderContext(canvas);
-      const verses = createVerses(2);
+      const verses = createItems(2);
 
       const testCases = [
         { dpr: 1.0, zoom: 1.0, expected: 1.0 },
@@ -575,7 +575,7 @@ describe('the search ring', () => {
     // There the square is drawn RING_OUTSIDE_PX larger on every side and the
     // ring is measured in from that edge, so the hole is the square less the
     // inside width twice.
-    const { RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_WITH_OVERLAY;
+    const { RING_INSIDE_PX, RING_MIN_SQUARE_PX } = RINGS;
     expect(RING_MIN_SQUARE_PX - 2 * RING_INSIDE_PX).toBeGreaterThan(0);
   });
 });

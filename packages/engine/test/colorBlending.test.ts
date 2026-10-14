@@ -1,7 +1,6 @@
-// src/scrollytelling/__tests__/colorBlending.test.ts
 import type { Color } from '@torahmap/utils';
 import { describe, it, expect } from 'vitest';
-import { flatten, mergePictures, still } from '../colorBlending';
+import { flatten, mergePictures, still } from '../src/index.ts';
 
 describe('mergePictures', () => {
   it('returns fromColors at t=0', () => {

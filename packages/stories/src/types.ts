@@ -1,8 +1,4 @@
-export interface CameraPosition {
-  x: number;
-  y: number;
-  zoom: number;
-}
+import type { CameraPosition, EasingName } from '@torahmap/engine';
 
 /**
  * Camera reference: an explicit position, the app's initial camera, or places
@@ -35,12 +31,6 @@ export interface StoryData {
   /** How the camera moves between stops, unless a stop says otherwise. */
   easing?: EasingName;
 }
-
-export const EASINGS = ['linear', 'ease-in', 'ease-out', 'ease-in-out'] as const;
-export type EasingName = (typeof EASINGS)[number];
-
-/** How the camera moves between stops when neither the story nor the stop says. */
-export const DEFAULT_EASING: EasingName = 'ease-in-out';
 
 /** A story and the file name, without `.md`, that the URL calls it by. */
 export interface Story {

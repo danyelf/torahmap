@@ -2,19 +2,19 @@
 // each reported as what it asks for, in screen pixels, and what a tap and
 // Escape do. Nothing here touches the camera, the pin or the link.
 
-import type { ScreenPoint } from './camera.ts';
-import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from './constants.ts';
-import { DRAG_PX } from './frame.ts';
-import { sameItem } from './items.ts';
-import type { MapItem } from './types.ts';
 import {
+  type ScreenPoint,
+  sameItem,
+  type MapItem,
   createTouchState,
   getPinchCenter,
   getPinchDistance,
   releaseTouch,
   resetTouchState,
   trackTouch,
-} from './touchState.ts';
+} from '@torahmap/engine';
+import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from './constants.ts';
+import { DRAG_PX } from './frame.ts';
 
 /** The longest press, in ms, that still counts as a tap. */
 const TAP_MS = 300;

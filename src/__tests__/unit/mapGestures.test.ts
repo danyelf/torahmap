@@ -1,11 +1,11 @@
 // The reader's hands on the map, turned into intents. The map is a grid of
 // 10-pixel squares, each named by its column and row; the cursor points only
 // while something is pinned.
+import type { MapItem } from '@torahmap/engine';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createMapGestures, escapeDoes, tapDoes, type MapGestures } from '../../mapGestures';
 import { DRAG_PX } from '../../frame';
 import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../../constants';
-import type { MapItem } from '../../types';
 
 type Square = MapItem & { id: string };
 
