@@ -19,7 +19,6 @@ __pycache__/
 
 # The Talmud source as downloaded from Sefaria; see DATA_REGENERATION.md.
 data/talmud/raw/
-data/talmud/mishnah/
 
 # Visual brainstorming companion scratch
 .superpowers/
