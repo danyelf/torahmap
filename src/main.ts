@@ -478,7 +478,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  const camera = text.startCamera(mapViewport(), zoomRange);
+  const camera = text.startCamera(mapViewport());
 
   let pinnedVerse: I | null = null;
 
@@ -1125,15 +1125,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     listedStories(text.stories.list, !__LIVE__),
     parseUrlState(source.link).story ?? null,
     (stops) =>
-      text.stories.resolve(
-        stops,
-        initialCamera,
-        verses,
-        squares,
-        mapFocus(),
-        mapViewport(),
-        zoomRange,
-      ),
+      text.stories.resolve(stops, initialCamera, verses, squares, mapFocus(), mapViewport()),
   );
   storyColumn.onMove(storyMoved);
   configureAnalytics({ getStory: () => storyColumn.where().story.id });

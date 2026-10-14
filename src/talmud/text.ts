@@ -2,6 +2,7 @@
 
 import type { MapText } from '../app/text.ts';
 import type { Story } from '@torahmap/stories';
+import type { LinkKeys } from '@torahmap/link';
 import { cameraToFit } from '../camera.ts';
 import { sefariaUrl } from '../sefaria.ts';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
@@ -36,15 +37,17 @@ const WHOLE_MAP: Story = {
   },
 };
 
+const TALMUD_LINK_KEYS: LinkKeys = {
+  square: 'at',
+  search: TALMUD_SEARCH_PARAMS,
+  overlayParams: () => undefined,
+  // The Tanakh's numbers, for now.
+  zoom: { min: 0.1, max: 10, start: 1 },
+};
+
 export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
   site: talmudSite,
-  link: {
-    square: 'at',
-    search: TALMUD_SEARCH_PARAMS,
-    overlayParams: () => undefined,
-    // The Tanakh's numbers, for now.
-    zoom: { min: 0.1, max: 10, start: 1 },
-  },
+  link: TALMUD_LINK_KEYS,
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {
@@ -61,12 +64,12 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
     return {
       items: laid.items,
 
-      startCamera: (viewport, zoom) =>
+      startCamera: (viewport) =>
         cameraToFit(
           { minX: 0, minY: 0, maxX: laid.bounds.width, maxY: laid.bounds.height },
           viewport.width,
           viewport.height,
-          zoom,
+          TALMUD_LINK_KEYS.zoom,
         ),
 
       baseColor: (item) => mishnahOrGemaraColor(structure, item),

@@ -1,6 +1,6 @@
 // What a text (the Tanakh, the Talmud) hands the app shell, and what the shell hands back.
 
-import type { LinkKeys, UrlState, ZoomRange } from '@torahmap/link';
+import type { LinkKeys, UrlState } from '@torahmap/link';
 import type { CameraPosition, Story, StoryStop } from '@torahmap/stories';
 import type { Credit } from '../credits.ts';
 import type { PageCopy } from './page.ts';
@@ -41,7 +41,7 @@ export interface MapText<I extends MapItem, S = unknown> {
 /** A text once its first files are in. */
 export interface OpenText<I extends MapItem, S = unknown> {
   items: I[];
-  startCamera(viewport: Viewport, zoom: ZoomRange): Camera;
+  startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */
   baseColor(item: I, index: number): VerseColor;
   /** Draws the labels into `container`; the function returned moves them with the map. */
@@ -61,7 +61,6 @@ export interface OpenText<I extends MapItem, S = unknown> {
       squares: ItemIndex<I>,
       focus: ScreenPoint,
       viewport: Viewport,
-      zoom: ZoomRange,
     ): ResolvedStoryStop[];
   };
   /** For telemetry: a square's book or tractate, and its section. */
