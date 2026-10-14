@@ -142,8 +142,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   a `scrollytelling/` mode, `app/` (what a text gives the app
   shell), `tanakh/` and `talmud/` (the two texts, each with its own search and
   site), `styles/`, the
-  `worker/` that serves the deployed site, and `telemetry/`, the page's half
-  of what it records.
+  `worker/` that serves the deployed site, and `telemetry/`, which turns a
+  change of who has the map into an event.
 - `index.html` — every text's page, filled from its copy by `vite.config.ts`
   at the address `src/pages.ts` gives it; the Talmud's, at `/talmud/`, is
   dev-only.
@@ -154,7 +154,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   page only inside its functions and says `"sideEffects": false`, so the
   Worker, which reaches it through links and stories, bundles none of its
   drawing), `telemetry` (which column of an event holds what, for the page
-  that sends it and the Worker that writes it), `overlay-catalog` (each Tanakh
+  that sends it and the Worker that writes it, and who can have the map,
+  which its mode column records), `overlay-catalog` (each Tanakh
   overlay's name and link keys, and with the search's, `LINK_KEYS`: a Tanakh
   link's), `stories` (how a story is written, and which are listed and opened
   by default; the Tanakh's own, compiled from Markdown by `generate.mjs`, at
@@ -207,7 +208,7 @@ change can be looked at without checking the branch out —
 
 What the Worker serves is in `src/worker/index.ts`; telemetry's client half is
 `src/analytics.ts`. No cookies; browser storage holds only two settings, Hide
-Hebrew and whether this is a return visit. The dev server sends nothing. What each column means is in `packages/telemetry`, and
+Hebrew and whether this is a return visit. The dev server sends nothing.
 `scripts/telemetry/report.sh` prints every saved query, and `usage.sh` beside
 it writes a chart of page views per day to `telemetry-report/usage.html`; both
 need a Cloudflare account id and an API token. Cloudflare Access keeps chat apps'

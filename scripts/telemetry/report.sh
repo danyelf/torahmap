@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Print each saved query's result over the last N days (default 30).
-# Needs what query.sh needs. Column meanings are in packages/telemetry/src/schema.ts.
+# Needs what query.sh needs. Column meanings are in packages/telemetry.
 set -euo pipefail
 
 days="${1:-30}"

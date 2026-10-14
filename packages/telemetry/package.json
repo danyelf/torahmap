@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/schema.ts"
+    ".": "./src/index.ts"
   },
   "dependencies": {
     "@torahmap/link": "*"

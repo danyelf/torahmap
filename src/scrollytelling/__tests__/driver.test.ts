@@ -14,7 +14,6 @@ import {
   settle,
   type StoryHasMap,
 } from '../driver';
-import { DRIVER_KINDS } from '@torahmap/telemetry';
 import type { ResolvedStoryStop } from '../types';
 
 const camera = { x: 1, y: 2, zoom: 3 };
@@ -142,6 +141,5 @@ describe('who has the map', () => {
     expect(driverKind(STORY_DRIVING)).toBe('story');
     expect(driverKind(easeBack(0))).toBe('story');
     expect(driverKind(readerTakesOver(0))).toBe('reader');
-    expect(DRIVER_KINDS).toEqual(['story', 'reader']);
   });
 });

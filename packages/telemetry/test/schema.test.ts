@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRIVER_KINDS, toDataPoint, workerDataPoint } from '../src/schema.ts';
+import { DRIVER_KINDS, toDataPoint, workerDataPoint } from '../src/index.ts';
 
 const context = {
   country: 'IL',
