@@ -264,13 +264,13 @@ export const SAMPLE_TROP_MARKS = {
   ZAQEF_QATAN: '\u0594',
 };
 
-/** A test overlay that colours each item by `getVerseColor`. */
+/** A test overlay that colours each item by `getItemColor`. */
 export function testOverlay<T = TanakhIdentity, S = unknown, D = unknown>(
   fields: Omit<Overlay<T, S, D>, 'colorsFor'>,
 ): Overlay<T, S, D> {
   return {
     ...fields,
     colorsFor: (items, settings, _hovered, data) =>
-      items.map((item) => fields.getVerseColor(item, settings, data)),
+      items.map((item) => fields.getItemColor(item, settings, data)),
   } as Overlay<T, S, D>;
 }

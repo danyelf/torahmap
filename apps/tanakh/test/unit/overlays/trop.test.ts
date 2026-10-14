@@ -102,7 +102,7 @@ describe('Trop Overlay', () => {
 
     it('returns null color when no mark selected', () => {
       const host = makeHost();
-      const color = host.getVerseColor(testVerses[0]);
+      const color = host.getItemColor(testVerses[0]);
       expect(color).toBeNull();
     });
   });
@@ -208,7 +208,7 @@ describe('Trop Overlay', () => {
 
     describe('previewing a mark by hovering', () => {
       const colours = (host: ReturnType<typeof makeHost>) =>
-        testVerses.map((v) => host.getVerseColor(v));
+        testVerses.map((v) => host.getItemColor(v));
 
       /** The map's colours with `button` clicked, from a host of its own. */
       function coloursClicked(index: number) {
@@ -340,12 +340,12 @@ describe('Trop Overlay', () => {
         rareButton!.click();
 
         const verseWithMark = testVerses.find((v) => {
-          const color = host.getVerseColor(v) as [number, number, number] | null;
+          const color = host.getItemColor(v) as [number, number, number] | null;
           return color && color[0] > 0.9 && color[1] > 0.8;
         });
         if (!verseWithMark) return;
 
-        const color = host.getVerseColor(verseWithMark) as [number, number, number];
+        const color = host.getItemColor(verseWithMark) as [number, number, number];
         assertApproximately(color[0], 1.0, 0.01);
         assertApproximately(color[1], 0.84, 0.01);
         assertApproximately(color[2], 0.0, 0.01);
@@ -361,12 +361,12 @@ describe('Trop Overlay', () => {
         rareButton!.click();
 
         const verseWithoutMark = testVerses.find((v) => {
-          const color = host.getVerseColor(v) as [number, number, number] | null;
+          const color = host.getItemColor(v) as [number, number, number] | null;
           return color && color[0] < 0.2;
         });
         if (!verseWithoutMark) return;
 
-        const color = host.getVerseColor(verseWithoutMark) as [number, number, number];
+        const color = host.getItemColor(verseWithoutMark) as [number, number, number];
         assertApproximately(color[0], 0.25, 0.02);
         assertApproximately(color[1], 0.25, 0.02);
         assertApproximately(color[2], 0.25, 0.02);
@@ -382,7 +382,7 @@ describe('Trop Overlay', () => {
         rareButton!.click();
 
         const colors = testVerses.map(
-          (v) => host.getVerseColor(v) as [number, number, number] | null,
+          (v) => host.getItemColor(v) as [number, number, number] | null,
         );
         const uniqueColors = new Set(
           colors.filter((c) => c !== null).map((c) => JSON.stringify(c)),
@@ -395,7 +395,7 @@ describe('Trop Overlay', () => {
   describe('Verse Filtering', () => {
     it('returns null color when no mark selected', () => {
       const host = makeHost();
-      expect(host.getVerseColor(testVerses[0])).toBeNull();
+      expect(host.getItemColor(testVerses[0])).toBeNull();
     });
 
     it('returns a color for every verse once a mark is selected', () => {
@@ -403,7 +403,7 @@ describe('Trop Overlay', () => {
       selectFirstMark(host);
 
       testVerses.forEach((verse) => {
-        const color = host.getVerseColor(verse) as [number, number, number] | null;
+        const color = host.getItemColor(verse) as [number, number, number] | null;
         expect(color).not.toBeNull();
         assertValidColor(color!);
       });
@@ -414,15 +414,15 @@ describe('Trop Overlay', () => {
       selectFirstMark(host);
 
       const verse = testVerses[0];
-      expect(host.getVerseColor(verse)).toEqual(host.getVerseColor(verse));
+      expect(host.getItemColor(verse)).toEqual(host.getItemColor(verse));
     });
 
-    it('colorsFor agrees with getVerseColor for every verse', () => {
+    it('colorsFor agrees with getItemColor for every verse', () => {
       const host = makeHost();
       selectFirstMark(host);
 
       const fromColorsFor = tropOverlay.colorsFor!(testVerses, host.settings, null, host.data);
-      const fromGetVerseColor = testVerses.map((v) => host.getVerseColor(v));
+      const fromGetVerseColor = testVerses.map((v) => host.getItemColor(v));
       expect(fromColorsFor).toEqual(fromGetVerseColor);
     });
 
@@ -562,7 +562,7 @@ describe('Trop Overlay', () => {
       host.restore({ trop: 'not-a-real-mark' });
 
       testVerses.forEach((verse) => {
-        expect(host.getVerseColor(verse)).toBeNull();
+        expect(host.getItemColor(verse)).toBeNull();
       });
     });
   });
@@ -578,7 +578,7 @@ describe('Trop Overlay', () => {
       selectFirstMark(host);
 
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      const color = host.getVerseColor(verse) as [number, number, number] | null;
+      const color = host.getItemColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
       assertValidColor(color!);
     });
@@ -594,7 +594,7 @@ describe('Trop Overlay', () => {
           return info && /×[2-9]/.test(info);
         });
         if (withMultiple) {
-          const color = host.getVerseColor(withMultiple) as [number, number, number] | null;
+          const color = host.getItemColor(withMultiple) as [number, number, number] | null;
           expect(color).not.toBeNull();
           assertValidColor(color!);
           return;
@@ -648,7 +648,7 @@ describe('Trop Overlay', () => {
     });
   });
 
-  describe('highlightVerseText (the overlay member)', () => {
+  describe('highlightItemText (the overlay member)', () => {
     it('marks the selected trop in Hebrew verse text', () => {
       const host = makeHost();
       const container = host.renderControls();
@@ -656,7 +656,7 @@ describe('Trop Overlay', () => {
       const unicode = button.dataset.unicode!;
       button.click();
 
-      const fragment = host.highlightVerseText(createVerse(), `בְּרֵאשִׁ${unicode}ית`, 'he');
+      const fragment = host.highlightItemText(createVerse(), `בְּרֵאשִׁ${unicode}ית`, 'he');
       const holder = document.createElement('div');
       holder.append(fragment);
       expect(holder.querySelector('mark')).not.toBeNull();
@@ -664,7 +664,7 @@ describe('Trop Overlay', () => {
 
     it('marks nothing when no trop is selected', () => {
       const host = makeHost();
-      const fragment = host.highlightVerseText(createVerse(), 'בְּרֵאשִׁ֖ית', 'he');
+      const fragment = host.highlightItemText(createVerse(), 'בְּרֵאשִׁ֖ית', 'he');
       const holder = document.createElement('div');
       holder.append(fragment);
       expect(holder.querySelector('mark')).toBeNull();
@@ -674,7 +674,7 @@ describe('Trop Overlay', () => {
     it('marks nothing in English text even with a trop selected', () => {
       const host = makeHost();
       selectFirstMark(host);
-      const fragment = host.highlightVerseText(createVerse(), 'In the beginning', 'en');
+      const fragment = host.highlightItemText(createVerse(), 'In the beginning', 'en');
       const holder = document.createElement('div');
       holder.append(fragment);
       expect(holder.querySelector('mark')).toBeNull();
@@ -734,18 +734,18 @@ describe('Trop Overlay', () => {
       selectFirstMark(first);
 
       const second = makeHost();
-      expect(second.getVerseColor(testVerses[0])).toBeNull();
+      expect(second.getItemColor(testVerses[0])).toBeNull();
     });
 
     it('survives destroy: colours still come from the settings, not module state', () => {
       const host = makeHost();
       selectFirstMark(host);
       const verse = testVerses[0];
-      const before = host.getVerseColor(verse);
+      const before = host.getItemColor(verse);
 
       tropOverlay.destroy?.();
 
-      expect(host.getVerseColor(verse)).toEqual(before);
+      expect(host.getItemColor(verse)).toEqual(before);
     });
   });
 
@@ -759,11 +759,11 @@ describe('Trop Overlay', () => {
 
       button1.click();
       const verse = testVerses[0];
-      const color1 = host.getVerseColor(verse);
+      const color1 = host.getItemColor(verse);
       const slug1 = host.settings.mark;
 
       button2.click();
-      const color2 = host.getVerseColor(verse);
+      const color2 = host.getItemColor(verse);
       const slug2 = host.settings.mark;
 
       expect(color1).not.toBeNull();

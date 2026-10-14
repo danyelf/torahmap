@@ -1,15 +1,15 @@
-// Build the per-verse buffer from spatial items (identity-agnostic)
+// Build the per-square buffer from spatial items (identity-agnostic)
 
 import type { Color } from '@torahmap/utils';
-import type { SpatialItem, VerseColor } from './types.ts';
+import type { SpatialItem, ItemColor } from './types.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
-// Helper to check if color is an array of colors (a verse split between them)
-function isColorArray(color: VerseColor | null | undefined): color is Color[] {
+// Helper to check if color is an array of colors (a square split between them)
+function isColorArray(color: ItemColor | null | undefined): color is Color[] {
   return Array.isArray(color) && Array.isArray(color[0]);
 }
 
-// Fill for verses with no assigned color, e.g. the base layer before any
+// Fill for squares with no assigned color, e.g. the base layer before any
 // overlay is picked. Shares its value with HIGHLIGHT_CONSTANTS.OUTLINE_COLOR,
 // but that constant is named for its other use as a border color; this name
 // says what it means here.
@@ -22,8 +22,8 @@ const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
  */
 export const SQUARE_GAP = 2;
 
-// World units a verse with several colors grows on every side, so it stands
-// out from single-color verses when zoomed out. Up to half of SQUARE_GAP keeps
+// World units a square with several colors grows on every side, so it stands
+// out from single-color squares when zoomed out. Up to half of SQUARE_GAP keeps
 // a gap between neighbours. The shader applies it.
 export const MULTICOLOR_GROWTH = 0.75;
 
@@ -32,15 +32,15 @@ export const MULTICOLOR_GROWTH = 0.75;
 export const BAND_OFFSET = 0.08;
 
 /**
- * One colouring of the map: a colour, or stripes, per verse, and how far each
- * verse has grown towards the size a multi-colour verse is drawn at, 0 to 1.
- * Without `growth`, a verse is fully grown exactly when its fill or its ring
- * has several colours. A verse's ring, where `rings` gives one, surrounds its
- * fill in colours of its own. `uncoloured` marks the verses whose fill is
+ * One colouring of the map: a colour, or stripes, per square, and how far each
+ * square has grown towards the size a multi-colour square is drawn at, 0 to 1.
+ * Without `growth`, a square is fully grown exactly when its fill or its ring
+ * has several colours. A square's ring, where `rings` gives one, surrounds its
+ * fill in colours of its own. `uncoloured` marks the squares whose fill is
  * their default grey, which a hover paints in the highlight colour instead of
  * brightening.
  */
-export interface Picture<C = VerseColor> {
+export interface Picture<C = ItemColor> {
   colors: C[];
   growth?: number[];
   rings?: (C | null)[];
@@ -50,10 +50,10 @@ export interface Picture<C = VerseColor> {
 const NO_COLORS: Picture = { colors: [] };
 
 /**
- * What the buffer holds for each verse, read once per verse. Each name is a
+ * What the buffer holds for each square, read once per square. Each name is a
  * shader input, and rendering.ts points it at its slice.
  *
- * Each verse carries two pictures, which the shader mixes by one fade for the
+ * Each square carries two pictures, which the shader mixes by one fade for the
  * whole map, so moving between them redraws without rebuilding this buffer.
  * At rest the two are the same.
  *
@@ -61,7 +61,7 @@ const NO_COLORS: Picture = { colors: [] };
  * unpacked, two pictures would need 19 attributes and 20 varyings, and WebGL 2
  * promises only 16 and 15.
  */
-export const VERSE_ATTRIBUTES = [
+export const ITEM_ATTRIBUTES = [
   { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units, before growing
   { name: 'a_fill', size: 4 },
   { name: 'a_ring', size: 4 },
@@ -71,16 +71,16 @@ export const VERSE_ATTRIBUTES = [
   { name: 'a_nextShape', size: 4 },
 ] as const;
 
-export type VerseAttributeName = (typeof VERSE_ATTRIBUTES)[number]['name'];
+export type ItemAttributeName = (typeof ITEM_ATTRIBUTES)[number]['name'];
 
-/** Where each entry starts within a verse's slice, in floats. */
-export const VERSE_OFFSETS = {} as Record<VerseAttributeName, number>;
+/** Where each entry starts within a square's slice, in floats. */
+export const ITEM_OFFSETS = {} as Record<ItemAttributeName, number>;
 let floats = 0;
-for (const { name, size } of VERSE_ATTRIBUTES) {
-  VERSE_OFFSETS[name] = floats;
+for (const { name, size } of ITEM_ATTRIBUTES) {
+  ITEM_OFFSETS[name] = floats;
   floats += size;
 }
-export const FLOATS_PER_VERSE = floats;
+export const FLOATS_PER_ITEM = floats;
 
 /** A colour as one float, 8 bits a channel; exact, as a float holds every integer below 2^24. */
 export function packColor([r, g, b]: Color): number {
@@ -93,40 +93,40 @@ const SLOTS = {
   to: { fill: 'a_nextFill', ring: 'a_nextRing', shape: 'a_nextShape' },
 } as const;
 
-/** A verse's stripes: at most four, and the base colour for none. */
-function stripesOf(color: VerseColor | null | undefined, baseColor: Color): Color[] {
+/** A square's stripes: at most four, and the base colour for none. */
+function stripesOf(color: ItemColor | null | undefined, baseColor: Color): Color[] {
   if (isColorArray(color)) return color.slice(0, 4);
   if (Array.isArray(color) && (color as unknown[]).length === 0) return [baseColor];
   return [(color as Color | null | undefined) || baseColor];
 }
 
 export function buildItemGeometry<T>(
-  verses: SpatialItem<T>[],
+  items: SpatialItem<T>[],
   from: Picture = NO_COLORS,
   to: Picture = from,
   baseColor: Color = DEFAULT_FILL_COLOR,
 ): Float32Array {
-  const data = new Float32Array(verses.length * FLOATS_PER_VERSE);
+  const data = new Float32Array(items.length * FLOATS_PER_ITEM);
 
   const writePicture = (picture: Picture, slots: (typeof SLOTS)['from' | 'to'], i: number) => {
-    const base = i * FLOATS_PER_VERSE;
+    const base = i * FLOATS_PER_ITEM;
     const fill = stripesOf(picture.colors[i], baseColor);
     const ringColor = picture.rings?.[i];
     const ring = ringColor ? stripesOf(ringColor, baseColor) : [];
 
     // Unused stripes stay zero
-    fill.forEach((color, s) => (data[base + VERSE_OFFSETS[slots.fill] + s] = packColor(color)));
-    ring.forEach((color, s) => (data[base + VERSE_OFFSETS[slots.ring] + s] = packColor(color)));
-    const shape = base + VERSE_OFFSETS[slots.shape];
+    fill.forEach((color, s) => (data[base + ITEM_OFFSETS[slots.fill] + s] = packColor(color)));
+    ring.forEach((color, s) => (data[base + ITEM_OFFSETS[slots.ring] + s] = packColor(color)));
+    const shape = base + ITEM_OFFSETS[slots.shape];
     data[shape] = fill.length;
     data[shape + 1] = picture.growth?.[i] ?? (Math.max(fill.length, ring.length) > 1 ? 1 : 0);
     data[shape + 2] = ring.length;
     data[shape + 3] = picture.uncoloured?.[i] ? 1 : 0;
   };
 
-  for (let i = 0; i < verses.length; i++) {
-    const v = verses[i];
-    const rect = i * FLOATS_PER_VERSE + VERSE_OFFSETS.a_rect;
+  for (let i = 0; i < items.length; i++) {
+    const v = items[i];
+    const rect = i * FLOATS_PER_ITEM + ITEM_OFFSETS.a_rect;
     data[rect] = v.x;
     data[rect + 1] = v.y;
     data[rect + 2] = v.x + v.size - SQUARE_GAP;

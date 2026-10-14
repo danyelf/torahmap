@@ -21,7 +21,7 @@ import {
   type RenderContext,
   getWebGL2,
   type MapItem,
-  type VerseColor,
+  type ItemColor,
   type Picture,
   DEFAULT_EASING,
   flatten,
@@ -128,11 +128,11 @@ import type { ResolvedStoryStop } from './scrollytelling/types';
 import { showLegend, type LegendRow } from './mapLegend.ts';
 import './styles/zoom-buttons.css';
 import './styles/frame.css';
-import './styles/verse-popup.css';
+import './styles/popup.css';
 import './styles/phone.css';
 
-// How far down a phone's map a verse brought into view is put. Halfway down,
-// the verse lands behind the popup that sits just above the sheet.
+// How far down a phone's map a square brought into view is put. Halfway down,
+// the square lands behind the popup that sits just above the sheet.
 const PHONE_STORY_FOCUS = 0.4;
 
 /**
@@ -178,7 +178,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   let loaded: Loaded = await firstFiles;
   const text = source.open(loaded);
-  const verses = text.items;
+  const items = text.items;
   const searchTool = text.search;
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
   const getOverlay = (id: string): Overlay<I> | undefined =>
@@ -201,11 +201,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let downloadsStarted = false;
   let timingSent = false;
 
-  const squares = indexItems(verses);
-  const baseColors = verses.map((verse, i) => text.baseColor(verse, i));
-  const base = (i: number): VerseColor => baseColors[i];
+  const squares = indexItems(items);
+  const baseColors = items.map((item, i) => text.baseColor(item, i));
+  const base = (i: number): ItemColor => baseColors[i];
   // A picture with its holes filled with each square's base colour.
-  const fill = (picture: Picture<VerseColor | null>): Picture<VerseColor> =>
+  const fill = (picture: Picture<ItemColor | null>): Picture<ItemColor> =>
     fillDefaultColors(picture, base);
 
   // Placed over the map; render() moves them with it.
@@ -239,7 +239,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const onMap = (e: { clientX: number; clientY: number }): ScreenPoint =>
     mapPoint(e.clientX, e.clientY, canvasOrigin);
 
-  const renderState = createRenderState(renderContext, verses, dpr);
+  const renderState = createRenderState(renderContext, items, dpr);
 
   let currentOverlay: Overlay<I> | null = null;
   const currentOverlayId = (): string => currentOverlay?.id ?? NO_OVERLAY;
@@ -254,9 +254,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // The one colour layer on the map: either a settled overlay's colours or a
   // story transition's blend. The shader draws the hover on top of it
   // (render). A pin never recomputes it; a hover does only when the colours
-  // depend on the hovered verse, which a blend's may.
-  let colorLayer: ColorLayer<VerseColor | null> = still({ colors: [] });
-  // What the verse buffer was last built from. A fade in progress changes only
+  // depend on the hovered square, which a blend's may.
+  let colorLayer: ColorLayer<ItemColor | null> = still({ colors: [] });
+  // What the square buffer was last built from. A fade in progress changes only
   // its amount, so a frame that keeps these redraws without rebuilding.
   let built: unknown[] = [];
 
@@ -278,7 +278,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     rebuildGeometry(renderContext.gl, renderState, fill(from), to && fill(to));
   }
 
-  function setColorLayer(next: ColorLayer<VerseColor | null>): void {
+  function setColorLayer(next: ColorLayer<ItemColor | null>): void {
     colorLayer = next;
     composite();
   }
@@ -350,8 +350,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
-  function explorePicture(): Picture<VerseColor | null> {
-    return toolsPicture(toolsNow(), verses, hoveredVerse, base, dimFor(frontTool));
+  function explorePicture(): Picture<ItemColor | null> {
+    return toolsPicture(toolsNow(), items, hoveredItem, base, dimFor(frontTool));
   }
 
   function applyTools(): void {
@@ -414,7 +414,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function blendColors(): ColorLayer | null {
     if (driver.by !== 'story' || !driver.blend) return null;
     const { from, to, t } = driver.blend;
-    return computeBlendedColors(from, to, t, verses, hoveredVerse, loaded, base, textTools);
+    return computeBlendedColors(from, to, t, items, hoveredItem, loaded, base, textTools);
   }
 
   function blendTransition(): void {
@@ -424,16 +424,16 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Repaint after the hovered or pinned verse changes. `hoveredBefore` is the
+   * Repaint after the hovered or pinned square changes. `hoveredBefore` is the
    * hover the colour layer was drawn for; a pin leaves the hover alone, so it
    * passes nothing and only composites.
    */
-  function repaint(hoveredBefore: I | null = hoveredVerse): void {
+  function repaint(hoveredBefore: I | null = hoveredItem): void {
     const layer = layerToRecompute(
       colorSource(driver),
       toolsNow().overlay,
       hoveredBefore,
-      hoveredVerse,
+      hoveredItem,
     );
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
@@ -442,10 +442,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Sync explore-mode state (overlay, params, pinned verse) to a story stop.
+   * Sync explore-mode state (overlay, params, pinned square) to a story stop.
    * Does NOT paint the buffer — caller decides (settled paints via applyTools,
    * mid-scroll lets the blender paint), so mid-scroll can keep
-   * `currentOverlay`/`pinnedVerse` in sync with the stop the reader is heading
+   * `currentOverlay`/`pinnedItem` in sync with the stop the reader is heading
    * toward, for the sidebar and the hover text.
    *
    * The stop is external state, like a link, so URL writes are off throughout:
@@ -471,24 +471,24 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // reader has a panel open to see it (stops don't open panels).
     if (searching()) frontTool = 'search';
 
-    // Sync pinnedVerse from stop (without going through pinVerse, which writes URL/telemetry)
+    // Sync pinnedItem from stop (without going through pinItem, which writes URL/telemetry)
     if (stop.pin) {
-      const verse = squares.find(stop.pin);
-      if (verse && !sameItem(pinnedVerse, verse)) {
-        pinnedVerse = verse;
-        updateSidebarWrapper(verse, true);
+      const item = squares.find(stop.pin);
+      if (item && !sameItem(pinnedItem, item)) {
+        pinnedItem = item;
+        updateSidebarWrapper(item, true);
       }
-    } else if (pinnedVerse) {
-      pinnedVerse = null;
+    } else if (pinnedItem) {
+      pinnedItem = null;
       updateSidebarWrapper(null);
     }
   }
 
   const camera = text.startCamera(mapViewport());
 
-  let pinnedVerse: I | null = null;
+  let pinnedItem: I | null = null;
 
-  let hoveredVerse: I | null = null;
+  let hoveredItem: I | null = null;
 
   const storyContent = document.getElementById('story-content')!;
 
@@ -563,7 +563,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   // An exploring phone's sheet is as tall as its content, or gone with nothing
-  // open; the map, the legend and the verse popup make room for it. Full
+  // open; the map, the legend and the popup make room for it. Full
   // height grows over the map instead.
   function measureSheet(): void {
     if (!phone || frame.full) return;
@@ -571,7 +571,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
   new ResizeObserver(measureSheet).observe(panel);
 
-  // On a phone the verse popup stacks above the legend, which grows a row for
+  // On a phone the popup stacks above the legend, which grows a row for
   // each thing on the map.
   new ResizeObserver(() => {
     const height = mapLegend.offsetHeight;
@@ -652,22 +652,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     applyTools();
   }
 
-  // Track the story stop whose explore-mode state (overlay, params, pinnedVerse)
+  // Track the story stop whose explore-mode state (overlay, params, pinnedItem)
   // is currently synced. Used to skip redundant resyncs every scroll frame.
   // Reset whenever the story comes back, since the reader may have changed the
   // overlay or pin out from under it.
   let lastSyncedStopId: string | null = null;
 
   function render(): void {
-    const offset = renderFrame(renderContext, renderState, camera, hoveredVerse, pinnedVerse);
+    const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
     moveLabels(offset, camera.zoom);
   }
 
-  function centerOnVerse(verse: I): void {
-    Object.assign(camera, centreForFocus(verse, camera.zoom, mapFocus(), mapViewport()));
+  function centerOnItem(item: I): void {
+    Object.assign(camera, centreForFocus(item, camera.zoom, mapFocus(), mapViewport()));
   }
 
-  // A verse is one square six pixels across, so centring it while scaled out
+  // A square is six pixels across, so centring it while scaled out
   // moves the map and shows the reader nothing. Close enough to pick it out.
   const RESULT_CLICK_ZOOM = 2.5;
 
@@ -680,17 +680,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Travel to a verse rather than cutting to it, so the reader keeps their
+   * Travel to a square rather than cutting to it, so the reader keeps their
    * bearings and can see where on the map the hit lives.
    *
    * Zooming in only when already further out: a reader who has zoomed past 2.5
    * has said what they want to see, and being pulled back would undo it.
    */
-  function glideToVerse(verse: I): void {
+  function glideToItem(item: I): void {
     cancelCameraGlide();
 
     const target = viewFocusedOn(
-      verse,
+      item,
       camera.zoom,
       RESULT_CLICK_ZOOM,
       mapFocus(),
@@ -704,23 +704,23 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     });
   }
 
-  // pinVerse, unpinVerse and zoomAt answer only the reader's gestures; the story
+  // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
-  function pinVerse(verse: I, centerCamera: boolean = false): void {
+  function pinItem(item: I, centerCamera: boolean = false): void {
     takeOver('takeover');
-    trackSquareClick(verse.id, text.area(verse).area);
-    pinnedVerse = verse;
-    updateSidebarWrapper(verse, true);
+    trackSquareClick(item.id, text.area(item).area);
+    pinnedItem = item;
+    updateSidebarWrapper(item, true);
     if (centerCamera) {
-      centerOnVerse(verse);
+      centerOnItem(item);
     }
     repaint();
     syncUrl(true);
   }
 
-  function unpinVerse(): void {
+  function unpinItem(): void {
     takeOver('takeover');
-    pinnedVerse = null;
+    pinnedItem = null;
     updateSidebarWrapper(null);
     repaint();
     syncUrl(true);
@@ -738,8 +738,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   render();
 
   function setHover(square: I | null): void {
-    const before = hoveredVerse;
-    hoveredVerse = square;
+    const before = hoveredItem;
+    hoveredItem = square;
     if (!sameItem(before, square)) repaint(before);
   }
 
@@ -748,8 +748,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     zoomIn: document.getElementById('zoom-in'),
     zoomOut: document.getElementById('zoom-out'),
     onMap,
-    squareUnder: (p) => findItemAtPoint(verses, camera, mapViewport(), p.x, p.y),
-    clickable: (square) => pinnedVerse !== null && square !== null,
+    squareUnder: (p) => findItemAtPoint(items, camera, mapViewport(), p.x, p.y),
+    clickable: (square) => pinnedItem !== null && square !== null,
     intents: {
       grab() {
         // A touch on the map lifts the menu and folds a phone's sheet.
@@ -767,22 +767,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       moveEnded: () => debouncedCameraSettled(),
       hover(square) {
         setHover(square);
-        // A pinned verse keeps the popup.
-        if (!pinnedVerse) updateSidebarWrapper(square);
+        // A pinned square keeps the popup.
+        if (!pinnedItem) updateSidebarWrapper(square);
       },
       leave: () => setHover(null),
       tap(square) {
-        const does = tapDoes(square, pinnedVerse);
-        if (does === 'pin' && square) pinVerse(square);
-        else if (does === 'unpin') unpinVerse();
+        const does = tapDoes(square, pinnedItem);
+        if (does === 'pin' && square) pinItem(square);
+        else if (does === 'unpin') unpinItem();
       },
       step(by) {
-        const next = pinnedVerse && squares.step(pinnedVerse, by);
-        if (next) pinVerse(next, true);
+        const next = pinnedItem && squares.step(pinnedItem, by);
+        if (next) pinItem(next, true);
       },
       escape(inField) {
-        const does = escapeDoes({ menu: frame.menu, pinned: pinnedVerse !== null, inField });
-        if (does === 'unpin') unpinVerse();
+        const does = escapeDoes({ menu: frame.menu, pinned: pinnedItem !== null, inField });
+        if (does === 'unpin') unpinItem();
         else dispatch({ type: does });
       },
     },
@@ -806,14 +806,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       state.overlayParams = buildOverlayParamsForUrl();
     }
 
-    if (pinnedVerse) {
-      state.square = pinnedVerse.id;
+    if (pinnedItem) {
+      state.square = pinnedItem.id;
     }
 
     state.zoom = camera.zoom;
 
-    // Pan (only if no verse - verse auto-centers)
-    if (!pinnedVerse) {
+    // Pan (only if no square - square auto-centers)
+    if (!pinnedItem) {
       state.x = camera.x;
       state.y = camera.y;
     }
@@ -850,16 +850,16 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const last = settledCamera;
     if (last.x === camera.x && last.y === camera.y && last.zoom === camera.zoom) return;
     markViewSettled();
-    const near = findNearestItem(verses, camera.x, camera.y);
+    const near = findNearestItem(items, camera.x, camera.y);
     const where = near ? text.area(near) : { area: '', section: '' };
     trackViewSettled(where.area, where.section, camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
-  function updateSidebarWrapper(verse: I | null, isPinned: boolean = false): void {
-    const file = verse && text.popupFile(verse);
+  function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
+    const file = item && text.popupFile(item);
     if (file) fetchPopupFile(file);
     const tools = toolsNow();
-    updateSidebar(sidebarElements, verse, (item) => text.popupText(item, loaded, tools.overlay), {
+    updateSidebar(sidebarElements, item, (item) => text.popupText(item, loaded, tools.overlay), {
       textsNotice: file ? noticeFor([file]) : null,
       wordsClickable: dataFor(searchTool, loaded) !== null,
       ...tools,
@@ -880,13 +880,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Redraw the popup for the verse it shows, pinned or else hovered. It reads
+   * Redraw the popup for the square it shows, pinned or else hovered. It reads
    * the overlay's settings when drawn, so it goes stale when they change under
-   * a verse that stays put, as when two story stops pin the same verse.
+   * a square that stays put, as when two story stops pin the same square.
    */
-  function refreshVersePopup(): void {
-    if (pinnedVerse) updateSidebarWrapper(pinnedVerse, true);
-    else if (hoveredVerse) updateSidebarWrapper(hoveredVerse, false);
+  function refreshPopup(): void {
+    if (pinnedItem) updateSidebarWrapper(pinnedItem, true);
+    else if (hoveredItem) updateSidebarWrapper(hoveredItem, false);
   }
 
   /** Say in the search caption that search's files are loading or failed; search fills it once they are in. */
@@ -908,7 +908,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function showLoadState(): void {
     updateLegend();
     showSearchNotice();
-    refreshVersePopup();
+    refreshPopup();
   }
 
   /** The reader closed a warning: it stays closed for those files. */
@@ -918,7 +918,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   sidebarElements.closeBtn?.addEventListener('click', () => {
-    unpinVerse();
+    unpinItem();
   });
 
   const overlaySelect = document.getElementById('overlay-select') as HTMLSelectElement;
@@ -973,7 +973,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function overlayChanged(fresh: boolean): void {
     drawOverlayPanel(fresh);
     updateLegend();
-    refreshVersePopup();
+    refreshPopup();
   }
 
   function drawOverlayPanel(fresh: boolean): void {
@@ -1012,7 +1012,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function searchChanged(fresh: boolean): void {
     drawSearchPanel(fresh);
     updateLegend();
-    refreshVersePopup();
+    refreshPopup();
   }
 
   function drawSearchPanel(fresh: boolean): void {
@@ -1053,9 +1053,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // sendBeacon survives the page navigating away, so following the link to
   // Sefaria doesn't lose the event.
   sidebarElements.link?.addEventListener('click', () => {
-    const verse = pinnedVerse ?? hoveredVerse;
-    if (!verse) return;
-    trackSefariaOpen(verse.id, text.area(verse).area, currentOverlayId());
+    const item = pinnedItem ?? hoveredItem;
+    if (!item) return;
+    trackSefariaOpen(item.id, text.area(item).area, currentOverlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -1069,7 +1069,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         e.preventDefault();
         const comment = writeStopComment(
           'STOP_ID',
-          { camera: cameraSetting(camera), overlay: currentOverlay?.id, pin: pinnedVerse?.id },
+          { camera: cameraSetting(camera), overlay: currentOverlay?.id, pin: pinnedItem?.id },
           {
             ...(currentOverlay && overlaySettings.toUrl(currentOverlay)),
             ...overlaySettings.toUrl(searchTool),
@@ -1084,11 +1084,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   text.start?.({
     loaded: () => loaded,
     holdPopup: popupHold.hold,
-    pinAndGlide: (verse) => {
+    pinAndGlide: (item) => {
       // A full-height sheet would hide the glide.
       if (frame.full) setFrame({ ...frame, full: false });
-      pinVerse(verse);
-      glideToVerse(verse);
+      pinItem(item);
+      glideToItem(item);
     },
     searchSettings: () => overlaySettings.get(searchTool),
     changeSearch: (update) => {
@@ -1117,8 +1117,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Where a verse is put when the story, a link or the reader brings it into
-   * view: the middle of the map, or on a phone higher up, clear of the verse
+   * Where a square is put when the story, a link or the reader brings it into
+   * view: the middle of the map, or on a phone higher up, clear of the square
    * popup that sits above the sheet.
    */
   function mapFocus(): ScreenPoint {
@@ -1131,7 +1131,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     listedStories(text.stories.list, !__LIVE__),
     parseUrlState(source.link).story ?? null,
     (stops) =>
-      text.stories.resolve(stops, initialCamera, verses, squares, mapFocus(), mapViewport()),
+      text.stories.resolve(stops, initialCamera, items, squares, mapFocus(), mapViewport()),
   );
   storyColumn.onMove(storyMoved);
   configureAnalytics({ getStory: () => storyColumn.where().story.id });
@@ -1139,7 +1139,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   window.addEventListener('resize', () => {
     // Crossing into or out of phone width turns the story from a column into a
-    // row, or back, and moves where it centres verses.
+    // row, or back, and moves where it centres squares.
     const relaid = isPhone() !== phone;
     if (relaid) {
       phone = !phone;
@@ -1370,7 +1370,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
-  function withDefaults(layer: ColorLayer<VerseColor | null>): ColorLayer {
+  function withDefaults(layer: ColorLayer<ItemColor | null>): ColorLayer {
     return {
       from: fill(layer.from),
       to: layer.to && fill(layer.to),
@@ -1396,7 +1396,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         state.fromStop,
         state.toStop,
         state.t,
-        verses,
+        items,
         null,
         loaded,
         base,
@@ -1453,12 +1453,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     const settled = state.fromStop === state.toStop;
     // Sync explore state to the nearer stop on every change, so hover events
-    // mid-scroll find a consistent currentOverlay/pinnedVerse.
+    // mid-scroll find a consistent currentOverlay/pinnedItem.
     const nearer = nearerStop(state);
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
     // Not setHover: the render below draws the highlight.
-    hoveredVerse = gestures.squareUnderMouse();
+    hoveredItem = gestures.squareUnderMouse();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.
@@ -1481,14 +1481,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView<I> {
     if (frame.mode !== 'story')
-      return { tools: pickedTools(), popup: pinnedVerse && text.popupFile(pinnedVerse) };
+      return { tools: pickedTools(), popup: pinnedItem && text.popupFile(pinnedItem) };
     const { stop } = storyColumn.where();
-    const verse = stop.pin ? squares.find(stop.pin) : null;
-    return { tools: stopTools(stop, textTools), popup: verse && text.popupFile(verse) };
+    const item = stop.pin ? squares.find(stop.pin) : null;
+    return { tools: stopTools(stop, textTools), popup: item && text.popupFile(item) };
   }
 
   function landingView(): LandingView<I> {
-    const shown = pinnedVerse ?? hoveredVerse;
+    const shown = pinnedItem ?? hoveredItem;
     let map = pickedTools();
     if (driver.by === 'story' && driver.blend) {
       map = [...stopTools(driver.blend.from, textTools), ...stopTools(driver.blend.to, textTools)];
@@ -1545,7 +1545,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function refreshPopupAfterDownload(): void {
-    if (!popupHold.held()) refreshVersePopup();
+    if (!popupHold.held()) refreshPopup();
   }
 
   function prebuilt(overlay: Overlay<I>, built: boolean): void {
@@ -1591,7 +1591,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /**
    * Replace the whole view with `next`, in an order where each step can rely on
-   * the one before: settings before the controls that draw them, the verse
+   * the one before: settings before the controls that draw them, the square
    * before the camera that centres on it.
    */
   function applyViewState(next: ViewState): void {
@@ -1612,12 +1612,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     searchChanged(true);
     overlayChanged(true);
 
-    const verse = next.verse ? squares.find(next.verse) : null;
-    pinnedVerse = verse;
-    updateSidebarWrapper(verse, verse !== null);
+    const item = next.item ? squares.find(next.item) : null;
+    pinnedItem = item;
+    updateSidebarWrapper(item, item !== null);
 
     cancelCameraGlide();
-    Object.assign(camera, cameraForView(next.camera, verse, mapFocus(), mapViewport()));
+    Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));
 
     applyTools();
     render();

@@ -1,4 +1,4 @@
-// Travelling to a verse: where the camera should end up, and how it gets there.
+// Travelling to a square: where the camera should end up, and how it gets there.
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
@@ -11,7 +11,7 @@ import {
 } from '../src/index.ts';
 import { ZOOM } from './fixtures.ts';
 
-const VERSE = { x: 400, y: 300, size: 6 };
+const ITEM = { x: 400, y: 300, size: 6 };
 const FOCUS = { x: 300, y: 400 };
 const VIEW = { width: 800, height: 600 };
 
@@ -22,43 +22,43 @@ function screenPosition(item: { x: number; size: number }, camera: Camera): numb
 
 describe('centreForFocus', () => {
   it('puts the item at the focus', () => {
-    const centre = centreForFocus(VERSE, 1, FOCUS, VIEW);
+    const centre = centreForFocus(ITEM, 1, FOCUS, VIEW);
 
-    expect(screenPosition(VERSE, { ...centre, zoom: 1 })).toBeCloseTo(FOCUS.x);
+    expect(screenPosition(ITEM, { ...centre, zoom: 1 })).toBeCloseTo(FOCUS.x);
   });
 
   it('aims at the zoom it is given, not the one in the camera', () => {
-    // Moving and zooming at once has to aim where the verse will be.
-    const centre = centreForFocus(VERSE, 4, FOCUS, VIEW);
+    // Moving and zooming at once has to aim where the square will be.
+    const centre = centreForFocus(ITEM, 4, FOCUS, VIEW);
 
-    expect(screenPosition(VERSE, { ...centre, zoom: 4 })).toBeCloseTo(FOCUS.x);
+    expect(screenPosition(ITEM, { ...centre, zoom: 4 })).toBeCloseTo(FOCUS.x);
   });
 });
 
 describe('viewFocusedOn', () => {
   it('zooms in when the map is scaled out past the floor', () => {
-    const view = viewFocusedOn(VERSE, 1, 2.5, FOCUS, VIEW, ZOOM);
+    const view = viewFocusedOn(ITEM, 1, 2.5, FOCUS, VIEW, ZOOM);
 
     expect(view.zoom).toBe(2.5);
-    expect(screenPosition(VERSE, view)).toBeCloseTo(FOCUS.x);
+    expect(screenPosition(ITEM, view)).toBeCloseTo(FOCUS.x);
   });
 
   it('leaves a reader who is already closer where they are', () => {
     // Pulling them back would undo a zoom they chose.
-    const view = viewFocusedOn(VERSE, 6, 2.5, FOCUS, VIEW, ZOOM);
+    const view = viewFocusedOn(ITEM, 6, 2.5, FOCUS, VIEW, ZOOM);
 
     expect(view.zoom).toBe(6);
   });
 
   it('centres at the zoom it settles on, not the one it started from', () => {
-    const view = viewFocusedOn(VERSE, 0.1, 2.5, FOCUS, VIEW, ZOOM);
+    const view = viewFocusedOn(ITEM, 0.1, 2.5, FOCUS, VIEW, ZOOM);
 
-    // The trap: centre at 0.1 and then zoom to 2.5 and the verse flies away.
-    expect(screenPosition(VERSE, view)).toBeCloseTo(FOCUS.x);
+    // The trap: centre at 0.1 and then zoom to 2.5 and the square flies away.
+    expect(screenPosition(ITEM, view)).toBeCloseTo(FOCUS.x);
   });
 
   it('never exceeds the maximum zoom', () => {
-    expect(viewFocusedOn(VERSE, 1, ZOOM.max * 2, FOCUS, VIEW, ZOOM).zoom).toBe(ZOOM.max);
+    expect(viewFocusedOn(ITEM, 1, ZOOM.max * 2, FOCUS, VIEW, ZOOM).zoom).toBe(ZOOM.max);
   });
 });
 

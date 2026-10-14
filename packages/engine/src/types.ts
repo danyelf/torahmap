@@ -1,7 +1,7 @@
 import type { Color } from '@torahmap/utils';
 
-/** A verse's colour, or its stripes. */
-export type VerseColor = Color | Color[];
+/** A square's colour, or its stripes. */
+export type ItemColor = Color | Color[];
 
 /**
  * A square on the map. The app compares and finds squares by id without

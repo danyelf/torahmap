@@ -24,7 +24,7 @@ export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, vo
 
   telemetry: { readerChanged() {}, replaced() {}, dataLoaded() {} },
 
-  getVerseColor: () => null,
+  getItemColor: () => null,
 
   colorsFor: (items) => items.map(() => null),
 

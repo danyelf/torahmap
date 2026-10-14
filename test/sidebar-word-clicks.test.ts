@@ -16,12 +16,12 @@ const texts: VerseTexts = {
 
 function mountPopup(): void {
   document.body.innerHTML = `
-    <div id="verse-popup">
-      <div class="verse-ref"><span class="ref-text"></span><button class="close-btn"></button></div>
+    <div id="popup">
+      <div class="popup-ref"><span class="ref-text"></span><button class="close-btn"></button></div>
       <div class="overlay-info"></div>
-      <div class="verse-hebrew"></div>
-      <div class="verse-notice"></div>
-      <div class="verse-english"></div>
+      <div class="popup-hebrew"></div>
+      <div class="popup-notice"></div>
+      <div class="popup-english"></div>
       <a class="sefaria-link">View on Sefaria</a>
     </div>`;
 }
@@ -45,7 +45,7 @@ describe('words in the popup', () => {
       wordsClickable: true,
     });
 
-    const spans = [...document.querySelectorAll('.verse-hebrew .verse-word')];
+    const spans = [...document.querySelectorAll('.popup-hebrew .popup-word')];
     expect(spans.map((s) => s.textContent)).toEqual(['וְר֣וּחַ', 'אֱלֹהִ֔ים', 'מְרַחֶ֖פֶת']);
   });
 
@@ -62,8 +62,8 @@ describe('words in the popup', () => {
       wordsClickable: false,
     });
 
-    expect(document.querySelectorAll('.verse-hebrew .verse-word')).toHaveLength(0);
-    document.querySelector<HTMLElement>('.verse-hebrew')!.click();
+    expect(document.querySelectorAll('.popup-hebrew .popup-word')).toHaveLength(0);
+    document.querySelector<HTMLElement>('.popup-hebrew')!.click();
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -124,7 +124,7 @@ describe('words in the popup', () => {
       wordsClickable: true,
     });
 
-    expect(document.querySelectorAll('.verse-english .verse-word')).toHaveLength(0);
+    expect(document.querySelectorAll('.popup-english .popup-word')).toHaveLength(0);
   });
 
   it('leaves the words plain while nothing listens', () => {
@@ -139,13 +139,13 @@ describe('words in the popup', () => {
       wordsClickable: true,
     });
 
-    expect(document.querySelectorAll('.verse-hebrew .verse-word')).toHaveLength(0);
+    expect(document.querySelectorAll('.popup-hebrew .popup-word')).toHaveLength(0);
   });
 
   it('reports the whole word when a click lands inside an overlay mark', () => {
     // Search wraps a match in <mark>, and trop marks a single accent - either
     // way the mark can land inside a word rather than around the whole thing,
-    // same as the interrupted-word case in verseWords-dom.test.ts. The word
+    // same as the interrupted-word case in textWords-dom.test.ts. The word
     // index is shared across the pieces precisely so a click on either half
     // still resolves to the whole word: that's the case this test covers.
     const handler = vi.fn();
@@ -154,8 +154,8 @@ describe('words in the popup', () => {
     const mockOverlay = testOverlay({
       id: 'test-overlay',
       name: 'Test overlay',
-      getVerseColor: () => null,
-      highlightVerseText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
+      getItemColor: () => null,
+      highlightItemText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
         const fragment = document.createDocumentFragment();
         if (language !== 'he') {
           fragment.appendChild(document.createTextNode(text));
@@ -182,14 +182,14 @@ describe('words in the popup', () => {
       wordsClickable: true,
     });
 
-    const hebrew = document.querySelector('.verse-hebrew')!;
+    const hebrew = document.querySelector('.popup-hebrew')!;
     expect(hebrew.querySelector('mark')).not.toBeNull();
 
     // Word 0 should be split into (at least) two spans sharing one index.
     const word0Spans = [...hebrew.querySelectorAll('[data-word-index="0"]')];
     expect(word0Spans.length).toBeGreaterThanOrEqual(2);
 
-    const insideMark = hebrew.querySelector<HTMLElement>('mark .verse-word')!;
+    const insideMark = hebrew.querySelector<HTMLElement>('mark .popup-word')!;
     expect(insideMark).not.toBeNull();
     insideMark.click();
 

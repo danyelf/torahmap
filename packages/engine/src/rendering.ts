@@ -11,9 +11,9 @@ import {
 import {
   buildItemGeometry,
   createBuffer,
-  VERSE_ATTRIBUTES,
-  VERSE_OFFSETS,
-  FLOATS_PER_VERSE,
+  ITEM_ATTRIBUTES,
+  ITEM_OFFSETS,
+  FLOATS_PER_ITEM,
   type Picture,
 } from './geometry.ts';
 import { buildOutlineGeometry } from './outline.ts';
@@ -46,13 +46,13 @@ export interface RenderContext {
  */
 export interface RenderState<T> {
   buffer: WebGLBuffer;
-  /** Points each per-verse attribute of the main program at its slice of `buffer`. */
+  /** Points each per-square attribute of the main program at its slice of `buffer`. */
   vertexArray: WebGLVertexArrayObject;
   outlineBuffer: WebGLBuffer | null;
   hoverOutlineBuffer: WebGLBuffer | null;
-  verses: SpatialItem<T>[];
+  items: SpatialItem<T>[];
   dpr: number;
-  /** How far the verses have gone from their first picture to their second, 0 to 1. */
+  /** How far the squares have gone from their first picture to their second, 0 to 1. */
   fade: number;
 }
 
@@ -68,23 +68,23 @@ export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
 
 export function createRenderState<T>(
   context: RenderContext,
-  verses: SpatialItem<T>[],
+  items: SpatialItem<T>[],
   dpr: number,
 ): RenderState<T> {
   const { gl, programs } = context;
-  const geometry = buildItemGeometry(verses);
+  const geometry = buildItemGeometry(items);
   const buffer = createBuffer(gl, geometry);
 
   const vertexArray = gl.createVertexArray();
   if (!vertexArray) throw new Error('Failed to create vertex array');
   gl.bindVertexArray(vertexArray);
   gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-  const stride = FLOATS_PER_VERSE * 4;
-  for (const { name, size } of VERSE_ATTRIBUTES) {
+  const stride = FLOATS_PER_ITEM * 4;
+  for (const { name, size } of ITEM_ATTRIBUTES) {
     const location = programs.main.attribs[name];
     gl.enableVertexAttribArray(location);
-    gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, VERSE_OFFSETS[name] * 4);
-    // Advance once per verse rather than once per corner
+    gl.vertexAttribPointer(location, size, gl.FLOAT, false, stride, ITEM_OFFSETS[name] * 4);
+    // Advance once per square rather than once per corner
     gl.vertexAttribDivisor(location, 1);
   }
   // Unbound, so the outline program's setup is not recorded into it
@@ -95,15 +95,15 @@ export function createRenderState<T>(
     vertexArray,
     outlineBuffer: null,
     hoverOutlineBuffer: null,
-    verses,
+    items,
     dpr,
     fade: 0,
   };
 }
 
 /**
- * Refills the per-verse buffer with updated colors. Call after overlay
- * changes; a hover needs none, as render() hands the shader the hovered verse.
+ * Refills the per-square buffer with updated colors. Call after overlay
+ * changes; a hover needs none, as render() hands the shader the hovered square.
  * The buffer object stays the same, so the vertex array still points at it.
  * Given a second picture, `state.fade` then moves between the two.
  */
@@ -113,7 +113,7 @@ export function rebuildGeometry<T>(
   from?: Picture,
   to?: Picture,
 ): void {
-  const geometry = buildItemGeometry(state.verses, from, to);
+  const geometry = buildItemGeometry(state.items, from, to);
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
@@ -126,11 +126,11 @@ export function render<T>(
   context: RenderContext,
   state: RenderState<T>,
   camera: Camera,
-  hoveredVerse: SpatialItem<T> | null,
-  pinnedVerse: SpatialItem<T> | null,
+  hoveredItem: SpatialItem<T> | null,
+  pinnedItem: SpatialItem<T> | null,
 ): { x: number; y: number } {
   const { gl, programs, canvas } = context;
-  const { vertexArray, verses, dpr } = state;
+  const { vertexArray, items, dpr } = state;
 
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(...MAP_BACKGROUND, 1.0);
@@ -151,23 +151,23 @@ export function render<T>(
     RING_INSIDE_PX * dpr,
     RING_MIN_SQUARE_PX * dpr,
   );
-  // Hit detection hands back an item of `verses` itself, so identity finds it.
-  gl.uniform1i(programs.main.uniforms.hovered, hoveredVerse ? verses.indexOf(hoveredVerse) : -1);
+  // Hit detection hands back an item of `items` itself, so identity finds it.
+  gl.uniform1i(programs.main.uniforms.hovered, hoveredItem ? items.indexOf(hoveredItem) : -1);
 
   gl.bindVertexArray(vertexArray);
-  // Six corners (two triangles) for each verse
-  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, verses.length);
+  // Six corners (two triangles) for each square
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
   gl.bindVertexArray(null);
 
-  if (hoveredVerse && !sameItem(hoveredVerse, pinnedVerse)) {
-    const hoverColor = pinnedVerse
+  if (hoveredItem && !sameItem(hoveredItem, pinnedItem)) {
+    const hoverColor = pinnedItem
       ? HIGHLIGHT_CONSTANTS.HOVER_WHILE_PINNED_OUTLINE_COLOR
       : HIGHLIGHT_CONSTANTS.HOVER_OUTLINE_COLOR;
 
     state.hoverOutlineBuffer = renderOutline(
       context,
       state,
-      hoveredVerse,
+      hoveredItem,
       hoverColor,
       state.hoverOutlineBuffer,
       camera,
@@ -175,11 +175,11 @@ export function render<T>(
   }
 
   // Pinned outline draws on top of the hover outline.
-  if (pinnedVerse) {
+  if (pinnedItem) {
     state.outlineBuffer = renderOutline(
       context,
       state,
-      pinnedVerse,
+      pinnedItem,
       HIGHLIGHT_CONSTANTS.PINNED_OUTLINE_COLOR,
       state.outlineBuffer,
       camera,
@@ -193,7 +193,7 @@ export function render<T>(
 export function renderOutline<T>(
   context: RenderContext,
   state: RenderState<T>,
-  verse: SpatialItem<T>,
+  item: SpatialItem<T>,
   color: Color,
   buffer: WebGLBuffer | null,
   camera: Camera,
@@ -202,7 +202,7 @@ export function renderOutline<T>(
   const { gl, programs, canvas } = context;
   const { dpr } = state;
 
-  const geometry = buildOutlineGeometry(verse, thickness);
+  const geometry = buildOutlineGeometry(item, thickness);
 
   let currentBuffer = buffer;
   if (!currentBuffer) {

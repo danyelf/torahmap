@@ -21,7 +21,7 @@ describe('sidebar', () => {
 
     beforeEach(() => {
       sidebar = document.createElement('div');
-      sidebar.id = 'verse-popup';
+      sidebar.id = 'popup';
       document.body.appendChild(sidebar);
     });
 
@@ -43,11 +43,11 @@ describe('sidebar', () => {
       const overlayInfo = document.createElement('div');
       overlayInfo.className = 'overlay-info';
       const hebrew = document.createElement('div');
-      hebrew.className = 'verse-hebrew';
+      hebrew.className = 'popup-hebrew';
       const english = document.createElement('div');
-      english.className = 'verse-english';
+      english.className = 'popup-english';
       const notice = document.createElement('div');
-      notice.className = 'verse-notice';
+      notice.className = 'popup-notice';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
@@ -180,17 +180,17 @@ describe('sidebar', () => {
 
     beforeEach(() => {
       const sidebar = document.createElement('div');
-      sidebar.id = 'verse-popup';
+      sidebar.id = 'popup';
       const ref = document.createElement('div');
       ref.className = 'ref-text';
       const overlayInfo = document.createElement('div');
       overlayInfo.className = 'overlay-info';
       const hebrew = document.createElement('div');
-      hebrew.className = 'verse-hebrew';
+      hebrew.className = 'popup-hebrew';
       const english = document.createElement('div');
-      english.className = 'verse-english';
+      english.className = 'popup-english';
       const notice = document.createElement('div');
-      notice.className = 'verse-notice';
+      notice.className = 'popup-notice';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
@@ -439,7 +439,7 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'test',
           name: 'Test Overlay',
-          getVerseColor: () => null,
+          getItemColor: () => null,
           getHoverInfo: vi.fn(() => 'Test hover info'),
         });
 
@@ -462,7 +462,7 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'test',
           name: 'Test Overlay',
-          getVerseColor: () => null,
+          getItemColor: () => null,
         });
 
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -502,8 +502,8 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'trop',
           name: 'Trop Overlay',
-          getVerseColor: () => null,
-          highlightVerseText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
+          getItemColor: () => null,
+          highlightItemText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
             const fragment = document.createDocumentFragment();
             if (language === 'he') {
               const mark = document.createElement('mark');
@@ -527,7 +527,7 @@ describe('sidebar', () => {
           wordsClickable: true,
         });
 
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+        expect(mockOverlay.highlightItemText).toHaveBeenCalledWith(
           verse,
           'בְּרֵאשִׁית',
           'he',
@@ -537,7 +537,7 @@ describe('sidebar', () => {
         // The mark reaches the popup, and the text inside it is still wrapped
         // into a clickable word rather than the guard refusing to touch it.
         expect(elements.hebrew?.querySelector('mark')).not.toBeNull();
-        expect(elements.hebrew?.querySelector('mark .verse-word')).not.toBeNull();
+        expect(elements.hebrew?.querySelector('mark .popup-word')).not.toBeNull();
         expect(elements.hebrew?.textContent).toBe('בְּרֵאשִׁית');
       });
 
@@ -550,8 +550,8 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'search',
           name: 'Search Overlay',
-          getVerseColor: () => null,
-          highlightVerseText: vi.fn((_verse: unknown, _text: string, language: 'he' | 'en') => {
+          getItemColor: () => null,
+          highlightItemText: vi.fn((_verse: unknown, _text: string, language: 'he' | 'en') => {
             if (language === 'he') return hebrewFragment;
             return englishFragment;
           }),
@@ -568,14 +568,14 @@ describe('sidebar', () => {
           wordsClickable: true,
         });
 
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+        expect(mockOverlay.highlightItemText).toHaveBeenCalledWith(
           verse,
           'בְּרֵאשִׁית',
           'he',
           settings,
           undefined,
         );
-        expect(mockOverlay.highlightVerseText).toHaveBeenCalledWith(
+        expect(mockOverlay.highlightItemText).toHaveBeenCalledWith(
           verse,
           'In the beginning',
           'en',
@@ -605,10 +605,10 @@ describe('sidebar', () => {
             tool: {
               id: 'search',
               name: 'Search',
-              getVerseColor: () => null,
+              getItemColor: () => null,
               colorsFor: (items) => items.map(() => null),
               getHoverInfo: () => info,
-              highlightVerseText: vi.fn((_verse: unknown, text: string) => {
+              highlightItemText: vi.fn((_verse: unknown, text: string) => {
                 const fragment = document.createDocumentFragment();
                 const mark = document.createElement('mark');
                 mark.textContent = text;
@@ -625,7 +625,7 @@ describe('sidebar', () => {
           const overlay = testOverlay({
             id: 'commentary',
             name: 'Commentary',
-            getVerseColor: () => null,
+            getItemColor: () => null,
             getHoverInfo: () => '680 references',
           });
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -663,16 +663,16 @@ describe('sidebar', () => {
           const overlay = testOverlay({
             id: 'trop',
             name: 'Trop',
-            getVerseColor: () => null,
-            highlightVerseText: marking('trop-highlight', ...overlayMarks),
+            getItemColor: () => null,
+            highlightItemText: marking('trop-highlight', ...overlayMarks),
           });
           const search: TanakhTool = {
             tool: {
               id: 'search',
               name: 'Search',
-              getVerseColor: () => null,
+              getItemColor: () => null,
               colorsFor: (items) => items.map(() => null),
-              highlightVerseText: marking('term-0', ...searchMarks),
+              highlightItemText: marking('term-0', ...searchMarks),
             },
             settings: {},
             data: undefined,

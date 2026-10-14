@@ -1,22 +1,22 @@
 // Colour computation for spatial items
 
-import { type SpatialItem, type VerseColor, type Picture, sameItem } from '@torahmap/engine';
+import { type SpatialItem, type ItemColor, type Picture, sameItem } from '@torahmap/engine';
 import { type Color, seededRandom, brighten } from '@torahmap/utils';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { ColorSource } from './scrollytelling/driver';
 import { DEFAULT_BRIGHTNESS, SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
 
 /**
- * Default gray for a verse with no overlay color, brightness-varied by a
+ * Default gray for a square with no overlay color, brightness-varied by a
  * seeded random to reduce moiré.
  */
-export function getDefaultColor(verseIndex: number): Color {
+export function getDefaultColor(itemIndex: number): Color {
   const brightness =
-    DEFAULT_BRIGHTNESS.MIN + seededRandom(verseIndex * 3) * DEFAULT_BRIGHTNESS.RANGE;
+    DEFAULT_BRIGHTNESS.MIN + seededRandom(itemIndex * 3) * DEFAULT_BRIGHTNESS.RANGE;
   return [brightness, brightness, brightness];
 }
 
-function brightenBands(color: VerseColor, factor: number): VerseColor {
+function brightenBands(color: ItemColor, factor: number): ItemColor {
   const one = (c: Color): Color => brighten(c, factor);
   return Array.isArray(color[0]) ? (color as Color[]).map(one) : one(color as Color);
 }
@@ -34,13 +34,13 @@ function brightenBands(color: VerseColor, factor: number): VerseColor {
  */
 export function combineLayers(
   count: number,
-  search: readonly (VerseColor | null)[] | null,
-  overlay: readonly (VerseColor | null)[] | null,
-  base: (index: number) => VerseColor,
+  search: readonly (ItemColor | null)[] | null,
+  overlay: readonly (ItemColor | null)[] | null,
+  base: (index: number) => ItemColor,
   nonMatchDim: number = SEARCH_NON_MATCH_DIM,
-): Picture<VerseColor | null> {
-  const colors: (VerseColor | null)[] = new Array(count);
-  const rings: (VerseColor | null)[] = new Array(count).fill(null);
+): Picture<ItemColor | null> {
+  const colors: (ItemColor | null)[] = new Array(count);
+  const rings: (ItemColor | null)[] = new Array(count).fill(null);
 
   for (let i = 0; i < count; i++) {
     const under = overlay?.[i] ?? null;
@@ -66,9 +66,9 @@ export function combineLayers(
  * own colour rather than mergePictures's placeholder for "nothing here".
  */
 export function fillDefaultColors(
-  picture: Picture<VerseColor | null>,
-  base: (index: number) => VerseColor,
-): Picture<VerseColor> {
+  picture: Picture<ItemColor | null>,
+  base: (index: number) => ItemColor,
+): Picture<ItemColor> {
   return {
     ...picture,
     colors: picture.colors.map((c, i) => c ?? base(i)),
@@ -83,7 +83,7 @@ export function overlayColorsFor<T, S, D>(
   settings: S,
   hovered: SpatialItem<T> | null,
   data: D,
-): (VerseColor | null)[] {
+): (ItemColor | null)[] {
   return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
 }
 
@@ -92,9 +92,9 @@ export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
   hovered: SpatialItem<T> | null,
-  base: (index: number) => VerseColor,
+  base: (index: number) => ItemColor,
   nonMatchDim?: number,
-): Picture<VerseColor | null> {
+): Picture<ItemColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
     on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
   return combineLayers(
@@ -107,7 +107,7 @@ export function toolsPicture<T>(
 }
 
 /**
- * Which colour layer a move of the hovered verse makes stale: a story
+ * Which colour layer a move of the hovered square makes stale: a story
  * transition's blend, the settled overlay's colours if they depend on the
  * hover, or neither. A timed ease blends colours captured when it began,
  * and a pin leaves the hover where it was, so neither recomputes anything.

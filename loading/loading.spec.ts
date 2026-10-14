@@ -102,7 +102,7 @@ test('the search results are quoted again when the per-word parse lands, keeping
 
 test('a file landing leaves the popup alone under an open word menu', async ({ page }) => {
   const { release, errors } = await open(page, 'verse=Genesis.30.11', [PARSE]);
-  const word = page.locator('#verse-popup .verse-word', { hasText: 'בגד' });
+  const word = page.locator('#popup .popup-word', { hasText: 'בגד' });
   // The menu opens once search's dictionary is in, which is not held.
   await expect(async () => {
     await word.click();
@@ -141,10 +141,8 @@ test('a pinned verse is centred at once, and its popup fills in when the texts l
 }) => {
   const link = 'verse=Genesis.12.1';
   const { release, errors } = await open(page, link, [TEXTS_FILE]);
-  await expect(
-    page.locator('#verse-popup.visible .load-notice[data-state="loading"]'),
-  ).toBeVisible();
-  await expect(page.locator('#verse-popup .verse-word')).toHaveCount(0);
+  await expect(page.locator('#popup.visible .load-notice[data-state="loading"]')).toBeVisible();
+  await expect(page.locator('#popup .popup-word')).toHaveCount(0);
 
   // Centred where it is with every file in: the same plain map, the same pin.
   const settled = await page.context().newPage();
@@ -155,8 +153,8 @@ test('a pinned verse is centred at once, and its popup fills in when the texts l
 
   release();
   await allLoaded(page);
-  await expect(page.locator('#verse-popup.visible .verse-word').first()).toBeVisible();
-  await expect(page.locator('#verse-popup .load-notice')).toHaveCount(0);
+  await expect(page.locator('#popup.visible .popup-word').first()).toBeVisible();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -188,19 +186,19 @@ async function expectPopupNotice(
   state: 'loading' | 'failed',
   screen: string,
 ): Promise<void> {
-  const notice = page.locator(`#verse-popup.visible .load-notice[data-state="${state}"]`);
+  const notice = page.locator(`#popup.visible .load-notice[data-state="${state}"]`);
   await expect(notice).toBeVisible();
-  await expect(page.locator('#verse-popup .verse-hebrew .load-notice')).toHaveCount(0);
-  const strip = (await page.locator('#verse-popup .verse-notice').boundingBox())!;
-  const popup = (await page.locator('#verse-popup').boundingBox())!;
+  await expect(page.locator('#popup .popup-hebrew .load-notice')).toHaveCount(0);
+  const strip = (await page.locator('#popup .popup-notice').boundingBox())!;
+  const popup = (await page.locator('#popup').boundingBox())!;
   if (screen === 'phone') {
-    const english = (await page.locator('#verse-popup .verse-english').boundingBox())!;
+    const english = (await page.locator('#popup .popup-english').boundingBox())!;
     expect(strip.y + strip.height).toBeLessThanOrEqual(english.y);
   } else {
     // The popup's border is 1px.
     expect(Math.abs(strip.y + strip.height - (popup.y + popup.height - 1))).toBeLessThanOrEqual(1);
-    await expect(page.locator('#verse-popup .verse-hebrew')).toBeHidden();
-    await expect(page.locator('#verse-popup .verse-english')).toBeHidden();
+    await expect(page.locator('#popup .popup-hebrew')).toBeHidden();
+    await expect(page.locator('#popup .popup-english')).toBeHidden();
   }
 }
 
@@ -211,8 +209,8 @@ test("a story stop's verse says its text is loading apart from the text", async 
   await expectPopupNotice(page, 'loading', info.project.name);
   release();
   await allLoaded(page);
-  await expect(page.locator('#verse-popup.visible .verse-word').first()).toBeVisible();
-  await expect(page.locator('#verse-popup .verse-notice')).toBeHidden();
+  await expect(page.locator('#popup.visible .popup-word').first()).toBeVisible();
+  await expect(page.locator('#popup .popup-notice')).toBeHidden();
   expect(errors).toEqual([]);
 });
 
@@ -223,8 +221,8 @@ test("a story stop's verse says its text failed apart from the text", async ({ p
     until: 'loaded',
   });
   await expectPopupNotice(page, 'failed', info.project.name);
-  await page.locator('#verse-popup .load-notice-close').click();
-  await expect(page.locator('#verse-popup .load-notice')).toHaveCount(0);
+  await page.locator('#popup .load-notice-close').click();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

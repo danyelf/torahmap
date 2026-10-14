@@ -14,7 +14,7 @@
      and the rule under it. */
   --column-head-pad: 8px;
   --column-head-height: calc(var(--tap) + 2 * var(--column-head-pad) + 1px);
-  /* The legend's height and the gap above it, where the phone's verse popup
+  /* The legend's height and the gap above it, where the phone's popup
      stacks; main.ts measures it. */
   --legend-shown: 0px;
   /* A legend row, unless it sits level with the ☰. */

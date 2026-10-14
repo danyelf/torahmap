@@ -4,8 +4,8 @@
 import type { MapItem } from '@torahmap/engine';
 import { ENGLISH, HEBREW, type TextLanguage } from './language.ts';
 import type { ToolOnMap } from './overlays/types.ts';
-import { verseWords, wrapWordsInFragment } from './verseWords.ts';
-import { combineMarks } from './verseMarks.ts';
+import { textWords, wrapWordsInFragment } from './textWords.ts';
+import { combineMarks } from './textMarks.ts';
 
 /** A click on a word in the popup's Hebrew text. */
 export interface WordClick<I extends MapItem = MapItem> {
@@ -56,10 +56,10 @@ function attachWordClicks(
   item: MapItem,
   heard: (click: WordClick) => void,
 ): void {
-  const words = verseWords(text);
+  const words = textWords(text);
 
   container.onclick = (event) => {
-    const span = (event.target as HTMLElement)?.closest?.('.verse-word');
+    const span = (event.target as HTMLElement)?.closest?.('.popup-word');
     if (!(span instanceof HTMLElement)) return;
 
     const index = Number(span.dataset.wordIndex);
@@ -89,15 +89,15 @@ export interface SidebarElements {
 }
 
 export function getSidebarElements(): SidebarElements {
-  const sidebar = document.getElementById('verse-popup');
+  const sidebar = document.getElementById('popup');
 
   return {
     sidebar,
     ref: sidebar?.querySelector('.ref-text') ?? null,
     overlayInfo: sidebar?.querySelector('.overlay-info') ?? null,
-    hebrew: sidebar?.querySelector('.verse-hebrew') ?? null,
-    notice: sidebar?.querySelector('.verse-notice') ?? null,
-    english: sidebar?.querySelector('.verse-english') ?? null,
+    hebrew: sidebar?.querySelector('.popup-hebrew') ?? null,
+    notice: sidebar?.querySelector('.popup-notice') ?? null,
+    english: sidebar?.querySelector('.popup-english') ?? null,
     link: (sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement) ?? null,
     closeBtn: sidebar?.querySelector('.close-btn') ?? null,
   };
@@ -161,14 +161,14 @@ export function updateSidebar<I extends MapItem>(
 
   // Both tools mark the text; where they mark the same letters, the search's mark is kept.
   const marked = (words: string, language: TextLanguage): DocumentFragment | null => {
-    const overlayMarks = currentOverlay?.highlightVerseText?.(
+    const overlayMarks = currentOverlay?.highlightItemText?.(
       item,
       words,
       language,
       overlaySettings,
       overlayData,
     );
-    const searchMarks = search?.tool.highlightVerseText?.(
+    const searchMarks = search?.tool.highlightItemText?.(
       item,
       words,
       language,

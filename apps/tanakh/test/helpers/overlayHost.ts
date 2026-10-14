@@ -31,11 +31,11 @@ export interface OverlayHost<S, D> {
   /** Called after every change the controls or `change` make. Restoring is not a change. */
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
-  getVerseColor(verse: TanakhLayout): ReturnType<TanakhOverlay['getVerseColor']>;
+  getItemColor(verse: TanakhLayout): ReturnType<TanakhOverlay['getItemColor']>;
   /** Returns false when the overlay declares no hoverChangesColors of its own. */
   hoverChangesColors(before: TanakhLayout | null, after: TanakhLayout | null): boolean;
   getHoverInfo(verse: TanakhLayout): string | null;
-  highlightVerseText(verse: TanakhLayout, text: string, language: TextLanguage): DocumentFragment;
+  highlightItemText(verse: TanakhLayout, text: string, language: TextLanguage): DocumentFragment;
   renderLegend(container: HTMLElement): void;
   summary(): OverlaySummary;
   renderSidebarInfo(verse: TanakhLayout, isPinned: boolean): HTMLElement | null;
@@ -92,8 +92,8 @@ export function hostOverlay<S, D>(
     toUrl() {
       return store.toUrl(overlay);
     },
-    getVerseColor(verse) {
-      return overlay.getVerseColor(verse, store.get(overlay), held);
+    getItemColor(verse) {
+      return overlay.getItemColor(verse, store.get(overlay), held);
     },
     hoverChangesColors(before, after) {
       return overlay.hoverChangesColors?.(before, after, store.get(overlay), held) ?? false;
@@ -101,9 +101,9 @@ export function hostOverlay<S, D>(
     getHoverInfo(verse) {
       return overlay.getHoverInfo?.(verse, store.get(overlay), held) ?? null;
     },
-    highlightVerseText(verse, text, language) {
-      if (!overlay.highlightVerseText) throw new Error(`${overlay.id} does not mark verse text`);
-      return overlay.highlightVerseText(verse, text, language, store.get(overlay), held);
+    highlightItemText(verse, text, language) {
+      if (!overlay.highlightItemText) throw new Error(`${overlay.id} does not mark verse text`);
+      return overlay.highlightItemText(verse, text, language, store.get(overlay), held);
     },
     renderLegend(into) {
       overlay.renderLegend?.(into, store.get(overlay), held);

@@ -96,7 +96,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
   ],
   data: { counts: 'overlays/commentary/counts.json' },
 
-  getVerseColor(verse, settings, data) {
+  getItemColor(verse, settings, data) {
     return commentaryColorAt(data, verse, settings.category);
   },
 

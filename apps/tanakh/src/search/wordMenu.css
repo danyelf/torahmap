@@ -15,7 +15,7 @@
 }
 
 /*
- * The panel's own header, following #verse-popup .verse-ref - the other
+ * The panel's own header, following #popup .popup-ref - the other
  * popover in this app - one size down, because the word menu is smaller and
  * this is a label rather than a banner. The negative margins take it out to the
  * panel's edges, past the 6px the panel pads its contents by.

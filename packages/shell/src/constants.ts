@@ -20,14 +20,14 @@ export const ZOOM_IN_FACTOR = 1.1; // 10% zoom in per wheel tick
 // Debounced so pan/zoom doesn't flood browser history with replaceState calls
 export const URL_UPDATE_DEBOUNCE_MS = 300;
 
-/** A verse's grey with no overlay: random within this range, to reduce moiré. */
+/** A square's grey with no overlay: random within this range, to reduce moiré. */
 export const DEFAULT_BRIGHTNESS = { MIN: 0.4, RANGE: 0.4 } as const;
 
-/** The grey of a verse left out. */
+/** The grey of a square left out. */
 export const DIMMED_GREY: Color = [0.18, 0.18, 0.18];
 
 /**
- * What a verse a search does not match keeps of its overlay colour, judged by
+ * What a square a search does not match keeps of its overlay colour, judged by
  * eye on the map: above about half, a warm search colour is lost among
  * Haftarah's stripes.
  */

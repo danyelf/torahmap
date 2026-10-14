@@ -1,6 +1,6 @@
 import {
   type MapItem,
-  type VerseColor,
+  type ItemColor,
   type Picture,
   still,
   type ColorLayer,
@@ -16,12 +16,12 @@ import type { SearchTool } from '../app/search.ts';
 import { toolsPicked, toolsShown } from '../tools.ts';
 import type { Loaded } from '../dataFiles.ts';
 
-// Memoised per verses array and loaded files by the stop's overlay, its search and their
+// Memoised per items array and loaded files by the stop's overlay, its search and their
 // validated link parameters. The key is canonical because validateOverlayParams
 // writes keys in the order urlParams declares them, so stops that ask for the
 // same thing share an entry. Colours that depend on the hover are recomputed
-// while a verse is hovered: caching by hover too would add an entry for every
-// verse the cursor crosses.
+// while a square is hovered: caching by hover too would add an entry for every
+// square the cursor crosses.
 const picturesCache = new WeakMap<readonly MapItem[], WeakMap<Loaded, Map<string, Picture>>>();
 
 // UrlParamValues declares every key optional; validateOverlayParams only ever
@@ -71,20 +71,20 @@ export function stopTools<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T>[]
 
 export function pictureForStop<I extends MapItem>(
   stop: ResolvedStoryStop,
-  verses: I[],
+  items: I[],
   hovered: I | null,
   loaded: Loaded,
-  base: (index: number) => VerseColor,
+  base: (index: number) => ItemColor,
   tools: TextTools<I>,
 ): Picture {
   const { search } = tools;
   const overlay = overlayOf(stop, tools);
   const byHover = !!(overlay?.hoverChangesColors && hovered);
 
-  let byLoaded = picturesCache.get(verses);
+  let byLoaded = picturesCache.get(items);
   if (!byLoaded) {
     byLoaded = new WeakMap();
-    picturesCache.set(verses, byLoaded);
+    picturesCache.set(items, byLoaded);
   }
   let cache = byLoaded.get(loaded);
   if (!cache) {
@@ -102,7 +102,7 @@ export function pictureForStop<I extends MapItem>(
     settingsFromLink(search, stop.searchParams ?? {}),
     loaded,
   );
-  const picture = fillDefaultColors(toolsPicture(shown, verses, hovered, base), base);
+  const picture = fillDefaultColors(toolsPicture(shown, items, hovered, base), base);
   if (!byHover) cache.set(key, picture);
   return picture;
 }
@@ -114,18 +114,18 @@ export function computeBlendedColors<I extends MapItem>(
   fromStop: ResolvedStoryStop,
   toStop: ResolvedStoryStop,
   t: number,
-  verses: I[],
+  items: I[],
   hovered: I | null,
   loaded: Loaded,
-  base: (index: number) => VerseColor,
+  base: (index: number) => ItemColor,
   tools: TextTools<I>,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)
-    return still(pictureForStop(fromStop, verses, hovered, loaded, base, tools));
-  if (t >= 1) return still(pictureForStop(toStop, verses, hovered, loaded, base, tools));
+    return still(pictureForStop(fromStop, items, hovered, loaded, base, tools));
+  if (t >= 1) return still(pictureForStop(toStop, items, hovered, loaded, base, tools));
   return {
-    from: pictureForStop(fromStop, verses, hovered, loaded, base, tools),
-    to: pictureForStop(toStop, verses, hovered, loaded, base, tools),
+    from: pictureForStop(fromStop, items, hovered, loaded, base, tools),
+    to: pictureForStop(toStop, items, hovered, loaded, base, tools),
     t,
   };
 }

@@ -1,6 +1,6 @@
 /**
  * `derive`, worked out once per value and kept. An overlay's colours are asked
- * for once per verse, 23,000 times a paint, all with one settings value and
+ * for once per square, 23,000 times a paint on the Tanakh, all with one settings value and
  * one data value.
  *
  * Settings and data are never edited in place — a change is a new value — so

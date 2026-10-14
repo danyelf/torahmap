@@ -152,11 +152,11 @@ describe('fillDefaultColors', () => {
 
 describe('toolsPicture', () => {
   it('asks each tool for its colours and combines them, search over overlay', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', getVerseColor: () => RED });
+    const overlay = testOverlay({ id: 'o', name: 'O', getItemColor: () => RED });
     const search = testOverlay({
       id: 's',
       name: 'S',
-      getVerseColor: (v) => (v.verse === 1 ? CYAN : null),
+      getItemColor: (v) => (v.verse === 1 ? CYAN : null),
     });
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
@@ -175,8 +175,8 @@ describe('toolsPicture', () => {
   });
 
   it('passes a non-match dim through to combineLayers', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', getVerseColor: () => RED });
-    const search = testOverlay({ id: 's', name: 'S', getVerseColor: () => null });
+    const overlay = testOverlay({ id: 'o', name: 'O', getItemColor: () => RED });
+    const search = testOverlay({ id: 's', name: 'S', getItemColor: () => null });
     const items = [createVerse({ verse: 1 })];
 
     const picture = toolsPicture(

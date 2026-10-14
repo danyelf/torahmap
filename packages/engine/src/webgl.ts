@@ -1,16 +1,16 @@
-// WebGL utilities for rendering verse quads
+// WebGL utilities for drawing the squares
 
 import {
   BAND_OFFSET,
   MULTICOLOR_GROWTH,
-  VERSE_ATTRIBUTES,
-  type VerseAttributeName,
+  ITEM_ATTRIBUTES,
+  type ItemAttributeName,
 } from './geometry.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
-  attribs: Record<VerseAttributeName, number>;
+  attribs: Record<ItemAttributeName, number>;
   uniforms: {
     resolution: WebGLUniformLocation | null;
     pan: WebGLUniformLocation | null;
@@ -25,27 +25,25 @@ const GLSL_TYPES = { 1: 'float', 2: 'vec2', 3: 'vec3', 4: 'vec4' } as const;
 
 const glslVec3 = (c: readonly number[]): string => `vec3(${c.map((x) => x.toFixed(4)).join(', ')})`;
 
-const VERSE_INPUTS = VERSE_ATTRIBUTES.map((a) => `in ${GLSL_TYPES[a.size]} ${a.name};`).join(
-  '\n  ',
-);
+const ITEM_INPUTS = ITEM_ATTRIBUTES.map((a) => `in ${GLSL_TYPES[a.size]} ${a.name};`).join('\n  ');
 
 const VERTEX_SHADER = `#version 300 es
   uniform vec2 u_resolution;
   uniform vec2 u_pan;
   uniform float u_zoom;
-  // How far each verse has gone from its first picture to its second.
+  // How far each square has gone from its first picture to its second.
   // Shared with the fragment shader, so its precision is stated in both.
   uniform highp float u_fade;
   // A ring's width outside the square and inside it, and the smallest square
   // that keeps a hole, in device pixels. Shared, like u_fade.
   uniform highp vec3 u_ring;
-  // The hovered verse's place in the list, or -1 for none.
+  // The hovered square's place in the list, or -1 for none.
   uniform int u_hovered;
 
-  ${VERSE_INPUTS}
+  ${ITEM_INPUTS}
 
   // The two triangles of a square, as fractions of the way across it. Every
-  // verse is drawn from these six corners, picked by gl_VertexID.
+  // square is drawn from these six corners, picked by gl_VertexID.
   const vec2 CORNERS[6] = vec2[6](
     vec2(0, 0), vec2(1, 0), vec2(0, 1),
     vec2(0, 1), vec2(1, 0), vec2(1, 1)
@@ -71,7 +69,7 @@ const VERTEX_SHADER = `#version 300 es
     return shape.x > 1.0 || shape.z > 1.0 ? (max(shape.x, shape.z) - 1.0) * 0.5 * ${BAND_OFFSET.toFixed(4)} : 0.0;
   }
 
-  // How far a picture's verse reaches past its square, in world units.
+  // How far a picture grows a square past its own size, in world units.
   float reach(vec4 shape, bool holes) {
     float grow = shape.y * ${MULTICOLOR_GROWTH.toFixed(4)};
     return shape.z > 0.0 && holes ? max(grow, u_ring.x / u_zoom) : grow;
@@ -132,7 +130,7 @@ const FRAGMENT_SHADER = `#version 300 es
     return all(greaterThanEqual(p, vec2(0))) && all(lessThan(p, vec2(1)));
   }
 
-  // The ring is measured in from the drawn edge, so a grown verse's ring is
+  // The ring is measured in from the drawn edge, so a grown square's ring is
   // as thick as any other's.
   bool inHole(vec2 p) {
     float inset = u_ring.x + u_ring.y;
@@ -143,8 +141,8 @@ const FRAGMENT_SHADER = `#version 300 es
   }
 
   // Several colors split the square into bands running corner to corner, one
-  // per color. A diagonal cut keeps a two-color verse from reading as two
-  // neighbouring verses, as a vertical split does. Each band slides a little
+  // per color. A diagonal cut keeps a two-color square from reading as two
+  // neighbouring squares, as a vertical split does. Each band slides a little
   // along the cut, centred on the square, so the bands read as separate
   // pieces. hole: 0 anywhere, 1 outside the hole, 2 inside it. Alpha 0 where
   // no band covers p.
@@ -163,7 +161,7 @@ const FRAGMENT_SHADER = `#version 300 es
     return vec4(0.0);
   }
 
-  // A fill under the hover: 1 brightens it, 2 (an uncoloured verse) paints it
+  // A fill under the hover: 1 brightens it, 2 (an uncoloured square) paints it
   // the highlight colour, 0 leaves it.
   vec4 lit(vec4 fill, int hover) {
     if (hover == 0 || fill.a == 0.0) return fill;
@@ -259,7 +257,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
   return {
     program,
     attribs: Object.fromEntries(
-      VERSE_ATTRIBUTES.map((a) => [a.name, gl.getAttribLocation(program, a.name)]),
+      ITEM_ATTRIBUTES.map((a) => [a.name, gl.getAttribLocation(program, a.name)]),
     ) as ShaderProgram['attribs'],
     uniforms: {
       resolution: gl.getUniformLocation(program, 'u_resolution'),

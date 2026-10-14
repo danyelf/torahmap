@@ -31,7 +31,7 @@ const texts: VerseTexts = {
 const index = buildTextIndex(texts, inTextsOrder(texts));
 
 function marked(text: string, language: 'he' | 'en'): string[] {
-  const fragment = searchOverlay.highlightVerseText(createVerse(), text, language);
+  const fragment = searchOverlay.highlightItemText(createVerse(), text, language);
   const host = document.createElement('div');
   host.appendChild(typeof fragment === 'string' ? document.createTextNode(fragment) : fragment);
   return [...host.innerHTML.matchAll(/<mark[^>]*>([^<]*)<\/mark>/g)].map((m) => m[1]);

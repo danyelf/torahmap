@@ -6,7 +6,7 @@
 // cannot tell them apart — it could be either — so the marking has to ask where
 // the word sits in the verse.
 //
-// These go through `highlightVerseText`, the overlay's own entry point, rather
+// These go through `highlightItemText`, the overlay's own entry point, rather
 // than through a copy of its loop. A test that reimplements the loop proves the
 // helper works and says nothing about whether the overlay calls it, which is
 // exactly the gap this closes.
@@ -33,7 +33,7 @@ beforeEach(() => {
 
 /** Each mark in the highlighted verse, as [which term, the letters marked]. */
 function marks(): Array<[string, string]> {
-  const fragment = searchOverlay.highlightVerseText(
+  const fragment = searchOverlay.highlightItemText(
     createVerse({ book: 'Genesis', chapter: 8, verse: 20 }),
     hebrew,
     'he',

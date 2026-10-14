@@ -63,43 +63,43 @@ describe('rendering', () => {
       vi.clearAllMocks();
     });
 
-    it('creates render state with buffer and verses', () => {
-      const verses = createItems(5);
-      const state = createRenderState(context, verses, 2.0);
+    it('creates render state with buffer and squares', () => {
+      const items = createItems(5);
+      const state = createRenderState(context, items, 2.0);
 
       expect(state.buffer).toBeDefined();
-      expect(state.verses).toBe(verses);
+      expect(state.items).toBe(items);
       expect(state.dpr).toBe(2.0);
     });
 
     it('initializes outline buffers as null', () => {
-      const verses = createItems(3);
-      const state = createRenderState(context, verses, 1.0);
+      const items = createItems(3);
+      const state = createRenderState(context, items, 1.0);
 
       expect(state.outlineBuffer).toBeNull();
       expect(state.hoverOutlineBuffer).toBeNull();
     });
 
     it('creates buffer via WebGL createBuffer', () => {
-      const verses = createItems(2);
-      createRenderState(context, verses, 1.0);
+      const items = createItems(2);
+      createRenderState(context, items, 1.0);
 
       expect(gl.createBuffer).toHaveBeenCalled();
     });
 
-    it('handles empty verse array', () => {
+    it('handles an empty items array', () => {
       const state = createRenderState(context, [], 1.0);
 
-      expect(state.verses).toEqual([]);
+      expect(state.items).toEqual([]);
       expect(state.buffer).toBeDefined();
     });
 
     it('stores device pixel ratio correctly', () => {
-      const verses = createItems(1);
+      const items = createItems(1);
 
-      const state1 = createRenderState(context, verses, 1.0);
-      const state2 = createRenderState(context, verses, 2.0);
-      const state3 = createRenderState(context, verses, 1.5);
+      const state1 = createRenderState(context, items, 1.0);
+      const state2 = createRenderState(context, items, 2.0);
+      const state3 = createRenderState(context, items, 1.5);
 
       expect(state1.dpr).toBe(1.0);
       expect(state2.dpr).toBe(2.0);
@@ -107,14 +107,14 @@ describe('rendering', () => {
     });
 
     it('uploads geometry to GPU via bufferData', () => {
-      const verses = createItems(3);
-      createRenderState(context, verses, 1.0);
+      const items = createItems(3);
+      createRenderState(context, items, 1.0);
 
       expect(gl.bindBuffer).toHaveBeenCalled();
       expect(gl.bufferData).toHaveBeenCalled();
     });
 
-    it('points every verse attribute at the buffer, read once per verse', () => {
+    it('points every square attribute at the buffer, read once per square', () => {
       const state = createRenderState(context, createItems(3), 1.0);
 
       expect(gl.bindVertexArray).toHaveBeenNthCalledWith(1, state.vertexArray);
@@ -134,23 +134,23 @@ describe('rendering', () => {
     beforeEach(() => {
       const context = createRenderContext(createMockCanvas());
       gl = context.gl;
-      const verses = createItems(5);
-      state = createRenderState(context, verses, 1.0);
+      const items = createItems(5);
+      state = createRenderState(context, items, 1.0);
       vi.clearAllMocks(); // Clear calls from createRenderState
     });
 
-    it('rebuilds geometry buffer with updated verses', () => {
+    it('rebuilds geometry buffer with updated squares', () => {
       rebuildGeometry(gl, state);
 
       expect(gl.bindBuffer).toHaveBeenCalledWith(gl.ARRAY_BUFFER, state.buffer);
       expect(gl.bufferData).toHaveBeenCalled();
     });
 
-    it('uses verses from state', () => {
-      // Update verse colors (TypeScript: these properties don't exist on MapItem,
-      // but the test is checking that rebuildGeometry uses state.verses)
-      (state.verses[0] as any).color = [1, 0, 0];
-      (state.verses[1] as any).color = [0, 1, 0];
+    it('uses squares from state', () => {
+      // Update square colors (TypeScript: these properties don't exist on MapItem,
+      // but the test is checking that rebuildGeometry uses state.items)
+      (state.items[0] as any).color = [1, 0, 0];
+      (state.items[1] as any).color = [0, 1, 0];
 
       rebuildGeometry(gl, state);
 
@@ -160,8 +160,8 @@ describe('rendering', () => {
       expect(callArgs[1]).toBeInstanceOf(Float32Array);
     });
 
-    it('handles empty verse array', () => {
-      state.verses = [];
+    it('handles an empty items array', () => {
+      state.items = [];
 
       expect(() => rebuildGeometry(gl, state)).not.toThrow();
       expect(gl.bufferData).toHaveBeenCalled();
@@ -183,8 +183,8 @@ describe('rendering', () => {
     beforeEach(() => {
       const canvas = createMockCanvas();
       context = createRenderContext(canvas);
-      const verses = createItems(10);
-      state = createRenderState(context, verses, 2.0);
+      const items = createItems(10);
+      state = createRenderState(context, items, 2.0);
       camera = { x: 100, y: 200, zoom: 1.5 };
       vi.clearAllMocks();
     });
@@ -244,13 +244,13 @@ describe('rendering', () => {
       expect(context.gl.vertexAttribDivisor).not.toHaveBeenCalled();
     });
 
-    it('draws six corners for each verse', () => {
+    it('draws six corners for each square', () => {
       render(context, state, camera, null, null);
 
       expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 10);
     });
 
-    it('does not render outline when no verses hovered or pinned', () => {
+    it('does not render outline when no squares hovered or pinned', () => {
       const useProgram = context.gl.useProgram as any;
       useProgram.mockClear();
 
@@ -261,31 +261,31 @@ describe('rendering', () => {
       expect(useProgram).toHaveBeenCalledWith(context.programs.main.program);
     });
 
-    it('renders hover outline when verse is hovered', () => {
-      const hoveredVerse = state.verses[0];
+    it('renders hover outline when square is hovered', () => {
+      const hoveredItem = state.items[0];
 
-      render(context, state, camera, hoveredVerse, null);
-
-      // Should have called useProgram for both main and outline shaders
-      expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
-      expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.outline.program);
-    });
-
-    it('renders pinned outline when verse is pinned', () => {
-      const pinnedVerse = state.verses[2];
-
-      render(context, state, camera, null, pinnedVerse);
+      render(context, state, camera, hoveredItem, null);
 
       // Should have called useProgram for both main and outline shaders
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.outline.program);
     });
 
-    it('does not render hover outline when hovered verse is same as pinned', () => {
-      const verse = state.verses[0];
+    it('renders pinned outline when square is pinned', () => {
+      const pinnedItem = state.items[2];
+
+      render(context, state, camera, null, pinnedItem);
+
+      // Should have called useProgram for both main and outline shaders
+      expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.main.program);
+      expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.outline.program);
+    });
+
+    it('does not render hover outline when hovered square is same as pinned', () => {
+      const item = state.items[0];
       (context.gl.useProgram as any).mockClear(); // Clear any previous calls
 
-      render(context, state, camera, verse, verse);
+      render(context, state, camera, item, item);
 
       // Should call useProgram 2 times total: once for main, once for pinned outline
       // Not for hover since hovered === pinned
@@ -295,21 +295,21 @@ describe('rendering', () => {
     });
 
     it('draws no hover outline over the pinned square, even as a different object', () => {
-      const pinnedVerse = state.verses[0];
-      const hoveredCopy = { ...pinnedVerse };
+      const pinnedItem = state.items[0];
+      const hoveredCopy = { ...pinnedItem };
       vi.mocked(context.gl.useProgram).mockClear();
 
-      render(context, state, camera, hoveredCopy, pinnedVerse);
+      render(context, state, camera, hoveredCopy, pinnedItem);
 
       expect(context.gl.useProgram).toHaveBeenCalledTimes(2);
     });
 
-    it('renders both hover and pinned outlines when different verses', () => {
-      const hoveredVerse = state.verses[0];
-      const pinnedVerse = state.verses[1];
+    it('renders both hover and pinned outlines when different squares', () => {
+      const hoveredItem = state.items[0];
+      const pinnedItem = state.items[1];
       (context.gl.useProgram as any).mockClear(); // Clear any previous calls
 
-      render(context, state, camera, hoveredVerse, pinnedVerse);
+      render(context, state, camera, hoveredItem, pinnedItem);
 
       // Should call useProgram 3 times total: main, hover outline, pinned outline
       expect(context.gl.useProgram).toHaveBeenCalledTimes(3);
@@ -317,8 +317,8 @@ describe('rendering', () => {
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.outline.program);
     });
 
-    it('handles zero verses', () => {
-      state.verses = [];
+    it('handles zero squares', () => {
+      state.items = [];
 
       expect(() => render(context, state, camera, null, null)).not.toThrow();
       expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 0);
@@ -354,19 +354,19 @@ describe('rendering', () => {
     let context: RenderContext;
     let state: RenderState<object>;
     let camera: Camera;
-    let verse: ReturnType<typeof createItem>;
+    let item: ReturnType<typeof createItem>;
 
     beforeEach(() => {
       const canvas = createMockCanvas();
       context = createRenderContext(canvas);
       state = createRenderState(context, createItems(5), 2.0);
       camera = { x: 50, y: 100, zoom: 1.0 };
-      verse = createItem({ x: 10, y: 20, size: 6 });
+      item = createItem({ x: 10, y: 20, size: 6 });
       vi.clearAllMocks();
     });
 
     it('creates new buffer when buffer is null', () => {
-      const buffer = renderOutline(context, state, verse, [1, 0, 0], null, camera);
+      const buffer = renderOutline(context, state, item, [1, 0, 0], null, camera);
 
       expect(buffer).toBeDefined();
       expect(context.gl.createBuffer).toHaveBeenCalled();
@@ -377,20 +377,20 @@ describe('rendering', () => {
       const createBufferSpy = context.gl.createBuffer as any;
       createBufferSpy.mockClear();
 
-      const buffer = renderOutline(context, state, verse, [1, 0, 0], mockBuffer, camera);
+      const buffer = renderOutline(context, state, item, [1, 0, 0], mockBuffer, camera);
 
       expect(buffer).toBe(mockBuffer);
       expect(context.gl.createBuffer).not.toHaveBeenCalled();
     });
 
     it('uses outline shader program', () => {
-      renderOutline(context, state, verse, [1, 0, 0], null, camera);
+      renderOutline(context, state, item, [1, 0, 0], null, camera);
 
       expect(context.gl.useProgram).toHaveBeenCalledWith(context.programs.outline.program);
     });
 
     it('sets camera uniforms with dpr scaling', () => {
-      renderOutline(context, state, verse, [0, 1, 0], null, camera);
+      renderOutline(context, state, item, [0, 1, 0], null, camera);
 
       expect(context.gl.uniform2f).toHaveBeenCalledWith(
         context.programs.outline.uniforms.resolution,
@@ -410,7 +410,7 @@ describe('rendering', () => {
 
     it('sets outline color uniform', () => {
       const color: [number, number, number] = [0.5, 0.7, 0.9];
-      renderOutline(context, state, verse, color, null, camera);
+      renderOutline(context, state, item, color, null, camera);
 
       expect(context.gl.uniform3f).toHaveBeenCalledWith(
         context.programs.outline.uniforms.color,
@@ -421,19 +421,19 @@ describe('rendering', () => {
     });
 
     it('draws 24 vertices for outline (4 borders * 6 vertices)', () => {
-      renderOutline(context, state, verse, [1, 1, 1], null, camera);
+      renderOutline(context, state, item, [1, 1, 1], null, camera);
 
       expect(context.gl.drawArrays).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 24);
     });
 
     it('binds buffer before drawing', () => {
-      const buffer = renderOutline(context, state, verse, [1, 0, 0], null, camera);
+      const buffer = renderOutline(context, state, item, [1, 0, 0], null, camera);
 
       expect(context.gl.bindBuffer).toHaveBeenCalledWith(context.gl.ARRAY_BUFFER, buffer);
     });
 
     it('enables position vertex attribute', () => {
-      renderOutline(context, state, verse, [1, 0, 0], null, camera);
+      renderOutline(context, state, item, [1, 0, 0], null, camera);
 
       expect(context.gl.enableVertexAttribArray).toHaveBeenCalledWith(
         context.programs.outline.attribs.position,
@@ -441,7 +441,7 @@ describe('rendering', () => {
     });
 
     it('uploads geometry to buffer', () => {
-      renderOutline(context, state, verse, [1, 0, 0], null, camera);
+      renderOutline(context, state, item, [1, 0, 0], null, camera);
 
       expect(context.gl.bufferData).toHaveBeenCalled();
       const callArgs = (context.gl.bufferData as any).mock.calls[0];
@@ -450,16 +450,12 @@ describe('rendering', () => {
       expect(callArgs[2]).toBe(context.gl.STATIC_DRAW);
     });
 
-    it('handles different verse sizes', () => {
-      const smallVerse = createItem({ size: 4 });
-      const largeVerse = createItem({ size: 10 });
+    it('handles different square sizes', () => {
+      const smallItem = createItem({ size: 4 });
+      const largeItem = createItem({ size: 10 });
 
-      expect(() =>
-        renderOutline(context, state, smallVerse, [1, 0, 0], null, camera),
-      ).not.toThrow();
-      expect(() =>
-        renderOutline(context, state, largeVerse, [1, 0, 0], null, camera),
-      ).not.toThrow();
+      expect(() => renderOutline(context, state, smallItem, [1, 0, 0], null, camera)).not.toThrow();
+      expect(() => renderOutline(context, state, largeItem, [1, 0, 0], null, camera)).not.toThrow();
     });
 
     it('handles different colors', () => {
@@ -473,7 +469,7 @@ describe('rendering', () => {
 
       colors.forEach((color) => {
         vi.clearAllMocks();
-        renderOutline(context, state, verse, color, null, camera);
+        renderOutline(context, state, item, color, null, camera);
 
         expect(context.gl.uniform3f).toHaveBeenCalledWith(
           context.programs.outline.uniforms.color,
@@ -485,8 +481,8 @@ describe('rendering', () => {
     it('returns the same buffer object when reusing', () => {
       const mockBuffer = {} as WebGLBuffer;
 
-      const result1 = renderOutline(context, state, verse, [1, 0, 0], mockBuffer, camera);
-      const result2 = renderOutline(context, state, verse, [0, 1, 0], mockBuffer, camera);
+      const result1 = renderOutline(context, state, item, [1, 0, 0], mockBuffer, camera);
+      const result2 = renderOutline(context, state, item, [0, 1, 0], mockBuffer, camera);
 
       expect(result1).toBe(mockBuffer);
       expect(result2).toBe(mockBuffer);
@@ -494,26 +490,26 @@ describe('rendering', () => {
   });
 
   describe('RenderState immutability', () => {
-    it('does not modify verses array when creating state', () => {
+    it('does not modify items array when creating state', () => {
       const context = createRenderContext(createMockCanvas());
-      const verses = createItems(3);
-      const versesCopy = [...verses];
+      const items = createItems(3);
+      const itemsCopy = [...items];
 
-      createRenderState(context, verses, 1.0);
+      createRenderState(context, items, 1.0);
 
-      expect(verses).toEqual(versesCopy);
+      expect(items).toEqual(itemsCopy);
     });
 
-    it('does not modify verses when rebuilding geometry', () => {
+    it('does not modify squares when rebuilding geometry', () => {
       const context = createRenderContext(createMockCanvas());
       const gl = context.gl;
-      const verses = createItems(3);
-      const state = createRenderState(context, verses, 1.0);
-      const versesCopy = [...verses.map((v) => ({ ...v }))];
+      const items = createItems(3);
+      const state = createRenderState(context, items, 1.0);
+      const itemsCopy = [...items.map((v) => ({ ...v }))];
 
       rebuildGeometry(gl, state);
 
-      expect(state.verses).toEqual(versesCopy);
+      expect(state.items).toEqual(itemsCopy);
     });
   });
 
@@ -521,8 +517,8 @@ describe('rendering', () => {
     it('renders with different camera positions', () => {
       const canvas = createMockCanvas();
       const context = createRenderContext(canvas);
-      const verses = createItems(5);
-      const state = createRenderState(context, verses, 1.0);
+      const items = createItems(5);
+      const state = createRenderState(context, items, 1.0);
 
       const cameras: Camera[] = [
         { x: 0, y: 0, zoom: 1.0 },
@@ -545,7 +541,7 @@ describe('rendering', () => {
     it('applies zoom correctly with different dpr values', () => {
       const canvas = createMockCanvas();
       const context = createRenderContext(canvas);
-      const verses = createItems(2);
+      const items = createItems(2);
 
       const testCases = [
         { dpr: 1.0, zoom: 1.0, expected: 1.0 },
@@ -556,7 +552,7 @@ describe('rendering', () => {
 
       testCases.forEach(({ dpr, zoom, expected }) => {
         vi.clearAllMocks();
-        const state = createRenderState(context, verses, dpr);
+        const state = createRenderState(context, items, dpr);
         const camera = { x: 0, y: 0, zoom };
 
         render(context, state, camera, null, null);

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initWebGL, createProgram, VERSE_ATTRIBUTES } from '../src/index.ts';
+import { initWebGL, createProgram, ITEM_ATTRIBUTES } from '../src/index.ts';
 import { createMockWebGL2Context, createMockCanvas } from './mocks.ts';
 
 const shaderSourceOf = (gl: WebGL2RenderingContext, call: number): string =>
@@ -234,14 +234,14 @@ describe('createProgram', () => {
   });
 
   describe('attribute locations', () => {
-    it('looks up every verse attribute by its name', () => {
+    it('looks up every square attribute by its name', () => {
       const program = createProgram(gl);
 
-      for (const { name } of VERSE_ATTRIBUTES) {
+      for (const { name } of ITEM_ATTRIBUTES) {
         expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, name);
         expect(program.attribs[name]).toBe(vi.mocked(gl.getAttribLocation)(mockProgram, name));
       }
-      expect(Object.keys(program.attribs)).toHaveLength(VERSE_ATTRIBUTES.length);
+      expect(Object.keys(program.attribs)).toHaveLength(ITEM_ATTRIBUTES.length);
     });
   });
 

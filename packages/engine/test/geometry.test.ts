@@ -4,23 +4,23 @@ import {
   buildItemGeometry,
   createBuffer,
   packColor,
-  FLOATS_PER_VERSE,
+  FLOATS_PER_ITEM,
   MULTICOLOR_GROWTH,
-  VERSE_ATTRIBUTES,
-  VERSE_OFFSETS,
-  type VerseAttributeName,
+  ITEM_ATTRIBUTES,
+  ITEM_OFFSETS,
+  type ItemAttributeName,
 } from '../src/index.ts';
 import { createItem, createItems, RED, GREEN, BLUE, WHITE } from './fixtures.ts';
 import { createMockWebGL2Context } from './mocks.ts';
 
-const SIZE = Object.fromEntries(VERSE_ATTRIBUTES.map((a) => [a.name, a.size])) as Record<
-  VerseAttributeName,
+const SIZE = Object.fromEntries(ITEM_ATTRIBUTES.map((a) => [a.name, a.size])) as Record<
+  ItemAttributeName,
   number
 >;
 
-function field(buffer: Float32Array, verse: number, name: VerseAttributeName): number[] {
+function field(buffer: Float32Array, item: number, name: ItemAttributeName): number[] {
   const size = SIZE[name];
-  const start = verse * FLOATS_PER_VERSE + VERSE_OFFSETS[name];
+  const start = item * FLOATS_PER_ITEM + ITEM_OFFSETS[name];
   return Array.from(buffer.subarray(start, start + size));
 }
 
@@ -46,13 +46,13 @@ describe('packColor', () => {
 });
 
 describe('buildItemGeometry', () => {
-  it('holds one entry per verse', () => {
-    expect(buildItemGeometry(createItems(7))).toHaveLength(7 * FLOATS_PER_VERSE);
+  it('holds one entry per square', () => {
+    expect(buildItemGeometry(createItems(7))).toHaveLength(7 * FLOATS_PER_ITEM);
     expect(buildItemGeometry([])).toHaveLength(0);
   });
 
   describe('rectangle', () => {
-    it('spans the verse, less the 2-unit gap between squares', () => {
+    it('spans the square, less the 2-unit gap between squares', () => {
       const buffer = buildItemGeometry([createItem({ x: 100, y: 200, size: 10 })]);
       expect(field(buffer, 0, 'a_rect')).toEqual([100, 200, 108, 208]);
     });
@@ -62,9 +62,9 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_rect')).toEqual([100.5, 200.75, 106.5, 206.75]);
     });
 
-    it('gives each verse its own rectangle', () => {
-      const verses = [createItem({ x: 10, y: 20 }), createItem({ x: 30, y: 40 })];
-      const buffer = buildItemGeometry(verses);
+    it('gives each square its own rectangle', () => {
+      const items = [createItem({ x: 10, y: 20 }), createItem({ x: 30, y: 40 })];
+      const buffer = buildItemGeometry(items);
       expect(field(buffer, 0, 'a_rect').slice(0, 2)).toEqual([10, 20]);
       expect(field(buffer, 1, 'a_rect').slice(0, 2)).toEqual([30, 40]);
     });
@@ -76,25 +76,25 @@ describe('buildItemGeometry', () => {
       expect(MULTICOLOR_GROWTH).toBeLessThan(1); // the gap between squares is 2
     });
 
-    it('grows a verse with several colours fully, and one with one colour not at all', () => {
+    it('grows a square with several colours fully, and one with one colour not at all', () => {
       const buffer = buildItemGeometry(createItems(2), { colors: [[RED, BLUE], RED] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(1);
       expect(field(buffer, 1, 'a_shape')[1]).toBe(0);
     });
 
-    it('grows a verse whose ring has several colours', () => {
+    it('grows a square whose ring has several colours', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [RED], rings: [[GREEN, BLUE]] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(1);
     });
 
-    it('grows a verse by the fraction it is given, whatever its colours', () => {
+    it('grows a square by the fraction it is given, whatever its colours', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [[RED, BLUE]], growth: [0.5] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(0.5);
     });
   });
 
   describe('colours', () => {
-    it('packs the verse colour, zero after it, and a count of 1', () => {
+    it('packs the square colour, zero after it, and a count of 1', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [RED] });
       expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(1);
@@ -123,7 +123,7 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_shape')[0]).toBe(4);
     });
 
-    it('colours each verse independently', () => {
+    it('colours each square independently', () => {
       const buffer = buildItemGeometry(createItems(3), {
         colors: [RED, [BLUE, GREEN], undefined as never],
       });
@@ -132,7 +132,7 @@ describe('buildItemGeometry', () => {
   });
 
   describe('rings', () => {
-    it('holds no ring for a verse without one', () => {
+    it('holds no ring for a square without one', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [RED], rings: [null] });
       expect(field(buffer, 0, 'a_ring')).toEqual([0, 0, 0, 0]);
       expect(field(buffer, 0, 'a_shape')[2]).toBe(0);

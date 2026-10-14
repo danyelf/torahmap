@@ -39,7 +39,7 @@ export interface MapIntents<I extends MapItem> {
   escape(inField: boolean): void;
 }
 
-/** What Escape does: closes the menu, else unpins the verse unless pressed in a field, else closes the panel or story. */
+/** What Escape does: closes the menu, else unpins the square unless pressed in a field, else closes the panel or story. */
 export function escapeDoes(state: {
   menu: boolean;
   pinned: boolean;

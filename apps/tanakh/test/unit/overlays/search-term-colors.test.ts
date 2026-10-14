@@ -88,7 +88,7 @@ describe('a surviving term keeps one colour', () => {
     typeIntoInput(rowInput(container, 1), 'spirit');
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
-    const fragment = searchOverlay.highlightVerseText(
+    const fragment = searchOverlay.highlightItemText(
       createVerse(),
       'and the spirit of God hovered',
       'en',
@@ -111,7 +111,7 @@ describe('a surviving term keeps one colour', () => {
 
     // Genesis 1:2 holds "spirit". Settings rebuilt from the URL would give the
     // survivor colour 0 once it moves to the first position.
-    expect(searchOverlay.getVerseColor(verses[1])).toEqual(SEARCH_COLORS[1]);
+    expect(searchOverlay.getItemColor(verses[1])).toEqual(SEARCH_COLORS[1]);
   });
 });
 

@@ -26,7 +26,7 @@ describe('buildOutlineGeometry', () => {
       const x0 = 100 - thickness; // Extends outside by thickness
       const y0 = 200 - thickness;
 
-      // Top border extends outside verse by thickness
+      // Top border extends outside square by thickness
       // First vertex of top border (top-left)
       expect(buffer[0]).toBe(x0);
       expect(buffer[1]).toBe(y0);
@@ -51,7 +51,7 @@ describe('buildOutlineGeometry', () => {
   });
 
   describe('border positions', () => {
-    it('top border spans full width extending outside verse', () => {
+    it('top border spans full width extending outside square', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
@@ -78,7 +78,7 @@ describe('buildOutlineGeometry', () => {
       expect(buffer[floatsPerVertex * 5 + 1]).toBe(y0 + thickness);
     });
 
-    it('right border spans full height extending outside verse', () => {
+    it('right border spans full height extending outside square', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
@@ -104,7 +104,7 @@ describe('buildOutlineGeometry', () => {
       expect(buffer[rightBorderOffset + floatsPerVertex * 5 + 1]).toBe(y1);
     });
 
-    it('bottom border spans full width extending outside verse', () => {
+    it('bottom border spans full width extending outside square', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
@@ -130,7 +130,7 @@ describe('buildOutlineGeometry', () => {
       expect(buffer[bottomBorderOffset + floatsPerVertex * 5 + 1]).toBe(y1);
     });
 
-    it('left border spans full height extending outside verse', () => {
+    it('left border spans full height extending outside square', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
@@ -156,7 +156,7 @@ describe('buildOutlineGeometry', () => {
       expect(buffer[leftBorderOffset + floatsPerVertex * 5 + 1]).toBe(y1);
     });
 
-    it('extends outside verse bounds by thickness', () => {
+    it('extends outside square bounds by thickness', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };
       const buffer = buildOutlineGeometry(bounds);
 
@@ -166,7 +166,7 @@ describe('buildOutlineGeometry', () => {
       const expectedX1 = 100 + 10 - 2 + thickness; // 110 (size - gap + thickness)
       const expectedY1 = 200 + 10 - 2 + thickness; // 210
 
-      // Top border starts outside the verse
+      // Top border starts outside the square
       expect(buffer[0]).toBe(expectedX0); // top-left x
       expect(buffer[1]).toBe(expectedY0); // top-left y
 

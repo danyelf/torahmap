@@ -86,7 +86,7 @@ describe('Overlay Switching Integration', () => {
     overlay.renderLegend?.(mockLegendContainer, settings.get(overlay), data);
 
     // Apply colors
-    lastColors = verses.map((v) => overlay.getVerseColor(v, settings.get(overlay), data));
+    lastColors = verses.map((v) => overlay.getItemColor(v, settings.get(overlay), data));
 
     currentOverlay = overlay;
     currentData = data;
@@ -165,7 +165,7 @@ describe('Overlay Switching Integration', () => {
     it('calls destroy() when switching away from overlay', () => {
       const destroy = vi.fn();
       registerOverlay(
-        testOverlay({ id: 'test-destroy', name: 'Test', getVerseColor: () => null, destroy }),
+        testOverlay({ id: 'test-destroy', name: 'Test', getItemColor: () => null, destroy }),
       );
       switchToOverlay('test-destroy');
 
@@ -276,7 +276,7 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse) {
-        const color = currentOverlay!.getVerseColor(
+        const color = currentOverlay!.getItemColor(
           genesisVerse,
           settings.get(currentOverlay!),
           currentData,
@@ -370,7 +370,7 @@ describe('Overlay Switching Integration', () => {
       const overlayWithoutDestroy = testOverlay({
         id: 'test-overlay-2',
         name: 'Test Overlay 2',
-        getVerseColor: () => [0, 1, 0],
+        getItemColor: () => [0, 1, 0],
         // No destroy method
       });
 
@@ -447,12 +447,12 @@ describe('Overlay Switching Integration', () => {
       switchToOverlay('commentary');
 
       const verse = verses[0];
-      const color1 = currentOverlay!.getVerseColor(
+      const color1 = currentOverlay!.getItemColor(
         verse,
         settings.get(currentOverlay!),
         currentData,
       );
-      const color2 = currentOverlay!.getVerseColor(
+      const color2 = currentOverlay!.getItemColor(
         verse,
         settings.get(currentOverlay!),
         currentData,
@@ -483,7 +483,7 @@ describe('Overlay Switching Integration', () => {
       };
 
       expect(() => {
-        verses.forEach((v) => overlay.getVerseColor(v, settings.get(overlay), malformed));
+        verses.forEach((v) => overlay.getItemColor(v, settings.get(overlay), malformed));
       }).not.toThrow();
     });
   });

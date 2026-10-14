@@ -103,8 +103,8 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Whole word: Genesis 12:1 holds אברם itself, Genesis 17:5 holds it and
       // also אברהם, and Exodus 3:6 holds only אברהם.
       const exodus = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 3)!;
-      expect(searchOverlay.getVerseColor(testVerses[1])).toEqual(SEARCH_COLORS[0]);
-      expect(searchOverlay.getVerseColor(exodus)).not.toEqual(SEARCH_COLORS[0]);
+      expect(searchOverlay.getItemColor(testVerses[1])).toEqual(SEARCH_COLORS[0]);
+      expect(searchOverlay.getItemColor(exodus)).not.toEqual(SEARCH_COLORS[0]);
 
       // The app repaints after a restore itself, so a restore is not announced
       // as a change the reader made.
@@ -116,7 +116,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
       // Exodus 1:1 has "ואלה" - substring match
       const verse = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 1 && v.verse === 1);
-      const substringColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
+      const substringColor = searchOverlay.getItemColor(verse!) as [number, number, number] | null;
 
       // Should be highlighted (matched as substring)
       expect(substringColor).not.toBeNull();
@@ -125,7 +125,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Switch to word mode by restoring a link
       searchOverlay.restore(new URLSearchParams('search=אלה&mode=w'));
 
-      const wordColor = searchOverlay.getVerseColor(verse!) as [number, number, number] | null;
+      const wordColor = searchOverlay.getItemColor(verse!) as [number, number, number] | null;
 
       // Word mode does not match "אלה" inside "ואלה"
       expect(wordColor).toBeNull();
@@ -145,8 +145,8 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       );
       const ex36 = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 3 && v.verse === 6);
 
-      const color175 = searchOverlay.getVerseColor(gen175!);
-      const color36 = searchOverlay.getVerseColor(ex36!);
+      const color175 = searchOverlay.getItemColor(gen175!);
+      const color36 = searchOverlay.getItemColor(ex36!);
 
       expect(color175).not.toBeNull();
       expect(color36).not.toBeNull();
@@ -171,7 +171,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 12 && v.verse === 1,
       );
 
-      const color121 = searchOverlay.getVerseColor(gen121!);
+      const color121 = searchOverlay.getItemColor(gen121!);
 
       // Should match (Genesis 12:1 has אברם)
       expect(color121).not.toBeNull();
@@ -260,7 +260,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       const gen175 = testVerses.find(
         (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
       );
-      const color = searchOverlay.getVerseColor(gen175!) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(gen175!) as [number, number, number] | null;
       expect(color).not.toBeNull();
     });
 
@@ -405,10 +405,10 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       )!;
 
       chooseMode('meanings');
-      expect(searchOverlay.getVerseColor(gen175)).toBeNull();
+      expect(searchOverlay.getItemColor(gen175)).toBeNull();
 
       chooseMode('substring');
-      expect(searchOverlay.getVerseColor(gen175)).toEqual(SEARCH_COLORS[0]);
+      expect(searchOverlay.getItemColor(gen175)).toEqual(SEARCH_COLORS[0]);
     });
   });
 
@@ -427,7 +427,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
 
         // All verses should return null (no search active)
         for (const verse of testVerses) {
-          const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+          const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
           expect(color).toBeNull();
         }
       }
@@ -668,7 +668,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       const verse = testVerses.find(
         (v) => v.book === 'Genesis' && v.chapter === 17 && v.verse === 5,
       );
-      expect(searchOverlay.getVerseColor(verse!)).not.toBeNull();
+      expect(searchOverlay.getItemColor(verse!)).not.toBeNull();
     });
   });
 });

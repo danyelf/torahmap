@@ -1,4 +1,4 @@
-// Build outline geometry for verse highlighting
+// Build outline geometry for square highlighting
 
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 import { SQUARE_GAP } from './geometry.ts';
@@ -9,7 +9,7 @@ export interface OutlineBounds {
   size: number;
 }
 
-/** Build outline geometry as 4 border rectangles (24 corners, x and y each) around a verse. */
+/** Build outline geometry as 4 border rectangles (24 corners, x and y each) around a square. */
 export function buildOutlineGeometry(
   bounds: OutlineBounds,
   thickness: number = HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
@@ -18,8 +18,8 @@ export function buildOutlineGeometry(
   const borderCount = 4; // top, right, bottom, left
   const data = new Float32Array(borderCount * verticesPerBorder * 2);
 
-  // Calculate outline bounds - extend OUTSIDE the verse by thickness
-  // so the outline doesn't cover the verse itself
+  // Calculate outline bounds - extend OUTSIDE the square by thickness
+  // so the outline doesn't cover the square itself
   const x0 = bounds.x - thickness;
   const y0 = bounds.y - thickness;
   const x1 = bounds.x + bounds.size - SQUARE_GAP + thickness;

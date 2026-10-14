@@ -15,7 +15,7 @@
    Exploring, the sheet is as tall as its open panel, up to half the screen,
    and gone when nothing is open. Dragged to full, it grows up over the map
    rather than shrinking it. --sheet-shown is the height the map, the legend
-   and the verse popup make room for; main.ts measures it. */
+   and the popup make room for; main.ts measures it. */
 @media (max-width: 768px) {
   :root {
     --layout: phone;
@@ -161,7 +161,7 @@
     transform: none;
   }
 
-  #verse-popup {
+  #popup {
     left: 10px;
     bottom: calc(var(--sheet-shown) + var(--legend-shown) + 10px);
     width: calc(100vw - 20px);
@@ -169,7 +169,7 @@
   }
 
   /* In the Hebrew's place and set as the Hebrew is, above the empty English. */
-  #verse-popup .verse-notice {
+  #popup .popup-notice {
     padding: 14px;
     font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
     font-size: 18px;
@@ -178,14 +178,14 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
-  #verse-popup:has(.verse-notice:not(:empty)) .verse-english {
+  #popup:has(.popup-notice:not(:empty)) .popup-english {
     display: block;
   }
 
   /* A full-height sheet covers the map the popup belongs to, and the menu,
      dropping from the top, reaches down over it; it is back when either goes. */
-  body[data-full] #verse-popup,
-  body[data-menu] #verse-popup {
+  body[data-full] #popup,
+  body[data-menu] #popup {
     visibility: hidden;
   }
 

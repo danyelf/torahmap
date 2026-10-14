@@ -95,7 +95,7 @@ describe('Commentary Overlay', () => {
   describe('Color Computation - Total Category', () => {
     it('returns valid colors for verses with data', () => {
       const verse = testVerses[0]; // Genesis 1:1, total: 150
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -105,8 +105,8 @@ describe('Commentary Overlay', () => {
       const highVerse = testVerses[0]; // Genesis 1:1, total: 150
       const lowVerse = testVerses[5]; // Exodus 1:2, total: 5
 
-      const highColor = commentaryOverlay.getVerseColor(highVerse) as [number, number, number];
-      const lowColor = commentaryOverlay.getVerseColor(lowVerse) as [number, number, number];
+      const highColor = commentaryOverlay.getItemColor(highVerse) as [number, number, number];
+      const lowColor = commentaryOverlay.getItemColor(lowVerse) as [number, number, number];
 
       // Colors should be different (higher count = hotter/redder)
       expect(highColor).not.toEqual(lowColor);
@@ -117,7 +117,7 @@ describe('Commentary Overlay', () => {
 
     it('returns color for verses with zero commentary', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // total: 0
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -125,7 +125,7 @@ describe('Commentary Overlay', () => {
 
     it('returns valid color for verses not in data', () => {
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -137,9 +137,9 @@ describe('Commentary Overlay', () => {
       const v2 = testVerses[1]; // 45 total
       const v3 = testVerses[5]; // 5 total
 
-      const c1 = commentaryOverlay.getVerseColor(v1) as [number, number, number];
-      const c2 = commentaryOverlay.getVerseColor(v2) as [number, number, number];
-      const c3 = commentaryOverlay.getVerseColor(v3) as [number, number, number];
+      const c1 = commentaryOverlay.getItemColor(v1) as [number, number, number];
+      const c2 = commentaryOverlay.getItemColor(v2) as [number, number, number];
+      const c3 = commentaryOverlay.getItemColor(v3) as [number, number, number];
 
       // Due to log scale, the color difference between 5 and 45
       // should be greater than between 45 and 150
@@ -162,8 +162,8 @@ describe('Commentary Overlay', () => {
       const verse1 = testVerses[0]; // Genesis 1:1, Midrash: 50
       const verse2 = testVerses[1]; // Genesis 1:2, Midrash: 20
 
-      const color1 = commentaryOverlay.getVerseColor(verse1) as [number, number, number];
-      const color2 = commentaryOverlay.getVerseColor(verse2) as [number, number, number];
+      const color1 = commentaryOverlay.getItemColor(verse1) as [number, number, number];
+      const color2 = commentaryOverlay.getItemColor(verse2) as [number, number, number];
 
       // Verse with more Midrash should have hotter color
       expect(color1[0]).toBeGreaterThan(color2[0]);
@@ -177,7 +177,7 @@ describe('Commentary Overlay', () => {
       select.dispatchEvent(new Event('change'));
 
       const verse = testVerses[4]; // Exodus 1:1, Talmud: 50
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -191,7 +191,7 @@ describe('Commentary Overlay', () => {
       select.dispatchEvent(new Event('change'));
 
       const verse = testVerses[4]; // Exodus 1:1, Halakhah: 30
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -205,7 +205,7 @@ describe('Commentary Overlay', () => {
       select.dispatchEvent(new Event('change'));
 
       const verse = testVerses[0]; // Genesis 1:1, no Kabbalah
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number];
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number];
 
       // Should be dark (zero value)
       expect(color[0]).toBeCloseTo(0.15, 1);
@@ -220,14 +220,13 @@ describe('Commentary Overlay', () => {
       // Switch to Midrash
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
-      const midrashColor = commentaryOverlay.getVerseColor(verse) as
-        [number, number, number] | null;
+      const midrashColor = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
       assertValidColor(midrashColor as [number, number, number]);
 
       // Switch to Talmud
       select.value = 'Talmud';
       select.dispatchEvent(new Event('change'));
-      const talmudColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const talmudColor = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
       assertValidColor(talmudColor as [number, number, number]);
 
       // Colors should be different
@@ -236,7 +235,7 @@ describe('Commentary Overlay', () => {
       // Switch back to total
       select.value = 'total';
       select.dispatchEvent(new Event('change'));
-      const totalColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const totalColor = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
       assertValidColor(totalColor as [number, number, number]);
     });
   });
@@ -245,8 +244,8 @@ describe('Commentary Overlay', () => {
     it('produces consistent colors for same verses', () => {
       const verse = testVerses[0];
 
-      const color1 = commentaryOverlay.getVerseColor(verse);
-      const color2 = commentaryOverlay.getVerseColor(verse);
+      const color1 = commentaryOverlay.getItemColor(verse);
+      const color2 = commentaryOverlay.getItemColor(verse);
 
       expect(color1).toEqual(color2);
     });
@@ -257,14 +256,13 @@ describe('Commentary Overlay', () => {
       // Use verse 2 which has different relative values in total vs Midrash
       // Genesis 1:2: total 45 (max 150), Midrash 20 (max 50)
       const verse = testVerses[1];
-      const totalColor = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const totalColor = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       const select = container.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
-      const midrashColor = commentaryOverlay.getVerseColor(verse) as
-        [number, number, number] | null;
+      const midrashColor = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       // Colors should be different because relative positions differ
       // In total: 45/150 = 0.3, in Midrash: 20/50 = 0.4
@@ -399,7 +397,7 @@ describe('Commentary Overlay', () => {
     it('shows zero as its own swatch, in the colour of an unlinked verse', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderLegend(container);
-      const unlinked = commentaryOverlay.getVerseColor(
+      const unlinked = commentaryOverlay.getItemColor(
         createVerse({ book: 'Genesis', chapter: 1, verse: 3 }),
       ) as Color;
 
@@ -495,7 +493,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.restore(new URLSearchParams('category=Talmud'));
 
       const verse = testVerses[0]; // Genesis 1:1, Talmud: 30
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -505,7 +503,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.restore(new URLSearchParams('other=value'));
 
       const verse = testVerses[0];
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -525,7 +523,7 @@ describe('Commentary Overlay', () => {
   describe('Edge Cases', () => {
     it('handles missing book data', () => {
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -533,7 +531,7 @@ describe('Commentary Overlay', () => {
 
     it('handles missing chapter data', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 999, verse: 1 });
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -541,7 +539,7 @@ describe('Commentary Overlay', () => {
 
     it('handles missing verse data', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 999 });
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -549,7 +547,7 @@ describe('Commentary Overlay', () => {
 
     it('handles verses with only zero counts', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 3 }); // total: 0
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -563,7 +561,7 @@ describe('Commentary Overlay', () => {
       select.value = 'Midrash';
       select.dispatchEvent(new Event('change'));
 
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
     });
 
@@ -578,7 +576,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.setData({ counts: highCountData });
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
 
-      const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
     });
@@ -610,7 +608,7 @@ describe('Commentary Overlay', () => {
 
           // Get colors for all test verses
           for (const verse of testVerses) {
-            const color = commentaryOverlay.getVerseColor(verse) as [number, number, number] | null;
+            const color = commentaryOverlay.getItemColor(verse) as [number, number, number] | null;
             expect(color).not.toBeNull();
             assertValidColor(color as [number, number, number]);
           }
@@ -623,8 +621,8 @@ describe('Commentary Overlay', () => {
     // The colours themselves, not "whatever the colour function returns" — an
     // assertion of the latter shape holds however the scale is wired up.
     it('colours a verse by where its count falls on the log scale', () => {
-      const atMax = commentaryOverlay.getVerseColor(testVerses[0]); // 150 of 150
-      const partWay = commentaryOverlay.getVerseColor(testVerses[1]); // 45 of 150
+      const atMax = commentaryOverlay.getItemColor(testVerses[0]); // 150 of 150
+      const partWay = commentaryOverlay.getItemColor(testVerses[1]); // 45 of 150
 
       assertColorEquals(atMax as number[], [1, 0.23, 0.18]);
       assertColorEquals(partWay as number[], [0.83031, 0.33996, 0.14991]);
@@ -635,7 +633,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.setData({ counts: testData });
       const brightness = (verse: number) =>
         (
-          commentaryOverlay.getVerseColor(
+          commentaryOverlay.getItemColor(
             createVerse({ book: 'Genesis', chapter: 1, verse }),
           ) as number[]
         ).reduce((a, b) => a + b);
@@ -648,7 +646,7 @@ describe('Commentary Overlay', () => {
       commentaryOverlay.setData({ counts: testData });
 
       assertColorEquals(
-        commentaryOverlay.getVerseColor(testVerses[1]) as number[],
+        commentaryOverlay.getItemColor(testVerses[1]) as number[],
         [0.14, 0.21, 0.33],
       );
     });
@@ -677,7 +675,7 @@ describe('Commentary Overlay', () => {
           null,
           commentaryOverlay.data,
         ),
-      ).toEqual([commentaryOverlay.getVerseColor(items[0])]);
+      ).toEqual([commentaryOverlay.getItemColor(items[0])]);
     });
   });
 });

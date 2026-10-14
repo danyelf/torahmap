@@ -98,7 +98,7 @@ describe('restoring a link as one complete view', () => {
         overlay: 'none',
         overlayParams: {},
         searchParams: {},
-        verse: null,
+        item: null,
         camera: DEFAULT_CAMERA,
       });
     });
@@ -139,23 +139,23 @@ describe('restoring a link as one complete view', () => {
       const view = viewFor('?zoom=2');
 
       expect(view.overlay).toBe('none');
-      expect(view.verse).toBeNull();
+      expect(view.item).toBeNull();
     });
 
     it('carries the linked verse as the id it names', () => {
-      expect(viewFor('?verse=I.Samuel.1.5').verse).toBe('I.Samuel.1.5');
+      expect(viewFor('?verse=I.Samuel.1.5').item).toBe('I.Samuel.1.5');
     });
 
     it('pins a verse through a written link and back', () => {
       const square = SAMPLE_VERSES[3];
       const view = viewFor(writeLink({ square: square.id, overlayParams: {} }, LINK_KEYS));
-      expect(indexItems(SAMPLE_VERSES).find(view.verse ?? '')).toBe(square);
+      expect(indexItems(SAMPLE_VERSES).find(view.item ?? '')).toBe(square);
     });
 
     it('pins nothing for a verse the map does not hold, and keeps the camera', () => {
       for (const ref of ['Genesis.01.1', 'genesis.1.1', 'Genesis.1.999']) {
         const view = viewFor(`?verse=${ref}&zoom=3`);
-        expect(indexItems(SAMPLE_VERSES).find(view.verse ?? '')).toBeNull();
+        expect(indexItems(SAMPLE_VERSES).find(view.item ?? '')).toBeNull();
         expect(view.camera.zoom).toBe(3);
       }
     });

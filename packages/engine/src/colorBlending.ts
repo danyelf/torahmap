@@ -26,13 +26,13 @@ function growthAt(picture: Picture, i: number, stripes: number): number {
  * One picture `t` of the way between two, blended stripe by stripe.
  *
  * The side with fewer stripes is stretched to match, each of its colours
- * covering the stripes nearest where its band lay. A verse whose stripe count
+ * covering the stripes nearest where its band lay. A square whose stripe count
  * differs between the two therefore changes its stripe widths, which the
  * shader's fade between whole pictures avoids; this is only for collapsing a
  * fade in progress when another has to start from it. Rings merge the same
- * way, a verse without one counting its fill as its ring.
+ * way, a square without one counting its fill as its ring.
  *
- * If a verse ends up with a single slot, the result is returned as a plain
+ * If a square ends up with a single slot, the result is returned as a plain
  * Color (not [Color]) so the geometry buffer emits it the same way it would
  * at rest.
  */

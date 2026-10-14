@@ -32,7 +32,7 @@ import {
   stripNikkud,
   type TextWord,
 } from '@torahmap/shell/hebrew.ts';
-import { isSectionMarker, verseWords } from '@torahmap/shell/verseWords.ts';
+import { isSectionMarker, textWords } from '@torahmap/shell/textWords.ts';
 
 // Sefaria prints a corrected word twice: the ketiv, as written, in round
 // brackets, and the qere, as read, in square ones. KETIV in
@@ -159,7 +159,7 @@ export const meaningsFor: (dictionary: Dictionary, writtenForm: string) => Meani
  * Which dictionary word is this written form, in this verse?
  *
  * Given `wordIndex` — which of the verse's printed words it is, counting from
- * zero the way `verseWords` does — this is a lookup rather than a guess, and
+ * zero the way `textWords` does — this is a lookup rather than a guess, and
  * answers with the words BHSA parsed there: one, or two for a ketiv read as
  * two (בגד, read בָּא גָד) or a word the page prints solid (הללויה). It needs
  * the verse's words (wordsOfVerse).
@@ -327,7 +327,7 @@ export function wordsOfVerse(
   const kept = linedUpByParse(parse);
   const known = kept.get(verseKey);
   if (known?.hebrew === hebrew) return known.words;
-  const clickable = verseWords(hebrew);
+  const clickable = textWords(hebrew);
   const named = namedWords(parse, verseKey, hebrew, clickable);
   const words = named && { verseKey, hebrew, clickable, named };
   kept.set(verseKey, { hebrew, words });
