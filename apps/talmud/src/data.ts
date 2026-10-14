@@ -28,7 +28,7 @@ export interface TalmudTractate {
   name: string;
   hebrewName: string;
   seder: string;
-  firstDaf: number;
+  /** From the first amud with text; an empty one inside the text stays, with no segments. */
   amudim: TalmudAmud[];
   perakim: TalmudPerek[];
 }
@@ -48,9 +48,14 @@ export function structureFrom(loaded: Loaded): TalmudStructure {
   return structure;
 }
 
-/** Where an amud is among its tractate's: 2a is the first in a tractate whose first daf is 2. */
-export function amudIndex(daf: number, amud: 'a' | 'b', firstDaf: number): number {
-  return (daf - firstDaf) * 2 + (amud === 'b' ? 1 : 0);
+/** Where an amud is among its tractate's, counting from `first`. */
+export function amudIndex(
+  daf: number,
+  amud: 'a' | 'b',
+  first: Pick<TalmudAmud, 'daf' | 'amud'>,
+): number {
+  const side = (a: 'a' | 'b') => (a === 'b' ? 1 : 0);
+  return (daf - first.daf) * 2 + side(amud) - side(first.amud);
 }
 
 // False if the tractate/daf/amud/segment is unknown.
@@ -63,7 +68,7 @@ export function isSegmentMishnah(
 ): boolean {
   const tractate = structure.tractates.find((t) => t.name === tractateName);
   if (!tractate) return false;
-  const amudEntry = tractate.amudim[amudIndex(daf, amud, tractate.firstDaf)];
+  const amudEntry = tractate.amudim[amudIndex(daf, amud, tractate.amudim[0])];
   if (!amudEntry) return false;
   return amudEntry.mishnahMask[segment - 1] ?? false;
 }

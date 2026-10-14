@@ -8,7 +8,6 @@ describe('isSegmentMishnah', () => {
         name: 'Berakhot',
         hebrewName: 'ברכות',
         seder: 'Seder Zeraim',
-        firstDaf: 2,
         amudim: [
           { daf: 2, amud: 'a', segmentCount: 3, perekIdx: 0, mishnahMask: [true, true, false] },
           { daf: 2, amud: 'b', segmentCount: 2, perekIdx: 0, mishnahMask: [false, false] },
@@ -46,10 +45,14 @@ describe('isSegmentMishnah', () => {
 });
 
 describe('amudIndex', () => {
-  it('counts amudim from the tractate’s first daf', () => {
-    expect(amudIndex(2, 'a', 2)).toBe(0);
-    expect(amudIndex(2, 'b', 2)).toBe(1);
-    expect(amudIndex(3, 'a', 2)).toBe(2);
-    expect(amudIndex(11, 'b', 10)).toBe(3);
+  it('counts amudim from the tractate’s first', () => {
+    expect(amudIndex(2, 'a', { daf: 2, amud: 'a' })).toBe(0);
+    expect(amudIndex(2, 'b', { daf: 2, amud: 'a' })).toBe(1);
+    expect(amudIndex(3, 'a', { daf: 2, amud: 'a' })).toBe(2);
+  });
+
+  it('counts from a tractate that opens on a b side, as Tamid does', () => {
+    expect(amudIndex(25, 'b', { daf: 25, amud: 'b' })).toBe(0);
+    expect(amudIndex(26, 'a', { daf: 25, amud: 'b' })).toBe(1);
   });
 });

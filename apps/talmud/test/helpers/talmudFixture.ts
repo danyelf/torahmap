@@ -8,7 +8,6 @@ export const talmudFixture: TalmudStructure = {
       name: 'TractA',
       hebrewName: 'א',
       seder: 'Seder Zeraim',
-      firstDaf: 2,
       amudim: [
         {
           daf: 2,
@@ -54,7 +53,6 @@ export const talmudFixture: TalmudStructure = {
       name: 'TractB',
       hebrewName: 'ב',
       seder: 'Seder Moed',
-      firstDaf: 2,
       amudim: [
         {
           daf: 2,

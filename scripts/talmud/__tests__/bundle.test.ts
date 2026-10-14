@@ -263,13 +263,30 @@ describe('processTractate', () => {
 
   it('keeps mid-amud boundary amud in the previous perek', () => {
     const { structure } = processTractate('Seder Test', 'Test', fakeWikisource(), fakeSchema());
-    // amudim are indexed from 1a (firstDaf=1)
     const amud2b = structure.amudim.find((a) => a.daf === 2 && a.amud === 'b')!;
     expect(amud2b.perekIdx).toBe(0); // boundary amud belongs to prev perek
     expect(amud2b.perekBoundaryAt).toBe(2); // 0-indexed: segs [0..2)=perek 0, [2..)=perek 1
     const amud3a = structure.amudim.find((a) => a.daf === 3 && a.amud === 'a')!;
     expect(amud3a.perekIdx).toBe(1);
     expect(amud3a.perekBoundaryAt).toBeUndefined();
+  });
+
+  it('drops the empty amudim before the text starts, and keeps an empty one inside it', () => {
+    const wikisource = fakeWikisource();
+    wikisource.text.splice(2, 0, []); // 2a, empty: the text opens on 2b
+    wikisource.text.splice(4, 0, []); // 3a, empty, inside the text
+    const schema = {
+      alts: { Chapters: { nodes: [{ heTitle: 'פרק א', wholeRef: 'Test 2b:1-4a:3' }] } },
+    };
+    const { structure, text } = processTractate('Seder Test', 'Test', wikisource, schema);
+    expect(structure.amudim.map((a) => `${a.daf}${a.amud}:${a.segmentCount}`)).toEqual([
+      '2b:5',
+      '3a:0',
+      '3b:4',
+      '4a:3',
+    ]);
+    expect(text.amudim.map((amud) => amud.length)).toEqual([5, 0, 4, 3]);
+    expect(structure.perakim[0]).toMatchObject({ startAmudIdx: 0, endAmudIdx: 3 });
   });
 
   it('removes a marker word only where it is a marker', () => {
@@ -282,7 +299,7 @@ describe('processTractate', () => {
       'a5',
     ];
     const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema());
-    expect(text.amudim[2].slice(0, 3)).toEqual(['הכל כשרים', 'מתני׳ דלא כרבי', 'סוף']);
+    expect(text.amudim[0].slice(0, 3)).toEqual(['הכל כשרים', 'מתני׳ דלא כרבי', 'סוף']);
   });
 
   it('keeps the word הדרן, in a chapter’s closing line and in running text', () => {
@@ -295,8 +312,8 @@ describe('processTractate', () => {
       '<big><strong>הדרן עלך כל כתבי</strong></big>',
     ];
     const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema());
-    expect(text.amudim[2][1]).toBe('והדרן אמרו');
-    expect(text.amudim[2][4]).toBe('הדרן עלך כל כתבי');
+    expect(text.amudim[0][1]).toBe('והדרן אמרו');
+    expect(text.amudim[0][4]).toBe('הדרן עלך כל כתבי');
   });
 
   it('removes the marker word where only the other edition marks the segment', () => {
@@ -312,8 +329,8 @@ describe('processTractate', () => {
       fakeSchema(),
       merged,
     );
-    expect(text.amudim[2].slice(0, 2)).toEqual(['סתם נזירות', 'מנהני מילי']);
-    expect(structure.amudim[2].mishnahMask.slice(0, 2)).toEqual([true, false]);
+    expect(text.amudim[0].slice(0, 2)).toEqual(['סתם נזירות', 'מנהני מילי']);
+    expect(structure.amudim[0].mishnahMask.slice(0, 2)).toEqual([true, false]);
   });
 });
 

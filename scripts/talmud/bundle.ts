@@ -19,7 +19,14 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { stripNikkud } from '@torahmap/shell/hebrew.ts';
-import { amudIndex } from '@torahmap/talmud/data.ts';
+import {
+  amudIndex,
+  type TalmudAmud,
+  type TalmudPerek,
+  type TalmudStructure,
+  type TalmudTractate,
+  type TalmudTractateText,
+} from '@torahmap/talmud/data.ts';
 
 // Pure helpers (unit-tested).
 
@@ -136,41 +143,6 @@ export function stripHtml(s: string): string {
   );
 }
 
-export interface TalmudAmud {
-  daf: number;
-  amud: 'a' | 'b';
-  segmentCount: number;
-  perekIdx: number;
-  perekBoundaryAt?: number;
-  mishnahMask: boolean[];
-}
-
-export interface TalmudPerek {
-  hebrewName: string;
-  startAmudIdx: number;
-  endAmudIdx: number;
-  startSegmentInFirstAmud: number;
-  endSegmentInLastAmud: number;
-}
-
-export interface TalmudTractate {
-  name: string;
-  hebrewName: string;
-  seder: string;
-  firstDaf: number;
-  amudim: TalmudAmud[];
-  perakim: TalmudPerek[];
-}
-
-export interface TalmudStructure {
-  tractates: TalmudTractate[];
-}
-
-export interface TalmudTractateText {
-  name: string;
-  amudim: string[][];
-}
-
 interface WikisourceJson {
   text: string[][];
   heTitle?: string;
@@ -265,11 +237,11 @@ export function processTractate(
   if (schemaNodes.length === 0) {
     throw new Error(`${tractateName}: schema has no perek nodes`);
   }
-  // Sefaria-Export indexes its amud array starting from daf 1 (with 1a/1b
-  // as empty placeholders — the Talmud traditionally has no daf 1). So the
-  // firstDaf is always 1, and the schema's perek refs like "Berakhot 2a:1"
-  // are resolved against that origin via amudIndex(daf, amud, 1).
-  const firstDaf = 1;
+  // Sefaria's amud arrays start at 1a, though the Talmud has no daf 1, and keep
+  // every amud before a tractate's text starts empty: to 25a, in Tamid.
+  const sefariaFirst = { daf: 1, amud: 'a' } as const;
+  const skip = rawText.findIndex((amud) => amud.length > 0);
+  if (skip < 0) throw new Error(`${tractateName}: no text`);
 
   // Build perakim array and compute per-amud perekIdx + boundary markers.
   const perakim: TalmudPerek[] = [];
@@ -282,13 +254,13 @@ export function processTractate(
     if (!ref) {
       throw new Error(`${tractateName}: cannot parse perek ${pi} wholeRef "${node.wholeRef}"`);
     }
-    const startIdx = amudIndex(ref.startDaf, ref.startAmud, firstDaf);
-    const endIdx = amudIndex(ref.endDaf, ref.endAmud, firstDaf);
+    const startIdx = amudIndex(ref.startDaf, ref.startAmud, sefariaFirst);
+    const endIdx = amudIndex(ref.endDaf, ref.endAmud, sefariaFirst);
 
     perakim.push({
       hebrewName: node.heTitle ?? `פרק ${pi + 1}`,
-      startAmudIdx: startIdx,
-      endAmudIdx: endIdx,
+      startAmudIdx: startIdx - skip,
+      endAmudIdx: endIdx - skip,
       startSegmentInFirstAmud: ref.startSegment,
       endSegmentInLastAmud: ref.endSegment,
     });
@@ -302,7 +274,7 @@ export function processTractate(
     let assignStart = startIdx;
     if (pi > 0) {
       const prev = perakim[pi - 1];
-      if (prev.endAmudIdx === startIdx) {
+      if (prev.endAmudIdx === startIdx - skip) {
         amudPerekBoundary.set(startIdx, ref.startSegment - 1);
         assignStart = startIdx + 1;
       }
@@ -324,9 +296,9 @@ export function processTractate(
   );
 
   const amudim: TalmudAmud[] = [];
-  for (let ai = 0; ai < rawText.length; ai++) {
+  for (let ai = skip; ai < rawText.length; ai++) {
     const segmentCount = rawText[ai].length;
-    const daf = firstDaf + Math.floor(ai / 2);
+    const daf = sefariaFirst.daf + Math.floor(ai / 2);
     const amud: 'a' | 'b' = ai % 2 === 0 ? 'a' : 'b';
     const boundary = amudPerekBoundary.get(ai);
     amudim.push({
@@ -344,13 +316,12 @@ export function processTractate(
       name: tractateName,
       hebrewName,
       seder,
-      firstDaf,
       amudim,
       perakim,
     },
     text: {
       name: tractateName,
-      amudim: cleanText,
+      amudim: cleanText.slice(skip),
     },
   };
 }
