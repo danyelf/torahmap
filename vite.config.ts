@@ -72,11 +72,27 @@ function talmudPlugin(): Plugin {
   };
 }
 
+// What Cloudflare does not publish of the build: this file, and on the live site, which has no
+// Talmud page, the Talmud's data.
+function assetsIgnorePlugin(live: boolean): Plugin {
+  return {
+    name: 'assets-ignore',
+    generateBundle() {
+      const ignored = ['.assetsignore', ...(live ? ['data/talmud'] : [])];
+      this.emitFile({
+        type: 'asset',
+        fileName: '.assetsignore',
+        source: ignored.join('\n') + '\n',
+      });
+    },
+  };
+}
+
 export default defineConfig(({ command }) => {
   const branch = getGitBranch();
   const live = command === 'build' && branch === 'main';
   return {
-    plugins: [storiesPlugin(), pagePlugin(), talmudPlugin()],
+    plugins: [storiesPlugin(), pagePlugin(), talmudPlugin(), assetsIgnorePlugin(live)],
     // Declared in packages/shell/src/env.d.ts.
     define: {
       __GIT_BRANCH__: JSON.stringify(branch),
