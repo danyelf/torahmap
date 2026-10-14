@@ -788,6 +788,35 @@ describe('labels', () => {
     });
   });
 
+  describe('a book label set as a tab', () => {
+    const tab = { fontSize: 20, above: 40, inset: 6, minPx: 8 };
+    const verses = [createVerse({ book: 'Genesis', x: 100, y: 200, size: 6 })];
+
+    function tabAt(zoom: number): HTMLElement {
+      const labels = createBookLabels(verses, container, book, {}, tab);
+      updateLabelPositions(labels, { x: 10, y: 20 }, zoom);
+      return labels.children[0] as HTMLElement;
+    }
+
+    it('keeps its place in its book at every zoom, inset from the right edge', () => {
+      for (const zoom of [0.5, 1, 4]) {
+        const label = tabAt(zoom);
+        expect(label.style.left).toBe(`${(106 - 6 + 10) * zoom}px`);
+        expect(label.style.top).toBe(`${(200 - 40 + 20) * zoom}px`);
+      }
+    });
+
+    it('scales with the map, without the bounds an ordinary label is held to', () => {
+      expect(tabAt(0.1).style.fontSize).toBe('2px');
+      expect(tabAt(10).style.fontSize).toBe('200px');
+    });
+
+    it('fades out below its smallest size', () => {
+      expect(tabAt(0.39).style.opacity).toBe('0');
+      expect(tabAt(0.4).style.opacity).toBe('');
+    });
+  });
+
   describe('createSectionLabels', () => {
     const verses = [
       createVerse({ book: 'Genesis', x: 0, y: 0, size: 6 }),

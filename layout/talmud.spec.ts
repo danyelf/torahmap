@@ -2,16 +2,45 @@
 // shows its text.
 import { expect, test } from '@playwright/test';
 import { allLoaded, boxes, openMap, shown } from './page.ts';
-import { outsideOf } from './geometry.ts';
+import { apart, outsideOf } from './geometry.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 
-test('the Talmud map draws, with its tractate labels over it', async ({ page }) => {
+test('the Talmud map draws, and names its tractates only once they are big enough to read', async ({
+  page,
+}) => {
   await openMap(page, '', TALMUD);
-  const map = (await boxes(page, '#canvas'))[0];
-  const labels = await boxes(page, '#book-labels .book-label');
-  expect(labels).not.toEqual([]);
-  for (const label of labels) expect(label.x).toBeGreaterThanOrEqual(map.x);
+  expect(await shown(page, '#book-labels .book-label')).not.toEqual([]);
+  expect(await boxes(page, '#book-labels .book-label')).toEqual([]);
 });
+
+for (const zoom of [0.4, 1, 2]) {
+  test(`at zoom ${zoom}, each tractate's name sits inside its seder's box, clear of the perek names`, async ({
+    page,
+  }) => {
+    await openMap(page, '', TALMUD);
+    // Berakhot's top-right corner, near the canvas's top-right.
+    const corner = await page
+      .locator('#book-labels .book-label')
+      .first()
+      .evaluate((l: HTMLElement) => ({ x: +l.dataset.rightX!, y: +l.dataset.topY! }));
+    const view = await boxes(page, '#canvas');
+    const x = Math.round(corner.x - (view[0].width / 2 - 100) / zoom);
+    const y = Math.round(corner.y + (view[0].height / 2 - 100) / zoom);
+    await openMap(page, `zoom=${zoom}&x=${x}&y=${y}`, TALMUD);
+
+    // Whole boxes, so the tractates off screen are checked too.
+    const full = async (selector: string) =>
+      (await shown(page, selector)).map((s) => s.full).filter((b) => b.width > 0);
+    const names = await full('#book-labels .book-label');
+    const sedarim = await full('#talmud-seder-bgs > *');
+    expect(names).not.toEqual([]);
+    for (const name of names) {
+      const within = sedarim.filter((s) => outsideOf([name], s).length === 0);
+      expect(within, `${name.name} at ${name.x},${name.y}`).toHaveLength(1);
+    }
+    expect(apart(names, await full('#talmud-perek-labels > *'))).toEqual([]);
+  });
+}
 
 test('the Talmud opens with every seder’s label on the map', async ({ page }) => {
   await openMap(page, '', TALMUD);

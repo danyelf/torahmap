@@ -15,7 +15,7 @@ import {
   sectionLabelReach,
   updateLabelPositions,
 } from '@torahmap/shell/mapLabels.ts';
-import { SEDER_LABEL_SIZE, SEDER_NAMES } from './constants.ts';
+import { SEDER_LABEL_SIZE, SEDER_NAMES, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { TALMUD_SEARCH_PARAMS, talmudSearch, type TalmudSearchSettings } from './search.ts';
 import {
@@ -103,7 +103,13 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
         const hebrewNames = Object.fromEntries(
           structure.tractates.map((t) => [t.name, t.hebrewName]),
         );
-        const names = createBookLabels(laid.items, container, (s) => s.tractate, hebrewNames);
+        const names = createBookLabels(
+          laid.items,
+          container,
+          (s) => s.tractate,
+          hebrewNames,
+          TRACTATE_TAB,
+        );
         createSectionLabels(laid.items, names, sederOf, SEDER_NAMES, SEDER_LABEL_SIZE);
         return (offset, zoom) => {
           updateTalmudLabelPositions(marks, offset, zoom);

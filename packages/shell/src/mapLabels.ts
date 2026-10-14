@@ -84,15 +84,35 @@ function boxesBy<T extends MapItem>(items: T[], groupOf: (item: T) => string): M
   return boxes;
 }
 
-/** A book missing from `hebrewNames` shows its own name in the Hebrew's place. */
+/**
+ * A book label set as a tab inside its book's box, scaled with the map rather
+ * than held to a readable size: its font size, how far above the book's first
+ * row its top sits and how far in from its right edge, in map units, and the
+ * smallest font, in pixels, it shows at. Smaller, it fades out.
+ */
+export interface BookTab {
+  fontSize: number;
+  above: number;
+  inset: number;
+  minPx: number;
+}
+
+const tabs = new WeakMap<HTMLElement, BookTab>();
+
+/**
+ * A book missing from `hebrewNames` shows its own name in the Hebrew's place.
+ * Without `tab`, a label sits above its book at a size held between bounds.
+ */
 export function createBookLabels<T extends MapItem>(
   items: T[],
   container: HTMLElement,
   bookOf: (item: T) => string,
   hebrewNames: Record<string, string> = {},
+  tab?: BookTab,
 ): HTMLDivElement {
   const labels = document.createElement('div');
   labels.id = 'book-labels';
+  if (tab) tabs.set(labels, tab);
 
   for (const [name, pos] of boxesBy(items, bookOf)) {
     const label = document.createElement('div');
@@ -106,6 +126,7 @@ export function createBookLabels<T extends MapItem>(
       /* A length, not a factor: the larger Hebrew below inherits it as-is and
          so cannot grow the box the positioning maths below assumes. */
       line-height:1.2em;
+      transition:opacity 0.2s;
     `;
     label.dataset.bookName = name;
     label.dataset.rightX = String(pos.maxX);
@@ -200,7 +221,14 @@ export function bookLabelSize(zoom: number): { fontSize: number; rise: number } 
 }
 
 export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
-  const { fontSize, rise } = bookLabelSize(zoom);
+  const tab = tabs.get(labelsContainer);
+  const { fontSize, rise } = tab
+    ? { fontSize: tab.fontSize * zoom, rise: tab.above * zoom }
+    : bookLabelSize(zoom);
+  // A tab keeps its length on the map, so the room its English needs is in ems.
+  const englishMinWidth = tab
+    ? fontSize * (ENGLISH_MIN_BOOK_WIDTH_PX / BASE_FONT_SIZE)
+    : ENGLISH_MIN_BOOK_WIDTH_PX;
 
   for (const label of labelsContainer.children) {
     if (label instanceof HTMLElement && label.dataset.section) {
@@ -210,7 +238,7 @@ export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoo
       const topY = parseFloat(label.dataset.topY || '0');
       const bookWidth = parseFloat(label.dataset.bookWidth || '0');
       // Position at book's right edge, label extends leftward via translateX(-100%)
-      const screenX = (rightX + pan.x) * zoom;
+      const screenX = (rightX - (tab?.inset ?? 0) + pan.x) * zoom;
       const screenY = (topY + pan.y) * zoom - rise;
       label.style.left = screenX + 'px';
       label.style.top = screenY + 'px';
@@ -218,7 +246,8 @@ export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoo
       label.style.transform = 'translateX(-100%)';
 
       const bookScreenWidth = bookWidth * zoom;
-      label.classList.toggle('narrow', bookScreenWidth < ENGLISH_MIN_BOOK_WIDTH_PX);
+      label.classList.toggle('narrow', bookScreenWidth < englishMinWidth);
+      if (tab) label.style.opacity = fontSize < tab.minPx ? '0' : '';
     }
   }
 }

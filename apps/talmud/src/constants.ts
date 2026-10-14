@@ -1,6 +1,6 @@
 // Talmud-specific layout and color constants.
 
-import type { SectionLabelSize } from '@torahmap/shell/mapLabels.ts';
+import type { BookTab, SectionLabelSize } from '@torahmap/shell/mapLabels.ts';
 
 // --- Layout constants ---
 
@@ -8,7 +8,17 @@ export const SEGMENT_SIZE = 6; // px per segment square
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
 export const TRACTATE_GAP = 90; // horizontal gap between tractates on a shelf (extra room now that wide tractates wrap into multi-column blocks)
 export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
-export const TRACTATE_LABEL_HEIGHT = 24; // space above each tractate block for its Hebrew name label
+// A tractate's name, a tab at the top-right of the band above its first row.
+// It fades out below 7 pixels, the floor of the perek labels, the smallest
+// Hebrew the map shows elsewhere; at 17 map units it reaches that at zoom 0.41.
+// At 17, Horayot's name, the widest for its tractate's width of those that begin
+// a shelf, fits inside it with 15 units to spare, 7 at the smallest zoom it shows
+// at, where the text is set wider. The tab's 20-unit line box ends 20 units above
+// the first row, clear of the first perek's label, which ends 2
+// units above it and is at most 12 tall, at zoom 0.7, where it first shows.
+export const TRACTATE_TAB: BookTab = { fontSize: 17, above: 40, inset: 6, minPx: 7 };
+// The tab, and 4 units above it.
+export const TRACTATE_LABEL_HEIGHT = TRACTATE_TAB.above + 4;
 
 // Tractates taller than this row count get wrapped into multiple columns
 // inside their own block. (Shabbat, Yevamot, Bava Batra, Sanhedrin, etc.)
@@ -39,7 +49,7 @@ export const SEDER_NAMES: Readonly<Record<string, { he: string; en: string }>> =
 };
 
 // The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a
-// shelf that is 600 from the next; Nezikin's, 390 of 505. The gap clears the daf
+// shelf that is 620 from the next; Nezikin's, 390 of 535. The gap clears the daf
 // labels beside each shelf's first tractate, which show from zoom 0.3.
 export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 
