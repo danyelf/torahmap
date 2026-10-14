@@ -10,6 +10,7 @@
  *   npx tsx scripts/talmud/verify-coverage.ts --force    # re-download all
  */
 
+import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { detectMarker } from './markers.ts';
@@ -73,7 +74,10 @@ export const BAVLI_TRACTATES: ReadonlyArray<TractateRef> = [
 export const CACHE_ROOT = 'data/talmud/raw';
 export const REPORT_PATH = 'data/talmud/coverage-report.json';
 
-const GCS_BASE = 'https://storage.googleapis.com/sefaria-export';
+const SEFARIA_EXPORT = readFileSync('scripts/sefaria-export.env', 'utf-8').match(
+  /^SEFARIA_EXPORT=(.+)$/m,
+)?.[1];
+if (!SEFARIA_EXPORT) throw new Error('scripts/sefaria-export.env names no SEFARIA_EXPORT');
 
 // How many of each marker a tractate may have. Berakhot has 34 of each; the
 // floor is low for short tractates, so it catches only markers lost outright.
@@ -119,9 +123,9 @@ function urlsFor(ref: TractateRef): {
   // E.g. "Rosh Hashanah" → "Rosh_Hashanah.json".
   const schemaName = ref.tractate.replace(/ /g, '_');
   return {
-    wikisource: `${GCS_BASE}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/${encodeURIComponent('Wikisource Talmud Bavli.json')}`,
-    merged: `${GCS_BASE}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`,
-    schema: `${GCS_BASE}/schemas/${schemaName}.json`,
+    wikisource: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/${encodeURIComponent('Wikisource Talmud Bavli.json')}`,
+    merged: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`,
+    schema: `${SEFARIA_EXPORT}/schemas/${schemaName}.json`,
   };
 }
 
