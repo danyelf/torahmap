@@ -4,9 +4,9 @@ import { haftarahOverlay as overlay } from '../../../overlays/haftarah';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_HAFTARAH_MAPPINGS, SAMPLE_STRUCTURE } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import { overlayColorsFor } from '../../../itemColoring';
+import { overlayColorsFor } from '@torahmap/shell/itemColoring.ts';
 import type { HaftarahData } from '../../../overlays/haftarah/readings';
-import { DIMMED_GREY } from '../../../constants';
+import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 
 const DATA: HaftarahData = { mappings: SAMPLE_HAFTARAH_MAPPINGS, structure: SAMPLE_STRUCTURE };
 const haftarahOverlay = hostOverlay(overlay, DATA);

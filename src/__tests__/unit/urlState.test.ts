@@ -6,13 +6,13 @@ import {
   subscribeToHistory,
   applyingExternalState,
   isApplyingExternalState,
-} from '../../urlState';
+} from '@torahmap/shell/urlState.ts';
 import { readLink, writeLink } from '@torahmap/link';
 import { mockHistory } from '../helpers/mocks';
 import { setLink } from '../helpers/setLink';
 import { registerAllOverlays, getAllOverlays } from '../../overlays/index';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { createOverlaySettings } from '../../overlays/settings';
+import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();

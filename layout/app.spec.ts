@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CHROME, STATES, viaMenu } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
-import { NO_OVERLAY } from '../src/overlays/types.ts';
+import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
 import { asReturningReader, boxes, DRAWN_FLOOR, drawnPixels, allLoaded, openMap } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
@@ -83,7 +83,7 @@ test("the haftarah legend's key shows only in the desktop layout", async ({ page
   const state = STATES.find((s) => s.name === 'explore-haftarah')!;
   await openMap(page, state.link);
   await state.then?.(page);
-  // Which layout the page is in, as src/styles/phone.css decides it.
+  // Which layout the page is in, as packages/shell/src/styles/phone.css decides it.
   const desktop = await page.evaluate(
     () =>
       getComputedStyle(document.documentElement).getPropertyValue('--layout').trim() !== 'phone',

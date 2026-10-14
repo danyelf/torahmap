@@ -3,13 +3,13 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import {
   mapStrippedToOriginal,
   onlySeparators,
   splitIntoWords,
   stripNikkud,
-} from '../../hebrew.ts';
+} from '@torahmap/shell/hebrew.ts';
 import { foldForMatching, matchRangesInFolded } from './matching.ts';
 import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
 import {

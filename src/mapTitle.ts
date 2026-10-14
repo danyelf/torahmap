@@ -10,6 +10,7 @@
 // only decides where it goes and how large it is; nothing here knows what the
 // title says or how its lines are arranged.
 
+import './mapTitle.css';
 import artwork from './mapTitle.svg?raw';
 import type { TanakhLayout } from './types.ts';
 

@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { Box, Shown } from './geometry.ts';
-import { VISITED_KEY } from '../src/visits.ts';
+import { VISITED_KEY } from '@torahmap/shell/visits.ts';
 
 /** The canvas's clear colour and the page's background: #1a1a1a. */
 const BACKGROUND = 26;

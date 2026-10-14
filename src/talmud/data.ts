@@ -1,6 +1,6 @@
 // The shapes of the Talmud data files in public/data/talmud/, and how to read them.
 
-import type { Loaded } from '../dataFiles.ts';
+import type { Loaded } from '@torahmap/shell/dataFiles.ts';
 
 export const STRUCTURE_FILE = 'talmud/structure.json';
 

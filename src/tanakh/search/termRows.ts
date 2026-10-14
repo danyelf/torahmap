@@ -6,7 +6,7 @@
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { colorToCss } from '@torahmap/utils';
-import { isHebrew, stripNikkud } from '../../hebrew.ts';
+import { isHebrew, stripNikkud } from '@torahmap/shell/hebrew.ts';
 import type { Dictionary, LexemeLanguage } from './search.ts';
 import type { Meaning } from './dictionary.ts';
 import {
@@ -28,8 +28,8 @@ import {
   type SearchTerm,
   type SearchMode,
 } from './terms.ts';
-import { CONTROL } from '../../panel.ts';
-import { SEARCH_BOX_ID } from '../../app/search.ts';
+import { CONTROL } from '@torahmap/shell/panel.ts';
+import { SEARCH_BOX_ID } from '@torahmap/shell/app/search.ts';
 
 /** What the rows ask of whoever owns the search. */
 export interface TermRowsHost {

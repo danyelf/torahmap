@@ -125,7 +125,7 @@ export async function recordEvents(page: Page): Promise<void> {
   await page.addScriptTag({
     type: 'module',
     content: `
-      import { configureAnalytics } from '/src/analytics.ts';
+      import { configureAnalytics } from '/packages/shell/src/analytics.ts';
       window.sent = [];
       configureAnalytics({ enabled: true, send: (body) => window.sent.push(JSON.parse(body)) });
     `,

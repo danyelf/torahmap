@@ -2,9 +2,14 @@
 // store main.ts uses, handing them and its data to every member, and
 // drawing the controls again after each change, into the container they were
 // last drawn in.
-import type { Overlay, OverlaySummary, SettingsUpdate } from '../../overlays/types';
-import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../../types';
-import { createOverlaySettings, settingsFromLink, type LinkParams } from '../../overlays/settings';
+import type { Overlay, OverlaySummary, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
+import type { TanakhIdentity, TanakhLayout } from '../../types';
+import type { TextLanguage } from '@torahmap/shell/language.ts';
+import {
+  createOverlaySettings,
+  settingsFromLink,
+  type LinkParams,
+} from '@torahmap/shell/overlays/settings.ts';
 import type { TanakhOverlay } from '../../overlays/index';
 
 export interface OverlayHost<S, D> {

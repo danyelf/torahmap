@@ -1,7 +1,7 @@
 // What the Tanakh's site calls itself: torahmap.org.
 
 import { describeLink } from '@torahmap/site/tanakh';
-import type { Site } from '../app/text.ts';
+import type { Site } from '@torahmap/shell/app/text.ts';
 import { TANAKH_PAGE } from './page.ts';
 
 export const tanakhSite: Site = {

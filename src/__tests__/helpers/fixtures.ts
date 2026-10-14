@@ -1,11 +1,11 @@
 // Test fixtures for Torah Map tests
 import { verseId } from '@torahmap/link/tanakh';
 import type { TanakhIdentity, TanakhLayout, TorahData } from '../../types';
-import type { Overlay } from '../../overlays/types';
+import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { CommentaryCounts } from '../../overlays/commentary';
 import { HAFTARAH_FILES, type HaftarahMappings } from '../../overlays/haftarah/readings';
 import { commentaryOverlay } from '../../overlays/commentary';
-import type { Loaded } from '../../dataFiles';
+import type { Loaded } from '@torahmap/shell/dataFiles.ts';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../tanakh/search/data';
 import type { StoryStop } from '@torahmap/stories';

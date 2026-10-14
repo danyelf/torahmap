@@ -11,7 +11,7 @@ export interface State {
   shown?: string[];
 }
 
-// The frame (index.html, src/styles/frame.css). The menu and the ☰ are left
+// The frame (index.html, packages/shell/src/styles/frame.css). The menu and the ☰ are left
 // out of `fixed`: on a desktop both sit over the column by design. Links in the
 // story's prose and in the credits are running text, which touch-size rules
 // exempt.

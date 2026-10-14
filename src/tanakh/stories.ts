@@ -10,7 +10,7 @@ import {
   type WorldBox,
 } from '@torahmap/engine';
 import type { StoryStop, CameraRef } from '@torahmap/stories';
-import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
+import type { ResolvedStoryStop } from '@torahmap/shell/scrollytelling/types.ts';
 import type { Book, TanakhLayout } from '../types.ts';
 import { bookFromUrl } from '@torahmap/link';
 import { getBookSection } from '../constants/books.ts';

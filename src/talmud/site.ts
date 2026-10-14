@@ -1,7 +1,7 @@
 // What the Talmud's site calls itself.
 
 import { viewTitle } from '@torahmap/site';
-import type { Site } from '../app/text.ts';
+import type { Site } from '@torahmap/shell/app/text.ts';
 import { parseTalmudId, talmudRef } from './layout.ts';
 import { SEFARIA_TALMUD, TALMUD_PAGE } from './page.ts';
 

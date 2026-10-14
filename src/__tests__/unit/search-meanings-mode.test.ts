@@ -10,7 +10,7 @@ import { excerptOf } from '../helpers/excerpt';
 import { findLexemesForWord, getLexeme } from '../../tanakh/search/search';
 import { addTerm, onlyMeaning } from '../../tanakh/search/terms';
 import { excerpt } from '../../tanakh/search/highlight';
-import { stripNikkud } from '../../hebrew';
+import { stripNikkud } from '@torahmap/shell/hebrew.ts';
 
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { realSearchData } from '../helpers/searchData';

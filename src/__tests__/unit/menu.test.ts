@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { menuHtml } from '../../menu';
+import { menuHtml } from '@torahmap/shell/menu.ts';
 import { tanakhSite } from '../../tanakh/site';
 import { talmudSite } from '../../talmud/site';
 

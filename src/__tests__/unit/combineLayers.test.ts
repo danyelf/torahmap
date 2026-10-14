@@ -5,8 +5,8 @@ import {
   fillDefaultColors,
   getDefaultColor,
   toolsPicture,
-} from '../../itemColoring';
-import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../../constants';
+} from '@torahmap/shell/itemColoring.ts';
+import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '@torahmap/shell/constants.ts';
 import { createVerse, testOverlay } from '../helpers/fixtures';
 
 const CYAN: Color = [0.1, 0.7, 0.8];

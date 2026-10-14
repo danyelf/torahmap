@@ -8,8 +8,8 @@ import {
   waitingOn,
   type Downloads,
   type LandingView,
-} from '../../downloads';
-import type { Loaded } from '../../dataFiles';
+} from '@torahmap/shell/downloads.ts';
+import type { Loaded } from '@torahmap/shell/dataFiles.ts';
 import { commentaryOverlay } from '../../overlays/commentary';
 import { tropOverlay } from '../../overlays/trop';
 import { HAFTARAH_FILES } from '../../overlays/haftarah/readings';

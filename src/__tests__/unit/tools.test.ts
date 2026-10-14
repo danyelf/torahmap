@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { toolsShown, togglesSearch } from '../../tools';
+import { toolsShown, togglesSearch } from '@torahmap/shell/tools.ts';
 import { searchTool } from '../../tanakh/search/index';
-import { settingsFromLink } from '../../overlays/settings';
+import { settingsFromLink } from '@torahmap/shell/overlays/settings.ts';
 import { SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 
 const counts = testOverlay({

@@ -9,9 +9,9 @@ import { STORIES, STORY_MARKDOWN } from '@torahmap/stories/tanakh';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { writeLink } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { parseUrlState } from '../../urlState';
+import { parseUrlState } from '@torahmap/shell/urlState.ts';
 import { isSearching, searchTool } from '../../tanakh/search/index';
-import { settingsFromLink } from '../../overlays/settings';
+import { settingsFromLink } from '@torahmap/shell/overlays/settings.ts';
 import { haftarahOverlay } from '../../overlays/haftarah';
 import { commentaryOverlay } from '../../overlays/commentary';
 import {
@@ -19,7 +19,7 @@ import {
   HAFTARAH_FILES,
   type HaftarahData,
 } from '../../overlays/haftarah/readings';
-import { loadNamedFiles } from '../../dataFiles';
+import { loadNamedFiles } from '@torahmap/shell/dataFiles.ts';
 import { setLink } from '../helpers/setLink';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');

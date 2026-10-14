@@ -1,6 +1,6 @@
 // Which text's page each address serves, for the Vite config. Imports only the texts' copy.
 
-import type { PageCopy } from './app/page.ts';
+import type { PageCopy } from '@torahmap/shell/app/page.ts';
 import { TANAKH_PAGE } from './tanakh/page.ts';
 import { TALMUD_PAGE } from './talmud/page.ts';
 

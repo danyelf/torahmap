@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { TanakhOverlay } from '../../overlays/index';
-import { getDefaultColor, overlayColorsFor, layerToRecompute } from '../../itemColoring';
+import {
+  getDefaultColor,
+  overlayColorsFor,
+  layerToRecompute,
+} from '@torahmap/shell/itemColoring.ts';
 import * as utils from '@torahmap/utils';
 import { createVerse, testOverlay } from '../helpers/fixtures';
 

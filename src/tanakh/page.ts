@@ -2,7 +2,7 @@
 
 import { ORIGIN } from '@torahmap/site';
 import { SITE_NAME, TAGLINE } from '@torahmap/site/tanakh';
-import type { PageCopy } from '../app/page.ts';
+import type { PageCopy } from '@torahmap/shell/app/page.ts';
 
 export const TANAKH_PAGE: PageCopy = {
   name: SITE_NAME,

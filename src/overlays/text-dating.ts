@@ -1,6 +1,6 @@
 import { type Color, colorToCss } from '@torahmap/utils';
 import './text-dating.css';
-import type { Overlay } from './types.ts';
+import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { legendCaption, legendRow } from './legend.ts';
 

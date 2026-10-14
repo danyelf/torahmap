@@ -7,8 +7,8 @@ import {
   getAllOverlays,
 } from '../../overlays/index';
 import { createVerses, SAMPLE_VERSES, SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
-import { dataFor } from '../../dataFiles';
-import { toolsShown } from '../../tools';
+import { dataFor } from '@torahmap/shell/dataFiles.ts';
+import { toolsShown } from '@torahmap/shell/tools.ts';
 import { configure as configureSearch, searchTool } from '../../tanakh/search/index';
 import { commentaryOverlay, type CommentaryCounts } from '../../overlays/commentary';
 import { restoreAllMocks } from '../helpers/mocks';
@@ -16,7 +16,7 @@ import {
   createOverlaySettings,
   settingsFromLink,
   type OverlaySettings,
-} from '../../overlays/settings';
+} from '@torahmap/shell/overlays/settings.ts';
 
 describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
