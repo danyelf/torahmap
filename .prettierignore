@@ -18,3 +18,7 @@ public/data/
 
 # Written by packages/stories/generate.mjs.
 packages/stories/src/generated.ts
+
+# The EU AI Act experiment: downloaded law, and JSON written by its scripts.
+experiments/eu-ai-act/downloads/
+experiments/eu-ai-act/*.json
