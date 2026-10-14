@@ -11,7 +11,7 @@ export interface Page {
   entry: string;
 }
 
-/** The Tanakh's at the root; the Talmud's, built on every branch but main (vite.config.ts). */
+/** The Tanakh's at the root; the Talmud's at /talmud/. */
 export const PAGES: readonly Page[] = [
   { path: TANAKH_PATH, copy: TANAKH_PAGE, entry: '/apps/tanakh/src/main.ts' },
   { path: TALMUD_PATH, copy: TALMUD_PAGE, entry: '/apps/talmud/src/main.ts' },

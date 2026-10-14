@@ -10,6 +10,7 @@ import {
   type TalmudStructure,
   type TalmudTractate,
   type TalmudTractateText,
+  TALMUD_DATA_DIR,
 } from '@torahmap/talmud/data.ts';
 import { markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
 import {
@@ -214,7 +215,7 @@ export function processTractate(
 }
 
 const DATA_DIR = 'public/data';
-const OUTPUT_DIR = join(DATA_DIR, 'talmud');
+const OUTPUT_DIR = join(DATA_DIR, TALMUD_DATA_DIR);
 const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
 
 async function readJson<T>(path: string): Promise<T> {

@@ -2,10 +2,13 @@
 
 import type { Loaded } from '@torahmap/shell/dataFiles.ts';
 
-export const STRUCTURE_FILE = 'talmud/structure.json';
+/** The Talmud's folder in public/data/. */
+export const TALMUD_DATA_DIR = 'talmud';
+
+export const STRUCTURE_FILE = `${TALMUD_DATA_DIR}/structure.json`;
 
 /** The file a tractate's text is in. */
-export const textsFile = (tractate: string): string => `talmud/texts/${tractate}.json`;
+export const textsFile = (tractate: string): string => `${TALMUD_DATA_DIR}/texts/${tractate}.json`;
 
 export interface TalmudAmud {
   daf: number;
