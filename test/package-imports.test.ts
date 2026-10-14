@@ -18,6 +18,11 @@ const ROOT = resolve(__dirname, '..');
 const TANAKH = /^@torahmap\/([^/]+\/tanakh(\.ts)?|overlay-catalog|tanakh)(\/|$)/;
 // The Tanakh's app, and the Worker that serves its site, may import it.
 const TANAKH_USERS = new Set(['@torahmap/tanakh', '@torahmap/worker']);
+// The Talmud links the verses it cites to the Tanakh's map, so it writes a Tanakh link, under the
+// keys the Tanakh's catalog gives; it may import that catalog and nothing else of the Tanakh's.
+const TANAKH_IMPORTS_ALLOWED: Readonly<Record<string, readonly string[]>> = {
+  '@torahmap/talmud': ['@torahmap/overlay-catalog'],
+};
 const CODE = /\.[cm]?[jt]sx?$/;
 // The paths that `import.meta.glob('./x/*.md')` and `new URL('./x', import.meta.url)` name.
 const PATH_ARGUMENT = /(?:\bimport\.meta\.glob|\bnew URL)\(\s*['"`]([^'"`]+)['"`]/g;
@@ -58,7 +63,10 @@ function importProblems(pkg: string): string[] {
         TANAKH_USERS.has(name) ||
         own.startsWith('test/') ||
         (own === 'src/tanakh.ts' && !relative(ROOT, pkg).startsWith('apps/'));
-      return TANAKH.test(spec) && !mayUseTanakh ? [`${where}, the Tanakh's own code`] : [];
+      const allowed = TANAKH_IMPORTS_ALLOWED[name]?.includes(spec) ?? false;
+      return TANAKH.test(spec) && !mayUseTanakh && !allowed
+        ? [`${where}, the Tanakh's own code`]
+        : [];
     });
   });
 }
@@ -121,6 +129,32 @@ describe("a package's imports", () => {
       rmSync(pkg, { recursive: true });
     }
   });
+
+  it("let the Talmud reach the Tanakh's catalog, and none of its other code", () => {
+    const pkg = mkdtempSync(join(tmpdir(), 'package-imports-'));
+    try {
+      mkdirSync(join(pkg, 'src'));
+      writeFileSync(
+        join(pkg, 'package.json'),
+        JSON.stringify({
+          name: '@torahmap/talmud',
+          dependencies: { '@torahmap/link': '*', '@torahmap/overlay-catalog': '*' },
+        }),
+      );
+      writeFileSync(
+        join(pkg, 'src/index.ts'),
+        [
+          "import { a } from '@torahmap/overlay-catalog';",
+          "import { b } from '@torahmap/link/tanakh';",
+        ].join('\n'),
+      );
+      expect(importProblems(pkg)).toEqual([
+        "src/index.ts imports @torahmap/link/tanakh, the Tanakh's own code",
+      ]);
+    } finally {
+      rmSync(pkg, { recursive: true });
+    }
+  });
 });
 
 // A stylesheet or picture: `./frame.css`, `./mapTitle.svg?raw`.
@@ -172,8 +206,12 @@ describe('the code each page runs', () => {
     expect(files.filter((file) => TANAKH_CODE(file) || TALMUD_CODE(file))).toEqual([]);
   });
 
-  it('for the Talmud, is none of the Tanakh’s', () => {
-    expect(reached('apps/talmud/src/main.ts').filter(TANAKH_CODE)).toEqual([]);
+  it('for the Talmud, is none of the Tanakh’s but what it may import', () => {
+    const allowed = TANAKH_IMPORTS_ALLOWED['@torahmap/talmud'].map((spec) =>
+      relative(ROOT, target(ROOT, spec)!),
+    );
+    const tanakh = reached('apps/talmud/src/main.ts').filter(TANAKH_CODE);
+    expect(tanakh.filter((file) => !allowed.includes(file))).toEqual([]);
   });
 
   it('for the Tanakh, is none of the Talmud’s', () => {

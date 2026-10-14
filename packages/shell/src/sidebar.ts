@@ -6,6 +6,7 @@ import { ENGLISH, HEBREW, type TextLanguage } from './language.ts';
 import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
+import { linkStretches, type TextLink } from './textLinks.ts';
 
 /** A click on a word in the popup's Hebrew text. */
 export interface WordClick<I extends MapItem = MapItem> {
@@ -109,6 +110,8 @@ export interface PopupText {
   hebrew: string;
   english: string;
   link: string;
+  /** Stretches of the Hebrew that link elsewhere, opened in a new window. */
+  hebrewLinks?: readonly TextLink[];
 }
 
 /** What the popup shows beside the square's text, and whether the square is pinned. */
@@ -184,7 +187,11 @@ export function updateSidebar<I extends MapItem>(
     if (!text.hebrew) {
       container.replaceChildren();
     } else {
-      const fragment = marked(text.hebrew, HEBREW) ?? textFragment(text.hebrew);
+      const fragment = linkStretches(
+        marked(text.hebrew, HEBREW) ?? textFragment(text.hebrew),
+        text.hebrew,
+        text.hebrewLinks ?? [],
+      );
       if (heard) {
         // Whatever the overlay produced, words are wrapped afterwards, so a click
         // finds a word whether or not anything is highlighting the text.

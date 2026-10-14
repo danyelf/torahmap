@@ -32,6 +32,8 @@ export function textWords(text: string): TextWord[] {
  * keeps count of where it is in the original string, and wraps each word's
  * text in a span.
  *
+ * Text inside a link is left as it is: a click there follows the link.
+ *
  * A word broken up by a mark becomes more than one span. They share a word
  * index, which is why the index is what a click reads rather than the span's
  * own text: one word, one answer, however many pieces it arrived in.
@@ -69,7 +71,9 @@ export function wrapWordsInFragment(fragment: DocumentFragment, text: string): D
   const walk = (node: Node): void => {
     // Copy the child list first: wrapping replaces nodes as we go.
     for (const child of [...node.childNodes]) {
-      if (child.nodeType === Node.TEXT_NODE) {
+      if (child instanceof HTMLAnchorElement) {
+        offset += child.textContent?.length ?? 0;
+      } else if (child.nodeType === Node.TEXT_NODE) {
         const content = child.textContent ?? '';
         const replacement = document.createDocumentFragment();
         let cursor = 0;

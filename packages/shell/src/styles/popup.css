@@ -90,6 +90,16 @@
   background: rgba(106, 176, 243, 0.22);
 }
 
+#popup .popup-hebrew .text-link {
+  color: inherit;
+  text-decoration: underline dotted rgba(106, 176, 243, 0.6);
+  text-underline-offset: 4px;
+}
+
+#popup .popup-hebrew .text-link:hover {
+  text-decoration: underline solid rgba(106, 176, 243, 0.9);
+}
+
 #popup .popup-english {
   padding: 14px;
   font-size: 14px;
