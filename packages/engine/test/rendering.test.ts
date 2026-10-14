@@ -8,7 +8,7 @@ import {
   type RenderContext,
   type RenderState,
   type Camera,
-  SEARCH_RINGS,
+  RINGS,
 } from '../src/index.ts';
 import { createMockCanvas } from './mocks.ts';
 import { createItem, createItems } from './fixtures.ts';
@@ -226,7 +226,7 @@ describe('rendering', () => {
     it('hands the shader the ring in device pixels', () => {
       render(context, state, camera, null, null);
 
-      const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_RINGS;
+      const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = RINGS;
       expect(context.gl.uniform3f).toHaveBeenCalledWith(
         context.programs.main.uniforms.ring,
         RING_OUTSIDE_PX * 2,
@@ -575,7 +575,7 @@ describe('the search ring', () => {
     // There the square is drawn RING_OUTSIDE_PX larger on every side and the
     // ring is measured in from that edge, so the hole is the square less the
     // inside width twice.
-    const { RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_RINGS;
+    const { RING_INSIDE_PX, RING_MIN_SQUARE_PX } = RINGS;
     expect(RING_MIN_SQUARE_PX - 2 * RING_INSIDE_PX).toBeGreaterThan(0);
   });
 });

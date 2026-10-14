@@ -34,11 +34,11 @@ describe('itemColoring', () => {
       // Test with different random values
       vi.spyOn(utils, 'seededRandom').mockReturnValue(0);
       const minColor = getDefaultColor(0);
-      expect(minColor[0]).toBe(0.4); // MIN_BRIGHTNESS
+      expect(minColor[0]).toBe(0.4); // DEFAULT_BRIGHTNESS.MIN
 
       vi.spyOn(utils, 'seededRandom').mockReturnValue(1);
       const maxColor = getDefaultColor(0);
-      expect(maxColor[0]).toBe(0.8); // MIN_BRIGHTNESS + BRIGHTNESS_RANGE
+      expect(maxColor[0]).toBe(0.8); // DEFAULT_BRIGHTNESS.MIN + RANGE
     });
 
     it('returns consistent results for same index', () => {

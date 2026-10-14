@@ -20,7 +20,7 @@ import { buildOutlineGeometry } from './outline.ts';
 import type { SpatialItem } from './types.ts';
 import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera.ts';
-import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, SEARCH_RINGS } from './constants.ts';
+import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, RINGS } from './constants.ts';
 
 function offsetFor(
   canvas: HTMLCanvasElement,
@@ -144,7 +144,7 @@ export function render<T>(
   gl.uniform2f(programs.main.uniforms.pan, offset.x, offset.y);
   gl.uniform1f(programs.main.uniforms.zoom, camera.zoom * dpr);
   gl.uniform1f(programs.main.uniforms.fade, state.fade);
-  const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = SEARCH_RINGS;
+  const { RING_OUTSIDE_PX, RING_INSIDE_PX, RING_MIN_SQUARE_PX } = RINGS;
   gl.uniform3f(
     programs.main.uniforms.ring,
     RING_OUTSIDE_PX * dpr,

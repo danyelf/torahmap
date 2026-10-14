@@ -1,40 +1,17 @@
 // Camera module - handles zoom and pan state
 
-import type { Bounds } from './types.ts';
 import { lerpCamera, easingFunctions } from './interpolation.ts';
-import type { ZoomRange } from './types.ts';
-import { DEFAULT_EASING } from './types.ts';
+import { DEFAULT_EASING, type CameraPosition, type ZoomRange } from './types.ts';
 
-export interface Camera {
-  x: number; // pan x position
-  y: number; // pan y position
-  zoom: number;
-}
+export type Camera = CameraPosition;
+
+// Screen pixels kept clear above the squares for the labels.
+export const LABEL_MARGIN = 40;
 
 /** The map's canvas, in CSS pixels. */
 export interface Viewport {
   width: number;
   height: number;
-}
-
-// Opens with Genesis 1:1, the rightmost verse after the RTL mirror, this far
-// in from the right edge of `windowWidth`: the map's own width unless a panel
-// covers part of it.
-const RIGHT_MARGIN = 320;
-// Screen pixels kept clear above the verses for the book labels.
-const LABEL_MARGIN = 40;
-
-export function createCamera(
-  viewport: Viewport,
-  bounds: Bounds,
-  range: ZoomRange,
-  windowWidth: number = viewport.width,
-): Camera {
-  return {
-    x: bounds.width - (windowWidth - RIGHT_MARGIN - viewport.width / 2),
-    y: viewport.height / 2 - LABEL_MARGIN,
-    zoom: range.start,
-  };
 }
 
 export function clampZoom(zoom: number, range: ZoomRange): number {
@@ -64,10 +41,8 @@ export function worldToScreen(
   camera: Camera,
   viewport: Viewport,
 ): ScreenPoint {
-  return {
-    x: (p.x - camera.x) * camera.zoom + viewport.width / 2,
-    y: (p.y - camera.y) * camera.zoom + viewport.height / 2,
-  };
+  const offset = viewOffset(camera, viewport);
+  return { x: (p.x + offset.x) * camera.zoom, y: (p.y + offset.y) * camera.zoom };
 }
 
 /**
@@ -176,8 +151,8 @@ export const CAMERA_GLIDE_MS = 500;
 /**
  * Glide the camera to a target, the way the story moves between its stops.
  *
- * Same interpolation and same easing as scrollytelling; only the thing driving
- * the progress differs. A story stop is driven by scroll position, and there is
+ * The same interpolation and easing a story uses between stops (`lerpCamera`
+ * with `DEFAULT_EASING`); only the thing driving the progress differs. A story stop is driven by scroll position, and there is
  * no scroll behind a click, so this drives it from the clock instead.
  *
  * The camera is edited in place, because that is the object the render loop

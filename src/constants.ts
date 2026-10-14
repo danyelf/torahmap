@@ -33,12 +33,12 @@ export const DEFAULT_BRIGHTNESS = { MIN: 0.4, RANGE: 0.4 } as const;
 /** The grey of a verse left out. */
 export const DIMMED_GREY: Color = [0.18, 0.18, 0.18];
 
-/** How a search shows over an overlay, judged by eye on the map. */
-export const SEARCH_WITH_OVERLAY = {
-  // What a verse the search does not match keeps of its overlay colour; above
-  // about half, a warm search colour is lost among Haftarah's stripes
-  NON_MATCH_DIM: 0.45,
-} as const;
+/**
+ * What a verse a search does not match keeps of its overlay colour, judged by
+ * eye on the map: above about half, a warm search colour is lost among
+ * Haftarah's stripes.
+ */
+export const SEARCH_NON_MATCH_DIM = 0.45;
 
 /** How long the map takes to cross-fade to a new picture: the front tool switching, or data landing. */
 export const MAP_FADE = {

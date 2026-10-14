@@ -94,7 +94,7 @@ import {
 import { LOADING, loadNotice } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
-import { URL_UPDATE_DEBOUNCE_MS, SEARCH_WITH_OVERLAY, MAP_FADE } from './constants.ts';
+import { URL_UPDATE_DEBOUNCE_MS, SEARCH_NON_MATCH_DIM, MAP_FADE } from './constants.ts';
 import { stopLabel } from './scrollytelling/storyPanel';
 import { cameraSetting, listedStories, writeStopComment } from '@torahmap/stories';
 import {
@@ -304,7 +304,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
   function dimFor(front: FrontTool): number {
-    return front === 'search' ? SEARCH_WITH_OVERLAY.NON_MATCH_DIM : 1;
+    return front === 'search' ? SEARCH_NON_MATCH_DIM : 1;
   }
 
   // Search or the overlay, whichever's panel opened last (src/frame.ts). Only

@@ -1,4 +1,3 @@
-// src/scrollytelling/__tests__/interpolation.test.ts
 import { describe, it, expect } from 'vitest';
 import { easingFunctions, lerpCamera, lerpColor } from '../src/index.ts';
 

@@ -4,7 +4,8 @@ import { resolveStops } from '../../tanakh/stories';
 import { initBookData } from '../../constants/books';
 import { SECTION_LABEL_REACH } from '../../labels';
 import type { TanakhLayout } from '../../types';
-import { createStoryStop as stop, createVerse, ZOOM } from '../helpers/fixtures';
+import { createStoryStop as stop, createVerse } from '../helpers/fixtures';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import type { StoryStop } from '@torahmap/stories';
 
 describe('resolveStops with a pinned verse', () => {
@@ -18,7 +19,7 @@ describe('resolveStops with a pinned verse', () => {
       indexItems(verses),
       { x: 0, y: 0 },
       { width: 400, height: 300 },
-      ZOOM,
+      LINK_KEYS.zoom,
     )[0].camera;
 
   it('centres a verse the map holds, at the initial zoom', () => {
@@ -48,34 +49,41 @@ describe('resolveStops with a camera naming places', () => {
   const initial = { x: 1, y: 2, zoom: 3 };
   const map = { width: 400, height: 300 };
   const resolve = (fields: Partial<StoryStop>) =>
-    resolveStops([stop(fields)], initial, verses, indexItems(verses), { x: 0, y: 0 }, map, ZOOM)[0]
-      .camera;
+    resolveStops(
+      [stop(fields)],
+      initial,
+      verses,
+      indexItems(verses),
+      { x: 0, y: 0 },
+      map,
+      LINK_KEYS.zoom,
+    )[0].camera;
 
   it('fits a book', () => {
     const box = { minX: 90, minY: 100, maxX: 100 + SECTION_LABEL_REACH, maxY: 110 };
     expect(resolve({ camera: { kind: 'places', names: ['I.Samuel'] } })).toEqual(
-      cameraToFit(box, 400, 300, ZOOM),
+      cameraToFit(box, 400, 300, LINK_KEYS.zoom),
     );
   });
 
   it('fits several places together', () => {
     const box = { minX: 90, minY: 100, maxX: 200 + SECTION_LABEL_REACH, maxY: 210 };
     expect(resolve({ camera: { kind: 'places', names: ['Neviim', 'Ketuvim'] } })).toEqual(
-      cameraToFit(box, 400, 300, ZOOM),
+      cameraToFit(box, 400, 300, LINK_KEYS.zoom),
     );
   });
 
   it('fits everything, at a given zoom', () => {
     const box = { minX: 0, minY: 0, maxX: 200 + SECTION_LABEL_REACH, maxY: 210 };
     expect(resolve({ camera: { kind: 'places', names: ['everything'] }, zoom: 0.5 })).toEqual(
-      cameraToFit(box, 400, 300, ZOOM, 0.5),
+      cameraToFit(box, 400, 300, LINK_KEYS.zoom, 0.5),
     );
   });
 
   it('fits a verse with a region', () => {
     const box = { minX: 0, minY: 0, maxX: 100 + SECTION_LABEL_REACH, maxY: 110 };
     expect(resolve({ camera: { kind: 'places', names: [verses[0].id, 'I.Samuel'] } })).toEqual(
-      cameraToFit(box, 400, 300, ZOOM),
+      cameraToFit(box, 400, 300, LINK_KEYS.zoom),
     );
   });
 

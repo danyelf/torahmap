@@ -22,6 +22,7 @@ export interface Bounds {
   height: number;
 }
 
+/** Where the camera is: the map point at the canvas's centre, and the zoom. */
 export interface CameraPosition {
   x: number;
   y: number;
