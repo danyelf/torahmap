@@ -1,5 +1,5 @@
-// The Talmud page, at /talmud/ on the dev server only: it draws, its labels sit over the
-// map, and a pinned segment shows its text.
+// The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
+// shows its text.
 import { expect, test } from '@playwright/test';
 import { allLoaded, boxes, openMap } from './page.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';

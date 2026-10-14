@@ -32,8 +32,9 @@ export function driverChangeEvent(from: Driver, to: Driver): 'story_exit' | 'sto
 
 interface Options {
   /**
-   * On only in a Vite production build: off on the dev server, and in a plain
-   * Node script (the print scripts), which has no import.meta.env.
+   * On in a Vite production build unless a text's page turns it off
+   * (apps/talmud/src/main.ts): off on the dev server, and in a plain Node script
+   * (the print scripts), which has no import.meta.env.
    */
   enabled: boolean;
   send: (body: string) => void;

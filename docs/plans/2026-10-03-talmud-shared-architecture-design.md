@@ -16,9 +16,9 @@ change of 2026-09-26. This design shares the app instead.
 ## The four projects
 
 1. **Draw the line inside `src/`.** `main.ts` becomes `createApp(text)`, and
-   both the Tanakh and the Talmud boot through it. The Talmud page is dev-only
-   and plain, and is not built for production until project 3. The Tanakh site
-   behaves exactly as before.
+   both the Tanakh and the Talmud boot through it. The Talmud page is plain,
+   on the dev server and each pull request's preview but not the live site,
+   until project 3. The Tanakh site behaves exactly as before.
 2. **Split into components:** `packages/utils`, `packages/engine`,
    `packages/telemetry`, `packages/shell`, and `apps/tanakh`, `apps/talmud`
    and `apps/worker`.
@@ -146,7 +146,8 @@ data script, so the overlay costs one download.
 The verse events (`verse_click`, `sefaria_click`) are replaced by new events
 carrying the square's `id` and its `area`. The old ones stop being sent; saved
 queries move to the new names. Which site sent an event is settled in
-project 3: the dev server sends nothing, and the Talmud is dev-only until then.
+project 3: the dev server sends nothing, and the Talmud page, on previews
+only, sends nothing until then.
 
 ## Project 1, pull request by pull request
 

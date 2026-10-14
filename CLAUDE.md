@@ -146,7 +146,7 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   `@torahmap/tanakh/layout.ts`, for the tools that use them.
 - `index.html` — every text's page, filled from its copy by `vite.config.ts`
   at the address `pages.ts` gives it; the Talmud's, at `/talmud/`, is
-  dev-only.
+  on the dev server and every branch's preview but not the live site.
 - `test/` — checks of the whole repository: that each package and app keeps to
   its imports and each page runs only its own text's code, the saved telemetry
   queries, and the shell's tests that need a text's data.

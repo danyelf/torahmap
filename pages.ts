@@ -11,7 +11,7 @@ export interface Page {
   entry: string;
 }
 
-/** The Tanakh's at the root, built and deployed; the Talmud's on the dev server alone. */
+/** The Tanakh's at the root; the Talmud's at /talmud/. */
 export const PAGES: readonly Page[] = [
   { path: TANAKH_PATH, copy: TANAKH_PAGE, entry: '/apps/tanakh/src/main.ts' },
   { path: TALMUD_PATH, copy: TALMUD_PAGE, entry: '/apps/talmud/src/main.ts' },
