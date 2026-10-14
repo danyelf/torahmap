@@ -7,7 +7,7 @@ import {
   stripNikkudAndSeparators,
   parseWholeRef,
   processTractate,
-} from '../scripts/talmud/bundle.ts';
+} from '../bundle.ts';
 
 describe('walkMarkers', () => {
   // Real markers always carry a <big> wrap on either the marker word

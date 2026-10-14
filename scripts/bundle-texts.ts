@@ -34,7 +34,6 @@ interface VerseText {
 type BookTexts = Record<string, Record<string, VerseText>>;
 type AllTexts = Record<string, BookTexts>;
 
-// Book definitions (same as apps/tanakh/src/books.ts)
 const BOOKS = [
   { name: 'Genesis', file: 'genesis' },
   { name: 'Exodus', file: 'exodus' },

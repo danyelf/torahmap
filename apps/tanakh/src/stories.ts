@@ -7,6 +7,7 @@ import {
   cameraToFit,
   centreForFocus,
   type ScreenPoint,
+  type Viewport,
   type WorldBox,
 } from '@torahmap/engine';
 import type { StoryStop, CameraRef } from '@torahmap/stories';
@@ -25,7 +26,7 @@ function cameraForVerse(
   verse: TanakhLayout,
   zoom: number,
   focus: ScreenPoint,
-  mapSize: MapSize,
+  mapSize: Viewport,
 ): CameraPosition {
   return { ...centreForFocus(verse, zoom, focus, mapSize), zoom };
 }
@@ -86,12 +87,6 @@ function placeBox(
   };
 }
 
-/** The map's canvas, in CSS pixels. */
-export interface MapSize {
-  width: number;
-  height: number;
-}
-
 // "initial" uses the app's default camera position, unless the stop pins a
 // verse, in which case that verse is put at `focus` instead. A camera naming
 // one verse puts it at `focus` too; any other places are fitted to `mapSize`.
@@ -101,7 +96,7 @@ export function resolveStops(
   verses: TanakhLayout[],
   squares: ItemIndex<TanakhLayout>,
   focus: ScreenPoint,
-  mapSize: MapSize,
+  mapSize: Viewport,
   zoom: ZoomRange,
 ): ResolvedStoryStop[] {
   return stops.map((stop) => {

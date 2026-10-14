@@ -3,6 +3,9 @@
 import { ORIGIN } from '@torahmap/site';
 import type { PageCopy } from '@torahmap/shell/app/page.ts';
 
+/** Where the Talmud's page is served, under the site's address. */
+export const TALMUD_PATH = '/talmud/';
+
 export const SEFARIA_TALMUD = 'https://www.sefaria.org/texts/Talmud';
 
 const SUMMARY =
@@ -11,7 +14,7 @@ const SUMMARY =
 export const TALMUD_PAGE: PageCopy = {
   name: 'Talmud Map',
   tagline: 'A map of the Babylonian Talmud.',
-  url: `${ORIGIN}/talmud/`,
+  url: `${ORIGIN}${TALMUD_PATH}`,
   noScript: SUMMARY,
   noWebGl: SUMMARY,
   textUrl: SEFARIA_TALMUD,

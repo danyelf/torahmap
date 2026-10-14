@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { cleanText } from '../scripts/bundle-texts';
+import { cleanText } from '../bundle-texts';
 
 describe('cleanText', () => {
   describe('HTML entity handling', () => {
@@ -159,7 +159,7 @@ describe('cleanText', () => {
   describe('data quality validation', () => {
     it('ensures Hebrew text contains no English letters', () => {
       // This test validates the actual bundled data file
-      const dataPath = path.resolve(__dirname, '../public/data/all-texts.json');
+      const dataPath = path.resolve(__dirname, '../../public/data/all-texts.json');
       const allTexts = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 
       const englishLetterRegex = /[a-zA-Z]/;
@@ -194,7 +194,7 @@ describe('cleanText', () => {
 
     it('ensures Hebrew text contains Hebrew characters', () => {
       // This test ensures we're not accidentally getting empty or English-only text
-      const dataPath = path.resolve(__dirname, '../public/data/all-texts.json');
+      const dataPath = path.resolve(__dirname, '../../public/data/all-texts.json');
       const allTexts = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 
       // Hebrew Unicode range: \u0590-\u05FF (includes letters and cantillation marks)
@@ -231,7 +231,7 @@ describe('cleanText', () => {
       // A partial download leaves verses with nothing in the English pane, and
       // the search index is built from this file, so those verses would simply
       // never match anything.
-      const dataPath = path.resolve(__dirname, '../public/data/all-texts.json');
+      const dataPath = path.resolve(__dirname, '../../public/data/all-texts.json');
       const allTexts = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 
       const violations: string[] = [];
@@ -267,7 +267,7 @@ describe('cleanText', () => {
       // by design: the divine name appears as GOD [יהוה], and alphabetic psalms
       // keep their acrostic letters inline. What would be wrong is an English
       // verse with no Latin letters at all.
-      const dataPath = path.resolve(__dirname, '../public/data/all-texts.json');
+      const dataPath = path.resolve(__dirname, '../../public/data/all-texts.json');
       const allTexts = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 
       const latinLetterRegex = /[a-zA-Z]/;

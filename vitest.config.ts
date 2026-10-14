@@ -13,7 +13,7 @@ export default defineConfig({
       'packages/*/test/**/*.test.ts',
       'test/**/*.test.ts',
       'video/**/*.test.ts',
-      'scripts/print/**/*.test.ts',
+      'scripts/**/*.test.ts',
     ],
     environment: 'happy-dom',
     setupFiles: ['./test/setup.ts'],

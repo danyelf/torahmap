@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { fillPage } from '@torahmap/shell/app/page.ts';
 import { pageAt } from '../pages.ts';
-import { rewritePage } from '../apps/worker/src/page.ts';
+import { rewritePage } from '@torahmap/worker/page.ts';
 
 // The page the Worker serves, at the root.
 const ROOT = pageAt('/');

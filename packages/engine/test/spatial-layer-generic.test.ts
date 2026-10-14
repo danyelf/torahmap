@@ -1,73 +1,25 @@
 import { describe, it, expect } from 'vitest';
 import { type SpatialItem, buildItemGeometry, findExactHit } from '../src/index.ts';
 
-// The fields each text puts on its squares, which the engine never reads.
-interface TanakhIdentity {
+// A text's own fields on its squares, which the engine carries but never reads.
+interface Place {
   book: string;
-  chapter: number;
-  verse: number;
-}
-interface TalmudIdentity {
-  tractate: string;
-  daf: number;
-  amud: 'a' | 'b';
-  segment: number;
+  line: number;
 }
 
-describe('spatial layer genericization', () => {
-  it('buildItemGeometry accepts SpatialItem<TanakhIdentity>', () => {
-    const items: SpatialItem<TanakhIdentity>[] = [
-      { id: 'Genesis.1.1', book: 'Genesis', chapter: 1, verse: 1, x: 10, y: 20, size: 6 },
-      { id: 'Genesis.1.2', book: 'Genesis', chapter: 1, verse: 2, x: 16, y: 20, size: 6 },
-    ];
+const items: SpatialItem<Place>[] = [
+  { id: 'a.1', book: 'a', line: 1, x: 10, y: 20, size: 6 },
+  { id: 'a.2', book: 'a', line: 2, x: 16, y: 20, size: 6 },
+];
+
+describe('squares that carry a text’s own fields', () => {
+  it('are drawn', () => {
     const geom = buildItemGeometry(items);
     expect(geom).toBeInstanceOf(Float32Array);
     expect(geom.length).toBeGreaterThan(0);
   });
 
-  it('buildItemGeometry accepts SpatialItem<TalmudIdentity>', () => {
-    const items: SpatialItem<TalmudIdentity>[] = [
-      {
-        id: 'Berakhot.2a.1',
-        tractate: 'Berakhot',
-        daf: 2,
-        amud: 'a',
-        segment: 1,
-        x: 10,
-        y: 20,
-        size: 6,
-      },
-      {
-        id: 'Berakhot.2a.2',
-        tractate: 'Berakhot',
-        daf: 2,
-        amud: 'a',
-        segment: 2,
-        x: 16,
-        y: 20,
-        size: 6,
-      },
-    ];
-    const geom = buildItemGeometry(items);
-    expect(geom).toBeInstanceOf(Float32Array);
-    expect(geom.length).toBeGreaterThan(0);
-  });
-
-  it('findExactHit accepts SpatialItem<TalmudIdentity>', () => {
-    const items: SpatialItem<TalmudIdentity>[] = [
-      {
-        id: 'Berakhot.2a.1',
-        tractate: 'Berakhot',
-        daf: 2,
-        amud: 'a',
-        segment: 1,
-        x: 10,
-        y: 20,
-        size: 6,
-      },
-    ];
-    const hit = findExactHit(items, 12, 22);
-    expect(hit).not.toBeNull();
-    expect(hit?.tractate).toBe('Berakhot');
+  it('come back from a hit with their fields', () => {
+    expect(findExactHit(items, 12, 22)?.line).toBe(1);
   });
 });

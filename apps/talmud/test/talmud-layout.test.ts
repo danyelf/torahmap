@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { computeTalmudLayout, dafRowsOf } from '@torahmap/talmud/layout.ts';
-import { talmudFixture as fixture } from '../apps/talmud/test/helpers/talmudFixture.ts';
-import { SEGMENT_SIZE, PEREK_GAP, SEDER_GAP } from '@torahmap/talmud/constants.ts';
+import { computeTalmudLayout, dafRowsOf } from '../src/layout.ts';
+import { talmudFixture as fixture } from './helpers/talmudFixture.ts';
+import { SEGMENT_SIZE, PEREK_GAP, SEDER_GAP } from '../src/constants.ts';
 
 describe('computeTalmudLayout', () => {
   const result = computeTalmudLayout(fixture);

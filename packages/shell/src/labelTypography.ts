@@ -4,7 +4,7 @@
  * The face the map's Hebrew headings are set in. The verse text is a separate
  * stack (see styles/verse-popup.css) — headings and body do not share one.
  *
- * Both entry points must request this family from Google Fonts, or the labels
+ * index.html must request this family from Google Fonts, or the labels
  * fall back to a system face and take the correction below anyway. A test in
  * test/labelTypography.test.ts holds them together.
  */

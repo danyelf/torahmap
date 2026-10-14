@@ -8,13 +8,11 @@ import { HEBREW_LABEL_FONT } from '@torahmap/shell/labelTypography.ts';
 // one and leave the other pointing at a font nothing asks for any more — the
 // labels then fall back to a system face and still take HEBREW_LABEL_SCALE,
 // which is measured for the face that failed to load.
-const ENTRY_POINTS = ['index.html'];
-
 const familyName = HEBREW_LABEL_FONT.split(',')[0].replace(/"/g, '').trim();
 
 describe('map label typography', () => {
-  it.each(ENTRY_POINTS)('%s requests the family the labels are set in', (entry) => {
-    const html = readFileSync(join(process.cwd(), entry), 'utf8');
+  it('index.html requests the family the labels are set in', () => {
+    const html = readFileSync(join(process.cwd(), 'index.html'), 'utf8');
     const requested = [...html.matchAll(/fonts\.googleapis\.com\/css2\?family=([^:&"]+)/g)].map(
       (m) => decodeURIComponent(m[1]).replace(/\+/g, ' '),
     );

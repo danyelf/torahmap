@@ -141,15 +141,15 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `apps/` — what runs, as npm workspace packages, each with its own `test/`:
   `tanakh` (the Tanakh's map: its layout, labels, title, verse texts, search
   and `overlays/`), `talmud` (the Talmud's) and `worker` (the Worker that
-  serves the deployed site). An app's `src/main.ts` is its page's entry. The
+  serves the deployed site). The Tanakh's and Talmud's `src/main.ts` is each page's entry. The
   Tanakh's and Talmud's export each module at its own path, as
   `@torahmap/tanakh/layout.ts`, for the tools that use them.
 - `index.html` — every text's page, filled from its copy by `vite.config.ts`
   at the address `pages.ts` gives it; the Talmud's, at `/talmud/`, is
   dev-only.
 - `test/` — checks of the whole repository: that each package and app keeps to
-  its imports, the saved telemetry queries, the scripts' own tests, and tests
-  of the shell with both texts.
+  its imports and each page runs only its own text's code, the saved telemetry
+  queries, and tests of the shell with both texts.
 - `packages/` — shared code, as npm workspace packages: `link` (reading and
   writing links, under each text's keys), `utils` (small helpers that depend
   on nothing else here), `engine` (drawing the squares, the camera, hit

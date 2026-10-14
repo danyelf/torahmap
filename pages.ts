@@ -2,15 +2,15 @@
 
 import type { PageCopy } from '@torahmap/shell/app/page.ts';
 import { TANAKH_PAGE } from '@torahmap/tanakh/page.ts';
-import { TALMUD_PAGE } from '@torahmap/talmud/page.ts';
+import { TALMUD_PAGE, TALMUD_PATH } from '@torahmap/talmud/page.ts';
+
+export { TALMUD_PATH };
 
 export interface Page {
   path: string;
   copy: PageCopy;
   entry: string;
 }
-
-export const TALMUD_PATH = '/talmud/';
 
 /** The Tanakh's at the root, built and deployed; the Talmud's on the dev server alone. */
 export const PAGES: readonly Page[] = [

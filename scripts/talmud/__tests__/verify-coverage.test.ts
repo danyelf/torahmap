@@ -1,14 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import {
-  countMarker,
-  totalSegments,
-  shapeMatches,
-  verifyTractate,
-} from '../scripts/talmud/verify-coverage.ts';
+import { countMarker, totalSegments, shapeMatches, verifyTractate } from '../verify-coverage.ts';
 
-const FIXTURES = join(__dirname, '../scripts/talmud/fixtures');
+const FIXTURES = join(__dirname, '../fixtures');
 
 function loadFixture(name: string): unknown {
   return JSON.parse(readFileSync(join(FIXTURES, name), 'utf-8'));
