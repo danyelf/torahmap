@@ -233,3 +233,22 @@ accepted trade for fast, offline-capable data.
 The gap is not negligible. Between the January 2026 and September 2026 exports
 the total link count grew 24%, unevenly: Jewish Thought more than doubled while
 Midrash grew 22%. The shape of the heatmap moves, not just its scale.
+
+## Talmud Texts
+
+The Talmud's text is the Wikisource edition of the Bavli, from the same Sefaria
+bucket. Its source lives in `data/talmud/`, gitignored apart from
+`coverage-report.json`, which says which tractates passed and so which the
+bundle builds.
+
+```bash
+# Download each tractate's text and chapter boundaries (~49MB), and check them
+npx tsx scripts/talmud/verify-coverage.ts
+# Download each tractate's standalone Mishnah, which bounds how long a Mishnah can run
+npx tsx scripts/talmud/fetch-mishnah.ts
+# Build public/data/talmud/
+npx tsx scripts/talmud/bundle.ts
+```
+
+Both downloads keep what is already on disk; `verify-coverage.ts --force`
+fetches the text again.

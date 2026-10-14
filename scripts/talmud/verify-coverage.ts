@@ -8,9 +8,9 @@
  *   3. Download schema JSON (for perek boundaries)
  *   4. Verify Wikisource: non-empty, plausible marker counts
  *   5. Cross-check Wikisource vs Davidson: identical shape
- *   6. Emit report to data-transient/talmud-coverage-report.json
+ *   6. Emit report to data/talmud/coverage-report.json
  *
- * Raw files cached under data-transient/talmud-raw/<Tractate>/ and reused
+ * Raw files cached under data/talmud/raw/<Tractate>/ and reused
  * by scripts/talmud/bundle.ts.
  *
  * Usage:
@@ -77,8 +77,8 @@ export const BAVLI_TRACTATES: ReadonlyArray<TractateRef> = [
 ];
 // 1 + 11 + 7 + 8 + 9 + 1 = 37
 
-const CACHE_ROOT = 'data-transient/talmud-raw';
-const REPORT_PATH = 'data-transient/talmud-coverage-report.json';
+const CACHE_ROOT = 'data/talmud/raw';
+const REPORT_PATH = 'data/talmud/coverage-report.json';
 
 const GCS_BASE = 'https://storage.googleapis.com/sefaria-export';
 
@@ -341,7 +341,7 @@ async function writeCoverageReport(
     failed: results.filter((r) => r.status !== 'pass').length,
     tractates: results,
   };
-  await mkdir('data-transient', { recursive: true });
+  await mkdir('data/talmud', { recursive: true });
   await writeFile(REPORT_PATH, JSON.stringify(report, null, 2), 'utf-8');
   console.log(`\nReport written to ${REPORT_PATH}`);
 }

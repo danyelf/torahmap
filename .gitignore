@@ -17,8 +17,9 @@ data/overlays/commentary/sefaria-index.json
 .claude/worktrees
 __pycache__/
 
-# Talmud verification cache — regenerable via scripts/talmud/verify-coverage.ts
-data-transient/
+# The Talmud source as downloaded from Sefaria; see DATA_REGENERATION.md.
+data/talmud/raw/
+data/talmud/mishnah/
 
 # Visual brainstorming companion scratch
 .superpowers/

@@ -9,16 +9,16 @@
  * dozens of segments past the real mishnah end. The standalone Mishnah
  * tells us how long each perek's mishnah block actually is.
  *
- * Inputs:  data-transient/talmud-coverage-report.json (tractate list)
- * Outputs: data-transient/mishnah-raw/<Tractate>.json
+ * Inputs:  data/talmud/coverage-report.json (tractate list)
+ * Outputs: data/talmud/mishnah/<Tractate>.json
  */
 
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const GCS = 'https://storage.googleapis.com/sefaria-export';
-const COVERAGE = 'data-transient/talmud-coverage-report.json';
-const OUT = 'data-transient/mishnah-raw';
+const COVERAGE = 'data/talmud/coverage-report.json';
+const OUT = 'data/talmud/mishnah';
 
 // A few standalone-Mishnah names don't follow the "Mishnah <Tractate>"
 // pattern. Add overrides here as we discover them.

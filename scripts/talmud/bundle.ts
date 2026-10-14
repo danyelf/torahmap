@@ -3,9 +3,9 @@
  * Bundle Talmud raw cache into runtime-fetchable JSON files.
  *
  * Inputs:
- *   data-transient/talmud-raw/<Tractate>/wikisource.json
- *   data-transient/talmud-raw/<Tractate>/schema.json
- *   docs/plans/data/2026-04-07-talmud-coverage-report.json (tells us which
+ *   data/talmud/raw/<Tractate>/wikisource.json
+ *   data/talmud/raw/<Tractate>/schema.json
+ *   data/talmud/coverage-report.json (tells us which
  *     tractates passed verification)
  *
  * Outputs:
@@ -474,9 +474,9 @@ export function processTractate(
   };
 }
 
-const CACHE_ROOT = 'data-transient/talmud-raw';
-const MISHNAH_CACHE = 'data-transient/mishnah-raw';
-const COVERAGE_REPORT = 'docs/plans/data/2026-04-07-talmud-coverage-report.json';
+const CACHE_ROOT = 'data/talmud/raw';
+const MISHNAH_CACHE = 'data/talmud/mishnah';
+const COVERAGE_REPORT = 'data/talmud/coverage-report.json';
 const OUTPUT_DIR = 'public/data/talmud';
 const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
 

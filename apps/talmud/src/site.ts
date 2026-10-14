@@ -15,6 +15,7 @@ export const talmudSite: Site = {
       source: 'Wikisource Talmud Bavli',
       url: SEFARIA_TALMUD,
       note: 'The Hebrew and Aramaic text, from Hebrew Wikisource, downloaded via Sefaria.',
+      collected: 'October 2026',
     },
   ],
   title(link) {
