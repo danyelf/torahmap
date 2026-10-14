@@ -1,7 +1,7 @@
 // Events for the site's own Worker (src/worker/index.ts). No cookies and no
 // browser storage: the visit id lives in memory, so a reload is a new visit.
-import type { TextLanguage } from './types.ts';
-import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
+import type { TextLanguage } from './language.ts';
+import { driverKind, type Driver } from './scrollytelling/driver.ts';
 import {
   errorMessage,
   MAX_BLOB_CHARS,
@@ -12,6 +12,23 @@ import {
   type EventPayload,
 } from '@torahmap/telemetry';
 import { linkKind, type LinkKind, type UrlState } from '@torahmap/link';
+
+/**
+ * How the reader took the map: acting on it while the story was open, or
+ * leaving the story — a tool chosen from its menu, its last stop's button, or
+ * a link into the explore view followed after the page has loaded.
+ */
+export type ExitHow = 'takeover' | 'fold';
+/** How the story took it back: scrolling it, opening it, or a link or Back/Forward. */
+export type ReturnHow = 'rejoin' | 'open' | 'link';
+
+/** The event a change of driver sends, or null when the same one keeps the map. */
+export function driverChangeEvent(from: Driver, to: Driver): 'story_exit' | 'story_return' | null {
+  const before = driverKind(from);
+  const after = driverKind(to);
+  if (before === after) return null;
+  return after === 'reader' ? 'story_exit' : 'story_return';
+}
 
 interface Options {
   /**

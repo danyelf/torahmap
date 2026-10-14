@@ -2,7 +2,7 @@
 // has stopped changing the search and search has its data.
 import { debounce } from '@torahmap/utils';
 import type { SearchTelemetry } from '@torahmap/shell/app/search.ts';
-import type { TextLanguage } from '@torahmap/shell/types.ts';
+import type { TextLanguage } from '@torahmap/shell/language.ts';
 import { termQuery, type SearchMode, type SearchTerm } from './terms.ts';
 import type { Dictionary } from './search.ts';
 import { dictionaryOf, type SearchData } from './data.ts';

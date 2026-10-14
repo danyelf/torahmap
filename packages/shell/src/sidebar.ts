@@ -2,8 +2,7 @@
 // the search, with its words clickable for the search.
 
 import type { MapItem } from '@torahmap/engine';
-import type { TextLanguage } from './types.ts';
-import { ENGLISH, HEBREW } from './types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from './language.ts';
 import type { ToolOnMap } from './overlays/types.ts';
 import { verseWords, wrapWordsInFragment } from './verseWords.ts';
 import { combineMarks } from './verseMarks.ts';

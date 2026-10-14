@@ -12,7 +12,7 @@ import type { UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import type { SearchTool } from '@torahmap/shell/app/search.ts';
 import { trackSearchExecute } from '@torahmap/shell/analytics.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
-import { HEBREW } from '@torahmap/shell/types.ts';
+import { HEBREW } from '@torahmap/shell/language.ts';
 import {
   getMatchingVerseTerms,
   parseSearchTerms,

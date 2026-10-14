@@ -1,6 +1,6 @@
 import type { SpatialItem } from '@torahmap/engine';
 import type { Color } from '@torahmap/utils';
-import type { TextLanguage } from '../types.ts';
+import type { TextLanguage } from '../language.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 

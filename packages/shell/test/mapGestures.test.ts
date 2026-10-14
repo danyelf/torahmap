@@ -3,14 +3,9 @@
 // while something is pinned.
 import type { MapItem } from '@torahmap/engine';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  createMapGestures,
-  escapeDoes,
-  tapDoes,
-  type MapGestures,
-} from '@torahmap/shell/mapGestures.ts';
-import { DRAG_PX } from '@torahmap/shell/frame.ts';
-import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '@torahmap/shell/constants.ts';
+import { createMapGestures, escapeDoes, tapDoes, type MapGestures } from '../src/mapGestures.ts';
+import { DRAG_PX } from '../src/frame.ts';
+import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../src/constants.ts';
 
 type Square = MapItem & { id: string };
 

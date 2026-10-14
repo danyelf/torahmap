@@ -17,7 +17,7 @@ import {
 } from './search.ts';
 import { isHebrew, splitIntoWords } from '@torahmap/shell/hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
-import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import type { MatchMode } from './matching.ts';
 
 /**

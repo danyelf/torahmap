@@ -1,4 +1,3 @@
-// src/scrollytelling/__tests__/overlayBlender.test.ts
 import { type Color } from '@torahmap/utils';
 import { SEARCH_COLORS } from '../../tanakh/search/terms.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -15,11 +14,7 @@ import type { ResolvedStoryStop } from '@torahmap/shell/scrollytelling/types.ts'
 import type { TanakhLayout } from '../../types';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhOverlay } from '../../overlays/index';
-import {
-  SAMPLE_COMMENTARY_COUNTS,
-  SAMPLE_LOADED,
-  testOverlay,
-} from '../../__tests__/helpers/fixtures';
+import { SAMPLE_COMMENTARY_COUNTS, SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
 import { getDefaultColor } from '@torahmap/shell/itemColoring.ts';
 import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '@torahmap/shell/constants.ts';
 

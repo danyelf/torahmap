@@ -139,9 +139,11 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 ## Project Structure
 
 - `src/` — the two texts and what serves them: `tanakh/` and `talmud/` (each
-  with its own search and site), the Tanakh's layout, labels and `overlays/`,
-  each page's entry (`main-tanakh.ts`, `main-talmud.ts`), and the `worker/`
-  that serves the deployed site; plus `__tests__/` for the test suite.
+  with its own search and site), the texts' types (`types.ts`), the Tanakh's
+  layout, labels, title, verse texts and `overlays/`, each page's entry
+  (`main-tanakh.ts`, `main-talmud.ts`) and which address serves which
+  (`pages.ts`), and the `worker/` that serves the deployed site; plus
+  `__tests__/` for the test suite.
 - `index.html` — every text's page, filled from its copy by `vite.config.ts`
   at the address `src/pages.ts` gives it; the Talmud's, at `/talmud/`, is
   dev-only.
@@ -151,22 +153,21 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   testing and the cross-fade, knowing nothing of either text; it touches the
   page only inside its functions and says `"sideEffects": false`, so the
   Worker, which reaches it through links and stories, bundles none of its
-  drawing), `shell` (the app shell, `createApp(text)`, with its panels, menu,
-  story column, links, popup, gestures, downloads, overlay machinery, how the
-  map is coloured and the page's half of telemetry; each module at its own
-  path, as `@torahmap/shell/main.ts`), `telemetry` (which column of an event
-  holds what, for the page that sends it and the Worker that writes it, and
-  who can have the map, which its mode column records), `overlay-catalog`
-  (each Tanakh overlay's name and link keys, and with the search's,
-  `LINK_KEYS`: a Tanakh link's), `stories` (how a story is written, and which
-  are listed and opened by default; the Tanakh's own, compiled from Markdown
-  by `generate.mjs`, at `@torahmap/stories/tanakh`), and `site` (the address
-  and view titles every text's site shares; at `@torahmap/site/tanakh`, what
-  the Tanakh's site calls things: the site's name and tagline, and how a link
-  is described; each text's own copy is its `site` slot,
-  `packages/shell/src/app/text.ts`). A package's Tanakh-only code sits behind
-  its `/tanakh` entry, so the app shell can import the rest. A package imports
-  nothing outside its own folder but the packages its `package.json` lists
+  drawing), `shell` (the app shell, `createApp(text)`: what every text's page
+  runs; each module at its own path, as `@torahmap/shell/main.ts`),
+  `telemetry` (which column of an event holds what, for the page that sends it
+  and the Worker that writes it, and who can have the map, which its mode
+  column records), `overlay-catalog` (each Tanakh overlay's name and link
+  keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (how a
+  story is written, and which are listed and opened by default; the Tanakh's
+  own, compiled from Markdown by `generate.mjs`, at
+  `@torahmap/stories/tanakh`), and `site` (the address and view titles every
+  text's site shares; at `@torahmap/site/tanakh`, what the Tanakh's site calls
+  things: the site's name and tagline, and how a link is described; each
+  text's own copy is its `site` slot, `packages/shell/src/app/text.ts`). A
+  package's Tanakh-only code sits behind its `/tanakh` entry, so the app shell
+  can import the rest. A package imports nothing outside its own folder but
+  the packages its `package.json` lists
   (`src/__tests__/unit/package-imports.test.ts`).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
@@ -234,7 +235,7 @@ The codebase follows a **functional, modular design** with clear separation of c
 - **main.ts** (`packages/shell`) is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `src/__tests__/unit/shell-boundary.test.ts` lists what counts
 - **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
 - **rendering.ts** (`packages/engine`) manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
-- **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors
+- **itemColoring.ts** (`packages/shell`) uses two-pass design: compute semantic state, then apply colors
 - **overlays/** are pluggable and easy to add
 - Any animated change to what the map shows goes through the renderer's
   picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one

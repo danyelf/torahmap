@@ -56,6 +56,7 @@ import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
 import {
   arrivedWith,
   configureAnalytics,
+  driverChangeEvent,
   downloadKbps,
   trackLoadTiming,
   reportError,
@@ -69,6 +70,8 @@ import {
   trackSquareClick,
   trackViewSettled,
   trackWebGLMissing,
+  type ExitHow,
+  type ReturnHow,
 } from './analytics.ts';
 import { linkKind, linkNamesAView, type LinkKeys, type UrlState } from '@torahmap/link';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
@@ -121,10 +124,8 @@ import {
   type ReaderDriving,
   type StoryHasMap,
 } from './scrollytelling/driver';
-import { driverChangeEvent, type ExitHow, type ReturnHow } from './telemetry/driverChange.ts';
 import type { ResolvedStoryStop } from './scrollytelling/types';
 import { showLegend, type LegendRow } from './mapLegend.ts';
-import './styles/map-title.css';
 import './styles/zoom-buttons.css';
 import './styles/frame.css';
 import './styles/verse-popup.css';

@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { renderStoryPanel, stopLabel } from '@torahmap/shell/scrollytelling/storyPanel.ts';
-import { createStoryStop as stop } from '../../__tests__/helpers/fixtures';
+import { renderStoryPanel, stopLabel } from '../src/scrollytelling/storyPanel.ts';
+import type { StoryStop } from '@torahmap/stories';
+
+const stop = (overrides: Partial<StoryStop> = {}): StoryStop => ({
+  id: 's',
+  text: 'Text.',
+  camera: 'initial',
+  overlay: null,
+  ...overrides,
+});
 
 describe('renderStoryPanel', () => {
   it('shows a heading for a titled stop', () => {

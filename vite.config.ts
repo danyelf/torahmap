@@ -68,7 +68,7 @@ export default defineConfig(({ command }) => {
   const branch = getGitBranch();
   return {
     plugins: [storiesPlugin(), pagePlugin(), talmudPlugin()],
-    // Declared in src/env.d.ts.
+    // Declared in packages/shell/src/env.d.ts.
     define: {
       __GIT_BRANCH__: JSON.stringify(branch),
       __LIVE__: JSON.stringify(command === 'build' && branch === 'main'),

@@ -4,7 +4,7 @@
 // last drawn in.
 import type { Overlay, OverlaySummary, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types';
-import type { TextLanguage } from '@torahmap/shell/types.ts';
+import type { TextLanguage } from '@torahmap/shell/language.ts';
 import {
   createOverlaySettings,
   settingsFromLink,

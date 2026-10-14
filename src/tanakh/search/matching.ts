@@ -6,7 +6,7 @@ import {
   normalizeHebrewForSearch,
   splitIntoWords,
 } from '@torahmap/shell/hebrew.ts';
-import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/types.ts';
+import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 
 export interface TextRange {
   start: number;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { STORY_DRIVING, readerTakesOver, rejoin } from '../src/scrollytelling/driver.ts';
-import { driverChangeEvent } from '../src/telemetry/driverChange.ts';
+import { driverChangeEvent } from '../src/analytics.ts';
 
 const reader = readerTakesOver(0);
 const easing = rejoin(0, 700, { x: 0, y: 0, zoom: 1 }, { colors: [] }, { colors: [] });
