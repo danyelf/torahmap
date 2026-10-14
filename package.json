@@ -48,6 +48,7 @@
     "@torahmap/overlay-catalog": "*",
     "@torahmap/site": "*",
     "@torahmap/stories": "*",
+    "@torahmap/telemetry": "*",
     "@torahmap/utils": "*"
   }
 }

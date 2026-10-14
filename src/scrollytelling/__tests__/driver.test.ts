@@ -5,7 +5,6 @@ import {
   SWIPE_EASE_MS,
   STORY_DRIVING,
   colorSource,
-  DRIVER_KINDS,
   driverKind,
   readerTakesOver,
   storyScrolled,
@@ -15,6 +14,7 @@ import {
   settle,
   type StoryHasMap,
 } from '../driver';
+import { DRIVER_KINDS } from '@torahmap/telemetry';
 import type { ResolvedStoryStop } from '../types';
 
 const camera = { x: 1, y: 2, zoom: 3 };

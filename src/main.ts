@@ -1554,7 +1554,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     sendLoadTiming();
   }
 
-  /** Sends load_timing once its fields are known; src/telemetry/schema.ts says what each marks. */
+  /** Sends load_timing once its fields are known; @torahmap/telemetry says what each marks. */
   function sendLoadTiming(): void {
     if (timingSent || !downloadsSettled) return;
     if (dataFor(searchTool, loaded) && !searchPrebuilt) return;

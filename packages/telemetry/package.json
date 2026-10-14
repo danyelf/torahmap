@@ -1,0 +1,11 @@
+{
+  "name": "@torahmap/telemetry",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/schema.ts"
+  },
+  "dependencies": {
+    "@torahmap/link": "*"
+  }
+}

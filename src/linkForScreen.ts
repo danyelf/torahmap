@@ -1,5 +1,5 @@
 import { linkKind, type UrlState } from '@torahmap/link';
-import type { DriverKind } from './scrollytelling/driver';
+import type { DriverKind } from '@torahmap/telemetry';
 import type { Frame } from './frame.ts';
 
 /**

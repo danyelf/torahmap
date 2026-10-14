@@ -7,7 +7,10 @@
 // changes what old rows mean.
 
 import type { LinkKind } from '@torahmap/link';
-import { DRIVER_KINDS, type DriverKind } from '../scrollytelling/driver.ts';
+
+/** Who has the map, the story or the reader: what the mode column holds. */
+export const DRIVER_KINDS = ['story', 'reader'] as const;
+export type DriverKind = (typeof DRIVER_KINDS)[number];
 
 const COMMON_COLUMNS = ['event', 'mode', 'country', 'device', 'host'] as const;
 type CommonColumn = (typeof COMMON_COLUMNS)[number];

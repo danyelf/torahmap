@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRIVER_KINDS } from '../../../scrollytelling/driver.ts';
-import { toDataPoint, workerDataPoint } from '../../../telemetry/schema.ts';
+import { DRIVER_KINDS, toDataPoint, workerDataPoint } from '../src/schema.ts';
 
 const context = {
   country: 'IL',
