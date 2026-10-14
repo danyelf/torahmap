@@ -35,10 +35,17 @@ function pagePlugin(): Plugin {
   };
 }
 
-// The dev server serves the Talmud's page from index.html; /talmud, without the slash, goes there too.
+const TEMPLATE = resolve(__dirname, 'index.html');
+// No such file: talmudPlugin gives the build index.html under this name.
+const TALMUD_PAGE = resolve(__dirname, `.${TALMUD_PATH}index.html`);
+
+// The Talmud's page is index.html at its own address: the dev server serves
+// it, sending /talmud, without the slash, there too, and a build reads it.
 function talmudPlugin(): Plugin {
   return {
     name: 'talmud-address',
+    resolveId: (id) => (id === TALMUD_PAGE ? id : null),
+    load: (id) => (id === TALMUD_PAGE ? readFile(TEMPLATE, 'utf8') : null),
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const [path, query] = (req.url ?? '').split('?');
@@ -51,7 +58,7 @@ function talmudPlugin(): Plugin {
         }
         if (pageAt(path).path !== TALMUD_PATH) return next();
         try {
-          const template = await readFile(resolve(__dirname, 'index.html'), 'utf8');
+          const template = await readFile(TEMPLATE, 'utf8');
           const page = `${TALMUD_PATH}index.html`;
           const html = await server.transformIndexHtml(page, template, req.originalUrl);
           res.setHeader('Content-Type', 'text/html');
@@ -67,18 +74,20 @@ function talmudPlugin(): Plugin {
 
 export default defineConfig(({ command }) => {
   const branch = getGitBranch();
+  const live = command === 'build' && branch === 'main';
   return {
     plugins: [storiesPlugin(), pagePlugin(), talmudPlugin()],
     // Declared in packages/shell/src/env.d.ts.
     define: {
       __GIT_BRANCH__: JSON.stringify(branch),
-      __LIVE__: JSON.stringify(command === 'build' && branch === 'main'),
+      __LIVE__: JSON.stringify(live),
     },
     build: {
       // The dev server also serves the test harness, since it serves any HTML
-      // file it is asked for.
+      // file it is asked for. The live site has the Tanakh's page alone; every
+      // other branch's preview has the Talmud's too.
       rollupOptions: {
-        input: { main: resolve(__dirname, 'index.html') },
+        input: { main: TEMPLATE, ...(live ? {} : { talmud: TALMUD_PAGE }) },
       },
     },
   };
