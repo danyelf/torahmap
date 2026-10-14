@@ -36,16 +36,14 @@ const WHOLE_MAP: Story = {
   },
 };
 
-// The Tanakh's numbers until the Talmud's map has its own look.
-const TALMUD_ZOOM = { min: 0.1, max: 10, start: 1 };
-
 export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
   site: talmudSite,
   link: {
     square: 'at',
     search: TALMUD_SEARCH_PARAMS,
     overlayParams: () => undefined,
-    zoom: TALMUD_ZOOM,
+    // The Tanakh's numbers, for now.
+    zoom: { min: 0.1, max: 10, start: 1 },
   },
   firstFiles: [STRUCTURE_FILE],
 
@@ -63,12 +61,12 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
     return {
       items: laid.items,
 
-      startCamera: (viewport) =>
+      startCamera: (viewport, zoom) =>
         cameraToFit(
           { minX: 0, minY: 0, maxX: laid.bounds.width, maxY: laid.bounds.height },
           viewport.width,
           viewport.height,
-          TALMUD_ZOOM,
+          zoom,
         ),
 
       baseColor: (item) => mishnahOrGemaraColor(structure, item),

@@ -478,7 +478,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  const camera = text.startCamera(mapViewport());
+  const camera = text.startCamera(mapViewport(), zoomRange);
 
   let pinnedVerse: I | null = null;
 
@@ -804,9 +804,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       state.square = pinnedVerse.id;
     }
 
-    if (camera.zoom !== zoomRange.start) {
-      state.zoom = camera.zoom;
-    }
+    state.zoom = camera.zoom;
 
     // Pan (only if no verse - verse auto-centers)
     if (!pinnedVerse) {
@@ -1127,7 +1125,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     listedStories(text.stories.list, !__LIVE__),
     parseUrlState(source.link).story ?? null,
     (stops) =>
-      text.stories.resolve(stops, initialCamera, verses, squares, mapFocus(), mapViewport()),
+      text.stories.resolve(
+        stops,
+        initialCamera,
+        verses,
+        squares,
+        mapFocus(),
+        mapViewport(),
+        zoomRange,
+      ),
   );
   storyColumn.onMove(storyMoved);
   configureAnalytics({ getStory: () => storyColumn.where().story.id });

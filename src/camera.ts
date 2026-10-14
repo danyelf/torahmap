@@ -8,7 +8,7 @@ import { DEFAULT_EASING } from '@torahmap/stories';
 export interface Camera {
   x: number; // pan x position
   y: number; // pan y position
-  zoom: number; // within the text's ZoomRange
+  zoom: number;
 }
 
 /** The map's canvas, in CSS pixels. */

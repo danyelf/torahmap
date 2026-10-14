@@ -9,7 +9,7 @@ import {
   type Camera,
 } from '../../camera';
 import { worldToScreen } from '../helpers/worldToScreen';
-const ZOOM = { min: 0.1, max: 10, start: 1 };
+import { ZOOM } from '../helpers/fixtures';
 
 const VERSE = { x: 400, y: 300, size: 6 };
 const FOCUS = { x: 300, y: 400 };

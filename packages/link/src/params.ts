@@ -198,19 +198,18 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
 
 /**
  * A text's zooms: the range its camera allows, which is the range a link may
- * carry, and the zoom its map opens at, which a link leaves out.
+ * carry, to two decimals; and `start`, the zoom a link leaves out.
  */
 export interface ZoomRange {
-  min: number;
-  max: number;
-  start: number;
+  readonly min: number;
+  readonly max: number;
+  readonly start: number;
 }
 
 const MAX_PAN_POSITION = 1000000;
 
 type TextKey = 'story' | 'stop' | 'overlay';
-export const NUMBER_KEY_NAMES = ['zoom', 'x', 'y'] as const;
-type NumberKey = (typeof NUMBER_KEY_NAMES)[number];
+type NumberKey = 'zoom' | 'x' | 'y';
 
 /**
  * The parts of a view a link names under its own keys, and the pinned square's
@@ -252,20 +251,23 @@ export const TEXT_KEYS: Readonly<Record<TextKey, ViewKey<string>>> = {
 /** A square's id, e.g. "I.Samuel.1.5" or "Berakhot.2a.1". */
 export const SQUARE_ID: ViewKey<string> = name(100);
 
-/** The link's number keys, its zoom kept to `zoom`. */
-export function numberKeys(zoom: ZoomRange): Readonly<Record<NumberKey, ViewKey<number>>> {
-  return {
-    zoom: number(2, (n) => n >= zoom.min && n <= zoom.max, zoom.start),
-    x: pan,
-    y: pan,
-  };
+export function zoomKey(zoom: ZoomRange): ViewKey<number> {
+  return number(2, (n) => n >= zoom.min && n <= zoom.max, zoom.start);
 }
 
-/** No overlay may claim one of the link's own keys. */
-export const RESERVED_KEYS: ReadonlySet<string> = new Set([
-  ...Object.keys(TEXT_KEYS),
-  ...NUMBER_KEY_NAMES,
-]);
+export const PAN_KEYS: Readonly<Record<Exclude<NumberKey, 'zoom'>, ViewKey<number>>> = {
+  x: pan,
+  y: pan,
+};
+
+/** The link's own keys. No overlay may claim one. */
+export const VIEW_KEYS: readonly (TextKey | NumberKey)[] = [
+  ...(Object.keys(TEXT_KEYS) as TextKey[]),
+  'zoom',
+  ...(Object.keys(PAN_KEYS) as NumberKey[]),
+];
+
+export const RESERVED_KEYS: ReadonlySet<string> = new Set(VIEW_KEYS);
 
 function stripHtmlTags(value: string): string {
   return value.replace(/<[^>]*>/g, '');

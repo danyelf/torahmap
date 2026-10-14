@@ -11,7 +11,7 @@ import { writeStopComment } from '@torahmap/stories';
 export function storyStopLine(name: string, query: string): string | null {
   const params = new URLSearchParams(query);
   if (params.has('story')) return null;
-  const zoom = params.get('zoom') ?? '1';
+  const zoom = params.get('zoom') ?? String(LINK_KEYS.zoom.start);
   const x = params.get('x');
   const y = params.get('y');
   const verse = params.get(LINK_KEYS.square) ?? undefined;

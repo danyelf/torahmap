@@ -11,8 +11,7 @@ import {
 } from '../../camera';
 import { worldToScreen } from '../helpers/worldToScreen';
 import type { Bounds } from '../../types';
-
-const ZOOM = { min: 0.1, max: 10, start: 1 };
+import { ZOOM } from '../helpers/fixtures';
 
 describe('camera', () => {
   describe('createCamera', () => {
@@ -20,8 +19,6 @@ describe('camera', () => {
       const bounds: Bounds = { width: 1000, height: 800 };
       const view = { width: 1540, height: 1080 };
       const camera = createCamera(view, bounds, ZOOM, 1920);
-
-      expect(camera.zoom).toBe(1);
       // Genesis 1:1 is the rightmost verse, so its right edge is the map's.
       const corner = worldToScreen({ x: bounds.width, y: 0 }, camera, view);
       expect(corner.x).toBeCloseTo(1920 - 320, 10);
@@ -34,27 +31,31 @@ describe('camera', () => {
       const corner = worldToScreen({ x: 500, y: 0 }, createCamera(view, bounds, ZOOM), view);
       expect(corner.x).toBeCloseTo(800 - 320, 10);
     });
+
+    it("opens at the text's start zoom", () => {
+      const view = { width: 800, height: 600 };
+      const camera = createCamera(view, { width: 500, height: 400 }, { ...ZOOM, start: 0.5 });
+      expect(camera.zoom).toBe(0.5);
+    });
   });
 
   describe('clampZoom', () => {
-    const range = { min: 0.1, max: 10, start: 1 };
-
     it('clamps values below minimum to the minimum', () => {
-      expect(clampZoom(0.05, range)).toBe(0.1);
-      expect(clampZoom(0, range)).toBe(0.1);
-      expect(clampZoom(-1, range)).toBe(0.1);
+      expect(clampZoom(0.05, ZOOM)).toBe(0.1);
+      expect(clampZoom(0, ZOOM)).toBe(0.1);
+      expect(clampZoom(-1, ZOOM)).toBe(0.1);
     });
 
     it('clamps values above maximum to the maximum', () => {
-      expect(clampZoom(10.5, range)).toBe(10.0);
-      expect(clampZoom(100, range)).toBe(10.0);
+      expect(clampZoom(10.5, ZOOM)).toBe(10.0);
+      expect(clampZoom(100, ZOOM)).toBe(10.0);
     });
 
     it('returns values within range unchanged, boundaries included', () => {
-      expect(clampZoom(0.1, range)).toBe(0.1);
-      expect(clampZoom(5.0, range)).toBe(5.0);
-      expect(clampZoom(10.0, range)).toBe(10.0);
-      expect(clampZoom(0.10000001, range)).toBe(0.10000001);
+      expect(clampZoom(0.1, ZOOM)).toBe(0.1);
+      expect(clampZoom(5.0, ZOOM)).toBe(5.0);
+      expect(clampZoom(10.0, ZOOM)).toBe(10.0);
+      expect(clampZoom(0.10000001, ZOOM)).toBe(0.10000001);
     });
 
     it("keeps to the text's own range", () => {

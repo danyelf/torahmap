@@ -5,8 +5,9 @@ import {
   RESERVED_KEYS,
   SQUARE_ID,
   TEXT_KEYS,
-  NUMBER_KEY_NAMES,
-  numberKeys,
+  PAN_KEYS,
+  VIEW_KEYS,
+  zoomKey,
   type ViewKey,
   type ZoomRange,
   type OverlayParams,
@@ -22,7 +23,7 @@ export interface UrlState extends ViewFields {
   searchParams?: UrlParamValues;
 }
 
-/** The keys a text's links use beside the view's own. */
+/** The keys a text's links use beside the view's own, and the zooms they may carry. */
 export interface LinkKeys {
   /** The pinned square's key. */
   square: string;
@@ -44,9 +45,7 @@ function takenKeys(keys: LinkKeys): ReadonlySet<string> {
  * ever populated alongside an overlay, which is checked directly.
  */
 export function linkNamesAView(state: UrlState): boolean {
-  const named = [...keysOf(TEXT_KEYS), ...NUMBER_KEY_NAMES, 'square' as const].some(
-    (key) => state[key] !== undefined,
-  );
+  const named = [...VIEW_KEYS, 'square' as const].some((key) => state[key] !== undefined);
   return named || state.searchParams !== undefined;
 }
 
@@ -67,7 +66,7 @@ export function readLink(query: string | URLSearchParams, keys: LinkKeys): UrlSt
 
   const state: UrlState = { overlayParams: {} };
   readKeys(state, TEXT_KEYS, params);
-  readKeys(state, numberKeys(keys.zoom), params);
+  readKeys(state, { zoom: zoomKey(keys.zoom), ...PAN_KEYS }, params);
   const square = params.get(keys.square);
   const id = square ? SQUARE_ID.parse(square) : null;
   if (id !== null) state.square = id;
@@ -129,7 +128,7 @@ export function writeLink(state: UrlState, keys: LinkKeys): string {
   writeKeys(params, view, TEXT_KEYS);
   const square = view.square && SQUARE_ID.format(view.square);
   if (square) params.set(keys.square, square);
-  writeKeys(params, view, numberKeys(keys.zoom));
+  writeKeys(params, view, { zoom: zoomKey(keys.zoom), ...PAN_KEYS });
 
   // Overlay-specific parameters, written through unchanged. Overlays omit
   // their own defaults, so whatever arrives here belongs in the URL.
