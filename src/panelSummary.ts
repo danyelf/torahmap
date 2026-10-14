@@ -1,6 +1,6 @@
 // A legend row: the overlay's name and what its own `summary` says it is
 // showing.
-import { escapeHtml } from './utils/html.ts';
+import { escapeHtml } from '@torahmap/utils';
 import type { OverlaySummary } from './overlays/types.ts';
 
 const MAX_SWATCHES = 6;

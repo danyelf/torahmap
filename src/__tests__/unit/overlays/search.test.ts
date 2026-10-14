@@ -1,9 +1,8 @@
+import { type Color, SEARCH_COLORS } from '@torahmap/utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../tanakh/search/index';
 import { configure, type SearchSettings } from '../../../tanakh/search/index.ts';
-import type { Color } from '../../../overlays/types';
 import { parseSearchTerms } from '../../../tanakh/search/search';
-import { SEARCH_COLORS } from '../../../utils/color';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';

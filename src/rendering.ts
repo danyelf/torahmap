@@ -1,5 +1,6 @@
 // Rendering module - handles WebGL rendering state and operations
 
+import type { Color } from '@torahmap/utils';
 import {
   initWebGL,
   createProgram,
@@ -16,7 +17,7 @@ import {
   type Picture,
 } from './geometry';
 import { buildOutlineGeometry } from './outline';
-import type { Color, SpatialItem } from './types';
+import type { SpatialItem } from './types';
 import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera';
 import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, SEARCH_WITH_OVERLAY } from './constants';

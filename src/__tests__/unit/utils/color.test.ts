@@ -1,8 +1,13 @@
+import {
+  rgbToHsl,
+  hslToRgb,
+  interpolateGradient,
+  type ColorStop,
+  type Color,
+} from '@torahmap/utils';
 import { describe, it, expect } from 'vitest';
-import { rgbToHsl, hslToRgb, interpolateGradient, type ColorStop } from '../../../utils/color';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import { TEST_COLORS } from '../../helpers/fixtures';
-import type { Color } from '../../../overlays/types';
 
 describe('interpolateGradient', () => {
   const simpleGradient: ColorStop[] = [

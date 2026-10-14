@@ -1,8 +1,8 @@
 // A Talmud segment's colour while no tool colours it: Mishnah or Gemara.
 
-import type { Color, TalmudIdentity } from '../types.ts';
+import { type Color, seededRandom } from '@torahmap/utils';
+import type { TalmudIdentity } from '../types.ts';
 import { isSegmentMishnah, type TalmudStructure } from './data.ts';
-import { seededRandom } from '../utils/random.ts';
 import { segmentHashId } from './segmentHash.ts';
 import { MISHNAH_BASE_COLOR, GEMARA_BASE_COLOR, BRIGHTNESS_JITTER } from './constants.ts';
 

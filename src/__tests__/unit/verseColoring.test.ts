@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { TanakhOverlay } from '../../overlays/index';
 import { getDefaultColor, overlayColorsFor, layerToRecompute } from '../../itemColoring';
-import * as randomModule from '../../utils/random';
+import * as randomModule from '@torahmap/utils';
 import { createVerse, testOverlay } from '../helpers/fixtures';
 
 describe('itemColoring', () => {

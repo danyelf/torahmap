@@ -1,8 +1,8 @@
 // Every panel: its title, which a phone shows and a desktop leaves to the
 // column's header, then its body. Controls in a panel take a shared class.
+import { escapeHtml } from '@torahmap/utils';
 import './styles/controls.css';
 import { PANEL_TITLES, type Panel } from './frame.ts';
-import { escapeHtml } from './utils/html.ts';
 
 /** The control classes every panel shares (src/styles/controls.css). */
 export const CONTROL = {

@@ -5,13 +5,13 @@
 // name a term by its position in the searched list. Those are the same number
 // until a term is removed, and then they are not.
 
+import { SEARCH_COLORS } from '@torahmap/utils';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../tanakh/search/index';
 import { configure } from '../../../tanakh/search/index.ts';
 import { createVerse } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';
-import { SEARCH_COLORS } from '../../../utils/color';
 import type { VerseTexts } from '../../../verseTexts';
 import { searchDataFor } from '../../helpers/searchData';
 

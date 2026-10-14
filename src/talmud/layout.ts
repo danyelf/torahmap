@@ -8,9 +8,9 @@
 // - Final coordinates have minX >= 0 (shifted into the first quadrant for
 //   compatibility with the existing camera/render pipeline).
 
+import { seededRandom } from '@torahmap/utils';
 import type { SpatialItem, TalmudIdentity } from '../types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
-import { seededRandom } from '../utils/random.ts';
 import { segmentHashId } from './segmentHash.ts';
 import { bookFromUrl, bookToUrl } from '@torahmap/link';
 import {

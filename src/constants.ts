@@ -1,6 +1,5 @@
+import type { Color } from '@torahmap/utils';
 // Global constants for the application
-
-import type { Color } from './types.ts';
 
 /**
  * Fetch a data file from public/data/.

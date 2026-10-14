@@ -1,5 +1,4 @@
-import { interpolateGradient, type ColorStop } from './color.ts';
-import type { Color } from '../overlays/types.ts';
+import { interpolateGradient, type Color, type ColorStop } from './color.ts';
 
 /** Maps a value onto the 0..1 position it occupies on a scale. */
 export type Transform = (value: number) => number;

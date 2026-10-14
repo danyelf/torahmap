@@ -1,7 +1,5 @@
 // Shared types for Torah Map
-
-/** Red, green and blue, each 0 to 1. */
-export type Color = [number, number, number];
+import type { Color } from '@torahmap/utils';
 
 /** A verse's colour, or its stripes. */
 export type VerseColor = Color | Color[];

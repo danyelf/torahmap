@@ -1,8 +1,8 @@
+import type { Color } from '@torahmap/utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import type { Color } from '../../../overlays/types';
 import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
 // Off the menu for now, so it is not in the registry.
 import {

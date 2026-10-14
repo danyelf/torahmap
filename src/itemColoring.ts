@@ -1,12 +1,11 @@
 // Colour computation for spatial items
 
-import type { Color, SpatialItem, VerseColor } from './types';
+import { type Color, seededRandom, brighten } from '@torahmap/utils';
+import type { SpatialItem, VerseColor } from './types';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { Picture } from './geometry';
 import type { ColorSource } from './scrollytelling/driver';
 import { sameItem } from './items.ts';
-import { seededRandom } from './utils/random';
-import { brighten } from './utils/color';
 import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY, DIMMED_GREY } from './constants';
 
 /**

@@ -1,6 +1,7 @@
 // Build the per-verse buffer from spatial items (identity-agnostic)
 
-import type { Color, SpatialItem, VerseColor } from './types.ts';
+import type { Color } from '@torahmap/utils';
+import type { SpatialItem, VerseColor } from './types.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 // Helper to check if color is an array of colors (a verse split between them)

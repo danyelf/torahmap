@@ -149,7 +149,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   dev-only.
 - `packages/` — shared code, kept free of the page so the Worker can import
   it, as npm workspace packages: `link` (reading and writing links, under
-  each text's keys), `overlay-catalog` (each Tanakh overlay's name and link
+  each text's keys), `utils` (colours, scales, timing helpers and a
+  passage's Sefaria link, depending on nothing), `overlay-catalog` (each Tanakh overlay's name and link
   keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (how
   a story is written, and which are listed and opened by default; the
   Tanakh's own, compiled from Markdown by `generate.mjs`, at
@@ -158,7 +159,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   calls things: the site's name and tagline, and how a link is described;
   each text's own copy is its `site` slot, `src/app/text.ts`). A package's
   Tanakh-only code sits behind its `/tanakh` entry, so the app shell can
-  import the rest.
+  import the rest. A package imports nothing outside its own folder but the
+  packages its `package.json` lists (`src/__tests__/unit/package-imports.test.ts`).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud

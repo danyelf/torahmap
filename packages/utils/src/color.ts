@@ -1,4 +1,5 @@
-import type { Color } from '../overlays/types.ts';
+/** Red, green and blue, each 0 to 1. */
+export type Color = [number, number, number];
 
 // Fixed palette for multi-term search (cyan, orange, lime, pink, yellow)
 export const SEARCH_COLORS: Color[] = [

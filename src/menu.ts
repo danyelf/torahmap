@@ -1,4 +1,4 @@
-import { escapeHtml } from './utils/html.ts';
+import { escapeHtml } from '@torahmap/utils';
 import { PANELS, type Panel } from './frame.ts';
 import type { Site } from './app/text.ts';
 

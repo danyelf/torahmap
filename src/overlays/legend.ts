@@ -1,8 +1,6 @@
 // Small pieces of legend markup for overlays that build their own HTML.
 
-import type { Scale } from '../utils/scale.ts';
-import type { Color } from './types.ts';
-import { colorToCss, interpolateGradient } from '../utils/color.ts';
+import { type Scale, type Color, colorToCss, interpolateGradient } from '@torahmap/utils';
 import './legend.css';
 
 /** Samples across the strip: enough to read as continuous, few enough to stay short. */

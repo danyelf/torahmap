@@ -1,3 +1,4 @@
+import type { Color } from '@torahmap/utils';
 import { describe, it, expect } from 'vitest';
 import {
   combineLayers,
@@ -6,7 +7,6 @@ import {
   toolsPicture,
 } from '../../itemColoring';
 import { DIMMED_GREY, SEARCH_WITH_OVERLAY } from '../../constants';
-import type { Color } from '../../overlays/types';
 import { createVerse, testOverlay } from '../helpers/fixtures';
 
 const CYAN: Color = [0.1, 0.7, 0.8];

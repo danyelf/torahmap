@@ -1,5 +1,5 @@
+import { seededRandom } from '../src/index.ts';
 import { describe, it, expect } from 'vitest';
-import { seededRandom } from '../../../utils/random';
 
 describe('seededRandom', () => {
   it('returns a number between 0 and 1', () => {

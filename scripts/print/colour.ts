@@ -1,10 +1,8 @@
+import { hslToRgb, seededRandom } from '@torahmap/utils';
 // Colours for ink on cream paper. The site's colour wheel is evenly spaced by
 // the numbers, so on paper its yellows glare and its blues go dark; the
 // readings here are evenly spaced in OKLCH, where equal numbers look equally
 // bright.
-
-import { hslToRgb } from '../../src/utils/color.ts';
-import { seededRandom } from '../../src/utils/random.ts';
 
 export const PAPER = '#f3ecdc';
 export const INK = '#3a2e24';

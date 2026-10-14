@@ -1,6 +1,6 @@
+import { whenIdle } from '@torahmap/utils';
 import type { Overlay } from './types.ts';
 import { dataFor, type Loaded } from '../dataFiles.ts';
-import { whenIdle } from '../utils/idle.ts';
 
 /**
  * Call the prebuild of each overlay whose data `after` completes, with that

@@ -1,7 +1,6 @@
+import { escapeHtml } from '@torahmap/utils';
 // Rewrites the shipped index.html's <title> and its description and og:
 // tags, as text, to name one link.
-
-import { escapeHtml } from '../utils/html.ts';
 
 export interface PageTags {
   title: string;

@@ -6,6 +6,7 @@
 // that choice the moment an earlier term is edited, because every later index
 // shifts and the choice lands silently on a different word.
 
+import { SEARCH_COLORS } from '@torahmap/utils';
 import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
 import {
   resultsForVerseSets,
@@ -16,7 +17,6 @@ import {
 } from './search.ts';
 import { isHebrew, splitIntoWords } from '../../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
-import { SEARCH_COLORS } from '../../utils/color.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
 import type { MatchMode } from './matching.ts';
 

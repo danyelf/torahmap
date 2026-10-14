@@ -1,5 +1,6 @@
 // The app shell: the map, its panels, story, popup and links, for whichever text it is given.
 
+import { debounce } from '@torahmap/utils';
 import type { MapText, Site } from './app/text.ts';
 import { SEARCH_BOX_ID } from './app/search.ts';
 import { mapPoint } from './mapPoint.ts';
@@ -43,7 +44,6 @@ import {
 import { linkKind, linkNamesAView, type LinkKeys, type UrlState } from '@torahmap/link';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
-import { debounce } from './utils/debounce.ts';
 import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';

@@ -3,8 +3,19 @@
 // The presentation half of the trop feature. What the marks are and which
 // verses carry them is in trop/marks.ts.
 
+import {
+  type Color,
+  lingeringHover,
+  colorToCss,
+  type ColorStop,
+  scale,
+  LINEAR,
+  LOG,
+  type Scale,
+  memoByValue,
+} from '@torahmap/utils';
 import './trop.css';
-import type { Overlay, Color, UrlParamValues, SettingsUpdate } from './types.ts';
+import type { Overlay, UrlParamValues, SettingsUpdate } from './types.ts';
 import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../types.ts';
 import { HEBREW } from '../types.ts';
 import { verseId } from '@torahmap/link/tanakh';
@@ -16,11 +27,7 @@ import {
   getRarityTier,
   type TropIndexEntry,
 } from './trop/marks.ts';
-import { lingeringHover } from '../utils/hover.ts';
-import { colorToCss, type ColorStop } from '../utils/color.ts';
-import { scale, LINEAR, LOG, type Scale } from '../utils/scale.ts';
 import { axisGradient, legendCaption, legendRow } from './legend.ts';
-import { memoByValue } from '../utils/memo.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
 /**

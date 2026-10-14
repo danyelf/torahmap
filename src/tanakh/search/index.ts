@@ -6,8 +6,9 @@
 // modules of their own — termRows.ts, resultsList.ts and highlight.ts — and
 // each is handed what it needs. Which row the reader is working in is
 // presentation, not a setting, so it stays here.
+import { type Color, SEARCH_COLORS, colorToCss, memoByValue } from '@torahmap/utils';
 import './search.css';
-import type { Color, UrlParamValues } from '../../overlays/types.ts';
+import type { UrlParamValues } from '../../overlays/types.ts';
 import type { SearchTool } from '../../app/search.ts';
 import { trackSearchExecute } from '../../analytics.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
@@ -47,10 +48,8 @@ import {
   MAX_TERMS,
   type SearchTerm,
 } from './terms.ts';
-import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { isSearchableWord } from '../../hebrew.ts';
 import { SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
-import { memoByValue } from '../../utils/memo.ts';
 
 /**
  * A list of terms, each with its own text, its own meanings, its own colour and

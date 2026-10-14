@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { IMPORT } from '../helpers/imports.ts';
 
 const ROOT = resolve(__dirname, '../../..');
 
@@ -29,8 +30,6 @@ const OVERLAY_BASE = [
   'src/overlays/prebuild.ts',
 ];
 
-// `from './x'`, `import './x'` and `import('./x')`, or the same of one of our packages.
-const IMPORT = /(?:\bfrom|\bimport)\s*\(?\s*['"](\.[^'"]+|@torahmap\/[^'"]+)['"]/g;
 // A stylesheet or picture: `./frame.css`, `./mapTitle.svg?raw`.
 const ASSET = /\.(?!ts$)\w+(\?\w*)?$/;
 
