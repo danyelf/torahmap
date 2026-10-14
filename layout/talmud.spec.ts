@@ -42,6 +42,19 @@ for (const zoom of [0.4, 1, 2]) {
   });
 }
 
+for (const [zoom, labelled] of [
+  [0.35, false],
+  [0.5, true],
+] as const) {
+  test(`at zoom ${zoom}, the dapim are numbered only if the tractates are named`, async ({
+    page,
+  }) => {
+    await openMap(page, `at=Berakhot.2a.1&zoom=${zoom}`, TALMUD);
+    expect((await boxes(page, '#talmud-daf-labels > *')).length > 0).toBe(labelled);
+    expect((await boxes(page, '#book-labels .book-label')).length > 0).toBe(labelled);
+  });
+}
+
 test('the Talmud opens with every seder’s label on the map', async ({ page }) => {
   await openMap(page, '', TALMUD);
   const map = (await boxes(page, '#canvas'))[0];
