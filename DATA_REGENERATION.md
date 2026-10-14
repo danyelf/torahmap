@@ -251,5 +251,5 @@ npx tsx scripts/talmud/bundle.ts
 The download keeps what is already on disk; `--force` fetches it again.
 
 Which segments are Mishnah comes from the bold מתני׳ and גמ׳ markers, read from
-both editions Sefaria has, Wikisource and Steinsaltz (`merged.json`), since
+both editions Sefaria has, Wikisource and the William Davidson Edition (`merged.json`), since
 each misses markers the other has.

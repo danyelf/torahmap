@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { countMarker, totalSegments, shapeMatches, verifyTractate } from '../verify-coverage.ts';
+import { countMarkers, totalSegments, shapeMatches, verifyTractate } from '../verify-coverage.ts';
 
 const FIXTURES = join(__dirname, '../fixtures');
 
@@ -9,22 +9,17 @@ function loadFixture(name: string): unknown {
   return JSON.parse(readFileSync(join(FIXTURES, name), 'utf-8'));
 }
 
-describe('countMarker', () => {
-  it('counts matnitin markers', () => {
+describe('countMarkers', () => {
+  it('counts the bold marker that opens a segment, as the bundle reads it', () => {
     const text = [
-      ['מתני׳ one', 'two'],
-      ['three', 'מתני׳ four'],
+      ['<big><strong>מתני׳</strong></big> one', 'two'],
+      ['three', "<big><strong>גמ'</strong></big> four"],
     ];
-    expect(countMarker(text, 'מתני׳')).toBe(2);
+    expect(countMarkers(text)).toEqual({ matnitin: 1, gemara: 1 });
   });
 
-  it('returns 0 when marker absent', () => {
-    expect(countMarker([['x', 'y']], 'מתני׳')).toBe(0);
-  });
-
-  it('counts markers embedded mid-segment', () => {
-    const text = [['prefix מתני׳ suffix']];
-    expect(countMarker(text, 'מתני׳')).toBe(1);
+  it('does not count the word in running text', () => {
+    expect(countMarkers([['אמר מתני׳ מני ר״ש היא']])).toEqual({ matnitin: 0, gemara: 0 });
   });
 });
 
@@ -91,7 +86,7 @@ describe('verifyTractate', () => {
   });
 
   it('passes when marker counts are within the plausibility range', () => {
-    // Fixture has 2 matnitin, 2 gemara, 1 hadran. MARKER_MIN = 3, so this
+    // Fixture has 2 matnitin and 2 gemara. MARKER_MIN = 3, so this
     // would soft-fail on mishnah+gemara counts.
     const ws = loadFixture('fake-tractate-clean.json');
     const md = ws;
@@ -100,18 +95,17 @@ describe('verifyTractate', () => {
     expect(r.status).toBe('soft-fail');
     expect(r.markers.matnitin).toBe(2);
     expect(r.markers.gemara).toBe(2);
-    expect(r.markers.hadran).toBe(1);
   });
 
   it('passes when everything is plausible', () => {
     // Build a synthetic tractate with plausible marker counts.
     const amudim: string[][] = [];
     for (let i = 0; i < 15; i++) {
-      amudim.push([`מתני׳ mishnah ${i}`, `גמ׳ gemara ${i}`]);
+      amudim.push([
+        `<big><strong>מתני׳</strong></big> mishnah ${i}`,
+        `<big><strong>גמ׳</strong></big> gemara ${i}`,
+      ]);
     }
-    amudim[4].push('הדרן 1');
-    amudim[9].push('הדרן 2');
-    amudim[14].push('הדרן 3');
 
     const ws = { text: amudim };
     const md = { text: amudim.map((a) => a.map((s) => s)) };
@@ -121,6 +115,5 @@ describe('verifyTractate', () => {
     expect(r.failures).toEqual([]);
     expect(r.markers.matnitin).toBe(15);
     expect(r.markers.gemara).toBe(15);
-    expect(r.markers.hadran).toBe(3);
   });
 });

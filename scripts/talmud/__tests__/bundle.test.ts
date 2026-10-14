@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  walkMarkers,
-  stripHtml,
-  stripNikkudAndSeparators,
-  parseWholeRef,
-  processTractate,
-} from '../bundle.ts';
+import { stripHtml, parseWholeRef, processTractate } from '../bundle.ts';
+import { stripNikkudAndSeparators, walkMarkers } from '../markers.ts';
 
 describe('walkMarkers', () => {
   // Real markers always carry a <big> wrap on either the marker word
@@ -159,7 +154,7 @@ describe('stripNikkudAndSeparators', () => {
 });
 
 describe('walkMarkers across two editions', () => {
-  // The Steinsaltz edition drops a bare מתני׳ before a bold first word,
+  // The Davidson edition drops a bare מתני׳ before a bold first word,
   // so a chapter's opening Mishnah carries a marker only in Wikisource.
   it('takes a Mishnah marker that only the first edition has', () => {
     const wikisource = [
@@ -262,7 +257,14 @@ describe('processTractate', () => {
   }
 
   it('keeps mid-amud boundary amud in the previous perek', () => {
-    const { structure } = processTractate('Seder Test', 'Test', fakeWikisource(), fakeSchema());
+    const wikisource = fakeWikisource();
+    const { structure } = processTractate(
+      'Seder Test',
+      'Test',
+      wikisource,
+      fakeSchema(),
+      wikisource,
+    );
     const amud2b = structure.amudim.find((a) => a.daf === 2 && a.amud === 'b')!;
     expect(amud2b.perekIdx).toBe(0); // boundary amud belongs to prev perek
     expect(amud2b.perekBoundaryAt).toBe(2); // 0-indexed: segs [0..2)=perek 0, [2..)=perek 1
@@ -278,7 +280,13 @@ describe('processTractate', () => {
     const schema = {
       alts: { Chapters: { nodes: [{ heTitle: 'פרק א', wholeRef: 'Test 2b:1-4a:3' }] } },
     };
-    const { structure, text } = processTractate('Seder Test', 'Test', wikisource, schema);
+    const { structure, text } = processTractate(
+      'Seder Test',
+      'Test',
+      wikisource,
+      schema,
+      wikisource,
+    );
     expect(structure.amudim.map((a) => `${a.daf}${a.amud}:${a.segmentCount}`)).toEqual([
       '2b:5',
       '3a:0',
@@ -298,7 +306,7 @@ describe('processTractate', () => {
       'a4',
       'a5',
     ];
-    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema());
+    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema(), wikisource);
     expect(text.amudim[0].slice(0, 3)).toEqual(['הכל כשרים', 'מתני׳ דלא כרבי', 'סוף']);
   });
 
@@ -311,7 +319,7 @@ describe('processTractate', () => {
       'a4',
       '<big><strong>הדרן עלך כל כתבי</strong></big>',
     ];
-    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema());
+    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema(), wikisource);
     expect(text.amudim[0][1]).toBe('והדרן אמרו');
     expect(text.amudim[0][4]).toBe('הדרן עלך כל כתבי');
   });
