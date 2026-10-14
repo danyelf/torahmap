@@ -1,7 +1,7 @@
 # One App, Two Texts
 
 **Date:** 2026-10-03
-**Status:** Design, approved 2026-10-03; project 1's order revised 2026-10-04 to put the shell first. Covers project 1 in full; projects 2–4 in outline.
+**Status:** Design, approved 2026-10-03; project 1's order revised 2026-10-04 to put the shell first. Project 1 done 2026-10-13 (#342). Project 2 planned step by step 2026-10-13; projects 3 and 4 in outline.
 
 The Talmud map becomes a sibling site of torahmap: the same menu, panels,
 stories, popup and links, with its own text, layout and overlays. It may grow
@@ -19,8 +19,9 @@ change of 2026-09-26. This design shares the app instead.
    both the Tanakh and the Talmud boot through it. The Talmud page is dev-only
    and plain, and is not built for production until project 3. The Tanakh site
    behaves exactly as before.
-2. **Move into packages:** `packages/utils`, `packages/engine`,
-   `packages/shell`, `apps/tanakh`, `apps/talmud`.
+2. **Split into components:** `packages/utils`, `packages/engine`,
+   `packages/telemetry`, `packages/shell`, and `apps/tanakh`, `apps/talmud`
+   and `apps/worker`.
 3. **The Talmud's look and feel, and going live** at `/talmud/`. Its own
    design round.
 4. **Talmud search.** Its own design round.
@@ -113,8 +114,8 @@ Notes on the slots:
   reader is in the stories, lives in `src/scrollytelling/storyColumn.ts` (see
   `2026-10-06-story-mode-design.md`).
 - **Generic types** stop at the edge: `createApp` and overlays are typed by the
-  text's square; the renderer, camera, hit testing, colour layers and mouse
-  state see `MapItem` only. No shared type defaults to `TanakhIdentity`.
+  text's square; the renderer, camera, hit testing and colour layers see
+  `MapItem` only. No shared type defaults to `TanakhIdentity`.
 
 ### What the shell takes on
 
@@ -191,22 +192,60 @@ compared with the live site.
 
 ## Project 2: packages
 
-One pull request moves the files; the package boundaries then enforce the
-line, and the boundary test retires.
+The code is split into components, each a package that lists what it uses.
+Something is a component when more than one thing uses it today: the Worker
+describes links without the map, and the wall prints draw the Tanakh's layout
+without the app.
 
-- `packages/utils`: knows nothing of the map or either text. `color`, `random`,
-  `scale`, `memo`, `html`, `debounce`, `idle`, the Sefaria link builder; the
-  general parts of `hebrew.ts` move in when the Talmud first needs them.
-- `packages/engine`: draws squares. `rendering`, `webgl`, `geometry`,
-  `outline`, `camera`, `hitDetection`, `mapPoint`, `mouseState`, `touchState`,
-  `itemColoring`, the cross-fade maths, layout helpers both layouts need
-  (bounds, right-to-left, jitter, wrapping), and the label-placement helper.
-- `packages/shell`: `createApp` and the panels, menu, stories, links, popup,
-  downloads, overlay machinery and client telemetry.
-- `apps/tanakh`, `apps/talmud`: each text and everything only it knows.
-- `@torahmap/link` and `@torahmap/stories` stay shared, without their verse
-  helpers; `@torahmap/site` and `@torahmap/overlay-catalog` become one per
-  site, both imported by the Worker.
+A package imports only packages its `package.json` lists, by name, and nothing
+outside its own folder by a relative path. npm workspaces do not stop either:
+every package is linked into the root `node_modules`. So a test checks every
+package's imports, and that check, not the folder layout, keeps the line.
+
+One pull request per step, each built, tested and checked as in project 1.
+Tests move with their code into the package's `test/` folder.
+
+1. **Zoom limits per text.** Each text gives its smallest, largest and default
+   zoom; the camera clamps to them, and a link's zoom is checked against them,
+   handed to the link as its keys are. The Talmud's map is several times the
+   Tanakh's, so its limits differ.
+2. **`packages/utils`**, which knows nothing of the map or either text:
+   `color`, `random`, `scale`, `memo`, `html`, `debounce`, `idle`, `hover`, the
+   Sefaria link builder, and the `Color` type. The import check arrives here,
+   for every package.
+3. **`packages/engine`**, which draws squares and depends on nothing:
+   `rendering`, `webgl`, `geometry`, `outline`, `camera`, `hitDetection`,
+   `mapPoint`, `touchState`, `items`, and the cross-fade maths
+   (`interpolation`, `colorBlending`). It owns the camera position and easing,
+   which `@torahmap/stories` then imports from it. `src/types.ts` and
+   `src/constants.ts` split: the general types and the drawing numbers go to
+   the engine, each text's types to that text, the rest to the shell.
+4. **`packages/telemetry`**: the shape of an event, which the page sends and
+   the Worker receives (`src/telemetry/schema.ts`). The list of story driver
+   kinds it records moves in with it.
+5. **`packages/shell`**: `createApp` and the panels, menu, story column,
+   links, popup, gestures (`mapGestures`), downloads, overlay machinery, how
+   the map is coloured (`itemColoring`: the engine draws a picture, the shell
+   decides it) and the page's half of telemetry.
+6. **The apps.** `apps/tanakh`, `apps/talmud` and `apps/worker`, and two
+   Tanakh components the app shares with others:
+   - **its layout and data**: `layout.ts`, its types, the book list and the
+     data files' names, used by the app and the wall prints;
+   - **its site**: name, tagline, link keys, overlay names and how a link is
+     described (today `@torahmap/overlay-catalog` and `@torahmap/site/tanakh`),
+     used by the app and the Worker.
+
+   The import check then covers the apps, and the boundary test retires.
+
+`@torahmap/link` and `@torahmap/stories` stay shared, the Tanakh's parts behind
+their `/tanakh` entries.
+
+Left for project 3, when the Talmud's layout is redone and its site goes live:
+layout helpers both layouts need (today the Talmud's shares only
+`seededRandom` with the Tanakh's), the label-placement helper, and the list of
+which site is at which address (`src/pages.ts`), which the Worker needs only
+then. The general parts of `hebrew.ts` move to utils when the Talmud first
+needs them.
 
 ## Projects 3 and 4
 
