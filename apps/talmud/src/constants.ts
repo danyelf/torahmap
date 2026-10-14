@@ -1,5 +1,7 @@
 // Talmud-specific layout and color constants.
 
+import type { SectionLabelSize } from '@torahmap/shell/mapLabels.ts';
+
 // --- Layout constants ---
 
 export const SEGMENT_SIZE = 6; // px per segment square
@@ -25,6 +27,21 @@ export const SEDER_ORDER: readonly string[] = [
   'Seder Kodashim',
   'Seder Tahorot',
 ];
+
+// Each seder's label, beside its shelf.
+export const SEDER_NAMES: Readonly<Record<string, { he: string; en: string }>> = {
+  'Seder Zeraim': { he: 'זרעים', en: 'Zeraim' },
+  'Seder Moed': { he: 'מועד', en: 'Moed' },
+  'Seder Nashim': { he: 'נשים', en: 'Nashim' },
+  'Seder Nezikin': { he: 'נזיקין', en: 'Nezikin' },
+  'Seder Kodashim': { he: 'קדשים', en: 'Kodashim' },
+  'Seder Tahorot': { he: 'טהרות', en: 'Tahorot' },
+};
+
+// The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a
+// shelf that is 600 from the next; Nezikin's, 390 of 505. The gap clears the daf
+// labels beside each shelf's first tractate, which show from zoom 0.3.
+export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 
 // --- Base colors (muted, similar, "rainfall over both") ---
 // MISHNAH = slate blue. GEMARA = a warm parchment, so it reads as coloured

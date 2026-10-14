@@ -21,7 +21,7 @@ export const HEBREW_LABEL_FONT = '"David Libre", system-ui, sans-serif';
  * font-size-adjust is not a substitute: its x-height and cap-height metrics
  * describe the Latin glyphs these faces also carry, not their Hebrew.
  *
- * Applied outside the zoom clamps — an em on the Hebrew span in labels.ts, a
+ * Applied outside the zoom clamps — an em on the Hebrew span in mapLabels.ts, a
  * multiplier on the clamped size in talmudLabels.ts — so MIN and MAX go on
  * meaning the size a label appears to be.
  */

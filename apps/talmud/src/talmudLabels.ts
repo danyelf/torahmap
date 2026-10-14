@@ -1,11 +1,8 @@
-// Tractate name labels + daf labels for the Talmud map.
-//
-// Uses HTML div overlays positioned via pan/zoom (same approach as
-// apps/tanakh/src/labels.ts for Tanakh book labels).
-//
-// Tractate labels are always visible; daf labels toggle by zoom level.
+// The Talmud map's own marks: a tint behind each seder, and the perek and daf
+// labels, which show by zoom level. Tractates and sedarim are named by the
+// shell's map labels, as books and sections are on the Tanakh's.
 
-import type { TractateBlock, SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
+import type { SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
   DAF_LABEL_ZOOM_LOW,
   DAF_LABEL_ZOOM_MID,
@@ -28,8 +25,6 @@ interface LabelSize {
 }
 
 const PEREK_SIZE: LabelSize = { base: 9, min: 7, max: 18 };
-const TRACTATE_SIZE: LabelSize = { base: 12, min: 6, max: 36 };
-const SEDER_SIZE: LabelSize = { base: 28, min: 14, max: 96 };
 
 const DAF_LABEL_FONT_SIZE = 9;
 
@@ -38,27 +33,14 @@ const DAF_LABEL_FONT_SIZE = 9;
 const hebrewLabelFontSize = ({ base, min, max }: LabelSize, zoom: number) =>
   Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE;
 
-// Transliterated → Hebrew display fallback for seder names.
-const SEDER_HEBREW: Record<string, string> = {
-  'Seder Zeraim': 'סדר זרעים',
-  'Seder Moed': 'סדר מועד',
-  'Seder Nashim': 'סדר נשים',
-  'Seder Nezikin': 'סדר נזיקין',
-  'Seder Kodashim': 'סדר קדשים',
-  'Seder Tahorot': 'סדר טהרות',
-};
-
 export interface TalmudLabelState {
   container: HTMLDivElement;
   sederBackgrounds: HTMLDivElement;
-  sederLabels: HTMLDivElement;
-  tractateLabels: HTMLDivElement;
   perekLabels: HTMLDivElement;
   dafLabels: HTMLDivElement;
 }
 
 export function createTalmudLabels(
-  tractateBlocks: TractateBlock[],
   sederBlocks: SederBlock[],
   perekAnchors: PerekAnchor[],
   dafRows: DafRowAnchor[],
@@ -89,61 +71,6 @@ export function createTalmudLabels(
     rect.dataset.maxX = String(sb.maxX);
     rect.dataset.maxY = String(sb.maxY);
     sederBackgrounds.appendChild(rect);
-  }
-
-  // --- Seder labels: large transliterated names, anchored to the right of
-  // each shelf (RTL reading). Drawn at low opacity so they read as section
-  // headings without dominating.
-  const sederLabels = document.createElement('div');
-  sederLabels.id = 'talmud-seder-labels';
-  for (const sb of sederBlocks) {
-    const label = document.createElement('div');
-    label.style.cssText = `
-      position:absolute;
-      color:#cfd6e6;
-      opacity:0.55;
-      font-family:${HEBREW_LABEL_FONT};
-      font-weight:700;
-      letter-spacing:0.04em;
-      text-shadow:0 1px 4px rgba(0,0,0,0.7);
-      white-space:nowrap;
-      line-height:1;
-      direction:rtl;
-      transform:translate(0, -100%);
-    `;
-    const heb = SEDER_HEBREW[sb.name] ?? sb.name;
-    label.textContent = heb;
-    // Anchor at the right edge of the shelf (which is also the right edge of
-    // the rightmost tractate, after the +dx world shift).
-    label.dataset.worldX = String(sb.maxX);
-    label.dataset.worldY = String(sb.minY);
-    sederLabels.appendChild(label);
-  }
-
-  const tractateLabels = document.createElement('div');
-  tractateLabels.id = 'talmud-tractate-labels';
-
-  for (const block of tractateBlocks) {
-    const label = document.createElement('div');
-    label.style.cssText = `
-      position:absolute;
-      color:#eee;
-      font-family:${HEBREW_LABEL_FONT};
-      font-weight:700;
-      text-shadow:0 1px 3px rgba(0,0,0,0.8);
-      white-space:nowrap;
-      line-height:1;
-      direction:rtl;
-      transform:translate(-50%, -100%);
-    `;
-    label.textContent = block.hebrewName || block.name;
-    // Anchor at the BOTTOM of the tractate label band (just above the
-    // segments). With translate(-50%, -100%) this puts the label entirely
-    // inside the seder background rect — which matches block.minY..maxY.
-    // Anchoring at minY would put it ABOVE the seder bg, which is wrong.
-    label.dataset.worldX = String(block.labelAnchor.x);
-    label.dataset.worldY = String(block.labelAnchor.y + 6);
-    tractateLabels.appendChild(label);
   }
 
   // --- Perek (section) labels: small Hebrew names of each perek,
@@ -200,8 +127,6 @@ export function createTalmudLabels(
   }
 
   container.appendChild(sederBackgrounds);
-  container.appendChild(sederLabels);
-  container.appendChild(tractateLabels);
   container.appendChild(perekLabels);
   container.appendChild(dafLabelsEl);
   parent.appendChild(container);
@@ -209,8 +134,6 @@ export function createTalmudLabels(
   return {
     container,
     sederBackgrounds,
-    sederLabels,
-    tractateLabels,
     perekLabels,
     dafLabels: dafLabelsEl,
   };
@@ -235,30 +158,6 @@ export function updateTalmudLabelPositions(
     el.style.top = `${screenY}px`;
     el.style.width = `${screenW}px`;
     el.style.height = `${screenH}px`;
-  }
-
-  // Seder labels: always visible, large.
-  const sederFontSize = hebrewLabelFontSize(SEDER_SIZE, zoom);
-  for (const el of Array.from(state.sederLabels.children) as HTMLElement[]) {
-    const worldX = parseFloat(el.dataset.worldX || '0');
-    const worldY = parseFloat(el.dataset.worldY || '0');
-    const screenX = (worldX + pan.x) * zoom;
-    const screenY = (worldY + pan.y) * zoom;
-    el.style.left = `${screenX}px`;
-    el.style.top = `${screenY}px`;
-    el.style.fontSize = `${sederFontSize}px`;
-  }
-
-  // Tractate labels: always visible, scaled with zoom.
-  const fontSize = hebrewLabelFontSize(TRACTATE_SIZE, zoom);
-  for (const el of Array.from(state.tractateLabels.children) as HTMLElement[]) {
-    const worldX = parseFloat(el.dataset.worldX || '0');
-    const worldY = parseFloat(el.dataset.worldY || '0');
-    const screenX = (worldX + pan.x) * zoom;
-    const screenY = (worldY + pan.y) * zoom;
-    el.style.left = `${screenX}px`;
-    el.style.top = `${screenY}px`;
-    el.style.fontSize = `${fontSize}px`;
   }
 
   // Perek labels: visible at mid+ zoom, scaled with zoom.

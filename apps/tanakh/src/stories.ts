@@ -15,7 +15,7 @@ import type { ResolvedStoryStop } from '@torahmap/shell/scrollytelling/types.ts'
 import type { Book, TanakhLayout } from './types.ts';
 import { bookFromUrl } from '@torahmap/link';
 import { getBookSection } from './books.ts';
-import { SECTION_LABEL_REACH } from './labels.ts';
+import { sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 
 function isPlaces(cam: CameraRef): cam is { kind: 'places'; names: string[] } {
   return typeof cam === 'object' && 'kind' in cam && cam.kind === 'places';
@@ -82,7 +82,7 @@ function placeBox(
   return {
     minX: Math.min(...inside.map((v) => v.x)),
     minY: Math.min(...inside.map((v) => v.y)),
-    maxX: Math.max(...inside.map((v) => v.x + v.size)) + SECTION_LABEL_REACH,
+    maxX: Math.max(...inside.map((v) => v.x + v.size)) + sectionLabelReach(),
     maxY: Math.max(...inside.map((v) => v.y + v.size)),
   };
 }

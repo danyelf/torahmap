@@ -4,9 +4,12 @@ import {
   createBookLabels,
   createSectionLabels,
   updateLabelPositions,
-} from '../../src/labels';
+} from '@torahmap/shell/mapLabels.ts';
 import { createVerse, SAMPLE_VERSES } from '../helpers/index';
 import { HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
+import type { TanakhLayout } from '../../src/types';
+
+const book = (v: TanakhLayout) => v.book;
 
 // Hebrew names for test use (matching tanakh-structure.json hebrewName field)
 const HEBREW_NAMES: Record<string, string> = {
@@ -71,7 +74,7 @@ describe('labels', () => {
     describe('basic functionality', () => {
       it('creates a labels container element', () => {
         const verses = [createVerse()];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         expect(labels).toBeInstanceOf(HTMLDivElement);
         expect(labels.id).toBe('book-labels');
@@ -79,14 +82,14 @@ describe('labels', () => {
 
       it('appends labels container to parent container', () => {
         const verses = [createVerse()];
-        createBookLabels(verses, container);
+        createBookLabels(verses, container, book);
 
         const labelsInDom = container.querySelector('#book-labels');
         expect(labelsInDom).not.toBeNull();
       });
 
       it('handles empty verse array', () => {
-        const labels = createBookLabels([], container);
+        const labels = createBookLabels([], container, book);
 
         expect(labels.children.length).toBe(0);
       });
@@ -100,7 +103,7 @@ describe('labels', () => {
           createVerse({ book: 'Exodus' }),
           createVerse({ book: 'Isaiah' }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         // Should have 3 labels for 3 unique books
         expect(labels.children.length).toBe(3);
@@ -112,7 +115,7 @@ describe('labels', () => {
           createVerse({ book: 'Exodus' }),
           createVerse({ book: 'Psalms' }),
         ];
-        const labels = createBookLabels(verses, container, HEBREW_NAMES);
+        const labels = createBookLabels(verses, container, book, HEBREW_NAMES);
 
         const labelTexts = Array.from(labels.children).map((child) => child.textContent);
         // Labels contain Hebrew name + English name
@@ -124,7 +127,7 @@ describe('labels', () => {
 
       it('applies correct styling to each label', () => {
         const verses = [createVerse({ book: 'Genesis' })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.style.position).toBe('absolute');
@@ -141,7 +144,7 @@ describe('labels', () => {
 
       it('sets the Hebrew larger than the label it sits in', () => {
         const verses = [createVerse({ book: 'Genesis' })];
-        const labels = createBookLabels(verses, container, HEBREW_NAMES);
+        const labels = createBookLabels(verses, container, book, HEBREW_NAMES);
 
         const label = labels.children[0] as HTMLElement;
         const heSpan = label.querySelector('.book-label-he') as HTMLElement;
@@ -151,7 +154,7 @@ describe('labels', () => {
 
       it('stores book name in dataset', () => {
         const verses = [createVerse({ book: 'Genesis' })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.bookName).toBe('Genesis');
@@ -161,7 +164,7 @@ describe('labels', () => {
     describe('book bounds calculation', () => {
       it('stores maxX (x + size) as rightX for single verse', () => {
         const verses = [createVerse({ book: 'Genesis', x: 100 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.rightX).toBe('106'); // 100 + size(6)
@@ -169,7 +172,7 @@ describe('labels', () => {
 
       it('stores minY as topY for single verse', () => {
         const verses = [createVerse({ book: 'Genesis', y: 200 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.topY).toBe('200');
@@ -181,7 +184,7 @@ describe('labels', () => {
           createVerse({ book: 'Genesis', x: 50 }),
           createVerse({ book: 'Genesis', x: 150 }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.rightX).toBe('156'); // max(106, 56, 156)
@@ -193,7 +196,7 @@ describe('labels', () => {
           createVerse({ book: 'Genesis', y: 50 }), // topmost
           createVerse({ book: 'Genesis', y: 150 }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.topY).toBe('50');
@@ -206,7 +209,7 @@ describe('labels', () => {
           createVerse({ book: 'Exodus', x: 100, y: 30 }),
           createVerse({ book: 'Exodus', x: 110, y: 25 }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const genesisLabel = Array.from(labels.children).find(
           (child) => (child as HTMLElement).dataset.bookName === 'Genesis',
@@ -224,7 +227,7 @@ describe('labels', () => {
 
       it('handles verses at negative coordinates', () => {
         const verses = [createVerse({ book: 'Genesis', x: -50, y: -100 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.rightX).toBe('-44'); // -50 + 6
@@ -233,7 +236,7 @@ describe('labels', () => {
 
       it('handles verses at zero coordinates', () => {
         const verses = [createVerse({ book: 'Genesis', x: 0, y: 0 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.rightX).toBe('6'); // 0 + 6
@@ -242,7 +245,7 @@ describe('labels', () => {
 
       it('handles very large coordinates', () => {
         const verses = [createVerse({ book: 'Genesis', x: 10000, y: 20000 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.rightX).toBe('10006'); // 10000 + 6
@@ -257,7 +260,7 @@ describe('labels', () => {
           createVerse({ book: 'Exodus', x: 100, y: 20 }),
           createVerse({ book: 'Leviticus', x: 200, y: 20 }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         expect(labels.children.length).toBe(3);
         const bookNames = Array.from(labels.children).map(
@@ -274,7 +277,7 @@ describe('labels', () => {
           createVerse({ book: 'Isaiah', x: 100, y: 500 }),
           createVerse({ book: 'Jeremiah', x: 200, y: 500 }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         expect(labels.children.length).toBe(3);
         const bookNames = Array.from(labels.children).map(
@@ -291,7 +294,7 @@ describe('labels', () => {
           createVerse({ book: 'Proverbs', x: 100, y: 1000 }),
           createVerse({ book: 'Job', x: 200, y: 1000 }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         expect(labels.children.length).toBe(3);
         const bookNames = Array.from(labels.children).map(
@@ -308,7 +311,7 @@ describe('labels', () => {
           createVerse({ book: 'Isaiah', x: 10, y: 500 }), // Nevi'im
           createVerse({ book: 'Psalms', x: 10, y: 1000 }), // Ketuvim
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         expect(labels.children.length).toBe(3);
       });
@@ -317,7 +320,7 @@ describe('labels', () => {
     describe('edge cases', () => {
       it('handles book with single verse', () => {
         const verses = [createVerse({ book: 'Obadiah', x: 100, y: 200 })];
-        const labels = createBookLabels(verses, container, HEBREW_NAMES);
+        const labels = createBookLabels(verses, container, book, HEBREW_NAMES);
 
         expect(labels.children.length).toBe(1);
         const label = labels.children[0] as HTMLElement;
@@ -329,7 +332,7 @@ describe('labels', () => {
         const verses = Array.from({ length: 100 }, (_, i) =>
           createVerse({ book: 'Psalms', x: (i % 10) * 10, y: Math.floor(i / 10) * 10 }),
         );
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         expect(labels.children.length).toBe(1);
         const label = labels.children[0] as HTMLElement;
@@ -338,7 +341,7 @@ describe('labels', () => {
 
       it('handles books with spaces in names', () => {
         const verses = [createVerse({ book: 'Song of Songs', x: 100, y: 200 })];
-        const labels = createBookLabels(verses, container, HEBREW_NAMES);
+        const labels = createBookLabels(verses, container, book, HEBREW_NAMES);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.textContent).toContain('Song of Songs');
@@ -348,7 +351,7 @@ describe('labels', () => {
 
       it('handles books with hyphens in names', () => {
         const verses = [createVerse({ book: 'I-Chronicles', x: 100, y: 200 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.textContent).toContain('I-Chronicles');
@@ -356,7 +359,7 @@ describe('labels', () => {
 
       it('handles fractional coordinates', () => {
         const verses = [createVerse({ book: 'Genesis', x: 10.5, y: 20.7 })];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         const label = labels.children[0] as HTMLElement;
         expect(label.dataset.rightX).toBe('16.5'); // 10.5 + 6
@@ -369,7 +372,7 @@ describe('labels', () => {
           createVerse({ book: 'Amos', x: 20, y: 30 }),
           createVerse({ book: 'Micah', x: 30, y: 40 }),
         ];
-        const labels = createBookLabels(verses, container);
+        const labels = createBookLabels(verses, container, book);
 
         // The order in which labels are created matches first occurrence
         const firstLabel = labels.children[0] as HTMLElement;
@@ -384,7 +387,7 @@ describe('labels', () => {
 
     describe('integration with SAMPLE_VERSES', () => {
       it('correctly processes sample verses spanning multiple books', () => {
-        const labels = createBookLabels(SAMPLE_VERSES, container);
+        const labels = createBookLabels(SAMPLE_VERSES, container, book);
 
         // SAMPLE_VERSES includes Genesis, Exodus, Isaiah, Psalms
         expect(labels.children.length).toBeGreaterThanOrEqual(3);
@@ -405,7 +408,7 @@ describe('labels', () => {
         createVerse({ book: 'Genesis', x: 100, y: 200 }),
         createVerse({ book: 'Exodus', x: 300, y: 400 }),
       ];
-      labelsContainer = createBookLabels(verses, container);
+      labelsContainer = createBookLabels(verses, container, book);
     });
 
     describe('basic positioning', () => {
@@ -774,7 +777,7 @@ describe('labels', () => {
         const verses = Array.from({ length: 100 }, (_, i) =>
           createVerse({ book: `Book${i}`, x: i * 10, y: i * 20 }),
         );
-        const manyLabels = createBookLabels(verses, container);
+        const manyLabels = createBookLabels(verses, container, book);
 
         updateLabelPositions(manyLabels, { x: 50, y: 100 }, 2);
 
@@ -791,11 +794,15 @@ describe('labels', () => {
       createVerse({ book: 'Exodus', x: 100, y: 40, size: 6 }),
       createVerse({ book: 'Joshua', x: 50, y: 200, size: 6 }),
     ];
-    const sectionOf = (book: string) => (book === 'Joshua' ? 'neviim' : 'torah');
+    const sectionOf = (v: TanakhLayout) => (v.book === 'Joshua' ? 'neviim' : 'torah');
+    const names = {
+      torah: { he: 'תורה', en: 'Five Books' },
+      neviim: { he: 'נביאים', en: 'Prophets' },
+    };
 
     function sectionLabels(): { labels: HTMLDivElement; sections: HTMLElement[] } {
-      const labels = createBookLabels(verses, container);
-      createSectionLabels(verses, labels, sectionOf);
+      const labels = createBookLabels(verses, container, book);
+      createSectionLabels(verses, labels, sectionOf, names);
       return { labels, sections: [...labels.querySelectorAll<HTMLElement>('[data-section]')] };
     }
 
@@ -813,6 +820,16 @@ describe('labels', () => {
       expect(sections[0].style.left).toBe('122px');
       expect(sections[0].style.top).toBe(`${calculateExpectedY(0, 5, 1)}px`);
       expect(sections[0].style.transform).toContain('rotate(90deg)');
+    });
+
+    it('takes a size and gap of its own', () => {
+      const labels = createBookLabels(verses, container, book);
+      createSectionLabels(verses, labels, sectionOf, names, { fontSize: 40, gapEm: 1.5 });
+      updateLabelPositions(labels, { x: 0, y: 0 }, 1);
+      const torah = labels.querySelector<HTMLElement>('[data-section="torah"]')!;
+      // Right edge 106, plus one and a half ems of 40px.
+      expect(torah.style.left).toBe('166px');
+      expect(torah.style.fontSize).toBe('40px');
     });
 
     it('shrinks without a floor, but stops growing when zoomed in', () => {

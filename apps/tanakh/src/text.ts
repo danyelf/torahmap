@@ -1,7 +1,12 @@
 // The Tanakh as a text for the app shell.
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
-import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
+import {
+  createBookLabels,
+  createSectionLabels,
+  updateLabelPositions,
+  type SectionName,
+} from '@torahmap/shell/mapLabels.ts';
 import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from './verseTexts.ts';
 import { initBookData } from './books.ts';
@@ -18,6 +23,12 @@ import type { TanakhLayout } from './types.ts';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { tanakhSite } from './site.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
+
+const SECTION_NAMES: Record<string, SectionName> = {
+  torah: { he: 'תורה', en: 'Five Books' },
+  neviim: { he: 'נביאים', en: 'Prophets' },
+  ketuvim: { he: 'כתובים', en: 'Writings' },
+};
 
 export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
   site: tanakhSite,
@@ -42,8 +53,13 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
 
       labels(container) {
         const hebrewNames = Object.fromEntries(data.books.map((b) => [b.name, b.hebrewName]));
-        const bookLabels = createBookLabels(items, container, hebrewNames);
-        createSectionLabels(items, bookLabels, (book) => sections.get(book) ?? 'neviim');
+        const bookLabels = createBookLabels(items, container, (v) => v.book, hebrewNames);
+        createSectionLabels(
+          items,
+          bookLabels,
+          (v) => sections.get(v.book) ?? 'neviim',
+          SECTION_NAMES,
+        );
         const mapTitle = createMapTitle(items, container, (book) => sections.get(book) === 'torah');
         return (offset, zoom) => {
           updateLabelPositions(bookLabels, offset, zoom);

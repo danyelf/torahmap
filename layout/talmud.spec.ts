@@ -1,15 +1,29 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
 import { expect, test } from '@playwright/test';
-import { allLoaded, boxes, openMap } from './page.ts';
+import { allLoaded, boxes, openMap, shown } from './page.ts';
+import { outsideOf } from './geometry.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 
 test('the Talmud map draws, with its tractate labels over it', async ({ page }) => {
   await openMap(page, '', TALMUD);
   const map = (await boxes(page, '#canvas'))[0];
-  const labels = await boxes(page, '#talmud-tractate-labels > *');
+  const labels = await boxes(page, '#book-labels .book-label');
   expect(labels).not.toEqual([]);
   for (const label of labels) expect(label.x).toBeGreaterThanOrEqual(map.x);
+});
+
+test('the Talmud opens with every seder’s label on the map', async ({ page }) => {
+  await openMap(page, '', TALMUD);
+  const map = (await boxes(page, '#canvas'))[0];
+  const sedarim = await shown(page, '#book-labels [data-section]');
+  expect(sedarim).not.toEqual([]);
+  expect(
+    outsideOf(
+      sedarim.map((s) => s.full),
+      map,
+    ),
+  ).toEqual([]);
 });
 
 test('the dev server fills the Talmud’s page with its own copy', async ({ request }, info) => {

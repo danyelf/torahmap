@@ -61,7 +61,6 @@ export interface TractateBlock {
   minY: number;
   maxX: number;
   maxY: number;
-  labelAnchor: { x: number; y: number };
 }
 
 export interface SederBlock {
@@ -453,10 +452,6 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
         minY: shelfY,
         maxX: tractateRightEdge,
         maxY: tractateBottom,
-        labelAnchor: {
-          x: tractateRightEdge - t.width / 2,
-          y: shelfY + TRACTATE_LABEL_HEIGHT / 2,
-        },
       });
 
       // Translate the tractate's local perek anchors into world coords.
@@ -503,7 +498,6 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   for (const block of tractateBlocks) {
     block.minX += dx;
     block.maxX += dx;
-    block.labelAnchor.x += dx;
   }
   for (const block of sederBlocks) {
     block.minX += dx;
