@@ -1,13 +1,32 @@
+import { describe, it, expect } from 'vitest';
 import {
   rgbToHsl,
   hslToRgb,
   interpolateGradient,
   type ColorStop,
   type Color,
-} from '@torahmap/utils';
-import { describe, it, expect } from 'vitest';
-import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
-import { TEST_COLORS } from '../../helpers/fixtures';
+} from '../src/index.ts';
+
+const RED: Color = [1, 0, 0];
+const GREEN: Color = [0, 1, 0];
+const BLUE: Color = [0, 0, 1];
+const WHITE: Color = [1, 1, 1];
+const BLACK: Color = [0, 0, 0];
+const GRAY: Color = [0.5, 0.5, 0.5];
+const YELLOW: Color = [1, 1, 0];
+
+function assertValidColor(color: number[]) {
+  expect(color).toHaveLength(3);
+  for (const channel of color) {
+    expect(channel).toBeGreaterThanOrEqual(0);
+    expect(channel).toBeLessThanOrEqual(1);
+  }
+}
+
+function assertColorEquals(actual: number[], expected: number[], epsilon: number) {
+  expect(actual).toHaveLength(3);
+  actual.forEach((channel, i) => expect(Math.abs(channel - expected[i])).toBeLessThan(epsilon));
+}
 
 describe('interpolateGradient', () => {
   const simpleGradient: ColorStop[] = [
@@ -119,49 +138,49 @@ describe('interpolateGradient', () => {
 
 describe('rgbToHsl', () => {
   it('converts pure red correctly', () => {
-    const hsl = rgbToHsl(TEST_COLORS.RED);
+    const hsl = rgbToHsl(RED);
     expect(hsl.h).toBeCloseTo(0, 1);
     expect(hsl.s).toBeCloseTo(1, 2);
     expect(hsl.l).toBeCloseTo(0.5, 2);
   });
 
   it('converts pure green correctly', () => {
-    const hsl = rgbToHsl(TEST_COLORS.GREEN);
+    const hsl = rgbToHsl(GREEN);
     expect(hsl.h).toBeCloseTo(120, 1);
     expect(hsl.s).toBeCloseTo(1, 2);
     expect(hsl.l).toBeCloseTo(0.5, 2);
   });
 
   it('converts pure blue correctly', () => {
-    const hsl = rgbToHsl(TEST_COLORS.BLUE);
+    const hsl = rgbToHsl(BLUE);
     expect(hsl.h).toBeCloseTo(240, 1);
     expect(hsl.s).toBeCloseTo(1, 2);
     expect(hsl.l).toBeCloseTo(0.5, 2);
   });
 
   it('converts white correctly', () => {
-    const hsl = rgbToHsl(TEST_COLORS.WHITE);
+    const hsl = rgbToHsl(WHITE);
     expect(hsl.h).toBe(0); // Hue is undefined for achromatic, but implementation returns 0
     expect(hsl.s).toBe(0);
     expect(hsl.l).toBeCloseTo(1, 2);
   });
 
   it('converts black correctly', () => {
-    const hsl = rgbToHsl(TEST_COLORS.BLACK);
+    const hsl = rgbToHsl(BLACK);
     expect(hsl.h).toBe(0);
     expect(hsl.s).toBe(0);
     expect(hsl.l).toBe(0);
   });
 
   it('converts gray correctly', () => {
-    const hsl = rgbToHsl(TEST_COLORS.GRAY);
+    const hsl = rgbToHsl(GRAY);
     expect(hsl.h).toBe(0);
     expect(hsl.s).toBe(0);
     expect(hsl.l).toBeCloseTo(0.5, 2);
   });
 
   it('converts yellow correctly', () => {
-    const hsl = rgbToHsl(TEST_COLORS.YELLOW);
+    const hsl = rgbToHsl(YELLOW);
     expect(hsl.h).toBeCloseTo(60, 1);
     expect(hsl.s).toBeCloseTo(1, 2);
     expect(hsl.l).toBeCloseTo(0.5, 2);
@@ -238,32 +257,32 @@ describe('rgbToHsl', () => {
 describe('hslToRgb', () => {
   it('converts pure red HSL to RGB correctly', () => {
     const rgb = hslToRgb({ h: 0, s: 1, l: 0.5 });
-    assertColorEquals(rgb, TEST_COLORS.RED, 0.01);
+    assertColorEquals(rgb, RED, 0.01);
   });
 
   it('converts pure green HSL to RGB correctly', () => {
     const rgb = hslToRgb({ h: 120, s: 1, l: 0.5 });
-    assertColorEquals(rgb, TEST_COLORS.GREEN, 0.01);
+    assertColorEquals(rgb, GREEN, 0.01);
   });
 
   it('converts pure blue HSL to RGB correctly', () => {
     const rgb = hslToRgb({ h: 240, s: 1, l: 0.5 });
-    assertColorEquals(rgb, TEST_COLORS.BLUE, 0.01);
+    assertColorEquals(rgb, BLUE, 0.01);
   });
 
   it('converts white HSL to RGB correctly', () => {
     const rgb = hslToRgb({ h: 0, s: 0, l: 1 });
-    assertColorEquals(rgb, TEST_COLORS.WHITE, 0.01);
+    assertColorEquals(rgb, WHITE, 0.01);
   });
 
   it('converts black HSL to RGB correctly', () => {
     const rgb = hslToRgb({ h: 0, s: 0, l: 0 });
-    assertColorEquals(rgb, TEST_COLORS.BLACK, 0.01);
+    assertColorEquals(rgb, BLACK, 0.01);
   });
 
   it('converts gray HSL to RGB correctly', () => {
     const rgb = hslToRgb({ h: 0, s: 0, l: 0.5 });
-    assertColorEquals(rgb, TEST_COLORS.GRAY, 0.01);
+    assertColorEquals(rgb, GRAY, 0.01);
   });
 
   it('returns grayscale for zero saturation', () => {
@@ -288,8 +307,8 @@ describe('hslToRgb', () => {
     const black = hslToRgb({ h: 180, s: 1, l: 0 });
     const white = hslToRgb({ h: 180, s: 1, l: 1 });
 
-    assertColorEquals(black, TEST_COLORS.BLACK, 0.01);
-    assertColorEquals(white, TEST_COLORS.WHITE, 0.01);
+    assertColorEquals(black, BLACK, 0.01);
+    assertColorEquals(white, WHITE, 0.01);
   });
 
   it('produces valid RGB values for all valid HSL inputs', () => {

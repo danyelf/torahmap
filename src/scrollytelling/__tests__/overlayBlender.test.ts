@@ -1,5 +1,6 @@
 // src/scrollytelling/__tests__/overlayBlender.test.ts
-import { type Color, SEARCH_COLORS } from '@torahmap/utils';
+import { type Color } from '@torahmap/utils';
+import { SEARCH_COLORS } from '../../tanakh/search/terms.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { pictureForStop, computeBlendedColors, stopTools } from '../overlayBlender';
 import { searchTool } from '../../tanakh/search/index';

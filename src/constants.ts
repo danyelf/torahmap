@@ -1,5 +1,6 @@
-import type { Color } from '@torahmap/utils';
 // Global constants for the application
+
+import type { Color } from '@torahmap/utils';
 
 /**
  * Fetch a data file from public/data/.

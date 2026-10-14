@@ -5,7 +5,7 @@
 // name a term by its position in the searched list. Those are the same number
 // until a term is removed, and then they are not.
 
-import { SEARCH_COLORS } from '@torahmap/utils';
+import { SEARCH_COLORS } from '../../../tanakh/search/terms.ts';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../tanakh/search/index';
 import { configure } from '../../../tanakh/search/index.ts';

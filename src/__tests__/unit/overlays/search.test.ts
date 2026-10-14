@@ -1,4 +1,5 @@
-import { type Color, SEARCH_COLORS } from '@torahmap/utils';
+import { type Color } from '@torahmap/utils';
+import { SEARCH_COLORS } from '../../../tanakh/search/terms.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../tanakh/search/index';
 import { configure, type SearchSettings } from '../../../tanakh/search/index.ts';

@@ -1,4 +1,3 @@
-import { escapeHtml } from '@torahmap/utils';
 // Where the map's data comes from, and how that is shown under "Sources and
 // credits" in the About & settings panel.
 //
@@ -12,6 +11,8 @@ import { escapeHtml } from '@torahmap/utils';
 // import Overlay, since overlays/types.ts imports Credit from here and that
 // would close a loop; the renderer takes the smallest shape it actually needs
 // instead.
+
+import { escapeHtml } from '@torahmap/utils';
 
 export interface Credit {
   /** How the source should be named. Some licences require a specific wording. */

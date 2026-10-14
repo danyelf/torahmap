@@ -1,4 +1,4 @@
-import { SEARCH_COLORS } from '@torahmap/utils';
+import { SEARCH_COLORS } from '../../tanakh/search/terms.ts';
 import { describe, it, expect } from 'vitest';
 import { buildDictionary, buildTextIndex, type LexiconFile } from '../../tanakh/search/search';
 import { searchTool } from '../../tanakh/search/index';
