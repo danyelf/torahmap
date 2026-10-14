@@ -13,8 +13,8 @@ import {
   driverAfterLanding,
   settle,
   type StoryHasMap,
-} from '../driver';
-import type { ResolvedStoryStop } from '../types';
+} from '../src/scrollytelling/driver.ts';
+import type { ResolvedStoryStop } from '../src/scrollytelling/types.ts';
 
 const camera = { x: 1, y: 2, zoom: 3 };
 const easeBack = (now: number, duration = REJOIN_EASE_MS): StoryHasMap =>

@@ -3,7 +3,7 @@
 
 import { memoByValue } from '@torahmap/utils';
 import type { VerseTexts } from '../../verseTexts';
-import { HEBREW } from '../../types.ts';
+import { HEBREW } from '@torahmap/shell/types.ts';
 import { verseId } from '@torahmap/link/tanakh';
 
 import {
@@ -11,9 +11,9 @@ import {
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './constants.ts';
-import { isSearchableWord, normalizeHebrewForSearch } from '../../hebrew.ts';
+import { isSearchableWord, normalizeHebrewForSearch } from '@torahmap/shell/hebrew.ts';
 import { foldForMatching, matchRangesInFolded, type MatchMode } from './matching.ts';
-import type { TextLanguage } from '../../types.ts';
+import type { TextLanguage } from '@torahmap/shell/types.ts';
 
 export interface TermMatch {
   termIndex: number;

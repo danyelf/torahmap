@@ -6,7 +6,7 @@ async function about(): Promise<HTMLDivElement> {
   const { registerAllOverlays } = await import('../../overlays/index');
   registerAllOverlays();
   const { getAllOverlays } = await import('../../overlays/registry');
-  const { aboutHtml } = await import('../../aboutPanel');
+  const { aboutHtml } = await import('@torahmap/shell/aboutPanel.ts');
   const { tanakhSite } = await import('../../tanakh/site');
   const div = document.createElement('div');
   div.innerHTML = aboutHtml(tanakhSite, getAllOverlays());
@@ -49,7 +49,7 @@ describe('the About panel', () => {
   });
 
   it('is about the text it is given, with that text’s credits', async () => {
-    const { aboutHtml } = await import('../../aboutPanel');
+    const { aboutHtml } = await import('@torahmap/shell/aboutPanel.ts');
     const { talmudSite } = await import('../../talmud/site');
     const div = document.createElement('div');
     div.innerHTML = aboutHtml(talmudSite, []);

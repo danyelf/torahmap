@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { TanakhTool } from '../../overlays/index';
-import { getSidebarElements, setWordClickHandler, type SidebarElements } from '../../sidebar';
+import {
+  getSidebarElements,
+  setWordClickHandler,
+  type SidebarElements,
+} from '@torahmap/shell/sidebar.ts';
 import { getSefariaUrl } from '../../tanakh/popup';
 import { showVerse } from '../helpers/tanakhPopup';
 import type { VerseTexts } from '../../verseTexts';

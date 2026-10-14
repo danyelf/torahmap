@@ -1,7 +1,7 @@
 // Checked by `npm run typecheck`, never run: an overlay names its files exactly
 // when it takes data.
-import { optional } from '../dataFiles.ts';
-import type { Overlay } from './types.ts';
+import { optional } from '@torahmap/shell/dataFiles.ts';
+import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 
 const colour = { getVerseColor: () => null, colorsFor: () => [] };
 

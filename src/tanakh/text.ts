@@ -5,17 +5,17 @@ import { createBookLabels, createSectionLabels, updateLabelPositions } from '../
 import { createMapTitle, updateMapTitlePosition } from '../mapTitle.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from '../verseTexts.ts';
 import { initBookData } from '../constants/books.ts';
-import { getDefaultColor } from '../itemColoring.ts';
+import { getDefaultColor } from '@torahmap/shell/itemColoring.ts';
 import { popupText } from './popup.ts';
 import { createCamera } from './camera.ts';
-import { reportError } from '../analytics.ts';
+import { reportError } from '@torahmap/shell/analytics.ts';
 import { STORIES } from '@torahmap/stories/tanakh';
 import { resolveStops } from './stories.ts';
 import { registerAllOverlays, getAllOverlays } from '../overlays/index.ts';
 import { configure as configureSearch, searchTool, type SearchSettings } from './search/index.ts';
 import { listenForWordClicks } from './search/wordClicks.ts';
 import type { TanakhLayout } from '../types.ts';
-import type { MapText } from '../app/text.ts';
+import type { MapText } from '@torahmap/shell/app/text.ts';
 import { tanakhSite } from './site.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 

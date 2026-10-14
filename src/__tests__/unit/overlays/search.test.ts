@@ -12,7 +12,7 @@ import type { TanakhLayout } from '../../../types';
 import type { VerseTexts } from '../../../verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { realSearchData, searchDataFor } from '../../helpers/searchData';
-import { configureAnalytics } from '../../../analytics.ts';
+import { configureAnalytics } from '@torahmap/shell/analytics.ts';
 
 const searchOverlay = hostOverlay(searchTool, searchDataFor({}));
 

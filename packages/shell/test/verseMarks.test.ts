@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { combineMarks } from '../../verseMarks';
+import { combineMarks } from '../src/verseMarks.ts';
 
 const TEXT = 'In the beginning';
 

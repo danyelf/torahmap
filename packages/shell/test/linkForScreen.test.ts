@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { linkForScreen, pushes } from '../../linkForScreen';
+import { linkForScreen, pushes } from '../src/linkForScreen.ts';
 
 const view = { verse: 'Genesis.12.1', overlay: 'commentary', overlayParams: {} };
 const otherView = { verse: 'Genesis.17.5', overlay: 'commentary', overlayParams: {} };

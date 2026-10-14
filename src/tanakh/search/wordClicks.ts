@@ -1,15 +1,15 @@
 // A click on a Hebrew word in the verse popup opens its menu, which adds the
 // word, or one of its meanings, to the search.
 
-import type { Shell } from '../../app/text.ts';
+import type { Shell } from '@torahmap/shell/app/text.ts';
 import type { TanakhLayout } from '../../types.ts';
-import { dataFor } from '../../dataFiles.ts';
-import { stripNikkud } from '../../hebrew.ts';
+import { dataFor } from '@torahmap/shell/dataFiles.ts';
+import { stripNikkud } from '@torahmap/shell/hebrew.ts';
 import { meaningsInVerse, wordsOfVerse } from './dictionary.ts';
 import { dictionaryOf } from './data.ts';
-import { setWordClickHandler } from '../../sidebar.ts';
+import { setWordClickHandler } from '@torahmap/shell/sidebar.ts';
 import { openWordMenu } from './wordMenu.ts';
-import { trackWordMenuOpen, trackWordSearch } from '../../analytics.ts';
+import { trackWordMenuOpen, trackWordSearch } from '@torahmap/shell/analytics.ts';
 import { searchTool, searchForMeaning, canAddTerm, type SearchSettings } from './index.ts';
 
 /** What the word menu reads and changes. */

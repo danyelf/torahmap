@@ -33,8 +33,8 @@ import {
   splitIntoWords,
   stripNikkud,
   type TextWord,
-} from '../../hebrew.ts';
-import { isSectionMarker, verseWords } from '../../verseWords.ts';
+} from '@torahmap/shell/hebrew.ts';
+import { isSectionMarker, verseWords } from '@torahmap/shell/verseWords.ts';
 
 /**
  * One dictionary word a written form might be, as a reader sees it.

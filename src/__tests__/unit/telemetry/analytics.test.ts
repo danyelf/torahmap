@@ -16,7 +16,7 @@ import {
   trackSquareClick,
   trackStoryStop,
   trackViewSettled,
-} from '../../../analytics.ts';
+} from '@torahmap/shell/analytics.ts';
 
 let send: ReturnType<typeof vi.fn<(body: string) => void>>;
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPopupHold } from '../../popupHold';
+import { createPopupHold } from '../src/popupHold.ts';
 
 describe('the popup hold', () => {
   it('holds the popup until every hold is released', () => {

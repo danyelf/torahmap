@@ -9,7 +9,7 @@
 // match fails here instead of every shared link previewing as the home page.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { fillPage } from '../../../app/page.ts';
+import { fillPage } from '@torahmap/shell/app/page.ts';
 import { pageAt } from '../../../pages.ts';
 import { rewritePage } from '../../../worker/page.ts';
 

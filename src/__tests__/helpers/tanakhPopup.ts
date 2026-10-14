@@ -1,6 +1,6 @@
 // The Tanakh's popup for a verse, as the shell draws it.
 
-import { updateSidebar, type PopupView, type SidebarElements } from '../../sidebar';
+import { updateSidebar, type PopupView, type SidebarElements } from '@torahmap/shell/sidebar.ts';
 import { popupText } from '../../tanakh/popup';
 import type { TanakhLayout } from '../../types';
 import { TEXTS_FILE, type VerseTexts } from '../../verseTexts';

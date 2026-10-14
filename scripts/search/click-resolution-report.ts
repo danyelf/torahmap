@@ -47,13 +47,13 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
   return new Response(readFileSync(resolved, 'utf8'), { status: 200 });
 }) as typeof fetch;
 
-const { loadNamedFiles } = await import('../../src/dataFiles.ts');
+const { loadNamedFiles } = await import('@torahmap/shell/dataFiles.ts');
 const { SEARCH_FILES, dictionaryOf } = await import('../../src/tanakh/search/data.ts');
 const { findLexemesForWord } = await import('../../src/tanakh/search/search.ts');
 const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
   await import('../../src/tanakh/search/dictionary.ts');
-const { verseWords } = await import('../../src/verseWords.ts');
-const { stripNikkud } = await import('../../src/hebrew.ts');
+const { verseWords } = await import('@torahmap/shell/verseWords.ts');
+const { stripNikkud } = await import('@torahmap/shell/hebrew.ts');
 const { verseId } = await import('@torahmap/link/tanakh');
 
 interface Report {

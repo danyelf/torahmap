@@ -8,7 +8,7 @@ export const LAUNCH_ARGS = [
   '--ignore-gpu-blocklist',
 ];
 
-// src/styles/phone.css decides which width is a phone; the tablet here gets
+// packages/shell/src/styles/phone.css decides which width is a phone; the tablet here gets
 // the desktop layout.
 export const SCREENS: { name: string; use: PlaywrightTestProject['use'] }[] = [
   { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },

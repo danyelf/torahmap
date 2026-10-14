@@ -2,22 +2,26 @@
 import { type Color } from '@torahmap/utils';
 import { SEARCH_COLORS } from '../../tanakh/search/terms.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { pictureForStop, computeBlendedColors, stopTools } from '../overlayBlender';
+import {
+  pictureForStop,
+  computeBlendedColors,
+  stopTools,
+} from '@torahmap/shell/scrollytelling/overlayBlender.ts';
 import { searchTool } from '../../tanakh/search/index';
 import { getOverlay, registerOverlay } from '../../overlays/registry';
 import { commentaryOverlay } from '../../overlays/commentary';
-import { createOverlaySettings } from '../../overlays/settings';
-import type { ResolvedStoryStop } from '../types';
+import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
+import type { ResolvedStoryStop } from '@torahmap/shell/scrollytelling/types.ts';
 import type { TanakhLayout } from '../../types';
-import type { Overlay, UrlParamValues } from '../../overlays/types';
+import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhOverlay } from '../../overlays/index';
 import {
   SAMPLE_COMMENTARY_COUNTS,
   SAMPLE_LOADED,
   testOverlay,
 } from '../../__tests__/helpers/fixtures';
-import { getDefaultColor } from '../../itemColoring';
-import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../../constants';
+import { getDefaultColor } from '@torahmap/shell/itemColoring.ts';
+import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '@torahmap/shell/constants.ts';
 
 // The tools a stop can name, as a text hands them over: the overlays these
 // tests register, and search.

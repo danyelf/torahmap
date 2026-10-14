@@ -14,13 +14,6 @@ export function fetchData(filename: string): Promise<Response> {
   return fetch(`${import.meta.env?.BASE_URL ?? '/'}data/${filename}`);
 }
 
-/**
- * Position jitter for verse squares: (seededRandom() - JITTER_CENTER) * JITTER_RANGE
- * gives a ±1px offset that breaks up the regular grid and reduces moiré.
- */
-export const JITTER_CENTER = 0.5;
-export const JITTER_RANGE = 2.0;
-
 export const ZOOM_OUT_FACTOR = 0.9; // 10% zoom out per wheel tick
 export const ZOOM_IN_FACTOR = 1.1; // 10% zoom in per wheel tick
 

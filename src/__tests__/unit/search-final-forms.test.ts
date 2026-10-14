@@ -16,7 +16,7 @@ import { describe, it, expect } from 'vitest';
 import { verseId } from '@torahmap/link/tanakh';
 import { buildTextIndex, versesForTerm } from '../../tanakh/search/search';
 import { inTextsOrder } from '../helpers/searchData';
-import { stripNikkud, normalizeHebrewForSearch } from '../../hebrew';
+import { stripNikkud, normalizeHebrewForSearch } from '@torahmap/shell/hebrew.ts';
 import type { VerseTexts } from '../../verseTexts';
 
 describe('Hebrew Final Forms Normalization', () => {

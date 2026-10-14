@@ -7,7 +7,7 @@ import {
   landingFrame,
   nextFrame,
   type Frame,
-} from '../../frame';
+} from '../src/frame.ts';
 
 const explore = (open: Frame['open'], full = false): Frame => ({
   mode: 'explore',

@@ -1,14 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { writeLink, type UrlState } from '@torahmap/link';
-import { parseUrlState, updateUrl } from '../../urlState';
+import { parseUrlState, updateUrl } from '@torahmap/shell/urlState.ts';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { configure as configureSearch } from '../../tanakh/search/index';
 import { searchTool } from '../../tanakh/search/index';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
-import { dataFor } from '../../dataFiles';
+import { dataFor } from '@torahmap/shell/dataFiles.ts';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { createOverlaySettings } from '../../overlays/settings';
+import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 
 describe('URL State Sync Integration', () => {
   let originalLocation: Location;

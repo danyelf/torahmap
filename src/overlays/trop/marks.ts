@@ -1,11 +1,11 @@
 // Trop (cantillation marks): what the marks are, and which verses carry them.
 //
 // The domain half of the trop feature. The overlay that draws it is in
-// ../trop.ts; which character is a mark is in src/hebrew.ts, with the other
+// ../trop.ts; which character is a mark is in packages/shell/src/hebrew.ts, with the other
 // character tests.
 
 import type { VerseTexts } from '../../verseTexts.ts';
-import { isTropMark } from '../../hebrew.ts';
+import { isTropMark } from '@torahmap/shell/hebrew.ts';
 
 // Trop index: maps trop unicode -> list of verse locations containing it
 interface TropVerseLocation {

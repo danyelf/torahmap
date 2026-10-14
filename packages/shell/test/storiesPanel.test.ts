@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { storiesHtml, storyChosen, type StoryCard } from '../../storiesPanel';
+import { storiesHtml, storyChosen, type StoryCard } from '../src/storiesPanel.ts';
 
 const card = (over: Partial<StoryCard>): StoryCard => ({
   id: 'tour',

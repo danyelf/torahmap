@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { findLexemesForWord } from '../../tanakh/search/search';
-import { normalizeHebrewForSearch } from '../../hebrew';
+import { normalizeHebrewForSearch } from '@torahmap/shell/hebrew.ts';
 import { realSearchData } from '../helpers/searchData';
 
 const cases: Array<{ in: string; out: string; rule: string }> = JSON.parse(

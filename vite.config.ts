@@ -3,7 +3,7 @@ import { execSync } from 'child_process';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
-import { fillPage } from './src/app/page.ts';
+import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH, pageAt } from './src/pages.ts';
 
 // Get the current git branch name

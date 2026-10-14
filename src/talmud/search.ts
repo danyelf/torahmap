@@ -2,7 +2,7 @@
 // segment matches, so the shell's search runs on the Talmud page, panel, link
 // and Back step included, until the Talmud has a search of its own.
 import type { UrlParamSpec } from '@torahmap/link';
-import { SEARCH_BOX_ID, type SearchTool } from '../app/search.ts';
+import { SEARCH_BOX_ID, type SearchTool } from '@torahmap/shell/app/search.ts';
 import type { TalmudLayoutItem } from './layout.ts';
 
 export interface TalmudSearchSettings {

@@ -2,7 +2,7 @@
 
 import { cameraToFit } from '@torahmap/engine';
 import { sefariaUrl } from '@torahmap/utils';
-import type { MapText } from '../app/text.ts';
+import type { MapText } from '@torahmap/shell/app/text.ts';
 import type { Story } from '@torahmap/stories';
 import type { LinkKeys } from '@torahmap/link';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';

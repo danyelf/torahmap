@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readLink } from '@torahmap/link';
-import { tabTitle } from '../../tabTitle';
+import { tabTitle } from '@torahmap/shell/tabTitle.ts';
 import { tanakhSite } from '../../tanakh/site';
 import { talmudSite } from '../../talmud/site';
 import { talmudText } from '../../talmud/text';

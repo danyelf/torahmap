@@ -4,7 +4,7 @@ import {
   startChosen,
   type StartOverlay,
   type StartStory,
-} from '../../startingPoints';
+} from '../src/startingPoints.ts';
 
 const SEARCH: StartOverlay = { id: 'search', name: 'Find', description: 'Finds a word.' };
 

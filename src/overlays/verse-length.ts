@@ -1,10 +1,10 @@
 import { type Color, type ColorStop, scale, SQRT, type Scale, memoByValue } from '@torahmap/utils';
 import './verse-length.css';
-import type { Overlay } from './types.ts';
+import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { verseId } from '@torahmap/link/tanakh';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
-import { verseWords } from '../verseWords.ts';
+import { verseWords } from '@torahmap/shell/verseWords.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
 import { NO_DATA } from './colors.ts';

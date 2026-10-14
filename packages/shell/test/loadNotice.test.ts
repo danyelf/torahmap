@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { loadNotice } from '../../loadNotice';
+import { loadNotice } from '../src/loadNotice.ts';
 
 describe('loadNotice', () => {
   it('says a file is loading, with nothing to close', () => {

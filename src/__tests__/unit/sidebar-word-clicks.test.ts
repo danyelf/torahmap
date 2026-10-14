@@ -5,7 +5,7 @@
 // listening.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getSidebarElements, setWordClickHandler } from '../../sidebar';
+import { getSidebarElements, setWordClickHandler } from '@torahmap/shell/sidebar.ts';
 import { showVerse } from '../helpers/tanakhPopup';
 import { createVerse, testOverlay } from '../helpers/fixtures';
 import type { VerseTexts } from '../../verseTexts';

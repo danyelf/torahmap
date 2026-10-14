@@ -3,7 +3,7 @@
 
 import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '@torahmap/engine';
 import { readFileSync } from 'node:fs';
-import { loadNamedFiles } from '../../src/dataFiles.ts';
+import { loadNamedFiles } from '@torahmap/shell/dataFiles.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '../../src/verseTexts.ts';
 import {
   deriveHaftarah,

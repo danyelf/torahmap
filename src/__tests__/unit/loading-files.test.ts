@@ -3,7 +3,7 @@ import { EVERYTHING } from '../../../loading/files';
 import { registerAllOverlays } from '../../overlays/index';
 import { getAllOverlays } from '../../overlays/registry';
 import { searchTool } from '../../tanakh/search/index';
-import { overlayFiles } from '../../dataFiles';
+import { overlayFiles } from '@torahmap/shell/dataFiles.ts';
 import { STRUCTURE_FILE } from '../../verseTexts';
 
 describe("the loading suite's list of files", () => {

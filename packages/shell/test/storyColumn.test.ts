@@ -2,7 +2,7 @@
 // each page as wide as the column. Which stop shows is read from the scroll.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Story, StoryStop } from '@torahmap/stories';
-import { createStoryColumn, placeIn, type StoryColumn } from '../storyColumn';
+import { createStoryColumn, placeIn, type StoryColumn } from '../src/scrollytelling/storyColumn.ts';
 
 const PAGE = 100;
 

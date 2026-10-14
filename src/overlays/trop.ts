@@ -15,11 +15,12 @@ import {
   memoByValue,
 } from '@torahmap/utils';
 import './trop.css';
-import type { Overlay, UrlParamValues, SettingsUpdate } from './types.ts';
-import type { TanakhIdentity, TanakhLayout, TextLanguage } from '../types.ts';
-import { HEBREW } from '../types.ts';
+import type { Overlay, UrlParamValues, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
+import type { TanakhIdentity, TanakhLayout } from '../types.ts';
+import type { TextLanguage } from '@torahmap/shell/types.ts';
+import { HEBREW } from '@torahmap/shell/types.ts';
 import { verseId } from '@torahmap/link/tanakh';
-import { isNikkud } from '../hebrew.ts';
+import { isNikkud } from '@torahmap/shell/hebrew.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,

@@ -12,8 +12,8 @@
 import { describe, it, expect } from 'vitest';
 import { parseVerseId } from '@torahmap/link/tanakh';
 import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../tanakh/search/dictionary';
-import { splitIntoWords, stripNikkud } from '../../../hebrew';
-import { verseWords } from '../../../verseWords';
+import { splitIntoWords, stripNikkud } from '@torahmap/shell/hebrew.ts';
+import { verseWords } from '@torahmap/shell/verseWords.ts';
 import { realSearchData } from '../../helpers/searchData';
 
 const { files, dictionary, parse } = realSearchData();

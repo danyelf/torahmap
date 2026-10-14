@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { shareLink } from '../../share';
+import { shareLink } from '../src/share.ts';
 
 const url = 'https://torahmap.org/?verse=Genesis.12.1';
 

@@ -8,10 +8,10 @@ import {
   escapeHtml,
   lingeringHover,
 } from '@torahmap/utils';
-import type { Overlay, UrlParamValues } from './types.ts';
+import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { verseId } from '@torahmap/link/tanakh';
-import { DIMMED_GREY } from '../constants.ts';
+import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import {
   deriveHaftarah,
   forEachVerseInRange,
@@ -24,7 +24,7 @@ import {
   type HaftarahItem,
   type OccasionCategory,
 } from './haftarah/readings.ts';
-import { CONTROL } from '../panel.ts';
+import { CONTROL } from '@torahmap/shell/panel.ts';
 import { buildLegendGradient, legendCaption } from './legend.ts';
 import { HAFTARAH, HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 import './haftarah.css';

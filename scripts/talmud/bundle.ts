@@ -17,7 +17,7 @@
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { stripNikkud } from '../../src/hebrew.ts';
+import { stripNikkud } from '@torahmap/shell/hebrew.ts';
 import { amudIndex } from '../../src/talmud/data.ts';
 
 // Pure helpers (unit-tested).

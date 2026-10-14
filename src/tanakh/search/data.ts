@@ -1,5 +1,5 @@
 // Search's files, and the text index and dictionary it builds from them.
-import { optional } from '../../dataFiles.ts';
+import { optional } from '@torahmap/shell/dataFiles.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, type VerseTexts } from '../../verseTexts.ts';
 import type { Parse } from './dictionary.ts';
 import {

@@ -5,8 +5,8 @@
 // up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { verseWords } from '../../verseWords';
-import { stripNikkud } from '../../hebrew';
+import { verseWords } from '../src/verseWords.ts';
+import { stripNikkud } from '../src/hebrew.ts';
 
 const words = (text: string) => verseWords(text).map((w) => w.word);
 

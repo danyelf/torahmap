@@ -1,15 +1,20 @@
 import { indexItems, worldToScreen } from '@torahmap/engine';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { parseUrlState } from '../../urlState';
-import { resolveViewState, cameraForView, opensFolded, type ViewState } from '../../viewState';
+import { parseUrlState } from '@torahmap/shell/urlState.ts';
+import {
+  resolveViewState,
+  cameraForView,
+  opensFolded,
+  type ViewState,
+} from '@torahmap/shell/viewState.ts';
 import { registerAllOverlays, getOverlay } from '../../overlays/index';
 import { configure as configureSearch } from '../../tanakh/search/index';
 import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
-import { dataFor } from '../../dataFiles';
+import { dataFor } from '@torahmap/shell/dataFiles.ts';
 import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { readLink, writeLink } from '@torahmap/link';
-import { createOverlaySettings } from '../../overlays/settings';
+import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 import { searchTool } from '../../tanakh/search/index';
 
 const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };

@@ -8,11 +8,11 @@
 // presentation, not a setting, so it stays here.
 import { type Color, colorToCss, memoByValue } from '@torahmap/utils';
 import './search.css';
-import type { UrlParamValues } from '../../overlays/types.ts';
-import type { SearchTool } from '../../app/search.ts';
-import { trackSearchExecute } from '../../analytics.ts';
+import type { UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import type { SearchTool } from '@torahmap/shell/app/search.ts';
+import { trackSearchExecute } from '@torahmap/shell/analytics.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../types.ts';
-import { HEBREW } from '../../types.ts';
+import { HEBREW } from '@torahmap/shell/types.ts';
 import {
   getMatchingVerseTerms,
   parseSearchTerms,
@@ -49,7 +49,7 @@ import {
   SEARCH_COLORS,
   type SearchTerm,
 } from './terms.ts';
-import { isSearchableWord } from '../../hebrew.ts';
+import { isSearchableWord } from '@torahmap/shell/hebrew.ts';
 import { SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
 
 /**

@@ -10,7 +10,7 @@ import {
   splitIntoWords,
   stripNikkud,
   normalizeHebrewForSearch,
-} from '../../hebrew';
+} from '../src/hebrew.ts';
 
 const GENESIS_1_1_END = 'אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summaryHtml } from '../../panelSummary';
+import { summaryHtml } from '../src/panelSummary.ts';
 
 function parse(html: string): HTMLDivElement {
   const div = document.createElement('div');

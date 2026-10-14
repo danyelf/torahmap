@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderStoryPanel, stopLabel } from '../storyPanel';
+import { renderStoryPanel, stopLabel } from '@torahmap/shell/scrollytelling/storyPanel.ts';
 import { createStoryStop as stop } from '../../__tests__/helpers/fixtures';
 
 describe('renderStoryPanel', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { showLegend, type LegendRow } from '../../mapLegend';
+import { showLegend, type LegendRow } from '../src/mapLegend.ts';
 
 function legend(): HTMLElement {
   const div = document.createElement('div');
