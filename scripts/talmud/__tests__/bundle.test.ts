@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   walkMarkers,
-  walkMarkersWithBudget,
-  perekUnitCharCounts,
   stripHtml,
   stripNikkudAndSeparators,
   parseWholeRef,
@@ -160,77 +158,74 @@ describe('stripNikkudAndSeparators', () => {
   });
 });
 
-describe('walkMarkersWithBudget', () => {
-  // Simulate a tractate with one amud, one perek, where the source has
-  // a real מתני׳ marker but is missing the corresponding גמ׳ marker —
-  // mirrors the Avodah Zarah 22a:11 → 26a:4 bug shape on a smaller scale.
-  it('force-flips a runaway mishnah run that exceeds the per-marker char cap', () => {
-    // Each Hebrew "word" below is 3 chars. The marker segment carries
-    // ~7 chars after stripping (the marker word + content). Subsequent
-    // segments add 3 chars each. With a per-perek max-unit budget of 15
-    // and slack 1.2 → cap 18, the cap fires after ~4 segments.
-    const text = [
-      ['<big><strong>מתני׳</strong></big> אבג', 'דהו', 'זחט', 'יכל', 'מנס', 'עפצ', 'קרש', 'תאב'],
+describe('walkMarkers across two editions', () => {
+  // The Steinsaltz edition drops a bare מתני׳ before a bold first word,
+  // so a chapter's opening Mishnah carries a marker only in Wikisource.
+  it('takes a Mishnah marker that only the first edition has', () => {
+    const wikisource = [
+      ['מתני׳ <big><strong>בא</strong></big> לו', 'עוד', 'גמ׳ <big><strong>ת״ר</strong></big>'],
     ];
-    const perekUnitChars = [[15]];
-    const perekIdxByAmud = [0];
-    const result = walkMarkersWithBudget(text, perekIdxByAmud, perekUnitChars, new Map());
-    // The first segment is mishnah; eventually the cap fires and the
-    // tail is gemara. Don't pin the exact split point — it's sensitive
-    // to the marker-word strip — but assert the shape: a mishnah
-    // prefix followed by an all-false gemara tail.
-    expect(result[0][0]).toBe(true);
-    expect(result[0][result[0].length - 1]).toBe(false);
-    const flipIdx = result[0].indexOf(false);
-    expect(flipIdx).toBeGreaterThan(0);
-    expect(flipIdx).toBeLessThan(text[0].length);
-    for (let i = flipIdx; i < result[0].length; i++) {
-      expect(result[0][i]).toBe(false);
-    }
+    const steinsaltz = [
+      ['<big><strong>בָּא</strong></big> לוֹ', 'עוד', '<big><strong>גְּמָ׳</strong></big> ת״ר'],
+    ];
+    expect(walkMarkers(wikisource, steinsaltz)).toEqual([[true, true, false]]);
   });
 
-  it('respects an explicit gemara marker (does not require budget exhaustion)', () => {
-    const text = [
-      [
-        '<big><strong>מתני׳</strong></big> אבג',
-        'דהו',
-        '<big><strong>גמ׳</strong></big> זחט',
-        'יכל',
-      ],
+  it('takes a Gemara marker that only the second edition has', () => {
+    const wikisource = [['<big><strong>מתני׳</strong></big> משנה', 'ורמינהי']];
+    const steinsaltz = [
+      ['<big><strong>מַתְנִי׳</strong></big> משנה', '<strong><big>גְּמָ׳</big></strong> ורמינהי'],
     ];
-    const result = walkMarkersWithBudget(
-      text,
-      [0],
-      [[100]], // huge budget - we'd never hit cap
-      new Map(),
-    );
-    expect(result[0]).toEqual([true, true, false, false]);
-  });
-
-  it("resets budget per marker so a multi-mishnah perek isn't truncated", () => {
-    // Two short M runs separated by a G marker. With a generous budget
-    // each M run should fit comfortably inside its own counter.
-    const text = [
-      [
-        '<big><strong>מתני׳</strong></big> אבג',
-        'דהו',
-        '<big><strong>גמ׳</strong></big> זחט',
-        'יכל',
-        '<big><strong>מתני׳</strong></big> מנס',
-        'עפצ',
-        '<big><strong>גמ׳</strong></big> קרש',
-      ],
-    ];
-    const result = walkMarkersWithBudget(text, [0], [[40, 40]], new Map());
-    expect(result[0]).toEqual([true, true, false, false, true, true, false]);
+    expect(walkMarkers(wikisource, steinsaltz)).toEqual([[true, false]]);
   });
 });
 
-describe('perekUnitCharCounts', () => {
-  it('strips nikkud and HTML before counting', () => {
-    // שלום = 4 chars, בראשית = 6 chars
-    const counts = perekUnitCharCounts([['<big>שָׁלוֹם</big>', 'בְּרֵאשִׁית']]);
-    expect(counts).toEqual([[4, 6]]);
+describe('walkMarkers marker variants', () => {
+  it('reads a marker written with an ASCII apostrophe', () => {
+    const text = [
+      ["<big><strong>מתני'</strong></big> משנה", 'עוד', "<big><strong>גמ'</strong></big> גמרא"],
+    ];
+    expect(walkMarkers(text)).toEqual([[true, true, false]]);
+  });
+
+  it('reads a marker in <b> rather than <strong>', () => {
+    const text = [["<big><b>מתני'</b></big> משנה", "<big><b>גמ'</b></big> גמרא"]];
+    expect(walkMarkers(text)).toEqual([[true, false]]);
+  });
+
+  it('starts the Gemara at the next segment when a bold גמ׳ ends a segment', () => {
+    const text = [
+      ['<big><strong>מתני׳</strong></big> משנה', 'סוף המשנה: <big><strong>גמ׳</strong></big> '],
+      ['במאי עסקינן', 'עוד'],
+    ];
+    expect(walkMarkers(text)).toEqual([
+      [true, true],
+      [false, false],
+    ]);
+  });
+
+  it('starts a Mishnah at a bold Hebrew numeral', () => {
+    const text = [
+      [
+        'גמרא',
+        '<big><strong>א אמר</strong></big> להם הממונה',
+        'עוד',
+        '<big><strong>ב</strong></big> אמר',
+      ],
+    ];
+    expect(walkMarkers(text)).toEqual([[false, true, true, true]]);
+  });
+
+  it('keeps a Mishnah running until the next Gemara marker, however long', () => {
+    const mishnah = Array.from({ length: 40 }, () => 'משנה ארוכה מאוד');
+    const text = [
+      [
+        '<big><strong>מתני׳</strong></big> פתיחה',
+        ...mishnah,
+        '<big><strong>גמ׳</strong></big> גמרא',
+      ],
+    ];
+    expect(walkMarkers(text)[0]).toEqual([true, ...mishnah.map(() => true), false]);
   });
 });
 
@@ -275,6 +270,36 @@ describe('processTractate', () => {
     const amud3a = structure.amudim.find((a) => a.daf === 3 && a.amud === 'a')!;
     expect(amud3a.perekIdx).toBe(1);
     expect(amud3a.perekBoundaryAt).toBeUndefined();
+  });
+
+  it('removes a marker word only where it is a marker', () => {
+    const wikisource = fakeWikisource();
+    wikisource.text[2] = [
+      'מתני׳ <big><strong>הכל</strong></big> כשרים',
+      "<big><strong>גמ'</strong></big> מתני׳ דלא כרבי",
+      'סוף <big><strong>גמ׳</strong></big>',
+      'a4',
+      'a5',
+    ];
+    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema());
+    expect(text.amudim[2].slice(0, 3)).toEqual(['הכל כשרים', 'מתני׳ דלא כרבי', 'סוף']);
+  });
+
+  it('removes the marker word where only the other edition marks the segment', () => {
+    const wikisource = fakeWikisource();
+    wikisource.text[2] = ["מתני' סתם נזירות", "גמ' מנהני מילי", 'a3', 'a4', 'a5'];
+    const merged = { text: wikisource.text.map((amud) => [...amud]) };
+    merged.text[2][0] = '<big><strong>מַתְנִי׳</strong></big> סְתָם נְזִירוּת';
+    merged.text[2][1] = '<big><strong>גְּמָ׳</strong></big> מְנָהָנֵי מִילֵּי';
+    const { structure, text } = processTractate(
+      'Seder Test',
+      'Test',
+      wikisource,
+      fakeSchema(),
+      merged,
+    );
+    expect(text.amudim[2].slice(0, 2)).toEqual(['סתם נזירות', 'מנהני מילי']);
+    expect(structure.amudim[2].mishnahMask.slice(0, 2)).toEqual([true, false]);
   });
 });
 

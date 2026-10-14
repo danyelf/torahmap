@@ -4,6 +4,7 @@
  *
  * Inputs:
  *   data/talmud/raw/<Tractate>/wikisource.json
+ *   data/talmud/raw/<Tractate>/merged.json (the Steinsaltz edition, for its markers)
  *   data/talmud/raw/<Tractate>/schema.json
  *   data/talmud/coverage-report.json (tells us which
  *     tractates passed verification)
@@ -22,189 +23,88 @@ import { amudIndex } from '@torahmap/talmud/data.ts';
 
 // Pure helpers (unit-tested).
 
-/**
- * Walk a tractate's segment stream tracking Mishnah/Gemara state.
- *
- * Rule: a segment counts as a structural marker only when it carries
- * BOTH a marker word (מתני׳ / גמ׳) AND a `<big>` (or `<big><strong>`)
- * presentational wrapper near the start of the segment — see the marker
- * regexes below for the exact forms this takes. The wrap is the strongest
- * cue — without it, segments like Bava Metzia 6b:2 ("א\"ל רב המנונא מתני׳
- * היא ספק בכורות...") would falsely flip the state for dozens of dapim,
- * because the abbreviation is also natural Hebrew that appears inside
- * running text.
- *
- * Initial state is gemara (conservative default — in practice the very
- * first segment of every tractate is a wrapped מתני׳ marker).
- */
-// The marker may be preceded by editorial punctuation (`[`, `(`) and the
-// marker word itself can be wrapped inside parentheses inside the strong
-// tag — Wikisource has all of these forms in real data:
-//   "<big><strong>מתני׳</strong></big> ..."     (canonical wrapped)
-//   "[<big><strong>גמ׳</strong></big> ת\"ר] ..." (Sotah 49a:17 style)
-//   "<big><strong>(גמ׳)</strong></big> ..."     (Sotah 49b:4 style)
-//   "מתני׳ <big><strong>הכל</strong></big> ..." (bare-leading form)
+type Marker = 'M' | 'G' | null;
+
+// A marker is מתני׳ (a Mishnah begins) or גמ׳ (the Gemara begins) in bold
+// at the start of a segment. The same words occur in running text ("מתני׳
+// מני ר״ש היא", Sanhedrin 67a:8), so without the bold they are not markers.
+// The forms that occur:
+//   "<big><strong>מתני׳</strong></big> ..."     (also <b>, or <strong><big>)
+//   "[<big><strong>גמ׳</strong></big> ת״ר] ..." (Sotah 49a:17)
+//   "<big><strong>(גמ׳)</strong></big> ..."     (Sotah 49b:4)
+//   "מתני׳ <big><strong>הכל</strong></big> ..." (bare word, bold first word)
 const WRAPPED_MARKER_RE =
-  /^[\s\[\(]*(?:<[^>]+>[\s\[\(]*)*<big[^>]*>(?:[\s\(]*<strong[^>]*>)?[\s\(]*(מתני׳|גמ׳)/;
+  /^[\s\[\(]*(?:<[^>]+>[\s\[\(]*)*<big[^>]*>(?:[\s\(]*<(?:strong|b)\b[^>]*>)?[\s\(]*(מתני׳|גמ׳)/;
 const BARE_LEADING_MARKER_RE = /^[\s\[\(]*(מתני׳|גמ׳)(?:\s|$)/;
+// Tamid's last three chapters have no Gemara; Wikisource numbers their
+// mishnayot with a bold letter instead ("<big><strong>ב</strong></big> אמר").
+const NUMBERED_MISHNAH_RE = /^\s*(?:<[^>]+>\s*)*<big[^>]*>\s*<(?:strong|b)\b[^>]*>\s*[א-י](?:\s|<)/;
+// Where an amud break falls between a Mishnah and its Gemara, Wikisource
+// leaves the גמ׳ at the end of the Mishnah's last segment (Pesachim 71b:14,
+// Niddah 56b:25); the Steinsaltz edition puts it on the next segment.
+const TRAILING_GEMARA_RE = /<big[^>]*>\s*(?:<(?:strong|b)\b[^>]*>\s*)?גמ׳\s*(?:<\/[^>]+>\s*)*$/;
 
-function detectMarker(seg: string): 'M' | 'G' | null {
-  // Strip nikkud first — Sefaria's merged ("Steinsaltz") source carries
-  // full vowel pointing on every word, including the marker words
-  // (מַתְנִי׳ / גְּמָ׳). The bare wikisource source doesn't, but
-  // stripping is a no-op there. Doing this once up front lets the
-  // regexes stay simple.
-  const s = stripNikkudAndSeparators(seg);
+/** Without points, and with the ASCII apostrophe some markers use as geresh. */
+function normalizeMarkers(seg: string): string {
+  return stripNikkudAndSeparators(seg).replace(/(מתני|גמ)'/g, '$1׳');
+}
 
-  // Form 1: marker is wrapped in <big><strong>...</strong></big>.
+function detectMarker(seg: string): Marker {
+  const s = normalizeMarkers(seg);
   const wrapped = s.match(WRAPPED_MARKER_RE);
-  if (wrapped) {
-    return wrapped[1] === 'מתני׳' ? 'M' : 'G';
-  }
-  // Form 2: marker is bare at the very start, and the first content
-  // word IS wrapped in <big>. We require the wrap to appear within the
-  // first 80 chars of the segment so we don't pick up unrelated tags
-  // later in the text.
+  if (wrapped) return wrapped[1] === 'מתני׳' ? 'M' : 'G';
   const bare = s.match(BARE_LEADING_MARKER_RE);
-  if (bare && /<big[^>]*>/.test(s.slice(0, 80))) {
-    return bare[1] === 'מתני׳' ? 'M' : 'G';
-  }
+  if (bare && /<big[^>]*>/.test(s.slice(0, 80))) return bare[1] === 'מתני׳' ? 'M' : 'G';
+  if (NUMBERED_MISHNAH_RE.test(s)) return 'M';
   return null;
 }
 
-export function walkMarkers(text: string[][]): boolean[][] {
-  const result: boolean[][] = [];
-  let isMishnah = false;
-  for (const amud of text) {
-    const row: boolean[] = [];
-    for (const seg of amud) {
-      const m = detectMarker(seg);
-      if (m === 'M') isMishnah = true;
-      else if (m === 'G') isMishnah = false;
-      row.push(isMishnah);
-    }
-    result.push(row);
-  }
-  return result;
+function endsWithGemaraMarker(seg: string): boolean {
+  return TRAILING_GEMARA_RE.test(normalizeMarkers(seg));
 }
 
 /**
- * Walk markers with a per-marker char budget bounding how long any
- * single mishnah run can be. The cap is set per-perek to the LONGEST
- * standalone mishnah unit in that perek × slack — that's the largest
- * any single Bavli mishnah block could plausibly be without a missing
- * gemara marker. Each new מתני׳ marker resets the run counter, so a
- * perek with several legitimate mishnayot still works (each gets its
- * own fresh budget).
+ * Whether each segment is Mishnah. A tractate starts in Gemara; each marker
+ * sets the state until the next.
  *
- * This compensates for missing-marker bugs in the Wikisource source
- * (e.g. Avodah Zarah 22a:11 → 26a:4, where the editor forgot the
- * gemara marker and the walker would otherwise leave 100+ segments
- * wrongly tagged as mishnah).
- *
- * Args:
- *   text             - Wikisource segment grid
- *   perekIdxByAmud   - perek index per amud
- *   perekUnitChars   - char count of each standalone mishnah unit, per
- *                      perek (parallel to schema perakim)
- *   perekBoundaryAt  - optional per-amud mid-amud perek-boundary map
- *   slack            - multiplier on the per-marker cap (default 1.5)
+ * `other` is a second edition of the same text, segment for segment. Each
+ * edition misses markers the other has: the Steinsaltz edition drops the
+ * bare מתני׳ that opens most chapters, and Wikisource lacks some גמ׳ at the
+ * top of an amud (Avodah Zarah 22b:1), so a segment is a marker if either
+ * edition marks it. The two never disagree on which marker it is.
  */
-export function walkMarkersWithBudget(
-  text: string[][],
-  perekIdxByAmud: number[],
-  perekUnitChars: number[][],
-  perekBoundaryAt: Map<number, number>,
-  slack = 1.2,
-): boolean[][] {
-  const result: boolean[][] = [];
+export function walkMarkers(text: string[][], other: string[][] = []): boolean[][] {
+  let gemaraNext = false;
   let isMishnah = false;
-  let currentPerekIdx = -1;
-  let charsConsumedInRun = 0;
-  let currentBudget = 0;
-  let runForceFlipped = false;
-
-  function startPerek(newIdx: number): void {
-    currentPerekIdx = newIdx;
-    charsConsumedInRun = 0;
-    runForceFlipped = false;
-    const units = perekUnitChars[newIdx] ?? [];
-    const maxUnit = units.length > 0 ? Math.max(...units) : 0;
-    currentBudget = maxUnit * slack;
-  }
-
-  for (let ai = 0; ai < text.length; ai++) {
-    const amud = text[ai];
-    const amudPerek = perekIdxByAmud[ai];
-    const boundary = perekBoundaryAt.get(ai);
-
-    if (boundary === undefined && amudPerek !== currentPerekIdx) {
-      startPerek(amudPerek);
-    }
-
-    const row: boolean[] = [];
-    for (let si = 0; si < amud.length; si++) {
-      // Mid-amud perek boundary handling: segments [0..boundary) belong
-      // to the OLD perek; segments [boundary..) belong to the NEW one.
-      if (boundary !== undefined && si === 0 && amudPerek !== currentPerekIdx) {
-        startPerek(amudPerek);
-      }
-      if (boundary !== undefined && si === boundary) {
-        startPerek(amudPerek + 1);
-      }
-
-      const seg = amud[si];
-      const m = detectMarker(seg);
-      if (m === 'M') {
-        isMishnah = true;
-        // Reset run counter — each marker gets a fresh budget.
-        charsConsumedInRun = 0;
-        runForceFlipped = false;
-      } else if (m === 'G') {
-        isMishnah = false;
-        charsConsumedInRun = 0;
-        runForceFlipped = false;
-      }
-
-      if (isMishnah) {
-        const clean = stripNikkudAndSeparators(stripHtml(seg)).replace(/[\s\.,;:׃״׳"׳']/g, '');
-        charsConsumedInRun += clean.length;
-        if (!runForceFlipped && currentBudget > 0 && charsConsumedInRun > currentBudget) {
-          // We've consumed more characters than the largest plausible
-          // mishnah in this perek. Assume the source is missing a גמ׳
-          // marker and force-flip back to gemara from here.
-          isMishnah = false;
-          runForceFlipped = true;
-        }
-      }
-
-      row.push(isMishnah);
-    }
-    result.push(row);
-  }
-  return result;
-}
-
-/**
- * Compute per-perek char counts of every standalone mishnah unit, for
- * use as walkMarkersWithBudget's per-marker cap input.
- */
-export function perekUnitCharCounts(mishnahText: string[][]): number[][] {
-  return mishnahText.map((perek) =>
-    perek.map(
-      (unit) => stripNikkudAndSeparators(stripHtml(unit)).replace(/[\s\.,;:׃״׳"׳']/g, '').length,
-    ),
+  return text.map((amud, ai) =>
+    amud.map((seg, si) => {
+      const m = markerAt(text, other, ai, si) ?? (gemaraNext ? 'G' : null);
+      if (m) isMishnah = m === 'M';
+      gemaraNext = endsWithGemaraMarker(seg) || endsWithGemaraMarker(other[ai]?.[si] ?? '');
+      return isMishnah;
+    }),
   );
 }
 
+function markerAt(text: string[][], other: string[][], ai: number, si: number): Marker {
+  return detectMarker(text[ai][si]) ?? detectMarker(other[ai]?.[si] ?? '');
+}
+
+/** A segment without the marker word that opens or closes it. */
+function stripMarkerWords(seg: string, isMarker: boolean): string {
+  if (endsWithGemaraMarker(seg)) seg = seg.replace(/גמ['׳]((?:\s|<\/[^>]+>)*)$/, '$1');
+  // Shabbat 82a:13 opens with a bare גמ, no geresh.
+  if (isMarker) seg = seg.replace(/^((?:[\s\[\(]|<[^>]+>)*)(?:מתני|גמ)['׳]?(?=[\s<\]\)]|$)/, '$1');
+  return seg;
+}
+
 // Maqaf, paseq, sof pasuq and nun hafukha: stripNikkud keeps them, as word
-// separators, but they are not letters to count.
+// separators, but marker matching ignores them.
 const HEBREW_SEPARATORS = /[\u05BE\u05C0\u05C3\u05C6]/g;
 
 /**
- * Hebrew without points, accents or its four separator marks, so that
- * char-count comparisons between Wikisource Bavli (no nikkud) and
- * standalone Mishnah (full nikkud) are apples-to-apples.
+ * Hebrew without points, accents or its four separator marks. The Steinsaltz
+ * edition is fully pointed, marker words included (מַתְנִי׳); Wikisource is not.
  */
 export function stripNikkudAndSeparators(s: string): string {
   return stripNikkud(s).replace(HEBREW_SEPARATORS, '');
@@ -341,10 +241,6 @@ export function parseWholeRef(ref: string): {
   return null;
 }
 
-export interface MishnahJson {
-  text: string[][]; // [perek][mishnah_unit]
-}
-
 export interface MergedJson {
   text: string[][]; // [amudIdx][segIdx], parallel to wikisource shape
 }
@@ -354,19 +250,16 @@ export function processTractate(
   tractateName: string,
   wikisource: WikisourceJson,
   schema: SchemaJson,
-  mishnah?: MishnahJson | null,
   merged?: MergedJson | null,
 ): { structure: TalmudTractate; text: TalmudTractateText } {
   const rawText = wikisource.text;
   const hebrewName = wikisource.heTitle ?? tractateName;
-  // For marker detection we prefer the Steinsaltz-merged source if it
-  // exists — it carries more reliable structural markers, including
-  // ones that the bare wikisource source is missing (e.g. AZ 22b:1's
-  // <strong><big>גְּמָ׳</big></strong>). The shape is identical
-  // (verify-coverage.ts confirms amudCount + segmentCount per tractate),
-  // so we can index into it with the same coordinates.
-  const markerText: string[][] =
-    merged && merged.text && merged.text.length === rawText.length ? merged.text : rawText;
+  // verify-coverage.ts checks the Steinsaltz edition has the same shape;
+  // where it does not, its markers cannot be lined up and go unused.
+  const sameShape =
+    merged?.text?.length === rawText.length &&
+    rawText.every((amud, ai) => merged.text[ai]?.length === amud.length);
+  const otherEdition = sameShape ? merged.text : [];
 
   const schemaNodes = schema.alts?.Chapters?.nodes ?? [];
   if (schemaNodes.length === 0) {
@@ -422,23 +315,16 @@ export function processTractate(
     }
   }
 
-  // Compute per-segment Mishnah mask. If a standalone Mishnah counterpart
-  // is available (almost all 37 Bavli tractates have one), use the
-  // budget-capped walker which bounds each perek's mishnah-state run by
-  // the standalone perek's char length × slack. This is what catches
-  // missing-marker bugs like Avodah Zarah 22a:11 → 26a:4 where the
-  // Wikisource source omits the gemara marker entirely.
-  let mishnahMask: boolean[][];
-  if (mishnah && mishnah.text && mishnah.text.length > 0) {
-    const unitChars = perekUnitCharCounts(mishnah.text);
-    mishnahMask = walkMarkersWithBudget(markerText, amudPerekIdx, unitChars, amudPerekBoundary);
-  } else {
-    mishnahMask = walkMarkers(markerText);
-  }
+  const mishnahMask = walkMarkers(rawText, otherEdition);
 
-  const cleanText: string[][] = rawText.map((amud) =>
-    amud.map((seg) =>
-      stripHtml(seg.replace(/מתני׳/g, '').replace(/גמ׳/g, '').replace(/הדרן/g, '')),
+  const cleanText: string[][] = rawText.map((amud, ai) =>
+    amud.map((seg, si) =>
+      stripHtml(
+        stripMarkerWords(seg, markerAt(rawText, otherEdition, ai, si) !== null).replace(
+          /הדרן/g,
+          '',
+        ),
+      ),
     ),
   );
 
@@ -475,7 +361,6 @@ export function processTractate(
 }
 
 const CACHE_ROOT = 'data/talmud/raw';
-const MISHNAH_CACHE = 'data/talmud/mishnah';
 const COVERAGE_REPORT = 'data/talmud/coverage-report.json';
 const OUTPUT_DIR = 'public/data/talmud';
 const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
@@ -511,21 +396,11 @@ async function main(): Promise<void> {
         /* fall back to wikisource markers */
       }
 
-      // Optional; processTractate falls back to the marker-only walker.
-      let mishnah: MishnahJson | null = null;
-      try {
-        const mishText = await readFile(join(MISHNAH_CACHE, `${ref.tractate}.json`), 'utf-8');
-        mishnah = JSON.parse(mishText) as MishnahJson;
-      } catch {
-        /* no standalone mishnah; walker falls back to marker-only mode */
-      }
-
       const { structure: tractateStructure, text: tractateText } = processTractate(
         ref.seder,
         ref.tractate,
         ws,
         sc,
-        mishnah,
         merged,
       );
 

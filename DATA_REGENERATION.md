@@ -244,11 +244,12 @@ bundle builds.
 ```bash
 # Download each tractate's text and chapter boundaries (~49MB), and check them
 npx tsx scripts/talmud/verify-coverage.ts
-# Download each tractate's standalone Mishnah, which bounds how long a Mishnah can run
-npx tsx scripts/talmud/fetch-mishnah.ts
 # Build public/data/talmud/
 npx tsx scripts/talmud/bundle.ts
 ```
 
-Both downloads keep what is already on disk; `verify-coverage.ts --force`
-fetches the text again.
+The download keeps what is already on disk; `--force` fetches it again.
+
+Which segments are Mishnah comes from the bold מתני׳ and גמ׳ markers, read from
+both editions Sefaria has, Wikisource and Steinsaltz (`merged.json`), since
+each misses markers the other has.
