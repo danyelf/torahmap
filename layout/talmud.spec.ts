@@ -2,8 +2,8 @@
 // map, and a pinned segment shows its text.
 import { expect, test } from '@playwright/test';
 import { allLoaded, boxes, openMap } from './page.ts';
-import { TALMUD_PATH as TALMUD } from '../src/pages.ts';
-import { TALMUD_PAGE } from '../src/talmud/page.ts';
+import { TALMUD_PATH as TALMUD } from '../pages.ts';
+import { TALMUD_PAGE } from '@torahmap/talmud/page.ts';
 
 test('the Talmud map draws, with its tractate labels over it', async ({ page }) => {
   await openMap(page, '', TALMUD);

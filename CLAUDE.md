@@ -23,7 +23,7 @@ What the map does is in [README.md](README.md). What an agent also needs:
   come back as a mode of its own rather than a menu entry. Registering it again
   means moving its id, name and description into `OVERLAYS` in
   `packages/overlay-catalog`, then adding it to the table in
-  `src/overlays/index.ts`; the typecheck points at whichever is missing.
+  `apps/tanakh/src/overlays/index.ts`; the typecheck points at whichever is missing.
 - The stories are the Markdown files in `packages/stories/markdown/`, built
   into the page; each one's header sets its title, description, `order` and
   `draft`. The dev server hot-reloads them.
@@ -138,15 +138,18 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 
 ## Project Structure
 
-- `src/` — the two texts and what serves them: `tanakh/` and `talmud/` (each
-  with its own search and site), the texts' types (`types.ts`), the Tanakh's
-  layout, labels, title, verse texts and `overlays/`, each page's entry
-  (`main-tanakh.ts`, `main-talmud.ts`) and which address serves which
-  (`pages.ts`), and the `worker/` that serves the deployed site; plus
-  `__tests__/` for the test suite.
+- `apps/` — what runs, as npm workspace packages, each with its own `test/`:
+  `tanakh` (the Tanakh's map: its layout, labels, title, verse texts, search
+  and `overlays/`), `talmud` (the Talmud's) and `worker` (the Worker that
+  serves the deployed site). An app's `src/main.ts` is its page's entry. The
+  Tanakh's and Talmud's export each module at its own path, as
+  `@torahmap/tanakh/layout.ts`, for the tools that use them.
 - `index.html` — every text's page, filled from its copy by `vite.config.ts`
-  at the address `src/pages.ts` gives it; the Talmud's, at `/talmud/`, is
+  at the address `pages.ts` gives it; the Talmud's, at `/talmud/`, is
   dev-only.
+- `test/` — checks of the whole repository: that each package and app keeps to
+  its imports, the saved telemetry queries, the scripts' own tests, and tests
+  of the shell with both texts.
 - `packages/` — shared code, as npm workspace packages: `link` (reading and
   writing links, under each text's keys), `utils` (small helpers that depend
   on nothing else here), `engine` (drawing the squares, the camera, hit
@@ -166,9 +169,9 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   things: the site's name and tagline, and how a link is described; each
   text's own copy is its `site` slot, `packages/shell/src/app/text.ts`). A
   package's Tanakh-only code sits behind its `/tanakh` entry, so the app shell
-  can import the rest. A package imports nothing outside its own folder but
-  the packages its `package.json` lists
-  (`src/__tests__/unit/package-imports.test.ts`).
+  can import the rest. A package or app imports nothing outside its own folder
+  but the packages its `package.json` lists, and only the Tanakh's app and the
+  Worker import the Tanakh's own code (`test/package-imports.test.ts`).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
@@ -208,7 +211,7 @@ hand. Every pull request also gets its own public `workers.dev` link, so a UI
 change can be looked at without checking the branch out —
 `scripts/prpreview.sh <pr>` serves one locally instead.
 
-What the Worker serves is in `src/worker/index.ts`; telemetry's client half is
+What the Worker serves is in `apps/worker/src/index.ts`; telemetry's client half is
 `packages/shell/src/analytics.ts`. No cookies; browser storage holds only two settings, Hide
 Hebrew and whether this is a return visit. The dev server sends nothing.
 `scripts/telemetry/report.sh` prints every saved query, and `usage.sh` beside
@@ -232,7 +235,7 @@ The codebase follows a **functional, modular design** with clear separation of c
 
 ### Key Concepts
 
-- **main.ts** (`packages/shell`) is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `src/__tests__/unit/shell-boundary.test.ts` lists what counts
+- **main.ts** (`packages/shell`) is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `test/package-imports.test.ts` holds that line
 - **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
 - **rendering.ts** (`packages/engine`) manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** (`packages/shell`) uses two-pass design: compute semantic state, then apply colors

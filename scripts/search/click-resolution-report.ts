@@ -24,9 +24,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Dictionary } from '../../src/tanakh/search/search.ts';
-import type { SearchData } from '../../src/tanakh/search/data.ts';
-import type { Parse } from '../../src/tanakh/search/dictionary.ts';
+import type { Dictionary } from '@torahmap/tanakh/search/search.ts';
+import type { SearchData } from '@torahmap/tanakh/search/data.ts';
+import type { Parse } from '@torahmap/tanakh/search/dictionary.ts';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, '..', '..');
@@ -48,10 +48,10 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
 }) as typeof fetch;
 
 const { loadNamedFiles } = await import('@torahmap/shell/dataFiles.ts');
-const { SEARCH_FILES, dictionaryOf } = await import('../../src/tanakh/search/data.ts');
-const { findLexemesForWord } = await import('../../src/tanakh/search/search.ts');
+const { SEARCH_FILES, dictionaryOf } = await import('@torahmap/tanakh/search/data.ts');
+const { findLexemesForWord } = await import('@torahmap/tanakh/search/search.ts');
 const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
-  await import('../../src/tanakh/search/dictionary.ts');
+  await import('@torahmap/tanakh/search/dictionary.ts');
 const { verseWords } = await import('@torahmap/shell/verseWords.ts');
 const { stripNikkud } = await import('@torahmap/shell/hebrew.ts');
 const { verseId } = await import('@torahmap/link/tanakh');

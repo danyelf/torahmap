@@ -1,4 +1,4 @@
-// Events for the site's own Worker (src/worker/index.ts). No cookies and no
+// Events for the site's own Worker (apps/worker/src/index.ts). No cookies and no
 // browser storage: the visit id lives in memory, so a reload is a new visit.
 import type { TextLanguage } from './language.ts';
 import { driverKind, type Driver } from './scrollytelling/driver.ts';

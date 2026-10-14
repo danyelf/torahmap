@@ -1,6 +1,6 @@
 // What draw() takes: plain data, so it can cross into the page as JSON.
 
-/** Map units, as src/layout.ts gives them. */
+/** Map units, as apps/tanakh/src/layout.ts gives them. */
 export interface PrintVerse {
   x: number;
   y: number;

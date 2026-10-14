@@ -17,7 +17,7 @@ The Hebrew lexeme index behind meanings-mode search comes from the
 
 Every source named here is also credited in the app, in the Credits tab of the
 help modal. The collection dates shown there are hand-maintained strings in
-`src/tanakh/site.ts` and beside each overlay's and tool's credits: no data file
+`apps/tanakh/src/site.ts` and beside each overlay's and tool's credits: no data file
 carries a generation timestamp, and a git commit date cannot stand in for one,
 because a commit that merely moves or refactors a data file would claim it had
 been re-collected that month. **Whenever you run one of the commands below, set
@@ -35,7 +35,7 @@ bash scripts/download-texts.sh
 npx tsx scripts/bundle-texts.ts
 ```
 
-Then set `collected` for both editions in `src/tanakh/site.ts`.
+Then set `collected` for both editions in `apps/tanakh/src/site.ts`.
 
 ### Which editions
 
@@ -86,7 +86,7 @@ Text-Fabric the first time. Once that setup is done:
 .venv/bin/python scripts/search/generate-lexeme-index.py
 ```
 
-Then set the BHSA `collected` date in `src/tanakh/search/index.ts`.
+Then set the BHSA `collected` date in `apps/tanakh/src/search/index.ts`.
 
 Afterwards, check what the new index can name:
 
@@ -114,7 +114,7 @@ refresh them. Once the files are refreshed:
 npx tsx scripts/overlays/haftarah/generate.ts
 ```
 
-Then set the hebcal `collected` date in `src/overlays/haftarah.ts`.
+Then set the hebcal `collected` date in `apps/tanakh/src/overlays/haftarah.ts`.
 
 The names are not hebcal's, and they live in `data/overlays/haftarah/names.json`
 rather
@@ -129,7 +129,7 @@ export — `schemas/Genesis.json` and the other four books, under
 what hebcal calls the portion, because everywhere else the two agree. The
 occasion names are our own; no source publishes a canonical list of them.
 
-Expect the tests to speak up. `src/__tests__/unit/overlays/haftarah-data.test.ts` pins
+Expect the tests to speak up. `apps/tanakh/test/unit/overlays/haftarah-data.test.ts` pins
 several readings by name, so if hebcal has changed its mind about one of them
 the test fails and tells you which. That is the intended way to find out;
 decide whether to follow the change before editing the test to match.
@@ -143,7 +143,7 @@ npm run generate:text-dating
 
 This reads the hand-curated ranges in `data/text-dating-source.json` rather than
 fetching anything, so it does not change when the Wikipedia article behind those
-ranges was last consulted. Set `collected` in `src/overlays/text-dating.ts` only
+ranges was last consulted. Set `collected` in `apps/tanakh/src/overlays/text-dating.ts` only
 if you actually revisit the article.
 
 ## Commentary Counts
@@ -165,7 +165,7 @@ are already present.
 Sefaria re-exports on the 1st of each month, and the script prints the export
 date it found, so there is nothing to gain by running this more than monthly.
 
-Set the `collected` date in `src/overlays/commentary.ts` to the export date the
+Set the `collected` date in `apps/tanakh/src/overlays/commentary.ts` to the export date the
 script printed. That is what the Credits tab shows, and it is the date of the
 export rather than of the run.
 

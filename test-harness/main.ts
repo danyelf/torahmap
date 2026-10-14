@@ -8,7 +8,7 @@ import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 import {
   configure as configureSearch,
   searchTool as searchOverlay,
-} from '../src/tanakh/search/index.ts';
+} from '@torahmap/tanakh/search/index.ts';
 
 // --- Event log ---
 

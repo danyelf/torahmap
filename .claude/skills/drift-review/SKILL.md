@@ -35,7 +35,7 @@ background with this brief, filled in:
 >    is always a finding: that comes from the Vite config.
 > 3. Anything computed twice.
 > 4. Cleverness, indirection or machinery the change does not need; dead code.
-> 5. Boundaries: an overlay's content lives only under `src/overlays/`, and each
+> 5. Boundaries: an overlay's content lives only under `apps/tanakh/src/overlays/`, and each
 >    package keeps to what CLAUDE.md's Project Structure says it is for.
 > 6. Prose, judged by AGENTS.md. Cut by default and argue for what stays.
 >

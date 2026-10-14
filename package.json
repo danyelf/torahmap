@@ -5,7 +5,8 @@
   "version": "0.1.0",
   "type": "module",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
     "prepare": "sh scripts/install-hooks.sh --warn-only",
@@ -49,7 +50,10 @@
     "@torahmap/shell": "*",
     "@torahmap/site": "*",
     "@torahmap/stories": "*",
+    "@torahmap/talmud": "*",
+    "@torahmap/tanakh": "*",
     "@torahmap/telemetry": "*",
-    "@torahmap/utils": "*"
+    "@torahmap/utils": "*",
+    "@torahmap/worker": "*"
   }
 }

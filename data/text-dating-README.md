@@ -9,7 +9,7 @@ of chapters, or (with `"all"`) a whole book, to a single point estimate:
 - **chapters**: `"15"`, a range like `"1-14"`, comma-separated ranges like
   `"1-14,16-40"`, or `"all"` for every chapter in the book
 - **verses**: `"all"`, a single verse (`"5"`), or a range (`"1-11"`)
-- **era**: one of the six eras in `src/overlays/text-dating.ts`
+- **era**: one of the six eras in `apps/tanakh/src/overlays/text-dating.ts`
 - **date_bce**: a single estimated year BCE
 - **note**: explanation of the dating (source attribution, scholarly view)
 - **citation**: optional URL, appended to the note as a link

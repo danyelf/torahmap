@@ -1,0 +1,12 @@
+{
+  "name": "@torahmap/worker",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@torahmap/link": "*",
+    "@torahmap/overlay-catalog": "*",
+    "@torahmap/site": "*",
+    "@torahmap/telemetry": "*",
+    "@torahmap/utils": "*"
+  }
+}

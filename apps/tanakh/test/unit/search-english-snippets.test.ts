@@ -1,0 +1,105 @@
+// An English term's result quotes the English verse.
+
+import { describe, it, expect } from 'vitest';
+import { excerptOf } from '../helpers/excerpt';
+import { buildTextIndex, resultsForVerseSets, type SearchResult } from '../../src/search/search';
+import type { VerseTexts } from '../../src/verseTexts';
+import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
+
+const HEBREW = /[֐-׿]/;
+
+const texts: VerseTexts = {
+  Genesis: {
+    '9': {
+      '9': {
+        he: 'וַאֲנִי הִנְנִי מֵקִים אֶת־בְּרִיתִי אִתְּכֶם',
+        en: 'And I, behold, I establish my covenant with you',
+      },
+    },
+    '17': {
+      '7': {
+        he: 'וַהֲקִמֹתִי אֶת־בְּרִיתִי בֵּינִי וּבֵינֶךָ',
+        en: 'And I will establish my covenant between me and thee',
+      },
+    },
+  },
+};
+
+const index = buildTextIndex(texts, inTextsOrder(texts));
+
+function genesis99(): SearchResult {
+  return resultsForVerseSets(index, [new Set(['Genesis.9.9'])])[0];
+}
+
+describe('snippets for an English term', () => {
+  it('quotes the English verse, not the Hebrew one', () => {
+    const snippet = excerptOf(genesis99(), 'covenant', 'substring', index, EMPTY_DICTIONARY);
+
+    expect(snippet).not.toBeNull();
+    expect(snippet!.snippet).toContain('covenant');
+    expect(snippet!.snippet).not.toMatch(HEBREW);
+  });
+
+  it('marks the word that was searched for', () => {
+    const snippet = excerptOf(genesis99(), 'covenant', 'substring', index, EMPTY_DICTIONARY)!;
+    const marked = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
+
+    expect(marked).toBe('covenant');
+  });
+
+  it('matches without regard to case', () => {
+    const snippet = excerptOf(genesis99(), 'Covenant', 'substring', index, EMPTY_DICTIONARY)!;
+    const marked = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
+
+    // The verse prints it lowercase; the reader typed it capitalised.
+    expect(marked).toBe('covenant');
+  });
+
+  it('still quotes Hebrew for a Hebrew term', () => {
+    const snippet = excerptOf(genesis99(), 'בריתי', 'meanings', index, EMPTY_DICTIONARY)!;
+
+    expect(snippet.snippet).toMatch(HEBREW);
+  });
+
+  it('falls back to the English verse when the word is not in it', () => {
+    const snippet = excerptOf(genesis99(), 'chariot', 'substring', index, EMPTY_DICTIONARY)!;
+
+    // Nothing to mark, but the reader should still be reading the right verse.
+    expect(snippet.snippet).not.toMatch(HEBREW);
+    expect(snippet.matchStart).toBe(0);
+    expect(snippet.matchEnd).toBe(0);
+  });
+});
+
+describe('a Hebrew term beside an English one', () => {
+  // Genesis 17:7 is reached by both; Genesis 9:9 only by the English term, so
+  // its snippet is the one that goes wrong if the Hebrew path claims it.
+  const hebrewTerm = 'בריתי';
+  const englishTerm = 'behold';
+
+  function mixedResults() {
+    return resultsForVerseSets(index, [
+      new Set(['Genesis.17.7']),
+      new Set(['Genesis.17.7', 'Genesis.9.9']),
+    ]);
+  }
+
+  it('quotes English for a verse only the English term found', () => {
+    const only = mixedResults().find((r) => r.verse === 9)!;
+
+    expect(only.matchingTerms.map((m) => m.termIndex)).toEqual([1]);
+
+    const snippet = excerptOf(only, englishTerm, 'substring', index, EMPTY_DICTIONARY)!;
+    expect(snippet.snippet).not.toMatch(HEBREW);
+    expect(snippet.snippet.slice(snippet.matchStart, snippet.matchEnd)).toBe('behold');
+  });
+
+  it('quotes Hebrew for a verse the Hebrew term claimed first', () => {
+    const both = mixedResults().find((r) => r.verse === 7)!;
+
+    expect(both.matchingTerms[0].termIndex).toBe(0);
+    expect(excerptOf(both, hebrewTerm, 'meanings', index, EMPTY_DICTIONARY)!.snippet).toMatch(
+      HEBREW,
+    );
+  });
+});

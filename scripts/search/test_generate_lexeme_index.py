@@ -8,7 +8,7 @@ normalize() here and normalizeHebrewForSearch() in packages/shell/src/hebrew.ts 
 Hebrew identically. If they drift, the index keys and the lookups spell words
 differently, so the lookup silently misses and meanings search finds nothing.
 Both read folding-cases.json; the TypeScript half is in
-src/__tests__/unit/search-normalization.test.ts.
+apps/tanakh/test/unit/search-normalization.test.ts.
 """
 
 import importlib.util

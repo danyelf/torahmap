@@ -16,5 +16,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "packages"]
+  "include": ["apps", "packages", "test", "pages.ts"]
 }
