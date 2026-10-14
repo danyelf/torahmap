@@ -98,7 +98,7 @@ interface OverlayMembers<T, S, D> {
   destroy?(): void;
 
   // null renders default gray; Color[] splits the square corner to corner, one band per color.
-  getVerseColor(verse: SpatialItem<T>, settings: S, data: D): Color | Color[] | null;
+  getItemColor(item: SpatialItem<T>, settings: S, data: D): Color | Color[] | null;
 
   // The same colours for many items at once, as the map and the story's blend
   // ask for them. `hovered` is the item under the cursor; only Haftarah's
@@ -132,9 +132,9 @@ interface OverlayMembers<T, S, D> {
   // are CSS values. Absent, the line is the name alone.
   summary?(settings: S, data: D): OverlaySummary;
 
-  getHoverInfo?(verse: SpatialItem<T>, settings: S, data: D): string | null;
+  getHoverInfo?(item: SpatialItem<T>, settings: S, data: D): string | null;
 
-  // Declaring this marks an overlay's colours as depending on the hovered verse:
+  // Declaring this marks an overlay's colours as depending on the hovered square:
   // the map recomputes them when it says so, and the story's blend does not
   // memoise them. True when moving the hover from `before` to `after` changes them.
   hoverChangesColors?(
@@ -145,22 +145,22 @@ interface OverlayMembers<T, S, D> {
   ): boolean;
 
   renderSidebarInfo?(
-    verse: SpatialItem<T>,
+    item: SpatialItem<T>,
     isPinned: boolean,
     settings: S,
     data: D,
   ): HTMLElement | null;
 
-  // Marks words by their place in the verse, so it is handed the verse as well as its text.
-  highlightVerseText?(
-    verse: SpatialItem<T>,
+  // Marks words by their place in the item's text, so it is handed the item as well as its text.
+  highlightItemText?(
+    item: SpatialItem<T>,
     text: string,
     language: TextLanguage,
     settings: S,
     data: D,
   ): DocumentFragment;
 
-  // The Sefaria `?with=` value this overlay wants a verse's link to open to
+  // The Sefaria `?with=` value this overlay wants an item's link to open to
   // (e.g. a chosen commentary category). Absent overlays get `with=all`.
   getSefariaConnectionParam?(settings: S): string | null;
 

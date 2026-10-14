@@ -1,15 +1,15 @@
-// Splitting a verse into the words a reader can click.
+// Splitting an item's text into the words a reader can click.
 //
 // Word boundaries here must match the ones the dictionary index was built on,
 // or a click looks up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
-import { verseWords } from '../src/verseWords.ts';
+import { textWords } from '../src/textWords.ts';
 import { stripNikkud } from '../src/hebrew.ts';
 
-const words = (text: string) => verseWords(text).map((w) => w.word);
+const words = (text: string) => textWords(text).map((w) => w.word);
 
-describe('the words of a verse', () => {
+describe("the words of an item's text", () => {
   it('splits on spaces', () => {
     expect(words('בראשית ברא אלהים')).toEqual(['בראשית', 'ברא', 'אלהים']);
   });
@@ -36,21 +36,21 @@ describe('the words of a verse', () => {
     expect(words('(לא) אליו')).toEqual(['לא', 'אליו']);
   });
 
-  it('says where each word sits in the verse', () => {
-    const verse = 'וְהָאָ֗רֶץ {פ} עַל־פְּנֵ֣י תְה֑וֹם׃';
-    for (const { word, start, end } of verseWords(verse)) {
-      expect(verse.slice(start, end)).toBe(word);
+  it('says where each word sits in the text', () => {
+    const text = 'וְהָאָ֗רֶץ {פ} עַל־פְּנֵ֣י תְה֑וֹם׃';
+    for (const { word, start, end } of textWords(text)) {
+      expect(text.slice(start, end)).toBe(word);
     }
   });
 
-  it('handles an empty verse without inventing a word', () => {
-    expect(verseWords('')).toEqual([]);
+  it('handles an empty text without inventing a word', () => {
+    expect(textWords('')).toEqual([]);
   });
 });
 
 describe('the spelling a click looks up and puts in the search box', () => {
   it('is the word as printed, final letters and all, without points or brackets', () => {
-    expect(verseWords('(הוצא) [הַיְצֵא] [בָּא הָאָרֶץ]').map((w) => stripNikkud(w.word))).toEqual([
+    expect(textWords('(הוצא) [הַיְצֵא] [בָּא הָאָרֶץ]').map((w) => stripNikkud(w.word))).toEqual([
       'הוצא',
       'היצא',
       'בא',

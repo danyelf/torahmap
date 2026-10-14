@@ -80,7 +80,7 @@ describe('Verse Length Overlay', () => {
     });
 
     it('has required methods', () => {
-      expect(overlay.getVerseColor).toBeDefined();
+      expect(overlay.getItemColor).toBeDefined();
       expect(overlay.renderLegend).toBeDefined();
       expect(overlay.getHoverInfo).toBeDefined();
       expect(overlay.renderSidebarInfo).toBeDefined();
@@ -106,7 +106,7 @@ describe('Verse Length Overlay', () => {
 
     it('handles empty text as zero words', () => {
       const verse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
 
       // Should return dark gray for zero words
       expect(color).not.toBeNull();
@@ -226,7 +226,7 @@ describe('Verse Length Overlay', () => {
       ];
 
       for (const verse of verses) {
-        const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
         expect(color).not.toBeNull();
         assertValidColor(color!);
       }
@@ -239,10 +239,10 @@ describe('Verse Length Overlay', () => {
       const verse12 = createVerse({ book: 'Exodus', chapter: 1, verse: 1 }); // 12 words
       const verse14 = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 14 words
 
-      const color1 = verseLengthOverlay.getVerseColor(verse1)! as [number, number, number];
-      const color4 = verseLengthOverlay.getVerseColor(verse4)! as [number, number, number];
-      const color12 = verseLengthOverlay.getVerseColor(verse12)! as [number, number, number];
-      const color14 = verseLengthOverlay.getVerseColor(verse14)! as [number, number, number];
+      const color1 = verseLengthOverlay.getItemColor(verse1)! as [number, number, number];
+      const color4 = verseLengthOverlay.getItemColor(verse4)! as [number, number, number];
+      const color12 = verseLengthOverlay.getItemColor(verse12)! as [number, number, number];
+      const color14 = verseLengthOverlay.getItemColor(verse14)! as [number, number, number];
 
       // Just verify all colors are valid and different
       assertValidColor(color1);
@@ -257,7 +257,7 @@ describe('Verse Length Overlay', () => {
 
     it('assigns cooler colors (purple) to shorter verses', () => {
       const shortVerse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word
-      const color = verseLengthOverlay.getVerseColor(shortVerse)! as [number, number, number] as [
+      const color = verseLengthOverlay.getItemColor(shortVerse)! as [number, number, number] as [
         number,
         number,
         number,
@@ -271,7 +271,7 @@ describe('Verse Length Overlay', () => {
 
     it('assigns warmer colors (yellow) to longer verses', () => {
       const longVerse = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 16 words
-      const color = verseLengthOverlay.getVerseColor(longVerse)! as [number, number, number] as [
+      const color = verseLengthOverlay.getItemColor(longVerse)! as [number, number, number] as [
         number,
         number,
         number,
@@ -288,16 +288,16 @@ describe('Verse Length Overlay', () => {
       const shortVerse = createVerse({ book: 'Exodus', chapter: 1, verse: 2 }); // 1 word (min)
       const longVerse = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 16 words (max)
 
-      const shortColor = verseLengthOverlay.getVerseColor(shortVerse)! as [
+      const shortColor = verseLengthOverlay.getItemColor(shortVerse)! as [
         number,
         number,
         number,
       ] as [number, number, number] as [number, number, number];
-      const longColor = verseLengthOverlay.getVerseColor(longVerse)! as [
+      const longColor = verseLengthOverlay.getItemColor(longVerse)! as [number, number, number] as [
         number,
         number,
         number,
-      ] as [number, number, number] as [number, number, number];
+      ] as [number, number, number];
 
       // Short should be purple (higher blue component)
       expect(shortColor[2]).toBeGreaterThan(longColor[2]);
@@ -309,7 +309,7 @@ describe('Verse Length Overlay', () => {
 
     it('returns dark gray for verses with zero words', () => {
       const emptyVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(emptyVerse)! as [number, number, number] as [
+      const color = verseLengthOverlay.getItemColor(emptyVerse)! as [number, number, number] as [
         number,
         number,
         number,
@@ -323,7 +323,7 @@ describe('Verse Length Overlay', () => {
 
     it('returns dark gray for verses not in dataset', () => {
       const missingVerse = createVerse({ book: 'UnknownBook', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(missingVerse) as
+      const color = verseLengthOverlay.getItemColor(missingVerse) as
         [number, number, number] | null;
 
       // Missing verses are treated as 0 words (dark gray)
@@ -336,7 +336,7 @@ describe('Verse Length Overlay', () => {
 
     it('uses high saturation for vibrant colors', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(verse)! as [number, number, number] as [
+      const color = verseLengthOverlay.getItemColor(verse)! as [number, number, number] as [
         number,
         number,
         number,
@@ -355,8 +355,8 @@ describe('Verse Length Overlay', () => {
     it('produces consistent colors for same verse', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
 
-      const color1 = verseLengthOverlay.getVerseColor(verse);
-      const color2 = verseLengthOverlay.getVerseColor(verse);
+      const color1 = verseLengthOverlay.getItemColor(verse);
+      const color2 = verseLengthOverlay.getItemColor(verse);
 
       expect(color1).toEqual(color2);
     });
@@ -597,7 +597,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.setData({ texts: testData });
 
       const verse = createVerse({ book: 'TestBook', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
       const info = verseLengthOverlay.getHoverInfo(verse);
 
       assertValidColor(color!);
@@ -619,7 +619,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.setData({ texts: newData });
 
       const verse = createVerse({ book: 'NewBook', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
       const info = verseLengthOverlay.getHoverInfo(verse);
 
       expect(color).not.toBeNull();
@@ -628,7 +628,7 @@ describe('Verse Length Overlay', () => {
 
     it('handles missing chapter in book', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 999, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
       const info = verseLengthOverlay.getHoverInfo(verse);
 
       // Missing data is treated as 0 words (dark gray)
@@ -639,7 +639,7 @@ describe('Verse Length Overlay', () => {
 
     it('handles missing verse in chapter', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 999 });
-      const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
       const info = verseLengthOverlay.getHoverInfo(verse);
 
       // Missing data is treated as 0 words (dark gray)
@@ -652,7 +652,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.setData({ texts: {} });
 
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
 
       // Missing data is treated as 0 words (dark gray)
       expect(color).not.toBeNull();
@@ -711,7 +711,7 @@ describe('Verse Length Overlay', () => {
       verseLengthOverlay.setData({ texts: minimalData });
 
       const verse = createVerse({ book: 'SingleBook', chapter: 1, verse: 1 });
-      const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
       const info = verseLengthOverlay.getHoverInfo(verse);
 
       assertValidColor(color!);
@@ -737,7 +737,7 @@ describe('Verse Length Overlay', () => {
       ];
 
       for (const verse of verses) {
-        const color = verseLengthOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = verseLengthOverlay.getItemColor(verse) as [number, number, number] | null;
         if (color !== null) {
           assertValidColor(color);
           for (const component of color) {
@@ -753,17 +753,17 @@ describe('Verse Length Overlay', () => {
       const verse7 = createVerse({ book: 'Genesis', chapter: 1, verse: 1 }); // 7 words
       const verse14 = createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }); // 14 words
 
-      const color1 = verseLengthOverlay.getVerseColor(verse1)! as [number, number, number] as [
+      const color1 = verseLengthOverlay.getItemColor(verse1)! as [number, number, number] as [
         number,
         number,
         number,
       ];
-      const color7 = verseLengthOverlay.getVerseColor(verse7)! as [number, number, number] as [
+      const color7 = verseLengthOverlay.getItemColor(verse7)! as [number, number, number] as [
         number,
         number,
         number,
       ];
-      const color14 = verseLengthOverlay.getVerseColor(verse14)! as [number, number, number] as [
+      const color14 = verseLengthOverlay.getItemColor(verse14)! as [number, number, number] as [
         number,
         number,
         number,
@@ -783,11 +783,11 @@ describe('Verse Length Overlay', () => {
   describe('data', () => {
     it('colours by the texts it is handed now', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const before = verseLengthOverlay.getVerseColor(verse);
+      const before = verseLengthOverlay.getItemColor(verse);
       const shorter = structuredClone(testVerseTexts);
       shorter.Genesis['1']['1'].he = 'בְּרֵאשִׁ֖ית';
       verseLengthOverlay.setData({ texts: shorter });
-      expect(verseLengthOverlay.getVerseColor(verse)).not.toEqual(before);
+      expect(verseLengthOverlay.getItemColor(verse)).not.toEqual(before);
     });
 
     it('colours the same whether or not prebuild ran first', () => {

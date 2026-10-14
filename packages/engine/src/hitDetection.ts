@@ -1,26 +1,26 @@
-// Hit Detection module - handles verse hit detection from screen coordinates
+// Hit Detection module - handles square hit detection from screen coordinates
 
 import type { SpatialItem } from './types.ts';
 import { screenToWorld, type Camera, type Viewport } from './camera.ts';
 import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 /** Check if a point (in world coordinates) is inside a spatial item's bounds. */
-export function isPointInItem<T>(worldX: number, worldY: number, verse: SpatialItem<T>): boolean {
+export function isPointInItem<T>(worldX: number, worldY: number, item: SpatialItem<T>): boolean {
   return (
-    worldX >= verse.x &&
-    worldX < verse.x + verse.size &&
-    worldY >= verse.y &&
-    worldY < verse.y + verse.size
+    worldX >= item.x &&
+    worldX < item.x + item.size &&
+    worldY >= item.y &&
+    worldY < item.y + item.size
   );
 }
 
-/** Find verse at exact world coordinates (no fuzzy matching). */
+/** Find square at exact world coordinates (no fuzzy matching). */
 export function findExactHit<T>(
-  verses: SpatialItem<T>[],
+  items: SpatialItem<T>[],
   worldX: number,
   worldY: number,
 ): SpatialItem<T> | null {
-  for (const v of verses) {
+  for (const v of items) {
     if (isPointInItem(worldX, worldY, v)) {
       return v;
     }
@@ -33,7 +33,7 @@ export function findExactHit<T>(
  * `maxDistance` if one is given.
  */
 export function findNearestItem<T>(
-  verses: SpatialItem<T>[],
+  items: SpatialItem<T>[],
   worldX: number,
   worldY: number,
   maxDistance: number = Infinity,
@@ -41,7 +41,7 @@ export function findNearestItem<T>(
   let nearestItem: SpatialItem<T> | null = null;
   let nearestDistSq = maxDistance * maxDistance;
 
-  for (const v of verses) {
+  for (const v of items) {
     const centerX = v.x + v.size / 2;
     const centerY = v.y + v.size / 2;
 
@@ -58,21 +58,21 @@ export function findNearestItem<T>(
   return nearestItem;
 }
 
-/** Find the nearest verse within the fuzzy radius of a world point. */
+/** Find the nearest square within the fuzzy radius of a world point. */
 export function findFuzzyHit<T>(
-  verses: SpatialItem<T>[],
+  items: SpatialItem<T>[],
   worldX: number,
   worldY: number,
 ): SpatialItem<T> | null {
-  return findNearestItem(verses, worldX, worldY, HIGHLIGHT_CONSTANTS.FUZZY_RADIUS);
+  return findNearestItem(items, worldX, worldY, HIGHLIGHT_CONSTANTS.FUZZY_RADIUS);
 }
 
 /**
- * Find verse at screen coordinates: exact hit detection first, falling back
+ * Find square at screen coordinates: exact hit detection first, falling back
  * to fuzzy matching so a near-miss still lands on something.
  */
 export function findItemAtPoint<T>(
-  verses: SpatialItem<T>[],
+  items: SpatialItem<T>[],
   camera: Camera,
   viewport: Viewport,
   screenX: number,
@@ -80,10 +80,10 @@ export function findItemAtPoint<T>(
 ): SpatialItem<T> | null {
   const { x: worldX, y: worldY } = screenToWorld({ x: screenX, y: screenY }, camera, viewport);
 
-  const exactHit = findExactHit(verses, worldX, worldY);
+  const exactHit = findExactHit(items, worldX, worldY);
   if (exactHit) {
     return exactHit;
   }
 
-  return findFuzzyHit(verses, worldX, worldY);
+  return findFuzzyHit(items, worldX, worldY);
 }

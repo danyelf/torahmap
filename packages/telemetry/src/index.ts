@@ -36,7 +36,7 @@ export const EVENTS = {
   story_exit: { blobs: ['stop_id', 'how', 'story'], doubles: ['stop_number'] },
   story_return: { blobs: ['stop_id', 'how', 'story'], doubles: [] },
   // A square's id is its link form, and its area the text's area(); a word's
-  // id is its verse's.
+  // id is its square's.
   view_settled: { blobs: ['area', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },

@@ -16,7 +16,7 @@ export interface ViewState {
   overlay: string;
   overlayParams: OverlayParams;
   searchParams: UrlParamValues;
-  verse: string | null;
+  square: string | null;
   camera: Camera;
 }
 
@@ -42,7 +42,7 @@ export function resolveViewState(
     overlay,
     overlayParams: overlay === NO_OVERLAY ? {} : url.overlayParams,
     searchParams: url.searchParams ?? {},
-    verse: url.square ?? null,
+    square: url.square ?? null,
     camera: {
       zoom: url.zoom ?? defaultCamera.zoom,
       x: url.x ?? defaultCamera.x,
@@ -57,16 +57,16 @@ export function opensFolded(link: UrlState, hasVisited: boolean): boolean {
 }
 
 /**
- * The camera a view lands on: its zoom, then its position, then its verse at
- * `focus`. The verse is placed last so that it is placed at the zoom the link
+ * The camera a view lands on: its zoom, then its position, then its item at
+ * `focus`. The item is placed last so that it is placed at the zoom the link
  * asked for; placing it first and zooming after moves it off screen.
  */
 export function cameraForView(
   camera: Camera,
-  verse: { x: number; y: number; size: number } | null,
+  item: { x: number; y: number; size: number } | null,
   focus: ScreenPoint,
   viewport: Viewport,
 ): Camera {
-  if (!verse) return { ...camera };
-  return { ...centreForFocus(verse, camera.zoom, focus, viewport), zoom: camera.zoom };
+  if (!item) return { ...camera };
+  return { ...centreForFocus(item, camera.zoom, focus, viewport), zoom: camera.zoom };
 }

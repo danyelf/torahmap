@@ -151,13 +151,13 @@ describe('Search Overlay', () => {
   describe('Color Computation - No Search', () => {
     it('returns null when no search is active', () => {
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
       expect(color).toBeNull();
     });
 
     it('returns null for all verses when no search query', () => {
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -174,8 +174,8 @@ describe('Search Overlay', () => {
       const verse1 = testVerses[0]; // Genesis 1:1
       const verse3 = testVerses[2]; // Genesis 1:3
 
-      const color1 = searchOverlay.getVerseColor(verse1);
-      const color3 = searchOverlay.getVerseColor(verse3);
+      const color1 = searchOverlay.getItemColor(verse1);
+      const color3 = searchOverlay.getItemColor(verse3);
 
       expect(color1).not.toBeNull();
       expect(color3).not.toBeNull();
@@ -186,12 +186,12 @@ describe('Search Overlay', () => {
 
     it('gives no colour to a verse it does not match', () => {
       // Genesis 1:2 does not contain "God"
-      expect(searchOverlay.getVerseColor(testVerses[1])).toBeNull();
+      expect(searchOverlay.getItemColor(testVerses[1])).toBeNull();
     });
 
     it('uses correct color from SEARCH_COLORS palette', () => {
       const verse = testVerses[0]; // Genesis 1:1
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
@@ -206,7 +206,7 @@ describe('Search Overlay', () => {
     it('returns single color for verse matching one term', () => {
       // Genesis 1:1 contains "God" but not "earth"
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[0]); // Color for first term
     });
@@ -214,7 +214,7 @@ describe('Search Overlay', () => {
     it('returns array of colors for verse matching multiple terms', () => {
       // Genesis 1:2 contains "earth"
       const verse = testVerses[1];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[1]);
     });
@@ -236,7 +236,7 @@ describe('Search Overlay', () => {
     it('highlights verses with Hebrew matches', () => {
       // Genesis 1:1 contains אלהים
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       expect(color).toEqual(SEARCH_COLORS[0]);
@@ -244,7 +244,7 @@ describe('Search Overlay', () => {
 
     it('gives no colour to a verse without a Hebrew match', () => {
       // Genesis 2:1 does not contain אלהים
-      expect(searchOverlay.getVerseColor(testVerses[3])).toBeNull();
+      expect(searchOverlay.getItemColor(testVerses[3])).toBeNull();
     });
 
     it('handles nikkud-insensitive search', () => {
@@ -253,7 +253,7 @@ describe('Search Overlay', () => {
 
       // Still matches Genesis 1:1, which has אֱלֹהִים (with nikkud)
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
@@ -336,7 +336,7 @@ describe('Search Overlay', () => {
       input.value = 'אלהים';
       input.dispatchEvent(new Event('input'));
       expect(input.dir).toBe('rtl');
-      expect(searchOverlay.getVerseColor(testVerses[0])).not.toBeNull();
+      expect(searchOverlay.getItemColor(testVerses[0])).not.toBeNull();
 
       clearBtn.click();
 
@@ -344,7 +344,7 @@ describe('Search Overlay', () => {
       expect(input.value).toBe('');
       expect(input.dir).toBe('ltr');
       // ...and the search is actually re-run, so nothing stays highlighted
-      expect(searchOverlay.getVerseColor(testVerses[0])).toBeNull();
+      expect(searchOverlay.getItemColor(testVerses[0])).toBeNull();
     });
 
     it('reports a change on search', () => {
@@ -764,7 +764,7 @@ describe('Search Overlay', () => {
 
       // Isaiah 1:1 should be highlighted
       const verse = testVerses[6];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
@@ -800,7 +800,7 @@ describe('Search Overlay', () => {
       searchOverlay.restore(urlParams);
 
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toBeNull();
     });
@@ -902,7 +902,7 @@ describe('Search Overlay', () => {
       type(container, '');
 
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -912,7 +912,7 @@ describe('Search Overlay', () => {
       type(container, '   ');
 
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -922,7 +922,7 @@ describe('Search Overlay', () => {
       type(container, 'xyzabc123'); // Should not match anything
 
       for (const verse of testVerses) {
-        expect(searchOverlay.getVerseColor(verse)).toBeNull();
+        expect(searchOverlay.getItemColor(verse)).toBeNull();
       }
     });
 
@@ -931,7 +931,7 @@ describe('Search Overlay', () => {
       type(container, 'God');
 
       const verse = createVerse({ book: 'NonExistent', chapter: 1, verse: 1 });
-      expect(searchOverlay.getVerseColor(verse)).toBeNull();
+      expect(searchOverlay.getItemColor(verse)).toBeNull();
     });
 
     it('handles comma-separated terms', () => {
@@ -939,7 +939,7 @@ describe('Search Overlay', () => {
       type(container, 'God, earth, light');
 
       const verse = testVerses[0]; // Genesis 1:1 has "God"
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
     });
@@ -949,7 +949,7 @@ describe('Search Overlay', () => {
       type(container, '  God  ,  earth  ');
 
       const verse = testVerses[0];
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
     });
@@ -958,14 +958,14 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, 'a'.repeat(1000));
 
-      expect(() => searchOverlay.getVerseColor(testVerses[0])).not.toThrow();
+      expect(() => searchOverlay.getItemColor(testVerses[0])).not.toThrow();
     });
 
     it('handles special characters in search', () => {
       const container = render();
       type(container, '&<>"\'/');
 
-      expect(() => searchOverlay.getVerseColor(testVerses[0])).not.toThrow();
+      expect(() => searchOverlay.getItemColor(testVerses[0])).not.toThrow();
     });
 
     it('handles search term shorter than 2 characters', () => {
@@ -973,7 +973,7 @@ describe('Search Overlay', () => {
       type(container, 'a'); // Too short
 
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
         expect(color).toBeNull();
       }
     });
@@ -1019,14 +1019,14 @@ describe('Search Overlay', () => {
       type(container1, 'God');
 
       const verse = testVerses[0]; // Genesis 1:1
-      let color = searchOverlay.getVerseColor(verse);
+      let color = searchOverlay.getItemColor(verse);
       expect(color).toEqual(SEARCH_COLORS[0]);
 
       // Simulate switching to a different overlay (calls destroy)
       searchOverlay.destroy?.();
 
       // Search state survives, still available internally
-      color = searchOverlay.getVerseColor(verse);
+      color = searchOverlay.getItemColor(verse);
       expect(color).toEqual(SEARCH_COLORS[0]);
 
       // Simulate switching back to search overlay (renders controls again)
@@ -1035,7 +1035,7 @@ describe('Search Overlay', () => {
       const input2 = container2.querySelector('#search-input') as HTMLInputElement;
       expect(input2.value).toBe('God');
 
-      color = searchOverlay.getVerseColor(verse);
+      color = searchOverlay.getItemColor(verse);
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
 
@@ -1082,7 +1082,7 @@ describe('Search Overlay', () => {
     });
   });
 
-  describe('highlightVerseText', () => {
+  describe('highlightItemText', () => {
     // Helper to convert DocumentFragment to HTML string for testing
     function fragmentToHtml(fragment: DocumentFragment): string {
       const div = document.createElement('div');
@@ -1107,13 +1107,13 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, '');
 
-      const result = searchOverlay.highlightVerseText(createVerse(), 'In the beginning', 'en');
+      const result = searchOverlay.highlightItemText(createVerse(), 'In the beginning', 'en');
       expect(fragmentToText(result)).toBe('In the beginning');
       expect(fragmentToHtml(result)).not.toContain('<mark');
     });
 
     it('highlights matching terms in English text', () => {
-      const result = searchOverlay.highlightVerseText(
+      const result = searchOverlay.highlightItemText(
         createVerse(),
         'And God said let there be light',
         'en',
@@ -1129,7 +1129,7 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, 'אלהים');
 
-      const result = searchOverlay.highlightVerseText(
+      const result = searchOverlay.highlightItemText(
         createVerse(),
         'בְּרֵאשִׁית בָּרָא אֱלֹהִים',
         'he',
@@ -1138,7 +1138,7 @@ describe('Search Overlay', () => {
     });
 
     it('escapes HTML special characters', () => {
-      const result = searchOverlay.highlightVerseText(
+      const result = searchOverlay.highlightItemText(
         createVerse(),
         'Test <script>alert("xss")</script>',
         'en',
@@ -1153,7 +1153,7 @@ describe('Search Overlay', () => {
     });
 
     it('assigns term-N class to marks', () => {
-      const result = searchOverlay.highlightVerseText(
+      const result = searchOverlay.highlightItemText(
         createVerse(),
         'And God said let there be light',
         'en',
@@ -1168,23 +1168,23 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, 'God, Godly'); // Overlapping terms (hypothetically)
 
-      const result = searchOverlay.highlightVerseText(createVerse(), 'God is great', 'en');
+      const result = searchOverlay.highlightItemText(createVerse(), 'God is great', 'en');
       const text = fragmentToText(result);
       expect(text).toContain('God');
     });
 
     it('handles text with no matches', () => {
-      const result = searchOverlay.highlightVerseText(createVerse(), 'No matches here', 'en');
+      const result = searchOverlay.highlightItemText(createVerse(), 'No matches here', 'en');
       expect(fragmentToHtml(result)).not.toContain('<mark');
     });
 
     it('handles empty text', () => {
-      const result = searchOverlay.highlightVerseText(createVerse(), '', 'en');
+      const result = searchOverlay.highlightItemText(createVerse(), '', 'en');
       expect(fragmentToText(result)).toBe('');
     });
 
     it('handles case-insensitive English matching', () => {
-      const result = searchOverlay.highlightVerseText(createVerse(), 'god created', 'en');
+      const result = searchOverlay.highlightItemText(createVerse(), 'god created', 'en');
       expect(fragmentToHtml(result)).toContain('<mark');
     });
 
@@ -1192,12 +1192,12 @@ describe('Search Overlay', () => {
       const container = render();
       type(container, 'אלהים'); // Without nikkud
 
-      const result = searchOverlay.highlightVerseText(createVerse(), 'אֱלֹהִים', 'he'); // With nikkud
+      const result = searchOverlay.highlightItemText(createVerse(), 'אֱלֹהִים', 'he'); // With nikkud
       expect(fragmentToHtml(result)).toContain('<mark');
     });
 
     it('handles multiple occurrences of same term', () => {
-      const result = searchOverlay.highlightVerseText(createVerse(), 'God said God created', 'en');
+      const result = searchOverlay.highlightItemText(createVerse(), 'God said God created', 'en');
       const html = fragmentToHtml(result);
       const matches = html.match(/<mark/g);
       expect(matches?.length).toBeGreaterThan(1);
@@ -1216,7 +1216,7 @@ describe('Search Overlay', () => {
 
       // Test verse with the word אֱלֹהִים (with nikkud); should highlight only
       // the full word, not substrings.
-      const result = searchOverlay.highlightVerseText(
+      const result = searchOverlay.highlightItemText(
         createVerse(),
         'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵת',
         'he',
@@ -1241,7 +1241,7 @@ describe('Search Overlay', () => {
 
       // Test verse where "God" appears as full word and as substring
       // "God" should match but "Godly" should not
-      const result = searchOverlay.highlightVerseText(createVerse(), 'God is Godly and good', 'en');
+      const result = searchOverlay.highlightItemText(createVerse(), 'God is Godly and good', 'en');
       const html = fragmentToHtml(result);
 
       const marks = html.match(/<mark[^>]*>([^<]*)<\/mark>/g);
@@ -1266,7 +1266,7 @@ describe('Search Overlay', () => {
 
       // Test with the actual verse text from Genesis 1:1
       const verseText = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים';
-      const result = searchOverlay.highlightVerseText(createVerse(), verseText, 'he');
+      const result = searchOverlay.highlightItemText(createVerse(), verseText, 'he');
       const html = fragmentToHtml(result);
 
       const matches = html.match(/<mark[^>]*>([^<]*)<\/mark>/g);
@@ -1286,7 +1286,7 @@ describe('Search Overlay', () => {
       searchOverlay.restore({ search: 'הארץ', mode: 'w' });
 
       const html = fragmentToHtml(
-        searchOverlay.highlightVerseText(
+        searchOverlay.highlightItemText(
           createVerse(),
           'אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃',
           'he',
@@ -1308,7 +1308,7 @@ describe('Search Overlay', () => {
       searchOverlay.restore({ search: 'ירושלם', mode: 'w' });
 
       const html = fragmentToHtml(
-        searchOverlay.highlightVerseText(createVerse(), verse, 'he') as DocumentFragment,
+        searchOverlay.highlightItemText(createVerse(), verse, 'he') as DocumentFragment,
       );
       const marked = [...html.matchAll(/<mark[^>]*>([^<]*)<\/mark>/g)].map((m) =>
         m[1].replace(/[^א-ת]/g, ''),
@@ -1325,9 +1325,9 @@ describe('Search Overlay', () => {
     });
 
     it('returns valid RGB colors for every verse it matches', () => {
-      expect(testVerses.some((verse) => searchOverlay.getVerseColor(verse) !== null)).toBe(true);
+      expect(testVerses.some((verse) => searchOverlay.getItemColor(verse) !== null)).toBe(true);
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
         if (Array.isArray(color)) {
           if (typeof color[0] === 'number') {
@@ -1345,7 +1345,7 @@ describe('Search Overlay', () => {
 
     it('returns colors in 0-1 range', () => {
       for (const verse of testVerses) {
-        const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+        const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
         if (Array.isArray(color) && typeof color[0] === 'number') {
           const c = color as Color;
@@ -1452,9 +1452,9 @@ describe('Search Overlay', () => {
       expect(changed).not.toHaveBeenCalled();
     });
 
-    it('gives the colours getVerseColor gives for the same query', () => {
+    it('gives the colours getItemColor gives for the same query', () => {
       searchOverlay.restore({ search: 'God, heavens' });
-      const expected = testVerses.map((v) => searchOverlay.getVerseColor(v));
+      const expected = testVerses.map((v) => searchOverlay.getItemColor(v));
 
       searchOverlay.restore({ search: '' });
       expect(colorsFor(testVerses, 'God, heavens')).toEqual(expected);
@@ -1477,15 +1477,15 @@ describe('Search Overlay', () => {
   describe('Settings the app holds', () => {
     it('paints the settings it is handed, whatever it was last asked about', () => {
       searchOverlay.restore({ search: 'God' });
-      const held = testVerses.map((v) => searchOverlay.getVerseColor(v));
+      const held = testVerses.map((v) => searchOverlay.getItemColor(v));
 
       colorsFor(testVerses, 'heavens');
-      expect(testVerses.map((v) => searchOverlay.getVerseColor(v))).toEqual(held);
+      expect(testVerses.map((v) => searchOverlay.getItemColor(v))).toEqual(held);
 
       // A second holder of settings — a story stop being blended, say —
       // restoring a different search leaves this one's paint alone.
       hostOverlay(searchOverlay.overlay, searchOverlay.data).restore({ search: 'earth' });
-      expect(testVerses.map((v) => searchOverlay.getVerseColor(v))).toEqual(held);
+      expect(testVerses.map((v) => searchOverlay.getItemColor(v))).toEqual(held);
     });
 
     it('asks for a change rather than making one', () => {
@@ -1504,7 +1504,7 @@ describe('Search Overlay', () => {
 
       expect(requests).toHaveLength(1);
       expect(searchOverlay.settings).toBe(before);
-      expect(testVerses.map((v) => searchOverlay.getVerseColor(v))).toEqual(
+      expect(testVerses.map((v) => searchOverlay.getItemColor(v))).toEqual(
         testVerses.map(() => null),
       );
     });
@@ -1551,7 +1551,7 @@ describe('Search Overlay', () => {
 
       // Matching verses should be highlighted
       const verse = testVerses[0]; // Genesis 1:1
-      const color = searchOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
       expect(color).toEqual(SEARCH_COLORS[0]);
     });
 

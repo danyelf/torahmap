@@ -61,7 +61,7 @@ describe('itemColoring', () => {
       const overlay: TanakhOverlay = {
         id: 'test',
         name: 'Test',
-        getVerseColor: vi.fn(),
+        getItemColor: vi.fn(),
         colorsFor,
       };
 
@@ -84,10 +84,10 @@ describe('itemColoring', () => {
     const hoverSensitive = testOverlay({
       id: 'hover',
       name: 'Hover',
-      getVerseColor: () => null,
+      getItemColor: () => null,
       hoverChangesColors: () => true,
     });
-    const hoverBlind = testOverlay({ id: 'plain', name: 'Plain', getVerseColor: () => null });
+    const hoverBlind = testOverlay({ id: 'plain', name: 'Plain', getItemColor: () => null });
 
     it('re-blends mid-transition when the hovered verse changes', () => {
       expect(

@@ -38,7 +38,7 @@ describe('mergePictures', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('fades a one-colour verse into its stripes from its own colour', () => {
+  it('fades a one-colour square into its stripes from its own colour', () => {
     // [cyan] becoming [cyan, orange, red]: every stripe starts cyan, so
     // nothing flashes dark at the start of the transition.
     const cyan: Color = [0, 1, 1];
@@ -76,7 +76,7 @@ describe('mergePictures', () => {
   });
 
   it('starts from the size a layer was given, not the one its stripes suggest', () => {
-    // An ease that begins partway through a transition, from a verse drawn 30% grown.
+    // An ease that begins partway through a transition, from a square drawn 30% grown.
     const a: Color = [1, 0, 0];
     const b: Color = [0, 0, 1];
     const partway = { colors: [[a, b]], growth: [0.3] };
@@ -109,7 +109,7 @@ describe('mergePictures with rings', () => {
     expect(merged.rings![0]).toEqual([0.5, 0, 0.5]);
   });
 
-  it('leaves a verse with a ring on neither side without one', () => {
+  it('leaves a square with a ring on neither side without one', () => {
     const merged = mergePictures(
       { colors: [RED, RED] },
       { colors: [RED, RED], rings: [BLUE, null] },

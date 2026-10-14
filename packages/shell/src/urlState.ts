@@ -41,7 +41,7 @@ export function isApplyingExternalState(): boolean {
  * applied — see applyingExternalState().
  *
  * pushHistory creates a new history entry, for a significant change like
- * overlay or verse; otherwise it replaces the current entry, for pan/zoom.
+ * overlay or pinned item; otherwise it replaces the current entry, for pan/zoom.
  * A URL that would not change is left alone, so it adds no history entry.
  */
 export function updateUrl(state: UrlState, keys: LinkKeys, pushHistory: boolean = false): void {

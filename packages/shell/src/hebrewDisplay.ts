@@ -1,4 +1,4 @@
-// The reader's choice to hide the Hebrew in the verse popup and the map labels.
+// The reader's choice to hide the Hebrew in the popup and the map labels.
 // Search still takes Hebrew; only what is displayed changes.
 
 const STORAGE_KEY = 'torahMap.englishOnly';

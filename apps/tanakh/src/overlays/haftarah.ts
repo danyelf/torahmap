@@ -15,7 +15,7 @@ import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import {
   deriveHaftarah,
   forEachVerseInRange,
-  getItemColor,
+  readingColor,
   HAFTARAH_FILES,
   isParsha,
   type Custom,
@@ -238,7 +238,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
   },
 
   /** The colour with nothing hovered on the map. The map asks colorsFor, which takes the hover. */
-  getVerseColor(
+  getItemColor(
     verse: TanakhLayout,
     settings: HaftarahSettings,
     data: HaftarahData,
@@ -290,7 +290,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
 
     const totalItems = deriveHaftarah(data, settings.custom).items.length;
     const gradient = buildLegendGradient(10, (i) =>
-      getItemColor(i * (totalItems / 10), totalItems),
+      readingColor(i * (totalItems / 10), totalItems),
     );
 
     container.innerHTML = `

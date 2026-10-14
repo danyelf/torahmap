@@ -451,7 +451,7 @@ export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> 
     dictionaryOf(data);
   },
 
-  getVerseColor(verse, settings, data) {
+  getItemColor(verse, settings, data) {
     return searchColorAt(verse, searchFor(data, settings));
   },
 
@@ -577,7 +577,7 @@ export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> 
     requestChange = null;
   },
 
-  highlightVerseText(verse, text, language, settings, data) {
+  highlightItemText(verse, text, language, settings, data) {
     const words = language === HEBREW ? wordsOfVerse(data.parse, verse.id, text) : null;
     return highlightTerms(
       text,

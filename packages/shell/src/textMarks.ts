@@ -1,4 +1,4 @@
-// Two tools each hand back a verse's text with some stretches wrapped in a
+// Two tools each hand back an item's text with some stretches wrapped in a
 // mark; this lays both sets of marks over the one text.
 
 interface Marked {

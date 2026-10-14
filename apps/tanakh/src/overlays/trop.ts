@@ -232,7 +232,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     marksOf(data);
   },
 
-  getVerseColor(verse, settings, data) {
+  getItemColor(verse, settings, data) {
     return tropColorAt(verse, derivationFor(data, settings));
   },
 
@@ -292,7 +292,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     return count ? `${derived.entry.name} ×${count}` : null;
   },
 
-  highlightVerseText(
+  highlightItemText(
     _verse,
     text: string,
     language: TextLanguage,

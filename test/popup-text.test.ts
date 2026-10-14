@@ -29,7 +29,7 @@ describe("the Tanakh's popup", () => {
     const commentary = testOverlay({
       id: 'commentary',
       name: 'Commentary',
-      getVerseColor: () => null,
+      getItemColor: () => null,
       getSefariaConnectionParam: (settings: { category: string }) => settings.category,
     });
     const overlay = { tool: commentary, settings: { category: 'Midrash' }, data: undefined };

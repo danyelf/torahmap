@@ -1,11 +1,11 @@
 // Word spans and overlay highlighting in the same text.
 //
-// The verse popup may hold plain text, search highlights, or trop highlights.
+// The popup may hold plain text, search highlights, or trop highlights.
 // Words have to become clickable in all three without changing what the
 // overlays produce.
 
 import { describe, it, expect, vi } from 'vitest';
-import { wrapWordsInFragment } from '../src/verseWords.ts';
+import { wrapWordsInFragment } from '../src/textWords.ts';
 
 function fragmentOf(...nodes: Node[]): DocumentFragment {
   const fragment = document.createDocumentFragment();
@@ -24,7 +24,7 @@ describe('wrapping words in a highlighted fragment', () => {
     const text = 'בראשית ברא אלהים';
     const wrapped = wrapWordsInFragment(fragmentOf(document.createTextNode(text)), text);
 
-    const spans = [...wrapped.querySelectorAll('.verse-word')];
+    const spans = [...wrapped.querySelectorAll('.popup-word')];
     expect(spans.map((s) => s.textContent)).toEqual(['בראשית', 'ברא', 'אלהים']);
     expect(spans.map((s) => s.getAttribute('data-word-index'))).toEqual(['0', '1', '2']);
   });
@@ -40,7 +40,7 @@ describe('wrapping words in a highlighted fragment', () => {
     const text = 'אֶחָֽד׃ {פ}';
     const wrapped = wrapWordsInFragment(fragmentOf(document.createTextNode(text)), text);
 
-    const spans = [...wrapped.querySelectorAll('.verse-word')];
+    const spans = [...wrapped.querySelectorAll('.popup-word')];
     expect(spans.map((s) => s.textContent)).toEqual(['אֶחָֽד']);
   });
 
@@ -55,7 +55,7 @@ describe('wrapping words in a highlighted fragment', () => {
 
     expect(wrapped.querySelector('mark')).not.toBeNull();
     expect(wrapped.textContent).toBe(text);
-    expect([...wrapped.querySelectorAll('.verse-word')].length).toBeGreaterThanOrEqual(2);
+    expect([...wrapped.querySelectorAll('.popup-word')].length).toBeGreaterThanOrEqual(2);
   });
 
   it('gives both halves of an interrupted word the same index', () => {
@@ -72,8 +72,8 @@ describe('wrapping words in a highlighted fragment', () => {
     expect(wrapped.textContent).toBe(text);
   });
 
-  it('wraps nothing when the fragment text does not match the verse', () => {
-    // If an overlay ever hands back text that has drifted from the verse it
+  it('wraps nothing when the fragment text does not match the item', () => {
+    // If an overlay ever hands back text that has drifted from the item it
     // was built from, a click would resolve against the wrong offsets and
     // report the wrong word. Refusing to wrap makes that failure visible -
     // the words are simply not clickable - instead of silently wrong.
@@ -84,7 +84,7 @@ describe('wrapping words in a highlighted fragment', () => {
     const wrapped = wrapWordsInFragment(fragment, text);
 
     expect(wrapped.textContent).toBe('something else entirely');
-    expect(wrapped.querySelectorAll('.verse-word')).toHaveLength(0);
+    expect(wrapped.querySelectorAll('.popup-word')).toHaveLength(0);
     expect(warn).toHaveBeenCalledTimes(1);
 
     warn.mockRestore();

@@ -415,23 +415,23 @@
 }
 
 /* Sidebar search term highlighting */
-#verse-popup mark.term-0 {
+#popup mark.term-0 {
   background: rgba(51, 230, 255, 0.4);
   color: #fff;
 }
-#verse-popup mark.term-1 {
+#popup mark.term-1 {
   background: rgba(255, 128, 0, 0.4);
   color: #fff;
 }
-#verse-popup mark.term-2 {
+#popup mark.term-2 {
   background: rgba(128, 255, 51, 0.4);
   color: #fff;
 }
-#verse-popup mark.term-3 {
+#popup mark.term-3 {
   background: rgba(255, 51, 204, 0.4);
   color: #fff;
 }
-#verse-popup mark.term-4 {
+#popup mark.term-4 {
   background: rgba(255, 255, 51, 0.4);
   color: #000;
 }

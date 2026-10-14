@@ -9,8 +9,8 @@ import {
 const SEARCH: StartOverlay = { id: 'search', name: 'Find', description: 'Finds a word.' };
 
 const OVERLAYS: StartOverlay[] = [
-  { id: 'colours', name: 'Colours', description: 'Paints the verses. Brighter is more.' },
-  { id: 'shades', name: 'Shades', description: 'Shades the verses.' },
+  { id: 'colours', name: 'Colours', description: 'Paints the squares. Brighter is more.' },
+  { id: 'shades', name: 'Shades', description: 'Shades the squares.' },
 ];
 
 const STORIES: StartStory[] = [
@@ -44,7 +44,7 @@ describe('the starting points', () => {
     const [search, colours, , tour] = buttons(div);
     expect(search.textContent).toContain('Find');
     expect(search.textContent).toContain('Finds a word.');
-    expect(colours.textContent).toContain('Paints the verses.');
+    expect(colours.textContent).toContain('Paints the squares.');
     expect(colours.textContent).not.toContain('Brighter is more.');
     expect(tour.textContent).toContain('The Guided Tour');
     expect(tour.textContent).toContain('Follows Abraham.');

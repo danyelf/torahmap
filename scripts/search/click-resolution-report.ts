@@ -52,7 +52,7 @@ const { SEARCH_FILES, dictionaryOf } = await import('@torahmap/tanakh/search/dat
 const { findLexemesForWord } = await import('@torahmap/tanakh/search/search.ts');
 const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
   await import('@torahmap/tanakh/search/dictionary.ts');
-const { verseWords } = await import('@torahmap/shell/verseWords.ts');
+const { textWords } = await import('@torahmap/shell/textWords.ts');
 const { stripNikkud } = await import('@torahmap/shell/hebrew.ts');
 const { verseId } = await import('@torahmap/link/tanakh');
 
@@ -93,7 +93,7 @@ function buildReport(
         const verseKey = verseId(book, Number(chapter), Number(verse));
         const words = wordsOfVerse(parse, verseKey, text.he);
 
-        for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
+        for (const [wordIndex, { word }] of textWords(text.he).entries()) {
           const form = stripNikkud(word);
           const offered = meaningsInVerse(dictionary, words, form, verseKey, wordIndex);
           const n = offered.length;

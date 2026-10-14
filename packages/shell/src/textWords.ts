@@ -1,4 +1,4 @@
-// Splitting displayed verse text into the words a reader can click.
+// Splitting an item's displayed text into the words a reader can click.
 //
 // Where a word ends is decided in hebrew.ts, which is also what the
 // dictionary index was built on. A click resolving a different word than
@@ -14,10 +14,10 @@ export function isSectionMarker(word: string): boolean {
 }
 
 /**
- * The words of a verse a reader can click, in order. A word's position in
+ * The words of an item's text a reader can click, in order. A word's position in
  * this list is its index: what a click reports and the parse is looked up by.
  */
-export function verseWords(text: string): TextWord[] {
+export function textWords(text: string): TextWord[] {
   return splitIntoWords(text).filter(
     ({ word }) => !isSectionMarker(word) && isSearchableWord(word),
   );
@@ -39,18 +39,18 @@ export function verseWords(text: string): TextWord[] {
 export function wrapWordsInFragment(fragment: DocumentFragment, text: string): DocumentFragment {
   // The walk below trusts that offsets into `text` line up with the
   // fragment's own text nodes. Nothing upstream guarantees that - an overlay
-  // could hand back text that has drifted from the verse it was built from -
+  // could hand back text that has drifted from the item it was built from -
   // so check it here. Wrapping nothing leaves the words visibly inert rather
   // than clickable and wrong.
   if (fragment.textContent !== text) {
     console.warn(
-      'wrapWordsInFragment: fragment text does not match verse text, leaving words unwrapped',
-      { fragmentText: fragment.textContent, verseText: text },
+      'wrapWordsInFragment: fragment text does not match the item text, leaving words unwrapped',
+      { fragmentText: fragment.textContent, itemText: text },
     );
     return fragment;
   }
 
-  const words = verseWords(text);
+  const words = textWords(text);
 
   // Which word covers a given offset, or null between words. Offsets are
   // visited in increasing order as the walk proceeds, so the search can pick
@@ -84,7 +84,7 @@ export function wrapWordsInFragment(fragment: DocumentFragment, text: string): D
             replacement.appendChild(document.createTextNode(slice));
           } else {
             const span = document.createElement('span');
-            span.className = 'verse-word';
+            span.className = 'popup-word';
             span.dataset.wordIndex = String(index);
             span.textContent = slice;
             replacement.appendChild(span);

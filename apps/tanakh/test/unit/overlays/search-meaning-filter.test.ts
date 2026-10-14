@@ -107,11 +107,11 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
 
     const figLeaves = verses[0];
-    expect(searchOverlay.getVerseColor(figLeaves)).not.toBeNull();
+    expect(searchOverlay.getItemColor(figLeaves)).not.toBeNull();
 
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor(figLeaves)).toBeNull();
+    expect(searchOverlay.getItemColor(figLeaves)).toBeNull();
   });
 
   it('keeps the verses of the meanings still checked', () => {
@@ -119,7 +119,7 @@ describe('narrowing repaints the map', () => {
     type(container, 'עלה');
     uncheck(container, 'leafage');
 
-    expect(searchOverlay.getVerseColor(verses[2])).not.toBeNull();
+    expect(searchOverlay.getItemColor(verses[2])).not.toBeNull();
   });
 
   it('will not let the reader uncheck the last one', () => {
@@ -168,7 +168,7 @@ describe('the URL', () => {
       (b) => b.checked,
     );
     expect(checked).toHaveLength(1);
-    expect(searchOverlay.getVerseColor(verses[0])).toBeNull();
+    expect(searchOverlay.getItemColor(verses[0])).toBeNull();
   });
 });
 
@@ -275,7 +275,7 @@ describe('showing only one meaning', () => {
     only(container, 'burnt-offering');
 
     // Genesis 3:7 is the fig-leaf verse, so it goes.
-    expect(searchOverlay.getVerseColor(verses[0])).toBeNull();
+    expect(searchOverlay.getItemColor(verses[0])).toBeNull();
   });
 
   it('offers a way back only once something is narrowed', () => {
@@ -318,7 +318,7 @@ describe('highlighting a verse when the terms are not all one language', () => {
     type(container, 'עלה, leaves');
 
     const marks = [
-      ...searchOverlay.highlightVerseText(createVerse(), 'ויתפרו עלה תאנה', 'he').childNodes,
+      ...searchOverlay.highlightItemText(createVerse(), 'ויתפרו עלה תאנה', 'he').childNodes,
     ]
       .filter((n) => (n as Element).tagName === 'MARK')
       .map((n) => n.textContent);
@@ -331,7 +331,7 @@ describe('highlighting a verse when the terms are not all one language', () => {
     type(container, 'עלה, leaves');
 
     const marks = [
-      ...searchOverlay.highlightVerseText(createVerse(), 'they sewed fig leaves', 'en').childNodes,
+      ...searchOverlay.highlightItemText(createVerse(), 'they sewed fig leaves', 'en').childNodes,
     ]
       .filter((n) => (n as Element).tagName === 'MARK')
       .map((n) => n.textContent);
@@ -354,11 +354,11 @@ describe('a row that is empty or too short to search', () => {
   it('does not change what the map paints', () => {
     const container = render();
     type(container, 'עלה');
-    const before = searchOverlay.getVerseColor(verses[0]);
+    const before = searchOverlay.getItemColor(verses[0]);
 
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
 
-    expect(searchOverlay.getVerseColor(verses[0])).toEqual(before);
+    expect(searchOverlay.getItemColor(verses[0])).toEqual(before);
   });
 
   it('does not steal the count from the row below it', () => {

@@ -125,7 +125,7 @@ describe('centreForFocus', () => {
   const item = { x: 400, y: 300, size: 6 };
 
   it('puts the item at a focus away from the middle', () => {
-    // The phone centres verses above the middle, clear of the story sheet.
+    // The phone centres squares above the middle, clear of the story sheet.
     const focus = { x: 400, y: 228 };
     const centre = centreForFocus(item, 2.5, focus, view);
     const screen = worldToScreen({ x: 403, y: 303 }, { ...centre, zoom: 2.5 }, view);

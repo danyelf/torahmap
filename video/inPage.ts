@@ -115,7 +115,7 @@ export function showOverlays(o: {
   // The pinned verse's card goes where the scene puts it. Otherwise it keeps
   // its bottom corner, where a bottom caption would cover it, so it waits
   // above the caption instead.
-  const card = document.getElementById('verse-popup');
+  const card = document.getElementById('popup');
   if (card) {
     const below = o.caption && o.captionAt === 'bottom';
     const top = band.firstElementChild!.getBoundingClientRect().top;

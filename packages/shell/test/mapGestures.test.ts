@@ -285,7 +285,7 @@ describe('Escape', () => {
     expect(escapeDoes({ menu: true, pinned: true, inField: false })).toBe('menu');
   });
 
-  it('then unpins the verse', () => {
+  it('then unpins the square', () => {
     expect(escapeDoes({ menu: false, pinned: true, inField: false })).toBe('unpin');
   });
 

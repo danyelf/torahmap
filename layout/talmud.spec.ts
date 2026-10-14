@@ -23,15 +23,15 @@ test('the dev server fills the Talmud’s page with its own copy', async ({ requ
 
 test("a pinned segment's popup shows its text", async ({ page }) => {
   const errors = await openMap(page, 'at=Berakhot.2a.1', TALMUD);
-  await expect(page.locator('#verse-popup.visible .ref-text')).toHaveText('Berakhot 2a:1');
-  await expect(page.locator('#verse-popup .verse-hebrew')).not.toBeEmpty();
+  await expect(page.locator('#popup.visible .ref-text')).toHaveText('Berakhot 2a:1');
+  await expect(page.locator('#popup .popup-hebrew')).not.toBeEmpty();
   expect(errors).toEqual([]);
 });
 
 test('a link to a segment that does not exist pins nothing', async ({ page }) => {
   await openMap(page, 'at=Berakhot.999a.1', TALMUD);
   await expect(page.locator('#talmud-labels')).toHaveCount(1);
-  await expect(page.locator('#verse-popup.visible')).toHaveCount(0);
+  await expect(page.locator('#popup.visible')).toHaveCount(0);
 });
 
 test("a tractate file that fails says so, and isn't fetched again", async ({ page }) => {
@@ -43,10 +43,10 @@ test("a tractate file that fails says so, and isn't fetched again", async ({ pag
   // Not openMap: the failed download is reported, as a console error.
   await page.goto(`${TALMUD}?at=Berakhot.2a.1`);
   await allLoaded(page);
-  await expect(page.locator('#verse-popup .verse-notice')).not.toBeEmpty();
+  await expect(page.locator('#popup .popup-notice')).not.toBeEmpty();
   await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowLeft');
-  await expect(page.locator('#verse-popup .ref-text')).toHaveText('Berakhot 2a:1');
+  await expect(page.locator('#popup .ref-text')).toHaveText('Berakhot 2a:1');
   expect(requests).toBe(1);
 });
 

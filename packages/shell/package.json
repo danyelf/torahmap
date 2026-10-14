@@ -19,7 +19,7 @@
     "./panel.ts": "./src/panel.ts",
     "./scrollytelling/types.ts": "./src/scrollytelling/types.ts",
     "./sidebar.ts": "./src/sidebar.ts",
-    "./verseWords.ts": "./src/verseWords.ts"
+    "./textWords.ts": "./src/textWords.ts"
   },
   "dependencies": {
     "@torahmap/engine": "*",

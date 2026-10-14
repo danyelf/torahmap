@@ -49,7 +49,7 @@ export const POSITION_JITTER = 0.7;
 // --- Per-seder background tints ---
 // Drawn as semi-transparent DOM overlays above the canvas (opacity =
 // SEDER_BACKGROUND_OPACITY). Tints are intentionally muted but distinct
-// enough to read against the dark canvas + flat verse colors — near-white
+// enough to read against the dark canvas + flat square colors — near-white
 // values (0.97+) are invisible there.
 
 export const SEDER_BACKGROUND_COLORS: Readonly<Record<string, readonly [number, number, number]>> =

@@ -2,7 +2,7 @@
 import { expect } from 'vitest';
 
 // All channels must be in [0, 1]. Accepts Color | Color[] (overlay
-// getVerseColor's return type).
+// getItemColor's return type).
 export function assertValidColor(
   color: number[] | [number, number, number] | (number[] | [number, number, number])[],
 ) {

@@ -66,7 +66,7 @@ export interface HaftarahData {
   structure: TorahData;
 }
 
-export function getItemColor(itemIndex: number, totalItemCount: number): Color {
+export function readingColor(itemIndex: number, totalItemCount: number): Color {
   const hue = (itemIndex / totalItemCount) * 360;
   return hslToRgb({ h: hue, s: 0.8, l: 0.55 });
 }
@@ -117,7 +117,7 @@ export const deriveHaftarah = memoByValueAndKey(
     // Parshiot take color indices 0..parshiot.length-1; special occasions
     // continue from there, so the rainbow runs across both without repeats.
     items.forEach((item, i) => {
-      itemToColor.set(item, getItemColor(i, items.length));
+      itemToColor.set(item, readingColor(i, items.length));
 
       if (isParsha(item)) {
         forEachVerseInRange(data.structure, item.torah, (book, ch, v) => {

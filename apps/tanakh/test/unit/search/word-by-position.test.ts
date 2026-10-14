@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { parseVerseId } from '@torahmap/link/tanakh';
 import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../src/search/dictionary';
 import { splitIntoWords, stripNikkud } from '@torahmap/shell/hebrew.ts';
-import { verseWords } from '@torahmap/shell/verseWords.ts';
+import { textWords } from '@torahmap/shell/textWords.ts';
 import { realSearchData } from '../../helpers/searchData';
 
 const { files, dictionary, parse } = realSearchData();
@@ -54,7 +54,7 @@ const withBrackets = (hebrew: string, { start, end }: { start: number; end: numb
 
 /** Where a word sits among the verse's clickable words, which is what a click reports. */
 const wordIndexOf = (verseKey: string, word: string): number =>
-  verseWords(hebrewOf(verseKey)).findIndex((w) => stripNikkud(w.word) === word);
+  textWords(hebrewOf(verseKey)).findIndex((w) => stripNikkud(w.word) === word);
 
 describe('marking the words of a verse', () => {
   it('gives each עלה in Genesis 8:20 to the term that means it', () => {
@@ -212,7 +212,7 @@ describe('a click on the written form of a corrected word', () => {
   /** The meanings a click on the word printed as `printed` offers. */
   const clicked = (verseKey: string, printed: string): string[][] => {
     const hebrew = hebrewOf(verseKey);
-    const words = verseWords(hebrew);
+    const words = textWords(hebrew);
     const index = words.findIndex((w) => withBrackets(hebrew, w) === printed);
     expect(index, `${printed} in ${verseKey}`).toBeGreaterThanOrEqual(0);
     return meaningsInVerse(
@@ -256,7 +256,7 @@ describe('a click on the written form of a corrected word', () => {
     const verseKey = 'Jeremiah.2.20';
     const hebrew = hebrewOf(verseKey).replace(/(\[[^\]]*\])/, '$1 (נא)');
     const words = wordsOfVerse(parse, verseKey, hebrew);
-    const index = verseWords(hebrew).findIndex((w) => withBrackets(hebrew, w) === '(נא)');
+    const index = textWords(hebrew).findIndex((w) => withBrackets(hebrew, w) === '(נא)');
     expect(meaningsInVerse(dictionary, words, 'נא', verseKey, index)).toEqual([]);
   });
 });

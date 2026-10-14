@@ -123,7 +123,7 @@ describe('Haftarah Overlay', () => {
   describe('Torah Verses (Parshiot)', () => {
     it('returns color for Torah verses in a parsha', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -133,8 +133,8 @@ describe('Haftarah Overlay', () => {
       const verse1 = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const verse2 = createVerse({ book: 'Genesis', chapter: 5, verse: 10 });
 
-      const color1 = haftarahOverlay.getVerseColor(verse1);
-      const color2 = haftarahOverlay.getVerseColor(verse2);
+      const color1 = haftarahOverlay.getItemColor(verse1);
+      const color2 = haftarahOverlay.getItemColor(verse2);
 
       expect(color1).toEqual(color2);
     });
@@ -143,8 +143,8 @@ describe('Haftarah Overlay', () => {
       const bereshitVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const noachVerse = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
 
-      const color1 = haftarahOverlay.getVerseColor(bereshitVerse);
-      const color2 = haftarahOverlay.getVerseColor(noachVerse);
+      const color1 = haftarahOverlay.getItemColor(bereshitVerse);
+      const color2 = haftarahOverlay.getItemColor(noachVerse);
 
       expect(color1).not.toEqual(color2);
     });
@@ -154,7 +154,7 @@ describe('Haftarah Overlay', () => {
     it('returns color for haftarah verses', () => {
       // Isaiah 42:5-21 is haftarah for Bereshit (Ashkenazi)
       const verse = createVerse({ book: 'Isaiah', chapter: 42, verse: 10 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -164,9 +164,9 @@ describe('Haftarah Overlay', () => {
       const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const haftarahVerse = createVerse({ book: 'Isaiah', chapter: 42, verse: 10 });
 
-      const torahColor = haftarahOverlay.getVerseColor(torahVerse) as
+      const torahColor = haftarahOverlay.getItemColor(torahVerse) as
         [number, number, number] | null;
-      const haftarahColor = haftarahOverlay.getVerseColor(haftarahVerse) as
+      const haftarahColor = haftarahOverlay.getItemColor(haftarahVerse) as
         [number, number, number] | null;
 
       expect(torahColor).toEqual(haftarahColor);
@@ -177,7 +177,7 @@ describe('Haftarah Overlay', () => {
     it('returns color for special occasion haftarah verses', () => {
       // Isaiah 66 is haftarah for Shabbat Rosh Chodesh
       const verse = createVerse({ book: 'Isaiah', chapter: 66, verse: 10 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -186,7 +186,7 @@ describe('Haftarah Overlay', () => {
     it('returns color for high holiday haftarah verses', () => {
       // I Samuel 1-2 is haftarah for Rosh Hashanah Day 1
       const verse = createVerse({ book: 'I Samuel', chapter: 1, verse: 10 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
       assertValidColor(color as [number, number, number]);
@@ -196,9 +196,9 @@ describe('Haftarah Overlay', () => {
       const parshaVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const occasionVerse = createVerse({ book: 'Isaiah', chapter: 66, verse: 10 });
 
-      const parshaColor = haftarahOverlay.getVerseColor(parshaVerse) as
+      const parshaColor = haftarahOverlay.getItemColor(parshaVerse) as
         [number, number, number] | null;
-      const occasionColor = haftarahOverlay.getVerseColor(occasionVerse) as
+      const occasionColor = haftarahOverlay.getItemColor(occasionVerse) as
         [number, number, number] | null;
 
       expect(parshaColor).not.toEqual(occasionColor);
@@ -331,17 +331,17 @@ describe('Haftarah Overlay', () => {
 
     it('lights a previewed reading, darkens the others, and greys the rest', () => {
       const cold = [genesis, bereshitHaftarah, noach].map(
-        (v) => haftarahOverlay.getVerseColor(v) as Color,
+        (v) => haftarahOverlay.getItemColor(v) as Color,
       );
       preview(BERESHIT);
       const [hotTorah, hotHaftarah, darkNoach] = [genesis, bereshitHaftarah, noach].map(
-        (v) => haftarahOverlay.getVerseColor(v) as Color,
+        (v) => haftarahOverlay.getItemColor(v) as Color,
       );
 
       expect(sum(hotTorah)).toBeGreaterThan(sum(cold[0]));
       expect(sum(hotHaftarah)).toBeGreaterThan(sum(cold[1]));
       expect(sum(darkNoach)).toBeLessThan(sum(cold[2]));
-      expect(haftarahOverlay.getVerseColor(psalms)).toEqual(DIMMED_GREY);
+      expect(haftarahOverlay.getItemColor(psalms)).toEqual(DIMMED_GREY);
     });
 
     it('lights every reading that shares a verse with the previewed one', () => {
@@ -349,13 +349,13 @@ describe('Haftarah Overlay', () => {
       loadRoshChodesh('ashkenazi', [
         { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
       ]);
-      const cold = haftarahOverlay.getVerseColor(genesis) as Color;
+      const cold = haftarahOverlay.getItemColor(genesis) as Color;
       preview(ROSH_CHODESH);
 
-      expect(sum(haftarahOverlay.getVerseColor(genesis) as Color)).toBeGreaterThan(sum(cold));
-      expect(sum(haftarahOverlay.getVerseColor(noach) as Color)).toBeLessThan(
+      expect(sum(haftarahOverlay.getItemColor(genesis) as Color)).toBeGreaterThan(sum(cold));
+      expect(sum(haftarahOverlay.getItemColor(noach) as Color)).toBeLessThan(
         sum(
-          haftarahOverlay.overlay.getVerseColor(
+          haftarahOverlay.overlay.getItemColor(
             noach,
             haftarahOverlay.fromUrl({}),
             haftarahOverlay.data,
@@ -370,7 +370,7 @@ describe('Haftarah Overlay', () => {
         { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
       ]);
       const noachLit = () => {
-        const cold = haftarahOverlay.overlay.getVerseColor(
+        const cold = haftarahOverlay.overlay.getItemColor(
           noach,
           {
             ...haftarahOverlay.settings,
@@ -378,7 +378,7 @@ describe('Haftarah Overlay', () => {
           },
           haftarahOverlay.data,
         ) as Color;
-        return sum(haftarahOverlay.getVerseColor(noach) as Color) > sum(cold);
+        return sum(haftarahOverlay.getItemColor(noach) as Color) > sum(cold);
       };
 
       preview(ROSH_CHODESH);
@@ -402,7 +402,7 @@ describe('Haftarah Overlay', () => {
     const genesis = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
     const noach = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
     const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
-    const brightness = (v: typeof genesis) => sum(haftarahOverlay.getVerseColor(v) as Color);
+    const brightness = (v: typeof genesis) => sum(haftarahOverlay.getItemColor(v) as Color);
     const brightnessUnder = (v: typeof genesis, hovered: typeof genesis | null) =>
       sum(
         haftarahOverlay.overlay.colorsFor!(
@@ -429,11 +429,11 @@ describe('Haftarah Overlay', () => {
 
     it('lights the reading exactly as hovering it in the key does', () => {
       haftarahOverlay.change((current) => ({ ...current, preview: 'Bereshit' }));
-      const previewed = [genesis, noach, psalms].map((v) => haftarahOverlay.getVerseColor(v));
+      const previewed = [genesis, noach, psalms].map((v) => haftarahOverlay.getItemColor(v));
 
       haftarahOverlay.restore({ reading: 'Bereshit' });
 
-      expect([genesis, noach, psalms].map((v) => haftarahOverlay.getVerseColor(v))).toEqual(
+      expect([genesis, noach, psalms].map((v) => haftarahOverlay.getItemColor(v))).toEqual(
         previewed,
       );
     });
@@ -442,7 +442,7 @@ describe('Haftarah Overlay', () => {
       const cold = brightness(genesis);
       haftarahOverlay.restore({ reading: 'Nonesuch' });
       expect(brightness(genesis)).toBe(cold);
-      expect(haftarahOverlay.getVerseColor(psalms)).toBeNull();
+      expect(haftarahOverlay.getItemColor(psalms)).toBeNull();
     });
 
     it('gives way to a reading hovered in the key, and returns when it is left', () => {
@@ -476,7 +476,7 @@ describe('Haftarah Overlay', () => {
       // Isaiah 54:1-10 is Noach haftarah in our sample
       // This verse is only in Noach haftarah in our sample
       const verse = createVerse({ book: 'Isaiah', chapter: 54, verse: 5 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number] | null;
 
       // Should return a single color since there's no overlap in sample
       expect(color).not.toBeNull();
@@ -499,8 +499,8 @@ describe('Haftarah Overlay', () => {
       const verse1 = createVerse({ book: 'Genesis', chapter: 1, verse: 1 }); // First parsha
       const verse2 = createVerse({ book: 'Isaiah', chapter: 66, verse: 10 }); // First special occasion
 
-      const color1 = haftarahOverlay.getVerseColor(verse1) as [number, number, number];
-      const color2 = haftarahOverlay.getVerseColor(verse2) as [number, number, number];
+      const color1 = haftarahOverlay.getItemColor(verse1) as [number, number, number];
+      const color2 = haftarahOverlay.getItemColor(verse2) as [number, number, number];
 
       expect(color1).not.toBeNull();
       expect(color2).not.toBeNull();
@@ -511,7 +511,7 @@ describe('Haftarah Overlay', () => {
 
     it('colors are valid RGB values', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number];
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number];
 
       expect(color[0]).toBeGreaterThanOrEqual(0);
       expect(color[0]).toBeLessThanOrEqual(1);
@@ -525,14 +525,14 @@ describe('Haftarah Overlay', () => {
   describe('Non-Relevant Verses', () => {
     it('returns null for non-Torah non-haftarah verses', () => {
       const verse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toBeNull();
     });
 
     it('returns null for book not in any reading', () => {
       const verse = createVerse({ book: 'Ruth', chapter: 1, verse: 1 });
-      const color = haftarahOverlay.getVerseColor(verse) as [number, number, number] | null;
+      const color = haftarahOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).toBeNull();
     });

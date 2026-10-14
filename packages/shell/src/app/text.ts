@@ -7,7 +7,7 @@ import type {
   Viewport,
   ItemIndex,
   MapItem,
-  VerseColor,
+  ItemColor,
 } from '@torahmap/engine';
 import type { LinkKeys, UrlState } from '@torahmap/link';
 import type { Story, StoryStop } from '@torahmap/stories';
@@ -49,7 +49,7 @@ export interface OpenText<I extends MapItem, S = unknown> {
   items: I[];
   startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */
-  baseColor(item: I, index: number): VerseColor;
+  baseColor(item: I, index: number): ItemColor;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
   /** The file a square's text is in. The shell downloads it when the square's popup first shows. */
