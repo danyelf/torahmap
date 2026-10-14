@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { columns, EVENTS, type EventName } from '../../../telemetry/schema.ts';
+import { columns, EVENTS, type EventName } from '@torahmap/telemetry';
 
 const dir = join(__dirname, '../../../../scripts/telemetry');
 const queries = readdirSync(dir).filter((f) => f.endsWith('.sql'));

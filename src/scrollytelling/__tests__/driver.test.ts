@@ -5,7 +5,6 @@ import {
   SWIPE_EASE_MS,
   STORY_DRIVING,
   colorSource,
-  DRIVER_KINDS,
   driverKind,
   readerTakesOver,
   storyScrolled,
@@ -142,6 +141,5 @@ describe('who has the map', () => {
     expect(driverKind(STORY_DRIVING)).toBe('story');
     expect(driverKind(easeBack(0))).toBe('story');
     expect(driverKind(readerTakesOver(0))).toBe('reader');
-    expect(DRIVER_KINDS).toEqual(['story', 'reader']);
   });
 });

@@ -1,16 +1,16 @@
 // Events for the site's own Worker (src/worker/index.ts). No cookies and no
 // browser storage: the visit id lives in memory, so a reload is a new visit.
 import type { TextLanguage } from './types.ts';
-import type { DriverKind } from './scrollytelling/driver.ts';
 import type { ExitHow, ReturnHow } from './telemetry/driverChange.ts';
 import {
   errorMessage,
   MAX_BLOB_CHARS,
+  type DriverKind,
   type ErrorSource,
   type EventFields,
   type EventName,
   type EventPayload,
-} from './telemetry/schema.ts';
+} from '@torahmap/telemetry';
 import { linkKind, type LinkKind, type UrlState } from '@torahmap/link';
 
 interface Options {

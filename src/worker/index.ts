@@ -13,7 +13,7 @@ import {
   type EventFields,
   type RequestContext,
   type WorkerEvent,
-} from '../telemetry/schema.ts';
+} from '@torahmap/telemetry';
 import { readLink, writeLink, linkKind } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { describeLink } from '@torahmap/site/tanakh';

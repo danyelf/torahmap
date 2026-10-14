@@ -3,6 +3,7 @@
 // the story is.
 
 import type { Picture, CameraPosition } from '@torahmap/engine';
+import type { DriverKind } from '@torahmap/telemetry';
 import type { ResolvedStoryStop } from './types';
 
 /**
@@ -48,9 +49,6 @@ export type ReaderDriving = Extract<Driver, { by: 'reader' }>;
 export type StoryHasMap = Exclude<Driver, { by: 'reader' }>;
 
 export const STORY_DRIVING: StoryHasMap = { by: 'story', blend: null };
-
-export const DRIVER_KINDS = ['story', 'reader'] as const;
-export type DriverKind = (typeof DRIVER_KINDS)[number];
 
 /** Who has the map; an ease back to the story is the story's. */
 export function driverKind(driver: Driver): DriverKind {

@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as pageModule from '../../../worker/page.ts';
 import worker from '../../../worker/index.ts';
-import { columns, type DataPoint } from '../../../telemetry/schema.ts';
+import { columns, type DataPoint } from '@torahmap/telemetry';
 
 function env() {
   return {

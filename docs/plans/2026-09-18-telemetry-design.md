@@ -1,7 +1,7 @@
 # Telemetry Design
 
 **Date:** 2026-09-18
-**Status:** Shipped — `src/telemetry/`, `src/worker/`, `scripts/telemetry/`.
+**Status:** Shipped — `packages/telemetry/`, `src/telemetry/`, `src/worker/`, `scripts/telemetry/`.
 
 ## Problem
 
@@ -48,8 +48,8 @@ drops whole visits.
 ## Events
 
 Each event's fields, and the columns every event shares, are listed in
-`src/telemetry/schema.ts`. Every event carries the **mode**: who drives the
-map, `story` or `reader` (`src/scrollytelling/driver.ts`). While the story drives, the camera, zoom and
+`packages/telemetry`. Every event carries the **mode**: who drives the
+map, `story` or `reader` (`DRIVER_KINDS`, in the same package). While the story drives, the camera, zoom and
 pinned verse belong to its author, so the same action means something
 different for each. The story easing the map back counts as the story. On
 `page_view` the mode is who drives as the page opens: `reader` for a link
