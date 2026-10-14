@@ -1,6 +1,10 @@
 // Tests for the credits data and its renderer.
 import { describe, it, expect } from 'vitest';
-import { renderCreditBlock, renderCreditsHtml, type Credit } from '@torahmap/shell/credits.ts';
+import {
+  renderCreditBlock,
+  renderCreditsHtml,
+  type Credit,
+} from '../packages/shell/src/credits.ts';
 import { registerAllOverlays, getAllOverlays } from '@torahmap/tanakh/overlays/index.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
 import { tanakhSite } from '@torahmap/tanakh/site.ts';

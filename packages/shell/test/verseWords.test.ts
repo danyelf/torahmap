@@ -1,8 +1,7 @@
 // Splitting a verse into the words a reader can click.
 //
-// Word boundaries here are the ones normalizeHebrewForSearch() uses, because
-// the dictionary index was built on that rule. If the two drift, a click looks
-// up a word the reader did not click.
+// Word boundaries here must match the ones the dictionary index was built on,
+// or a click looks up a word the reader did not click.
 
 import { describe, it, expect } from 'vitest';
 import { verseWords } from '../src/verseWords.ts';

@@ -308,7 +308,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return front === 'search' ? SEARCH_NON_MATCH_DIM : 1;
   }
 
-  // Search or the overlay, whichever's panel opened last (src/frame.ts). Only
+  // Search or the overlay, whichever's panel opened last (frame.ts). Only
   // matters with both tools on, where it decides which one dims for the other.
   let frontTool: FrontTool = 'overlay';
   let fadeFrame: number | null = null;
@@ -507,7 +507,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const overlayDescription = document.getElementById('overlay-description')!;
   const menuToggle = document.getElementById('menu-toggle')!;
 
-  // What the panel shows (src/frame.ts); the story is open while its mode is 'story'.
+  // What the panel shows (frame.ts); the story is open while its mode is 'story'.
   let frame: Frame = STORY;
 
   // The layout last put on the page, so a resize can tell when it crosses over.

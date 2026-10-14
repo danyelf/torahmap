@@ -3,7 +3,24 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./analytics.ts": "./src/analytics.ts",
+    "./app/page.ts": "./src/app/page.ts",
+    "./app/search.ts": "./src/app/search.ts",
+    "./app/text.ts": "./src/app/text.ts",
+    "./constants.ts": "./src/constants.ts",
+    "./dataFiles.ts": "./src/dataFiles.ts",
+    "./hebrew.ts": "./src/hebrew.ts",
+    "./itemColoring.ts": "./src/itemColoring.ts",
+    "./labelTypography.ts": "./src/labelTypography.ts",
+    "./language.ts": "./src/language.ts",
+    "./main.ts": "./src/main.ts",
+    "./overlays/settings.ts": "./src/overlays/settings.ts",
+    "./overlays/types.ts": "./src/overlays/types.ts",
+    "./panel.ts": "./src/panel.ts",
+    "./scrollytelling/types.ts": "./src/scrollytelling/types.ts",
+    "./sidebar.ts": "./src/sidebar.ts",
+    "./verseWords.ts": "./src/verseWords.ts",
+    "./visits.ts": "./src/visits.ts"
   },
   "dependencies": {
     "@torahmap/engine": "*",

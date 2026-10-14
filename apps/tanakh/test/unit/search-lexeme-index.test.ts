@@ -9,7 +9,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { parseVerseId, verseId } from '@torahmap/link/tanakh';
-import { normalizeHebrewForSearch } from '@torahmap/shell/hebrew.ts';
+import { normalizeHebrewForSearch } from '../../src/search/spelling.ts';
 import { wordsBhsaParsed } from '../../src/search/dictionary';
 import * as fs from 'fs';
 import * as path from 'path';

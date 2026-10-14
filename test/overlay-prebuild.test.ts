@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { prebuildCompleted } from '@torahmap/shell/overlays/prebuild.ts';
-import { testOverlay } from '../../helpers/fixtures';
+import { prebuildCompleted } from '../packages/shell/src/overlays/prebuild.ts';
+import { testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 
 /** A scheduler that runs nothing until told to, one turn at a time. */
 function turns() {

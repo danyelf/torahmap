@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { CONTROL, panelHtml } from '@torahmap/shell/panel.ts';
-import { PANEL_TITLES, type Panel } from '@torahmap/shell/frame.ts';
-import { storiesHtml } from '@torahmap/shell/storiesPanel.ts';
-import { aboutHtml } from '@torahmap/shell/aboutPanel.ts';
-import { tanakhSite } from '../../src/site';
-import { overlayPanelHtml, searchPanelHtml } from '@torahmap/shell/toolPanels.ts';
+import { PANEL_TITLES, type Panel } from '../packages/shell/src/frame.ts';
+import { storiesHtml } from '../packages/shell/src/storiesPanel.ts';
+import { aboutHtml } from '../packages/shell/src/aboutPanel.ts';
+import { tanakhSite } from '@torahmap/tanakh/site.ts';
+import { overlayPanelHtml, searchPanelHtml } from '../packages/shell/src/toolPanels.ts';
 
 function parse(html: string): HTMLDivElement {
   const div = document.createElement('div');

@@ -130,7 +130,7 @@ WORD_SEPARATOR = re.compile(
 # What divides the parts of a word BHSA holds as one but prints as two.
 INNER_SEPARATOR = re.compile(rf"[\s{MAQAF}]+")
 # The ketiv, which Sefaria prints in round brackets beside the qere. KETIV in
-# packages/shell/src/hebrew.ts is the same pattern.
+# apps/tanakh/src/search/dictionary.ts is the same pattern.
 KETIV = re.compile(r"\([^)]*\)")
 # Inert here — BHSA has none. Sefaria writes ירושל͏ם with one, and both sides fold both.
 GRAPHEME_JOINER = 0x034F
@@ -168,7 +168,7 @@ def verse_id(book, chapter, verse):
 def normalize(text):
     """Fold Hebrew to the shape the search box works in.
 
-    Mirrors normalizeHebrewForSearch() in packages/shell/src/hebrew.ts; the two must agree
+    Mirrors normalizeHebrewForSearch() in apps/tanakh/src/search/spelling.ts; the two must agree
     character for character or every lookup misses.
     """
     return fold_finals(as_printed(text))

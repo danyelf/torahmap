@@ -25,8 +25,6 @@ import {
   type LexemeId,
 } from './search.ts';
 import {
-  KETIV,
-  QERE,
   isHebrew,
   onlySeparators,
   mapStrippedToOriginal,
@@ -35,6 +33,12 @@ import {
   type TextWord,
 } from '@torahmap/shell/hebrew.ts';
 import { isSectionMarker, verseWords } from '@torahmap/shell/verseWords.ts';
+
+// Sefaria prints a corrected word twice: the ketiv, as written, in round
+// brackets, and the qere, as read, in square ones. KETIV in
+// scripts/search/generate-lexeme-index.py is the same pattern.
+const KETIV = /\([^)]*\)/g;
+const QERE = /\[[^\]]*\]/g;
 
 /**
  * One dictionary word a written form might be, as a reader sees it.

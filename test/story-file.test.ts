@@ -6,21 +6,21 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { STOP_COMMENT_RE, STORY_HEADER_KEYS, type StoryStop } from '@torahmap/stories';
 import { STORIES, STORY_MARKDOWN } from '@torahmap/stories/tanakh';
-import { registerAllOverlays, getOverlay } from '../../src/overlays/index';
+import { registerAllOverlays, getOverlay } from '@torahmap/tanakh/overlays/index.ts';
 import { writeLink } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { parseUrlState } from '@torahmap/shell/urlState.ts';
-import { isSearching, searchTool } from '../../src/search/index';
+import { parseUrlState } from '../packages/shell/src/urlState.ts';
+import { isSearching, searchTool } from '@torahmap/tanakh/search/index.ts';
 import { settingsFromLink } from '@torahmap/shell/overlays/settings.ts';
-import { haftarahOverlay } from '../../src/overlays/haftarah';
-import { commentaryOverlay } from '../../src/overlays/commentary';
+import { haftarahOverlay } from '@torahmap/tanakh/overlays/haftarah.ts';
+import { commentaryOverlay } from '@torahmap/tanakh/overlays/commentary.ts';
 import {
   deriveHaftarah,
   HAFTARAH_FILES,
   type HaftarahData,
-} from '../../src/overlays/haftarah/readings';
+} from '@torahmap/tanakh/overlays/haftarah/readings.ts';
 import { loadNamedFiles } from '@torahmap/shell/dataFiles.ts';
-import { setLink } from '../helpers/setLink';
+import { setLink } from '../apps/tanakh/test/helpers/setLink.ts';
 
 const dataDir = path.join(process.cwd(), 'public', 'data');
 

@@ -1,17 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { TanakhOverlay } from '../../src/overlays/index';
+import type { TanakhOverlay } from '@torahmap/tanakh/overlays/index.ts';
 import {
   registerAllOverlays,
   registerOverlay,
   getOverlay,
   getAllOverlays,
-} from '../../src/overlays/index';
-import { createVerses, SAMPLE_VERSES, SAMPLE_LOADED, testOverlay } from '../helpers/fixtures';
+} from '@torahmap/tanakh/overlays/index.ts';
+import {
+  createVerses,
+  SAMPLE_VERSES,
+  SAMPLE_LOADED,
+  testOverlay,
+} from '../apps/tanakh/test/helpers/fixtures.ts';
 import { dataFor } from '@torahmap/shell/dataFiles.ts';
-import { toolsShown } from '@torahmap/shell/tools.ts';
-import { configure as configureSearch, searchTool } from '../../src/search/index';
-import { commentaryOverlay, type CommentaryCounts } from '../../src/overlays/commentary';
-import { restoreAllMocks } from '../helpers/mocks';
+import { toolsShown } from '../packages/shell/src/tools.ts';
+import { configure as configureSearch, searchTool } from '@torahmap/tanakh/search/index.ts';
+import { commentaryOverlay, type CommentaryCounts } from '@torahmap/tanakh/overlays/commentary.ts';
+import { restoreAllMocks } from '../apps/tanakh/test/helpers/mocks.ts';
 import {
   createOverlaySettings,
   settingsFromLink,

@@ -1,13 +1,13 @@
 // Test fixtures for Torah Map tests
 import { verseId } from '@torahmap/link/tanakh';
-import type { TanakhIdentity, TanakhLayout, TorahData } from '../../src/types';
+import type { TanakhIdentity, TanakhLayout, TorahData } from '../../src/types.ts';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
-import type { CommentaryCounts } from '../../src/overlays/commentary';
-import { HAFTARAH_FILES, type HaftarahMappings } from '../../src/overlays/haftarah/readings';
-import { commentaryOverlay } from '../../src/overlays/commentary';
+import type { CommentaryCounts } from '../../src/overlays/commentary.ts';
+import { HAFTARAH_FILES, type HaftarahMappings } from '../../src/overlays/haftarah/readings.ts';
+import { commentaryOverlay } from '../../src/overlays/commentary.ts';
 import type { Loaded } from '@torahmap/shell/dataFiles.ts';
-import { STRUCTURE_FILE, TEXTS_FILE } from '../../src/verseTexts';
-import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/search/data';
+import { STRUCTURE_FILE, TEXTS_FILE } from '../../src/verseTexts.ts';
+import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/search/data.ts';
 import type { StoryStop } from '@torahmap/stories';
 
 export function createStoryStop(overrides: Partial<StoryStop> = {}): StoryStop {
@@ -238,8 +238,6 @@ export const SAMPLE_STRUCTURE = {
 
 /**
  * The three lexeme files, holding no word: every term is matched by its text.
- * Here rather than in searchData.ts, which reads from disk, because typechecked
- * code outside the tests imports this file.
  */
 export const EMPTY_DICTIONARY_FILES: DictionaryFiles = {
   lexicon: { source: 'none', lexemes: [] },

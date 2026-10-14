@@ -4,7 +4,7 @@ import { escapeHtml } from '@torahmap/utils';
 import './styles/controls.css';
 import { PANEL_TITLES, type Panel } from './frame.ts';
 
-/** The control classes every panel shares (src/styles/controls.css). */
+/** The control classes every panel shares (styles/controls.css). */
 export const CONTROL = {
   button: 'control-button',
   quiet: 'control-button quiet',

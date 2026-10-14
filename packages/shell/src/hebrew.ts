@@ -1,20 +1,14 @@
 // The letter-level rules of Hebrew text: which characters are points and
-// accents, which ones separate one word from the next, and how a written form
-// is folded to the spelling the search index and the dictionary are keyed on.
+// accents, and which ones separate one word from the next.
 //
-// Everything that reads Hebrew reads it through here, so that search, the
-// clickable words in a verse and the highlighter agree about where a word ends.
+// Everything that reads Hebrew finds its words through here, so that search,
+// the clickable words in the popup and the highlighter agree about where a
+// word ends.
 
 // Points and accents share a Unicode range with four characters that are not
 // decoration at all.
 const NIKKUD_START = 0x0591;
 const NIKKUD_END = 0x05c7;
-
-// The cantillation marks occupy the front of that same range. The lower bound
-// is shared because the block opens with the accents and the vowel points
-// follow them, not because the two questions are the same one.
-const TROP_START = 0x0591;
-const TROP_END = 0x05af;
 
 // These sit inside the range above but separate words rather than sit on one.
 // Sefaria ends every verse with a sof pasuq attached to the last word, so a
@@ -31,24 +25,10 @@ const SEPARATOR_CODES = new Set([
 // lookup of Jerusalem misses.
 const GRAPHEME_JOINER = 0x034f;
 
-// Shin and sin written as one character each, from the Hebrew presentation
-// forms. BHSA uses these where Sefaria writes the plain letter and a dot, and
-// the dot is stripped as a point, so the two sources would otherwise disagree
-// about how to spell the same word. Nothing in the text we display uses them;
-// the generator folds them for the same reason, and both fold both so that
-// neither has to be read to predict the other.
-const PRESENTATION_FORM_MAP: Record<string, string> = {
-  'שׁ': 'ש', // shin with shin dot (U+FB2A) → shin (U+05E9)
-  'שׂ': 'ש', // shin with sin dot (U+FB2B) → shin (U+05E9)
-};
-
-const FINAL_FORM_MAP: Record<string, string> = {
-  'ך': 'כ', // kaf sofit (U+05DA) → kaf (U+05DB)
-  'ם': 'מ', // mem sofit (U+05DD) → mem (U+05DE)
-  'ן': 'נ', // nun sofit (U+05DF) → nun (U+05E0)
-  'ף': 'פ', // pe sofit (U+05E3) → pe (U+05E4)
-  'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
-};
+/** Is this one of the four Hebrew characters above that break words? */
+export function isHebrewSeparator(code: number): boolean {
+  return SEPARATOR_CODES.has(code);
+}
 
 /**
  * Does `stripNikkud` drop this character? A point, an accent, or the grapheme
@@ -63,25 +43,7 @@ export function isNikkud(code: number): boolean {
   return code >= NIKKUD_START && code <= NIKKUD_END && !SEPARATOR_CODES.has(code);
 }
 
-/**
- * Is this one of the cantillation marks, the accents that say how a verse is
- * chanted?
- *
- * A strict subset of what `isNikkud` covers: every trop mark is an accent, and
- * the vowel points past TROP_END are not trop. Kept beside it so the two can be
- * read against each other rather than found separately and assumed unrelated.
- */
-export function isTropMark(code: number): boolean {
-  return code >= TROP_START && code <= TROP_END;
-}
-
 const HEBREW_LETTER = /[\u05D0-\u05EA]/;
-
-// Sefaria prints a corrected word twice: the ketiv, as written, in round
-// brackets, and the qere, as read, in square ones. KETIV in
-// scripts/search/generate-lexeme-index.py is the same pattern.
-export const KETIV = /\([^)]*\)/g;
-export const QERE = /\[[^\]]*\]/g;
 
 /** Does this text hold a Hebrew letter? */
 export function isHebrew(text: string): boolean {
@@ -99,9 +61,9 @@ export function isSearchableWord(text: string): boolean {
   return (text.match(LETTER)?.length ?? 0) >= 2;
 }
 
-// The brackets of KETIV and QERE. No bracket sits between two letters, so
-// counting them as separators leaves every verse's words, and their line-up
-// with BHSA, unchanged.
+// The brackets Sefaria prints around a corrected word's two spellings. No
+// bracket sits between two letters, so counting them as separators leaves
+// every verse's words, and their line-up with BHSA, unchanged.
 const BRACKETS = new Set(['(', ')', '[', ']']);
 
 /** Whitespace, hyphen, a bracket, or one of the four Hebrew characters that break words. */
@@ -124,25 +86,6 @@ export function stripNikkud(text: string): string {
   let result = '';
   for (const char of text) {
     if (!isNikkud(char.charCodeAt(0))) result += char;
-  }
-  return result;
-}
-
-/**
- * The spelling a word is indexed and searched under: points and accents gone,
- * final forms folded to their plain letters, and every separator written as a
- * space so that a typed space matches a maqaf.
- */
-export function normalizeHebrewForSearch(text: string): string {
-  let result = '';
-  for (const raw of text) {
-    const char = PRESENTATION_FORM_MAP[raw] ?? raw;
-    const code = char.charCodeAt(0);
-    if (isNikkud(code)) continue;
-    // Whitespace is already a break and is left as written; it is the Hebrew
-    // separators that have to become one, so that a typed space matches them.
-    const foldsToSpace = SEPARATOR_CODES.has(code) || char === '-';
-    result += foldsToSpace ? ' ' : (FINAL_FORM_MAP[char] ?? char);
   }
   return result;
 }

@@ -1,11 +1,8 @@
 // What counts as a match, for both the search that finds verses and the
 // highlighter that marks them.
 
-import {
-  isWordSeparator,
-  normalizeHebrewForSearch,
-  splitIntoWords,
-} from '@torahmap/shell/hebrew.ts';
+import { isWordSeparator, splitIntoWords } from '@torahmap/shell/hebrew.ts';
+import { normalizeHebrewForSearch } from './spelling.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 
 export interface TextRange {

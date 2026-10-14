@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { TanakhOverlay } from '../../src/overlays/index';
-import type { TanakhIdentity } from '../../src/types';
+import type { TanakhOverlay } from '@torahmap/tanakh/overlays/index.ts';
+import type { TanakhIdentity } from '@torahmap/tanakh/types.ts';
 import {
   downloadStages,
   filesFirst,
@@ -8,15 +8,15 @@ import {
   waitingOn,
   type Downloads,
   type LandingView,
-} from '@torahmap/shell/downloads.ts';
+} from '../packages/shell/src/downloads.ts';
 import type { Loaded } from '@torahmap/shell/dataFiles.ts';
-import { commentaryOverlay } from '../../src/overlays/commentary';
-import { tropOverlay } from '../../src/overlays/trop';
-import { HAFTARAH_FILES } from '../../src/overlays/haftarah/readings';
-import { searchTool } from '../../src/search/index';
-import { DICTIONARY_FILES, SEARCH_FILES } from '../../src/search/data';
-import { STRUCTURE_FILE, TEXTS_FILE } from '../../src/verseTexts';
-import { SAMPLE_LOADED, SAMPLE_STRUCTURE } from '../helpers/fixtures';
+import { commentaryOverlay } from '@torahmap/tanakh/overlays/commentary.ts';
+import { tropOverlay } from '@torahmap/tanakh/overlays/trop.ts';
+import { HAFTARAH_FILES } from '@torahmap/tanakh/overlays/haftarah/readings.ts';
+import { searchTool } from '@torahmap/tanakh/search/index.ts';
+import { DICTIONARY_FILES, SEARCH_FILES } from '@torahmap/tanakh/search/data.ts';
+import { STRUCTURE_FILE, TEXTS_FILE } from '@torahmap/tanakh/verseTexts.ts';
+import { SAMPLE_LOADED, SAMPLE_STRUCTURE } from '../apps/tanakh/test/helpers/fixtures.ts';
 
 const COUNTS = commentaryOverlay.data.counts;
 const HAFTARAH = HAFTARAH_FILES.mappings;

@@ -124,7 +124,7 @@ than chosen by taste, so the reformat moved as few lines as it could:
 `singleQuote` because committed source held 6995 single-quoted strings to 1112
 double, and `printWidth: 100` because line lengths ran to a p99 of 100.
 `quoteProps: preserve` keeps the quotes on Hebrew object keys such as
-`'ך': 'כ'` in `packages/shell/src/hebrew.ts`, which Prettier would otherwise strip — they are
+`'ך': 'כ'` in `apps/tanakh/src/search/spelling.ts`, which Prettier would otherwise strip — they are
 valid JavaScript identifiers, so nothing forces the quotes, but the letters are
 much easier to pick out with them.
 
@@ -141,15 +141,15 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 - `apps/` — what runs, as npm workspace packages, each with its own `test/`:
   `tanakh` (the Tanakh's map: its layout, labels, title, verse texts, search
   and `overlays/`), `talmud` (the Talmud's) and `worker` (the Worker that
-  serves the deployed site). The Tanakh's and Talmud's `src/main.ts` is each page's entry. The
-  Tanakh's and Talmud's export each module at its own path, as
+  serves the deployed site). Each text's `src/main.ts` is its page's entry,
+  and each text exports every module at its own path, as
   `@torahmap/tanakh/layout.ts`, for the tools that use them.
 - `index.html` — every text's page, filled from its copy by `vite.config.ts`
   at the address `pages.ts` gives it; the Talmud's, at `/talmud/`, is
   dev-only.
 - `test/` — checks of the whole repository: that each package and app keeps to
   its imports and each page runs only its own text's code, the saved telemetry
-  queries, and tests of the shell with both texts.
+  queries, and tests of the shell run with a text's data.
 - `packages/` — shared code, as npm workspace packages: `link` (reading and
   writing links, under each text's keys), `utils` (small helpers that depend
   on nothing else here), `engine` (drawing the squares, the camera, hit
@@ -157,7 +157,8 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   page only inside its functions and says `"sideEffects": false`, so the
   Worker, which reaches it through links and stories, bundles none of its
   drawing), `shell` (the app shell, `createApp(text)`: what every text's page
-  runs; each module at its own path, as `@torahmap/shell/main.ts`),
+  runs; the modules a text may use are the ones its `package.json` exports,
+  each at its own path, as `@torahmap/shell/main.ts`),
   `telemetry` (which column of an event holds what, for the page that sends it
   and the Worker that writes it, and who can have the map, which its mode
   column records), `overlay-catalog` (each Tanakh overlay's name and link
@@ -236,10 +237,10 @@ The codebase follows a **functional, modular design** with clear separation of c
 ### Key Concepts
 
 - **main.ts** (`packages/shell`) is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `test/package-imports.test.ts` holds that line
-- **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
+- **layout.ts** (`apps/tanakh`) computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
 - **rendering.ts** (`packages/engine`) manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
 - **itemColoring.ts** (`packages/shell`) uses two-pass design: compute semantic state, then apply colors
-- **overlays/** are pluggable and easy to add
+- **overlays/** (`apps/tanakh/src/overlays/`) are pluggable and easy to add
 - Any animated change to what the map shows goes through the renderer's
   picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
   story stops ease with. Don't add another animation path for it.

@@ -1,6 +1,6 @@
 // Splitting displayed verse text into the words a reader can click.
 //
-// Where a word ends is decided in src/hebrew.ts, which is also what the
+// Where a word ends is decided in hebrew.ts, which is also what the
 // dictionary index was built on. A click resolving a different word than
 // search would find is the failure this shares a rule to avoid.
 

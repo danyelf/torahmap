@@ -1,11 +1,20 @@
 // Trop (cantillation marks): what the marks are, and which verses carry them.
 //
 // The domain half of the trop feature. The overlay that draws it is in
-// ../trop.ts; which character is a mark is in packages/shell/src/hebrew.ts, with the other
-// character tests.
+// ../trop.ts.
 
 import type { VerseTexts } from '../../verseTexts.ts';
-import { isTropMark } from '@torahmap/shell/hebrew.ts';
+
+// The cantillation marks open the Hebrew points-and-accents block, so every
+// one is also something the shell's isNikkud strips; the vowel points after
+// them are not trop.
+const TROP_START = 0x0591;
+const TROP_END = 0x05af;
+
+/** Is this one of the cantillation marks, the accents that say how a verse is chanted? */
+function isTropMark(code: number): boolean {
+  return code >= TROP_START && code <= TROP_END;
+}
 
 // Trop index: maps trop unicode -> list of verse locations containing it
 interface TropVerseLocation {

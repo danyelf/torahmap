@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { writeLink, type UrlState } from '@torahmap/link';
-import { parseUrlState, updateUrl } from '@torahmap/shell/urlState.ts';
-import { registerAllOverlays, getOverlay } from '../../src/overlays/index';
-import { configure as configureSearch } from '../../src/search/index';
-import { searchTool } from '../../src/search/index';
-import { SAMPLE_VERSES, SAMPLE_LOADED } from '../helpers/fixtures';
+import { parseUrlState, updateUrl } from '../packages/shell/src/urlState.ts';
+import { registerAllOverlays, getOverlay } from '@torahmap/tanakh/overlays/index.ts';
+import { configure as configureSearch } from '@torahmap/tanakh/search/index.ts';
+import { searchTool } from '@torahmap/tanakh/search/index.ts';
+import { SAMPLE_VERSES, SAMPLE_LOADED } from '../apps/tanakh/test/helpers/fixtures.ts';
 import { dataFor } from '@torahmap/shell/dataFiles.ts';
-import { mockHistory, mockWindowLocation, restoreAllMocks } from '../helpers/mocks';
+import {
+  mockHistory,
+  mockWindowLocation,
+  restoreAllMocks,
+} from '../apps/tanakh/test/helpers/mocks.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 

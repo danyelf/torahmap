@@ -3,7 +3,7 @@
   z-index: 200;
   min-width: 200px;
   max-width: 320px;
-  /* Its height is capped at the screen's by src/wordMenu.ts. */
+  /* Its height is capped at the screen's by wordMenu.ts. */
   overflow-y: auto;
   padding: 6px;
   background: rgba(30, 30, 30, 0.98);

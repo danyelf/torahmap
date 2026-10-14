@@ -9,7 +9,6 @@ import {
   mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
-  normalizeHebrewForSearch,
 } from '../src/hebrew.ts';
 
 const GENESIS_1_1_END = 'אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
@@ -47,7 +46,6 @@ describe('the grapheme joiner Sefaria writes inside Jerusalem', () => {
 
   it('is dropped along with the points', () => {
     expect(stripNikkud(JERUSALEM)).toBe('ירושלם');
-    expect(normalizeHebrewForSearch(JERUSALEM)).toBe('ירושלמ');
   });
 
   it('is counted when a position past it is mapped back', () => {
@@ -60,18 +58,9 @@ describe('the grapheme joiner Sefaria writes inside Jerusalem', () => {
   });
 });
 
-describe('folding a written form to its indexed spelling', () => {
-  it('keeps final forms when only points are stripped', () => {
+describe('stripping the points', () => {
+  it('keeps final forms', () => {
     expect(stripNikkud('שָׁלוֹם')).toBe('שלום');
-  });
-
-  it('folds final forms and separators for search', () => {
-    expect(normalizeHebrewForSearch('שלום')).toBe('שלומ');
-    expect(normalizeHebrewForSearch('את־יצחק')).toBe('את יצחק');
-  });
-
-  it('leaves whitespace as written rather than rewriting it as a space', () => {
-    expect(normalizeHebrewForSearch('אב\nגד')).toBe('אב\nגד');
   });
 });
 

@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import type { TanakhOverlay } from '../../src/overlays/index';
+import type { TanakhOverlay } from '@torahmap/tanakh/overlays/index.ts';
 import {
   parseUrlState,
   updateUrl,
   subscribeToHistory,
   applyingExternalState,
   isApplyingExternalState,
-} from '@torahmap/shell/urlState.ts';
+} from '../packages/shell/src/urlState.ts';
 import { readLink, writeLink } from '@torahmap/link';
-import { mockHistory } from '../helpers/mocks';
-import { setLink } from '../helpers/setLink';
-import { registerAllOverlays, getAllOverlays } from '../../src/overlays/index';
+import { mockHistory } from '../apps/tanakh/test/helpers/mocks.ts';
+import { setLink } from '../apps/tanakh/test/helpers/setLink.ts';
+import { registerAllOverlays, getAllOverlays } from '@torahmap/tanakh/overlays/index.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 
