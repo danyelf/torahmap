@@ -9,6 +9,10 @@ import type { Loaded } from '../../dataFiles';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../verseTexts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../tanakh/search/data';
 import type { StoryStop } from '@torahmap/stories';
+import type { ZoomRange } from '@torahmap/link';
+
+/** A text's zoom range, for tests of the code that keeps to one. */
+export const ZOOM: ZoomRange = { min: 0.1, max: 10, start: 1 };
 
 export function createStoryStop(overrides: Partial<StoryStop> = {}): StoryStop {
   return { id: 's', text: 'Text.', camera: 'initial', overlay: null, ...overrides };

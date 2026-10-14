@@ -40,13 +40,7 @@ import {
   trackViewSettled,
   trackWebGLMissing,
 } from './analytics.ts';
-import {
-  linkKind,
-  linkNamesAView,
-  DEFAULT_ZOOM,
-  type LinkKeys,
-  type UrlState,
-} from '@torahmap/link';
+import { linkKind, linkNamesAView, type LinkKeys, type UrlState } from '@torahmap/link';
 import { parseUrlState, updateUrl, subscribeToHistory, applyingExternalState } from './urlState.ts';
 import { resolveViewState, cameraForView, opensFolded, type ViewState } from './viewState.ts';
 import { debounce } from './utils/debounce.ts';
@@ -153,6 +147,7 @@ function showCannotDraw(): void {
 export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Promise<void> {
   // Before the data loads, so the branch name shows from the start.
   showTitle(source);
+  const zoomRange = source.link.zoom;
 
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
@@ -688,7 +683,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function glideToVerse(verse: I): void {
     cancelCameraGlide();
 
-    const target = viewFocusedOn(verse, camera.zoom, RESULT_CLICK_ZOOM, mapFocus(), mapViewport());
+    const target = viewFocusedOn(
+      verse,
+      camera.zoom,
+      RESULT_CLICK_ZOOM,
+      mapFocus(),
+      mapViewport(),
+      zoomRange,
+    );
 
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
@@ -722,7 +724,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function zoomAt(factor: number, at: ScreenPoint): void {
     takeOver('takeover');
     cancelCameraGlide();
-    const newZoom = clampZoom(camera.zoom * factor);
+    const newZoom = clampZoom(camera.zoom * factor, zoomRange);
     Object.assign(camera, zoomAtPoint(camera, newZoom, at, mapViewport()));
     render();
   }
@@ -802,9 +804,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       state.square = pinnedVerse.id;
     }
 
-    if (camera.zoom !== DEFAULT_ZOOM) {
-      state.zoom = camera.zoom;
-    }
+    state.zoom = camera.zoom;
 
     // Pan (only if no verse - verse auto-centers)
     if (!pinnedVerse) {
@@ -1574,7 +1574,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function restoreFromUrl(link: UrlState): void {
     const next = resolveViewState(
       link,
-      { ...initialCamera, zoom: DEFAULT_ZOOM },
+      { ...initialCamera, zoom: zoomRange.start },
       (id) => getOverlay(id) !== undefined,
     );
     applyingExternalState(() => applyViewState(next));

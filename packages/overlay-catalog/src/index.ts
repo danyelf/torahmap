@@ -88,6 +88,7 @@ export const LINK_KEYS: LinkKeys = {
   square: 'verse',
   search: SEARCH_URL_PARAMS,
   overlayParams: overlayParamSpecs,
+  zoom: { min: 0.1, max: 10, start: 1 },
 };
 
 /** An overlay's display name, by id; undefined for an unknown id. */

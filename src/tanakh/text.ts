@@ -36,7 +36,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
     return {
       items,
 
-      startCamera: (viewport) => createCamera(viewport, bounds),
+      startCamera: (viewport) => createCamera(viewport, bounds, LINK_KEYS.zoom),
 
       baseColor: (_, i) => getDefaultColor(i),
 
@@ -59,7 +59,10 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
 
       search: searchTool,
 
-      stories: { list: STORIES, resolve: resolveStops },
+      stories: {
+        list: STORIES,
+        resolve: (...args) => resolveStops(...args, LINK_KEYS.zoom),
+      },
 
       area: (v) => ({ area: v.book, section: sections.get(v.book) ?? '' }),
 

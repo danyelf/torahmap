@@ -2,13 +2,13 @@
 
 import type { Bounds } from './types';
 import { lerpCamera, easingFunctions } from './scrollytelling/interpolation.ts';
-import { MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM } from '@torahmap/link';
+import type { ZoomRange } from '@torahmap/link';
 import { DEFAULT_EASING } from '@torahmap/stories';
 
 export interface Camera {
   x: number; // pan x position
   y: number; // pan y position
-  zoom: number; // zoom level (0.1 - 10.0)
+  zoom: number;
 }
 
 /** The map's canvas, in CSS pixels. */
@@ -27,17 +27,18 @@ const LABEL_MARGIN = 40;
 export function createCamera(
   viewport: Viewport,
   bounds: Bounds,
+  range: ZoomRange,
   windowWidth: number = viewport.width,
 ): Camera {
   return {
     x: bounds.width - (windowWidth - RIGHT_MARGIN - viewport.width / 2),
     y: viewport.height / 2 - LABEL_MARGIN,
-    zoom: DEFAULT_ZOOM,
+    zoom: range.start,
   };
 }
 
-export function clampZoom(zoom: number): number {
-  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+export function clampZoom(zoom: number, range: ZoomRange): number {
+  return Math.max(range.min, Math.min(range.max, zoom));
 }
 
 /** A point on the map's canvas, in CSS pixels. */
@@ -116,14 +117,20 @@ const FIT_MARGIN = 16;
  * The camera that centres `box` on a `width` × `height` canvas, at the largest
  * zoom that fits it inside the margins, unless `zoom` is given.
  */
-export function cameraToFit(box: WorldBox, width: number, height: number, zoom?: number): Camera {
+export function cameraToFit(
+  box: WorldBox,
+  width: number,
+  height: number,
+  range: ZoomRange,
+  zoom?: number,
+): Camera {
   const boxWidth = box.maxX - box.minX;
   const boxHeight = box.maxY - box.minY;
   const fitted = Math.min(
     (width - 2 * FIT_MARGIN) / boxWidth,
     (height - FIT_MARGIN - LABEL_MARGIN) / boxHeight,
   );
-  const z = clampZoom(zoom ?? fitted);
+  const z = clampZoom(zoom ?? fitted, range);
   const centreY = LABEL_MARGIN + (height - FIT_MARGIN - LABEL_MARGIN) / 2;
   return {
     x: box.minX + boxWidth / 2,
@@ -145,8 +152,9 @@ export function viewFocusedOn(
   minZoom: number,
   focus: ScreenPoint,
   viewport: Viewport,
+  range: ZoomRange,
 ): Camera {
-  const zoom = clampZoom(Math.max(currentZoom, minZoom));
+  const zoom = clampZoom(Math.max(currentZoom, minZoom), range);
   return { ...centreForFocus(item, zoom, focus, viewport), zoom };
 }
 

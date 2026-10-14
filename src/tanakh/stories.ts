@@ -4,7 +4,7 @@ import type { StoryStop, CameraPosition, CameraRef } from '@torahmap/stories';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { Book, TanakhLayout } from '../types.ts';
 import type { ItemIndex } from '../items.ts';
-import { bookFromUrl } from '@torahmap/link';
+import { bookFromUrl, type ZoomRange } from '@torahmap/link';
 import { getBookSection } from '../constants/books.ts';
 import { SECTION_LABEL_REACH } from '../labels.ts';
 import { cameraToFit, centreForFocus, type ScreenPoint, type WorldBox } from '../camera.ts';
@@ -95,6 +95,7 @@ export function resolveStops(
   squares: ItemIndex<TanakhLayout>,
   focus: ScreenPoint,
   mapSize: MapSize,
+  zoom: ZoomRange,
 ): ResolvedStoryStop[] {
   return stops.map((stop) => {
     const cam = stop.camera;
@@ -106,7 +107,7 @@ export function resolveStops(
       camera = verse
         ? cameraForVerse(verse, stop.zoom ?? 3, focus, mapSize)
         : box
-          ? cameraToFit(box, mapSize.width, mapSize.height, stop.zoom)
+          ? cameraToFit(box, mapSize.width, mapSize.height, zoom, stop.zoom)
           : { ...initialCamera };
     } else if (cam !== 'initial') {
       camera = cam;

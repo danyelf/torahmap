@@ -2,6 +2,7 @@
 
 import { easingFunctions, lerpCamera } from '../src/scrollytelling/interpolation.ts';
 import type { Scene, Script, Step, ViewScene } from './script.ts';
+import { LINK_KEYS } from '@torahmap/overlay-catalog';
 
 export interface Camera {
   x: number;
@@ -117,7 +118,11 @@ export function transition(segment: Segment, t: number): number {
 
 export function cameraOf(params: Record<string, string>): Camera | null {
   if (params.x === undefined || params.y === undefined) return null;
-  return { x: Number(params.x), y: Number(params.y), zoom: Number(params.zoom ?? 1) };
+  return {
+    x: Number(params.x),
+    y: Number(params.y),
+    zoom: Number(params.zoom ?? LINK_KEYS.zoom.start),
+  };
 }
 
 /**
