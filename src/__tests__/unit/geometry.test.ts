@@ -1,3 +1,4 @@
+import type { Color } from '@torahmap/utils';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   buildItemGeometry,
@@ -10,7 +11,6 @@ import {
   type VerseAttributeName,
 } from '../../geometry';
 import { createVerse, createVerses, TEST_COLORS, createMockWebGL2Context } from '../helpers';
-import type { Color } from '../../overlays/types';
 
 const SIZE = Object.fromEntries(VERSE_ATTRIBUTES.map((a) => [a.name, a.size])) as Record<
   VerseAttributeName,

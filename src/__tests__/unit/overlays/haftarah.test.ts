@@ -1,13 +1,11 @@
+import { type Color, rgbToHsl, HOVER_LINGER_MS } from '@torahmap/utils';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { haftarahOverlay as overlay } from '../../../overlays/haftarah';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_HAFTARAH_MAPPINGS, SAMPLE_STRUCTURE } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { overlayColorsFor } from '../../../itemColoring';
-import type { Color } from '../../../overlays/types';
 import type { HaftarahData } from '../../../overlays/haftarah/readings';
-import { rgbToHsl } from '../../../utils/color';
-import { HOVER_LINGER_MS } from '../../../utils/hover';
 import { DIMMED_GREY } from '../../../constants';
 
 const DATA: HaftarahData = { mappings: SAMPLE_HAFTARAH_MAPPINGS, structure: SAMPLE_STRUCTURE };

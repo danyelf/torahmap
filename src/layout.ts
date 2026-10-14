@@ -1,8 +1,8 @@
 // Layout algorithm: compute (x, y) position for every verse
 
+import { seededRandom } from '@torahmap/utils';
 import type { TorahData, LayoutConfig, TanakhLayout, Bounds, Book } from './types.ts';
 import { verseId } from '@torahmap/link/tanakh';
-import { seededRandom } from './utils/random.ts';
 import { JITTER_CENTER, JITTER_RANGE } from './constants.ts';
 
 const VERSE_SIZE = 6; // pixels per verse square

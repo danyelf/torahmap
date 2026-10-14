@@ -1,8 +1,8 @@
+import { SEARCH_COLORS } from '../../tanakh/search/terms.ts';
 import { describe, it, expect } from 'vitest';
 import { buildDictionary, buildTextIndex, type LexiconFile } from '../../tanakh/search/search';
 import { searchTool } from '../../tanakh/search/index';
 import { settingsFromLink } from '../../overlays/settings';
-import { SEARCH_COLORS } from '../../utils/color';
 import { dataFor } from '../../dataFiles';
 import { createVerse, SAMPLE_LOADED } from '../helpers/fixtures';
 import { inTextsOrder, searchDataFor } from '../helpers/searchData';

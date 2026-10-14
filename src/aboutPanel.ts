@@ -1,8 +1,8 @@
+import { escapeHtml } from '@torahmap/utils';
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
 import { CONTROL, panelHtml } from './panel.ts';
 import type { Site } from './app/text.ts';
-import { escapeHtml } from './utils/html.ts';
 
 // GitHub's Octicons (MIT): mark-github and mail.
 const icon = (path: string): string =>

@@ -2,6 +2,7 @@
 //
 // The mode belongs to a term and is set on that term's row, so these tests
 // click the row.
+import { SEARCH_COLORS } from '../../tanakh/search/terms.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../tanakh/search/index';
 import { configure } from '../../tanakh/search/index.ts';
@@ -10,7 +11,6 @@ import type { VerseTexts } from '../../verseTexts';
 import { hostOverlay } from '../helpers/overlayHost';
 import { realSearchData, searchDataFor } from '../helpers/searchData';
 import { createVerse } from '../helpers/fixtures';
-import { SEARCH_COLORS } from '../../utils/color';
 
 const searchOverlay = hostOverlay(searchTool, searchDataFor({}));
 const { lexicon, forms, verseLexemes } = realSearchData().files;

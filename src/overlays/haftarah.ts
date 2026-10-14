@@ -1,10 +1,16 @@
-import type { Overlay, Color, UrlParamValues } from './types.ts';
+import {
+  type Color,
+  rgbToHsl,
+  hslToRgb,
+  colorToCss,
+  brighten,
+  escapeHtml,
+  lingeringHover,
+} from '@torahmap/utils';
+import type { Overlay, UrlParamValues } from './types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { verseId } from '@torahmap/link/tanakh';
 import { HIGHLIGHT_CONSTANTS, DIMMED_GREY } from '../constants.ts';
-import { rgbToHsl, hslToRgb, colorToCss, brighten } from '../utils/color.ts';
-import { escapeHtml } from '../utils/html.ts';
-import { lingeringHover } from '../utils/hover.ts';
 import {
   deriveHaftarah,
   forEachVerseInRange,

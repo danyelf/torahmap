@@ -5,6 +5,7 @@
 // reader is working in, but they hold none of it. Everything comes through the host
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
+import { colorToCss } from '@torahmap/utils';
 import { isHebrew, stripNikkud } from '../../hebrew.ts';
 import type { Dictionary, LexemeLanguage } from './search.ts';
 import type { Meaning } from './dictionary.ts';
@@ -23,10 +24,10 @@ import {
   meaningsPossible,
   termIsHebrew,
   MAX_TERMS,
+  SEARCH_COLORS,
   type SearchTerm,
   type SearchMode,
 } from './terms.ts';
-import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
 import { CONTROL } from '../../panel.ts';
 import { SEARCH_BOX_ID } from '../../app/search.ts';
 

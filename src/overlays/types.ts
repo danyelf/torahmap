@@ -1,11 +1,10 @@
-import type { Color, SpatialItem, TextLanguage } from '../types.ts';
+import type { Color } from '@torahmap/utils';
+import type { SpatialItem, TextLanguage } from '../types.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 
 export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '@torahmap/link';
 export type { Credit } from '../credits.ts';
-
-export type { Color };
 
 /** The overlay id that stands for none: the picker's first option, and what telemetry records. */
 export const NO_OVERLAY = 'none';

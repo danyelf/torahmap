@@ -1,9 +1,9 @@
 // What the overlay panel offers while None is chosen: search, every overlay
 // and every story, each in its own words.
+import { escapeHtml } from '@torahmap/utils';
 import { firstSentence, type Story, type StoryData } from '@torahmap/stories';
 import type { Overlay } from './overlays/types.ts';
 import { CONTROL } from './panel.ts';
-import { escapeHtml } from './utils/html.ts';
 
 export type StartChoice =
   { kind: 'search' } | { kind: 'overlay'; id: string } | { kind: 'story'; id: string };

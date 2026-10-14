@@ -1,11 +1,11 @@
 // Which searched terms are worth an analytics event, and when: once the reader
 // has stopped changing the search and search has its data.
+import { debounce } from '@torahmap/utils';
 import type { SearchTelemetry } from '../../app/search.ts';
 import type { TextLanguage } from '../../types.ts';
 import { termQuery, type SearchMode, type SearchTerm } from './terms.ts';
 import type { Dictionary } from './search.ts';
 import { dictionaryOf, type SearchData } from './data.ts';
-import { debounce } from '../../utils/debounce.ts';
 import { activeTerms, termHitCount, type SearchSettings } from './index.ts';
 
 /** What was last recorded for each term, by term id. */

@@ -1,13 +1,5 @@
-import type { Color } from '../overlays/types.ts';
-
-// Fixed palette for multi-term search (cyan, orange, lime, pink, yellow)
-export const SEARCH_COLORS: Color[] = [
-  [0.1, 0.7, 0.8], // Cyan (dimmed for luminance balance)
-  [1.0, 0.5, 0.0], // Orange
-  [0.5, 1.0, 0.2], // Lime
-  [1.0, 0.2, 0.8], // Pink
-  [1.0, 1.0, 0.2], // Yellow
-];
+/** Red, green and blue, each 0 to 1. */
+export type Color = [number, number, number];
 
 /** A color as CSS, for a swatch or a background the GPU is not drawing. */
 export function colorToCss(color: Color): string {

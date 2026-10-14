@@ -1,5 +1,5 @@
+import { escapeHtml } from '@torahmap/utils';
 import { CONTROL, panelHtml } from './panel.ts';
-import { escapeHtml } from './utils/html.ts';
 import type { StoryPlace } from './menu.ts';
 
 export interface StoryCard {

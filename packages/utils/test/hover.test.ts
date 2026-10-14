@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { lingeringHover, HOVER_LINGER_MS } from '../../utils/hover';
+import { lingeringHover, HOVER_LINGER_MS } from '../src/index.ts';
 
 describe('lingeringHover', () => {
   beforeEach(() => vi.useFakeTimers());

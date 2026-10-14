@@ -2,12 +2,10 @@
 // occasions, as handed in, and for each custom the lookups from a verse to the
 // readings it belongs to.
 
-import type { Color } from '../types.ts';
+import { type Color, hslToRgb, memoByValueAndKey } from '@torahmap/utils';
 import type { TorahData } from '../../types.ts';
 import { verseId } from '@torahmap/link/tanakh';
-import { hslToRgb } from '../../utils/color.ts';
 import { STRUCTURE_FILE } from '../../verseTexts.ts';
-import { memoByValueAndKey } from '../../utils/memo.ts';
 import { HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 
 interface VerseRef {

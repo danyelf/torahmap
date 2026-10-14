@@ -1,8 +1,8 @@
+import { type Color, colorToCss } from '@torahmap/utils';
 import './text-dating.css';
-import type { Overlay, Color } from './types.ts';
+import type { Overlay } from './types.ts';
 import type { TanakhIdentity } from '../types.ts';
 import { legendCaption, legendRow } from './legend.ts';
-import { colorToCss } from '../utils/color.ts';
 
 interface TextDatingFile {
   notes: string[];

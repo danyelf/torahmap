@@ -1,5 +1,6 @@
 // Search's files for tests: the shipped ones, read from disk, or made-up texts
 // with a dictionary that knows no word.
+import { memoByValue } from '@torahmap/utils';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,7 +19,6 @@ import {
   type SearchData,
 } from '../../tanakh/search/data';
 import type { Parse } from '../../tanakh/search/dictionary';
-import { memoByValue } from '../../utils/memo';
 import type { VerseTexts } from '../../verseTexts';
 import { EMPTY_DICTIONARY_FILES } from './fixtures';
 

@@ -2,8 +2,8 @@
 // search at production scale. Roughly half the verses contain אלהים — the
 // word every search-performance test searches for — so a search has to
 // filter rather than match everything.
+import { seededRandom } from '@torahmap/utils';
 import type { VerseTexts } from '../../verseTexts';
-import { seededRandom } from '../../utils/random';
 
 const BOOKS = ['Genesis', 'Exodus', 'Leviticus', 'Numbers', 'Deuteronomy'];
 const CHAPTERS_PER_BOOK = 50;

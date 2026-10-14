@@ -12,7 +12,7 @@
 // would close a loop; the renderer takes the smallest shape it actually needs
 // instead.
 
-import { escapeHtml } from './utils/html.ts';
+import { escapeHtml } from '@torahmap/utils';
 
 export interface Credit {
   /** How the source should be named. Some licences require a specific wording. */

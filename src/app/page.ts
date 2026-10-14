@@ -1,6 +1,6 @@
 // A text's page: index.html, filled from its copy.
 
-import { escapeHtml } from '../utils/html.ts';
+import { escapeHtml } from '@torahmap/utils';
 
 /** What a text's page says before the map runs, and to link previews; plain text throughout. */
 export interface PageCopy {

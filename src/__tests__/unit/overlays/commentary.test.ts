@@ -1,3 +1,4 @@
+import { colorToCss, type Color } from '@torahmap/utils';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   commentaryOverlay as overlay,
@@ -10,8 +11,6 @@ import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../types';
 import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
-import { colorToCss } from '../../../utils/color';
-import type { Color } from '../../../overlays/types';
 
 describe('Commentary Overlay', () => {
   let testData: CommentaryCounts;

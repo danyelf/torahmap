@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { IMPORT } from '../helpers/imports.ts';
 
 const ROOT = resolve(__dirname, '../../..');
 
@@ -29,15 +30,13 @@ const OVERLAY_BASE = [
   'src/overlays/prebuild.ts',
 ];
 
-// `from './x'`, `import './x'` and `import('./x')`, or the same of one of our packages.
-const IMPORT = /(?:\bfrom|\bimport)\s*\(?\s*['"](\.[^'"]+|@torahmap\/[^'"]+)['"]/g;
 // A stylesheet or picture: `./frame.css`, `./mapTitle.svg?raw`.
 const ASSET = /\.(?!ts$)\w+(\?\w*)?$/;
 
 /** The file an import names: a path, or the entry its package's package.json exports. */
 function target(file: string, spec: string): string | undefined {
-  if (spec.startsWith('.')) {
-    const path = resolve(dirname(file), spec);
+  if (!spec.startsWith('@')) {
+    const path = spec.startsWith('/') ? resolve(ROOT, spec.slice(1)) : resolve(dirname(file), spec);
     return [path, `${path}.ts`, `${path}/index.ts`].find(
       (candidate) => candidate.endsWith('.ts') && existsSync(candidate),
     );

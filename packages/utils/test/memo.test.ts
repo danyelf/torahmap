@@ -1,5 +1,5 @@
+import { memoByValueAndKey } from '../src/index.ts';
 import { describe, it, expect, vi } from 'vitest';
-import { memoByValueAndKey } from '../../../utils/memo';
 
 describe('memoByValueAndKey', () => {
   it('derives once per value and key', () => {

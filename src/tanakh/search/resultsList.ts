@@ -2,9 +2,9 @@
 //
 // Told what to show on every pass, so it holds no opinion about what the search
 // found — only how far down its own list it has drawn.
+import { colorToCss } from '@torahmap/utils';
 import type { SearchResult, Snippet } from './search.ts';
-import { colorIndexAt, termIsHebrew, type SearchTerm } from './terms.ts';
-import { SEARCH_COLORS, colorToCss } from '../../utils/color.ts';
+import { SEARCH_COLORS, colorIndexAt, termIsHebrew, type SearchTerm } from './terms.ts';
 import { markRange } from './highlight.ts';
 import { verseRef } from '@torahmap/link/tanakh';
 

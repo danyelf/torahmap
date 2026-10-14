@@ -1,4 +1,4 @@
-import type { Color } from '../overlays/types.ts';
+import type { Color } from '@torahmap/utils';
 import type { Picture } from '../geometry.ts';
 import { lerpColor } from './interpolation';
 

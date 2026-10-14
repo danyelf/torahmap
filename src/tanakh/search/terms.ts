@@ -6,6 +6,7 @@
 // that choice the moment an earlier term is edited, because every later index
 // shifts and the choice lands silently on a different word.
 
+import type { Color } from '@torahmap/utils';
 import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
 import {
   resultsForVerseSets,
@@ -16,7 +17,6 @@ import {
 } from './search.ts';
 import { isHebrew, splitIntoWords } from '../../hebrew.ts';
 import { TERM_SEPARATORS } from './constants.ts';
-import { SEARCH_COLORS } from '../../utils/color.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '../../types.ts';
 import type { MatchMode } from './matching.ts';
 
@@ -57,6 +57,15 @@ export interface SearchTerm {
    */
   chosen: string[] | null;
 }
+
+// Fixed palette for multi-term search (cyan, orange, lime, pink, yellow)
+export const SEARCH_COLORS: Color[] = [
+  [0.1, 0.7, 0.8], // Cyan (dimmed for luminance balance)
+  [1.0, 0.5, 0.0], // Orange
+  [0.5, 1.0, 0.2], // Lime
+  [1.0, 0.2, 0.8], // Pink
+  [1.0, 1.0, 0.2], // Yellow
+];
 
 /**
  * One colour per term. SEARCH_COLORS is indexed modulo its length, so one more

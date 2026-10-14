@@ -1,7 +1,6 @@
+import { scale, LOG, SQRT, type ColorStop } from '@torahmap/utils';
 import { describe, it, expect } from 'vitest';
 import { renderAxis } from '../../../overlays/legend';
-import { scale, LOG, SQRT } from '../../../utils/scale';
-import type { ColorStop } from '../../../utils/color';
 
 const BLACK_TO_WHITE: ColorStop[] = [
   { t: 0, color: [0, 0, 0] },

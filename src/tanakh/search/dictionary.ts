@@ -12,6 +12,7 @@
 // not decoration: 461 ETCBC ids are shared by a Hebrew word and an Aramaic one,
 // and `<LH/` is both burnt-offering and pretext.
 
+import { memoByValue, memoByValueAndKey } from '@torahmap/utils';
 import {
   findLexemesForWord,
   printedSpelling,
@@ -34,7 +35,6 @@ import {
   type TextWord,
 } from '../../hebrew.ts';
 import { isSectionMarker, verseWords } from '../../verseWords.ts';
-import { memoByValue, memoByValueAndKey } from '../../utils/memo.ts';
 
 /**
  * One dictionary word a written form might be, as a reader sees it.
