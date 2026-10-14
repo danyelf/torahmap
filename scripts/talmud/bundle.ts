@@ -18,6 +18,13 @@ import {
   shapeMatches,
   type CoverageReport,
 } from './verify-coverage.ts';
+import {
+  STRUCTURE_FILE,
+  TEXTS_FILE,
+  getVerseText,
+  type VerseTexts,
+} from '@torahmap/tanakh/verseTexts.ts';
+import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
 
 /**
  * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
@@ -114,7 +121,7 @@ export function processTractate(
   wikisource: WikisourceJson,
   schema: SchemaJson,
   merged: MergedJson,
-): { structure: TalmudTractate; text: TalmudTractateText } {
+): { structure: TalmudTractate; text: Omit<TalmudTractateText, 'citations'> } {
   const shape = shapeMatches(wikisource, merged);
   if (!shape.match) throw new Error(`${tractateName}: the editions differ: ${shape.reason}`);
   const schemaNodes = schema.alts?.Chapters?.nodes ?? [];
@@ -206,7 +213,8 @@ export function processTractate(
   };
 }
 
-const OUTPUT_DIR = 'public/data/talmud';
+const DATA_DIR = 'public/data';
+const OUTPUT_DIR = join(DATA_DIR, 'talmud');
 const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
 
 async function readJson<T>(path: string): Promise<T> {
@@ -224,6 +232,14 @@ async function main(): Promise<void> {
   await mkdir(TEXTS_DIR, { recursive: true });
 
   const structure: TalmudStructure = { tractates: [] };
+  const { books } = await readJson<{ books: TanakhBook[] }>(join(DATA_DIR, STRUCTURE_FILE));
+  const texts = await readJson<VerseTexts>(join(DATA_DIR, TEXTS_FILE));
+  const find = citationFinder({
+    books,
+    text: (book, chapter, verse) => getVerseText(texts, book, chapter, verse)?.he ?? null,
+  });
+  let linked = 0;
+  const missed: string[] = [];
 
   for (const ref of passed) {
     process.stdout.write(`  ${ref.tractate.padEnd(20)} ... `);
@@ -239,11 +255,13 @@ async function main(): Promise<void> {
 
       structure.tractates.push(tractateStructure);
 
-      await writeFile(
-        join(TEXTS_DIR, `${ref.tractate}.json`),
-        JSON.stringify(tractateText),
-        'utf-8',
-      );
+      const cited = citationsByPlace(tractateText.amudim, find);
+      for (const amud of Object.values(cited.citations)) {
+        for (const segment of Object.values(amud)) linked += segment.length;
+      }
+      missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
+      const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
+      await writeFile(join(TEXTS_DIR, `${ref.tractate}.json`), JSON.stringify(shipped), 'utf-8');
 
       const segCount = tractateStructure.amudim.reduce((a, b) => a + b.segmentCount, 0);
       console.log(
@@ -259,6 +277,10 @@ async function main(): Promise<void> {
   console.log('');
   console.log(`Structure: ${join(OUTPUT_DIR, 'structure.json')}`);
   console.log(`Texts: ${TEXTS_DIR}/*.json (${structure.tractates.length} files)`);
+  console.log('');
+  console.log(`Tanakh citations linked: ${linked}`);
+  console.log(`Looked like citations but named no verse: ${missed.length}`);
+  for (const stretch of missed.slice(0, 10)) console.log(`  ${stretch}`);
 }
 
 // Only run main() when invoked as a script, not when imported for testing.

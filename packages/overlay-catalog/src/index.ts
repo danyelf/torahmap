@@ -3,7 +3,13 @@
 // the DOM: its id, name, description and the URL parameters it owns; and the
 // search's, which together make a Tanakh link's keys.
 
-import type { LinkKeys, UrlParamSpec, OverlayParamSpecLookup } from '@torahmap/link';
+import {
+  writeLink,
+  type LinkKeys,
+  type UrlParamSpec,
+  type OverlayParamSpecLookup,
+} from '@torahmap/link';
+import { TANAKH_PATH } from '@torahmap/site';
 
 export interface OverlayEntry<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> {
   readonly id: string;
@@ -93,3 +99,12 @@ export const LINK_KEYS: LinkKeys = {
 
 /** An overlay's display name, by id; undefined for an unknown id. */
 export const overlayName = (id: string): string | undefined => BY_ID.get(id)?.name;
+
+/** The Tanakh's map on `verse`, with each verse shaded by how much commentary of `category` it has. */
+export function commentaryLink(verse: string, category: string): string {
+  const query = writeLink(
+    { square: verse, overlay: COMMENTARY.id, overlayParams: { category } },
+    LINK_KEYS,
+  );
+  return `${TANAKH_PATH}${query}`;
+}

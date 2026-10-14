@@ -1,13 +1,13 @@
 // What the Tanakh's page says before the map runs. Imported by the Vite config, so it imports no app code.
 
-import { ORIGIN } from '@torahmap/site';
+import { ORIGIN, TANAKH_PATH } from '@torahmap/site';
 import { SITE_NAME, TAGLINE } from '@torahmap/site/tanakh';
 import type { PageCopy } from '@torahmap/shell/app/page.ts';
 
 export const TANAKH_PAGE: PageCopy = {
   name: SITE_NAME,
   tagline: TAGLINE,
-  url: `${ORIGIN}/`,
+  url: `${ORIGIN}${TANAKH_PATH}`,
   image: {
     url: `${ORIGIN}/og-image.jpg`,
     alt: 'The five books of the Torah above the first books of the Prophets, each verse a small square colored by how much commentary it has.',

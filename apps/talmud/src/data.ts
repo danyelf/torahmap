@@ -40,6 +40,15 @@ export interface TalmudStructure {
 export interface TalmudTractateText {
   name: string;
   amudim: string[][];
+  /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
+  citations: Record<number, Record<number, Citation[]>>;
+}
+
+/** Where a segment cites a Tanakh verse: the cited words, by place in its text, and the verse's id. */
+export interface Citation {
+  start: number;
+  end: number;
+  verse: string;
 }
 
 export function structureFrom(loaded: Loaded): TalmudStructure {

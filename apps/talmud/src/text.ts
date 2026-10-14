@@ -5,6 +5,7 @@ import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import type { Story } from '@torahmap/stories';
 import type { LinkKeys } from '@torahmap/link';
+import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
 import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
@@ -45,6 +46,9 @@ const TALMUD_LINK_KEYS: LinkKeys = {
   zoom: { min: 0.1, max: 10, start: 1 },
 };
 
+// The commentary overlay's category for the Talmud, as public/data/overlays/commentary/ names it.
+export const TALMUD_CATEGORY = 'Talmud';
+
 export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
   site: talmudSite,
   link: TALMUD_LINK_KEYS,
@@ -55,10 +59,14 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
     const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
     const laid = computeTalmudLayout(structure);
 
-    /** A segment's text in its tractate's file, which holds one list of segments per amud. */
-    const segmentText = (s: TalmudLayoutItem, file: TalmudTractateText): string => {
+    /** A segment's text and citations in its tractate's file, which lists both by amud. */
+    const segmentIn = (s: TalmudLayoutItem, file: TalmudTractateText) => {
       const first = tractates.get(s.tractate)?.amudim[0];
-      return (first && file.amudim[amudIndex(s.daf, s.amud, first)]?.[s.segment - 1]) ?? '';
+      const ai = first ? amudIndex(s.daf, s.amud, first) : -1;
+      return {
+        text: file.amudim[ai]?.[s.segment - 1] ?? '',
+        citations: file.citations[ai]?.[s.segment - 1] ?? [],
+      };
     };
 
     return {
@@ -89,11 +97,17 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
 
       popupText(item, loaded) {
         const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;
+        const segment = file && segmentIn(item, file);
         return {
           ref: talmudRef(item),
-          hebrew: file ? segmentText(item, file) : '',
+          hebrew: segment?.text ?? '',
           english: '',
           link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
+          hebrewLinks: segment?.citations.map(({ start, end, verse }) => ({
+            start,
+            end,
+            href: commentaryLink(verse, TALMUD_CATEGORY),
+          })),
         };
       },
 
