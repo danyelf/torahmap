@@ -5,11 +5,11 @@ import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import type { Story } from '@torahmap/stories';
 import type { LinkKeys } from '@torahmap/link';
+import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
 import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
-import { tanakhLink } from './tanakhLink.ts';
 import { TALMUD_SEARCH_PARAMS, talmudSearch, type TalmudSearchSettings } from './search.ts';
 import {
   STRUCTURE_FILE,
@@ -45,6 +45,9 @@ const TALMUD_LINK_KEYS: LinkKeys = {
   // The Tanakh's numbers, for now.
   zoom: { min: 0.1, max: 10, start: 1 },
 };
+
+// The commentary overlay's category for the Talmud, as public/data/overlays/commentary/ names it.
+export const TALMUD_CATEGORY = 'Talmud';
 
 export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
   site: talmudSite,
@@ -103,7 +106,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
           hebrewLinks: segment?.citations.map(({ start, end, verse }) => ({
             start,
             end,
-            href: tanakhLink(verse),
+            href: commentaryLink(verse, TALMUD_CATEGORY),
           })),
         };
       },

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { citationsByPlace, findCitations, type Tanakh, type TanakhBook } from '../citations.ts';
+import { citationFinder, citationsByPlace, type Tanakh, type TanakhBook } from '../citations.ts';
 
 const book = (name: string, hebrewName: string, chapters = 50, verses = 40): TanakhBook => ({
   name,
@@ -33,11 +33,15 @@ const VERSES: Record<string, string> = {
   'Exodus.20.23': 'וְלֹֽא־תַעֲלֶ֥ה בְמַעֲלֹ֖ת עַֽל־מִזְבְּחִ֑י',
 };
 
-const TANAKH: Tanakh = { books: BOOKS, text: (verse) => VERSES[verse] ?? null };
+const TANAKH: Tanakh = {
+  books: BOOKS,
+  text: (book, chapter, verse) => VERSES[`${book}.${chapter}.${verse}`] ?? null,
+};
+const findCitations = citationFinder(TANAKH);
 
 /** The verse each citation in `text` names, and the text its link covers. */
 function cited(text: string): [string, string][] {
-  return findCitations(text, TANAKH).citations.map(({ start, end, verse }) => [
+  return findCitations(text).citations.map(({ start, end, verse }) => [
     text.slice(start, end),
     verse,
   ]);
@@ -74,7 +78,7 @@ describe('findCitations', () => {
 
   it('finds every citation in a segment, at its place', () => {
     const text = 'כתיב (תהלים א, א) וכתיב (תהלים ב, ב)';
-    expect(findCitations(text, TANAKH).citations).toEqual([
+    expect(findCitations(text).citations).toEqual([
       { start: 6, end: 16, verse: 'Psalms.1.1' },
       { start: 25, end: 35, verse: 'Psalms.2.2' },
     ]);
@@ -91,13 +95,12 @@ describe('findCitations', () => {
       '(ע"ש)',
       '(מלכים א ל)',
     ];
-    for (const text of plain)
-      expect(findCitations(text, TANAKH)).toEqual({ citations: [], missed: [] });
+    for (const text of plain) expect(findCitations(text)).toEqual({ citations: [], missed: [] });
   });
 
   it('reports what looks like a citation but names no verse of the Tanakh', () => {
     const text = '(שם מא, ו) (תהלים לו, כה) (בראשית נא, א) (בן סירא יג, יד)';
-    expect(findCitations(text, TANAKH)).toEqual({
+    expect(findCitations(text)).toEqual({
       citations: [],
       missed: ['(שם מא, ו)', '(תהלים לו, כה)', '(בראשית נא, א)', '(בן סירא יג, יד)'],
     });
@@ -159,7 +162,7 @@ describe('reading what the text gets wrong or leaves out', () => {
 describe('citationsByPlace', () => {
   it("files each segment's citations under its amud and segment, and gathers what was missed", () => {
     const amudim = [['(תהלים א, א)', 'none here'], [], ['(תהלים ב, ב) (בן סירא יג, יד)']];
-    expect(citationsByPlace(amudim, TANAKH)).toEqual({
+    expect(citationsByPlace(amudim, findCitations)).toEqual({
       citations: {
         0: { 0: [{ start: 1, end: 11, verse: 'Psalms.1.1' }] },
         2: { 0: [{ start: 1, end: 11, verse: 'Psalms.2.2' }] },

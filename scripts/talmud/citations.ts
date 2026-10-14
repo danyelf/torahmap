@@ -1,22 +1,21 @@
 // The Tanakh verses the Talmud's text cites, written in brackets: (תהלים לו, ז).
 
 import { verseId } from '@torahmap/link/tanakh';
-import { hebrewNumeral } from '@torahmap/utils';
+import { textWords } from '@torahmap/shell/textWords.ts';
+import type { Book } from '@torahmap/tanakh/types.ts';
 import type { Citation, TalmudTractateText } from '@torahmap/talmud/data.ts';
+import { hebrewNumeral } from './hebrewNumeral.ts';
 
-/** A book as public/data/tanakh-structure.json describes it. */
-export interface TanakhBook {
-  name: string;
-  hebrewName: string;
-  /** How many verses each chapter has. */
-  chapters: number[];
-}
+export type TanakhBook = Pick<Book, 'name' | 'hebrewName' | 'chapters'>;
 
 export interface Tanakh {
   books: readonly TanakhBook[];
-  /** A verse's Hebrew, by its id; null for a verse there is no text for. */
-  text: (verse: string) => string | null;
+  /** A verse's Hebrew; null for a verse there is no text for. */
+  text: (book: string, chapter: number, verse: number) => string | null;
 }
+
+/** What a segment cites, and the bracketed stretches that look like citations but name no verse. */
+export type Found = { citations: Citation[]; missed: string[] };
 
 /** Spellings the Talmud uses beside the Tanakh's own Hebrew names. */
 const SPELLINGS: Readonly<Record<string, string>> = {
@@ -52,14 +51,8 @@ const CHAPTER_AND_VERSE = new RegExp(
 // known here looks.
 const CITATION_SHAPE = new RegExp(`^\\S.*\\s(${NUMERAL})\\s*[,:]\\s*(${NUMERAL})(?:-${NUMERAL})?$`);
 
-/**
- * The verses `text` cites, and the bracketed stretches that look like citations but name no verse
- * of the Tanakh, brackets and all.
- */
-export function findCitations(
-  text: string,
-  tanakh: Tanakh,
-): { citations: Citation[]; missed: string[] } {
+/** What a segment's text cites, read against `tanakh`; the book names are read once. */
+export function citationFinder(tanakh: Tanakh): (text: string) => Found {
   const byName = new Map<string, TanakhBook>(tanakh.books.map((book) => [book.hebrewName, book]));
   for (const [spelling, name] of Object.entries(SPELLINGS)) {
     const book = byName.get(name);
@@ -67,34 +60,54 @@ export function findCitations(
   }
   const names = [...byName.keys()].sort((a, b) => b.length - a.length);
 
-  const citations: Citation[] = [];
-  const missed: string[] = [];
-  let lastBook: TanakhBook | null = null;
-  for (const match of text.matchAll(BRACKETED)) {
-    const inside = match[1].trim();
-    if (!inside) continue;
-    // "מלכים א' ו ז": the geresh on a numbered book's letter.
-    const words = (MISTAKES[inside] ?? inside).replace(/(\s[אב])['׳](?=\s)/g, '$1');
-    const startsWith = (n: string) => words.startsWith(n) && /\s/.test(words[n.length] ?? '');
-    const name: string | null =
-      names.find(startsWith) ?? (lastBook && startsWith(SAME_BOOK) ? SAME_BOOK : null);
-    const book: TanakhBook | null = name === SAME_BOOK ? lastBook : name ? byName.get(name)! : null;
-    const numbers = name && words.slice(name.length).trim().match(CHAPTER_AND_VERSE);
-    if (!book || !numbers) {
-      if (!name && isNumbered(words.match(CITATION_SHAPE))) missed.push(match[0]);
-      continue;
+  // Each verse's words, spelled as quotes are compared, read once.
+  const read = new Map<string, string[]>();
+  const wordsOf = (book: TanakhBook, chapter: number, verse: number): string[] => {
+    const key = `${book.name} ${chapter}:${verse}`;
+    let words = read.get(key);
+    if (!words) {
+      words = textWords(tanakh.text(book.name, chapter, verse) ?? '')
+        .map(({ word }) => spelling(letters(word)))
+        .filter(Boolean);
+      read.set(key, words);
     }
-    lastBook = book;
-    const quoted = quote(text.slice(match.index + match[0].length), tanakh, book);
-    const verse = verseIn(book, numbers[1], numbers[2], quoted);
-    if (!verse) {
-      missed.push(match[0]);
-      continue;
+    return words;
+  };
+
+  return (text) => {
+    const citations: Citation[] = [];
+    const missed: string[] = [];
+    let lastBook: TanakhBook | null = null;
+    for (const match of text.matchAll(BRACKETED)) {
+      const inside = match[1].trim();
+      if (!inside) continue;
+      // "מלכים א' ו ז": the geresh on a numbered book's letter.
+      const words = (MISTAKES[inside] ?? inside).replace(/(\s[אב])['׳](?=\s)/g, '$1');
+      const startsWith = (n: string) => words.startsWith(n) && /\s/.test(words[n.length] ?? '');
+      const name: string | null =
+        names.find(startsWith) ?? (lastBook && startsWith(SAME_BOOK) ? SAME_BOOK : null);
+      const book: TanakhBook | null =
+        name === SAME_BOOK ? lastBook : name ? byName.get(name)! : null;
+      const numbers = name && words.slice(name.length).trim().match(CHAPTER_AND_VERSE);
+      if (!book || !numbers) {
+        if (!name && isNumbered(words.match(CITATION_SHAPE))) missed.push(match[0]);
+        continue;
+      }
+      lastBook = book;
+      const quoted = quote(text.slice(match.index + match[0].length));
+      const holds: Holds | null =
+        quoted &&
+        ((chapter, verse, count) => holdsRun(wordsOf(book, chapter, verse), quoted, count));
+      const verse = verseIn(book, numbers[1], numbers[2], holds);
+      if (!verse) {
+        missed.push(match[0]);
+        continue;
+      }
+      const start = match.index + 1 + match[1].indexOf(inside);
+      citations.push({ start, end: start + inside.length, verse });
     }
-    const start = match.index + 1 + match[1].indexOf(inside);
-    citations.push({ start, end: start + inside.length, verse });
-  }
-  return { citations, missed };
+    return { citations, missed };
+  };
 }
 
 function isNumbered(shape: RegExpMatchArray | null): boolean {
@@ -102,14 +115,14 @@ function isNumbered(shape: RegExpMatchArray | null): boolean {
 }
 
 /** Whether a verse holds `count` of the words quoted, one after another. */
-type Quote = (chapter: number, verse: number, count: number) => boolean;
+type Holds = (chapter: number, verse: number, count: number) => boolean;
 
-/** The words that follow a citation of `book`, to look for in its verses; null when too few follow. */
-function quote(after: string, tanakh: Tanakh, book: TanakhBook): Quote | null {
+/** The three words that follow a citation, spelled as verses are compared; null when fewer follow. */
+function quote(after: string): string[] | null {
   // Two words often recur in a nearby verse; three seldom do.
   const words: string[] = [];
   for (const written of after.split(/[([{]/)[0].split(/\s+/)) {
-    const word = written.replace(/[^א-ת]/g, '');
+    const word = letters(written);
     if (/^ה['׳]$/.test(written)) words.push('יהוה');
     else if (word === 'וגו') continue;
     // Any other abbreviation ends the quote.
@@ -117,24 +130,25 @@ function quote(after: string, tanakh: Tanakh, book: TanakhBook): Quote | null {
     else if (word.length > 1) words.push(word);
     if (words.length === 3) break;
   }
-  if (words.length < 3) return null;
-  const quoted = words.map(spelling);
-  return (chapter, verse, count) => {
-    const hebrew = tanakh.text(verseId(book.name, chapter, verse));
-    if (!hebrew) return false;
-    const verseWords = hebrew
-      .replace(/\{[^}]*\}/g, '')
-      .split(/[\s\u05BE\u05C0]+/)
-      .map((word) => spelling(word.replace(/[^א-ת]/g, '')))
-      .filter(Boolean);
-    return verseWords.some((_, at) =>
-      quoted.some(
-        (_, from) =>
-          from + count <= quoted.length &&
-          quoted.slice(from, from + count).every((word, i) => verseWords[at + i] === word),
-      ),
-    );
-  };
+  return words.length < 3 ? null : words.map(spelling);
+}
+
+function holdsRun(
+  verseWords: readonly string[],
+  quoted: readonly string[],
+  count: number,
+): boolean {
+  return verseWords.some((_, at) =>
+    quoted.some(
+      (_, from) =>
+        from + count <= quoted.length &&
+        quoted.slice(from, from + count).every((word, i) => verseWords[at + i] === word),
+    ),
+  );
+}
+
+function letters(word: string): string {
+  return word.replace(/[^א-ת]/g, '');
 }
 
 /** A word without the vav and yod that some spellings add and others leave out. */
@@ -150,17 +164,17 @@ function verseIn(
   book: TanakhBook,
   chapterWritten: string,
   verseWritten: string,
-  quoted: Quote | null,
+  holds: Holds | null,
 ): string | null {
   const chapter = hebrewNumeral(chapterWritten);
   const verse = hebrewNumeral(verseWritten);
   if (!chapter || !verse) return null;
   const length = book.chapters[chapter - 1] ?? 0;
   const exists = (v: number) => v >= 1 && v <= length;
-  if (quoted && !(exists(verse) && quoted(chapter, verse, 2))) {
+  if (holds && !(exists(verse) && holds(chapter, verse, 2))) {
     for (let distance = 1; distance <= NEARBY; distance++) {
       for (const near of [verse - distance, verse + distance]) {
-        if (exists(near) && quoted(chapter, near, 3)) return verseId(book.name, chapter, near);
+        if (exists(near) && holds(chapter, near, 3)) return verseId(book.name, chapter, near);
       }
     }
   }
@@ -170,13 +184,13 @@ function verseIn(
 /** The citations in a tractate's text, by amud and segment, and every stretch that was missed. */
 export function citationsByPlace(
   amudim: readonly (readonly string[])[],
-  tanakh: Tanakh,
+  find: (text: string) => Found,
 ): { citations: TalmudTractateText['citations']; missed: string[] } {
   const citations: TalmudTractateText['citations'] = {};
   const missed: string[] = [];
   amudim.forEach((amud, ai) =>
     amud.forEach((segment, si) => {
-      const found = findCitations(segment, tanakh);
+      const found = find(segment);
       missed.push(...found.missed);
       if (found.citations.length > 0) (citations[ai] ??= {})[si] = found.citations;
     }),

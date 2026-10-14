@@ -16,13 +16,14 @@ import { IMPORT } from './helpers/imports.ts';
 const ROOT = resolve(__dirname, '..');
 // The Tanakh's own code: a package's /tanakh entry, the catalog of its overlays, and its app.
 const TANAKH = /^@torahmap\/([^/]+\/tanakh(\.ts)?|overlay-catalog|tanakh)(\/|$)/;
-// The Tanakh's app, and the Worker that serves its site, may import it.
-const TANAKH_USERS = new Set(['@torahmap/tanakh', '@torahmap/worker']);
-// The Talmud links the verses it cites to the Tanakh's map, so it writes a Tanakh link, under the
-// keys the Tanakh's catalog gives; it may import that catalog and nothing else of the Tanakh's.
-const TANAKH_IMPORTS_ALLOWED: Readonly<Record<string, readonly string[]>> = {
+// What of it each package may import: all of it, for the Tanakh's app and the Worker that serves
+// its site; for the Talmud, which links the verses it cites to the Tanakh's map, only the catalog.
+const TANAKH_IMPORTS: Readonly<Record<string, 'all' | readonly string[]>> = {
+  '@torahmap/tanakh': 'all',
+  '@torahmap/worker': 'all',
   '@torahmap/talmud': ['@torahmap/overlay-catalog'],
 };
+const TALMUD_MAY_IMPORT = TANAKH_IMPORTS['@torahmap/talmud'] as readonly string[];
 const CODE = /\.[cm]?[jt]sx?$/;
 // The paths that `import.meta.glob('./x/*.md')` and `new URL('./x', import.meta.url)` name.
 const PATH_ARGUMENT = /(?:\bimport\.meta\.glob|\bnew URL)\(\s*['"`]([^'"`]+)['"`]/g;
@@ -60,10 +61,11 @@ function importProblems(pkg: string): string[] {
       if (named !== name && !(named in dependencies)) return [`${where}, not in its package.json`];
       const own = relative(pkg, file);
       const mayUseTanakh =
-        TANAKH_USERS.has(name) ||
+        TANAKH_IMPORTS[name] === 'all' ||
         own.startsWith('test/') ||
         (own === 'src/tanakh.ts' && !relative(ROOT, pkg).startsWith('apps/'));
-      const allowed = TANAKH_IMPORTS_ALLOWED[name]?.includes(spec) ?? false;
+      const may = TANAKH_IMPORTS[name];
+      const allowed = Array.isArray(may) && may.includes(spec);
       return TANAKH.test(spec) && !mayUseTanakh && !allowed
         ? [`${where}, the Tanakh's own code`]
         : [];
@@ -207,9 +209,7 @@ describe('the code each page runs', () => {
   });
 
   it('for the Talmud, is none of the Tanakh’s but what it may import', () => {
-    const allowed = TANAKH_IMPORTS_ALLOWED['@torahmap/talmud'].map((spec) =>
-      relative(ROOT, target(ROOT, spec)!),
-    );
+    const allowed = TALMUD_MAY_IMPORT.map((spec) => relative(ROOT, target(ROOT, spec)!));
     const tanakh = reached('apps/talmud/src/main.ts').filter(TANAKH_CODE);
     expect(tanakh.filter((file) => !allowed.includes(file))).toEqual([]);
   });

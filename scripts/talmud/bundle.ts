@@ -18,8 +18,13 @@ import {
   shapeMatches,
   type CoverageReport,
 } from './verify-coverage.ts';
-import { verseId } from '@torahmap/link/tanakh';
-import { citationsByPlace, type Tanakh, type TanakhBook } from './citations.ts';
+import {
+  STRUCTURE_FILE,
+  TEXTS_FILE,
+  getVerseText,
+  type VerseTexts,
+} from '@torahmap/tanakh/verseTexts.ts';
+import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
 
 /**
  * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
@@ -208,9 +213,8 @@ export function processTractate(
   };
 }
 
-const TANAKH_STRUCTURE = 'public/data/tanakh-structure.json';
-const TANAKH_TEXTS = 'public/data/all-texts.json';
-const OUTPUT_DIR = 'public/data/talmud';
+const DATA_DIR = 'public/data';
+const OUTPUT_DIR = join(DATA_DIR, 'talmud');
 const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
 
 async function readJson<T>(path: string): Promise<T> {
@@ -228,19 +232,12 @@ async function main(): Promise<void> {
   await mkdir(TEXTS_DIR, { recursive: true });
 
   const structure: TalmudStructure = { tractates: [] };
-  const books: TanakhBook[] = JSON.parse(await readFile(TANAKH_STRUCTURE, 'utf-8')).books;
-  const texts: Record<string, Record<string, Record<string, { he: string }>>> = JSON.parse(
-    await readFile(TANAKH_TEXTS, 'utf-8'),
-  );
-  const hebrew = new Map<string, string>();
-  for (const book of books) {
-    for (const [chapter, verses] of Object.entries(texts[book.name] ?? {})) {
-      for (const [verse, { he }] of Object.entries(verses)) {
-        hebrew.set(verseId(book.name, Number(chapter), Number(verse)), he);
-      }
-    }
-  }
-  const tanakh: Tanakh = { books, text: (verse) => hebrew.get(verse) ?? null };
+  const { books } = await readJson<{ books: TanakhBook[] }>(join(DATA_DIR, STRUCTURE_FILE));
+  const texts = await readJson<VerseTexts>(join(DATA_DIR, TEXTS_FILE));
+  const find = citationFinder({
+    books,
+    text: (book, chapter, verse) => getVerseText(texts, book, chapter, verse)?.he ?? null,
+  });
   let linked = 0;
   const missed: string[] = [];
 
@@ -258,7 +255,7 @@ async function main(): Promise<void> {
 
       structure.tractates.push(tractateStructure);
 
-      const cited = citationsByPlace(tractateText.amudim, tanakh);
+      const cited = citationsByPlace(tractateText.amudim, find);
       for (const amud of Object.values(cited.citations)) {
         for (const segment of Object.values(amud)) linked += segment.length;
       }

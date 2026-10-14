@@ -1,4 +1,4 @@
-import { hebrewNumeral } from '../src/index.ts';
+import { hebrewNumeral } from '../hebrewNumeral.ts';
 import { describe, it, expect } from 'vitest';
 
 describe('hebrewNumeral', () => {

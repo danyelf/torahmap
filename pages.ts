@@ -1,5 +1,6 @@
 // Which text's page each address serves, for the Vite config. Imports only the texts' copy.
 
+import { TANAKH_PATH } from '@torahmap/site';
 import type { PageCopy } from '@torahmap/shell/app/page.ts';
 import { TANAKH_PAGE } from '@torahmap/tanakh/page.ts';
 import { TALMUD_PAGE, TALMUD_PATH } from '@torahmap/talmud/page.ts';
@@ -12,7 +13,7 @@ export interface Page {
 
 /** The Tanakh's at the root, built and deployed; the Talmud's on the dev server alone. */
 export const PAGES: readonly Page[] = [
-  { path: '/', copy: TANAKH_PAGE, entry: '/apps/tanakh/src/main.ts' },
+  { path: TANAKH_PATH, copy: TANAKH_PAGE, entry: '/apps/tanakh/src/main.ts' },
   { path: TALMUD_PATH, copy: TALMUD_PAGE, entry: '/apps/talmud/src/main.ts' },
 ];
 

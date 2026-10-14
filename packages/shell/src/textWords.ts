@@ -5,6 +5,8 @@
 // search would find is the failure this shares a rule to avoid.
 
 import { isSearchableWord, splitIntoWords, type TextWord } from './hebrew.ts';
+import { TEXT_LINK } from './textLinks.ts';
+import { wrapRuns } from './textRuns.ts';
 
 /** {פ} and {ס}: paragraph markers Sefaria leaves in the text. Not words. */
 const SECTION_MARKER = /^\{[פס]\}$/;
@@ -26,12 +28,6 @@ export function textWords(text: string): TextWord[] {
 /**
  * Make every word in an already-built fragment clickable.
  *
- * The fragment may come from an overlay that has wrapped parts of the text in
- * <mark> elements - search marks whole matches, trop marks single accents
- * inside words. Rather than fight that, this walks the text nodes in order,
- * keeps count of where it is in the original string, and wraps each word's
- * text in a span.
- *
  * Text inside a link is left as it is: a click there follows the link.
  *
  * A word broken up by a mark becomes more than one span. They share a word
@@ -39,19 +35,6 @@ export function textWords(text: string): TextWord[] {
  * own text: one word, one answer, however many pieces it arrived in.
  */
 export function wrapWordsInFragment(fragment: DocumentFragment, text: string): DocumentFragment {
-  // The walk below trusts that offsets into `text` line up with the
-  // fragment's own text nodes. Nothing upstream guarantees that - an overlay
-  // could hand back text that has drifted from the item it was built from -
-  // so check it here. Wrapping nothing leaves the words visibly inert rather
-  // than clickable and wrong.
-  if (fragment.textContent !== text) {
-    console.warn(
-      'wrapWordsInFragment: fragment text does not match the item text, leaving words unwrapped',
-      { fragmentText: fragment.textContent, itemText: text },
-    );
-    return fragment;
-  }
-
   const words = textWords(text);
 
   // Which word covers a given offset, or null between words. Offsets are
@@ -66,44 +49,17 @@ export function wrapWordsInFragment(fragment: DocumentFragment, text: string): D
     return word && offset >= word.start && offset < word.end ? searchFrom : null;
   };
 
-  let offset = 0;
-
-  const walk = (node: Node): void => {
-    // Copy the child list first: wrapping replaces nodes as we go.
-    for (const child of [...node.childNodes]) {
-      if (child instanceof HTMLAnchorElement) {
-        offset += child.textContent?.length ?? 0;
-      } else if (child.nodeType === Node.TEXT_NODE) {
-        const content = child.textContent ?? '';
-        const replacement = document.createDocumentFragment();
-        let cursor = 0;
-
-        while (cursor < content.length) {
-          const index = wordAt(offset + cursor);
-          let run = cursor + 1;
-          while (run < content.length && wordAt(offset + run) === index) run++;
-
-          const slice = content.slice(cursor, run);
-          if (index === null) {
-            replacement.appendChild(document.createTextNode(slice));
-          } else {
-            const span = document.createElement('span');
-            span.className = 'popup-word';
-            span.dataset.wordIndex = String(index);
-            span.textContent = slice;
-            replacement.appendChild(span);
-          }
-          cursor = run;
-        }
-
-        offset += content.length;
-        child.parentNode?.replaceChild(replacement, child);
-      } else {
-        walk(child);
-      }
-    }
-  };
-
-  walk(fragment);
-  return fragment;
+  return wrapRuns(
+    fragment,
+    text,
+    wordAt,
+    (index, run) => {
+      const span = document.createElement('span');
+      span.className = 'popup-word';
+      span.dataset.wordIndex = String(index);
+      span.textContent = run;
+      return span;
+    },
+    (element) => element.classList.contains(TEXT_LINK),
+  );
 }
