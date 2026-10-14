@@ -16,7 +16,7 @@ export interface ViewState {
   overlay: string;
   overlayParams: OverlayParams;
   searchParams: UrlParamValues;
-  item: string | null;
+  square: string | null;
   camera: Camera;
 }
 
@@ -42,7 +42,7 @@ export function resolveViewState(
     overlay,
     overlayParams: overlay === NO_OVERLAY ? {} : url.overlayParams,
     searchParams: url.searchParams ?? {},
-    item: url.square ?? null,
+    square: url.square ?? null,
     camera: {
       zoom: url.zoom ?? defaultCamera.zoom,
       x: url.x ?? defaultCamera.x,

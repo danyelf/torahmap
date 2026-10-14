@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { linkForScreen, pushes } from '../src/linkForScreen.ts';
 
-const view = { item: 'Genesis.12.1', overlay: 'commentary', overlayParams: {} };
-const otherView = { item: 'Genesis.17.5', overlay: 'commentary', overlayParams: {} };
+const view = { square: 'Genesis.12.1', overlay: 'commentary', overlayParams: {} };
+const otherView = { square: 'Genesis.17.5', overlay: 'commentary', overlayParams: {} };
 const stop = { story: 'tour', stop: 'abraham_call', overlayParams: {} };
 const otherStop = { story: 'tour', stop: 'abraham_rename', overlayParams: {} };
 const story = { id: 'tour', stop: 'abraham_call' };

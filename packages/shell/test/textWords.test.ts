@@ -37,9 +37,9 @@ describe("the words of an item's text", () => {
   });
 
   it('says where each word sits in the text', () => {
-    const item = 'וְהָאָ֗רֶץ {פ} עַל־פְּנֵ֣י תְה֑וֹם׃';
-    for (const { word, start, end } of textWords(item)) {
-      expect(item.slice(start, end)).toBe(word);
+    const text = 'וְהָאָ֗רֶץ {פ} עַל־פְּנֵ֣י תְה֑וֹם׃';
+    for (const { word, start, end } of textWords(text)) {
+      expect(text.slice(start, end)).toBe(word);
     }
   });
 

@@ -151,7 +151,7 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): HTMLElement | null;
 
-  // Marks words by their place in the item, so it is handed the item as well as its text.
+  // Marks words by their place in the item's text, so it is handed the item as well as its text.
   highlightItemText?(
     item: SpatialItem<T>,
     text: string,

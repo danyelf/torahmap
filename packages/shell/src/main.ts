@@ -859,7 +859,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const file = item && text.popupFile(item);
     if (file) fetchPopupFile(file);
     const tools = toolsNow();
-    updateSidebar(sidebarElements, item, (item) => text.popupText(item, loaded, tools.overlay), {
+    updateSidebar(sidebarElements, item, (shown) => text.popupText(shown, loaded, tools.overlay), {
       textsNotice: file ? noticeFor([file]) : null,
       wordsClickable: dataFor(searchTool, loaded) !== null,
       ...tools,
@@ -1118,8 +1118,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /**
    * Where a square is put when the story, a link or the reader brings it into
-   * view: the middle of the map, or on a phone higher up, clear of the square
-   * popup that sits above the sheet.
+   * view: the middle of the map, or on a phone higher up, clear of the popup
+   * that sits above the sheet.
    */
   function mapFocus(): ScreenPoint {
     const height = phone ? canvas.clientHeight * PHONE_STORY_FOCUS : canvas.clientHeight / 2;
@@ -1612,7 +1612,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     searchChanged(true);
     overlayChanged(true);
 
-    const item = next.item ? squares.find(next.item) : null;
+    const item = next.square ? squares.find(next.square) : null;
     pinnedItem = item;
     updateSidebarWrapper(item, item !== null);
 

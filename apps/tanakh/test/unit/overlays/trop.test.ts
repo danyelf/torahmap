@@ -422,8 +422,8 @@ describe('Trop Overlay', () => {
       selectFirstMark(host);
 
       const fromColorsFor = tropOverlay.colorsFor!(testVerses, host.settings, null, host.data);
-      const fromGetVerseColor = testVerses.map((v) => host.getItemColor(v));
-      expect(fromColorsFor).toEqual(fromGetVerseColor);
+      const fromGetItemColor = testVerses.map((v) => host.getItemColor(v));
+      expect(fromColorsFor).toEqual(fromGetItemColor);
     });
 
     it('colorsFor does not read or write the settings a host holds', () => {
