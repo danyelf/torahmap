@@ -50,7 +50,7 @@ export const SEDER_NAMES: Readonly<Record<string, { he: string; en: string }>> =
 
 // The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a
 // shelf that is 620 from the next; Nezikin's, 390 of 535. The gap clears the daf
-// labels beside each shelf's first tractate, which show from DAF_LABEL_ZOOM_LOW.
+// labels beside each shelf's first tractate, which show from PEREK_LABEL_ZOOM.
 export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 
 // --- Base colors (muted, similar, "rainfall over both") ---
@@ -91,14 +91,7 @@ export const SEDER_BACKGROUND_COLORS: Readonly<Record<string, readonly [number, 
 
 export const SEDER_BACKGROUND_OPACITY = 0.1;
 
-// --- Zoom thresholds for daf label density ---
-//   < LOW   no labels
-//   < MID   every 10th daf (10a, 20a, …)
-//   < HIGH  every 3rd daf  (3a, 6a, 9a, …)
-//   >= HIGH every daf, both sides
-
-// No page numbers before you can read whose pages they are: the first daf labels show with the
-// tractate names.
-export const DAF_LABEL_ZOOM_LOW = TRACTATE_TAB.minPx / TRACTATE_TAB.fontSize;
-export const DAF_LABEL_ZOOM_MID = 0.7;
-export const DAF_LABEL_ZOOM_HIGH = 1.5;
+// The perek names and the first daf numbers show from PEREK_LABEL_ZOOM; every daf from
+// DAF_LABEL_ZOOM_ALL.
+export const PEREK_LABEL_ZOOM = 0.7;
+export const DAF_LABEL_ZOOM_ALL = 1.5;

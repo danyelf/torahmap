@@ -75,11 +75,9 @@ export interface PerekAnchor {
   tractate: string;
   perekIdx: number;
   hebrewName: string;
-  // The perek's first row in world coords, plus the max row width across
-  // the perek so labels can be centered like section titles.
+  // The right edge and top of the perek's first row, in world coords.
   rightX: number;
   topY: number;
-  width: number;
 }
 
 /** Where an amud's daf label goes: its row's right edge and top, in world coordinates. */
@@ -168,7 +166,6 @@ interface LocalPerekAnchor {
   // The right edge is the right edge of the column the perek starts in.
   rightX: number;
   topY: number;
-  width: number; // max row width of this perek inside this column
 }
 
 interface LaidOutTractate {
@@ -273,18 +270,12 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           perekIdx: row.perekIdx,
           rightX: 0,
           topY: y,
-          width: 0,
         });
       }
       lastPerekIdx = row.perekIdx;
 
       const rowWidth = row.segments.length * SEGMENT_SIZE;
       if (rowWidth > colMaxWidth) colMaxWidth = rowWidth;
-      // Track per-perek max row width for centering perek labels.
-      const currentPerek = colPereks[colPereks.length - 1];
-      if (currentPerek && rowWidth > currentPerek.width) {
-        currentPerek.width = rowWidth;
-      }
 
       for (let i = 0; i < row.segments.length; i++) {
         const seg = row.segments[i];
@@ -338,7 +329,6 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
         perekIdx: lp.perekIdx,
         rightX: columnRightEdge, // column right edge in tractate-local coords
         topY: lp.topY,
-        width: lp.width,
       });
     }
     if (frame.height > maxHeight) maxHeight = frame.height;
@@ -464,7 +454,6 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
           hebrewName: hebrew,
           rightX: tractateRightEdge + lp.rightX,
           topY: tractateTop + lp.topY,
-          width: lp.width,
         });
       }
 

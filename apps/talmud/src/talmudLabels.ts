@@ -4,18 +4,12 @@
 
 import type { SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
-  DAF_LABEL_ZOOM_LOW,
-  DAF_LABEL_ZOOM_MID,
-  DAF_LABEL_ZOOM_HIGH,
+  DAF_LABEL_ZOOM_ALL,
+  PEREK_LABEL_ZOOM,
   SEDER_BACKGROUND_COLORS,
   SEDER_BACKGROUND_OPACITY,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
-
-// Perek labels appear at mid-zoom and above (same threshold as the daf
-// 3/3/4 tier — when the user can see individual sub-decade dapim, the
-// perek headings become legible too).
-const PEREK_LABEL_ZOOM_THRESHOLD = 0.7;
 
 // Size at zoom 1, and the bounds it is held between as the reader zooms.
 interface LabelSize {
@@ -73,9 +67,7 @@ export function createTalmudLabels(
     sederBackgrounds.appendChild(rect);
   }
 
-  // --- Perek (section) labels: small Hebrew names of each perek,
-  // centered above the perek's row block like a section title.
-  // Visible at mid+ zoom.
+  // Perek labels: each perek's name, above its first row, flush with its right edge.
   const perekLabels = document.createElement('div');
   perekLabels.id = 'talmud-perek-labels';
   for (const a of perekAnchors) {
@@ -90,15 +82,11 @@ export function createTalmudLabels(
       white-space:nowrap;
       line-height:1;
       direction:rtl;
-      transform:translate(-50%, -100%);
+      transform:translate(-100%, -100%);
       display:none;
     `;
     label.textContent = a.hebrewName;
-    // Center the label horizontally over the perek's content area
-    // (the perek's max row width, anchored at the column's right edge).
-    // worldX = horizontal center of the perek block.
-    // worldY sits just above the first row.
-    label.dataset.worldX = String(a.rightX - a.width / 2);
+    label.dataset.worldX = String(a.rightX);
     label.dataset.worldY = String(a.topY - 2);
     perekLabels.appendChild(label);
   }
@@ -160,8 +148,8 @@ export function updateTalmudLabelPositions(
     el.style.height = `${screenH}px`;
   }
 
-  // Perek labels: visible at mid+ zoom, scaled with zoom.
-  const perekVisible = zoom >= PEREK_LABEL_ZOOM_THRESHOLD;
+  // Perek labels: scaled with zoom.
+  const perekVisible = zoom >= PEREK_LABEL_ZOOM;
   const perekFontSize = hebrewLabelFontSize(PEREK_SIZE, zoom);
   for (const el of Array.from(state.perekLabels.children) as HTMLElement[]) {
     if (!perekVisible) {
@@ -178,30 +166,15 @@ export function updateTalmudLabelPositions(
     el.style.fontSize = `${perekFontSize}px`;
   }
 
-  // Daf labels: zoom-dependent density.
-  //   zoom < LOW:  none
-  //   LOW..MID:    every 10th daf, A side only ("10a", "20a", ...)
-  //   MID..HIGH:   3/3/4 stride per decade ("3a", "6a", "10a",
-  //                "13a", "16a", "20a", ...) — 10s stay visible
-  //   zoom >= HIGH: every daf, both sides
-  const showAll = zoom >= DAF_LABEL_ZOOM_HIGH;
-  const showMid = zoom >= DAF_LABEL_ZOOM_MID;
-  const showSparse = zoom >= DAF_LABEL_ZOOM_LOW;
+  // Daf labels: every 3rd daf with the perek names (3a, 6a, 10a, 13a, …), every page from
+  // DAF_LABEL_ZOOM_ALL.
+  const showAll = zoom >= DAF_LABEL_ZOOM_ALL;
+  const showSome = zoom >= PEREK_LABEL_ZOOM;
   for (const el of Array.from(state.dafLabels.children) as HTMLElement[]) {
     const daf = parseInt(el.dataset.daf || '0', 10);
-    const amud = el.dataset.amud;
-    let shouldShow: boolean;
-    if (showAll) {
-      shouldShow = true;
-    } else if (showMid) {
-      // 3/3/4 stride: 3, 6, 10, 13, 16, 20, 23, 26, 30 ...
-      const m = daf % 10;
-      shouldShow = amud === 'a' && (m === 3 || m === 6 || m === 0);
-    } else if (showSparse) {
-      shouldShow = amud === 'a' && daf % 10 === 0;
-    } else {
-      shouldShow = false;
-    }
+    const m = daf % 10;
+    const shouldShow =
+      showAll || (showSome && el.dataset.amud === 'a' && (m === 3 || m === 6 || m === 0));
     if (!shouldShow) {
       el.style.display = 'none';
       continue;
