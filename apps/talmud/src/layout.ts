@@ -55,7 +55,7 @@ export function talmudRef(s: TalmudIdentity): string {
   return `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
 }
 
-/** A tractate's squares, exactly, before jitter; its section is its seder. */
+/** The box round a tractate's squares; its section is its seder. */
 export interface TractateBlock extends BookBox {
   maxY: number;
 }
@@ -79,7 +79,7 @@ export interface PerekAnchor {
 
 /**
  * Where an amud's daf label goes: its column's right edge and its first row's top, in world
- * coordinates. Taken before jitter, so the labels line up.
+ * coordinates.
  */
 export interface DafRowAnchor {
   tractate: string;
