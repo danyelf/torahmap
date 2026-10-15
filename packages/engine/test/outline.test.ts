@@ -15,6 +15,12 @@ describe('buildOutlineGeometry', () => {
       const bounds: OutlineBounds = { x: 10, y: 20, size: 10 };
       expect(buildOutlineGeometry(bounds)).toHaveLength(48);
     });
+
+    it('surrounds the square where it is drawn, jitter included', () => {
+      const plain = buildOutlineGeometry({ x: 100, y: 200, size: 10 });
+      const nudged = buildOutlineGeometry({ x: 100, y: 200, size: 10, jitter: { x: 1, y: -0.5 } });
+      expect(Array.from(nudged)).toEqual(Array.from(plain).map((v, i) => v + (i % 2 ? -0.5 : 1)));
+    });
   });
 
   describe('default thickness', () => {

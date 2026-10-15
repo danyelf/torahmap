@@ -108,8 +108,8 @@ function sheet(
     palette: PALETTE,
     fonts: FONTS,
     verses: layout.map((v, i) => ({
-      x: v.x,
-      y: v.y,
+      x: v.x + (v.jitter?.x ?? 0),
+      y: v.y + (v.jitter?.y ?? 0),
       side: v.size - SQUARE_GAP,
       fills: fillsOf(v, i),
     })),

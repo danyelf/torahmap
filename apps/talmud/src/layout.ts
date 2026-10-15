@@ -178,7 +178,6 @@ interface LaidOutTractate {
   seder: string;
   items: TalmudLayoutItem[];
   perekAnchors: LocalPerekAnchor[];
-  rows: number;
   // Local coordinates: origin (0, 0) = top-right. x is <= 0; y is >= 0.
   width: number;
   height: number;
@@ -240,10 +239,8 @@ function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
  * perakim are separated by PEREK_GAP. Tall tractates are split into
  * multiple columns side-by-side (column 0 is rightmost / read first).
  */
-// Its rows are numbered on from firstRow.
-function layoutTractate(tractate: TalmudTractate, firstRow: number): LaidOutTractate {
+function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
   const allRows = rowsForTractate(tractate);
-  let rowNumber = firstRow;
   const columns = splitRowsIntoColumns(allRows);
   const items: TalmudLayoutItem[] = [];
   const perekAnchors: LocalPerekAnchor[] = [];
@@ -299,21 +296,20 @@ function layoutTractate(tractate: TalmudTractate, firstRow: number): LaidOutTrac
           amud: row.amud,
           segment: seg.segment,
         };
-        // Per-segment positional jitter — break up the perfect grid.
         const seed = segmentHashId(segment);
-        const jx = (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER;
-        const jy = (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER;
         colItems.push({
           ...segment,
           id: talmudId(segment),
-          x: baseX + jx,
-          y: y + jy,
+          x: baseX,
+          y,
           size: SEGMENT_SIZE,
-          row: rowNumber,
+          jitter: {
+            x: (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER,
+            y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER,
+          },
         });
       }
       y += SEGMENT_SIZE;
-      rowNumber++;
     }
     columnFrames.push({
       items: colItems,
@@ -365,7 +361,6 @@ function layoutTractate(tractate: TalmudTractate, firstRow: number): LaidOutTrac
     seder: tractate.seder,
     items,
     perekAnchors,
-    rows: allRows.length,
     width: totalWidth,
     height: maxHeight,
   };
@@ -388,12 +383,7 @@ export function dafRowsOf(items: TalmudLayoutItem[]): DafRowAnchor[] {
 
 export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutResult {
   // 1. Lay out each tractate in local coordinates.
-  let firstRow = 0;
-  const laid = structure.tractates.map((t) => {
-    const tractate = layoutTractate(t, firstRow);
-    firstRow += tractate.rows;
-    return tractate;
-  });
+  const laid = structure.tractates.map(layoutTractate);
 
   // 2. Group by seder (canonical order, keeps unknown sedarim at the end).
   const bySeder = new Map<string, LaidOutTractate[]>();

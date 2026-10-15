@@ -12,8 +12,11 @@ export interface MapItem {
   x: number;
   y: number;
   size: number;
-  /** Squares sharing a row, side by side, are drawn as one bar when too small to tell apart. */
-  row?: number;
+  /**
+   * How far the square is drawn from its place, so the squares do not line up
+   * into a grid. Taken out as they are widened into bars.
+   */
+  jitter?: { x: number; y: number };
 }
 
 /** A text's own fields (book, chapter and verse; or a Talmud segment) on a square. */

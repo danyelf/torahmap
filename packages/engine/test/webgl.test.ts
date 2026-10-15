@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initWebGL, createProgram, ITEM_ATTRIBUTES, REACH_ATTRIBUTE } from '../src/index.ts';
+import { initWebGL, createProgram, ITEM_ATTRIBUTES } from '../src/index.ts';
 import { createMockWebGL2Context, createMockCanvas } from './mocks.ts';
 
 const shaderSourceOf = (gl: WebGL2RenderingContext, call: number): string =>
@@ -237,10 +237,7 @@ describe('createProgram', () => {
     it('looks up every square attribute by its name', () => {
       const program = createProgram(gl);
 
-      const names: (keyof typeof program.attribs)[] = [
-        ...ITEM_ATTRIBUTES.map((a) => a.name),
-        REACH_ATTRIBUTE,
-      ];
+      const names = ITEM_ATTRIBUTES.map((a) => a.name);
       for (const name of names) {
         expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, name);
         expect(program.attribs[name]).toBe(vi.mocked(gl.getAttribLocation)(mockProgram, name));

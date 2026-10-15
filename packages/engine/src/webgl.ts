@@ -3,6 +3,7 @@
 import {
   BAND_OFFSET,
   MULTICOLOR_GROWTH,
+  SQUARE_GAP,
   ITEM_ATTRIBUTES,
   type ItemAttributeName,
 } from './geometry.ts';
@@ -10,7 +11,7 @@ import { BARS, HIGHLIGHT_CONSTANTS } from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
-  attribs: Record<ItemAttributeName | typeof REACH_ATTRIBUTE, number>;
+  attribs: Record<ItemAttributeName, number>;
   uniforms: {
     resolution: WebGLUniformLocation | null;
     pan: WebGLUniformLocation | null;
@@ -20,9 +21,6 @@ export interface ShaderProgram {
     hovered: WebGLUniformLocation | null;
   };
 }
-
-/** World units from a square's right edge to its row neighbour's left (gapsToRightNeighbour). */
-export const REACH_ATTRIBUTE = 'a_reach';
 
 const GLSL_TYPES = { 1: 'float', 2: 'vec2', 3: 'vec3', 4: 'vec4' } as const;
 
@@ -44,7 +42,6 @@ const VERTEX_SHADER = `#version 300 es
   uniform int u_hovered;
 
   ${ITEM_INPUTS}
-  in float ${REACH_ATTRIBUTE};
 
   // The two triangles of a square, as fractions of the way across it. Every
   // square is drawn from these six corners, picked by gl_VertexID.
@@ -84,12 +81,14 @@ const VERTEX_SHADER = `#version 300 es
     float side = (a_rect.z - a_rect.x) * u_zoom;
     bool holes = side >= u_ring.z;
     float grow = mix(reach(a_shape, holes), reach(a_nextShape, holes), u_fade);
-    vec4 rect = a_rect + vec4(-grow, -grow, grow, grow);
-    // A square too small to draw cleanly reaches across to its row neighbour,
-    // so the row reads as one bar. Never under one device pixel, so it is
-    // always drawn.
+    // A square too small to draw cleanly loses its jitter and reaches across the
+    // gap to its right, so a row of them reads as one bar. Never under one device
+    // pixel, so it is always drawn. Where rows are under a pixel apart, that makes
+    // them overlap, and each row covers part of the one above it, search hits included.
     float widen = clamp((${BARS.START_PX.toFixed(4)} - side) / ${(BARS.START_PX - BARS.FULL_PX).toFixed(4)}, 0.0, 1.0);
-    rect.z = max(rect.z, a_rect.z + ${REACH_ATTRIBUTE} * widen);
+    vec2 nudge = a_jitter * (1.0 - widen);
+    vec4 rect = a_rect + vec4(nudge - grow, nudge + grow);
+    rect.z = max(rect.z, a_rect.z + nudge.x + ${SQUARE_GAP.toFixed(4)} * widen);
     rect.zw = max(rect.zw, rect.xy + 1.0 / u_zoom);
     float pad = max(bandReach(a_shape), bandReach(a_nextShape));
     uv = mix(vec2(-pad), vec2(1.0 + pad), uv);
@@ -106,7 +105,7 @@ const VERTEX_SHADER = `#version 300 es
     v_side = holes ? (rect.z - rect.x) * u_zoom : 0.0;
     v_uv = uv;
     // The square's own corner, which zooming does not move, seeds its dithering noise
-    v_seed = a_rect.xy;
+    v_seed = a_rect.xy + a_jitter;
   }
 `;
 
@@ -267,10 +266,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
   return {
     program,
     attribs: Object.fromEntries(
-      [...ITEM_ATTRIBUTES.map((a) => a.name), REACH_ATTRIBUTE].map((name) => [
-        name,
-        gl.getAttribLocation(program, name),
-      ]),
+      ITEM_ATTRIBUTES.map((a) => a.name).map((name) => [name, gl.getAttribLocation(program, name)]),
     ) as ShaderProgram['attribs'],
     uniforms: {
       resolution: gl.getUniformLocation(program, 'u_resolution'),

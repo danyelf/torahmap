@@ -68,6 +68,16 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_rect').slice(0, 2)).toEqual([10, 20]);
       expect(field(buffer, 1, 'a_rect').slice(0, 2)).toEqual([30, 40]);
     });
+
+    it('holds the jitter apart from the place, and none for a square without', () => {
+      const buffer = buildItemGeometry([
+        createItem({ x: 10, y: 20, jitter: { x: 0.5, y: -0.25 } }),
+        createItem({ x: 30, y: 40 }),
+      ]);
+      expect(field(buffer, 0, 'a_rect').slice(0, 2)).toEqual([10, 20]);
+      expect(field(buffer, 0, 'a_jitter')).toEqual([0.5, -0.25]);
+      expect(field(buffer, 1, 'a_jitter')).toEqual([0, 0]);
+    });
   });
 
   describe('growth', () => {

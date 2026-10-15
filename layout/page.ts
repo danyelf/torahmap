@@ -212,3 +212,32 @@ export async function clippedText(page: Page, selector: string): Promise<string[
     }),
   );
 }
+
+/** The longest unbroken run of drawn pixels along any one row of `png`. */
+export async function longestDrawnRun(page: Page, png: Buffer): Promise<number> {
+  return page.evaluate(
+    async ({ b64, bg, delta }) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const { data } = ctx.getImageData(0, 0, c.width, c.height);
+      let longest = 0;
+      for (let y = 0; y < c.height; y++) {
+        let run = 0;
+        for (let x = 0; x < c.width; x++) {
+          const i = (y * c.width + x) * 4;
+          const d = Math.max(...[0, 1, 2].map((k) => Math.abs(data[i + k] - bg)));
+          run = d > delta ? run + 1 : 0;
+          longest = Math.max(longest, run);
+        }
+      }
+      return longest;
+    },
+    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
+  );
+}
