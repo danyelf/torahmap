@@ -16,5 +16,12 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "packages"]
+  "include": [
+    "apps",
+    "packages",
+    "test",
+    "pages.ts",
+    "scripts/__tests__",
+    "scripts/talmud/__tests__"
+  ]
 }

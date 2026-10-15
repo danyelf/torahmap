@@ -1,0 +1,86 @@
+// The shapes of the Talmud data files in public/data/talmud/, and how to read them.
+
+import type { Loaded } from '@torahmap/shell/dataFiles.ts';
+
+/** The Talmud's folder in public/data/. */
+export const TALMUD_DATA_DIR = 'talmud';
+
+export const STRUCTURE_FILE = `${TALMUD_DATA_DIR}/structure.json`;
+
+/** The file a tractate's text is in. */
+export const textsFile = (tractate: string): string => `${TALMUD_DATA_DIR}/texts/${tractate}.json`;
+
+export interface TalmudAmud {
+  daf: number;
+  amud: 'a' | 'b';
+  segmentCount: number;
+  perekIdx: number;
+  perekBoundaryAt?: number;
+  mishnahMask: boolean[];
+}
+
+export interface TalmudPerek {
+  hebrewName: string;
+  startAmudIdx: number;
+  endAmudIdx: number;
+  startSegmentInFirstAmud: number;
+  endSegmentInLastAmud: number;
+}
+
+export interface TalmudTractate {
+  name: string;
+  hebrewName: string;
+  seder: string;
+  /** From the first amud with text; an empty one inside the text stays, with no segments. */
+  amudim: TalmudAmud[];
+  perakim: TalmudPerek[];
+}
+
+export interface TalmudStructure {
+  tractates: TalmudTractate[];
+}
+
+export interface TalmudTractateText {
+  name: string;
+  amudim: string[][];
+  /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
+  citations: Record<number, Record<number, Citation[]>>;
+}
+
+/** Where a segment cites a Tanakh verse: the cited words, by place in its text, and the verse's id. */
+export interface Citation {
+  start: number;
+  end: number;
+  verse: string;
+}
+
+export function structureFrom(loaded: Loaded): TalmudStructure {
+  const structure = loaded.get(STRUCTURE_FILE) as TalmudStructure | undefined;
+  if (!structure) throw new Error(`Could not load ${STRUCTURE_FILE}`);
+  return structure;
+}
+
+/** Where an amud is among its tractate's, counting from `first`. */
+export function amudIndex(
+  daf: number,
+  amud: 'a' | 'b',
+  first: Pick<TalmudAmud, 'daf' | 'amud'>,
+): number {
+  const side = (a: 'a' | 'b') => (a === 'b' ? 1 : 0);
+  return (daf - first.daf) * 2 + side(amud) - side(first.amud);
+}
+
+// False if the tractate/daf/amud/segment is unknown.
+export function isSegmentMishnah(
+  structure: TalmudStructure,
+  tractateName: string,
+  daf: number,
+  amud: 'a' | 'b',
+  segment: number,
+): boolean {
+  const tractate = structure.tractates.find((t) => t.name === tractateName);
+  if (!tractate) return false;
+  const amudEntry = tractate.amudim[amudIndex(daf, amud, tractate.amudim[0])];
+  if (!amudEntry) return false;
+  return amudEntry.mishnahMask[segment - 1] ?? false;
+}

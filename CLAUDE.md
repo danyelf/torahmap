@@ -23,7 +23,7 @@ What the map does is in [README.md](README.md). What an agent also needs:
   come back as a mode of its own rather than a menu entry. Registering it again
   means moving its id, name and description into `OVERLAYS` in
   `packages/overlay-catalog`, then adding it to the table in
-  `src/overlays/index.ts`; the typecheck points at whichever is missing.
+  `apps/tanakh/src/overlays/index.ts`; the typecheck points at whichever is missing.
 - The stories are the Markdown files in `packages/stories/markdown/`, built
   into the page; each one's header sets its title, description, `order` and
   `draft`. The dev server hot-reloads them.
@@ -124,7 +124,7 @@ than chosen by taste, so the reformat moved as few lines as it could:
 `singleQuote` because committed source held 6995 single-quoted strings to 1112
 double, and `printWidth: 100` because line lengths ran to a p99 of 100.
 `quoteProps: preserve` keeps the quotes on Hebrew object keys such as
-`'ך': 'כ'` in `src/hebrew.ts`, which Prettier would otherwise strip — they are
+`'ך': 'כ'` in `apps/tanakh/src/search/spelling.ts`, which Prettier would otherwise strip — they are
 valid JavaScript identifiers, so nothing forces the quotes, but the letters are
 much easier to pick out with them.
 
@@ -138,23 +138,41 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
 
 ## Project Structure
 
-- `src/` — application source, plus `__tests__/` for the test suite. Includes
-  a `scrollytelling/` mode, `app/` (what a text gives the app
-  shell), `tanakh/` and `talmud/` (the two texts, each with its own search and
-  site), `styles/`, the
-  `worker/` that serves the deployed site, and the `telemetry/` it records
-  through.
+- `apps/` — what runs, as npm workspace packages, each with its own `test/`:
+  `tanakh` (the Tanakh's map: its layout, labels, title, verse texts, search
+  and `overlays/`), `talmud` (the Talmud's) and `worker` (the Worker that
+  serves the deployed site). Each text's `src/main.ts` is its page's entry,
+  and each text exports every module at its own path, as
+  `@torahmap/tanakh/layout.ts`, for the tools that use them.
 - `index.html` — every text's page, filled from its copy by `vite.config.ts`
-  at the address `src/pages.ts` gives it; the Talmud's, at `/talmud/`, is
-  dev-only.
-- `packages/` — shared code, kept free of the page so the Worker can import
-  it, as npm workspace packages: `link` (reading and writing links, under
-  each text's keys), `overlay-catalog` (each Tanakh overlay's name and link
-  keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (the
-  stories, compiled from Markdown by `generate.mjs`, and which are listed and
-  opened by default), and `site` (what the
-  Tanakh's site calls things: the site's name and tagline, and how a link is
-  described; each text's own copy is its `site` slot, `src/app/text.ts`).
+  at the address `pages.ts` gives it; the Talmud's, at `/talmud/`, is
+  on the dev server and every branch's preview but not the live site.
+- `test/` — checks of the whole repository: that each package and app keeps to
+  its imports and each page runs only its own text's code, the saved telemetry
+  queries, and the shell's tests that need a text's data.
+- `packages/` — shared code, as npm workspace packages: `link` (reading and
+  writing links, under each text's keys), `utils` (small helpers that depend
+  on nothing else here), `engine` (drawing the squares, the camera, hit
+  testing and the cross-fade, knowing nothing of either text; it touches the
+  page only inside its functions and says `"sideEffects": false`, so the
+  Worker, which reaches it through links and stories, bundles none of its
+  drawing), `shell` (the app shell, `createApp(text)`: what every text's page
+  runs; the modules a text may use are the ones its `package.json` exports,
+  each at its own path, as `@torahmap/shell/main.ts`),
+  `telemetry` (which column of an event holds what, for the page that sends it
+  and the Worker that writes it, and who can have the map, which its mode
+  column records), `overlay-catalog` (each Tanakh overlay's name and link
+  keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (how a
+  story is written, and which are listed and opened by default; the Tanakh's
+  own, compiled from Markdown by `generate.mjs`, at
+  `@torahmap/stories/tanakh`), and `site` (the address and view titles every
+  text's site shares; at `@torahmap/site/tanakh`, what the Tanakh's site calls
+  things: the site's name and tagline, and how a link is described; each
+  text's own copy is its `site` slot, `packages/shell/src/app/text.ts`). A
+  package's Tanakh-only code sits behind its `/tanakh` entry, so the app shell
+  can import the rest. A package or app imports nothing outside its own folder
+  but the packages its `package.json` lists, and only the Tanakh's app and the
+  Worker import the Tanakh's own code (`test/package-imports.test.ts`).
 - `public/data/` — shipped data: bundled verse texts, structure, and
   a directory for what only one part of the app reads — `overlays/commentary`,
   `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
@@ -194,9 +212,9 @@ hand. Every pull request also gets its own public `workers.dev` link, so a UI
 change can be looked at without checking the branch out —
 `scripts/prpreview.sh <pr>` serves one locally instead.
 
-What the Worker serves is in `src/worker/index.ts`; telemetry's client half is
-`src/analytics.ts`. No cookies; browser storage holds only two settings, Hide
-Hebrew and whether this is a return visit. The dev server sends nothing. What each column means is in `src/telemetry/schema.ts`, and
+What the Worker serves is in `apps/worker/src/index.ts`; telemetry's client half is
+`packages/shell/src/analytics.ts`. No cookies; browser storage holds only two settings, Hide
+Hebrew and whether this is a return visit. The dev server sends nothing.
 `scripts/telemetry/report.sh` prints every saved query, and `usage.sh` beside
 it writes a chart of page views per day to `telemetry-report/usage.html`; both
 need a Cloudflare account id and an API token. Cloudflare Access keeps chat apps'
@@ -218,11 +236,11 @@ The codebase follows a **functional, modular design** with clear separation of c
 
 ### Key Concepts
 
-- **main.ts** is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given
-- **layout.ts** computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
-- **rendering.ts** manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
-- **itemColoring.ts** uses two-pass design: compute semantic state, then apply colors
-- **overlays/** are pluggable and easy to add
+- **main.ts** (`packages/shell`) is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `test/package-imports.test.ts` holds that line
+- **layout.ts** (`apps/tanakh`) computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
+- **rendering.ts** (`packages/engine`) manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
+- **itemColoring.ts** (`packages/shell`) uses two-pass design: compute semantic state, then apply colors
+- **overlays/** (`apps/tanakh/src/overlays/`) are pluggable and easy to add
 - Any animated change to what the map shows goes through the renderer's
   picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
   story stops ease with. Don't add another animation path for it.
@@ -239,12 +257,12 @@ files.
 
 ## Interactions
 
-The controls are listed once, in the About panel (`src/aboutPanel.ts`); keep
+The controls are listed once, in the About panel (`packages/shell/src/aboutPanel.ts`); keep
 that list in step with the code.
 
 The URL carries the search, the overlay and its settings, the pinned verse, the
 camera and, while reading, the story and its stop (`@torahmap/link`, with the
-browser half in `src/urlState.ts`), so any view can be linked to. *Share* in the menu
+browser half in `packages/shell/src/urlState.ts`), so any view can be linked to. *Share* in the menu
 copies that link, or opens the share sheet on a touch screen; the tab's title
 names the view (`describeLink`).
 

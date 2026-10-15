@@ -6,11 +6,11 @@
 //   npm run rehearse   (opens /video/rehearse.html?script=sample)
 //   npm run capture    (opens /video/rehearse.html)
 
+import { easingFunctions } from '@torahmap/engine';
 import { parseScript, type Scene } from './script.ts';
 import { cameraOf, doEvents, viewQuery } from './timeline.ts';
 import { restingScrollTops, showView } from './inPage.ts';
 import { captureLine, storyStopLine } from './capture.ts';
-import { easingFunctions } from '../src/scrollytelling/interpolation.ts';
 
 const scriptName = new URLSearchParams(location.search).get('script');
 const script = scriptName

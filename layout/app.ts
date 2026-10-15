@@ -11,22 +11,22 @@ export interface State {
   shown?: string[];
 }
 
-// The frame (index.html, src/styles/frame.css). The menu and the ☰ are left
+// The frame (index.html, packages/shell/src/styles/frame.css). The menu and the ☰ are left
 // out of `fixed`: on a desktop both sit over the column by design. Links in the
 // story's prose and in the credits are running text, which touch-size rules
 // exempt.
 export const CHROME: Chrome = {
-  fixed: '#panel, #map-legend, #zoom-controls, #verse-popup.visible',
+  fixed: '#panel, #map-legend, #zoom-controls, #popup.visible',
   map: '#canvas',
   panel: '#panel',
   interactive:
     '#panel button, #panel select, #panel input, ' +
     '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
     '#menu-toggle, #menu button, #map-legend button, ' +
-    '#verse-popup button, #verse-popup a, #zoom-controls button',
+    '#popup button, #popup a, #zoom-controls button',
   text:
     '.map-legend-summary, .menu-title, .menu-item, .column-title, .panel-title, #panel label, ' +
-    '.story-card-place, #verse-popup .ref-text',
+    '.story-card-place, #popup .ref-text',
 };
 
 /** Opens a menu item through the ☰. */
@@ -154,12 +154,12 @@ export const STATES: State[] = [
   {
     name: 'explore-search-and-overlay-pinned',
     link: `search=${ABRAHAM}&overlay=commentary&verse=Genesis.17.5`,
-    shown: ['#verse-popup', ...BOTH_ROWS],
+    shown: ['#popup', ...BOTH_ROWS],
   },
   {
     name: 'explore-verse-pinned',
     link: 'overlay=commentary&verse=Genesis.12.1',
-    shown: ['#verse-popup', '#map-legend'],
+    shown: ['#popup', '#map-legend'],
   },
   {
     // A word read as two, so the menu offers two meanings and is at its tallest.
@@ -168,7 +168,7 @@ export const STATES: State[] = [
     name: 'explore-word-menu',
     link: 'overlay=commentary&verse=Genesis.30.11',
     then: async (page) => {
-      const word = page.locator('#verse-popup .verse-word', { hasText: 'בגד' });
+      const word = page.locator('#popup .popup-word', { hasText: 'בגד' });
       await expect(async () => {
         // A press outside the menu closes it; the click opens it again.
         await word.click();

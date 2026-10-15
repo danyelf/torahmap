@@ -1,5 +1,7 @@
 // Validating a link's parameters: the view's own, and each overlay's against its declaration.
 
+import type { ZoomRange } from '@torahmap/engine';
+
 /**
  * The kinds of value an overlay parameter can hold. The overlay picks a kind;
  * this module decides what that kind allows.
@@ -196,13 +198,6 @@ export function validateOverlayParams<S extends readonly UrlParamSpec[]>(
   return values as UrlParamValues<S>;
 }
 
-// The range a link may carry and the range the camera allows are one range;
-// this package owns it because packages cannot import from src/.
-export const MIN_ZOOM = 0.1;
-export const MAX_ZOOM = 10.0;
-// The zoom the map opens at, which a link leaves out.
-export const DEFAULT_ZOOM = 1.0;
-
 const MAX_PAN_POSITION = 1000000;
 
 type TextKey = 'story' | 'stop' | 'overlay';
@@ -248,17 +243,23 @@ export const TEXT_KEYS: Readonly<Record<TextKey, ViewKey<string>>> = {
 /** A square's id, e.g. "I.Samuel.1.5" or "Berakhot.2a.1". */
 export const SQUARE_ID: ViewKey<string> = name(100);
 
-export const NUMBER_KEYS: Readonly<Record<NumberKey, ViewKey<number>>> = {
-  zoom: number(2, (n) => n >= MIN_ZOOM && n <= MAX_ZOOM, DEFAULT_ZOOM),
+export function zoomKey(zoom: ZoomRange): ViewKey<number> {
+  return number(2, (n) => n >= zoom.min && n <= zoom.max, zoom.start);
+}
+
+export const PAN_KEYS: Readonly<Record<Exclude<NumberKey, 'zoom'>, ViewKey<number>>> = {
   x: pan,
   y: pan,
 };
 
-/** No overlay may claim one of the link's own keys. */
-export const RESERVED_KEYS: ReadonlySet<string> = new Set([
-  ...Object.keys(TEXT_KEYS),
-  ...Object.keys(NUMBER_KEYS),
-]);
+/** The link's own keys. No overlay may claim one. */
+export const VIEW_KEYS: readonly (TextKey | NumberKey)[] = [
+  ...(Object.keys(TEXT_KEYS) as TextKey[]),
+  'zoom',
+  ...(Object.keys(PAN_KEYS) as NumberKey[]),
+];
+
+export const RESERVED_KEYS: ReadonlySet<string> = new Set(VIEW_KEYS);
 
 function stripHtmlTags(value: string): string {
   return value.replace(/<[^>]*>/g, '');

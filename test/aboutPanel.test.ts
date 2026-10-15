@@ -1,0 +1,71 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+async function about(): Promise<HTMLDivElement> {
+  vi.resetModules();
+  // The registry fills when the overlays register, so the panel is built after that.
+  const { registerAllOverlays } = await import('@torahmap/tanakh/overlays/index.ts');
+  registerAllOverlays();
+  const { getAllOverlays } = await import('@torahmap/tanakh/overlays/registry.ts');
+  const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
+  const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
+  const div = document.createElement('div');
+  div.innerHTML = aboutHtml(tanakhSite, getAllOverlays());
+  return div;
+}
+
+beforeEach(() => {
+  document.body.innerHTML = '';
+});
+
+describe('the About panel', () => {
+  it('offers the Hebrew toggle as a button', async () => {
+    const div = await about();
+    const toggle = div.querySelector<HTMLButtonElement>('#hebrew-toggle');
+    expect(toggle?.type).toBe('button');
+  });
+
+  it('says what the map is and who made it', async () => {
+    const text = (await about()).textContent ?? '';
+    expect(text).toContain('Torahmap');
+    expect(text).toContain('Danyel Fisher');
+  });
+
+  it('names its icon links for screen readers', async () => {
+    const links = [...(await about()).querySelectorAll('.byline-icon')];
+    expect(links.map((a) => a.getAttribute('aria-label'))).toEqual(['GitHub', 'Email']);
+    expect(links[1].getAttribute('href')).toMatch(/^mailto:/);
+  });
+
+  it('lists the controls', async () => {
+    expect((await about()).querySelectorAll('.controls-table tr').length).toBeGreaterThan(0);
+  });
+
+  it('carries the credits, the map first', async () => {
+    const titles = [...(await about()).querySelectorAll('.credit-block-title')].map(
+      (h) => h.textContent,
+    );
+    expect(titles[0]).toBe('The map itself');
+    expect(titles.length).toBeGreaterThan(1);
+  });
+
+  it('is about the text it is given, with that text’s credits', async () => {
+    const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
+    const { talmudSite } = await import('@torahmap/talmud/site.ts');
+    const div = document.createElement('div');
+    div.innerHTML = aboutHtml(talmudSite, []);
+    expect(div.textContent).toContain(talmudSite.page.name);
+    const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
+    expect(div.textContent).not.toContain(tanakhSite.page.name);
+    expect(div.querySelector('.controls-table')?.textContent).not.toContain(tanakhSite.squareName);
+    expect([...div.querySelectorAll('.credit-source')].map((s) => s.textContent)).toEqual(
+      talmudSite.credits.map((c) => c.source),
+    );
+  });
+
+  it('opens every source link in a new tab, safely', async () => {
+    for (const a of (await about()).querySelectorAll<HTMLAnchorElement>('.credits-list a')) {
+      expect(a.target).toBe('_blank');
+      expect(a.rel).toContain('noopener');
+    }
+  });
+});

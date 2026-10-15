@@ -1,0 +1,90 @@
+// What a text (the Tanakh, the Talmud) hands the app shell, and what the shell hands back.
+
+import type {
+  CameraPosition,
+  Camera,
+  ScreenPoint,
+  Viewport,
+  ItemIndex,
+  MapItem,
+  ItemColor,
+} from '@torahmap/engine';
+import type { LinkKeys, UrlState } from '@torahmap/link';
+import type { Story, StoryStop } from '@torahmap/stories';
+import type { Credit } from '../credits.ts';
+import type { PageCopy } from './page.ts';
+import type { Loaded } from '../dataFiles.ts';
+import type { Overlay, ToolOnMap } from '../overlays/types.ts';
+import type { SearchTool } from './search.ts';
+import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
+import type { PopupText } from '../sidebar.ts';
+
+/** What a text's site calls itself and its links. */
+export interface Site {
+  /** Its page, and its name there and everywhere. */
+  page: PageCopy;
+  /** What a reader calls one square, in plain text: "verse", "segment". */
+  squareName: string;
+  /** What the map is, as the About panel's opening paragraph. */
+  aboutHtml: string;
+  /** What the map itself rests on, credited above each tool's sources. */
+  credits: readonly Credit[];
+  /** What a link is called in a tab, in plain text. */
+  title(link: UrlState): string;
+}
+
+export interface MapText<I extends MapItem, S = unknown> {
+  site: Site;
+  link: LinkKeys;
+  /** Downloaded before the first frame. */
+  firstFiles: string[];
+  /** The file whose arrival and download speed load timing reports. */
+  timedFile?: string;
+  /** The text, laid out from its first files. */
+  open(loaded: Loaded): OpenText<I, S>;
+}
+
+/** A text once its first files are in. */
+export interface OpenText<I extends MapItem, S = unknown> {
+  items: I[];
+  startCamera(viewport: Viewport): Camera;
+  /** A square's colour while no tool colours it. */
+  baseColor(item: I, index: number): ItemColor;
+  /** Draws the labels into `container`; the function returned moves them with the map. */
+  labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
+  /** The file a square's text is in. The shell downloads it when the square's popup first shows. */
+  popupFile(item: I): string;
+  /** What a square's popup says; the shell marks it and makes its words clickable. */
+  popupText(item: I, loaded: Loaded, overlay: ToolOnMap<I> | null): PopupText;
+  overlays: Overlay<I>[];
+  search: SearchTool<I, S>;
+  stories: {
+    list: readonly Story[];
+    resolve(
+      stops: StoryStop[],
+      initialCamera: CameraPosition,
+      items: I[],
+      squares: ItemIndex<I>,
+      focus: ScreenPoint,
+      viewport: Viewport,
+    ): ResolvedStoryStop[];
+  };
+  /** For telemetry: a square's book or tractate, and its section. */
+  area(item: I): { area: string; section: string };
+  /** Wires the text's own parts to the running shell. */
+  start?(shell: Shell<I, S>): void;
+}
+
+/** What a text's own code may ask of the shell. */
+export interface Shell<I extends MapItem, S = unknown> {
+  loaded(): Loaded;
+  searchSettings(): S;
+  /** Change the search as the reader did, and open its panel. */
+  changeSearch(update: (current: S) => S): void;
+  /** Hold the popup while something is open over it; the function returned releases the hold. */
+  holdPopup(): () => void;
+  /** Pin a square and travel to it, as a search result does. */
+  pinAndGlide(item: I): void;
+  /** The text's stories changed, as they do when one is edited on the dev server. */
+  storiesChanged(list: readonly Story[]): void;
+}

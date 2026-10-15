@@ -1,25 +1,19 @@
 #!/usr/bin/env tsx
 /**
- * Verify Wikisource coverage across all Bavli tractates.
- *
- * For each tractate:
- *   1. Download Wikisource Hebrew JSON (primary source for M/G markers)
- *   2. Download Davidson merged.json (secondary, for shape cross-check)
- *   3. Download schema JSON (for perek boundaries)
- *   4. Verify Wikisource: non-empty, plausible marker counts
- *   5. Cross-check Wikisource vs Davidson: identical shape
- *   6. Emit report to data-transient/talmud-coverage-report.json
- *
- * Raw files cached under data-transient/talmud-raw/<Tractate>/ and reused
- * by scripts/talmud/bundle.ts.
+ * Download every Bavli tractate in both editions, Wikisource and Davidson, with
+ * its chapter boundaries, and check that each is whole: both editions divided
+ * alike, chapters in the schema, and a plausible count of markers. The report
+ * says which tractates bundle.ts builds.
  *
  * Usage:
  *   npx tsx scripts/talmud/verify-coverage.ts            # honor cache
  *   npx tsx scripts/talmud/verify-coverage.ts --force    # re-download all
  */
 
+import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { detectMarker } from './markers.ts';
 
 // Tractate list — hand-rolled. Source: standard Vilna Bavli table of contents.
 // 37 tractates total. Shekalim is excluded because its "Bavli" Gemara is
@@ -31,62 +25,62 @@ export interface TractateRef {
 }
 
 export const BAVLI_TRACTATES: ReadonlyArray<TractateRef> = [
-  // Seder Zeraim (1)
-  { seder: 'Seder Zeraim', tractate: 'Berakhot' },
-  // Seder Moed (11; Shekalim excluded)
-  { seder: 'Seder Moed', tractate: 'Shabbat' },
-  { seder: 'Seder Moed', tractate: 'Eruvin' },
-  { seder: 'Seder Moed', tractate: 'Pesachim' },
-  { seder: 'Seder Moed', tractate: 'Yoma' },
-  { seder: 'Seder Moed', tractate: 'Sukkah' },
-  { seder: 'Seder Moed', tractate: 'Beitzah' },
-  { seder: 'Seder Moed', tractate: 'Rosh Hashanah' },
-  { seder: 'Seder Moed', tractate: 'Taanit' },
-  { seder: 'Seder Moed', tractate: 'Megillah' },
-  { seder: 'Seder Moed', tractate: 'Moed Katan' },
-  { seder: 'Seder Moed', tractate: 'Chagigah' },
-  // Seder Nashim (7)
-  { seder: 'Seder Nashim', tractate: 'Yevamot' },
-  { seder: 'Seder Nashim', tractate: 'Ketubot' },
-  { seder: 'Seder Nashim', tractate: 'Nedarim' },
-  { seder: 'Seder Nashim', tractate: 'Nazir' },
-  { seder: 'Seder Nashim', tractate: 'Sotah' },
-  { seder: 'Seder Nashim', tractate: 'Gittin' },
-  { seder: 'Seder Nashim', tractate: 'Kiddushin' },
-  // Seder Nezikin (8)
-  { seder: 'Seder Nezikin', tractate: 'Bava Kamma' },
-  { seder: 'Seder Nezikin', tractate: 'Bava Metzia' },
-  { seder: 'Seder Nezikin', tractate: 'Bava Batra' },
-  { seder: 'Seder Nezikin', tractate: 'Sanhedrin' },
-  { seder: 'Seder Nezikin', tractate: 'Makkot' },
-  { seder: 'Seder Nezikin', tractate: 'Shevuot' },
-  { seder: 'Seder Nezikin', tractate: 'Avodah Zarah' },
-  { seder: 'Seder Nezikin', tractate: 'Horayot' },
-  // Seder Kodashim (9)
-  { seder: 'Seder Kodashim', tractate: 'Zevachim' },
-  { seder: 'Seder Kodashim', tractate: 'Menachot' },
-  { seder: 'Seder Kodashim', tractate: 'Chullin' },
-  { seder: 'Seder Kodashim', tractate: 'Bekhorot' },
-  { seder: 'Seder Kodashim', tractate: 'Arakhin' },
-  { seder: 'Seder Kodashim', tractate: 'Temurah' },
-  { seder: 'Seder Kodashim', tractate: 'Keritot' },
-  { seder: 'Seder Kodashim', tractate: 'Meilah' },
-  { seder: 'Seder Kodashim', tractate: 'Tamid' },
-  // Seder Tahorot (1) — note: Sefaria-Export uses "Tahorot" spelling
-  { seder: 'Seder Tahorot', tractate: 'Niddah' },
+  // Zeraim (1)
+  { seder: 'Zeraim', tractate: 'Berakhot' },
+  // Moed (11; Shekalim excluded)
+  { seder: 'Moed', tractate: 'Shabbat' },
+  { seder: 'Moed', tractate: 'Eruvin' },
+  { seder: 'Moed', tractate: 'Pesachim' },
+  { seder: 'Moed', tractate: 'Yoma' },
+  { seder: 'Moed', tractate: 'Sukkah' },
+  { seder: 'Moed', tractate: 'Beitzah' },
+  { seder: 'Moed', tractate: 'Rosh Hashanah' },
+  { seder: 'Moed', tractate: 'Taanit' },
+  { seder: 'Moed', tractate: 'Megillah' },
+  { seder: 'Moed', tractate: 'Moed Katan' },
+  { seder: 'Moed', tractate: 'Chagigah' },
+  // Nashim (7)
+  { seder: 'Nashim', tractate: 'Yevamot' },
+  { seder: 'Nashim', tractate: 'Ketubot' },
+  { seder: 'Nashim', tractate: 'Nedarim' },
+  { seder: 'Nashim', tractate: 'Nazir' },
+  { seder: 'Nashim', tractate: 'Sotah' },
+  { seder: 'Nashim', tractate: 'Gittin' },
+  { seder: 'Nashim', tractate: 'Kiddushin' },
+  // Nezikin (8)
+  { seder: 'Nezikin', tractate: 'Bava Kamma' },
+  { seder: 'Nezikin', tractate: 'Bava Metzia' },
+  { seder: 'Nezikin', tractate: 'Bava Batra' },
+  { seder: 'Nezikin', tractate: 'Sanhedrin' },
+  { seder: 'Nezikin', tractate: 'Makkot' },
+  { seder: 'Nezikin', tractate: 'Shevuot' },
+  { seder: 'Nezikin', tractate: 'Avodah Zarah' },
+  { seder: 'Nezikin', tractate: 'Horayot' },
+  // Kodashim (9)
+  { seder: 'Kodashim', tractate: 'Zevachim' },
+  { seder: 'Kodashim', tractate: 'Menachot' },
+  { seder: 'Kodashim', tractate: 'Chullin' },
+  { seder: 'Kodashim', tractate: 'Bekhorot' },
+  { seder: 'Kodashim', tractate: 'Arakhin' },
+  { seder: 'Kodashim', tractate: 'Temurah' },
+  { seder: 'Kodashim', tractate: 'Keritot' },
+  { seder: 'Kodashim', tractate: 'Meilah' },
+  { seder: 'Kodashim', tractate: 'Tamid' },
+  // Tahorot (1) — note: Sefaria-Export uses "Tahorot" spelling
+  { seder: 'Tahorot', tractate: 'Niddah' },
 ];
 // 1 + 11 + 7 + 8 + 9 + 1 = 37
 
-const CACHE_ROOT = 'data-transient/talmud-raw';
-const REPORT_PATH = 'data-transient/talmud-coverage-report.json';
+export const CACHE_ROOT = 'data/talmud/raw';
+export const REPORT_PATH = 'data/talmud/coverage-report.json';
 
-const GCS_BASE = 'https://storage.googleapis.com/sefaria-export';
+const SEFARIA_EXPORT = readFileSync('scripts/sefaria-export.env', 'utf-8').match(
+  /^SEFARIA_EXPORT=(.+)$/m,
+)?.[1];
+if (!SEFARIA_EXPORT) throw new Error('scripts/sefaria-export.env names no SEFARIA_EXPORT');
 
-// Marker plausibility ranges (segments per tractate).
-// Berakhot has 34 of each. The lower bound handles small tractates like
-// Tamid (5) and Taanit (8) which are legitimately short. Only catastrophic
-// data loss (e.g., 0 markers) should be caught by this rule — the primary
-// verification is the hard shape/schema check above.
+// How many of each marker a tractate may have. Berakhot has 34 of each; the
+// floor is low for short tractates, so it catches only markers lost outright.
 const MARKER_MIN = 3;
 const MARKER_MAX = 400;
 
@@ -123,19 +117,19 @@ function urlsFor(ref: TractateRef): {
   merged: string;
   schema: string;
 } {
-  const seder = encodeURIComponent(ref.seder);
+  const seder = encodeURIComponent(`Seder ${ref.seder}`);
   const tractate = encodeURIComponent(ref.tractate);
   // Schema filenames use underscores for spaces, not URL-encoded spaces.
   // E.g. "Rosh Hashanah" → "Rosh_Hashanah.json".
   const schemaName = ref.tractate.replace(/ /g, '_');
   return {
-    wikisource: `${GCS_BASE}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/${encodeURIComponent('Wikisource Talmud Bavli.json')}`,
-    merged: `${GCS_BASE}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`,
-    schema: `${GCS_BASE}/schemas/${schemaName}.json`,
+    wikisource: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/${encodeURIComponent('Wikisource Talmud Bavli.json')}`,
+    merged: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`,
+    schema: `${SEFARIA_EXPORT}/schemas/${schemaName}.json`,
   };
 }
 
-function cachePathsFor(ref: TractateRef): {
+export function cachePathsFor(ref: TractateRef): {
   wikisource: string;
   merged: string;
   schema: string;
@@ -180,30 +174,28 @@ async function fetchTractate(
 
 // Verification logic — pure functions, no I/O.
 
+export type TractateStatus = 'pass' | 'hard-fail' | 'soft-fail';
+
 export interface VerificationResult {
-  status: 'pass' | 'hard-fail' | 'soft-fail';
+  status: TractateStatus;
   failures: string[];
   wikisource: { amudCount: number; segmentCount: number };
   merged: { amudCount: number; segmentCount: number };
   shapeMatch: boolean;
-  markers: { matnitin: number; gemara: number; hadran: number };
+  markers: { matnitin: number; gemara: number };
 }
 
 export interface TalmudJson {
   text: string[][];
 }
 
-/**
- * Count occurrences of a marker string across all segments in a tractate.
- */
-export function countMarker(text: string[][], marker: string): number {
-  let count = 0;
-  for (const amud of text) {
-    for (const seg of amud) {
-      if (seg.includes(marker)) count += 1;
-    }
-  }
-  return count;
+/** How many segments open with each marker, read as bundle.ts reads them. */
+export function countMarkers(text: string[][]): { matnitin: number; gemara: number } {
+  const opens = text.flat().map(detectMarker);
+  return {
+    matnitin: opens.filter((m) => m === 'M').length,
+    gemara: opens.filter((m) => m === 'G').length,
+  };
 }
 
 /**
@@ -285,25 +277,16 @@ export function verifyTractate(
 
   // --- Soft rules (markers) — only if hard rules passed ---
 
-  const markers = {
-    matnitin: 0,
-    gemara: 0,
-    hadran: 0,
-  };
+  let markers = { matnitin: 0, gemara: 0 };
 
   if (!hardFail && Array.isArray(ws?.text)) {
-    markers.matnitin = countMarker(ws.text, 'מתני׳');
-    markers.gemara = countMarker(ws.text, 'גמ׳');
-    markers.hadran = countMarker(ws.text, 'הדרן');
+    markers = countMarkers(ws.text);
 
     if (markers.matnitin < MARKER_MIN || markers.matnitin > MARKER_MAX) {
       failures.push(`מתני׳ count = ${markers.matnitin} (expected ${MARKER_MIN}–${MARKER_MAX})`);
     }
     if (markers.gemara < MARKER_MIN || markers.gemara > MARKER_MAX) {
       failures.push(`גמ׳ count = ${markers.gemara} (expected ${MARKER_MIN}–${MARKER_MAX})`);
-    }
-    if (markers.hadran < 1) {
-      failures.push('הדרן count < 1 (no perek boundaries?)');
     }
   }
 
@@ -323,8 +306,7 @@ export function verifyTractate(
   };
 }
 
-interface CoverageReport {
-  generatedAt: string;
+export interface CoverageReport {
   totalTractates: number;
   passed: number;
   failed: number;
@@ -335,13 +317,12 @@ async function writeCoverageReport(
   results: Array<VerificationResult & TractateRef>,
 ): Promise<void> {
   const report: CoverageReport = {
-    generatedAt: new Date().toISOString(),
     totalTractates: results.length,
     passed: results.filter((r) => r.status === 'pass').length,
     failed: results.filter((r) => r.status !== 'pass').length,
     tractates: results,
   };
-  await mkdir('data-transient', { recursive: true });
+  await mkdir(dirname(REPORT_PATH), { recursive: true });
   await writeFile(REPORT_PATH, JSON.stringify(report, null, 2), 'utf-8');
   console.log(`\nReport written to ${REPORT_PATH}`);
 }
@@ -395,7 +376,7 @@ async function main(): Promise<void> {
       const tag = result.status === 'pass' ? 'PASS' : result.status.toUpperCase();
       process.stdout.write(
         `${tag.padEnd(10)} amudim=${result.wikisource.amudCount} seg=${result.wikisource.segmentCount} ` +
-          `markers=${result.markers.matnitin}/${result.markers.gemara}/${result.markers.hadran}\n`,
+          `markers=${result.markers.matnitin}/${result.markers.gemara}\n`,
       );
       if (result.failures.length > 0) {
         for (const f of result.failures) console.log(`    ! ${f}`);
@@ -409,7 +390,7 @@ async function main(): Promise<void> {
         wikisource: { amudCount: 0, segmentCount: 0 },
         merged: { amudCount: 0, segmentCount: 0 },
         shapeMatch: false,
-        markers: { matnitin: 0, gemara: 0, hadran: 0 },
+        markers: { matnitin: 0, gemara: 0 },
       });
     }
   }

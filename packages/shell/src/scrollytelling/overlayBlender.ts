@@ -1,0 +1,131 @@
+import {
+  type MapItem,
+  type ItemColor,
+  type Picture,
+  still,
+  type ColorLayer,
+} from '@torahmap/engine';
+import type { StoryStop } from '@torahmap/stories';
+import type { ResolvedStoryStop } from './types';
+import type { Overlay } from '../overlays/types.ts';
+import { fillDefaultColors, toolsPicture } from '../itemColoring';
+import { validateOverlayParams, type UrlParamValues } from '@torahmap/link';
+import { NO_OVERLAY } from '../overlays/types.ts';
+import { settingsFromLink } from '../overlays/settings.ts';
+import type { SearchTool } from '../app/search.ts';
+import { toolsPicked, toolsShown } from '../tools.ts';
+import type { Loaded } from '../dataFiles.ts';
+
+// Memoised per items array and loaded files by the stop's overlay, its search and their
+// validated link parameters. The key is canonical because validateOverlayParams
+// writes keys in the order urlParams declares them, so stops that ask for the
+// same thing share an entry. Colours that depend on the hover are recomputed
+// while a square is hovered: caching by hover too would add an entry for every
+// square the cursor crosses.
+const picturesCache = new WeakMap<readonly MapItem[], WeakMap<Loaded, Map<string, Picture>>>();
+
+// UrlParamValues declares every key optional; validateOverlayParams only ever
+// sets present keys to non-empty strings, so this just gives TypeScript proof
+// of what's already true at runtime.
+function definedEntries(values: UrlParamValues): [string, string][] {
+  return Object.entries(values).filter(
+    (entry): entry is [string, string] => entry[1] !== undefined,
+  );
+}
+
+function paramsKey(values: UrlParamValues): string {
+  return new URLSearchParams(Object.fromEntries(definedEntries(values))).toString();
+}
+
+function cacheKeyFor<T>(
+  overlay: Overlay<T> | null,
+  search: SearchTool<T>,
+  stop: StoryStop,
+): string {
+  const overlayKey = overlay
+    ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
+    : NO_OVERLAY;
+  const searchKey = paramsKey(validateOverlayParams(search.urlParams, stop.searchParams ?? {}));
+  return `${overlayKey}#${searchKey}`;
+}
+
+/** The text's tools a stop names: its search, and its overlays by id. */
+export interface TextTools<T> {
+  search: SearchTool<T>;
+  overlay(id: string): Overlay<T> | undefined;
+}
+
+function overlayOf<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T> | null {
+  return (stop.overlay && tools.overlay(stop.overlay)) || null;
+}
+
+/** The tools a stop picks. */
+export function stopTools<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T>[] {
+  const { search } = tools;
+  return toolsPicked(
+    overlayOf(stop, tools),
+    search,
+    settingsFromLink(search, stop.searchParams ?? {}),
+  );
+}
+
+export function pictureForStop<I extends MapItem>(
+  stop: ResolvedStoryStop,
+  items: I[],
+  hovered: I | null,
+  loaded: Loaded,
+  base: (index: number) => ItemColor,
+  tools: TextTools<I>,
+): Picture {
+  const { search } = tools;
+  const overlay = overlayOf(stop, tools);
+  const byHover = !!(overlay?.hoverChangesColors && hovered);
+
+  let byLoaded = picturesCache.get(items);
+  if (!byLoaded) {
+    byLoaded = new WeakMap();
+    picturesCache.set(items, byLoaded);
+  }
+  let cache = byLoaded.get(loaded);
+  if (!cache) {
+    cache = new Map();
+    byLoaded.set(loaded, cache);
+  }
+  const key = cacheKeyFor(overlay, search, stop);
+  const cached = byHover ? undefined : cache.get(key);
+  if (cached) return cached;
+
+  const shown = toolsShown(
+    overlay,
+    overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
+    search,
+    settingsFromLink(search, stop.searchParams ?? {}),
+    loaded,
+  );
+  const picture = fillDefaultColors(toolsPicture(shown, items, hovered, base), base);
+  if (!byHover) cache.set(key, picture);
+  return picture;
+}
+
+// One stop's colours fading into the next's. At rest on a stop it is that
+// stop's alone, and so is t === 1, which controller.ts hands over with two
+// different stops when their rest zones touch.
+export function computeBlendedColors<I extends MapItem>(
+  fromStop: ResolvedStoryStop,
+  toStop: ResolvedStoryStop,
+  t: number,
+  items: I[],
+  hovered: I | null,
+  loaded: Loaded,
+  base: (index: number) => ItemColor,
+  tools: TextTools<I>,
+): ColorLayer {
+  if (fromStop === toStop || t === 0)
+    return still(pictureForStop(fromStop, items, hovered, loaded, base, tools));
+  if (t >= 1) return still(pictureForStop(toStop, items, hovered, loaded, base, tools));
+  return {
+    from: pictureForStop(fromStop, items, hovered, loaded, base, tools),
+    to: pictureForStop(toStop, items, hovered, loaded, base, tools),
+    t,
+  };
+}

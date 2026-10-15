@@ -1,0 +1,29 @@
+import { describe, it, expect, afterEach } from 'vitest';
+import type { TanakhOverlay } from '../../../src/overlays/index';
+import { registerOverlay, clearOverlays, getOverlay } from '../../../src/overlays/registry';
+
+function claiming(key: string): TanakhOverlay {
+  return {
+    id: `claims-${key}`,
+    name: 'Claims',
+    getItemColor: () => null,
+    colorsFor: (items) => items.map(() => null),
+    urlParams: [{ key, kind: 'token' }],
+    settingsFromUrl: (params) => params,
+    settingsToUrl: () => ({}),
+  };
+}
+
+describe('registerOverlay', () => {
+  afterEach(() => clearOverlays());
+
+  it.each(['search', 'mode', 'm'])("refuses an overlay that claims the search's %s", (key) => {
+    expect(() => registerOverlay(claiming(key))).toThrow(key);
+    expect(getOverlay(`claims-${key}`)).toBeUndefined();
+  });
+
+  it('takes an overlay whose keys are its own', () => {
+    registerOverlay(claiming('category'));
+    expect(getOverlay('claims-category')).toBeDefined();
+  });
+});

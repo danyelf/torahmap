@@ -1,9 +1,9 @@
 // The site's layout with Psalms in three columns, which makes the map short
 // enough to fill a 36-inch sheet's width with the key beneath it.
 
-import { verseId } from '@torahmap/link';
-import { computeLayout } from '../../src/layout.ts';
-import type { TanakhLayout, TorahData } from '../../src/types.ts';
+import { verseId } from '@torahmap/link/tanakh';
+import { computeLayout } from '@torahmap/tanakh/layout.ts';
+import type { TanakhLayout, TorahData } from '@torahmap/tanakh/types.ts';
 
 /** The first chapter of each Psalms column. */
 export const PSALMS_COLUMNS = [1, 51, 101] as const;

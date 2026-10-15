@@ -24,7 +24,7 @@ Each book is a column.
 
 These are the fifty chapters of the Book of Genesis. Each line is a single chapter.
 
-<!-- stop: verses | camera: Genesis.1.1 | zoom: 5 | verse: Genesis.1.1 -->
+<!-- stop: verses | camera: Genesis.1.1 | zoom: 5 | pin: Genesis.1.1 -->
 
 Every square is a single verse. The text appears when you hover over a verse; tap or click to pin it.
 
@@ -36,15 +36,15 @@ We can overlay the map with data. Let’s trace the story of how the forefather 
 
 We can search for his name, **אברם**, Abram.
 
-<!-- stop: abraham_call | camera: Genesis.12.1 | zoom: 2.5 | verse: Genesis.12.1 | search: אברם -->
+<!-- stop: abraham_call | camera: Genesis.12.1 | zoom: 2.5 | pin: Genesis.12.1 | search: אברם -->
 
 In Genesis 12, God calls to Abram: *Lekh lekha* — “Go forth from your native land and from your father’s house to the land that I will show you.”
 
-<!-- stop: abraham_rename | camera: Genesis.17.5 | zoom: 2.5 | verse: Genesis.17.5 | search: אברם,אברהם -->
+<!-- stop: abraham_rename | camera: Genesis.17.5 | zoom: 2.5 | pin: Genesis.17.5 | search: אברם,אברהם -->
 
 Five chapters later, God gives Abram a new name: “you shall no longer be called Abram, but your name shall be Abraham.” This verse, showing the rename, holds both colors.
 
-<!-- stop: genesis_full | camera: Genesis.24.20 | zoom: 0.8 | verse: Genesis.25.11 | search: אברם,אברהם -->
+<!-- stop: genesis_full | camera: Genesis.24.20 | zoom: 0.8 | pin: Genesis.25.11 | search: אברם,אברהם -->
 
 In Genesis, Abraham is everywhere: even after his burial in chapter 25, his name is a continuing presence.
 
@@ -54,15 +54,15 @@ And then he almost disappears.
 
 The other four books of the Torah name him in just a handful of verses.
 
-<!-- stop: name_in_list | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | search: אברם,אברהם, -->
+<!-- stop: name_in_list | camera: Exodus.3.15 | zoom: 2.5 | pin: Exodus.3.15 | search: אברם,אברהם, -->
 
 When he does appear, he is usually the first of the forefathers: Abraham, Isaac, and Jacob.
 
-<!-- stop: name_in_list_with_isaac | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב, -->
+<!-- stop: name_in_list_with_isaac | camera: Exodus.3.15 | zoom: 2.5 | pin: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב, -->
 
 At the burning bush, God tells Moses to tell the Israelites that he was sent by “the God of Abraham, the God of Isaac, and the God of Jacob.”
 
-<!-- stop: name_in_list_worldwide_three_names | camera: everything | verse: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב -->
+<!-- stop: name_in_list_worldwide_three_names | camera: everything | pin: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב -->
 
 After Genesis, he is usually named alongside Isaac and Jacob. (Jacob’s name, in pink, appears more often.)
 
@@ -70,27 +70,27 @@ After Genesis, he is usually named alongside Isaac and Jacob. (Jacob’s name, i
 
 Now we switch from search to the commentary overlay, which shows how often the prayer book quotes each verse.
 
-<!-- stop: liturgy_verse_II | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
+<!-- stop: liturgy_verse_II | camera: Exodus.3.15 | zoom: 2.5 | pin: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
 The Amidah prayer, the central prayer said three times a day, opens with the words of this verse: “God of Abraham, God of Isaac, and God of Jacob.”
 
-<!-- stop: liturgy_verse_III | camera: Exodus.3.15 | zoom: 2.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
+<!-- stop: liturgy_verse_III | camera: Exodus.3.15 | zoom: 2.5 | pin: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
 Of all the verses that name Abraham, this is the one the prayer book cites most. You can click on the Sefaria link to see the citations on their website.
 
-<!-- stop: liturgy_zoom_out | camera: Exodus.3.15 | zoom: 1.5 | verse: Exodus.3.15 | overlay: commentary | category: Liturgy -->
+<!-- stop: liturgy_zoom_out | camera: Exodus.3.15 | zoom: 1.5 | pin: Exodus.3.15 | overlay: commentary | category: Liturgy -->
 
 The prayer book’s Abraham comes from the places that look back at him: the burning bush;
 
-<!-- stop: liturgy_leviticus | camera: Leviticus.26.42 | zoom: 1.5 | verse: Leviticus.26.42 | overlay: commentary | category: Liturgy -->
+<!-- stop: liturgy_leviticus | camera: Leviticus.26.42 | zoom: 1.5 | pin: Leviticus.26.42 | overlay: commentary | category: Liturgy -->
 
 Leviticus’s “I will remember My covenant with Abraham”;
 
-<!-- stop: liturgy_micah | camera: Micah.7.20 | zoom: 2 | verse: Micah.7.20 | overlay: commentary | category: Liturgy -->
+<!-- stop: liturgy_micah | camera: Micah.7.20 | zoom: 2 | pin: Micah.7.20 | overlay: commentary | category: Liturgy -->
 
 and Micah’s “loyalty to Abraham”.
 
-<!-- stop: abraham_again | camera: everything | verse: Leviticus.26.42 | search: אברם,אברהם,, -->
+<!-- stop: abraham_again | camera: everything | pin: Leviticus.26.42 | search: אברם,אברהם,, -->
 
 Even though the Tanakh allows him to slip into the background, the prayer book is built from the places where the Tanakh remembers.
 

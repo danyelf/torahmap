@@ -24,9 +24,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Dictionary } from '../../src/tanakh/search/search.ts';
-import type { SearchData } from '../../src/tanakh/search/data.ts';
-import type { Parse } from '../../src/tanakh/search/dictionary.ts';
+import type { Dictionary } from '@torahmap/tanakh/search/search.ts';
+import type { SearchData } from '@torahmap/tanakh/search/data.ts';
+import type { Parse } from '@torahmap/tanakh/search/dictionary.ts';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, '..', '..');
@@ -47,14 +47,14 @@ globalThis.fetch = (async (input: RequestInfo | URL): Promise<Response> => {
   return new Response(readFileSync(resolved, 'utf8'), { status: 200 });
 }) as typeof fetch;
 
-const { loadNamedFiles } = await import('../../src/dataFiles.ts');
-const { SEARCH_FILES, dictionaryOf } = await import('../../src/tanakh/search/data.ts');
-const { findLexemesForWord } = await import('../../src/tanakh/search/search.ts');
+const { loadNamedFiles } = await import('@torahmap/shell/dataFiles.ts');
+const { SEARCH_FILES, dictionaryOf } = await import('@torahmap/tanakh/search/data.ts');
+const { findLexemesForWord } = await import('@torahmap/tanakh/search/search.ts');
 const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
-  await import('../../src/tanakh/search/dictionary.ts');
-const { verseWords } = await import('../../src/verseWords.ts');
-const { stripNikkud } = await import('../../src/hebrew.ts');
-const { verseId } = await import('@torahmap/link');
+  await import('@torahmap/tanakh/search/dictionary.ts');
+const { textWords } = await import('@torahmap/shell/textWords.ts');
+const { stripNikkud } = await import('@torahmap/shell/hebrew.ts');
+const { verseId } = await import('@torahmap/link/tanakh');
 
 interface Report {
   /** Words whose reading the verse settles to exactly one dictionary word. */
@@ -93,7 +93,7 @@ function buildReport(
         const verseKey = verseId(book, Number(chapter), Number(verse));
         const words = wordsOfVerse(parse, verseKey, text.he);
 
-        for (const [wordIndex, { word }] of verseWords(text.he).entries()) {
+        for (const [wordIndex, { word }] of textWords(text.he).entries()) {
           const form = stripNikkud(word);
           const offered = meaningsInVerse(dictionary, words, form, verseKey, wordIndex);
           const n = offered.length;

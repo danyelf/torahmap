@@ -4,7 +4,7 @@
 /**
  * The scroll position at which the story rests on each stop, by stop id: the
  * stop's middle at the middle of the story, as computeStopScrollCenters in
- * src/scrollytelling/controller.ts places it. Null when the stops sit side by
+ * packages/shell/src/scrollytelling/controller.ts places it. Null when the stops sit side by
  * side, as on a phone, where the story pages rather than scrolls.
  */
 export function restingScrollTops(doc: Document = document): Record<string, number> | null {
@@ -115,7 +115,7 @@ export function showOverlays(o: {
   // The pinned verse's card goes where the scene puts it. Otherwise it keeps
   // its bottom corner, where a bottom caption would cover it, so it waits
   // above the caption instead.
-  const card = document.getElementById('verse-popup');
+  const card = document.getElementById('popup');
   if (card) {
     const below = o.caption && o.captionAt === 'bottom';
     const top = band.firstElementChild!.getBoundingClientRect().top;

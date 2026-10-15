@@ -1,0 +1,87 @@
+import { DEFAULT_EASING, type EasingName, lerpCamera, easingFunctions } from '@torahmap/engine';
+import type { ResolvedStoryStop, InterpolatedState } from './types';
+
+// Each stop has a "rest zone" in the middle where the view holds steady.
+// REST_ZONE_FRACTION of each stop's height is the rest zone (centered).
+// Transitions happen in the scroll gap between rest zones.
+const REST_ZONE_FRACTION = 0.4;
+
+// The scrollTop at which each stop's visual center aligns with the viewport center.
+function computeStopScrollCenters(
+  stopOffsets: number[],
+  stopHeights: number[],
+  viewportHeight: number,
+): number[] {
+  return stopOffsets.map((offset, i) => {
+    const visualCenter = offset + stopHeights[i] / 2;
+    return visualCenter - viewportHeight / 2;
+  });
+}
+
+export function computeInterpolatedState(
+  stops: ResolvedStoryStop[],
+  stopOffsets: number[],
+  totalHeight: number,
+  scrollTop: number,
+  defaultEasing: EasingName = DEFAULT_EASING,
+  stopHeights: number[],
+  viewportHeight: number,
+): InterpolatedState {
+  const maxScroll = Math.max(0, totalHeight - viewportHeight);
+  const clampedScroll = Math.max(0, Math.min(scrollTop, maxScroll));
+
+  const scrollCenters = computeStopScrollCenters(stopOffsets, stopHeights, viewportHeight);
+
+  const restZones: [number, number][] = scrollCenters.map((center, i) => {
+    const halfZone = (stopHeights[i] * REST_ZONE_FRACTION) / 2;
+    return [Math.max(0, center - halfZone), Math.min(maxScroll, center + halfZone)];
+  });
+
+  // Find which stop's rest zone we're in (or between)
+  for (let i = 0; i < stops.length; i++) {
+    if (clampedScroll <= restZones[i][1]) {
+      if (clampedScroll >= restZones[i][0]) {
+        // Inside rest zone of stop i — hold steady
+        return {
+          camera: { ...stops[i].camera },
+          fromStop: stops[i],
+          toStop: stops[i],
+          t: 0,
+        };
+      }
+      if (i === 0) {
+        return {
+          camera: { ...stops[0].camera },
+          fromStop: stops[0],
+          toStop: stops[0],
+          t: 0,
+        };
+      }
+      // Between rest zones — transition
+      const transitionStart = restZones[i - 1][1];
+      const transitionEnd = restZones[i][0];
+      const rawT =
+        transitionEnd > transitionStart
+          ? (clampedScroll - transitionStart) / (transitionEnd - transitionStart)
+          : 1;
+
+      const easeFn = easingFunctions[stops[i].easing ?? defaultEasing];
+      const t = easeFn(Math.max(0, Math.min(1, rawT)));
+
+      return {
+        camera: lerpCamera(stops[i - 1].camera, stops[i].camera, t),
+        fromStop: stops[i - 1],
+        toStop: stops[i],
+        t,
+      };
+    }
+  }
+
+  // Past last rest zone — hold at last stop
+  return {
+    camera: { ...stops[stops.length - 1].camera },
+    fromStop: stops[stops.length - 1],
+    toStop: stops[stops.length - 1],
+    t: 0,
+  };
+}

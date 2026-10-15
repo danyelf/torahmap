@@ -1,0 +1,144 @@
+#popup {
+  position: fixed;
+  bottom: 20px;
+  left: calc(var(--map-left) + 20px);
+  width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  z-index: 15;
+  display: none;
+  color: #fff;
+}
+
+#popup.visible {
+  display: block;
+}
+
+#popup.pinned {
+  border-color: rgba(106, 176, 243, 0.3);
+}
+
+#popup .popup-ref {
+  padding: 12px 14px;
+  padding-right: 36px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+#popup .close-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  display: none;
+  line-height: 1;
+}
+
+#popup .close-btn:hover {
+  color: #fff;
+}
+
+#popup.pinned .close-btn {
+  display: block;
+}
+
+#popup .overlay-info {
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6ab0f3;
+  background: rgba(106, 176, 243, 0.1);
+  border-bottom: 1px solid rgba(106, 176, 243, 0.2);
+  font-style: italic;
+  display: none;
+}
+
+#popup .overlay-info:not(:empty) {
+  display: block;
+}
+
+#popup .popup-hebrew {
+  padding: 14px;
+  font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
+  font-size: 18px;
+  line-height: 1.6;
+  direction: rtl;
+  text-align: right;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#popup .popup-hebrew .popup-word {
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.12s ease;
+}
+
+#popup .popup-hebrew .popup-word:hover {
+  background: rgba(106, 176, 243, 0.22);
+}
+
+#popup .popup-hebrew .text-link {
+  color: inherit;
+  text-decoration: underline dotted rgba(106, 176, 243, 0.6);
+  text-underline-offset: 4px;
+}
+
+#popup .popup-hebrew .text-link:hover {
+  text-decoration: underline solid rgba(106, 176, 243, 0.9);
+}
+
+#popup .popup-english {
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ccc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* While the texts are not in, a strip under the reference says so, and the
+   empty text rows are left out. A phone keeps it where the Hebrew goes
+   (phone.css). */
+#popup .popup-notice {
+  padding: 10px 14px;
+}
+
+#popup .popup-notice:empty {
+  display: none;
+}
+
+#popup:has(.popup-notice:not(:empty)) :is(.popup-hebrew, .popup-english) {
+  display: none;
+}
+
+#popup .sefaria-link {
+  float: right;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+  color: #6ab0f3;
+  font-size: 12px;
+  font-weight: 400;
+  text-decoration: none;
+}
+
+#popup .sefaria-link:hover {
+  color: #fff;
+}
+
+body.english-only #popup .popup-hebrew {
+  display: none;
+}

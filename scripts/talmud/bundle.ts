@@ -1,223 +1,37 @@
 #!/usr/bin/env tsx
-/**
- * Bundle Talmud raw cache into runtime-fetchable JSON files.
- *
- * Inputs:
- *   data-transient/talmud-raw/<Tractate>/wikisource.json
- *   data-transient/talmud-raw/<Tractate>/schema.json
- *   docs/plans/data/2026-04-07-talmud-coverage-report.json (tells us which
- *     tractates passed verification)
- *
- * Outputs:
- *   public/data/talmud/structure.json
- *   public/data/talmud/texts/<Tractate>.json
- *
- * Excluded: tractates that failed verification.
- */
+// Build public/data/talmud/ from the tractates verify-coverage.ts downloaded and passed.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { stripNikkud } from '../../src/hebrew.ts';
-import { amudIndex } from '../../src/talmud/data.ts';
-
-// Pure helpers (unit-tested).
-
-/**
- * Walk a tractate's segment stream tracking Mishnah/Gemara state.
- *
- * Rule: a segment counts as a structural marker only when it carries
- * BOTH a marker word (מתני׳ / גמ׳) AND a `<big>` (or `<big><strong>`)
- * presentational wrapper near the start of the segment — see the marker
- * regexes below for the exact forms this takes. The wrap is the strongest
- * cue — without it, segments like Bava Metzia 6b:2 ("א\"ל רב המנונא מתני׳
- * היא ספק בכורות...") would falsely flip the state for dozens of dapim,
- * because the abbreviation is also natural Hebrew that appears inside
- * running text.
- *
- * Initial state is gemara (conservative default — in practice the very
- * first segment of every tractate is a wrapped מתני׳ marker).
- */
-// The marker may be preceded by editorial punctuation (`[`, `(`) and the
-// marker word itself can be wrapped inside parentheses inside the strong
-// tag — Wikisource has all of these forms in real data:
-//   "<big><strong>מתני׳</strong></big> ..."     (canonical wrapped)
-//   "[<big><strong>גמ׳</strong></big> ת\"ר] ..." (Sotah 49a:17 style)
-//   "<big><strong>(גמ׳)</strong></big> ..."     (Sotah 49b:4 style)
-//   "מתני׳ <big><strong>הכל</strong></big> ..." (bare-leading form)
-const WRAPPED_MARKER_RE =
-  /^[\s\[\(]*(?:<[^>]+>[\s\[\(]*)*<big[^>]*>(?:[\s\(]*<strong[^>]*>)?[\s\(]*(מתני׳|גמ׳)/;
-const BARE_LEADING_MARKER_RE = /^[\s\[\(]*(מתני׳|גמ׳)(?:\s|$)/;
-
-function detectMarker(seg: string): 'M' | 'G' | null {
-  // Strip nikkud first — Sefaria's merged ("Steinsaltz") source carries
-  // full vowel pointing on every word, including the marker words
-  // (מַתְנִי׳ / גְּמָ׳). The bare wikisource source doesn't, but
-  // stripping is a no-op there. Doing this once up front lets the
-  // regexes stay simple.
-  const s = stripNikkudAndSeparators(seg);
-
-  // Form 1: marker is wrapped in <big><strong>...</strong></big>.
-  const wrapped = s.match(WRAPPED_MARKER_RE);
-  if (wrapped) {
-    return wrapped[1] === 'מתני׳' ? 'M' : 'G';
-  }
-  // Form 2: marker is bare at the very start, and the first content
-  // word IS wrapped in <big>. We require the wrap to appear within the
-  // first 80 chars of the segment so we don't pick up unrelated tags
-  // later in the text.
-  const bare = s.match(BARE_LEADING_MARKER_RE);
-  if (bare && /<big[^>]*>/.test(s.slice(0, 80))) {
-    return bare[1] === 'מתני׳' ? 'M' : 'G';
-  }
-  return null;
-}
-
-export function walkMarkers(text: string[][]): boolean[][] {
-  const result: boolean[][] = [];
-  let isMishnah = false;
-  for (const amud of text) {
-    const row: boolean[] = [];
-    for (const seg of amud) {
-      const m = detectMarker(seg);
-      if (m === 'M') isMishnah = true;
-      else if (m === 'G') isMishnah = false;
-      row.push(isMishnah);
-    }
-    result.push(row);
-  }
-  return result;
-}
+import {
+  amudIndex,
+  type TalmudAmud,
+  type TalmudPerek,
+  type TalmudStructure,
+  type TalmudTractate,
+  type TalmudTractateText,
+  TALMUD_DATA_DIR,
+} from '@torahmap/talmud/data.ts';
+import { markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
+import {
+  REPORT_PATH,
+  cachePathsFor,
+  shapeMatches,
+  type CoverageReport,
+} from './verify-coverage.ts';
+import {
+  STRUCTURE_FILE,
+  TEXTS_FILE,
+  getVerseText,
+  type VerseTexts,
+} from '@torahmap/tanakh/verseTexts.ts';
+import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
 
 /**
- * Walk markers with a per-marker char budget bounding how long any
- * single mishnah run can be. The cap is set per-perek to the LONGEST
- * standalone mishnah unit in that perek × slack — that's the largest
- * any single Bavli mishnah block could plausibly be without a missing
- * gemara marker. Each new מתני׳ marker resets the run counter, so a
- * perek with several legitimate mishnayot still works (each gets its
- * own fresh budget).
- *
- * This compensates for missing-marker bugs in the Wikisource source
- * (e.g. Avodah Zarah 22a:11 → 26a:4, where the editor forgot the
- * gemara marker and the walker would otherwise leave 100+ segments
- * wrongly tagged as mishnah).
- *
- * Args:
- *   text             - Wikisource segment grid
- *   perekIdxByAmud   - perek index per amud
- *   perekUnitChars   - char count of each standalone mishnah unit, per
- *                      perek (parallel to schema perakim)
- *   perekBoundaryAt  - optional per-amud mid-amud perek-boundary map
- *   slack            - multiplier on the per-marker cap (default 1.5)
- */
-export function walkMarkersWithBudget(
-  text: string[][],
-  perekIdxByAmud: number[],
-  perekUnitChars: number[][],
-  perekBoundaryAt: Map<number, number>,
-  slack = 1.2,
-): boolean[][] {
-  const result: boolean[][] = [];
-  let isMishnah = false;
-  let currentPerekIdx = -1;
-  let charsConsumedInRun = 0;
-  let currentBudget = 0;
-  let runForceFlipped = false;
-
-  function startPerek(newIdx: number): void {
-    currentPerekIdx = newIdx;
-    charsConsumedInRun = 0;
-    runForceFlipped = false;
-    const units = perekUnitChars[newIdx] ?? [];
-    const maxUnit = units.length > 0 ? Math.max(...units) : 0;
-    currentBudget = maxUnit * slack;
-  }
-
-  for (let ai = 0; ai < text.length; ai++) {
-    const amud = text[ai];
-    const amudPerek = perekIdxByAmud[ai];
-    const boundary = perekBoundaryAt.get(ai);
-
-    if (boundary === undefined && amudPerek !== currentPerekIdx) {
-      startPerek(amudPerek);
-    }
-
-    const row: boolean[] = [];
-    for (let si = 0; si < amud.length; si++) {
-      // Mid-amud perek boundary handling: segments [0..boundary) belong
-      // to the OLD perek; segments [boundary..) belong to the NEW one.
-      if (boundary !== undefined && si === 0 && amudPerek !== currentPerekIdx) {
-        startPerek(amudPerek);
-      }
-      if (boundary !== undefined && si === boundary) {
-        startPerek(amudPerek + 1);
-      }
-
-      const seg = amud[si];
-      const m = detectMarker(seg);
-      if (m === 'M') {
-        isMishnah = true;
-        // Reset run counter — each marker gets a fresh budget.
-        charsConsumedInRun = 0;
-        runForceFlipped = false;
-      } else if (m === 'G') {
-        isMishnah = false;
-        charsConsumedInRun = 0;
-        runForceFlipped = false;
-      }
-
-      if (isMishnah) {
-        const clean = stripNikkudAndSeparators(stripHtml(seg)).replace(/[\s\.,;:׃״׳"׳']/g, '');
-        charsConsumedInRun += clean.length;
-        if (!runForceFlipped && currentBudget > 0 && charsConsumedInRun > currentBudget) {
-          // We've consumed more characters than the largest plausible
-          // mishnah in this perek. Assume the source is missing a גמ׳
-          // marker and force-flip back to gemara from here.
-          isMishnah = false;
-          runForceFlipped = true;
-        }
-      }
-
-      row.push(isMishnah);
-    }
-    result.push(row);
-  }
-  return result;
-}
-
-/**
- * Compute per-perek char counts of every standalone mishnah unit, for
- * use as walkMarkersWithBudget's per-marker cap input.
- */
-export function perekUnitCharCounts(mishnahText: string[][]): number[][] {
-  return mishnahText.map((perek) =>
-    perek.map(
-      (unit) => stripNikkudAndSeparators(stripHtml(unit)).replace(/[\s\.,;:׃״׳"׳']/g, '').length,
-    ),
-  );
-}
-
-// Maqaf, paseq, sof pasuq and nun hafukha: stripNikkud keeps them, as word
-// separators, but they are not letters to count.
-const HEBREW_SEPARATORS = /[\u05BE\u05C0\u05C3\u05C6]/g;
-
-/**
- * Hebrew without points, accents or its four separator marks, so that
- * char-count comparisons between Wikisource Bavli (no nikkud) and
- * standalone Mishnah (full nikkud) are apples-to-apples.
- */
-export function stripNikkudAndSeparators(s: string): string {
-  return stripNikkud(s).replace(HEBREW_SEPARATORS, '');
-}
-
-/**
- * Strip Wikisource HTML, embedded data-URI images, and markdown link
- * syntax from a segment string. The Bavli Wikisource source mixes raw
- * tags into segments — not just <br>/<big>/<strong> but also <img>
- * blobs (sometimes huge base64 PNGs), <a>/<span> wrappers, and the
- * occasional `[label](url)` markdown link. We want plain Hebrew text
- * for the popup AND for counting segment lengths (which
- * counts characters, so a base64 blob would dwarf real content).
+ * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
+ * segments — not just <br>/<big>/<strong> but also <img> blobs (sometimes
+ * huge base64 PNGs), <a>/<span> wrappers, and the occasional `[label](url)`
+ * markdown link.
  */
 export function stripHtml(s: string): string {
   return (
@@ -236,41 +50,6 @@ export function stripHtml(s: string): string {
   );
 }
 
-export interface TalmudAmud {
-  daf: number;
-  amud: 'a' | 'b';
-  segmentCount: number;
-  perekIdx: number;
-  perekBoundaryAt?: number;
-  mishnahMask: boolean[];
-}
-
-export interface TalmudPerek {
-  hebrewName: string;
-  startAmudIdx: number;
-  endAmudIdx: number;
-  startSegmentInFirstAmud: number;
-  endSegmentInLastAmud: number;
-}
-
-export interface TalmudTractate {
-  name: string;
-  hebrewName: string;
-  seder: string;
-  firstDaf: number;
-  amudim: TalmudAmud[];
-  perakim: TalmudPerek[];
-}
-
-export interface TalmudStructure {
-  tractates: TalmudTractate[];
-}
-
-export interface TalmudTractateText {
-  name: string;
-  amudim: string[][];
-}
-
 interface WikisourceJson {
   text: string[][];
   heTitle?: string;
@@ -285,14 +64,6 @@ interface SchemaJson {
       }>;
     };
   };
-}
-
-interface CoverageReport {
-  tractates: Array<{
-    seder: string;
-    tractate: string;
-    status: 'pass' | 'hard-fail' | 'soft-fail';
-  }>;
 }
 
 /**
@@ -341,12 +112,8 @@ export function parseWholeRef(ref: string): {
   return null;
 }
 
-export interface MishnahJson {
-  text: string[][]; // [perek][mishnah_unit]
-}
-
 export interface MergedJson {
-  text: string[][]; // [amudIdx][segIdx], parallel to wikisource shape
+  text: string[][];
 }
 
 export function processTractate(
@@ -354,33 +121,28 @@ export function processTractate(
   tractateName: string,
   wikisource: WikisourceJson,
   schema: SchemaJson,
-  mishnah?: MishnahJson | null,
-  merged?: MergedJson | null,
-): { structure: TalmudTractate; text: TalmudTractateText } {
-  const rawText = wikisource.text;
-  const hebrewName = wikisource.heTitle ?? tractateName;
-  // For marker detection we prefer the Steinsaltz-merged source if it
-  // exists — it carries more reliable structural markers, including
-  // ones that the bare wikisource source is missing (e.g. AZ 22b:1's
-  // <strong><big>גְּמָ׳</big></strong>). The shape is identical
-  // (verify-coverage.ts confirms amudCount + segmentCount per tractate),
-  // so we can index into it with the same coordinates.
-  const markerText: string[][] =
-    merged && merged.text && merged.text.length === rawText.length ? merged.text : rawText;
-
+  merged: MergedJson,
+): { structure: TalmudTractate; text: Omit<TalmudTractateText, 'citations'> } {
+  const shape = shapeMatches(wikisource, merged);
+  if (!shape.match) throw new Error(`${tractateName}: the editions differ: ${shape.reason}`);
   const schemaNodes = schema.alts?.Chapters?.nodes ?? [];
   if (schemaNodes.length === 0) {
     throw new Error(`${tractateName}: schema has no perek nodes`);
   }
-  // Sefaria-Export indexes its amud array starting from daf 1 (with 1a/1b
-  // as empty placeholders — the Talmud traditionally has no daf 1). So the
-  // firstDaf is always 1, and the schema's perek refs like "Berakhot 2a:1"
-  // are resolved against that origin via amudIndex(daf, amud, 1).
-  const firstDaf = 1;
+  // Sefaria's amud arrays start at 1a, though the Talmud has no daf 1, and keep
+  // every amud before a tractate's text starts empty: to 25a, in Tamid.
+  const skip = wikisource.text.findIndex((amud) => amud.length > 0);
+  if (skip < 0) throw new Error(`${tractateName}: no text`);
+  const amudAt = (ai: number): Pick<TalmudAmud, 'daf' | 'amud'> => ({
+    daf: 1 + Math.floor((skip + ai) / 2),
+    amud: (skip + ai) % 2 === 0 ? 'a' : 'b',
+  });
+  const text = wikisource.text.slice(skip);
+  const other = merged.text.slice(skip);
 
   // Build perakim array and compute per-amud perekIdx + boundary markers.
   const perakim: TalmudPerek[] = [];
-  const amudPerekIdx: number[] = new Array(rawText.length).fill(0);
+  const amudPerekIdx: number[] = new Array(text.length).fill(0);
   const amudPerekBoundary: Map<number, number> = new Map();
 
   for (let pi = 0; pi < schemaNodes.length; pi++) {
@@ -389,8 +151,9 @@ export function processTractate(
     if (!ref) {
       throw new Error(`${tractateName}: cannot parse perek ${pi} wholeRef "${node.wholeRef}"`);
     }
-    const startIdx = amudIndex(ref.startDaf, ref.startAmud, firstDaf);
-    const endIdx = amudIndex(ref.endDaf, ref.endAmud, firstDaf);
+    const startIdx = amudIndex(ref.startDaf, ref.startAmud, amudAt(0));
+    const endIdx = amudIndex(ref.endDaf, ref.endAmud, amudAt(0));
+    if (startIdx < 0) throw new Error(`${tractateName}: perek ${pi} starts before the text`);
 
     perakim.push({
       hebrewName: node.heTitle ?? `פרק ${pi + 1}`,
@@ -417,125 +180,89 @@ export function processTractate(
 
     // Assign perekIdx to every amud in this range (skipping the boundary
     // amud when it already belongs to the previous perek).
-    for (let ai = assignStart; ai <= endIdx && ai < rawText.length; ai++) {
+    for (let ai = assignStart; ai <= endIdx && ai < text.length; ai++) {
       amudPerekIdx[ai] = pi;
     }
   }
 
-  // Compute per-segment Mishnah mask. If a standalone Mishnah counterpart
-  // is available (almost all 37 Bavli tractates have one), use the
-  // budget-capped walker which bounds each perek's mishnah-state run by
-  // the standalone perek's char length × slack. This is what catches
-  // missing-marker bugs like Avodah Zarah 22a:11 → 26a:4 where the
-  // Wikisource source omits the gemara marker entirely.
-  let mishnahMask: boolean[][];
-  if (mishnah && mishnah.text && mishnah.text.length > 0) {
-    const unitChars = perekUnitCharCounts(mishnah.text);
-    mishnahMask = walkMarkersWithBudget(markerText, amudPerekIdx, unitChars, amudPerekBoundary);
-  } else {
-    mishnahMask = walkMarkers(markerText);
-  }
-
-  const cleanText: string[][] = rawText.map((amud) =>
-    amud.map((seg) =>
-      stripHtml(seg.replace(/מתני׳/g, '').replace(/גמ׳/g, '').replace(/הדרן/g, '')),
-    ),
+  const markers = markersOf(text, other);
+  const mishnahMask = mishnahFrom(markers);
+  const cleanText = text.map((amud, ai) =>
+    amud.map((seg, si) => stripHtml(stripMarkerWords(seg, markers[ai][si]))),
   );
 
-  const amudim: TalmudAmud[] = [];
-  for (let ai = 0; ai < rawText.length; ai++) {
-    const segmentCount = rawText[ai].length;
-    const daf = firstDaf + Math.floor(ai / 2);
-    const amud: 'a' | 'b' = ai % 2 === 0 ? 'a' : 'b';
+  const amudim: TalmudAmud[] = text.map((amud, ai) => {
     const boundary = amudPerekBoundary.get(ai);
-    amudim.push({
-      daf,
-      amud,
-      segmentCount,
+    return {
+      ...amudAt(ai),
+      segmentCount: amud.length,
       perekIdx: amudPerekIdx[ai],
       ...(boundary !== undefined ? { perekBoundaryAt: boundary } : {}),
-      mishnahMask: mishnahMask[ai] ?? new Array(segmentCount).fill(false),
-    });
-  }
+      mishnahMask: mishnahMask[ai],
+    };
+  });
 
   return {
     structure: {
       name: tractateName,
-      hebrewName,
+      hebrewName: wikisource.heTitle ?? tractateName,
       seder,
-      firstDaf,
       amudim,
       perakim,
     },
-    text: {
-      name: tractateName,
-      amudim: cleanText,
-    },
+    text: { name: tractateName, amudim: cleanText },
   };
 }
 
-const CACHE_ROOT = 'data-transient/talmud-raw';
-const MISHNAH_CACHE = 'data-transient/mishnah-raw';
-const COVERAGE_REPORT = 'docs/plans/data/2026-04-07-talmud-coverage-report.json';
-const OUTPUT_DIR = 'public/data/talmud';
+const DATA_DIR = 'public/data';
+const OUTPUT_DIR = join(DATA_DIR, TALMUD_DATA_DIR);
 const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
+
+async function readJson<T>(path: string): Promise<T> {
+  return JSON.parse(await readFile(path, 'utf-8')) as T;
+}
 
 async function main(): Promise<void> {
   console.log('Loading coverage report...');
-  const reportText = await readFile(COVERAGE_REPORT, 'utf-8');
-  const report: CoverageReport = JSON.parse(reportText);
+  const report = await readJson<CoverageReport>(REPORT_PATH);
 
   const passed = report.tractates.filter((t) => t.status === 'pass');
   console.log(`${passed.length} passed tractates to bundle`);
   console.log('');
 
-  await mkdir(OUTPUT_DIR, { recursive: true });
   await mkdir(TEXTS_DIR, { recursive: true });
 
   const structure: TalmudStructure = { tractates: [] };
+  const { books } = await readJson<{ books: TanakhBook[] }>(join(DATA_DIR, STRUCTURE_FILE));
+  const texts = await readJson<VerseTexts>(join(DATA_DIR, TEXTS_FILE));
+  const find = citationFinder({
+    books,
+    text: (book, chapter, verse) => getVerseText(texts, book, chapter, verse)?.he ?? null,
+  });
+  let linked = 0;
+  const missed: string[] = [];
 
   for (const ref of passed) {
     process.stdout.write(`  ${ref.tractate.padEnd(20)} ... `);
     try {
-      const wsText = await readFile(join(CACHE_ROOT, ref.tractate, 'wikisource.json'), 'utf-8');
-      const scText = await readFile(join(CACHE_ROOT, ref.tractate, 'schema.json'), 'utf-8');
-      const ws: WikisourceJson = JSON.parse(wsText);
-      const sc: SchemaJson = JSON.parse(scText);
-
-      // Optional; processTractate falls back to wikisource if missing.
-      let merged: MergedJson | null = null;
-      try {
-        const mergedRaw = await readFile(join(CACHE_ROOT, ref.tractate, 'merged.json'), 'utf-8');
-        merged = JSON.parse(mergedRaw) as MergedJson;
-      } catch {
-        /* fall back to wikisource markers */
-      }
-
-      // Optional; processTractate falls back to the marker-only walker.
-      let mishnah: MishnahJson | null = null;
-      try {
-        const mishText = await readFile(join(MISHNAH_CACHE, `${ref.tractate}.json`), 'utf-8');
-        mishnah = JSON.parse(mishText) as MishnahJson;
-      } catch {
-        /* no standalone mishnah; walker falls back to marker-only mode */
-      }
-
+      const paths = cachePathsFor(ref);
       const { structure: tractateStructure, text: tractateText } = processTractate(
         ref.seder,
         ref.tractate,
-        ws,
-        sc,
-        mishnah,
-        merged,
+        await readJson<WikisourceJson>(paths.wikisource),
+        await readJson<SchemaJson>(paths.schema),
+        await readJson<MergedJson>(paths.merged),
       );
 
       structure.tractates.push(tractateStructure);
 
-      await writeFile(
-        join(TEXTS_DIR, `${ref.tractate}.json`),
-        JSON.stringify(tractateText),
-        'utf-8',
-      );
+      const cited = citationsByPlace(tractateText.amudim, find);
+      for (const amud of Object.values(cited.citations)) {
+        for (const segment of Object.values(amud)) linked += segment.length;
+      }
+      missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
+      const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
+      await writeFile(join(TEXTS_DIR, `${ref.tractate}.json`), JSON.stringify(shipped), 'utf-8');
 
       const segCount = tractateStructure.amudim.reduce((a, b) => a + b.segmentCount, 0);
       console.log(
@@ -551,6 +278,10 @@ async function main(): Promise<void> {
   console.log('');
   console.log(`Structure: ${join(OUTPUT_DIR, 'structure.json')}`);
   console.log(`Texts: ${TEXTS_DIR}/*.json (${structure.tractates.length} files)`);
+  console.log('');
+  console.log(`Tanakh citations linked: ${linked}`);
+  console.log(`Looked like citations but named no verse: ${missed.length}`);
+  for (const stretch of missed.slice(0, 10)) console.log(`  ${stretch}`);
 }
 
 // Only run main() when invoked as a script, not when imported for testing.

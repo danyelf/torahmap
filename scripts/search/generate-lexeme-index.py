@@ -123,14 +123,14 @@ SEPARATORS = {0x05BE, 0x05C0, 0x05C3, 0x05C6}  # maqaf, paseq, sof pasuq, nun ha
 MAQAF = chr(0x05BE)
 SOF_PASUQ = chr(0x05C3)
 # Where one word ends and the next begins: whitespace, a hyphen, or a separator.
-# isWordSeparator() in src/hebrew.ts draws the same line.
+# isWordSeparator() in packages/shell/src/hebrew.ts draws the same line.
 WORD_SEPARATOR = re.compile(
     r"[\s\-" + "".join(chr(code) for code in sorted(SEPARATORS)) + "]+"
 )
 # What divides the parts of a word BHSA holds as one but prints as two.
 INNER_SEPARATOR = re.compile(rf"[\s{MAQAF}]+")
 # The ketiv, which Sefaria prints in round brackets beside the qere. KETIV in
-# src/hebrew.ts is the same pattern.
+# apps/tanakh/src/search/dictionary.ts is the same pattern.
 KETIV = re.compile(r"\([^)]*\)")
 # Inert here — BHSA has none. Sefaria writes ירושל͏ם with one, and both sides fold both.
 GRAPHEME_JOINER = 0x034F
@@ -168,7 +168,7 @@ def verse_id(book, chapter, verse):
 def normalize(text):
     """Fold Hebrew to the shape the search box works in.
 
-    Mirrors normalizeHebrewForSearch() in src/hebrew.ts; the two must agree
+    Mirrors normalizeHebrewForSearch() in apps/tanakh/src/search/spelling.ts; the two must agree
     character for character or every lookup misses.
     """
     return fold_finals(as_printed(text))
@@ -202,7 +202,7 @@ def consonants(text):
 
 
 def is_word(form):
-    """A single letter is never a word. isSearchableWord() in src/hebrew.ts
+    """A single letter is never a word. isSearchableWord() in packages/shell/src/hebrew.ts
     draws the same line."""
     return len(consonants(form)) >= 2
 
@@ -363,7 +363,7 @@ def main():
     lexemes = []
     for node in lex_nodes:
         display = F.voc_lex_utf8.v(node) or F.lex_utf8.v(node) or ""
-        # The row order LexemeRow in src/tanakh/search/search.ts reads.
+        # The row order LexemeRow in apps/tanakh/src/search/search.ts reads.
         lexemes.append(
             [
                 F.lex.v(node),

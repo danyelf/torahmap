@@ -3,7 +3,13 @@
 // the DOM: its id, name, description and the URL parameters it owns; and the
 // search's, which together make a Tanakh link's keys.
 
-import type { LinkKeys, UrlParamSpec, OverlayParamSpecLookup } from '@torahmap/link';
+import {
+  writeLink,
+  type LinkKeys,
+  type UrlParamSpec,
+  type OverlayParamSpecLookup,
+} from '@torahmap/link';
+import { TANAKH_PATH } from '@torahmap/site';
 
 export interface OverlayEntry<S extends readonly UrlParamSpec[] = readonly UrlParamSpec[]> {
   readonly id: string;
@@ -76,7 +82,7 @@ export const overlayParamSpecs: OverlayParamSpecLookup = (id) => BY_ID.get(id)?.
 export const SEARCH_URL_PARAMS = [
   { key: 'search', kind: 'text' },
   // Positional across the terms in `search`, one letter each, and an empty
-  // entry for a term still on its default (see MODE_LETTERS in src/tanakh/search/terms.ts).
+  // entry for a term still on its default (see MODE_LETTERS in apps/tanakh/src/search/terms.ts).
   { key: 'mode', kind: 'token' },
   { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
@@ -88,10 +94,17 @@ export const LINK_KEYS: LinkKeys = {
   square: 'verse',
   search: SEARCH_URL_PARAMS,
   overlayParams: overlayParamSpecs,
+  zoom: { min: 0.1, max: 10, start: 1 },
 };
 
 /** An overlay's display name, by id; undefined for an unknown id. */
 export const overlayName = (id: string): string | undefined => BY_ID.get(id)?.name;
 
-/** The overlay id that stands for none: the picker's first option, and what telemetry records. */
-export const NO_OVERLAY = 'none';
+/** The Tanakh's map on `verse`, with each verse shaded by how much commentary of `category` it has. */
+export function commentaryLink(verse: string, category: string): string {
+  const query = writeLink(
+    { square: verse, overlay: COMMENTARY.id, overlayParams: { category } },
+    LINK_KEYS,
+  );
+  return `${TANAKH_PATH}${query}`;
+}

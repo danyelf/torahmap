@@ -12,10 +12,11 @@
 #
 set -euo pipefail
 
-BUCKET="https://storage.googleapis.com/sefaria-export/links"
 INDEX_URL="https://www.sefaria.org/api/index/"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+source "$PROJECT_ROOT/scripts/sefaria-export.env"
+BUCKET="$SEFARIA_EXPORT/links"
 LINKS_DIR="$PROJECT_ROOT/data/overlays/commentary/sefaria-links"
 INDEX="$PROJECT_ROOT/data/overlays/commentary/sefaria-index.json"
 COUNTS="$PROJECT_ROOT/public/data/overlays/commentary/counts.json"

@@ -4,13 +4,12 @@ import {
   writeLink,
   linkNamesAView,
   linkKind,
-  verseId,
-  parseVerseId,
   validateOverlayParams,
   type LinkKeys,
   type UrlState,
   type UrlParamSpec,
 } from '../src/index.ts';
+import { verseId, parseVerseId } from '../src/tanakh.ts';
 import { keys, lookup } from './sampleOverlays.ts';
 
 describe('readLink', () => {
@@ -66,6 +65,14 @@ describe('readLink', () => {
   it('rejects non-numeric zoom', () => {
     const state = readLink('?zoom=abc', keys);
     expect(state.zoom).toBeUndefined();
+  });
+
+  it("keeps a zoom within the text's own range, and only that", () => {
+    const wide: LinkKeys = { ...keys, zoom: { min: 0.01, max: 4, start: 0.5 } };
+    expect(readLink('?zoom=0.05', wide).zoom).toBe(0.05);
+    expect(readLink('?zoom=5', wide).zoom).toBeUndefined();
+    expect(writeLink({ overlayParams: {}, zoom: 0.5 }, wide)).toBe('');
+    expect(writeLink({ overlayParams: {}, zoom: 1 }, wide)).toBe('?zoom=1');
   });
 
   it('parses x and y pan positions', () => {
@@ -456,6 +463,7 @@ describe("a text's own keys", () => {
     square: 'at',
     search: [{ key: 'search', kind: 'text' }],
     overlayParams: lookup,
+    zoom: keys.zoom,
   };
 
   it('reads and writes the pinned square under the key its text names', () => {

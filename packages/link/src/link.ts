@@ -1,11 +1,14 @@
 // Reading and writing the view a link names.
 
+import type { ZoomRange } from '@torahmap/engine';
 import {
   validateOverlayParams,
   RESERVED_KEYS,
   SQUARE_ID,
   TEXT_KEYS,
-  NUMBER_KEYS,
+  PAN_KEYS,
+  VIEW_KEYS,
+  zoomKey,
   type ViewKey,
   type OverlayParams,
   type OverlayParamSpecLookup,
@@ -20,24 +23,19 @@ export interface UrlState extends ViewFields {
   searchParams?: UrlParamValues;
 }
 
-/** The keys a text's links use beside the view's own. */
+/** The keys a text's links use beside the view's own, and the zooms they may carry. */
 export interface LinkKeys {
   /** The pinned square's key. */
   square: string;
   /** The search's keys, read whatever overlay is on. */
   search: readonly UrlParamSpec[];
   overlayParams: OverlayParamSpecLookup;
+  zoom: ZoomRange;
 }
 
 /** The keys no overlay may have: the view's own, the square's and the search's. */
 function takenKeys(keys: LinkKeys): ReadonlySet<string> {
   return new Set([...RESERVED_KEYS, keys.square, ...keys.search.map((spec) => spec.key)]);
-}
-
-// Allows letters (including Hebrew), spaces, and dots, for names like "I.Samuel".
-function validateBookName(book: string): boolean {
-  if (!book || book.trim() === '') return false;
-  return /^[a-zA-Z\u0590-\u05FF\s.]+$/.test(book);
 }
 
 /**
@@ -47,9 +45,7 @@ function validateBookName(book: string): boolean {
  * ever populated alongside an overlay, which is checked directly.
  */
 export function linkNamesAView(state: UrlState): boolean {
-  const named = [...keysOf(TEXT_KEYS), ...keysOf(NUMBER_KEYS), 'square' as const].some(
-    (key) => state[key] !== undefined,
-  );
+  const named = [...VIEW_KEYS, 'square' as const].some((key) => state[key] !== undefined);
   return named || state.searchParams !== undefined;
 }
 
@@ -70,7 +66,7 @@ export function readLink(query: string | URLSearchParams, keys: LinkKeys): UrlSt
 
   const state: UrlState = { overlayParams: {} };
   readKeys(state, TEXT_KEYS, params);
-  readKeys(state, NUMBER_KEYS, params);
+  readKeys(state, { zoom: zoomKey(keys.zoom), ...PAN_KEYS }, params);
   const square = params.get(keys.square);
   const id = square ? SQUARE_ID.parse(square) : null;
   if (id !== null) state.square = id;
@@ -132,7 +128,7 @@ export function writeLink(state: UrlState, keys: LinkKeys): string {
   writeKeys(params, view, TEXT_KEYS);
   const square = view.square && SQUARE_ID.format(view.square);
   if (square) params.set(keys.square, square);
-  writeKeys(params, view, NUMBER_KEYS);
+  writeKeys(params, view, { zoom: zoomKey(keys.zoom), ...PAN_KEYS });
 
   // Overlay-specific parameters, written through unchanged. Overlays omit
   // their own defaults, so whatever arrives here belongs in the URL.
@@ -153,45 +149,4 @@ export function bookToUrl(book: string): string {
 /** A book's name as a link wrote it: "I.Samuel" -> "I Samuel". */
 export function bookFromUrl(urlBook: string): string {
   return urlBook.replace(/\./g, ' ');
-}
-
-/** A verse's id, the one name every part of the app uses for it: "I Samuel" 1:5 -> "I.Samuel.1.5". */
-export function verseId(book: string, chapter: number, verse: number): string {
-  return `${bookToUrl(book)}.${chapter}.${verse}`;
-}
-
-/** A verse as readers write it: "I Samuel 1:5". */
-export function verseRef(v: { book: string; chapter: number; verse: number }): string {
-  return `${v.book} ${v.chapter}:${v.verse}`;
-}
-
-/**
- * Read a verse id: "I.Samuel.1.5" -> { book: "I Samuel", chapter: 1, verse: 5 },
- * or null for anything verseId would not write.
- */
-export function parseVerseId(
-  verseStr: string,
-): { book: string; chapter: number; verse: number } | null {
-  // Split from the end to handle book names with dots, e.g. "I.Samuel.1.5".
-  const parts = verseStr.split('.');
-  if (parts.length < 3) return null;
-  if (parts.length > 5) return null; // max 3 parts for book name + 2 for chapter/verse
-
-  const verseStr_ = parts.pop()!;
-  const chapterStr = parts.pop()!;
-  const book = bookFromUrl(parts.join('.'));
-
-  const verse = parseInt(verseStr_, 10);
-  const chapter = parseInt(chapterStr, 10);
-
-  if (isNaN(verse) || isNaN(chapter)) return null;
-  if (verse < 0 || chapter < 0) return null;
-
-  // No book has >200 chapters, no chapter has >200 verses
-  if (chapter > 200 || verse > 200) return null;
-
-  if (!validateBookName(book)) return null;
-
-  // A verse's square is found by its exact id, so "Genesis.01.1" names none.
-  return verseId(book, chapter, verse) === verseStr ? { book, chapter, verse } : null;
 }

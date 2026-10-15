@@ -2,13 +2,13 @@
 // Loads search's real files and renders the real search controls
 // No WebGL, no map, no verse layout — just the input pipeline
 
-import { dataFor, loadFiles, overlayFiles } from '../src/dataFiles.ts';
-import { isHebrew } from '../src/hebrew.ts';
-import { createOverlaySettings } from '../src/overlays/index.ts';
+import { dataFor, loadFiles, overlayFiles } from '@torahmap/shell/dataFiles.ts';
+import { isHebrew } from '@torahmap/shell/hebrew.ts';
+import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 import {
   configure as configureSearch,
   searchTool as searchOverlay,
-} from '../src/tanakh/search/index.ts';
+} from '@torahmap/tanakh/search/index.ts';
 
 // --- Event log ---
 

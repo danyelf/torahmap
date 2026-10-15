@@ -3,8 +3,7 @@
 // readings here are evenly spaced in OKLCH, where equal numbers look equally
 // bright.
 
-import { hslToRgb } from '../../src/utils/color.ts';
-import { seededRandom } from '../../src/utils/random.ts';
+import { hslToRgb, seededRandom } from '@torahmap/utils';
 
 export const PAPER = '#f3ecdc';
 export const INK = '#3a2e24';
