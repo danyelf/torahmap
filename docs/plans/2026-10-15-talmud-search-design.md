@@ -50,29 +50,49 @@ bracketed citations, so it needs the links moved across.
 - **Punctuation ends a word.** The Davidson text has `. : , ? ! —`, so
   whole-word matching treats any character that is not a
   letter or a vowel point as a word's edge. `isWordSeparator` itself stays as
-  it is: word clicks and the Tanakh's dictionary line-up depend on it.
+  it is: word clicks and the Tanakh's dictionary line-up depend on it. This
+  is the Hebrew language's rule; English already breaks at punctuation.
 
-## One search, in the shell
+## One search, in its own package
 
-The parts of `apps/tanakh/src/search/` that do not depend on the Bible
-dictionary move to `packages/shell/src/search/`: spelling and matching, the
-term list and its link letters, the text index and excerpts, popup marks, the
+The search knows no language, so it can serve a text in any: the Tanakh, the
+Talmud, or an English-only text such as the EU AI Act (#372). Two new packages
+share the work.
+
+**`@torahmap/search`** holds the parts of `apps/tanakh/src/search/` that do not
+depend on the Bible dictionary: the term list and its colours and link letters,
+the two match modes and phrases, the text index and excerpts, popup marks, the
 results list, the term rows, and the telemetry debounce. They become one
 function, `createTermSearch(spec)`, which returns the `SearchTool` the shell
-already knows. Its state (which row is open, what is shown) lives in that
-call, not at module level.
+already knows. Its state (which row is open, what is shown) lives in that call,
+not at module level. It is a package rather than part of the shell because
+three things use it: the two apps and the wall prints.
 
-A text supplies:
+It matches through the languages a text gives it. A language says how text is
+folded for comparing, what ends a word, which letters may be attached in front
+of a word, and whether a typed term is in it. English, which lowercases and
+breaks words at punctuation, is the package's own.
 
-- its search files, and each item's id, reference and searchable text;
-- the prefix letters, if any;
+**`@torahmap/hebrew`** holds Hebrew: the folding in `spelling.ts` (vowel points,
+final letters), the word breaks and vowel-point helpers now in
+`packages/shell/src/hebrew.ts`, and the Hebrew language, whose prefix letters a
+text turns on or not. The shell imports it for the popup, which is still
+written for a Hebrew and an English text; untangling that is not part of this
+change.
+
+A text supplies to `createTermSearch`:
+
+- its languages: Hebrew and English for the Tanakh; Hebrew, with prefixes, for
+  the Talmud;
+- its search files, and each item's id, reference and searchable text in each
+  language;
 - what a result is called ("verse", "segment"), the box's placeholder, its
   description and credits;
 - for the Tanakh only, its meanings mode: one object that offers the mode for a
   term, finds its items and marks, draws the meanings chooser, and reads and
   writes its own link key (`m`).
 
-The Talmud supplies the first three. The meanings chooser, word clicks, the
+The meanings chooser, word clicks, the
 word menu and everything that reads the dictionary stay in `apps/tanakh`.
 
 Choosing a single object for the meanings mode, rather than letting the Tanakh
@@ -83,7 +103,7 @@ set of rows, one results list, one link format.
 
 The Tanakh's search behaves exactly as now, including a Hebrew term starting in
 meanings mode. Its existing tests stay and pass; they are repointed to the
-shell where their code moved. The layout tests and a before-and-after
+packages their code moved to. The layout tests and a before-and-after
 screenshot of the Tanakh's search panel check what it looks like.
 
 ## Not in this change
