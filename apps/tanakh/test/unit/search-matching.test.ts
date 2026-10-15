@@ -10,7 +10,8 @@ import { EMPTY_DICTIONARY, inTextsOrder, searchDataFor } from '../helpers/search
 
 const searchOverlay = hostOverlay(overlay, searchDataFor({}));
 import { buildTextIndex, versesForTerm } from '../../src/search/search';
-import { matchRangesInFolded, foldForMatching } from '../../src/search/matching';
+import { english, matchRanges } from '@torahmap/search';
+import { hebrew } from '@torahmap/hebrew';
 import type { VerseTexts } from '../../src/verseTexts';
 import { setTermText } from '../../src/search/terms';
 
@@ -109,22 +110,22 @@ describe('the search and the highlighter agree', () => {
 });
 
 describe('where a term matches', () => {
-  const folded = (text: string) => foldForMatching(text, 'he');
+  const folded = (text: string) => hebrew().fold(text);
 
   it('finds a Hebrew word only as a whole word', () => {
     const haystack = folded('אלהים ואלהים');
     expect(
-      matchRangesInFolded(haystack, folded('אלהים'), { mode: 'word', language: 'he' }),
+      matchRanges(haystack, folded('אלהים'), { mode: 'word', language: hebrew() }),
     ).toHaveLength(1);
     expect(
-      matchRangesInFolded(haystack, folded('אלהים'), { mode: 'substring', language: 'he' }),
+      matchRanges(haystack, folded('אלהים'), { mode: 'substring', language: hebrew() }),
     ).toHaveLength(2);
   });
 
   it('finds a Hebrew phrase as whole words', () => {
     const haystack = folded('וַיְדַבֵּר יְהוָה אֶל־מֹשֶׁה');
     const find = (term: string) =>
-      matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' });
+      matchRanges(haystack, folded(term), { mode: 'word', language: hebrew() });
     expect(find('וידבר יהוה')).toEqual([{ start: 0, end: 10 }]);
     expect(find('אל משה')).toHaveLength(1); // written with a maqaf
     expect(find('דבר יהוה')).toEqual([]); // the phrase starts inside a word
@@ -133,7 +134,7 @@ describe('where a term matches', () => {
   it('finds a phrase across any run of separators', () => {
     const haystack = folded('וַיֹּ֨אמֶר אֵלָ֜יו בָּלָ֗ק (לך) [לְכָה־]נָּ֨א אִתִּ֜י');
     const find = (term: string) =>
-      matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' }).map(
+      matchRanges(haystack, folded(term), { mode: 'word', language: hebrew() }).map(
         ({ start, end }) => haystack.slice(start, end),
       );
     expect(find('לכה נא')).toEqual(['לכה ]נא']);
@@ -144,7 +145,7 @@ describe('where a term matches', () => {
   it('takes the brackets around a written and a read form as word edges', () => {
     const find = (verse: string, term: string) => {
       const haystack = folded(verse);
-      return matchRangesInFolded(haystack, folded(term), { mode: 'word', language: 'he' }).map(
+      return matchRanges(haystack, folded(term), { mode: 'word', language: hebrew() }).map(
         ({ start, end }) => haystack.slice(start, end),
       );
     };
@@ -157,22 +158,22 @@ describe('where a term matches', () => {
   });
 
   it('treats English punctuation as a word boundary, which splitting on spaces would not', () => {
-    const ranges = matchRangesInFolded('in the beginning, god', 'beginning', {
+    const ranges = matchRanges('in the beginning, god', 'beginning', {
       mode: 'word',
-      language: 'en',
+      language: english,
     });
     expect(ranges).toEqual([{ start: 7, end: 16 }]);
   });
 
   it('does not read a term as a pattern', () => {
-    expect(matchRangesInFolded('a.c abc', 'a.c', { mode: 'substring', language: 'en' })).toEqual([
+    expect(matchRanges('a.c abc', 'a.c', { mode: 'substring', language: english })).toEqual([
       { start: 0, end: 3 },
     ]);
   });
 
   it('stops at the limit, for callers that only ask whether there is a match', () => {
     expect(
-      matchRangesInFolded('aaaa', 'a', { mode: 'substring', language: 'en', limit: 1 }),
+      matchRanges('aaaa', 'a', { mode: 'substring', language: english, limit: 1 }),
     ).toHaveLength(1);
   });
 });
