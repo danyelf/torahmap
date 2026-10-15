@@ -1,6 +1,6 @@
 // The Babylonian Talmud as a text for the app shell.
 
-import { cameraToFit } from '@torahmap/engine';
+import { FIT_MARGIN, cameraToFit } from '@torahmap/engine';
 import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import type { Story } from '@torahmap/stories';
@@ -10,7 +10,7 @@ import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.
 import { talmudSite } from './site.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
-import { SEDER_LABEL_SIZE, SEDER_NAMES, TRACTATE_TAB } from './constants.ts';
+import { SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { TALMUD_SEARCH_PARAMS, talmudSearch, type TalmudSearchSettings } from './search.ts';
 import {
@@ -80,9 +80,9 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
         const width = laid.bounds.width + sectionLabelReach(SEDER_LABEL_SIZE);
         const box = { minX: 0, minY: 0, maxX: width, maxY: laid.bounds.height };
         const camera = cameraToFit(box, viewport.width, viewport.height, TALMUD_LINK_KEYS.zoom);
-        // Where the map is too wide to fit, its right edge stays on screen: every shelf
-        // starts there.
-        const overhang = width / 2 - viewport.width / (2 * camera.zoom);
+        // Where the map is too wide to fit, its right edge stays on screen, as far in as a
+        // fitted map's: every shelf starts there.
+        const overhang = width / 2 - (viewport.width / 2 - FIT_MARGIN) / camera.zoom;
         return overhang > 0 ? { ...camera, x: camera.x + overhang } : camera;
       },
 
@@ -96,7 +96,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
           container,
         );
         const moveNames = createMapLabels(laid.tractateBlocks, container, {
-          sectionNames: SEDER_NAMES,
+          sectionNames: Object.fromEntries(SEDARIM.map((s) => [s.name, s])),
           sectionSize: SEDER_LABEL_SIZE,
           tab: TRACTATE_TAB,
         });

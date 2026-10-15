@@ -24,7 +24,7 @@ import {
   TRACTATE_WRAP_ROWS,
   TRACTATE_COLUMN_GAP,
   POSITION_JITTER,
-  SEDER_ORDER,
+  SEDARIM,
   DAF_LABEL_ROOM,
 } from './constants.ts';
 
@@ -372,11 +372,8 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   // 1. Lay out each tractate in local coordinates.
   const laid = structure.tractates.map(layoutTractate);
 
-  // 2. Group by seder (canonical order, keeps unknown sedarim at the end).
-  const bySeder = new Map<string, LaidOutTractate[]>();
-  for (const seder of SEDER_ORDER) {
-    bySeder.set(seder, []);
-  }
+  // 2. Group by seder, in shelf order, with any unknown seder after the rest.
+  const bySeder = new Map<string, LaidOutTractate[]>(SEDARIM.map((s) => [s.name, []]));
   for (const t of laid) {
     if (!bySeder.has(t.seder)) bySeder.set(t.seder, []);
     bySeder.get(t.seder)!.push(t);
@@ -404,13 +401,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   }
 
   let shelfY = 0;
-  const sedarimInOrder = [
-    ...SEDER_ORDER,
-    ...[...bySeder.keys()].filter((k) => !SEDER_ORDER.includes(k)),
-  ];
-
-  for (const seder of sedarimInOrder) {
-    const tractates = bySeder.get(seder) ?? [];
+  for (const [seder, tractates] of bySeder) {
     if (tractates.length === 0) continue;
 
     let shelfRightEdge = 0;

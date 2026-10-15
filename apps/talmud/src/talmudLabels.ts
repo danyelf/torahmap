@@ -7,7 +7,7 @@ import {
   DAF_LABEL_ZOOM_ALL,
   PEREK_LABEL_ZOOM,
   PEREK_SIZE,
-  SEDER_BACKGROUND_COLORS,
+  SEDARIM,
   SEDER_BACKGROUND_OPACITY,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
@@ -48,7 +48,7 @@ function labelGroup(id: string, labels: Placed[]) {
 }
 
 function sederTint(block: SederBlock): HTMLElement | null {
-  const tint = SEDER_BACKGROUND_COLORS[block.name];
+  const tint = SEDARIM.find((s) => s.name === block.name)?.tint;
   if (!tint) return null;
   const [r, g, b] = tint.map((c) => Math.round(c * 255));
   const el = document.createElement('div');

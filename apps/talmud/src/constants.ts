@@ -1,6 +1,6 @@
 // Talmud-specific layout and color constants.
 
-import type { BookTab, SectionLabelSize } from '@torahmap/shell/mapLabels.ts';
+import type { BookTab, SectionLabelSize, SectionName } from '@torahmap/shell/mapLabels.ts';
 
 export const SEGMENT_SIZE = 6; // px per segment square
 
@@ -46,26 +46,34 @@ export const TRACTATE_WRAP_ROWS = 50;
 // Between a tractate's columns: room for the daf numbers beside a column, then 14 more.
 export const TRACTATE_COLUMN_GAP = DAF_LABEL_ROOM.right + 14;
 
-// --- Canonical seder order (top-to-bottom shelf order) ---
+// --- The sedarim ---
 
-export const SEDER_ORDER: readonly string[] = [
-  'Seder Zeraim',
-  'Seder Moed',
-  'Seder Nashim',
-  'Seder Nezikin',
-  'Seder Kodashim',
-  'Seder Tahorot',
+/**
+ * A seder: its name in the data, and in Hebrew and English beside its shelf, and the tint behind
+ * its shelf, red, green and blue from 0 to 1.
+ */
+export interface Seder extends SectionName {
+  name: string;
+  tint: readonly [number, number, number];
+}
+
+const seder = (name: string, he: string, tint: Seder['tint']): Seder => ({
+  name,
+  he,
+  en: name.replace(/^Seder /, ''),
+  tint,
+});
+
+// In shelf order, top to bottom. The tints are muted but distinct enough to read against the dark
+// canvas and the squares' colours; near-white ones (0.97 and up) are invisible there.
+export const SEDARIM: readonly Seder[] = [
+  seder('Seder Zeraim', 'זרעים', [0.45, 0.65, 0.4]), // green
+  seder('Seder Moed', 'מועד', [0.35, 0.55, 0.85]), // blue
+  seder('Seder Nashim', 'נשים', [0.85, 0.5, 0.55]), // rose
+  seder('Seder Nezikin', 'נזיקין', [0.85, 0.7, 0.3]), // amber
+  seder('Seder Kodashim', 'קדשים', [0.55, 0.4, 0.75]), // violet
+  seder('Seder Tahorot', 'טהרות', [0.4, 0.75, 0.75]), // teal
 ];
-
-// Each seder's label, beside its shelf.
-export const SEDER_NAMES: Readonly<Record<string, { he: string; en: string }>> = {
-  'Seder Zeraim': { he: 'זרעים', en: 'Zeraim' },
-  'Seder Moed': { he: 'מועד', en: 'Moed' },
-  'Seder Nashim': { he: 'נשים', en: 'Nashim' },
-  'Seder Nezikin': { he: 'נזיקין', en: 'Nezikin' },
-  'Seder Kodashim': { he: 'קדשים', en: 'Kodashim' },
-  'Seder Tahorot': { he: 'טהרות', en: 'Tahorot' },
-};
 
 // The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a
 // shelf that is 620 from the next; Nezikin's, 390 of 535. The gap clears the daf
@@ -92,20 +100,5 @@ export const BRIGHTNESS_JITTER = 0.18;
 // looks like noise rather than texture.
 export const POSITION_JITTER = 0.7;
 
-// --- Per-seder background tints ---
-// Drawn as semi-transparent DOM overlays above the canvas (opacity =
-// SEDER_BACKGROUND_OPACITY). Tints are intentionally muted but distinct
-// enough to read against the dark canvas + flat square colors — near-white
-// values (0.97+) are invisible there.
-
-export const SEDER_BACKGROUND_COLORS: Readonly<Record<string, readonly [number, number, number]>> =
-  {
-    'Seder Zeraim': [0.45, 0.65, 0.4], // green
-    'Seder Moed': [0.35, 0.55, 0.85], // blue
-    'Seder Nashim': [0.85, 0.5, 0.55], // rose
-    'Seder Nezikin': [0.85, 0.7, 0.3], // amber
-    'Seder Kodashim': [0.55, 0.4, 0.75], // violet
-    'Seder Tahorot': [0.4, 0.75, 0.75], // teal
-  };
-
+// The tints are drawn over the canvas at this opacity.
 export const SEDER_BACKGROUND_OPACITY = 0.1;
