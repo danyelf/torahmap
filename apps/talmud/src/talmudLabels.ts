@@ -48,7 +48,7 @@ function labelGroup(id: string, labels: Placed[]) {
 }
 
 function sederTint(block: SederBlock): HTMLElement | null {
-  const tint = SEDARIM.find((s) => s.name === block.name)?.tint;
+  const tint = SEDARIM.find((s) => s.en === block.name)?.tint;
   if (!tint) return null;
   const [r, g, b] = tint.map((c) => Math.round(c * 255));
   const el = document.createElement('div');

@@ -49,30 +49,22 @@ export const TRACTATE_COLUMN_GAP = DAF_LABEL_ROOM.right + 14;
 // --- The sedarim ---
 
 /**
- * A seder: its name in the data, and in Hebrew and English beside its shelf, and the tint behind
- * its shelf, red, green and blue from 0 to 1.
+ * A seder: its name in Hebrew and in English, which is also its name in the data, and the tint
+ * behind its shelf, red, green and blue from 0 to 1.
  */
 export interface Seder extends SectionName {
-  name: string;
   tint: readonly [number, number, number];
 }
-
-const seder = (name: string, he: string, tint: Seder['tint']): Seder => ({
-  name,
-  he,
-  en: name.replace(/^Seder /, ''),
-  tint,
-});
 
 // In shelf order, top to bottom. The tints are muted but distinct enough to read against the dark
 // canvas and the squares' colours; near-white ones (0.97 and up) are invisible there.
 export const SEDARIM: readonly Seder[] = [
-  seder('Seder Zeraim', 'זרעים', [0.45, 0.65, 0.4]), // green
-  seder('Seder Moed', 'מועד', [0.35, 0.55, 0.85]), // blue
-  seder('Seder Nashim', 'נשים', [0.85, 0.5, 0.55]), // rose
-  seder('Seder Nezikin', 'נזיקין', [0.85, 0.7, 0.3]), // amber
-  seder('Seder Kodashim', 'קדשים', [0.55, 0.4, 0.75]), // violet
-  seder('Seder Tahorot', 'טהרות', [0.4, 0.75, 0.75]), // teal
+  { en: 'Zeraim', he: 'זרעים', tint: [0.45, 0.65, 0.4] }, // green
+  { en: 'Moed', he: 'מועד', tint: [0.35, 0.55, 0.85] }, // blue
+  { en: 'Nashim', he: 'נשים', tint: [0.85, 0.5, 0.55] }, // rose
+  { en: 'Nezikin', he: 'נזיקין', tint: [0.85, 0.7, 0.3] }, // amber
+  { en: 'Kodashim', he: 'קדשים', tint: [0.55, 0.4, 0.75] }, // violet
+  { en: 'Tahorot', he: 'טהרות', tint: [0.4, 0.75, 0.75] }, // teal
 ];
 
 // The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a

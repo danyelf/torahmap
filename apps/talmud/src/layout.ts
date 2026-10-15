@@ -373,7 +373,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   const laid = structure.tractates.map(layoutTractate);
 
   // 2. Group by seder, in shelf order, with any unknown seder after the rest.
-  const bySeder = new Map<string, LaidOutTractate[]>(SEDARIM.map((s) => [s.name, []]));
+  const bySeder = new Map<string, LaidOutTractate[]>(SEDARIM.map((s) => [s.en, []]));
   for (const t of laid) {
     if (!bySeder.has(t.seder)) bySeder.set(t.seder, []);
     bySeder.get(t.seder)!.push(t);

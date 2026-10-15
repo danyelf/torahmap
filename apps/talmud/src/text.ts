@@ -96,7 +96,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
           container,
         );
         const moveNames = createMapLabels(laid.tractateBlocks, container, {
-          sectionNames: Object.fromEntries(SEDARIM.map((s) => [s.name, s])),
+          sectionNames: Object.fromEntries(SEDARIM.map((s) => [s.en, s])),
           sectionSize: SEDER_LABEL_SIZE,
           tab: TRACTATE_TAB,
         });

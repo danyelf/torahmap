@@ -26,7 +26,7 @@ describe('computeTalmudLayout', () => {
 
   it('emits one sederBlock per represented seder', () => {
     expect(result.sederBlocks.length).toBe(2);
-    expect(result.sederBlocks.map((s) => s.name).sort()).toEqual(['Seder Moed', 'Seder Zeraim']);
+    expect(result.sederBlocks.map((s) => s.name).sort()).toEqual(['Moed', 'Zeraim']);
   });
 
   const amud = (daf: number, a: 'a' | 'b') =>
@@ -107,7 +107,7 @@ describe('a tractate long enough to wrap into columns', () => {
       {
         name: 'Long',
         hebrewName: 'ארוך',
-        seder: 'Seder Moed',
+        seder: 'Moed',
         amudim,
         perakim: [
           {

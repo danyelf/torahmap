@@ -258,13 +258,7 @@ describe('processTractate', () => {
 
   it('keeps mid-amud boundary amud in the previous perek', () => {
     const wikisource = fakeWikisource();
-    const { structure } = processTractate(
-      'Seder Test',
-      'Test',
-      wikisource,
-      fakeSchema(),
-      wikisource,
-    );
+    const { structure } = processTractate('Zeraim', 'Test', wikisource, fakeSchema(), wikisource);
     const amud2b = structure.amudim.find((a) => a.daf === 2 && a.amud === 'b')!;
     expect(amud2b.perekIdx).toBe(0); // boundary amud belongs to prev perek
     expect(amud2b.perekBoundaryAt).toBe(2); // 0-indexed: segs [0..2)=perek 0, [2..)=perek 1
@@ -280,13 +274,7 @@ describe('processTractate', () => {
     const schema = {
       alts: { Chapters: { nodes: [{ heTitle: 'פרק א', wholeRef: 'Test 2b:1-4a:3' }] } },
     };
-    const { structure, text } = processTractate(
-      'Seder Test',
-      'Test',
-      wikisource,
-      schema,
-      wikisource,
-    );
+    const { structure, text } = processTractate('Zeraim', 'Test', wikisource, schema, wikisource);
     expect(structure.amudim.map((a) => `${a.daf}${a.amud}:${a.segmentCount}`)).toEqual([
       '2b:5',
       '3a:0',
@@ -306,7 +294,7 @@ describe('processTractate', () => {
       'a4',
       'a5',
     ];
-    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema(), wikisource);
+    const { text } = processTractate('Zeraim', 'Test', wikisource, fakeSchema(), wikisource);
     expect(text.amudim[0].slice(0, 3)).toEqual(['הכל כשרים', 'מתני׳ דלא כרבי', 'סוף']);
   });
 
@@ -319,7 +307,7 @@ describe('processTractate', () => {
       'a4',
       '<big><strong>הדרן עלך כל כתבי</strong></big>',
     ];
-    const { text } = processTractate('Seder Test', 'Test', wikisource, fakeSchema(), wikisource);
+    const { text } = processTractate('Zeraim', 'Test', wikisource, fakeSchema(), wikisource);
     expect(text.amudim[0][1]).toBe('והדרן אמרו');
     expect(text.amudim[0][4]).toBe('הדרן עלך כל כתבי');
   });
@@ -330,13 +318,7 @@ describe('processTractate', () => {
     const merged = { text: wikisource.text.map((amud) => [...amud]) };
     merged.text[2][0] = '<big><strong>מַתְנִי׳</strong></big> סְתָם נְזִירוּת';
     merged.text[2][1] = '<big><strong>גְּמָ׳</strong></big> מְנָהָנֵי מִילֵּי';
-    const { structure, text } = processTractate(
-      'Seder Test',
-      'Test',
-      wikisource,
-      fakeSchema(),
-      merged,
-    );
+    const { structure, text } = processTractate('Zeraim', 'Test', wikisource, fakeSchema(), merged);
     expect(text.amudim[0].slice(0, 2)).toEqual(['סתם נזירות', 'מנהני מילי']);
     expect(structure.amudim[0].mishnahMask.slice(0, 2)).toEqual([true, false]);
   });
