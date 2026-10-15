@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTalmudLayout, dafRowsOf } from '../src/layout.ts';
+import { computeTalmudLayout } from '../src/layout.ts';
 import { talmudFixture as fixture } from './helpers/talmudFixture.ts';
 import { SEGMENT_SIZE, PEREK_GAP, SEDER_GAP, POSITION_JITTER } from '../src/constants.ts';
 
@@ -76,29 +76,12 @@ describe('computeTalmudLayout', () => {
       new Set(result.items.map((i) => `${i.tractate}:${i.daf}${i.amud}`)).size,
     );
   });
-});
 
-describe('dafRowsOf', () => {
-  const square = (amud: 'a' | 'b', segment: number, x: number, y: number) => ({
-    tractate: 'T',
-    daf: 2,
-    amud,
-    segment,
-    id: `T.2${amud}.${segment}`,
-    x,
-    y,
-    size: 6,
-  });
-
-  it("anchors each amud's label at its squares' right edge and top", () => {
-    const rows = dafRowsOf([
-      square('a', 1, 40, 12),
-      square('a', 2, 30, 10),
-      square('b', 1, 20, 30),
-    ]);
-    expect(rows).toEqual([
-      { tractate: 'T', daf: 2, amud: 'a', rightX: 46, topY: 10 },
-      { tractate: 'T', daf: 2, amud: 'b', rightX: 26, topY: 30 },
-    ]);
+  it("puts each amud's daf label at its first row's edge and top, not its jittered squares'", () => {
+    const rows = result.dafRows.filter((r) => r.tractate === 'TractA');
+    expect(rows.map((r) => `${r.daf}${r.amud}`)).toEqual(['2a', '2b', '3a', '3b']);
+    expect(new Set(rows.map((r) => r.rightX)).size).toBe(1);
+    const S = SEGMENT_SIZE;
+    expect(rows.map((r) => r.topY - rows[0].topY)).toEqual([0, S, 2 * S, 3 * S + PEREK_GAP]);
   });
 });

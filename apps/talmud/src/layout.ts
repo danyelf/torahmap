@@ -81,7 +81,10 @@ export interface PerekAnchor {
   topY: number;
 }
 
-/** Where an amud's daf label goes: its row's right edge and top, in world coordinates. */
+/**
+ * Where an amud's daf label goes: its column's right edge and its first row's top, in world
+ * coordinates. Taken before jitter, so the labels line up.
+ */
 export interface DafRowAnchor {
   tractate: string;
   daf: number;
@@ -175,6 +178,7 @@ interface LaidOutTractate {
   seder: string;
   items: TalmudLayoutItem[];
   perekAnchors: LocalPerekAnchor[];
+  dafRows: Omit<DafRowAnchor, 'tractate'>[];
   // Local coordinates: origin (0, 0) = top-right. x is <= 0; y is >= 0.
   width: number;
   height: number;
@@ -241,6 +245,8 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
   const columns = splitRowsIntoColumns(allRows);
   const items: TalmudLayoutItem[] = [];
   const perekAnchors: LocalPerekAnchor[] = [];
+  const dafRows: Omit<DafRowAnchor, 'tractate'>[] = [];
+  const amudimSeen = new Set<string>();
 
   // Pass 1: lay out each column in its own local frame (right edge at x=0).
   // While iterating, capture a perek anchor at the y of each perek's first
@@ -251,10 +257,12 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     width: number;
     height: number;
     localPereks: LocalPerekAnchor[]; // anchors in column-local coords (rightX always 0)
+    localDafs: Omit<DafRowAnchor, 'tractate'>[];
   }[] = [];
   for (const colRows of columns) {
     const colItems: TalmudLayoutItem[] = [];
     const colPereks: LocalPerekAnchor[] = [];
+    const colDafs: Omit<DafRowAnchor, 'tractate'>[] = [];
     let y = 0;
     let lastPerekIdx = -1;
     let colMaxWidth = 0;
@@ -272,6 +280,11 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           rightX: 0,
           topY: y,
         });
+      }
+      const amud = `${row.daf}${row.amud}`;
+      if (!amudimSeen.has(amud)) {
+        amudimSeen.add(amud);
+        colDafs.push({ daf: row.daf, amud: row.amud, rightX: 0, topY: y });
       }
       lastPerekIdx = row.perekIdx;
 
@@ -307,6 +320,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
       width: colMaxWidth,
       height: y,
       localPereks: colPereks,
+      localDafs: colDafs,
     });
   }
 
@@ -332,6 +346,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
         topY: lp.topY,
       });
     }
+    for (const d of frame.localDafs) dafRows.push({ ...d, rightX: columnRightEdge });
     if (frame.height > maxHeight) maxHeight = frame.height;
     if (c === columnFrames.length - 1) {
       totalWidth = -(columnRightEdge - frame.width);
@@ -351,24 +366,10 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     seder: tractate.seder,
     items,
     perekAnchors,
+    dafRows,
     width: totalWidth,
     height: maxHeight,
   };
-}
-
-export function dafRowsOf(items: TalmudLayoutItem[]): DafRowAnchor[] {
-  const rows = new Map<string, DafRowAnchor>();
-  for (const { tractate, daf, amud, x, y, size } of items) {
-    const key = `${tractate}:${daf}${amud}`;
-    const row = rows.get(key);
-    if (!row) {
-      rows.set(key, { tractate, daf, amud, rightX: x + size, topY: y });
-    } else {
-      row.rightX = Math.max(row.rightX, x + size);
-      row.topY = Math.min(row.topY, y);
-    }
-  }
-  return [...rows.values()];
 }
 
 export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutResult {
@@ -395,6 +396,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   const tractateBlocks: TractateBlock[] = [];
   const sederBlocks: SederBlock[] = [];
   const allPerekAnchors: PerekAnchor[] = [];
+  const allDafRows: DafRowAnchor[] = [];
 
   // Quick lookup for perek hebrew names per tractate.
   const perekNamesByTractate = new Map<string, string[]>();
@@ -458,6 +460,15 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
         });
       }
 
+      for (const d of t.dafRows) {
+        allDafRows.push({
+          ...d,
+          tractate: t.name,
+          rightX: tractateRightEdge + d.rightX,
+          topY: tractateTop + d.topY,
+        });
+      }
+
       if (tractateBottom - shelfY > shelfMaxHeight) {
         shelfMaxHeight = tractateBottom - shelfY;
       }
@@ -496,6 +507,9 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   for (const a of allPerekAnchors) {
     a.rightX += dx;
   }
+  for (const d of allDafRows) {
+    d.rightX += dx;
+  }
 
   // 5. Compute bounds
   let maxX = 0;
@@ -510,7 +524,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     tractateBlocks,
     sederBlocks,
     perekAnchors: allPerekAnchors,
-    dafRows: dafRowsOf(allItems),
+    dafRows: allDafRows,
     bounds: { width: maxX, height: maxY },
   };
 }
