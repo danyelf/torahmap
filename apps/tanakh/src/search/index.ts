@@ -15,7 +15,6 @@ import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
 import {
   getMatchingVerseTerms,
-  parseSearchTerms,
   type Dictionary,
   type SearchResult,
   type TextIndex,
@@ -31,25 +30,29 @@ import {
 } from './resultsList.ts';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import { searchTelemetry } from './telemetry.ts';
-import { SEARCH_RECORD_DELAY_MS } from './constants.ts';
+import { SEARCH_RECORD_DELAY_MS } from '@torahmap/search';
 import {
   addTerm,
-  chosenMeanings,
   colorIndexAt,
   setTermText,
-  onlyMeaning,
-  encodeMeanings,
-  applyMeanings,
   setMode,
-  effectiveMode,
-  resultsForTerms,
   encodeModes,
   applyModes,
   MAX_TERMS,
   SEARCH_COLORS,
   type SearchTerm,
-} from './terms.ts';
-import { isSearchableWord } from '@torahmap/hebrew';
+} from '@torahmap/search';
+import {
+  chosenMeanings,
+  onlyMeaning,
+  encodeMeanings,
+  applyMeanings,
+  effectiveMode,
+  resultsForTerms,
+  meaningsMode,
+} from './meanings.ts';
+import { isSearchableWord } from '@torahmap/utils';
+import { parseSearchTerms } from '@torahmap/search';
 import { SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
 
 /**
@@ -414,7 +417,7 @@ function searchColorAt(verse: TanakhLayout, search: Search): Color | Color[] | n
 function settingsFromUrl(params: UrlParamValues<typeof SEARCH_URL_PARAMS>): SearchSettings {
   let terms = parseSearchTerms(params.search ?? '').reduce(addTerm, [] as SearchTerm[]);
   if (terms.length === 0) terms = addTerm([], '');
-  if (params.mode) terms = applyModes(terms, params.mode);
+  if (params.mode) terms = applyModes(terms, params.mode, meaningsMode);
   if (params.m) terms = applyMeanings(terms, params.m);
   return { terms };
 }
@@ -482,7 +485,7 @@ export const searchTool: SearchTool<TanakhIdentity, SearchSettings, SearchData> 
       // Both are positional over the same list, so they are written together
       // and a term that has chosen nothing contributes an empty entry rather
       // than being skipped — skipping it would shift every later term.
-      const modes = encodeModes(active);
+      const modes = encodeModes(active, meaningsMode);
       if (modes) params.mode = modes;
 
       const meanings = encodeMeanings(active);

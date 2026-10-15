@@ -6,7 +6,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildTextIndex, versesForTerm } from '../../src/search/search.ts';
-import { addTerm, termQuery } from '../../src/search/terms.ts';
+import { addTerm } from '@torahmap/search';
+import { termQuery } from '../../src/search/meanings.ts';
 import { ALL_TEXTS_FIXTURE } from '../helpers/mixedLanguageTexts.ts';
 import { meaningsFor, versesFor } from '../../src/search/dictionary.ts';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';

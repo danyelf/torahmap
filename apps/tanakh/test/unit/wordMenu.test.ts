@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { openWordMenu, closeWordMenu, type WordMenuOptions } from '../../src/search/wordMenu';
 import type { Meaning } from '../../src/search/dictionary.ts';
-import { MAX_TERMS } from '../../src/search/terms.ts';
+import { MAX_TERMS } from '@torahmap/search';
 
 const leaf: Meaning = {
   keys: ['<LH=/@heb'],

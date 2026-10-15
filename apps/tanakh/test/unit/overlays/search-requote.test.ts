@@ -3,7 +3,7 @@
 // place, so the reader keeps their place in the list.
 import { afterEach, describe, expect, it } from 'vitest';
 import { searchTool } from '../../../src/search/index';
-import { addTerm } from '../../../src/search/terms';
+import { addTerm } from '@torahmap/search';
 import { realSearchData } from '../../helpers/searchData';
 
 const { files } = realSearchData();

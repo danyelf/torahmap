@@ -16,13 +16,8 @@ import {
   type Snippet,
   type TextIndex,
 } from './search.ts';
-import {
-  colorIndexAt,
-  effectiveMode,
-  selectedKeys,
-  termIsHebrew,
-  type SearchTerm,
-} from './terms.ts';
+import { colorIndexAt, type SearchTerm } from '@torahmap/search';
+import { effectiveMode, selectedKeys, termIsHebrew } from './meanings.ts';
 
 /**
  * A term's colour is carried on the mark's class, and the stylesheet holds one

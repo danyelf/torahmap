@@ -14,8 +14,9 @@
 import { describe, it, expect } from 'vitest';
 import { validateOverlayParams } from '@torahmap/link';
 import { searchTool } from '../../src/search/index';
-import { addTerm, applyMeanings, encodeMeanings } from '../../src/search/terms';
-import type { SearchTerm } from '../../src/search/terms';
+import { addTerm } from '@torahmap/search';
+import { applyMeanings, encodeMeanings } from '../../src/search/meanings.ts';
+import type { SearchTerm } from '@torahmap/search';
 
 // The overlay's own declaration, not a copy of it: declaring `m` as free text
 // again is the mistake this file exists to catch, and a hand-written spec here

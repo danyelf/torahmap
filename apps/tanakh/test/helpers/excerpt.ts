@@ -1,7 +1,8 @@
 import { verseId } from '@torahmap/link/tanakh';
 import type { Dictionary, SearchResult, TextIndex } from '../../src/search/search';
 import type { Parse } from '../../src/search/dictionary';
-import { addTerm, setMode, type SearchMode } from '../../src/search/terms';
+import { addTerm, setMode } from '@torahmap/search';
+import { type SearchMode } from '../../src/search/meanings.ts';
 import { excerpt } from '../../src/search/highlight';
 
 /** A result row's quotation of its verse, for a term typed as `text` in `mode`. */

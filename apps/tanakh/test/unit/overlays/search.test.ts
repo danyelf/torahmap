@@ -1,13 +1,13 @@
 import { type Color } from '@torahmap/utils';
-import { SEARCH_COLORS } from '../../../src/search/terms.ts';
+import { SEARCH_COLORS } from '@torahmap/search';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../src/search/index';
 import { configure, type SearchSettings } from '../../../src/search/index.ts';
-import { parseSearchTerms } from '../../../src/search/search';
+import { parseSearchTerms } from '@torahmap/search';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
-import { SEARCH_RECORD_DELAY_MS } from '../../../src/search/constants';
+import { SEARCH_RECORD_DELAY_MS } from '@torahmap/search';
 import type { TanakhLayout } from '../../../src/types';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { hostOverlay } from '../../helpers/overlayHost';

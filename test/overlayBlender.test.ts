@@ -1,5 +1,5 @@
 import { type Color } from '@torahmap/utils';
-import { SEARCH_COLORS } from '@torahmap/tanakh/search/terms.ts';
+import { SEARCH_COLORS } from '@torahmap/search';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   pictureForStop,
