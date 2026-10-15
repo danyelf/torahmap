@@ -3,7 +3,8 @@
 import { debounce } from '@torahmap/utils';
 import type { SearchTelemetry } from '@torahmap/shell/app/search.ts';
 import type { TextLanguage } from '@torahmap/shell/language.ts';
-import { termQuery, type SearchMode, type SearchTerm } from './terms.ts';
+import { type SearchTerm } from '@torahmap/search';
+import { termQuery, type SearchMode } from './meanings.ts';
 import type { Dictionary } from './search.ts';
 import { dictionaryOf, type SearchData } from './data.ts';
 import { activeTerms, termHitCount, type SearchSettings } from './index.ts';

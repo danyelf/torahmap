@@ -10,24 +10,26 @@ import { isHebrew, stripNikkud } from '@torahmap/hebrew';
 import type { Dictionary, LexemeLanguage } from './search.ts';
 import type { Meaning } from './dictionary.ts';
 import {
-  meaningsOf,
-  chosenAmong,
   removeTerm,
   setTermText,
+  setMode,
+  MAX_TERMS,
+  SEARCH_COLORS,
+  type SearchTerm,
+} from '@torahmap/search';
+import {
+  meaningsOf,
+  chosenAmong,
   toggleMeaning,
   onlyMeaning,
   allMeanings,
   isNarrowed,
-  setMode,
   effectiveMode,
   modesOffered,
   meaningsPossible,
   termIsHebrew,
-  MAX_TERMS,
-  SEARCH_COLORS,
-  type SearchTerm,
   type SearchMode,
-} from './terms.ts';
+} from './meanings.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { SEARCH_BOX_ID } from '@torahmap/shell/app/search.ts';
 

@@ -4,7 +4,8 @@
 // dictionary index was built on. A click resolving a different word than
 // search would find is the failure this shares a rule to avoid.
 
-import { isSearchableWord, splitIntoWords, type TextWord } from '@torahmap/hebrew';
+import { isSearchableWord } from '@torahmap/utils';
+import { splitIntoWords, type TextWord } from '@torahmap/hebrew';
 import { TEXT_LINK } from './textLinks.ts';
 import { wrapRuns } from './textRuns.ts';
 

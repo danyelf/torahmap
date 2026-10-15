@@ -6,12 +6,7 @@ import type { VerseTexts } from '../verseTexts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { verseId } from '@torahmap/link/tanakh';
 
-import {
-  TERM_SEPARATORS,
-  SEARCH_SNIPPET_MAX_LENGTH,
-  SEARCH_SNIPPET_CONTEXT_BEFORE,
-} from './constants.ts';
-import { isSearchableWord } from '@torahmap/hebrew';
+import { SEARCH_SNIPPET_MAX_LENGTH, SEARCH_SNIPPET_CONTEXT_BEFORE } from '@torahmap/search';
 import { normalizeHebrewForSearch } from '@torahmap/hebrew';
 import { matchRanges, type MatchMode } from '@torahmap/search';
 import { searchLanguage } from './languages.ts';
@@ -97,14 +92,6 @@ export interface Dictionary {
  */
 export function lexemeKey(lexeme: Lexeme): string {
   return `${lexeme.id}@${lexeme.language}`;
-}
-
-/** The terms a query string names, dropping ones too short to search on. */
-export function parseSearchTerms(query: string): string[] {
-  return query
-    .split(TERM_SEPARATORS)
-    .map((t) => t.trim())
-    .filter(isSearchableWord);
 }
 
 /** A lexeme as lexicon.json writes it, in the order generate-lexeme-index.py writes. */

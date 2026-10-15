@@ -13,7 +13,7 @@ import { buildTextIndex, versesForTerm } from '../../src/search/search';
 import { english, matchRanges } from '@torahmap/search';
 import { hebrew } from '@torahmap/hebrew';
 import type { VerseTexts } from '../../src/verseTexts';
-import { setTermText } from '../../src/search/terms';
+import { setTermText } from '@torahmap/search';
 
 const GENESIS_1_1 = 'בְּרֵאשִׁית בָּרָא אֱלֹהִים אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
 

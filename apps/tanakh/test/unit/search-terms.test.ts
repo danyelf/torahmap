@@ -6,15 +6,21 @@
 // the selection silently lands on a different word.
 
 import { describe, it, expect } from 'vitest';
-import { parseSearchTerms } from '../../src/search/search.ts';
+import { parseSearchTerms } from '@torahmap/search';
 import { meaningsInVerse, sameMeaning, versesFor } from '../../src/search/dictionary.ts';
 import {
   addTerm,
   removeTerm,
   setTermText,
+  MAX_TERMS,
+  setMode,
+  encodeModes,
+  applyModes,
+  type SearchTerm,
+} from '@torahmap/search';
+import {
   toggleMeaning,
   selectedKeys,
-  MAX_TERMS,
   encodeMeanings,
   applyMeanings,
   onlyMeaning,
@@ -22,14 +28,11 @@ import {
   isNarrowed,
   meaningsOf,
   chosenMeanings,
-  setMode,
   effectiveMode,
   modesOffered,
   meaningsPossible,
-  encodeModes,
-  applyModes,
-  type SearchTerm,
-} from '../../src/search/terms.ts';
+  meaningsMode,
+} from '../../src/search/meanings.ts';
 import { realSearchData } from '../helpers/searchData';
 
 const { dictionary } = realSearchData();
@@ -410,9 +413,13 @@ describe('the mode in the URL', () => {
     terms = setMode(terms, terms[0].id, 'substring');
     terms = setMode(terms, terms[1].id, 'word');
     terms = setMode(terms, terms[2].id, 'meanings');
-    expect(encodeModes(terms)).toBe('s,w,m');
+    expect(encodeModes(terms, meaningsMode)).toBe('s,w,m');
 
-    const fresh = applyModes(addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'דבר'), 's,w,m');
+    const fresh = applyModes(
+      addTerm(addTerm(addTerm([], 'עלה'), 'אור'), 'דבר'),
+      's,w,m',
+      meaningsMode,
+    );
     expect(fresh.map((t) => effectiveMode(dictionary, t))).toEqual([
       'substring',
       'word',

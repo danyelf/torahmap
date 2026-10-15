@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { searchTelemetry, termsToRecord, type Recorded } from '../../../src/search/telemetry';
 import type { SearchSettings } from '../../../src/search/index.ts';
 import { EMPTY_DICTIONARY, searchDataFor } from '../../helpers/searchData';
-import { addTerm, setMode, setTermText, type SearchTerm } from '../../../src/search/terms';
+import { addTerm, setMode, setTermText, type SearchTerm } from '@torahmap/search';
 
 const none: Recorded = new Map();
 

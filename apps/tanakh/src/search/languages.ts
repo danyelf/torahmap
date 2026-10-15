@@ -8,3 +8,6 @@ export const tanakhHebrew: SearchLanguage = hebrew();
 export function searchLanguage(language: TextLanguage): SearchLanguage {
   return language === HEBREW ? tanakhHebrew : english;
 }
+
+/** Hebrew first, so a term is Hebrew when it holds a Hebrew letter and English otherwise. */
+export const TANAKH_LANGUAGES: readonly SearchLanguage[] = [tanakhHebrew, english];

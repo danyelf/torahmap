@@ -4,7 +4,8 @@
 // found — only how far down its own list it has drawn.
 import { colorToCss } from '@torahmap/utils';
 import type { SearchResult, Snippet } from './search.ts';
-import { SEARCH_COLORS, colorIndexAt, termIsHebrew, type SearchTerm } from './terms.ts';
+import { SEARCH_COLORS, colorIndexAt, type SearchTerm } from '@torahmap/search';
+import { termIsHebrew } from './meanings.ts';
 import { markRange } from './highlight.ts';
 import { verseRef } from '@torahmap/link/tanakh';
 
