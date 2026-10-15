@@ -2,14 +2,7 @@
 // set sideways beside it. On the Talmud's map a book is a tractate and a
 // section a seder.
 
-import type { MapItem } from '@torahmap/engine';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from './labelTypography.ts';
-
-interface Box {
-  minX: number;
-  maxX: number;
-  minY: number;
-}
 
 interface Pan {
   x: number;
@@ -20,6 +13,20 @@ interface Pan {
 export interface SectionName {
   he: string;
   en: string;
+}
+
+/** The left and right edges of some squares, and their top. */
+interface Box {
+  minX: number;
+  maxX: number;
+  minY: number;
+}
+
+/** A book, its section, and the box of its squares. */
+export interface BookBox extends Box {
+  name: string;
+  hebrewName: string;
+  section: string;
 }
 
 const BASE_LABEL_GAP = 10; // Gap between label bottom and verse top at BASE_FONT_SIZE
@@ -36,16 +43,13 @@ const ENGLISH_MIN_BOOK_WIDTH_PX = 80;
  * The font has no minimum, so a label keeps its length on the map, and a text
  * picks a size at which its longest label is shorter than its shortest
  * section: then however far out the reader zooms, no label reaches the next
- * section. The Tanakh's longest is about 275 units at 32, against its shortest
- * section's 470.
+ * section.
  */
 export interface SectionLabelSize {
   fontSize: number;
   gapEm: number;
 }
 
-// The Tanakh's.
-const DEFAULT_SECTION_SIZE: SectionLabelSize = { fontSize: 32, gapEm: 0.5 };
 const MAX_SECTION_FONT_SIZE = 64;
 const SECTION_LABEL_LINE_EM = 1.2;
 
@@ -53,35 +57,8 @@ const SECTION_LABEL_LINE_EM = 1.2;
  * How far right of its section a section label reaches, in map units, while
  * its font is still growing with the zoom.
  */
-export function sectionLabelReach(size = DEFAULT_SECTION_SIZE): number {
+export function sectionLabelReach(size: SectionLabelSize): number {
   return size.fontSize * (size.gapEm + SECTION_LABEL_LINE_EM);
-}
-
-/** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
-function hebrewSpan(text: string, className: string): HTMLSpanElement {
-  const span = document.createElement('span');
-  span.className = className;
-  span.style.fontFamily = HEBREW_LABEL_FONT;
-  span.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
-  span.textContent = text;
-  return span;
-}
-
-/** The box around each group of items, in the order the groups first appear. */
-function boxesBy<T extends MapItem>(items: T[], groupOf: (item: T) => string): Map<string, Box> {
-  const boxes = new Map<string, Box>();
-  for (const v of items) {
-    const group = groupOf(v);
-    const b = boxes.get(group);
-    if (!b) {
-      boxes.set(group, { minX: v.x, maxX: v.x + v.size, minY: v.y });
-      continue;
-    }
-    b.minX = Math.min(b.minX, v.x);
-    b.maxX = Math.max(b.maxX, v.x + v.size);
-    b.minY = Math.min(b.minY, v.y);
-  }
-  return boxes;
 }
 
 /**
@@ -97,118 +74,86 @@ export interface BookTab {
   minPx: number;
 }
 
-const tabs = new WeakMap<HTMLElement, BookTab>();
-
-/**
- * A book missing from `hebrewNames` shows its own name in the Hebrew's place.
- * Without `tab`, a label sits above its book at a size held between bounds.
- */
-export function createBookLabels<T extends MapItem>(
-  items: T[],
-  container: HTMLElement,
-  bookOf: (item: T) => string,
-  hebrewNames: Record<string, string> = {},
-  tab?: BookTab,
-): HTMLDivElement {
-  const labels = document.createElement('div');
-  labels.id = 'book-labels';
-  if (tab) tabs.set(labels, tab);
-
-  for (const [name, pos] of boxesBy(items, bookOf)) {
-    const label = document.createElement('div');
-    label.className = 'book-label';
-    label.style.cssText = `
-      position:absolute;
-      color:#eee;
-      font-weight:700;
-      text-shadow:0 1px 3px rgba(0,0,0,0.8);
-      white-space:nowrap;
-      /* A length, not a factor: the larger Hebrew below inherits it as-is and
-         so cannot grow the box the positioning maths below assumes. */
-      line-height:1.2em;
-      transition:opacity 0.2s;
-    `;
-    label.dataset.bookName = name;
-    label.dataset.rightX = String(pos.maxX);
-    label.dataset.topY = String(pos.minY);
-    label.dataset.bookWidth = String(pos.maxX - pos.minX);
-
-    // Hebrew name, without nikkud
-    label.appendChild(hebrewSpan(hebrewNames[name] ?? name, 'book-label-he'));
-
-    // English name (shown when there's room)
-    const enSpan = document.createElement('span');
-    enSpan.className = 'book-label-en';
-    enSpan.textContent = ` ${name}`;
-    enSpan.style.cssText = 'font-family:system-ui,sans-serif;';
-    label.appendChild(enSpan);
-
-    labels.appendChild(label);
-  }
-
-  container.appendChild(labels);
-  return labels;
+export interface MapLabelSettings {
+  sectionNames: Readonly<Record<string, SectionName>>;
+  sectionSize: SectionLabelSize;
+  /** Without it, a book's label sits above its book at a size held between bounds. */
+  tab?: BookTab;
 }
 
-/**
- * Adds a sideways heading to the right of each section's books, where Hebrew
- * reading starts. `labelsContainer` is what createBookLabels returned.
- */
-export function createSectionLabels<T extends MapItem>(
-  items: T[],
-  labelsContainer: HTMLElement,
-  sectionOf: (item: T) => string,
-  names: Readonly<Record<string, SectionName>>,
-  size = DEFAULT_SECTION_SIZE,
-): void {
-  for (const [section, b] of boxesBy(items, sectionOf)) {
-    const label = document.createElement('div');
-    label.style.cssText = `
-      position:absolute;
-      color:#aaa;
-      font-weight:700;
-      text-shadow:0 1px 3px rgba(0,0,0,0.8);
-      white-space:nowrap;
-      line-height:${SECTION_LABEL_LINE_EM}em;
-    `;
-    label.dataset.section = section;
-    label.dataset.fontSize = String(size.fontSize);
-    label.dataset.gapEm = String(size.gapEm);
-    label.dataset.leftX = String(b.maxX);
-    label.dataset.topY = String(b.minY);
-
-    label.appendChild(hebrewSpan(names[section]?.he ?? section, 'section-label-he'));
-
-    const enSpan = document.createElement('span');
-    enSpan.style.fontFamily = 'system-ui,sans-serif';
-    enSpan.textContent = ` ${names[section]?.en ?? ''}`;
-    label.appendChild(enSpan);
-
-    labelsContainer.appendChild(label);
-  }
+/** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
+function hebrewSpan(text: string, className: string): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.className = className;
+  span.style.fontFamily = HEBREW_LABEL_FONT;
+  span.style.fontSize = `${HEBREW_LABEL_SCALE}em`;
+  span.textContent = text;
+  return span;
 }
 
-/** `bookLabelRise` is how far the book labels sit above their first row. */
-function positionSectionLabel(
-  label: HTMLElement,
-  pan: Pan,
-  zoom: number,
-  bookLabelRise: number,
-): void {
-  const fontSize = Math.min(
-    MAX_SECTION_FONT_SIZE,
-    parseFloat(label.dataset.fontSize || '0') * zoom,
-  );
-  const gapEm = parseFloat(label.dataset.gapEm || '0');
-  const leftX = parseFloat(label.dataset.leftX || '0');
-  const topY = parseFloat(label.dataset.topY || '0');
-  label.style.left = (leftX + pan.x) * zoom + fontSize * gapEm + 'px';
-  label.style.top = (topY + pan.y) * zoom - bookLabelRise + 'px';
-  label.style.fontSize = fontSize + 'px';
+/** Each section's box around its books, in the order the sections first appear. */
+function sectionBoxes(books: readonly BookBox[]): Map<string, Box> {
+  const boxes = new Map<string, Box>();
+  for (const book of books) {
+    const b = boxes.get(book.section);
+    if (!b) {
+      boxes.set(book.section, { minX: book.minX, maxX: book.maxX, minY: book.minY });
+      continue;
+    }
+    b.minX = Math.min(b.minX, book.minX);
+    b.maxX = Math.max(b.maxX, book.maxX);
+    b.minY = Math.min(b.minY, book.minY);
+  }
+  return boxes;
+}
+
+function bookLabel(book: BookBox): HTMLDivElement {
+  const label = document.createElement('div');
+  label.className = 'book-label';
+  label.style.cssText = `
+    position:absolute;
+    color:#eee;
+    font-weight:700;
+    text-shadow:0 1px 3px rgba(0,0,0,0.8);
+    white-space:nowrap;
+    /* A length, not a factor: the larger Hebrew below inherits it as-is and
+       so cannot grow the box the positioning maths below assumes. */
+    line-height:1.2em;
+    transition:opacity 0.2s;
+    transform:translateX(-100%);
+  `;
+  label.dataset.bookName = book.name;
+  label.appendChild(hebrewSpan(book.hebrewName, 'book-label-he'));
+  // Shown when there's room.
+  const enSpan = document.createElement('span');
+  enSpan.className = 'book-label-en';
+  enSpan.textContent = ` ${book.name}`;
+  enSpan.style.cssText = 'font-family:system-ui,sans-serif;';
+  label.appendChild(enSpan);
+  return label;
+}
+
+function sectionLabel(section: string, name: SectionName | undefined): HTMLDivElement {
+  const label = document.createElement('div');
+  label.style.cssText = `
+    position:absolute;
+    color:#aaa;
+    font-weight:700;
+    text-shadow:0 1px 3px rgba(0,0,0,0.8);
+    white-space:nowrap;
+    line-height:${SECTION_LABEL_LINE_EM}em;
+    transform-origin:0 0;
+    transform:rotate(90deg) translateY(-100%);
+  `;
   // Turned clockwise about its own top-left corner, so the text reads downward
   // from the top of the book labels and its line box sits right of the anchor.
-  label.style.transformOrigin = '0 0';
-  label.style.transform = 'rotate(90deg) translateY(-100%)';
+  label.dataset.section = section;
+  label.appendChild(hebrewSpan(name?.he ?? section, 'section-label-he'));
+  const enSpan = document.createElement('span');
+  enSpan.style.fontFamily = 'system-ui,sans-serif';
+  enSpan.textContent = ` ${name?.en ?? ''}`;
+  label.appendChild(enSpan);
+  return label;
 }
 
 /**
@@ -220,34 +165,54 @@ export function bookLabelSize(zoom: number): { fontSize: number; rise: number } 
   return { fontSize, rise: fontSize + BASE_LABEL_GAP * (fontSize / BASE_FONT_SIZE) };
 }
 
-export function updateLabelPositions(labelsContainer: HTMLElement, pan: Pan, zoom: number): void {
-  const tab = tabs.get(labelsContainer);
-  const { fontSize, rise } = tab
-    ? { fontSize: tab.fontSize * zoom, rise: tab.above * zoom }
-    : bookLabelSize(zoom);
-  // A tab keeps its length on the map, so the room its English needs is in ems.
-  const englishMinWidth = tab
-    ? fontSize * (ENGLISH_MIN_BOOK_WIDTH_PX / BASE_FONT_SIZE)
-    : ENGLISH_MIN_BOOK_WIDTH_PX;
-
-  for (const label of labelsContainer.children) {
-    if (label instanceof HTMLElement && label.dataset.section) {
-      positionSectionLabel(label, pan, zoom, rise);
-    } else if (label instanceof HTMLElement) {
-      const rightX = parseFloat(label.dataset.rightX || '0');
-      const topY = parseFloat(label.dataset.topY || '0');
-      const bookWidth = parseFloat(label.dataset.bookWidth || '0');
-      // Position at book's right edge, label extends leftward via translateX(-100%)
-      const screenX = (rightX - (tab?.inset ?? 0) + pan.x) * zoom;
-      const screenY = (topY + pan.y) * zoom - rise;
-      label.style.left = screenX + 'px';
-      label.style.top = screenY + 'px';
-      label.style.fontSize = fontSize + 'px';
-      label.style.transform = 'translateX(-100%)';
-
-      const bookScreenWidth = bookWidth * zoom;
-      label.classList.toggle('narrow', bookScreenWidth < englishMinWidth);
-      if (tab) label.style.opacity = fontSize < tab.minPx ? '0' : '';
+/**
+ * Names every book, and every section beside its books, in a container of
+ * their own inside `parent`. Returns what moves them with the map.
+ */
+export function createMapLabels(
+  books: readonly BookBox[],
+  parent: HTMLElement,
+  { sectionNames, sectionSize, tab }: MapLabelSettings,
+): (pan: Pan, zoom: number) => void {
+  const container = document.createElement('div');
+  container.id = 'book-labels';
+  const bookLabels = books.map((book) => {
+    const el = bookLabel(book);
+    // A tab keeps its length on the map, so whether its English fits does not change.
+    if (tab) {
+      const englishWidth = tab.fontSize * (ENGLISH_MIN_BOOK_WIDTH_PX / BASE_FONT_SIZE);
+      el.classList.toggle('narrow', book.maxX - book.minX < englishWidth);
     }
-  }
+    container.appendChild(el);
+    return { el, book };
+  });
+  const sectionLabels = [...sectionBoxes(books)].map(([section, box]) => {
+    const el = sectionLabel(section, sectionNames[section]);
+    container.appendChild(el);
+    return { el, box };
+  });
+  parent.appendChild(container);
+
+  return (pan, zoom) => {
+    const { fontSize, rise } = tab
+      ? { fontSize: tab.fontSize * zoom, rise: tab.above * zoom }
+      : bookLabelSize(zoom);
+    for (const { el, book } of bookLabels) {
+      // Its right edge, which the label's right edge meets.
+      el.style.left = (book.maxX - (tab?.inset ?? 0) + pan.x) * zoom + 'px';
+      el.style.top = (book.minY + pan.y) * zoom - rise + 'px';
+      el.style.fontSize = fontSize + 'px';
+      if (tab) el.style.opacity = fontSize < tab.minPx ? '0' : '';
+      else {
+        const bookScreenWidth = (book.maxX - book.minX) * zoom;
+        el.classList.toggle('narrow', bookScreenWidth < ENGLISH_MIN_BOOK_WIDTH_PX);
+      }
+    }
+    const sectionFontSize = Math.min(MAX_SECTION_FONT_SIZE, sectionSize.fontSize * zoom);
+    for (const { el, box } of sectionLabels) {
+      el.style.left = (box.maxX + pan.x) * zoom + sectionFontSize * sectionSize.gapEm + 'px';
+      el.style.top = (box.minY + pan.y) * zoom - rise + 'px';
+      el.style.fontSize = sectionFontSize + 'px';
+    }
+  };
 }

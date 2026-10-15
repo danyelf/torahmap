@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { resolveStops } from '../../src/stories';
 import { initBookData } from '../../src/books';
 import { sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
+import { SECTION_SIZE } from '../../src/labels.ts';
 import type { TanakhLayout } from '../../src/types';
 import { createStoryStop as stop, createVerse } from '../helpers/fixtures';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
@@ -60,28 +61,28 @@ describe('resolveStops with a camera naming places', () => {
     )[0].camera;
 
   it('fits a book', () => {
-    const box = { minX: 90, minY: 100, maxX: 100 + sectionLabelReach(), maxY: 110 };
+    const box = { minX: 90, minY: 100, maxX: 100 + sectionLabelReach(SECTION_SIZE), maxY: 110 };
     expect(resolve({ camera: { kind: 'places', names: ['I.Samuel'] } })).toEqual(
       cameraToFit(box, 400, 300, LINK_KEYS.zoom),
     );
   });
 
   it('fits several places together', () => {
-    const box = { minX: 90, minY: 100, maxX: 200 + sectionLabelReach(), maxY: 210 };
+    const box = { minX: 90, minY: 100, maxX: 200 + sectionLabelReach(SECTION_SIZE), maxY: 210 };
     expect(resolve({ camera: { kind: 'places', names: ['Neviim', 'Ketuvim'] } })).toEqual(
       cameraToFit(box, 400, 300, LINK_KEYS.zoom),
     );
   });
 
   it('fits everything, at a given zoom', () => {
-    const box = { minX: 0, minY: 0, maxX: 200 + sectionLabelReach(), maxY: 210 };
+    const box = { minX: 0, minY: 0, maxX: 200 + sectionLabelReach(SECTION_SIZE), maxY: 210 };
     expect(resolve({ camera: { kind: 'places', names: ['everything'] }, zoom: 0.5 })).toEqual(
       cameraToFit(box, 400, 300, LINK_KEYS.zoom, 0.5),
     );
   });
 
   it('fits a verse with a region', () => {
-    const box = { minX: 0, minY: 0, maxX: 100 + sectionLabelReach(), maxY: 110 };
+    const box = { minX: 0, minY: 0, maxX: 100 + sectionLabelReach(SECTION_SIZE), maxY: 110 };
     expect(resolve({ camera: { kind: 'places', names: [verses[0].id, 'I.Samuel'] } })).toEqual(
       cameraToFit(box, 400, 300, LINK_KEYS.zoom),
     );

@@ -9,6 +9,7 @@
 //   compatibility with the existing camera/render pipeline).
 
 import type { SpatialItem } from '@torahmap/engine';
+import type { BookBox } from '@torahmap/shell/mapLabels.ts';
 import { seededRandom } from '@torahmap/utils';
 import type { TalmudIdentity } from './types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
@@ -54,13 +55,8 @@ export function talmudRef(s: TalmudIdentity): string {
   return `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
 }
 
-export interface TractateBlock {
-  name: string;
-  hebrewName: string;
-  seder: string;
-  minX: number;
-  minY: number;
-  maxX: number;
+/** A tractate's squares, exactly, before jitter; its section is its seder. */
+export interface TractateBlock extends BookBox {
   maxY: number;
 }
 
@@ -440,9 +436,9 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
       tractateBlocks.push({
         name: t.name,
         hebrewName: t.hebrewName,
-        seder: t.seder,
+        section: t.seder,
         minX: tractateLeftEdge,
-        minY: shelfY,
+        minY: tractateTop,
         maxX: tractateRightEdge,
         maxY: tractateBottom,
       });

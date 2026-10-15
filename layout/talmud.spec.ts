@@ -17,6 +17,15 @@ async function outsideOneSeder(page: Page, labels: Box[]): Promise<string[]> {
     .map((l) => `${l.name} at ${l.x},${l.y}`);
 }
 
+/** Berakhot's top-right corner, in map units, from the page's own layout. */
+const berakhotCorner = (page: Page) =>
+  page.evaluate(async () => {
+    const load = (path: string) => import(/* @vite-ignore */ path);
+    const { computeTalmudLayout } = await load('/apps/talmud/src/layout.ts');
+    const laid = computeTalmudLayout(await (await fetch('/data/talmud/structure.json')).json());
+    return { x: laid.tractateBlocks[0].maxX as number, y: laid.tractateBlocks[0].minY as number };
+  });
+
 /**
  * The squares on screen, from the page's own layout, placed by the first seder's tint, whose box
  * the layout also gives.
@@ -24,12 +33,11 @@ async function outsideOneSeder(page: Page, labels: Box[]): Promise<string[]> {
 async function squaresOnScreen(page: Page): Promise<Box[]> {
   const tint = (await full(page, '#talmud-seder-bgs > *'))[0];
   const view = (await boxes(page, '#canvas'))[0];
-  const squares = await page.evaluate(async (tint) => {
-    const source = (path: string) => import(/* @vite-ignore */ path);
-    const { computeTalmudLayout } = await source('/apps/talmud/src/layout.ts');
-    const { SQUARE_GAP } = await source('/packages/engine/src/index.ts');
-    const structure = await (await fetch('/data/talmud/structure.json')).json();
-    const laid = computeTalmudLayout(structure);
+  const squares: Box[] = await page.evaluate(async (tint) => {
+    const load = (path: string) => import(/* @vite-ignore */ path);
+    const { computeTalmudLayout } = await load('/apps/talmud/src/layout.ts');
+    const { SQUARE_GAP } = await load('/packages/engine/src/index.ts');
+    const laid = computeTalmudLayout(await (await fetch('/data/talmud/structure.json')).json());
     const world = laid.sederBlocks[0];
     const zoom = tint.width / (world.maxX - world.minX);
     return laid.items.map((s: { id: string; x: number; y: number; size: number }) => ({
@@ -40,7 +48,7 @@ async function squaresOnScreen(page: Page): Promise<Box[]> {
       height: (s.size - SQUARE_GAP) * zoom,
     }));
   }, tint);
-  return squares.filter((b: Box) => outsideOf([b], view).length === 0);
+  return squares.filter((b) => outsideOf([b], view).length === 0);
 }
 
 test('the Talmud map draws, and names its tractates only once they are big enough to read', async ({
@@ -57,10 +65,7 @@ for (const zoom of [0.4, 1, 2]) {
   }) => {
     await openMap(page, '', TALMUD);
     // Berakhot's top-right corner, near the canvas's top-right.
-    const corner = await page
-      .locator('#book-labels .book-label')
-      .first()
-      .evaluate((l: HTMLElement) => ({ x: +l.dataset.rightX!, y: +l.dataset.topY! }));
+    const corner = await berakhotCorner(page);
     const view = await boxes(page, '#canvas');
     const x = Math.round(corner.x - (view[0].width / 2 - 100) / zoom);
     const y = Math.round(corner.y + (view[0].height / 2 - 100) / zoom);

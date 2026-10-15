@@ -9,12 +9,7 @@ import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
 import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
-import {
-  createBookLabels,
-  createSectionLabels,
-  sectionLabelReach,
-  updateLabelPositions,
-} from '@torahmap/shell/mapLabels.ts';
+import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import { SEDER_LABEL_SIZE, SEDER_NAMES, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { TALMUD_SEARCH_PARAMS, talmudSearch, type TalmudSearchSettings } from './search.ts';
@@ -100,20 +95,14 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
           laid.dafRows,
           container,
         );
-        const hebrewNames = Object.fromEntries(
-          structure.tractates.map((t) => [t.name, t.hebrewName]),
-        );
-        const names = createBookLabels(
-          laid.items,
-          container,
-          (s) => s.tractate,
-          hebrewNames,
-          TRACTATE_TAB,
-        );
-        createSectionLabels(laid.items, names, sederOf, SEDER_NAMES, SEDER_LABEL_SIZE);
+        const moveNames = createMapLabels(laid.tractateBlocks, container, {
+          sectionNames: SEDER_NAMES,
+          sectionSize: SEDER_LABEL_SIZE,
+          tab: TRACTATE_TAB,
+        });
         return (offset, zoom) => {
           updateTalmudLabelPositions(marks, offset, zoom);
-          updateLabelPositions(names, offset, zoom);
+          moveNames(offset, zoom);
         };
       },
 
