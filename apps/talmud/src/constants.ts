@@ -95,3 +95,8 @@ export const SEDER_BACKGROUND_OPACITY = 0.1;
 // DAF_LABEL_ZOOM_ALL.
 export const PEREK_LABEL_ZOOM = 0.7;
 export const DAF_LABEL_ZOOM_ALL = 1.5;
+
+// Room inside a seder's box for the daf numbers on its edges: right of its shelf, beside the first
+// tractate, and below the last row. A number is a fixed 9 px tall and at most 26 px wide with its
+// offset: 37 by 13 map units at PEREK_LABEL_ZOOM, where a row is 6 tall.
+export const DAF_LABEL_ROOM = { right: 40, below: 8 };

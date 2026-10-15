@@ -55,6 +55,21 @@ for (const [zoom, labelled] of [
   });
 }
 
+for (const zoom of [0.7, 2]) {
+  test(`at zoom ${zoom}, every daf number sits inside its seder's box`, async ({ page }) => {
+    await openMap(page, `at=Berakhot.2a.1&zoom=${zoom}`, TALMUD);
+    const full = async (selector: string) =>
+      (await shown(page, selector)).map((s) => s.full).filter((b) => b.width > 0);
+    const dapim = await full('#talmud-daf-labels > *');
+    const sedarim = await full('#talmud-seder-bgs > *');
+    expect(dapim).not.toEqual([]);
+    for (const daf of dapim) {
+      const within = sedarim.filter((s) => outsideOf([daf], s).length === 0);
+      expect(within, `${daf.name} at ${daf.x},${daf.y}`).toHaveLength(1);
+    }
+  });
+}
+
 test('the Talmud opens with every seder’s label on the map', async ({ page }) => {
   await openMap(page, '', TALMUD);
   const map = (await boxes(page, '#canvas'))[0];

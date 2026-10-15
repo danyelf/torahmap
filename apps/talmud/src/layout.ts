@@ -24,6 +24,7 @@ import {
   TRACTATE_COLUMN_GAP,
   POSITION_JITTER,
   SEDER_ORDER,
+  DAF_LABEL_ROOM,
 } from './constants.ts';
 
 export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
@@ -468,8 +469,8 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
       name: seder,
       minX: shelfLeftEdge,
       minY: shelfY,
-      maxX: 0,
-      maxY: shelfY + shelfMaxHeight,
+      maxX: DAF_LABEL_ROOM.right,
+      maxY: shelfY + shelfMaxHeight + DAF_LABEL_ROOM.below,
     });
 
     shelfY += shelfMaxHeight + SEDER_GAP;
