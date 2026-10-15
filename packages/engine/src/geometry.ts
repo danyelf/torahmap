@@ -62,7 +62,8 @@ const NO_COLORS: Picture = { colors: [] };
  * promises only 16 and 15.
  */
 export const ITEM_ATTRIBUTES = [
-  { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units, before growing
+  { name: 'a_rect', size: 4 }, // left, top, right, bottom in world units, before growing or jitter
+  { name: 'a_jitter', size: 2 },
   { name: 'a_fill', size: 4 },
   { name: 'a_ring', size: 4 },
   { name: 'a_shape', size: 4 }, // fill stripe count, growth, ring stripe count (0 for none), 1 if uncoloured
@@ -131,6 +132,9 @@ export function buildItemGeometry<T>(
     data[rect + 1] = v.y;
     data[rect + 2] = v.x + v.size - SQUARE_GAP;
     data[rect + 3] = v.y + v.size - SQUARE_GAP;
+    const jitter = i * FLOATS_PER_ITEM + ITEM_OFFSETS.a_jitter;
+    data[jitter] = v.jitter?.x ?? 0;
+    data[jitter + 1] = v.jitter?.y ?? 0;
     writePicture(from, SLOTS.from, i);
     writePicture(to, SLOTS.to, i);
   }

@@ -74,20 +74,18 @@ function layoutChapter(
     const lineIndent = lineNumber > 0 ? WRAP_INDENT : 0;
 
     for (let lineVerseIdx = 0; lineVerseIdx < lineLength; lineVerseIdx++) {
-      // Position jitter (±1px) to break up regular grid
-      const jitterX = (seededRandom(globalVerseIdx.value * 2) - JITTER_CENTER) * JITTER_RANGE;
-      const jitterY = (seededRandom(globalVerseIdx.value * 2 + 1) - JITTER_CENTER) * JITTER_RANGE;
-
-      const x = bookX + lineIndent + lineVerseIdx * VERSE_SIZE + jitterX;
-
       verses.push({
         id: verseId(bookName, chapterIdx + 1, verseIdx + 1),
         book: bookName,
         chapter: chapterIdx + 1,
         verse: verseIdx + 1,
-        x: x,
-        y: currentY + jitterY,
+        x: bookX + lineIndent + lineVerseIdx * VERSE_SIZE,
+        y: currentY,
         size: VERSE_SIZE,
+        jitter: {
+          x: (seededRandom(globalVerseIdx.value * 2) - JITTER_CENTER) * JITTER_RANGE,
+          y: (seededRandom(globalVerseIdx.value * 2 + 1) - JITTER_CENTER) * JITTER_RANGE,
+        },
       });
 
       maxWidth = Math.max(maxWidth, lineIndent + (lineVerseIdx + 1) * VERSE_SIZE);

@@ -2,7 +2,16 @@ import { expect, test } from '@playwright/test';
 import { CHROME, STATES, viaMenu } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
-import { asReturningReader, boxes, DRAWN_FLOOR, drawnPixels, allLoaded, openMap } from './page.ts';
+import {
+  asReturningReader,
+  boxes,
+  canvasShot,
+  DRAWN_FLOOR,
+  drawnPixels,
+  allLoaded,
+  longestDrawnRun,
+  openMap,
+} from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
   // No draw call runs; the clear still does.
@@ -100,4 +109,11 @@ test('the title face loads', async ({ page }) => {
   expect(faces, 'David Libre comes from Google Fonts, so this needs the network').toBeGreaterThan(
     0,
   );
+});
+
+test('zoomed far out, a line of verses draws as one unbroken bar', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one screen, at one pixel to the pixel');
+  // Squares 1.2 pixels wide, with 0.6 between them unless they are widened.
+  await openMap(page, 'zoom=0.3');
+  expect(await longestDrawnRun(page, await canvasShot(page))).toBeGreaterThan(40);
 });

@@ -87,23 +87,25 @@ describe('Layout Integration', () => {
   });
 
   describe('No Overlapping Positions', () => {
-    it('no two verses share the exact same position', () => {
-      // Since there's jitter, we check for unique (x, y) pairs
-      // With jitter, exact overlaps should be impossible
-      const positions = new Map<string, TanakhLayout>();
+    it('no two verses share a place', () => {
+      expect(new Set(verses.map((v) => `${v.x},${v.y}`)).size).toBe(verses.length);
+    });
 
-      for (const v of verses) {
-        const key = `${v.x.toFixed(1)},${v.y.toFixed(1)}`;
-        const existing = positions.get(key);
-        if (existing) {
-          // Allow same position only if they're different due to jitter rounding
-          const xDiff = Math.abs(v.x - existing.x);
-          const yDiff = Math.abs(v.y - existing.y);
-          // If they're at the same rounded position, the actual positions should differ
-          expect(xDiff > 0.01 || yDiff > 0.01).toBe(true);
-        }
-        positions.set(key, v);
-      }
+    it("puts a line's verses side by side, a square apart", () => {
+      const genesis1 = verses.filter((v) => v.book === 'Genesis' && v.chapter === 1);
+      expect(new Set(genesis1.map((v) => v.y)).size).toBe(1);
+      const xs = genesis1.map((v) => v.x);
+      expect(xs.slice(1).map((x, i) => Math.abs(x - xs[i]))).toEqual(
+        xs.slice(1).map(() => genesis1[0].size),
+      );
+    });
+
+    it('nudges each verse by its own jitter, at most one unit each way', () => {
+      const reach = Math.max(
+        ...verses.flatMap((v) => [Math.abs(v.jitter!.x), Math.abs(v.jitter!.y)]),
+      );
+      expect(reach).toBeLessThanOrEqual(1);
+      expect(new Set(verses.map((v) => v.jitter!.x)).size).toBeGreaterThan(1);
     });
   });
 

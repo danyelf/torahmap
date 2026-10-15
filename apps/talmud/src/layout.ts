@@ -296,16 +296,17 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           amud: row.amud,
           segment: seg.segment,
         };
-        // Per-segment positional jitter — break up the perfect grid.
         const seed = segmentHashId(segment);
-        const jx = (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER;
-        const jy = (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER;
         colItems.push({
           ...segment,
           id: talmudId(segment),
-          x: baseX + jx,
-          y: y + jy,
+          x: baseX,
+          y,
           size: SEGMENT_SIZE,
+          jitter: {
+            x: (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER,
+            y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER,
+          },
         });
       }
       y += SEGMENT_SIZE;

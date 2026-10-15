@@ -42,8 +42,8 @@ const TALMUD_LINK_KEYS: LinkKeys = {
   square: 'at',
   search: TALMUD_SEARCH_PARAMS,
   overlayParams: () => undefined,
-  // The Tanakh's numbers, for now.
-  zoom: { min: 0.1, max: 10, start: 1 },
+  // Low enough for the whole Talmud to fit across a phone.
+  zoom: { min: 0.05, max: 10, start: 1 },
 };
 
 // The commentary overlay's category for the Talmud, as public/data/overlays/commentary/ names it.

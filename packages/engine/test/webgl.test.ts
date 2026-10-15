@@ -237,11 +237,12 @@ describe('createProgram', () => {
     it('looks up every square attribute by its name', () => {
       const program = createProgram(gl);
 
-      for (const { name } of ITEM_ATTRIBUTES) {
+      const names = ITEM_ATTRIBUTES.map((a) => a.name);
+      for (const name of names) {
         expect(gl.getAttribLocation).toHaveBeenCalledWith(mockProgram, name);
         expect(program.attribs[name]).toBe(vi.mocked(gl.getAttribLocation)(mockProgram, name));
       }
-      expect(Object.keys(program.attribs)).toHaveLength(ITEM_ATTRIBUTES.length);
+      expect(Object.keys(program.attribs)).toHaveLength(names.length);
     });
   });
 

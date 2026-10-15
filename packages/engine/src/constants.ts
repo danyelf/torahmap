@@ -44,3 +44,13 @@ export const RINGS = {
   // close, as the multi-colour growth already can.
   RING_MIN_SQUARE_PX: 8,
 } as const;
+
+/**
+ * Squares smaller than START_PX on screen start widening into bars, and reach
+ * their row neighbour at FULL_PX. In device pixels, as the flicker and merging
+ * that bars replace come from the pixel grid.
+ */
+export const BARS = {
+  START_PX: 2,
+  FULL_PX: 1.5,
+} as const;
