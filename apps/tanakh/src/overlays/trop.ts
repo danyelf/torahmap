@@ -19,7 +19,7 @@ import type { Overlay, UrlParamValues, SettingsUpdate } from '@torahmap/shell/ov
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { verseId } from '@torahmap/link/tanakh';
-import { isNikkud } from '@torahmap/shell/hebrew.ts';
+import { isNikkud } from '@torahmap/hebrew';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,

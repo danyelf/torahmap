@@ -6,7 +6,7 @@
 // below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { colorToCss } from '@torahmap/utils';
-import { isHebrew, stripNikkud } from '@torahmap/shell/hebrew.ts';
+import { isHebrew, stripNikkud } from '@torahmap/hebrew';
 import type { Dictionary, LexemeLanguage } from './search.ts';
 import type { Meaning } from './dictionary.ts';
 import {

@@ -4,7 +4,7 @@ Tests for the folding rules the lexeme index is built on.
 
 Run with:  python3 -m pytest scripts/search/test_generate_lexeme_index.py
 
-normalize() here and normalizeHebrewForSearch() in apps/tanakh/src/search/spelling.ts must fold
+normalize() here and normalizeHebrewForSearch() in packages/hebrew/src/spelling.ts must fold
 Hebrew identically. If they drift, the index keys and the lookups spell words
 differently, so the lookup silently misses and meanings search finds nothing.
 Both read folding-cases.json; the TypeScript half is in

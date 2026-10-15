@@ -1,7 +1,7 @@
 // How a written form is folded to the spelling the search index and the
 // dictionary are keyed on.
 
-import { isHebrewSeparator, isNikkud } from '@torahmap/shell/hebrew.ts';
+import { isHebrewSeparator, isNikkud } from './letters.ts';
 
 // Shin and sin written as one character each, from the Hebrew presentation
 // forms. BHSA uses these where Sefaria writes the plain letter and a dot, and
