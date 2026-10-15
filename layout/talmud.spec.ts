@@ -1,9 +1,47 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { allLoaded, boxes, openMap, shown } from './page.ts';
-import { apart, outsideOf } from './geometry.ts';
+import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
+
+/** Whole boxes, so what is off screen is checked too. */
+const full = async (page: Page, selector: string) =>
+  (await shown(page, selector)).map((s) => s.full).filter((b) => b.width > 0);
+
+/** Each of `labels` that is not inside exactly one seder's box. */
+async function outsideOneSeder(page: Page, labels: Box[]): Promise<string[]> {
+  const sedarim = await full(page, '#talmud-seder-bgs > *');
+  return labels
+    .filter((l) => sedarim.filter((s) => outsideOf([l], s).length === 0).length !== 1)
+    .map((l) => `${l.name} at ${l.x},${l.y}`);
+}
+
+/**
+ * The squares on screen, from the page's own layout, placed by the first seder's tint, whose box
+ * the layout also gives.
+ */
+async function squaresOnScreen(page: Page): Promise<Box[]> {
+  const tint = (await full(page, '#talmud-seder-bgs > *'))[0];
+  const view = (await boxes(page, '#canvas'))[0];
+  const squares = await page.evaluate(async (tint) => {
+    const source = (path: string) => import(/* @vite-ignore */ path);
+    const { computeTalmudLayout } = await source('/apps/talmud/src/layout.ts');
+    const { SQUARE_GAP } = await source('/packages/engine/src/index.ts');
+    const structure = await (await fetch('/data/talmud/structure.json')).json();
+    const laid = computeTalmudLayout(structure);
+    const world = laid.sederBlocks[0];
+    const zoom = tint.width / (world.maxX - world.minX);
+    return laid.items.map((s: { id: string; x: number; y: number; size: number }) => ({
+      name: s.id,
+      x: tint.x + (s.x - world.minX) * zoom,
+      y: tint.y + (s.y - world.minY) * zoom,
+      width: (s.size - SQUARE_GAP) * zoom,
+      height: (s.size - SQUARE_GAP) * zoom,
+    }));
+  }, tint);
+  return squares.filter((b: Box) => outsideOf([b], view).length === 0);
+}
 
 test('the Talmud map draws, and names its tractates only once they are big enough to read', async ({
   page,
@@ -28,17 +66,10 @@ for (const zoom of [0.4, 1, 2]) {
     const y = Math.round(corner.y + (view[0].height / 2 - 100) / zoom);
     await openMap(page, `zoom=${zoom}&x=${x}&y=${y}`, TALMUD);
 
-    // Whole boxes, so the tractates off screen are checked too.
-    const full = async (selector: string) =>
-      (await shown(page, selector)).map((s) => s.full).filter((b) => b.width > 0);
-    const names = await full('#book-labels .book-label');
-    const sedarim = await full('#talmud-seder-bgs > *');
+    const names = await full(page, '#book-labels .book-label');
     expect(names).not.toEqual([]);
-    for (const name of names) {
-      const within = sedarim.filter((s) => outsideOf([name], s).length === 0);
-      expect(within, `${name.name} at ${name.x},${name.y}`).toHaveLength(1);
-    }
-    expect(apart(names, await full('#talmud-perek-labels > *'))).toEqual([]);
+    expect(await outsideOneSeder(page, names)).toEqual([]);
+    expect(apart(names, await full(page, '#talmud-perek-labels > *'))).toEqual([]);
   });
 }
 
@@ -58,15 +89,19 @@ for (const [zoom, labelled] of [
 for (const zoom of [0.7, 2]) {
   test(`at zoom ${zoom}, every daf number sits inside its seder's box`, async ({ page }) => {
     await openMap(page, `at=Berakhot.2a.1&zoom=${zoom}`, TALMUD);
-    const full = async (selector: string) =>
-      (await shown(page, selector)).map((s) => s.full).filter((b) => b.width > 0);
-    const dapim = await full('#talmud-daf-labels > *');
-    const sedarim = await full('#talmud-seder-bgs > *');
+    const dapim = await full(page, '#talmud-daf-labels > *');
     expect(dapim).not.toEqual([]);
-    for (const daf of dapim) {
-      const within = sedarim.filter((s) => outsideOf([daf], s).length === 0);
-      expect(within, `${daf.name} at ${daf.x},${daf.y}`).toHaveLength(1);
-    }
+    expect(await outsideOneSeder(page, dapim)).toEqual([]);
+  });
+}
+
+for (const zoom of [0.7, 1, 1.5]) {
+  test(`at zoom ${zoom}, no daf number touches a square`, async ({ page }) => {
+    // Shabbat wraps into several columns, each numbered beside the next.
+    await openMap(page, `at=Shabbat.2a.1&zoom=${zoom}`, TALMUD);
+    const dapim = await boxes(page, '#talmud-daf-labels > *');
+    expect(dapim).not.toEqual([]);
+    expect(apart(dapim, await squaresOnScreen(page))).toEqual([]);
   });
 }
 

@@ -2,21 +2,39 @@
 
 import type { BookTab, SectionLabelSize } from '@torahmap/shell/mapLabels.ts';
 
+export const SEGMENT_SIZE = 6; // px per segment square
+
+// --- Labels ---
+
+// The perek names and the first daf numbers show from PEREK_LABEL_ZOOM; every daf from
+// DAF_LABEL_ZOOM_ALL.
+export const PEREK_LABEL_ZOOM = 0.7;
+export const DAF_LABEL_ZOOM_ALL = 1.5;
+
+// A perek name's size at zoom 1, and the bounds it is held between, in pixels.
+export const PEREK_SIZE = { base: 9, min: 7, max: 18 };
+
+// A daf number is a fixed size, in pixels, set this far right of its column. The widest, "144b",
+// is 22 wide.
+export const DAF_LABEL = { fontSize: 9, offset: 4, maxWidth: 22 };
+
+// Room for the daf numbers beside a column and below a shelf's last row, in map units, at
+// PEREK_LABEL_ZOOM, where they are largest on the map.
+export const DAF_LABEL_ROOM = {
+  right: Math.ceil((DAF_LABEL.offset + DAF_LABEL.maxWidth) / PEREK_LABEL_ZOOM),
+  below: Math.ceil(DAF_LABEL.fontSize / PEREK_LABEL_ZOOM - SEGMENT_SIZE),
+};
+
 // --- Layout constants ---
 
-export const SEGMENT_SIZE = 6; // px per segment square
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
 export const TRACTATE_GAP = 90; // horizontal gap between tractates on a shelf (extra room now that wide tractates wrap into multi-column blocks)
 export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
-// A tractate's name, a tab at the top-right of the band above its first row.
-// It fades out below 7 pixels, the floor of the perek labels, the smallest
-// Hebrew the map shows elsewhere; at 17 map units it reaches that at zoom 0.41.
-// At 17, Horayot's name, the widest for its tractate's width of those that begin
-// a shelf, fits inside it with 15 units to spare, 7 at the smallest zoom it shows
-// at, where the text is set wider. The tab's 20-unit line box ends 20 units above
-// the first row, clear of the first perek's label, which ends 2
-// units above it and is at most 12 tall, at zoom 0.7, where it first shows.
-export const TRACTATE_TAB: BookTab = { fontSize: 17, above: 40, inset: 6, minPx: 7 };
+// A tractate's name, a tab above its first row that scales with the map. It fades out below the
+// perek names' smallest size. At 17, the tightest fit, Horayot's, has 15 units to spare inside its
+// tractate, and 7 at the smallest zoom it shows at. Its line box ends 20 units above the first
+// row, clear of the first perek's name, which is at most 12 tall and ends 2 above that row.
+export const TRACTATE_TAB: BookTab = { fontSize: 17, above: 40, inset: 6, minPx: PEREK_SIZE.min };
 // The tab, and 4 units above it.
 export const TRACTATE_LABEL_HEIGHT = TRACTATE_TAB.above + 4;
 
@@ -25,7 +43,8 @@ export const TRACTATE_LABEL_HEIGHT = TRACTATE_TAB.above + 4;
 // The threshold is in *display rows*, which roughly corresponds to half-
 // dapim plus a few perek-boundary splits.
 export const TRACTATE_WRAP_ROWS = 50;
-export const TRACTATE_COLUMN_GAP = 14; // horizontal gap between wrap columns
+// Between a tractate's columns: room for the daf numbers beside a column, then 14 more.
+export const TRACTATE_COLUMN_GAP = DAF_LABEL_ROOM.right + 14;
 
 // --- Canonical seder order (top-to-bottom shelf order) ---
 
@@ -90,13 +109,3 @@ export const SEDER_BACKGROUND_COLORS: Readonly<Record<string, readonly [number, 
   };
 
 export const SEDER_BACKGROUND_OPACITY = 0.1;
-
-// The perek names and the first daf numbers show from PEREK_LABEL_ZOOM; every daf from
-// DAF_LABEL_ZOOM_ALL.
-export const PEREK_LABEL_ZOOM = 0.7;
-export const DAF_LABEL_ZOOM_ALL = 1.5;
-
-// Room inside a seder's box for the daf numbers on its edges: right of its shelf, beside the first
-// tractate, and below the last row. A number is a fixed 9 px tall and at most 26 px wide with its
-// offset: 37 by 13 map units at PEREK_LABEL_ZOOM, where a row is 6 tall.
-export const DAF_LABEL_ROOM = { right: 40, below: 8 };

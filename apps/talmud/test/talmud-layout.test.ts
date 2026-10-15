@@ -1,7 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { computeTalmudLayout } from '../src/layout.ts';
 import { talmudFixture as fixture } from './helpers/talmudFixture.ts';
-import { SEGMENT_SIZE, PEREK_GAP, SEDER_GAP, POSITION_JITTER } from '../src/constants.ts';
+import {
+  DAF_LABEL,
+  DAF_LABEL_ROOM,
+  PEREK_GAP,
+  PEREK_LABEL_ZOOM,
+  POSITION_JITTER,
+  SEDER_GAP,
+  SEGMENT_SIZE,
+} from '../src/constants.ts';
 
 describe('computeTalmudLayout', () => {
   const result = computeTalmudLayout(fixture);
@@ -77,11 +85,61 @@ describe('computeTalmudLayout', () => {
     );
   });
 
-  it("puts each amud's daf label at its first row's edge and top, not its jittered squares'", () => {
+  it("puts each amud's daf label at its first row's edge and top", () => {
     const rows = result.dafRows.filter((r) => r.tractate === 'TractA');
     expect(rows.map((r) => `${r.daf}${r.amud}`)).toEqual(['2a', '2b', '3a', '3b']);
     expect(new Set(rows.map((r) => r.rightX)).size).toBe(1);
     const S = SEGMENT_SIZE;
     expect(rows.map((r) => r.topY - rows[0].topY)).toEqual([0, S, 2 * S, 3 * S + PEREK_GAP]);
+  });
+});
+
+describe('a tractate long enough to wrap into columns', () => {
+  const amudim = Array.from({ length: 60 }, (_, i) => ({
+    daf: 2 + Math.floor(i / 2),
+    amud: i % 2 === 0 ? ('a' as const) : ('b' as const),
+    segmentCount: 3,
+    perekIdx: 0,
+    mishnahMask: [false, false, false],
+  }));
+  const result = computeTalmudLayout({
+    tractates: [
+      {
+        name: 'Long',
+        hebrewName: 'ארוך',
+        seder: 'Seder Moed',
+        amudim,
+        perakim: [
+          {
+            hebrewName: 'פרק א',
+            startAmudIdx: 0,
+            endAmudIdx: 59,
+            startSegmentInFirstAmud: 1,
+            endSegmentInLastAmud: 3,
+          },
+        ],
+      },
+    ],
+  });
+  const columnEdges = [...new Set(result.dafRows.map((r) => r.rightX))];
+
+  it("numbers each column's amudim at that column's right edge, from the same top", () => {
+    expect(columnEdges).toHaveLength(2);
+    const firstOf = (edge: number) => result.dafRows.find((r) => r.rightX === edge)!;
+    expect(firstOf(columnEdges[1]).topY).toBe(firstOf(columnEdges[0]).topY);
+  });
+
+  it("leaves the room beside a column clear for its daf numbers, where they're largest", () => {
+    const tall = DAF_LABEL.fontSize / PEREK_LABEL_ZOOM;
+    for (const { rightX, topY } of result.dafRows) {
+      const inRoom = result.items.filter(
+        (s) =>
+          s.x < rightX + DAF_LABEL_ROOM.right &&
+          s.x + s.size > rightX + POSITION_JITTER &&
+          s.y < topY + tall &&
+          s.y + s.size > topY,
+      );
+      expect(inRoom.map((s) => s.id)).toEqual([]);
+    }
   });
 });

@@ -1,31 +1,16 @@
 // The Talmud map's own marks: a tint behind each seder, and the perek and daf
-// labels, which show by zoom level. Tractates and sedarim are named by the
-// shell's map labels, as books and sections are on the Tanakh's.
+// labels, which show by zoom level.
 
 import type { SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
+  DAF_LABEL,
   DAF_LABEL_ZOOM_ALL,
   PEREK_LABEL_ZOOM,
+  PEREK_SIZE,
   SEDER_BACKGROUND_COLORS,
   SEDER_BACKGROUND_OPACITY,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
-
-// Size at zoom 1, and the bounds it is held between as the reader zooms.
-interface LabelSize {
-  base: number;
-  min: number;
-  max: number;
-}
-
-const PEREK_SIZE: LabelSize = { base: 9, min: 7, max: 18 };
-
-const DAF_LABEL_FONT_SIZE = 9;
-
-// Every Hebrew label scales with zoom between its own bounds, then takes the
-// correction for the face it is set in.
-const hebrewLabelFontSize = ({ base, min, max }: LabelSize, zoom: number) =>
-  Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE;
 
 export interface TalmudLabelState {
   container: HTMLDivElement;
@@ -100,10 +85,10 @@ export function createTalmudLabels(
       position:absolute;
       color:#888;
       font-family:system-ui, sans-serif;
-      font-size:${DAF_LABEL_FONT_SIZE}px;
+      font-size:${DAF_LABEL.fontSize}px;
       white-space:nowrap;
       line-height:1;
-      transform:translate(4px, 0);
+      transform:translate(${DAF_LABEL.offset}px, 0);
       display:none;
     `;
     label.textContent = `${row.daf}${row.amud}`;
@@ -150,7 +135,8 @@ export function updateTalmudLabelPositions(
 
   // Perek labels: scaled with zoom.
   const perekVisible = zoom >= PEREK_LABEL_ZOOM;
-  const perekFontSize = hebrewLabelFontSize(PEREK_SIZE, zoom);
+  const { base, min, max } = PEREK_SIZE;
+  const perekFontSize = Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE;
   for (const el of Array.from(state.perekLabels.children) as HTMLElement[]) {
     if (!perekVisible) {
       el.style.display = 'none';
