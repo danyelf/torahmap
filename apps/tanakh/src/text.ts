@@ -1,7 +1,8 @@
 // The Tanakh as a text for the app shell.
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
-import { createBookLabels, createSectionLabels, updateLabelPositions } from './labels.ts';
+import { createMapLabels } from '@torahmap/shell/mapLabels.ts';
+import { SECTION_NAMES, SECTION_SIZE, bookBoxes } from './labels.ts';
 import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
 import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from './verseTexts.ts';
 import { initBookData } from './books.ts';
@@ -41,12 +42,13 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
       baseColor: (_, i) => getDefaultColor(i),
 
       labels(container) {
-        const hebrewNames = Object.fromEntries(data.books.map((b) => [b.name, b.hebrewName]));
-        const bookLabels = createBookLabels(items, container, hebrewNames);
-        createSectionLabels(items, bookLabels, (book) => sections.get(book) ?? 'neviim');
+        const moveNames = createMapLabels(bookBoxes(items, data.books), container, {
+          sectionNames: SECTION_NAMES,
+          sectionSize: SECTION_SIZE,
+        });
         const mapTitle = createMapTitle(items, container, (book) => sections.get(book) === 'torah');
         return (offset, zoom) => {
-          updateLabelPositions(bookLabels, offset, zoom);
+          moveNames(offset, zoom);
           updateMapTitlePosition(mapTitle, offset, zoom);
         };
       },

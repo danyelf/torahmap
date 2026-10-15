@@ -98,7 +98,7 @@ export interface WorldBox {
 }
 
 // Screen pixels kept clear around a fitted box, and LABEL_MARGIN above it.
-const FIT_MARGIN = 16;
+export const FIT_MARGIN = 16;
 
 /**
  * The camera that centres `box` on a `width` × `height` canvas, at the largest

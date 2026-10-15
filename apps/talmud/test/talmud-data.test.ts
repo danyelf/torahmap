@@ -7,7 +7,7 @@ describe('isSegmentMishnah', () => {
       {
         name: 'Berakhot',
         hebrewName: 'ברכות',
-        seder: 'Seder Zeraim',
+        seder: 'Zeraim',
         amudim: [
           { daf: 2, amud: 'a', segmentCount: 3, perekIdx: 0, mishnahMask: [true, true, false] },
           { daf: 2, amud: 'b', segmentCount: 2, perekIdx: 0, mishnahMask: [false, false] },

@@ -14,6 +14,7 @@
     "./labelTypography.ts": "./src/labelTypography.ts",
     "./language.ts": "./src/language.ts",
     "./main.ts": "./src/main.ts",
+    "./mapLabels.ts": "./src/mapLabels.ts",
     "./overlays/settings.ts": "./src/overlays/settings.ts",
     "./overlays/types.ts": "./src/overlays/types.ts",
     "./panel.ts": "./src/panel.ts",

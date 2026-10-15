@@ -9,6 +9,7 @@
 //   compatibility with the existing camera/render pipeline).
 
 import type { SpatialItem } from '@torahmap/engine';
+import type { BookBox } from '@torahmap/shell/mapLabels.ts';
 import { seededRandom } from '@torahmap/utils';
 import type { TalmudIdentity } from './types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
@@ -23,7 +24,8 @@ import {
   TRACTATE_WRAP_ROWS,
   TRACTATE_COLUMN_GAP,
   POSITION_JITTER,
-  SEDER_ORDER,
+  SEDARIM,
+  DAF_LABEL_ROOM,
 } from './constants.ts';
 
 export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
@@ -53,15 +55,9 @@ export function talmudRef(s: TalmudIdentity): string {
   return `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
 }
 
-export interface TractateBlock {
-  name: string;
-  hebrewName: string;
-  seder: string;
-  minX: number;
-  minY: number;
-  maxX: number;
+/** The box round a tractate's squares; its section is its seder. */
+export interface TractateBlock extends BookBox {
   maxY: number;
-  labelAnchor: { x: number; y: number };
 }
 
 export interface SederBlock {
@@ -76,14 +72,15 @@ export interface PerekAnchor {
   tractate: string;
   perekIdx: number;
   hebrewName: string;
-  // The perek's first row in world coords, plus the max row width across
-  // the perek so labels can be centered like section titles.
+  // The right edge and top of the perek's first row, in world coords.
   rightX: number;
   topY: number;
-  width: number;
 }
 
-/** Where an amud's daf label goes: its row's right edge and top, in world coordinates. */
+/**
+ * Where an amud's daf label goes: its column's right edge and its first row's top, in world
+ * coordinates.
+ */
 export interface DafRowAnchor {
   tractate: string;
   daf: number;
@@ -169,7 +166,6 @@ interface LocalPerekAnchor {
   // The right edge is the right edge of the column the perek starts in.
   rightX: number;
   topY: number;
-  width: number; // max row width of this perek inside this column
 }
 
 interface LaidOutTractate {
@@ -178,6 +174,7 @@ interface LaidOutTractate {
   seder: string;
   items: TalmudLayoutItem[];
   perekAnchors: LocalPerekAnchor[];
+  dafRows: Omit<DafRowAnchor, 'tractate'>[];
   // Local coordinates: origin (0, 0) = top-right. x is <= 0; y is >= 0.
   width: number;
   height: number;
@@ -244,6 +241,8 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
   const columns = splitRowsIntoColumns(allRows);
   const items: TalmudLayoutItem[] = [];
   const perekAnchors: LocalPerekAnchor[] = [];
+  const dafRows: Omit<DafRowAnchor, 'tractate'>[] = [];
+  const amudimSeen = new Set<string>();
 
   // Pass 1: lay out each column in its own local frame (right edge at x=0).
   // While iterating, capture a perek anchor at the y of each perek's first
@@ -254,10 +253,12 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     width: number;
     height: number;
     localPereks: LocalPerekAnchor[]; // anchors in column-local coords (rightX always 0)
+    localDafs: Omit<DafRowAnchor, 'tractate'>[];
   }[] = [];
   for (const colRows of columns) {
     const colItems: TalmudLayoutItem[] = [];
     const colPereks: LocalPerekAnchor[] = [];
+    const colDafs: Omit<DafRowAnchor, 'tractate'>[] = [];
     let y = 0;
     let lastPerekIdx = -1;
     let colMaxWidth = 0;
@@ -274,18 +275,17 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           perekIdx: row.perekIdx,
           rightX: 0,
           topY: y,
-          width: 0,
         });
+      }
+      const amud = `${row.daf}${row.amud}`;
+      if (!amudimSeen.has(amud)) {
+        amudimSeen.add(amud);
+        colDafs.push({ daf: row.daf, amud: row.amud, rightX: 0, topY: y });
       }
       lastPerekIdx = row.perekIdx;
 
       const rowWidth = row.segments.length * SEGMENT_SIZE;
       if (rowWidth > colMaxWidth) colMaxWidth = rowWidth;
-      // Track per-perek max row width for centering perek labels.
-      const currentPerek = colPereks[colPereks.length - 1];
-      if (currentPerek && rowWidth > currentPerek.width) {
-        currentPerek.width = rowWidth;
-      }
 
       for (let i = 0; i < row.segments.length; i++) {
         const seg = row.segments[i];
@@ -316,6 +316,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
       width: colMaxWidth,
       height: y,
       localPereks: colPereks,
+      localDafs: colDafs,
     });
   }
 
@@ -339,9 +340,9 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
         perekIdx: lp.perekIdx,
         rightX: columnRightEdge, // column right edge in tractate-local coords
         topY: lp.topY,
-        width: lp.width,
       });
     }
+    for (const d of frame.localDafs) dafRows.push({ ...d, rightX: columnRightEdge });
     if (frame.height > maxHeight) maxHeight = frame.height;
     if (c === columnFrames.length - 1) {
       totalWidth = -(columnRightEdge - frame.width);
@@ -361,35 +362,18 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     seder: tractate.seder,
     items,
     perekAnchors,
+    dafRows,
     width: totalWidth,
     height: maxHeight,
   };
-}
-
-export function dafRowsOf(items: TalmudLayoutItem[]): DafRowAnchor[] {
-  const rows = new Map<string, DafRowAnchor>();
-  for (const { tractate, daf, amud, x, y, size } of items) {
-    const key = `${tractate}:${daf}${amud}`;
-    const row = rows.get(key);
-    if (!row) {
-      rows.set(key, { tractate, daf, amud, rightX: x + size, topY: y });
-    } else {
-      row.rightX = Math.max(row.rightX, x + size);
-      row.topY = Math.min(row.topY, y);
-    }
-  }
-  return [...rows.values()];
 }
 
 export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutResult {
   // 1. Lay out each tractate in local coordinates.
   const laid = structure.tractates.map(layoutTractate);
 
-  // 2. Group by seder (canonical order, keeps unknown sedarim at the end).
-  const bySeder = new Map<string, LaidOutTractate[]>();
-  for (const seder of SEDER_ORDER) {
-    bySeder.set(seder, []);
-  }
+  // 2. Group by seder, in shelf order, with any unknown seder after the rest.
+  const bySeder = new Map<string, LaidOutTractate[]>(SEDARIM.map((s) => [s.en, []]));
   for (const t of laid) {
     if (!bySeder.has(t.seder)) bySeder.set(t.seder, []);
     bySeder.get(t.seder)!.push(t);
@@ -405,6 +389,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   const tractateBlocks: TractateBlock[] = [];
   const sederBlocks: SederBlock[] = [];
   const allPerekAnchors: PerekAnchor[] = [];
+  const allDafRows: DafRowAnchor[] = [];
 
   // Quick lookup for perek hebrew names per tractate.
   const perekNamesByTractate = new Map<string, string[]>();
@@ -416,13 +401,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   }
 
   let shelfY = 0;
-  const sedarimInOrder = [
-    ...SEDER_ORDER,
-    ...[...bySeder.keys()].filter((k) => !SEDER_ORDER.includes(k)),
-  ];
-
-  for (const seder of sedarimInOrder) {
-    const tractates = bySeder.get(seder) ?? [];
+  for (const [seder, tractates] of bySeder) {
     if (tractates.length === 0) continue;
 
     let shelfRightEdge = 0;
@@ -448,15 +427,11 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
       tractateBlocks.push({
         name: t.name,
         hebrewName: t.hebrewName,
-        seder: t.seder,
+        section: t.seder,
         minX: tractateLeftEdge,
-        minY: shelfY,
+        minY: tractateTop,
         maxX: tractateRightEdge,
         maxY: tractateBottom,
-        labelAnchor: {
-          x: tractateRightEdge - t.width / 2,
-          y: shelfY + TRACTATE_LABEL_HEIGHT / 2,
-        },
       });
 
       // Translate the tractate's local perek anchors into world coords.
@@ -469,7 +444,15 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
           hebrewName: hebrew,
           rightX: tractateRightEdge + lp.rightX,
           topY: tractateTop + lp.topY,
-          width: lp.width,
+        });
+      }
+
+      for (const d of t.dafRows) {
+        allDafRows.push({
+          ...d,
+          tractate: t.name,
+          rightX: tractateRightEdge + d.rightX,
+          topY: tractateTop + d.topY,
         });
       }
 
@@ -484,8 +467,8 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
       name: seder,
       minX: shelfLeftEdge,
       minY: shelfY,
-      maxX: 0,
-      maxY: shelfY + shelfMaxHeight,
+      maxX: DAF_LABEL_ROOM.right,
+      maxY: shelfY + shelfMaxHeight + DAF_LABEL_ROOM.below,
     });
 
     shelfY += shelfMaxHeight + SEDER_GAP;
@@ -503,7 +486,6 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   for (const block of tractateBlocks) {
     block.minX += dx;
     block.maxX += dx;
-    block.labelAnchor.x += dx;
   }
   for (const block of sederBlocks) {
     block.minX += dx;
@@ -511,6 +493,9 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   }
   for (const a of allPerekAnchors) {
     a.rightX += dx;
+  }
+  for (const d of allDafRows) {
+    d.rightX += dx;
   }
 
   // 5. Compute bounds
@@ -526,7 +511,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     tractateBlocks,
     sederBlocks,
     perekAnchors: allPerekAnchors,
-    dafRows: dafRowsOf(allItems),
+    dafRows: allDafRows,
     bounds: { width: maxX, height: maxY },
   };
 }

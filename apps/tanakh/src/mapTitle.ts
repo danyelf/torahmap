@@ -42,8 +42,8 @@ export interface MapTitle {
  * Builds the title and gives it a place in map coordinates: centred across the
  * gap between the map's left edge and the Torah's, above the Torah's first row.
  *
- * It gets a container of its own because `updateLabelPositions` rewrites the
- * position of every child of the book-label container, which would fight this.
+ * It gets a container of its own: the book labels' belongs to the shell, which
+ * places everything in it.
  */
 export function createMapTitle(
   verses: TanakhLayout[],

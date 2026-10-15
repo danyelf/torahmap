@@ -4,7 +4,7 @@
   "failed": 0,
   "tractates": [
     {
-      "seder": "Seder Zeraim",
+      "seder": "Zeraim",
       "tractate": "Berakhot",
       "status": "pass",
       "failures": [],
@@ -23,7 +23,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Shabbat",
       "status": "pass",
       "failures": [],
@@ -42,7 +42,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Eruvin",
       "status": "pass",
       "failures": [],
@@ -61,7 +61,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Pesachim",
       "status": "pass",
       "failures": [],
@@ -80,7 +80,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Yoma",
       "status": "pass",
       "failures": [],
@@ -99,7 +99,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Sukkah",
       "status": "pass",
       "failures": [],
@@ -118,7 +118,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Beitzah",
       "status": "pass",
       "failures": [],
@@ -137,7 +137,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Rosh Hashanah",
       "status": "pass",
       "failures": [],
@@ -156,7 +156,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Taanit",
       "status": "pass",
       "failures": [],
@@ -175,7 +175,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Megillah",
       "status": "pass",
       "failures": [],
@@ -194,7 +194,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Moed Katan",
       "status": "pass",
       "failures": [],
@@ -213,7 +213,7 @@
       }
     },
     {
-      "seder": "Seder Moed",
+      "seder": "Moed",
       "tractate": "Chagigah",
       "status": "pass",
       "failures": [],
@@ -232,7 +232,7 @@
       }
     },
     {
-      "seder": "Seder Nashim",
+      "seder": "Nashim",
       "tractate": "Yevamot",
       "status": "pass",
       "failures": [],
@@ -251,7 +251,7 @@
       }
     },
     {
-      "seder": "Seder Nashim",
+      "seder": "Nashim",
       "tractate": "Ketubot",
       "status": "pass",
       "failures": [],
@@ -270,7 +270,7 @@
       }
     },
     {
-      "seder": "Seder Nashim",
+      "seder": "Nashim",
       "tractate": "Nedarim",
       "status": "pass",
       "failures": [],
@@ -289,7 +289,7 @@
       }
     },
     {
-      "seder": "Seder Nashim",
+      "seder": "Nashim",
       "tractate": "Nazir",
       "status": "pass",
       "failures": [],
@@ -308,7 +308,7 @@
       }
     },
     {
-      "seder": "Seder Nashim",
+      "seder": "Nashim",
       "tractate": "Sotah",
       "status": "pass",
       "failures": [],
@@ -327,7 +327,7 @@
       }
     },
     {
-      "seder": "Seder Nashim",
+      "seder": "Nashim",
       "tractate": "Gittin",
       "status": "pass",
       "failures": [],
@@ -346,7 +346,7 @@
       }
     },
     {
-      "seder": "Seder Nashim",
+      "seder": "Nashim",
       "tractate": "Kiddushin",
       "status": "pass",
       "failures": [],
@@ -365,7 +365,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Bava Kamma",
       "status": "pass",
       "failures": [],
@@ -384,7 +384,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Bava Metzia",
       "status": "pass",
       "failures": [],
@@ -403,7 +403,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Bava Batra",
       "status": "pass",
       "failures": [],
@@ -422,7 +422,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Sanhedrin",
       "status": "pass",
       "failures": [],
@@ -441,7 +441,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Makkot",
       "status": "pass",
       "failures": [],
@@ -460,7 +460,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Shevuot",
       "status": "pass",
       "failures": [],
@@ -479,7 +479,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Avodah Zarah",
       "status": "pass",
       "failures": [],
@@ -498,7 +498,7 @@
       }
     },
     {
-      "seder": "Seder Nezikin",
+      "seder": "Nezikin",
       "tractate": "Horayot",
       "status": "pass",
       "failures": [],
@@ -517,7 +517,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Zevachim",
       "status": "pass",
       "failures": [],
@@ -536,7 +536,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Menachot",
       "status": "pass",
       "failures": [],
@@ -555,7 +555,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Chullin",
       "status": "pass",
       "failures": [],
@@ -574,7 +574,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Bekhorot",
       "status": "pass",
       "failures": [],
@@ -593,7 +593,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Arakhin",
       "status": "pass",
       "failures": [],
@@ -612,7 +612,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Temurah",
       "status": "pass",
       "failures": [],
@@ -631,7 +631,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Keritot",
       "status": "pass",
       "failures": [],
@@ -650,7 +650,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Meilah",
       "status": "pass",
       "failures": [],
@@ -669,7 +669,7 @@
       }
     },
     {
-      "seder": "Seder Kodashim",
+      "seder": "Kodashim",
       "tractate": "Tamid",
       "status": "pass",
       "failures": [],
@@ -688,7 +688,7 @@
       }
     },
     {
-      "seder": "Seder Tahorot",
+      "seder": "Tahorot",
       "tractate": "Niddah",
       "status": "pass",
       "failures": [],

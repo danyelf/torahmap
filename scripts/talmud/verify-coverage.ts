@@ -25,49 +25,49 @@ export interface TractateRef {
 }
 
 export const BAVLI_TRACTATES: ReadonlyArray<TractateRef> = [
-  // Seder Zeraim (1)
-  { seder: 'Seder Zeraim', tractate: 'Berakhot' },
-  // Seder Moed (11; Shekalim excluded)
-  { seder: 'Seder Moed', tractate: 'Shabbat' },
-  { seder: 'Seder Moed', tractate: 'Eruvin' },
-  { seder: 'Seder Moed', tractate: 'Pesachim' },
-  { seder: 'Seder Moed', tractate: 'Yoma' },
-  { seder: 'Seder Moed', tractate: 'Sukkah' },
-  { seder: 'Seder Moed', tractate: 'Beitzah' },
-  { seder: 'Seder Moed', tractate: 'Rosh Hashanah' },
-  { seder: 'Seder Moed', tractate: 'Taanit' },
-  { seder: 'Seder Moed', tractate: 'Megillah' },
-  { seder: 'Seder Moed', tractate: 'Moed Katan' },
-  { seder: 'Seder Moed', tractate: 'Chagigah' },
-  // Seder Nashim (7)
-  { seder: 'Seder Nashim', tractate: 'Yevamot' },
-  { seder: 'Seder Nashim', tractate: 'Ketubot' },
-  { seder: 'Seder Nashim', tractate: 'Nedarim' },
-  { seder: 'Seder Nashim', tractate: 'Nazir' },
-  { seder: 'Seder Nashim', tractate: 'Sotah' },
-  { seder: 'Seder Nashim', tractate: 'Gittin' },
-  { seder: 'Seder Nashim', tractate: 'Kiddushin' },
-  // Seder Nezikin (8)
-  { seder: 'Seder Nezikin', tractate: 'Bava Kamma' },
-  { seder: 'Seder Nezikin', tractate: 'Bava Metzia' },
-  { seder: 'Seder Nezikin', tractate: 'Bava Batra' },
-  { seder: 'Seder Nezikin', tractate: 'Sanhedrin' },
-  { seder: 'Seder Nezikin', tractate: 'Makkot' },
-  { seder: 'Seder Nezikin', tractate: 'Shevuot' },
-  { seder: 'Seder Nezikin', tractate: 'Avodah Zarah' },
-  { seder: 'Seder Nezikin', tractate: 'Horayot' },
-  // Seder Kodashim (9)
-  { seder: 'Seder Kodashim', tractate: 'Zevachim' },
-  { seder: 'Seder Kodashim', tractate: 'Menachot' },
-  { seder: 'Seder Kodashim', tractate: 'Chullin' },
-  { seder: 'Seder Kodashim', tractate: 'Bekhorot' },
-  { seder: 'Seder Kodashim', tractate: 'Arakhin' },
-  { seder: 'Seder Kodashim', tractate: 'Temurah' },
-  { seder: 'Seder Kodashim', tractate: 'Keritot' },
-  { seder: 'Seder Kodashim', tractate: 'Meilah' },
-  { seder: 'Seder Kodashim', tractate: 'Tamid' },
-  // Seder Tahorot (1) — note: Sefaria-Export uses "Tahorot" spelling
-  { seder: 'Seder Tahorot', tractate: 'Niddah' },
+  // Zeraim (1)
+  { seder: 'Zeraim', tractate: 'Berakhot' },
+  // Moed (11; Shekalim excluded)
+  { seder: 'Moed', tractate: 'Shabbat' },
+  { seder: 'Moed', tractate: 'Eruvin' },
+  { seder: 'Moed', tractate: 'Pesachim' },
+  { seder: 'Moed', tractate: 'Yoma' },
+  { seder: 'Moed', tractate: 'Sukkah' },
+  { seder: 'Moed', tractate: 'Beitzah' },
+  { seder: 'Moed', tractate: 'Rosh Hashanah' },
+  { seder: 'Moed', tractate: 'Taanit' },
+  { seder: 'Moed', tractate: 'Megillah' },
+  { seder: 'Moed', tractate: 'Moed Katan' },
+  { seder: 'Moed', tractate: 'Chagigah' },
+  // Nashim (7)
+  { seder: 'Nashim', tractate: 'Yevamot' },
+  { seder: 'Nashim', tractate: 'Ketubot' },
+  { seder: 'Nashim', tractate: 'Nedarim' },
+  { seder: 'Nashim', tractate: 'Nazir' },
+  { seder: 'Nashim', tractate: 'Sotah' },
+  { seder: 'Nashim', tractate: 'Gittin' },
+  { seder: 'Nashim', tractate: 'Kiddushin' },
+  // Nezikin (8)
+  { seder: 'Nezikin', tractate: 'Bava Kamma' },
+  { seder: 'Nezikin', tractate: 'Bava Metzia' },
+  { seder: 'Nezikin', tractate: 'Bava Batra' },
+  { seder: 'Nezikin', tractate: 'Sanhedrin' },
+  { seder: 'Nezikin', tractate: 'Makkot' },
+  { seder: 'Nezikin', tractate: 'Shevuot' },
+  { seder: 'Nezikin', tractate: 'Avodah Zarah' },
+  { seder: 'Nezikin', tractate: 'Horayot' },
+  // Kodashim (9)
+  { seder: 'Kodashim', tractate: 'Zevachim' },
+  { seder: 'Kodashim', tractate: 'Menachot' },
+  { seder: 'Kodashim', tractate: 'Chullin' },
+  { seder: 'Kodashim', tractate: 'Bekhorot' },
+  { seder: 'Kodashim', tractate: 'Arakhin' },
+  { seder: 'Kodashim', tractate: 'Temurah' },
+  { seder: 'Kodashim', tractate: 'Keritot' },
+  { seder: 'Kodashim', tractate: 'Meilah' },
+  { seder: 'Kodashim', tractate: 'Tamid' },
+  // Tahorot (1) — note: Sefaria-Export uses "Tahorot" spelling
+  { seder: 'Tahorot', tractate: 'Niddah' },
 ];
 // 1 + 11 + 7 + 8 + 9 + 1 = 37
 
@@ -117,7 +117,7 @@ function urlsFor(ref: TractateRef): {
   merged: string;
   schema: string;
 } {
-  const seder = encodeURIComponent(ref.seder);
+  const seder = encodeURIComponent(`Seder ${ref.seder}`);
   const tractate = encodeURIComponent(ref.tractate);
   // Schema filenames use underscores for spaces, not URL-encoded spaces.
   // E.g. "Rosh Hashanah" → "Rosh_Hashanah.json".
