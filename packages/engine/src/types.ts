@@ -12,6 +12,8 @@ export interface MapItem {
   x: number;
   y: number;
   size: number;
+  /** Squares sharing a row, side by side, are drawn as one bar when too small to tell apart. */
+  row?: number;
 }
 
 /** A text's own fields (book, chapter and verse; or a Talmud segment) on a square. */

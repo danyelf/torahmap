@@ -72,6 +72,8 @@ function layoutChapter(
   for (let lineNumber = 0; lineNumber < wrapPoints.length; lineNumber++) {
     const lineLength = wrapPoints[lineNumber];
     const lineIndent = lineNumber > 0 ? WRAP_INDENT : 0;
+    // A line's first verse is the first of no other line.
+    const row = globalVerseIdx.value;
 
     for (let lineVerseIdx = 0; lineVerseIdx < lineLength; lineVerseIdx++) {
       // Position jitter (±1px) to break up regular grid
@@ -88,6 +90,7 @@ function layoutChapter(
         x: x,
         y: currentY + jitterY,
         size: VERSE_SIZE,
+        row,
       });
 
       maxWidth = Math.max(maxWidth, lineIndent + (lineVerseIdx + 1) * VERSE_SIZE);

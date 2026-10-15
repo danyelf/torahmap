@@ -178,6 +178,7 @@ interface LaidOutTractate {
   seder: string;
   items: TalmudLayoutItem[];
   perekAnchors: LocalPerekAnchor[];
+  rows: number;
   // Local coordinates: origin (0, 0) = top-right. x is <= 0; y is >= 0.
   width: number;
   height: number;
@@ -239,8 +240,10 @@ function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
  * perakim are separated by PEREK_GAP. Tall tractates are split into
  * multiple columns side-by-side (column 0 is rightmost / read first).
  */
-function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
+// Its rows are numbered on from firstRow.
+function layoutTractate(tractate: TalmudTractate, firstRow: number): LaidOutTractate {
   const allRows = rowsForTractate(tractate);
+  let rowNumber = firstRow;
   const columns = splitRowsIntoColumns(allRows);
   const items: TalmudLayoutItem[] = [];
   const perekAnchors: LocalPerekAnchor[] = [];
@@ -306,9 +309,11 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           x: baseX + jx,
           y: y + jy,
           size: SEGMENT_SIZE,
+          row: rowNumber,
         });
       }
       y += SEGMENT_SIZE;
+      rowNumber++;
     }
     columnFrames.push({
       items: colItems,
@@ -360,6 +365,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     seder: tractate.seder,
     items,
     perekAnchors,
+    rows: allRows.length,
     width: totalWidth,
     height: maxHeight,
   };
@@ -382,7 +388,12 @@ export function dafRowsOf(items: TalmudLayoutItem[]): DafRowAnchor[] {
 
 export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutResult {
   // 1. Lay out each tractate in local coordinates.
-  const laid = structure.tractates.map(layoutTractate);
+  let firstRow = 0;
+  const laid = structure.tractates.map((t) => {
+    const tractate = layoutTractate(t, firstRow);
+    firstRow += tractate.rows;
+    return tractate;
+  });
 
   // 2. Group by seder (canonical order, keeps unknown sedarim at the end).
   const bySeder = new Map<string, LaidOutTractate[]>();

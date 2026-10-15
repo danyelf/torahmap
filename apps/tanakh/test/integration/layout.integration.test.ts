@@ -119,6 +119,19 @@ describe('Layout Integration', () => {
     });
   });
 
+  describe('Rows', () => {
+    it('gives each line of a chapter a row number of its own', () => {
+      const chapterOf = new Map<number | undefined, Set<string>>();
+      for (const v of verses) {
+        chapterOf.set(v.row, (chapterOf.get(v.row) ?? new Set()).add(`${v.book} ${v.chapter}`));
+      }
+      expect(chapterOf.has(undefined)).toBe(false);
+      expect([...chapterOf.values()].every((chapters) => chapters.size === 1)).toBe(true);
+      const psalm119 = verses.filter((v) => v.book === 'Psalms' && v.chapter === 119);
+      expect(new Set(psalm119.map((v) => v.row)).size).toBeGreaterThan(1);
+    });
+  });
+
   describe('Layout Bounds', () => {
     it('bounds are positive and reasonable', () => {
       const bounds = getLayoutBounds(verses);

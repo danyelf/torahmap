@@ -41,6 +41,17 @@ describe('computeTalmudLayout', () => {
     expect(max - min).toBeLessThanOrEqual(2 * 2 * 1.5); // 2px jitter window per side, with margin
   });
 
+  it("gives each amud's row of squares a row number of its own", () => {
+    const rowOf = new Map<string, Set<number | undefined>>();
+    for (const item of result.items) {
+      const amud = `${item.tractate} ${item.daf}${item.amud}`;
+      rowOf.set(amud, (rowOf.get(amud) ?? new Set()).add(item.row));
+    }
+    const rows = [...rowOf.values()];
+    expect(rows.every((r) => r.size === 1 && !r.has(undefined))).toBe(true);
+    expect(new Set(rows.map((r) => [...r][0])).size).toBe(rows.length);
+  });
+
   it('row width equals segment count × SEGMENT_SIZE (within ±jitter)', () => {
     const row0 = result.items.filter(
       (i) => i.tractate === 'TractA' && i.daf === 2 && i.amud === 'a',
