@@ -4,13 +4,9 @@
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
 import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
-import {
-  mapStrippedToOriginal,
-  onlySeparators,
-  splitIntoWords,
-  stripNikkud,
-} from '@torahmap/hebrew';
-import { foldForMatching, matchRangesInFolded } from './matching.ts';
+import { onlySeparators, splitIntoWords, stripNikkud } from '@torahmap/hebrew';
+import { matchRanges } from '@torahmap/search';
+import { searchLanguage } from './languages.ts';
 import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
 import {
   displayedVerse,
@@ -78,8 +74,9 @@ function findAllTermMatches(
 ): Match[] {
   const matches: Match[] = [];
   const language = isHebrew ? HEBREW : ENGLISH;
-  const folded = foldForMatching(text, language);
-  const toOriginal = (at: number) => (isHebrew ? mapStrippedToOriginal(text, at) : at);
+  const lang = searchLanguage(language);
+  const folded = lang.fold(text);
+  const toOriginal = (at: number) => lang.toOriginal(text, at);
 
   for (let termIndex = 0; termIndex < searchTerms.length; termIndex++) {
     const term = searchTerms[termIndex];
@@ -105,8 +102,8 @@ function findAllTermMatches(
       continue;
     }
 
-    const needle = foldForMatching(term.text.trim(), language);
-    for (const { start, end } of matchRangesInFolded(folded, needle, { mode, language })) {
+    const needle = lang.fold(term.text.trim());
+    for (const { start, end } of matchRanges(folded, needle, { mode, language: lang })) {
       matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
     }
   }

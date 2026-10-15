@@ -13,7 +13,8 @@ import {
 } from './constants.ts';
 import { isSearchableWord } from '@torahmap/hebrew';
 import { normalizeHebrewForSearch } from '@torahmap/hebrew';
-import { foldForMatching, matchRangesInFolded, type MatchMode } from './matching.ts';
+import { matchRanges, type MatchMode } from '@torahmap/search';
+import { searchLanguage } from './languages.ts';
 
 export interface TermMatch {
   termIndex: number;
@@ -375,11 +376,12 @@ export function versesForTerm(
   language: TextLanguage,
   mode: MatchMode,
 ): Set<string> {
-  const needle = foldForMatching(text, language);
+  const lang = searchLanguage(language);
+  const needle = lang.fold(text);
   const verses = new Set<string>();
   for (const entry of index.entries) {
     const haystack = language === HEBREW ? entry.hebrewText : entry.englishText;
-    if (matchRangesInFolded(haystack, needle, { mode, language, limit: 1 }).length > 0) {
+    if (matchRanges(haystack, needle, { mode, language: lang, limit: 1 }).length > 0) {
       verses.add(entry.id);
     }
   }

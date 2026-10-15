@@ -18,7 +18,7 @@ import {
 import { isHebrew, splitIntoWords } from '@torahmap/hebrew';
 import { TERM_SEPARATORS } from './constants.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
-import type { MatchMode } from './matching.ts';
+import type { MatchMode } from '@torahmap/search';
 
 /**
  * How a term is matched. Meanings resolves a written form to the dictionary words
