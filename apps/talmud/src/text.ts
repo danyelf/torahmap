@@ -8,7 +8,7 @@ import type { LinkKeys } from '@torahmap/link';
 import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
-import { createTalmudLabels, updateTalmudLabelPositions } from './talmudLabels.ts';
+import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import { SEDER_LABEL_SIZE, SEDER_NAMES, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
@@ -89,7 +89,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
       baseColor: (item) => mishnahOrGemaraColor(structure, item),
 
       labels(container) {
-        const marks = createTalmudLabels(
+        const moveMarks = createTalmudLabels(
           laid.sederBlocks,
           laid.perekAnchors,
           laid.dafRows,
@@ -101,7 +101,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
           tab: TRACTATE_TAB,
         });
         return (offset, zoom) => {
-          updateTalmudLabelPositions(marks, offset, zoom);
+          moveMarks(offset, zoom);
           moveNames(offset, zoom);
         };
       },
