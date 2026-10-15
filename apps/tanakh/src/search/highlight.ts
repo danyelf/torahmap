@@ -9,7 +9,7 @@ import {
   onlySeparators,
   splitIntoWords,
   stripNikkud,
-} from '@torahmap/shell/hebrew.ts';
+} from '@torahmap/hebrew';
 import { foldForMatching, matchRangesInFolded } from './matching.ts';
 import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
 import {

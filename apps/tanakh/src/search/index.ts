@@ -49,7 +49,7 @@ import {
   SEARCH_COLORS,
   type SearchTerm,
 } from './terms.ts';
-import { isSearchableWord } from '@torahmap/shell/hebrew.ts';
+import { isSearchableWord } from '@torahmap/hebrew';
 import { SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
 
 /**

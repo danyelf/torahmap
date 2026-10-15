@@ -11,8 +11,8 @@ import {
   SEARCH_SNIPPET_MAX_LENGTH,
   SEARCH_SNIPPET_CONTEXT_BEFORE,
 } from './constants.ts';
-import { isSearchableWord } from '@torahmap/shell/hebrew.ts';
-import { normalizeHebrewForSearch } from './spelling.ts';
+import { isSearchableWord } from '@torahmap/hebrew';
+import { normalizeHebrewForSearch } from '@torahmap/hebrew';
 import { foldForMatching, matchRangesInFolded, type MatchMode } from './matching.ts';
 
 export interface TermMatch {

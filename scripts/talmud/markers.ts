@@ -1,7 +1,7 @@
 // The bold words that tell a tractate's Mishnah from its Gemara: מתני׳ (a Mishnah begins) and גמ׳
 // (the Gemara begins).
 
-import { stripNikkud } from '@torahmap/shell/hebrew.ts';
+import { stripNikkud } from '@torahmap/hebrew';
 
 export type Marker = 'M' | 'G' | null;
 
