@@ -58,11 +58,15 @@ mapping from recitals to articles, and the 2026 amendment's own recitals.
 ## One engine change: squares of any width
 
 A recital is a 2×1 tile, so `MapItem` gains an optional `width`, defaulting to
-`size`. The GPU already takes a full rectangle per square, so the drawing needs
-nothing. Six places turn `size` into a rectangle by assuming a square, and each
+`size`. Six places turn `size` into a rectangle by assuming a square, and each
 reads `width ?? size` instead: `geometry.ts` (the rectangle), `hitDetection.ts`
 (the click test, and the centre used for nearest-square lookups), `camera.ts`
 (centring on a square, in two functions) and `outline.ts` (the pinned ring).
+
+The GPU takes a full rectangle per square, but the shader measured a search
+ring's hole, and whether a square has room for one, from its width alone, so a
+recital's ring was thin along its top. It now carries both sides
+(`webgl.ts`).
 
 The Tanakh and the Talmud set no `width`, and a test pins that their rectangles,
 hits and centres are unchanged.
@@ -74,7 +78,7 @@ became of it.
 
 | # | Assumption | What became of it |
 |---|---|---|
-| 1 | A square is square (`MapItem.size`) | Fixed: an optional `width`, read in six places. |
+| 1 | A square is square (`MapItem.size`) | Fixed: an optional `width`, read in six places, and both sides in the shader's search ring. |
 | 2 | A text has Hebrew | The popup copes with empty Hebrew. The real assumptions were the Hide Hebrew control and its stored choice, `torahMap.englishOnly`, which every page on one origin shares. Fixed: `Site.hasHebrew`; a text without it is English only, offers no control, and never reads or writes the choice. |
 | 3 | A label has a Hebrew name | `mapLabels.ts` draws a Hebrew span and hides a narrow book's English unless the page is English only. With `hasHebrew: false` the page is English only, so the English always shows; the Hebrew span stays, empty. No change needed. |
 | 4 | A text has at least one story | Still true. The Act copies the Talmud's one-stop stopgap. |
