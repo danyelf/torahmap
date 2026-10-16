@@ -312,6 +312,15 @@ describe('processTractate', () => {
     expect(text.amudim[0][4]).toBe('הדרן עלך כל כתבי');
   });
 
+  it('gives search the other edition, without its points or tags, segment for segment', () => {
+    const wikisource = fakeWikisource();
+    const merged = fakeWikisource();
+    merged.text[2] = ['<b>אָמַר</b> רַבִּי יוֹחָנָן', 'a2', 'a3', 'a4', 'a5'];
+    const { search } = processTractate('Zeraim', 'Test', wikisource, fakeSchema(), merged);
+    expect(search.map((amud) => amud.length)).toEqual([5, 4, 3]);
+    expect(search[0][0]).toBe('אמר רבי יוחנן');
+  });
+
   it('removes the marker word where only the other edition marks the segment', () => {
     const wikisource = fakeWikisource();
     wikisource.text[2] = ["מתני' סתם נזירות", "גמ' מנהני מילי", 'a3', 'a4', 'a5'];
