@@ -10,3 +10,4 @@ export * from './resultsList.ts';
 export * from './termRows.ts';
 export * from './telemetry.ts';
 export * from './termSearch.ts';
+export * from './searching.ts';

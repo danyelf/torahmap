@@ -8,7 +8,8 @@ import { type TextIndex } from '@torahmap/search';
 // machine. Meanings-mode search is about 1ms once warm, so a genuinely slow
 // search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildTextIndex, versesForTerm } from '../../src/search/search';
+import { buildTextIndex } from '../../src/search/search';
+import { versesForTerm } from '../helpers/searchData';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';

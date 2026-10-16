@@ -1,4 +1,6 @@
-import { type TextIndex } from '@torahmap/search';
+import { english, itemsForTerm, type MatchMode, type TextIndex } from '@torahmap/search';
+import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
+import { TANAKH_LANGUAGES } from '../../src/search/languages.ts';
 // Search's files for tests: the shipped ones, read from disk, or made-up texts
 // with a dictionary that knows no word.
 import { memoByValue } from '@torahmap/utils';
@@ -77,4 +79,14 @@ export function realSearchData(): RealSearchData {
     };
   }
   return real;
+}
+
+/** The verses a term's text matches in `language`'s text, as the search finds them. */
+export function versesForTerm(
+  index: TextIndex,
+  text: string,
+  language: TextLanguage,
+  mode: MatchMode,
+): Set<string> {
+  return itemsForTerm(index, text, language === HEBREW ? TANAKH_LANGUAGES[0] : english, mode);
 }

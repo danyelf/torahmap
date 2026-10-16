@@ -3,17 +3,10 @@
 
 import { memoByValue } from '@torahmap/utils';
 import type { VerseTexts } from '../verseTexts';
-import type { TextLanguage } from '@torahmap/shell/language.ts';
 import { verseId, verseRef } from '@torahmap/link/tanakh';
-import {
-  buildTextIndex as indexOf,
-  itemsForTerm,
-  type MatchMode,
-  type SearchEntry,
-  type TextIndex,
-} from '@torahmap/search';
+import { buildTextIndex as indexOf, type SearchEntry, type TextIndex } from '@torahmap/search';
 import { normalizeHebrewForSearch } from '@torahmap/hebrew';
-import { searchLanguage, TANAKH_LANGUAGES } from './languages.ts';
+import { TANAKH_LANGUAGES } from './languages.ts';
 
 /**
  * A lexeme is a dictionary entry: one word of Hebrew or Aramaic, with its own
@@ -284,14 +277,4 @@ export function searchByLexemes(dictionary: Dictionary, lexemes: LexemeId[]): Se
     }
   }
   return matchingVerses;
-}
-
-/** The verses a term's text matches, in the text of its own language. */
-export function versesForTerm(
-  index: TextIndex,
-  text: string,
-  language: TextLanguage,
-  mode: MatchMode,
-): Set<string> {
-  return itemsForTerm(index, text, searchLanguage(language), mode);
 }

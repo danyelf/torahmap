@@ -1,8 +1,8 @@
-import { resultsForItemSets, type SearchResult, type TextIndex } from '@torahmap/search';
 // The Tanakh's meanings mode: a term resolved to the dictionary words its text
 // could be, narrowed to the ones the reader leaves checked. The term list
 // itself is @torahmap/search's; this is what reads the dictionary.
 
+import { memoByValue } from '@torahmap/utils';
 import {
   effectiveMode as modeIn,
   languageOf,
@@ -17,12 +17,12 @@ import { onlySeparators, splitIntoWords, stripNikkud } from '@torahmap/hebrew';
 import {
   meaningsFor,
   sameMeaning,
-  versesFor,
   wordMatches,
   type Meaning,
+  type Parse,
   type VerseWords,
 } from './dictionary.ts';
-import { versesForTerm, type Dictionary } from './search.ts';
+import type { Dictionary } from './search.ts';
 import { TANAKH_LANGUAGES } from './languages.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 
@@ -174,19 +174,40 @@ export function meaningsPossible(dictionary: Dictionary | null, term: SearchTerm
 }
 
 /** Meanings, offered to a Hebrew term and its default there. */
-export const meaningsMode: ExtraMode<Dictionary> = {
+/**
+ * What meanings mode works from: the dictionary, and the per-word parse that
+ * says which reading each word of a verse is, once it is in.
+ */
+export interface MeaningsData {
+  readonly dictionary: Dictionary;
+  readonly parse: Parse | null;
+}
+
+// Per dictionary, then per parse: the same files give the same object.
+const pairs = memoByValue((dictionary: Dictionary) => {
+  const alone: MeaningsData = { dictionary, parse: null };
+  const withParse = memoByValue((parse: Parse): MeaningsData => ({ dictionary, parse }));
+  return (parse: Parse | null) => (parse ? withParse(parse) : alone);
+});
+
+export function meaningsData(dictionary: Dictionary, parse: Parse | null = null): MeaningsData {
+  return pairs(dictionary)(parse);
+}
+
+export const meaningsMode: ExtraMode<MeaningsData> = {
   id: 'meanings',
   letter: 'm',
   label: 'meanings',
   unavailable: "Meanings mode isn't available for phrases",
   offered: (_term, language) => language.id === HEBREW,
-  possible: (dictionary, term) => meaningsPossible(dictionary, term),
+  possible: (x, term) => meaningsPossible(x?.dictionary ?? null, term),
   isDefault: (_term, language) => language.id === HEBREW,
 };
 
 /** What the reader chose, or the default for the language the text is in. */
 export function effectiveMode(dictionary: Dictionary | null, term: SearchTerm): SearchMode {
-  return modeIn(term, TANAKH_LANGUAGES, meaningsMode, dictionary) as SearchMode;
+  const x = dictionary ? meaningsData(dictionary) : null;
+  return modeIn(term, TANAKH_LANGUAGES, meaningsMode, x) as SearchMode;
 }
 
 /** The modes this term's own text can be matched by, in the order shown. */
@@ -211,29 +232,6 @@ export function termQuery(dictionary: Dictionary, term: SearchTerm): TermQuery {
   return mode === 'meanings'
     ? { text, language, mode, meaningKeys: selectedKeys(dictionary, term) }
     : { text, language, mode };
-}
-
-/** The verses a query finds. A word the dictionary does not know finds none in meanings mode. */
-export function versesForQuery(
-  index: TextIndex,
-  dictionary: Dictionary,
-  query: TermQuery,
-): Set<string> {
-  return query.mode === 'meanings'
-    ? versesFor(dictionary, query.meaningKeys)
-    : versesForTerm(index, query.text, query.language, query.mode);
-}
-
-/** The verses these terms find, each naming the terms that found it. */
-export function resultsForTerms(
-  index: TextIndex,
-  dictionary: Dictionary,
-  terms: SearchTerm[],
-): SearchResult[] {
-  return resultsForItemSets(
-    index,
-    terms.map((term) => versesForQuery(index, dictionary, termQuery(dictionary, term))),
-  );
 }
 
 /**

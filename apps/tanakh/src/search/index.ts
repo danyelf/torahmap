@@ -4,19 +4,25 @@ import {
   activeTerms,
   canAddTerm,
   createTermSearch,
+  excerptOf,
   isSearching,
   matchingTermsOf,
+  resultsOf,
   SEARCH_RECORD_DELAY_MS,
+  type ExtraMode,
+  type SearchContext,
   type SearchResult,
   type SearchTerm,
+  type Snippet,
   type TermSettings,
   type TextIndex,
 } from '@torahmap/search';
+import { HEBREW } from '@torahmap/shell/language.ts';
 import { trackSearchExecute } from '@torahmap/shell/analytics.ts';
 import { SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
 import type { TanakhLayout } from '../types.ts';
 import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from './data.ts';
-import { spellingFor, versesFor, wordsOfVerse } from './dictionary.ts';
+import { spellingFor, versesFor, wordsOfVerse, type Parse } from './dictionary.ts';
 import type { Dictionary } from './search.ts';
 import {
   allMeanings,
@@ -25,10 +31,11 @@ import {
   encodeMeanings,
   isNarrowed,
   meaningRanges,
+  meaningsData,
   meaningsMode,
   quotedMeaning,
-  resultsForTerms,
   selectedKeys,
+  type MeaningsData,
 } from './meanings.ts';
 import { meaningSummary, renderMeanings } from './meaningRows.ts';
 import { TANAKH_LANGUAGES } from './languages.ts';
@@ -43,7 +50,43 @@ function onlyParseDiffers(a: SearchData, b: SearchData): boolean {
   return keys.every((key) => key === 'parse' || a[key] === b[key]);
 }
 
-const tanakhSearch = createTermSearch<TanakhLayout, SearchData, Dictionary>({
+/** Meanings mode, as the search runs it. */
+const meanings: ExtraMode<MeaningsData, SearchData> = {
+  ...meaningsMode,
+  build: (data) => meaningsData(dictionaryOf(data), data.parse),
+  itemsFor: ({ dictionary }, term) => versesFor(dictionary, selectedKeys(dictionary, term)),
+  ranges: ({ dictionary, parse }, term, { itemId, text, language }) =>
+    language.id === HEBREW
+      ? meaningRanges(dictionary, wordsOfVerse(parse, itemId, text), term, text, language)
+      : [],
+  quoted: quotedMeaning,
+  // Each word as typed, then which of its checked meanings this verse holds.
+  hoverNote({ dictionary }, term, itemId) {
+    const here = chosenMeanings(dictionary, term)
+      .filter((m) => versesFor(dictionary, m.keys).has(itemId))
+      .map((m) => m.gloss);
+    return `${term.text} (${here.join(', ')})`;
+  },
+  summary: ({ dictionary }, term) => meaningSummary(dictionary, term),
+  restore: {
+    label: 'all',
+    title: 'Put every meaning back',
+    shown: ({ dictionary }, term) => isNarrowed(dictionary, term),
+    apply: allMeanings,
+  },
+  renderBody: (body, term, x, edit) => renderMeanings(body, term, x?.dictionary ?? null, edit),
+  param: { key: 'm', write: encodeMeanings, read: applyMeanings },
+};
+
+/** How the Tanakh's search matches, given its dictionary and, once it is in, the parse. */
+function contextOf(
+  dictionary: Dictionary,
+  parse: Parse | null = null,
+): SearchContext<MeaningsData> {
+  return { languages: TANAKH_LANGUAGES, extra: meanings, x: meaningsData(dictionary, parse) };
+}
+
+const tanakhSearch = createTermSearch<TanakhLayout, SearchData, MeaningsData>({
   languages: TANAKH_LANGUAGES,
   data: SEARCH_FILES,
   index: textIndexOf,
@@ -66,30 +109,7 @@ const tanakhSearch = createTermSearch<TanakhLayout, SearchData, Dictionary>({
   // The parse marks a word better than its spelling: the list is quoted again in place.
   onlyQuotesChange: onlyParseDiffers,
   telemetry: searchTelemetry({ delayMs: SEARCH_RECORD_DELAY_MS, send: trackSearchExecute }),
-  extra: {
-    ...meaningsMode,
-    build: dictionaryOf,
-    itemsFor: (dictionary, term) => versesFor(dictionary, selectedKeys(dictionary, term)),
-    ranges: (dictionary, term, { itemId, text, language, data }) =>
-      meaningRanges(dictionary, wordsOfVerse(data.parse, itemId, text), term, text, language),
-    quoted: quotedMeaning,
-    // Each word as typed, then which of its checked meanings this verse holds.
-    hoverNote(dictionary, term, itemId) {
-      const here = chosenMeanings(dictionary, term)
-        .filter((m) => versesFor(dictionary, m.keys).has(itemId))
-        .map((m) => m.gloss);
-      return `${term.text} (${here.join(', ')})`;
-    },
-    summary: meaningSummary,
-    restore: {
-      label: 'all',
-      title: 'Put every meaning back',
-      shown: isNarrowed,
-      apply: allMeanings,
-    },
-    renderBody: renderMeanings,
-    param: { key: 'm', write: encodeMeanings, read: applyMeanings },
-  },
+  extra: meanings,
 });
 
 export const searchTool = tanakhSearch.tool;
@@ -124,8 +144,19 @@ export function matchesForTerms(
 ): { results: SearchResult[]; matchingTerms: Map<string, number[]> } {
   if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
-  const results = resultsForTerms(index, dictionary, active);
+  const results = resultsOf(index, active, contextOf(dictionary));
   return { results, matchingTerms: matchingTermsOf(results) };
+}
+
+/** A result row's quotation of its verse for `term`, as the panel quotes it. */
+export function excerpt(
+  result: SearchResult,
+  term: SearchTerm,
+  index: TextIndex,
+  dictionary: Dictionary,
+  parse: Parse | null,
+): Snippet | null {
+  return excerptOf(index, result, term, contextOf(dictionary, parse));
 }
 
 /**

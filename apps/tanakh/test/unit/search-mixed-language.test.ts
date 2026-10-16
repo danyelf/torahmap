@@ -5,7 +5,8 @@
 // and a blank row means "nothing yet", not "everything".
 
 import { describe, it, expect } from 'vitest';
-import { buildTextIndex, versesForTerm } from '../../src/search/search.ts';
+import { buildTextIndex } from '../../src/search/search.ts';
+import { versesForTerm } from '../helpers/searchData';
 import { addTerm } from '@torahmap/search';
 import { termQuery } from '../../src/search/meanings.ts';
 import { ALL_TEXTS_FIXTURE } from '../helpers/mixedLanguageTexts.ts';

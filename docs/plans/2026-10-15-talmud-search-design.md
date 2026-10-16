@@ -31,7 +31,7 @@ needs:
 The two editions line up segment for segment (81,793 segments).
 `scripts/talmud/bundle.ts` writes one more file, `public/data/talmud/search.json`:
 every segment's Davidson text, its vowels and tags removed, laid out as `texts/`'s amudim. It is
-18 MB, about 2.7 MB as served, and loads with search's other files.
+18 MB, about 2.7 MB as served, and downloads after the map first draws, as every tool's files do.
 
 The popup keeps the Wikisource text and its citation links, and its marks are
 found by matching the terms again in that text. So a segment found through an

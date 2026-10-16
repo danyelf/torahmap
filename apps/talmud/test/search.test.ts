@@ -40,6 +40,15 @@ describe('the Talmud’s search', () => {
     expect(found({ search: 'רבי', mode: 'w' })).toEqual(['TractA.2a.1', 'TractA.3b.1']);
   });
 
+  it('matches a term as a whole word until told otherwise', () => {
+    expect(found({ search: 'רבי' })).toEqual(['TractA.2a.1', 'TractA.3b.1']);
+    expect(found({ search: 'רבי', mode: 's' })).toEqual([
+      'TractA.2a.1',
+      'TractA.2a.3',
+      'TractA.3b.1',
+    ]);
+  });
+
   it('finds a phrase', () => {
     expect(found({ search: 'קל וחומר' })).toEqual(['TractA.2a.2']);
   });

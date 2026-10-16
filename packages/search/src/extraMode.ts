@@ -33,7 +33,7 @@ export interface ExtraMode<X, D = unknown> {
   ranges?(
     x: X,
     term: SearchTerm,
-    at: { itemId: string; text: string; language: SearchLanguage; data: D },
+    at: { itemId: string; text: string; language: SearchLanguage },
   ): TextRange[];
   /** The stretch a result row quotes around, from the term's `ranges` in that item. */
   quoted?(term: SearchTerm, text: string, ranges: TextRange[]): TextRange;

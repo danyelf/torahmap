@@ -2,7 +2,7 @@ import { addTerm, setMode, type SearchResult, type TextIndex } from '@torahmap/s
 import type { Dictionary } from '../../src/search/search';
 import type { Parse } from '../../src/search/dictionary';
 import { type SearchMode } from '../../src/search/meanings.ts';
-import { excerpt } from '../../src/search/highlight';
+import { excerpt } from '../../src/search/index.ts';
 
 /** A result row's quotation of its verse, for a term typed as `text` in `mode`. */
 export function excerptOf(
