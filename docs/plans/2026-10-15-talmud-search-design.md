@@ -1,6 +1,6 @@
 # Talmud search
 
-**Status:** Design, for review 2026-10-15. Issue #345. Follow-ups: #382 (search
+**Status:** Implemented 2026-10-15, branch `worktree-talmud-search`. Issue #345. Follow-ups: #382 (search
 by Jastrow entry), #389 (show the Davidson text in the popup).
 
 ## What it does
@@ -30,8 +30,8 @@ needs:
 
 The two editions line up segment for segment (81,793 segments).
 `scripts/talmud/bundle.ts` writes one more file, `public/data/talmud/search.json`:
-every segment's Davidson text, its vowels removed, in map order. It is 16 MB,
-about 2.5 MB as served, and loads on the first search.
+every segment's Davidson text, its vowels and tags removed, laid out as `texts/`'s amudim. It is
+18 MB, about 2.7 MB as served, and loads with search's other files.
 
 The popup keeps the Wikisource text and its citation links, and its marks are
 found by matching the terms again in that text. So a segment found through an
@@ -84,8 +84,8 @@ A text supplies to `createTermSearch`:
 
 - its languages: Hebrew and English for the Tanakh; Hebrew, with prefixes, for
   the Talmud;
-- its search files, and each item's id, reference and searchable text in each
-  language;
+- its search files, and from them an index of each item's id, reference and
+  text in each language, built once per set of text files;
 - what a result is called ("verse", "segment"), the box's placeholder, its
   description and credits;
 - for the Tanakh only, its meanings mode: one object that offers the mode for a
