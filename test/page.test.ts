@@ -10,13 +10,15 @@ import { talmudText } from '@torahmap/talmud/text.ts';
 const TEMPLATE = readFileSync(join(__dirname, '../index.html'), 'utf8');
 
 describe('pageAt', () => {
-  const [tanakh, talmud] = PAGES;
+  const [tanakh, talmud, euaiact] = PAGES;
 
   it('gives each address its own text’s page, query or not', () => {
     for (const path of ['/', '/index.html', '/?verse=Genesis.1.1'])
       expect(pageAt(path)).toBe(tanakh);
     for (const path of ['/talmud/', '/talmud/index.html', '/talmud/?at=Berakhot.2a.1'])
       expect(pageAt(path)).toBe(talmud);
+    for (const path of ['/euaiact/', '/euaiact/index.html', '/euaiact/?at=6(2)'])
+      expect(pageAt(path)).toBe(euaiact);
   });
 
   it('gives each text the copy its site shows', () => {
