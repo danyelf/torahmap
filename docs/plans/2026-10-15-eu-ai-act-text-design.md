@@ -1,7 +1,7 @@
 # The EU AI Act as a Third Text
 
 **Date:** 2026-10-15
-**Status:** Design, awaiting review. Builds on the exploration in
+**Status:** Built in branch `euaiact-text`. Builds on the exploration in
 `2026-10-13-eu-ai-act-map-design.md` (#372), which settled the layout.
 
 The Act becomes a third text beside the Tanakh and the Talmud, through
@@ -69,17 +69,30 @@ hits and centres are unchanged.
 
 ## Where the machinery assumed something else
 
-A running list. Each is confirmed or dropped as the work reaches it, and what
-is found is written here, not in a code comment.
+What building the Act found. Each row says what the shell assumed and what
+became of it.
 
-| # | Assumption | Status |
+| # | Assumption | What became of it |
 |---|---|---|
-| 1 | A square is square (`MapItem.size`) | Found; fixed by `width` above |
-| 2 | A popup has Hebrew and English (`PopupText`); "Hide Hebrew", the Hebrew label font and Hebrew word handling follow | To check: how much of it the Act can leave empty, and whether the toggle should vanish |
-| 3 | A section label has a Hebrew name and an English one (`mapLabels.ts`) | To check |
-| 4 | A text has at least one story | The Talmud's one-stop story is a stopgap; the Act copies it |
-| 5 | Overlays and link keys come from `overlay-catalog`, which is the Tanakh's | The Talmud has no overlays; the Act is the first other text to have them |
-| 6 | Telemetry's area and section are a book and a part of the canon (`area(item)`) | To check that the columns and mode values accept a third text |
+| 1 | A square is square (`MapItem.size`) | Fixed: an optional `width`, read in six places. |
+| 2 | A text has Hebrew | The popup copes with empty Hebrew. The real assumptions were the Hide Hebrew control and its stored choice, `torahMap.englishOnly`, which every page on one origin shares. Fixed: `Site.hasHebrew`; a text without it is English only, offers no control, and never reads or writes the choice. |
+| 3 | A label has a Hebrew name | `mapLabels.ts` draws a Hebrew span and hides a narrow book's English unless the page is English only. With `hasHebrew: false` the page is English only, so the English always shows; the Hebrew span stays, empty. No change needed. |
+| 4 | A text has at least one story | Still true. The Act copies the Talmud's one-stop stopgap. |
+| 5 | Overlays and link keys come from `overlay-catalog` | Not so: the shell takes `text.overlays` and `link.overlayParams` and never reads the catalog, which is the Tanakh's own list. The Act's two overlays needed nothing from it. |
+| 6 | Telemetry knows which text sent an event | It does not, so the Talmud's page sends none, and the Act's does the same. Telemetry for a second text is its own work. |
+| 7 | A square's id looks like the Tanakh's or the Talmud's | Not so: the link takes any id up to 100 characters without `/ \ \| ;` (`SQUARE_ID` in `packages/link/src/params.ts`), so `5(1)(h)` and `Annex.III.1.2` needed nothing. |
+| 8 | A text reads right to left | A book's label was always anchored at its right edge, so "Ch. III" sat over the last of its five columns. Fixed: `MapLabelSettings.direction`, right to left unless a text says otherwise. |
+| 9 | A text's source is Sefaria | The page said "View on Sefaria" in the popup and linked "Sefaria" when WebGL is missing. Fixed: `PageCopy.textSource`. |
+| 10 | A text styles its own text boxes | The search box's look lived in the Tanakh's search CSS, so any other text's box was unstyled. Fixed: a shared `control-input` beside the shell's other controls. |
+| 11 | A link with no zoom opens at a fixed zoom | Found, not fixed: a link with no zoom opens at `link.zoom.start` (`main.ts`, `restoreFromUrl`), not the fitted view, so a link such as `?overlay=references` opens the Act zoomed in, its left under the panel. The Talmud shares it. |
+| 12 | Each text has its own jitter | Two copies of the position jitter and two different brightness jitters. The Act uses new shared helpers in `@torahmap/utils`; moving the others onto them is #391. |
+
+The source links name the 2024 Official Journal text on EUR-Lex. Its anchors
+(`#art_6`, `#rct_12`, `#anx_III`) were checked in a browser: each is there and
+names the right article, recital or annex.
+
+The exploration's design doc counts 264 annex squares; its own `render.py`
+places 250, as this layout does.
 
 ## Testing
 
