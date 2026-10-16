@@ -110,12 +110,12 @@ export function toolsPicture<T>(
   );
 }
 
-/** What search alone draws a square it does not find as: grey, or its own colour dimmed when `keepsBase`. */
+/** What search alone draws a square it does not find as: grey, or `keepsBase` of its own colour. */
 export function unfoundColor(
   base: (index: number) => ItemColor,
-  keepsBase: boolean,
+  keepsBase: number | undefined,
 ): (index: number) => ItemColor {
-  return keepsBase ? (i) => brightenBands(base(i), SEARCH_NON_MATCH_DIM) : () => DIMMED_GREY;
+  return keepsBase === undefined ? () => DIMMED_GREY : (i) => brightenBands(base(i), keepsBase);
 }
 
 /**

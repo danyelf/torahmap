@@ -204,11 +204,11 @@ describe('toolsPicture', () => {
 });
 
 describe('unfoundColor', () => {
-  it('is grey unless the text keeps its base colour', () => {
-    expect(unfoundColor(() => BLUE, false)(0)).toEqual(DIMMED_GREY);
+  it('is grey unless the text keeps some of its base colour', () => {
+    expect(unfoundColor(() => BLUE, undefined)(0)).toEqual(DIMMED_GREY);
   });
 
-  it("dims the text's base colour when it keeps it", () => {
-    expect(unfoundColor(() => BLUE, true)(0)).toEqual(scaled(BLUE, DIM));
+  it("keeps as much of the text's base colour as the text asks", () => {
+    expect(unfoundColor(() => BLUE, 0.6)(0)).toEqual(scaled(BLUE, 0.6));
   });
 });

@@ -52,8 +52,8 @@ export interface OpenText<I extends MapItem, S = unknown> {
   startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */
   baseColor(item: I, index: number): ItemColor;
-  /** Whether a search dims the squares it does not find to their base colour rather than grey. */
-  searchKeepsBase?: boolean;
+  /** How much of its base colour a square a search does not find keeps; without it, the square goes grey. */
+  searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
   /** The file a square's text is in. The shell downloads it when the square's popup first shows. */
