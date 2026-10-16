@@ -23,7 +23,7 @@
 - Links need no backward compatibility.
 - The Act is not on torahmap.org until Danyel says so: its flag in `build.ts` is `live: false` and stays so.
 - Commit messages end with:
-  `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`
+  `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`
   `Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J`
 - Run `npx prettier --write <files>` on every TS, CSS, HTML and JSON file you touch before committing; the pre-commit hook checks formatting, typecheck and tests, and `public/data/` is excluded from formatting.
 - Commit commands stand alone: never chain a `git -C <other folder>` step with a commit or push.
@@ -180,7 +180,7 @@ git commit -m "Squares may be wider than tall
 An optional width on MapItem, defaulting to size, read where a square's
 rectangle, hit, centre and outline are worked out.
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
@@ -428,7 +428,7 @@ npx prettier --write build.ts pages.ts vite.config.ts apps/euaiact test/build.te
 git add apps/euaiact build.ts pages.ts vite.config.ts package.json package-lock.json test
 git commit -m "A page of its own for the AI Act, and a live flag for each page
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
@@ -738,7 +738,7 @@ npx prettier --write apps/euaiact
 git add scripts/euaiact public/data/euaiact apps/euaiact DATA_REGENERATION.md
 git commit -m "Ship the AI Act's data: structure, texts and references
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
@@ -747,7 +747,8 @@ Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ### Task 4: The layout
 
 **Files:**
-- Create: `apps/euaiact/src/constants.ts`, `apps/euaiact/src/layout.ts`, `apps/euaiact/test/helpers/actFixture.ts`, `apps/euaiact/test/layout.test.ts`
+- Create: `packages/utils/src/jitter.ts`, `packages/utils/test/jitter.test.ts`, `apps/euaiact/src/constants.ts`, `apps/euaiact/src/layout.ts`, `apps/euaiact/test/helpers/actFixture.ts`, `apps/euaiact/test/layout.test.ts`
+- Modify: `packages/utils/src/index.ts` (export the helpers)
 
 **Interfaces:**
 - Consumes: `ActStructure` and friends (Task 3); `MapItem.width` (Task 1); `BookBox` from `@torahmap/shell/mapLabels.ts`.
@@ -760,6 +761,67 @@ export interface ActItem extends MapItem {
 export interface ActLayout { items: ActItem[]; books: BookBox[]; bounds: { width: number; height: number } }
 export function computeActLayout(structure: ActStructure): ActLayout;
 ```
+
+- [ ] **Step 0: The shared jitter helpers**
+
+The Tanakh and the Talmud each have their own copy of this; moving them onto it is #391, not this plan. Create `packages/utils/src/jitter.ts`, export both from `packages/utils/src/index.ts`, and test them in `packages/utils/test/jitter.test.ts`:
+
+```ts
+// packages/utils/src/jitter.ts
+// A square's nudge in place and in brightness, fixed by a seed so it is the same on every load.
+
+import type { Color } from './color.ts';
+import { seededRandom } from './random.ts';
+
+/** An offset of up to ±range on each axis. */
+export function positionJitter(seed: number, range: number): { x: number; y: number } {
+  return {
+    x: (seededRandom(seed * 2) - 0.5) * 2 * range,
+    y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * range,
+  };
+}
+
+/** The colour up to ±range lighter or darker; multiplied, so the hue holds. */
+export function brightnessJitter(color: Color, seed: number, range: number): Color {
+  const f = 1 + (seededRandom(seed) - 0.5) * 2 * range;
+  return color.map((c) => Math.max(0, Math.min(1, c * f))) as Color;
+}
+```
+
+```ts
+// packages/utils/test/jitter.test.ts
+import { describe, expect, it } from 'vitest';
+import { brightnessJitter, positionJitter } from '../src/index.ts';
+
+const seeds = [1, 2, 3, 4, 5, -77, 123456];
+
+describe('position jitter', () => {
+  it('stays within its range, repeats for a seed, and varies between seeds', () => {
+    for (const s of seeds) {
+      const j = positionJitter(s, 0.7);
+      expect(Math.abs(j.x)).toBeLessThanOrEqual(0.7);
+      expect(Math.abs(j.y)).toBeLessThanOrEqual(0.7);
+      expect(positionJitter(s, 0.7)).toEqual(j);
+    }
+    expect(new Set(seeds.map((s) => positionJitter(s, 0.7).x)).size).toBeGreaterThan(1);
+  });
+});
+
+describe('brightness jitter', () => {
+  it('scales every channel by one factor within its range, and clamps to 1', () => {
+    for (const s of seeds) {
+      const [r, g, b] = brightnessJitter([0.2, 0.4, 0.6], s, 0.18);
+      expect(g / r).toBeCloseTo(2);
+      expect(b / r).toBeCloseTo(3);
+      expect(r / 0.2).toBeGreaterThanOrEqual(0.82 - 1e-9);
+      expect(r / 0.2).toBeLessThanOrEqual(1.18 + 1e-9);
+    }
+    expect(Math.max(...seeds.flatMap((s) => brightnessJitter([1, 1, 1], s, 0.18)))).toBe(1);
+  });
+});
+```
+
+Run `npx vitest run packages/utils`, expecting PASS.
 
 - [ ] **Step 1: Constants**
 
@@ -976,7 +1038,7 @@ Run: `npx vitest run apps/euaiact/test/layout.test.ts` — expected FAIL (`layou
 // Where every square of the Act stands: recitals over articles over annexes.
 
 import type { MapItem } from '@torahmap/engine';
-import { seededRandom } from '@torahmap/utils';
+import { positionJitter } from '@torahmap/utils';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
 import type { ActBlock, ActCell, ActGroup, ActStructure, Origin } from './data.ts';
 import type { Layer } from './ids.ts';
@@ -994,14 +1056,7 @@ import {
 } from './constants.ts';
 import { idHash } from './ids.ts';
 
-/** A square's nudge, fixed by its id; a recital's is the same as an article's. */
-function jitterFor(id: string): { x: number; y: number } {
-  const seed = idHash(id);
-  return {
-    x: (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER,
-    y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER,
-  };
-}
+const jitterFor = (id: string) => positionJitter(idHash(id), POSITION_JITTER);
 
 export interface ActItem extends MapItem {
   layer: Layer;
@@ -1179,11 +1234,11 @@ Write a throwaway script in the scratchpad (not in the repo) that loads `public/
 - [ ] **Step 8: Format and commit**
 
 ```bash
-npx prettier --write apps/euaiact
-git add apps/euaiact
+npx prettier --write apps/euaiact packages/utils
+git add apps/euaiact packages/utils
 git commit -m "Lay out the AI Act: three layers, chapter columns, recitals as wide tiles
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
@@ -1302,7 +1357,7 @@ npx prettier --write packages/shell apps/tanakh/src/site.ts apps/talmud/src/site
 git add -A packages apps test
 git commit -m "A text may have no Hebrew: no toggle, English only
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
@@ -1358,7 +1413,7 @@ Check `viewTitle`'s signature in `packages/site` and `Credit`'s fields in `packa
 // apps/euaiact/src/baseColor.ts
 // A square's colour while no tool colours it: its layer.
 
-import { type Color, seededRandom } from '@torahmap/utils';
+import { brightnessJitter, type Color } from '@torahmap/utils';
 import { BRIGHTNESS_JITTER } from './constants.ts';
 import { idHash } from './ids.ts';
 import type { ActItem } from './layout.ts';
@@ -1374,11 +1429,9 @@ export const RECITAL = hex('#b9a27a');
 export const ARTICLE = hex('#9aa3ad');
 export const ANNEX = hex('#5b8fc9');
 
-/** Its layer's colour, a little lighter or darker as its id fixes; multiplied, so the hue holds. */
 export function layerColor(item: ActItem): Color {
   const base = item.layer === 'recital' ? RECITAL : item.layer === 'annex' ? ANNEX : ARTICLE;
-  const f = 1 + (seededRandom(idHash(item.id)) - 0.5) * 2 * BRIGHTNESS_JITTER;
-  return base.map((c) => Math.max(0, Math.min(1, c * f))) as Color;
+  return brightnessJitter(base, idHash(item.id), BRIGHTNESS_JITTER);
 }
 ```
 
@@ -1600,7 +1653,7 @@ npx prettier --write apps/euaiact test
 git add apps/euaiact test
 git commit -m "The AI Act as a text: the map draws, its labels and popup work
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
@@ -1847,7 +1900,7 @@ npx prettier --write apps/euaiact
 git add apps/euaiact
 git commit -m "Two overlays for the AI Act: amendment, and what points here
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
@@ -2008,7 +2061,7 @@ npx prettier --write apps/euaiact
 git add apps/euaiact
 git commit -m "Plain-word search for the AI Act
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
 ```
 
