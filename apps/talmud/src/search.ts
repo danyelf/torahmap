@@ -4,12 +4,7 @@
 import { memoByValue } from '@torahmap/utils';
 import { hebrew } from '@torahmap/hebrew';
 import { TERM_SEARCH_PARAMS } from '@torahmap/link';
-import {
-  buildTextIndex,
-  createTermSearch,
-  type SearchEntry,
-  type TermSettings,
-} from '@torahmap/search';
+import { buildTextIndex, createTermSearch, type SearchEntry } from '@torahmap/search';
 import { talmudId, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import {
   SEARCH_FILE,
@@ -18,15 +13,11 @@ import {
   type TalmudStructure,
 } from './data.ts';
 
-export type TalmudSearchSettings = TermSettings;
-
 /** What search reads: the tractates' order and pages, and their search text. */
 export interface TalmudSearchData {
   structure: TalmudStructure;
   text: TalmudSearchText;
 }
-
-export const TALMUD_SEARCH_PARAMS = TERM_SEARCH_PARAMS;
 
 const LANGUAGES = [hebrew({ prefixes: 'דולבכשמה' })];
 
@@ -57,7 +48,7 @@ const search = createTermSearch<TalmudLayoutItem, TalmudSearchData>({
   defaultMode: 'word',
   placeholder: 'Search Hebrew or Aramaic…',
   description: 'Any word or phrase of the Talmud.',
-  urlParams: TALMUD_SEARCH_PARAMS,
+  urlParams: TERM_SEARCH_PARAMS,
 });
 
 export const talmudSearch = search.tool;

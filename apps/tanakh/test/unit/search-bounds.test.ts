@@ -1,10 +1,9 @@
-import { type SearchResult, type TextIndex } from '@torahmap/search';
 // A snippet's marked range stays inside the snippet, even where the word ends
 // the verse and carries points.
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { type SearchResult } from '@torahmap/search';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex } from '../../src/search/search';
-import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
+import { searchDataFor } from '../helpers/searchData';
 
 const result = (verse: number): SearchResult => ({
   id: `Genesis.1.${verse}`,
@@ -13,17 +12,13 @@ const result = (verse: number): SearchResult => ({
 });
 
 describe('Snippet bounds', () => {
-  let index: TextIndex;
-  beforeEach(() => {
-    const texts = {
-      Genesis: {
-        '1': {
-          '1': { he: 'אֱלֹהִים', en: 'God' },
-          '2': { he: 'בְּרֵאשִׁית', en: 'In the beginning' },
-        },
+  const data = searchDataFor({
+    Genesis: {
+      '1': {
+        '1': { he: 'אֱלֹהִים', en: 'God' },
+        '2': { he: 'בְּרֵאשִׁית', en: 'In the beginning' },
       },
-    };
-    index = buildTextIndex(texts, inTextsOrder(texts));
+    },
   });
 
   it.each([
@@ -32,13 +27,7 @@ describe('Snippet bounds', () => {
     [1, 'God'],
     [2, 'beginning'],
   ] as const)('keeps the mark inside the snippet (verse %i, %s)', (verse, term) => {
-    const { snippet, matchStart, matchEnd } = excerptOf(
-      result(verse),
-      term,
-      'word',
-      index,
-      EMPTY_DICTIONARY,
-    )!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result(verse), term, 'word', data)!;
 
     expect(matchStart).toBeGreaterThanOrEqual(0);
     expect(matchEnd).toBeGreaterThan(matchStart);
@@ -46,13 +35,7 @@ describe('Snippet bounds', () => {
   });
 
   it('marks the whole of a pointed word that ends the verse', () => {
-    const { snippet, matchStart, matchEnd } = excerptOf(
-      result(1),
-      'אלהים',
-      'word',
-      index,
-      EMPTY_DICTIONARY,
-    )!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result(1), 'אלהים', 'word', data)!;
     expect(snippet.slice(matchStart, matchEnd)).toBe('אֱלֹהִים');
   });
 });

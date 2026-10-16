@@ -1,15 +1,16 @@
 import { type TextIndex } from '@torahmap/search';
 // Tests for Hebrew search modes (substring, word, meanings)
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildTextIndex } from '../../src/search/search';
+import { textIndexOf, type SearchData } from '../../src/search/data';
 import { versesForTerm } from '../helpers/searchData';
 import type { MatchMode } from '@torahmap/search';
 import type { VerseTexts } from '../../src/verseTexts';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
-import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
+import { searchDataFor } from '../helpers/searchData';
 
 describe('Hebrew Search Modes', () => {
   let mockVerseTexts: VerseTexts;
+  let data: SearchData;
   let index: TextIndex;
 
   beforeEach(() => {
@@ -74,7 +75,8 @@ describe('Hebrew Search Modes', () => {
       },
     };
 
-    index = buildTextIndex(mockVerseTexts, inTextsOrder(mockVerseTexts));
+    data = searchDataFor(mockVerseTexts);
+    index = textIndexOf(data);
   });
 
   const found = (text: string, mode: MatchMode) => versesForTerm(index, text, 'he', mode);
@@ -127,18 +129,18 @@ describe('Hebrew Search Modes', () => {
       for (const mode of ['substring', 'word'] as const) {
         expect(found('', mode).size).toBe(0);
       }
-      expect(searchInMeaningsMode(index, EMPTY_DICTIONARY, '')).toEqual([]);
+      expect(searchInMeaningsMode(data, '')).toEqual([]);
     });
 
     it('finds nothing for a single letter in meanings mode', () => {
-      expect(searchInMeaningsMode(index, EMPTY_DICTIONARY, 'א')).toEqual([]);
+      expect(searchInMeaningsMode(data, 'א')).toEqual([]);
     });
 
     it('finds nothing for a term with no matches', () => {
       for (const mode of ['substring', 'word'] as const) {
         expect(found('xyz123', mode).size).toBe(0);
       }
-      expect(searchInMeaningsMode(index, EMPTY_DICTIONARY, 'xyz123')).toEqual([]);
+      expect(searchInMeaningsMode(data, 'xyz123')).toEqual([]);
     });
 
     it('finds nothing for a term of points alone', () => {

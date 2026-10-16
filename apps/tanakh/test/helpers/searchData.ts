@@ -1,8 +1,8 @@
-import { english, itemsForTerm, type MatchMode, type TextIndex } from '@torahmap/search';
-import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
-import { TANAKH_LANGUAGES } from '../../src/search/languages.ts';
 // Search's files for tests: the shipped ones, read from disk, or made-up texts
 // with a dictionary that knows no word.
+import { itemsForTerm, type MatchMode, type TextIndex } from '@torahmap/search';
+import type { TextLanguage } from '@torahmap/shell/language.ts';
+import { TANAKH_LANGUAGES } from '../../src/search/languages.ts';
 import { memoByValue } from '@torahmap/utils';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -81,6 +81,12 @@ export function realSearchData(): RealSearchData {
   return real;
 }
 
+/** Search's files for these texts, with the shipped dictionary and none of the parse. */
+export function withRealDictionary(texts: VerseTexts): SearchData {
+  const { lexicon, forms, verseLexemes } = realSearchData().files;
+  return searchDataFor(texts, { lexicon, forms, verseLexemes });
+}
+
 /** The verses a term's text matches in `language`'s text, as the search finds them. */
 export function versesForTerm(
   index: TextIndex,
@@ -88,5 +94,10 @@ export function versesForTerm(
   language: TextLanguage,
   mode: MatchMode,
 ): Set<string> {
-  return itemsForTerm(index, text, language === HEBREW ? TANAKH_LANGUAGES[0] : english, mode);
+  return itemsForTerm(
+    index,
+    text,
+    TANAKH_LANGUAGES.find((l) => l.id === language)!,
+    mode,
+  );
 }

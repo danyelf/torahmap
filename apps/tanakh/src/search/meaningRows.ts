@@ -4,14 +4,7 @@ import './meanings.css';
 import type { SearchTerm } from '@torahmap/search';
 import type { Dictionary, LexemeLanguage } from './search.ts';
 import type { Meaning } from './dictionary.ts';
-import {
-  chosenAmong,
-  effectiveMode,
-  isNarrowed,
-  meaningsOf,
-  onlyMeaning,
-  toggleMeaning,
-} from './meanings.ts';
+import { chosenAmong, isNarrowed, meaningsOf, onlyMeaning, toggleMeaning } from './meanings.ts';
 
 type Edit = (change: (terms: SearchTerm[]) => SearchTerm[]) => void;
 
@@ -98,8 +91,8 @@ function buildMeaningRow(
  * boxes are then synced on every pass, so a refused toggle (unchecking the last
  * one) is put back rather than leaving the page disagreeing with the state.
  */
-function meaningSignature(mode: string, rows: Meaning[]): string {
-  if (mode !== 'meanings' || rows.length < 2) return '';
+function meaningSignature(inMeaningsMode: boolean, rows: Meaning[]): string {
+  if (!inMeaningsMode || rows.length < 2) return '';
   return rows.map((m) => m.keys[0]).join(',');
 }
 
@@ -107,11 +100,12 @@ function meaningSignature(mode: string, rows: Meaning[]): string {
 export function renderMeanings(
   body: HTMLElement,
   term: SearchTerm,
+  inMeaningsMode: boolean,
   dictionary: Dictionary | null,
   edit: Edit,
 ): void {
   const rows = dictionary ? meaningsOf(dictionary, term) : [];
-  const signature = meaningSignature(effectiveMode(dictionary, term), rows);
+  const signature = meaningSignature(inMeaningsMode, rows);
 
   if (body.dataset.meanings !== signature) {
     body.dataset.meanings = signature;

@@ -16,6 +16,7 @@ import {
   setMode,
   encodeModes,
   applyModes,
+  modesOffered,
   type SearchTerm,
 } from '@torahmap/search';
 import {
@@ -28,14 +29,15 @@ import {
   isNarrowed,
   meaningsOf,
   chosenMeanings,
-  effectiveMode,
-  modesOffered,
   meaningsPossible,
   meaningsMode,
 } from '../../src/search/meanings.ts';
 import { realSearchData } from '../helpers/searchData';
+import { tanakhSearch } from '../../src/search/index.ts';
+import { TANAKH_LANGUAGES } from '../../src/search/languages.ts';
 
-const { dictionary } = realSearchData();
+const { files, dictionary } = realSearchData();
+const modeOf = (term: SearchTerm) => tanakhSearch.modeOf(files, term);
 
 describe('adding a term', () => {
   it('offers its meanings, all of them chosen', () => {
@@ -333,8 +335,8 @@ describe('getting back to all of them', () => {
 describe('a term matched its own way', () => {
   it('defaults Hebrew to meanings and English to substring', () => {
     const terms = addTerm(addTerm([], 'עלה'), 'light');
-    expect(effectiveMode(dictionary, terms[0])).toBe('meanings');
-    expect(effectiveMode(dictionary, terms[1])).toBe('substring');
+    expect(modeOf(terms[0])).toBe('meanings');
+    expect(modeOf(terms[1])).toBe('substring');
   });
 
   it('lets the default follow the text when the language changes', () => {
@@ -343,56 +345,60 @@ describe('a term matched its own way', () => {
     let terms = addTerm([], 'light');
     terms = setTermText(terms, terms[0].id, 'עלה');
     expect(terms[0].mode).toBeNull();
-    expect(effectiveMode(dictionary, terms[0])).toBe('meanings');
+    expect(modeOf(terms[0])).toBe('meanings');
   });
 
   it('keeps a chosen mode across an edit', () => {
     let terms = addTerm([], 'עלה');
     terms = setMode(terms, terms[0].id, 'word');
     terms = setTermText(terms, terms[0].id, 'עלו');
-    expect(effectiveMode(dictionary, terms[0])).toBe('word');
+    expect(modeOf(terms[0])).toBe('word');
   });
 
   it('holds meanings for English but does not forget it', () => {
     let terms = addTerm([], 'עלה');
     terms = setMode(terms, terms[0].id, 'meanings');
     terms = setTermText(terms, terms[0].id, 'light');
-    expect(effectiveMode(dictionary, terms[0])).toBe('word');
+    expect(modeOf(terms[0])).toBe('word');
     terms = setTermText(terms, terms[0].id, 'עלה');
-    expect(effectiveMode(dictionary, terms[0])).toBe('meanings');
+    expect(modeOf(terms[0])).toBe('meanings');
   });
 
   it('changes one term without touching its neighbours', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'אור');
     terms = setMode(terms, terms[1].id, 'word');
-    expect(effectiveMode(dictionary, terms[0])).toBe('meanings');
-    expect(effectiveMode(dictionary, terms[1])).toBe('word');
+    expect(modeOf(terms[0])).toBe('meanings');
+    expect(modeOf(terms[1])).toBe('word');
   });
 
   it('offers meanings only to a term the dictionary could answer', () => {
     const terms = addTerm(addTerm([], 'עלה'), 'light');
-    expect(modesOffered(terms[0])).toEqual(['substring', 'word', 'meanings']);
-    expect(modesOffered(terms[1])).toEqual(['substring', 'word']);
+    expect(modesOffered(terms[0], TANAKH_LANGUAGES, meaningsMode)).toEqual([
+      'substring',
+      'word',
+      'meanings',
+    ]);
+    expect(modesOffered(terms[1], TANAKH_LANGUAGES, meaningsMode)).toEqual(['substring', 'word']);
   });
 
   it('matches a phrase the dictionary does not have as whole words', () => {
     let terms = addTerm([], 'וידבר יהוה');
     expect(meaningsPossible(dictionary, terms[0])).toBe(false);
-    expect(effectiveMode(dictionary, terms[0])).toBe('word');
+    expect(modeOf(terms[0])).toBe('word');
     terms = setMode(terms, terms[0].id, 'meanings');
-    expect(effectiveMode(dictionary, terms[0])).toBe('word');
+    expect(modeOf(terms[0])).toBe('word');
   });
 
   it('keeps meanings for a phrase the dictionary has, and for any single word', () => {
     const terms = addTerm(addTerm([], 'בית אל'), 'ויאמ');
-    expect(effectiveMode(dictionary, terms[0])).toBe('meanings');
-    expect(effectiveMode(dictionary, terms[1])).toBe('meanings');
+    expect(modeOf(terms[0])).toBe('meanings');
+    expect(modeOf(terms[1])).toBe('meanings');
   });
 
   it('keeps meanings for a single word only, without the dictionary', () => {
     const terms = addTerm(addTerm([], 'בית אל'), 'ויאמ');
-    expect(effectiveMode(null, terms[0])).toBe('word');
-    expect(effectiveMode(null, terms[1])).toBe('meanings');
+    expect(tanakhSearch.modeOf(null, terms[0])).toBe('word');
+    expect(tanakhSearch.modeOf(null, terms[1])).toBe('meanings');
   });
 });
 
@@ -420,24 +426,20 @@ describe('the mode in the URL', () => {
       's,w,m',
       meaningsMode,
     );
-    expect(fresh.map((t) => effectiveMode(dictionary, t))).toEqual([
-      'substring',
-      'word',
-      'meanings',
-    ]);
+    expect(fresh.map((t) => modeOf(t))).toEqual(['substring', 'word', 'meanings']);
   });
 
   it('leaves a term on its default for an empty or unknown entry', () => {
     const terms = applyModes(addTerm(addTerm([], 'עלה'), 'אור'), ',zzz');
     expect(terms[0].mode).toBeNull();
     expect(terms[1].mode).toBeNull();
-    expect(terms.map((t) => effectiveMode(dictionary, t))).toEqual(['meanings', 'meanings']);
+    expect(terms.map((t) => modeOf(t))).toEqual(['meanings', 'meanings']);
   });
 
   it('ignores entries past the end of the term list', () => {
     const terms = applyModes(addTerm([], 'עלה'), 'w,r,s');
     expect(terms).toHaveLength(1);
-    expect(effectiveMode(dictionary, terms[0])).toBe('word');
+    expect(modeOf(terms[0])).toBe('word');
   });
 
   it('stays well under the 50-character cap at five terms', () => {
@@ -474,9 +476,7 @@ describe('typing and parsing agree on what separates two terms', () => {
     );
 
     expect(restored.map((t) => t.text)).toEqual(terms.map((t) => t.text));
-    expect(restored.map((t) => effectiveMode(dictionary, t))).toEqual(
-      terms.map((t) => effectiveMode(dictionary, t)),
-    );
+    expect(restored.map((t) => modeOf(t))).toEqual(terms.map((t) => modeOf(t)));
   });
 });
 

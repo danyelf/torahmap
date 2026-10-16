@@ -31,7 +31,7 @@ export function modeIn<X>(context: SearchContext<X>, term: SearchTerm): string {
 }
 
 /** Whether `term` is matched by the extra mode, which then has its data. */
-function byExtra<X>(
+export function byExtra<X>(
   context: SearchContext<X>,
   term: SearchTerm,
 ): context is SearchContext<X> & {

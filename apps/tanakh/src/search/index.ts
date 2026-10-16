@@ -4,25 +4,17 @@ import {
   activeTerms,
   canAddTerm,
   createTermSearch,
-  excerptOf,
   isSearching,
-  matchingTermsOf,
-  resultsOf,
   SEARCH_RECORD_DELAY_MS,
   type ExtraMode,
-  type SearchContext,
-  type SearchResult,
-  type SearchTerm,
-  type Snippet,
   type TermSettings,
-  type TextIndex,
 } from '@torahmap/search';
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { trackSearchExecute } from '@torahmap/shell/analytics.ts';
-import { SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
+import { MEANINGS_KEY, SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
 import type { TanakhLayout } from '../types.ts';
 import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from './data.ts';
-import { spellingFor, versesFor, wordsOfVerse, type Parse } from './dictionary.ts';
+import { spellingFor, versesFor, wordsOfVerse } from './dictionary.ts';
 import type { Dictionary } from './search.ts';
 import {
   allMeanings,
@@ -74,19 +66,12 @@ const meanings: ExtraMode<MeaningsData, SearchData> = {
     shown: ({ dictionary }, term) => isNarrowed(dictionary, term),
     apply: allMeanings,
   },
-  renderBody: (body, term, x, edit) => renderMeanings(body, term, x?.dictionary ?? null, edit),
-  param: { key: 'm', write: encodeMeanings, read: applyMeanings },
+  renderBody: (body, term, inThisMode, x, edit) =>
+    renderMeanings(body, term, inThisMode, x?.dictionary ?? null, edit),
+  param: { key: MEANINGS_KEY, write: encodeMeanings, read: applyMeanings },
 };
 
-/** How the Tanakh's search matches, given its dictionary and, once it is in, the parse. */
-function contextOf(
-  dictionary: Dictionary,
-  parse: Parse | null = null,
-): SearchContext<MeaningsData> {
-  return { languages: TANAKH_LANGUAGES, extra: meanings, x: meaningsData(dictionary, parse) };
-}
-
-const tanakhSearch = createTermSearch<TanakhLayout, SearchData, MeaningsData>({
+export const tanakhSearch = createTermSearch<TanakhLayout, SearchData, MeaningsData>({
   languages: TANAKH_LANGUAGES,
   data: SEARCH_FILES,
   index: textIndexOf,
@@ -122,43 +107,6 @@ export function configure(config: {
   tanakhSearch.configure(config.verses, config.callbacks?.onVerseClick ?? (() => {}));
 }
 
-/** How many verses one term accounts for on its own, or null when it is not being searched. */
-export function termHitCount(
-  data: SearchData,
-  settings: SearchSettings,
-  term: SearchTerm,
-): number | null {
-  return tanakhSearch.hitCount(data, settings, term);
-}
-
-/**
- * The verses these terms find, and nothing else: no state, no DOM, no analytics.
- *
- * A Hebrew term in meanings mode finds the verses of the meanings the reader has
- * left checked; every other term matches its text, in its own language.
- */
-export function matchesForTerms(
-  index: TextIndex,
-  dictionary: Dictionary,
-  active: SearchTerm[],
-): { results: SearchResult[]; matchingTerms: Map<string, number[]> } {
-  if (active.length === 0) return { results: [], matchingTerms: new Map() };
-
-  const results = resultsOf(index, active, contextOf(dictionary));
-  return { results, matchingTerms: matchingTermsOf(results) };
-}
-
-/** A result row's quotation of its verse for `term`, as the panel quotes it. */
-export function excerpt(
-  result: SearchResult,
-  term: SearchTerm,
-  index: TextIndex,
-  dictionary: Dictionary,
-  parse: Parse | null,
-): Snippet | null {
-  return excerptOf(index, result, term, contextOf(dictionary, parse));
-}
-
 /**
  * The search with a word a reader clicked added to it, narrowed to one of its
  * meanings, or null when the palette is full, so the caller can say so rather
@@ -185,5 +133,5 @@ export function searchForMeaning(
 ): SearchSettings | null {
   const chosen = meaningKeys && meaningKeys.length > 0 ? meaningKeys : null;
   const spelling = chosen ? (spellingFor(dictionary, chosen, text) ?? text) : text;
-  return tanakhSearch.addTermOrFill(settings, spelling, chosen ? 'meanings' : 'word', chosen);
+  return tanakhSearch.addTermOrFill(settings, spelling, chosen ? meaningsMode.id : 'word', chosen);
 }

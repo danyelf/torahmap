@@ -6,11 +6,8 @@ import { excerptOf } from '../helpers/excerpt';
 import { searchTool as overlay } from '../../src/search/index.ts';
 import { hostOverlay } from '../helpers/overlayHost';
 import { createVerse } from '../helpers/fixtures';
-import { EMPTY_DICTIONARY, inTextsOrder, searchDataFor } from '../helpers/searchData';
-
-const searchOverlay = hostOverlay(overlay, searchDataFor({}));
-import { buildTextIndex } from '../../src/search/search';
-import { versesForTerm } from '../helpers/searchData';
+import { searchDataFor, versesForTerm } from '../helpers/searchData';
+import { textIndexOf } from '../../src/search/data';
 import { english, matchRanges } from '@torahmap/search';
 import { hebrew } from '@torahmap/hebrew';
 import type { VerseTexts } from '../../src/verseTexts';
@@ -30,7 +27,9 @@ const texts: VerseTexts = {
   },
 };
 
-const index = buildTextIndex(texts, inTextsOrder(texts));
+const data = searchDataFor(texts);
+const index = textIndexOf(data);
+const searchOverlay = hostOverlay(overlay, searchDataFor({}));
 
 function marked(text: string, language: 'he' | 'en'): string[] {
   const fragment = searchOverlay.highlightItemText(createVerse(), text, language);
@@ -41,7 +40,7 @@ function marked(text: string, language: 'he' | 'en'): string[] {
 
 describe('the search and the highlighter agree', () => {
   beforeEach(() => {
-    searchOverlay.setData(searchDataFor(texts));
+    searchOverlay.setData(data);
   });
 
   it('on a term typed with a plain letter where the verse has a final form', () => {
@@ -77,25 +76,13 @@ describe('the search and the highlighter agree', () => {
 
   it('on where the result row centres a phrase', () => {
     const result = { id: 'Leviticus.1.1' };
-    const { snippet, matchStart, matchEnd } = excerptOf(
-      result,
-      'וידבר יהוה',
-      'word',
-      index,
-      EMPTY_DICTIONARY,
-    )!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהוה', 'word', data)!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
   });
 
   it('on where the result row centres a phrase cut off mid-word, in substring mode', () => {
     const result = { id: 'Leviticus.1.1' };
-    const { snippet, matchStart, matchEnd } = excerptOf(
-      result,
-      'וידבר יהו',
-      'substring',
-      index,
-      EMPTY_DICTIONARY,
-    )!;
+    const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהו', 'substring', data)!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהו');
   });
 });

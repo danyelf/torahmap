@@ -1,3 +1,4 @@
+import { ENGLISH } from '@torahmap/shell/language.ts';
 import type { SearchLanguage, TextRange } from './language.ts';
 
 /** A term is text a reader typed, so it can hold anything a regex reads. */
@@ -7,7 +8,7 @@ export function escapeForRegex(term: string): string {
 
 /** English: lowercased, a word bounded by punctuation as well as by space. */
 export const english: SearchLanguage = {
-  id: 'en',
+  id: ENGLISH,
   rtl: false,
   claims: () => true,
   fold: (text) => text.toLowerCase(),
