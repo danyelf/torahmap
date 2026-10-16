@@ -9,7 +9,8 @@ import { createVerse } from '../helpers/fixtures';
 import { EMPTY_DICTIONARY, inTextsOrder, searchDataFor } from '../helpers/searchData';
 
 const searchOverlay = hostOverlay(overlay, searchDataFor({}));
-import { buildTextIndex, versesForTerm } from '../../src/search/search';
+import { buildTextIndex } from '../../src/search/search';
+import { versesForTerm } from '../helpers/searchData';
 import { english, matchRanges } from '@torahmap/search';
 import { hebrew } from '@torahmap/hebrew';
 import type { VerseTexts } from '../../src/verseTexts';

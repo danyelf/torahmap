@@ -15,16 +15,16 @@ import type {
 import type { TextLanguage } from '@torahmap/shell/language.ts';
 import type { ExtraMode } from './extraMode.ts';
 import './search.css';
-import { highlightTerms, quoteTerm, type TermMatcher } from './highlight.ts';
-import type { SearchLanguage, TextRange } from './language.ts';
+import { highlightTerms } from './highlight.ts';
+import type { SearchLanguage } from './language.ts';
 import { createResultsList, type ResultsView } from './resultsList.ts';
 import { mountTermRows, type TermRows } from './termRows.ts';
+import { excerptOf, matcherOf, modeIn, resultsOf, type SearchContext } from './searching.ts';
 import { NO_TELEMETRY } from './telemetry.ts';
 import {
   addTerm,
   applyModes,
   colorIndexAt,
-  effectiveMode,
   encodeModes,
   languageOf,
   MAX_TERMS,
@@ -34,15 +34,7 @@ import {
   setTermText,
   type SearchTerm,
 } from './terms.ts';
-import {
-  displayedText,
-  itemsForTerm,
-  matchingTermsOf,
-  resultsForItemSets,
-  type SearchResult,
-  type Snippet,
-  type TextIndex,
-} from './textIndex.ts';
+import { matchingTermsOf, type SearchResult, type TextIndex } from './textIndex.ts';
 import type { MatchMode } from './matching.ts';
 
 /**
@@ -72,6 +64,8 @@ export interface TermSearchSpec<D, X> {
   /** Every link key the search reads: TERM_SEARCH_PARAMS, plus the extra mode's. */
   urlParams: readonly UrlParamSpec[];
   extra?: ExtraMode<X, D>;
+  /** How a term is matched while the reader has not said and the extra mode does not claim it: substring unless given. */
+  defaultMode?: MatchMode;
   /** Whether going from `before` to `after` changes only what result rows quote, so they are quoted again in place. */
   onlyQuotesChange?(before: D, after: D): boolean;
   /** Records the search; the caller builds it from this search's members. */
@@ -143,20 +137,19 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
 ): TermSearch<I, D, X> {
   const { languages, extra, noun } = spec;
   const extraOf = (data: D): X | null => extra?.build?.(data) ?? null;
-  const modeIn = (x: X | null, term: SearchTerm) => effectiveMode(term, languages, extra, x);
-  const modeOf = (data: D | null, term: SearchTerm) => modeIn(data ? extraOf(data) : null, term);
+  const contextOf = (x: X | null): SearchContext<X> => ({
+    languages,
+    extra,
+    x,
+    defaultMode: spec.defaultMode,
+  });
+  const contextFor = (data: D | null) => contextOf(data ? extraOf(data) : null);
+  const modeOf = (data: D | null, term: SearchTerm) => modeIn(contextFor(data), term);
 
   let items: readonly I[] = [];
   let onSelect: ((item: I) => void) | null = null;
   /** The row the reader last opened. Read through `openTerm`. */
   let openTermId: string | null = null;
-
-  /** The items one term finds, by its extra mode or by its text. */
-  function itemsOf(index: TextIndex, x: X | null, term: SearchTerm): ReadonlySet<string> {
-    const mode = modeIn(x, term);
-    if (mode === extra?.id && x !== null && extra.itemsFor) return extra.itemsFor(x, term);
-    return itemsForTerm(index, term.text.trim(), languageOf(languages, term), mode as MatchMode);
-  }
 
   // Per text index and extra data, then per settings: the same settings with
   // other data are another search. Every function in terms.ts returns a new
@@ -168,10 +161,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         const x = key === NO_EXTRA ? null : (key as X);
         const active = activeTerms(settings);
         if (active.length === 0) return { active, results: [], matchingTerms: new Map() };
-        const results = resultsForItemSets(
-          index,
-          active.map((term) => itemsOf(index, x, term)),
-        );
+        const results = resultsOf(index, active, contextOf(x));
         return { active, results, matchingTerms: matchingTermsOf(results) };
       }),
     ),
@@ -243,30 +233,6 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       if (result.matchingTerms.some((m) => m.termIndex === index)) count++;
     }
     return count;
-  }
-
-  /** How a term is matched within one item's text. */
-  function matcherFor(data: D, itemId: string): TermMatcher {
-    return {
-      modeOf: (term) => modeOf(data, term),
-      rangesOf(term, text, language) {
-        const x = extraOf(data);
-        if (modeOf(data, term) !== extra?.id || x === null || !extra.ranges) return null;
-        return extra.ranges(x, term, { itemId, text, language, data });
-      },
-    };
-  }
-
-  /** A result row's quotation of its item, marked where the item on screen would be. */
-  function excerpt(data: D, result: SearchResult, term: SearchTerm): Snippet | null {
-    const language = languageOf(languages, term);
-    const text = displayedText(spec.index(data), result.id, language);
-    if (text === null) return null;
-    const quoted =
-      modeOf(data, term) === extra?.id && extra.quoted
-        ? (ranges: TextRange[]) => extra.quoted!(term, text, ranges)
-        : undefined;
-    return quoteTerm(text, language, term, matcherFor(data, result.id), quoted);
   }
 
   // The controls on screen: their elements, where they send a change, and the
@@ -346,7 +312,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   }
 
   function snippetFor(data: D): ResultsView['snippet'] {
-    return (result, term) => excerpt(data, result, term);
+    return (result, term) => excerptOf(spec.index(data), result, term, contextFor(data));
   }
 
   /**
@@ -496,7 +462,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
               });
             },
           },
-          { languages, extra, placeholder: spec.placeholder },
+          { languages, extra, placeholder: spec.placeholder, defaultMode: spec.defaultMode },
         );
       } else if (settings === previous && data === previousData) {
         // Nothing has changed, and redrawing the list would scroll it to the top.
@@ -553,7 +519,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         text,
         textLanguage,
         searchFor(data, settings).active,
-        matcherFor(data, item.id),
+        matcherOf(contextFor(data), item.id),
       );
     },
   };

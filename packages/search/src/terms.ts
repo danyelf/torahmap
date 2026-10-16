@@ -155,9 +155,10 @@ export function effectiveMode<X>(
   languages: readonly SearchLanguage[],
   extra?: ExtraMode<X>,
   x: X | null = null,
+  defaultMode: MatchMode = 'substring',
 ): string {
   const language = languageOf(languages, term);
-  const chosen = term.mode ?? (extra?.isDefault(term, language) ? extra.id : 'substring');
+  const chosen = term.mode ?? (extra?.isDefault(term, language) ? extra.id : defaultMode);
   if (chosen !== extra?.id) return chosen;
   return extra.possible(x, term, language) ? chosen : 'word';
 }

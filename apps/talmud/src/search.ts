@@ -52,6 +52,9 @@ const search = createTermSearch<TalmudLayoutItem, TalmudSearchData>({
   data: { structure: STRUCTURE_FILE, text: SEARCH_FILE },
   index: ({ structure, text }) => indexes(structure)(text),
   noun: { one: 'segment', many: 'segments' },
+  // A prefix is part of a whole word here, and a short word as a substring
+  // lights most of the map: רב is inside רבי, רבה, רבא and ערב.
+  defaultMode: 'word',
   placeholder: 'Search Hebrew or Aramaic…',
   description: 'Any word or phrase of the Talmud.',
   urlParams: TALMUD_SEARCH_PARAMS,

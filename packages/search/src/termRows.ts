@@ -10,6 +10,7 @@ import { CONTROL } from '@torahmap/shell/panel.ts';
 import { SEARCH_BOX_ID } from '@torahmap/shell/app/search.ts';
 import type { ExtraMode } from './extraMode.ts';
 import type { SearchLanguage } from './language.ts';
+import type { MatchMode } from './matching.ts';
 import {
   effectiveMode,
   languageOf,
@@ -45,6 +46,8 @@ export interface TermRowsOptions<X> {
   extra?: ExtraMode<X>;
   /** The first box's placeholder. */
   placeholder: string;
+  /** How a term is matched while the reader has not said and the extra mode does not claim it. */
+  defaultMode?: MatchMode;
 }
 
 export interface TermRows {
@@ -57,12 +60,12 @@ const MODE_LABELS: Record<string, string> = { substring: 'substring', word: 'wor
 export function mountTermRows<X>(
   elements: { container: HTMLElement | null; addTermButton: HTMLButtonElement | null },
   host: TermRowsHost<X>,
-  { languages, extra, placeholder }: TermRowsOptions<X>,
+  { languages, extra, placeholder, defaultMode }: TermRowsOptions<X>,
 ): TermRows {
   const { container, addTermButton } = elements;
   const labelOf = (mode: string) => (mode === extra?.id ? extra.label : MODE_LABELS[mode]);
   const modeOf = (term: SearchTerm) =>
-    effectiveMode(term, languages, extra, host.extraData() ?? null);
+    effectiveMode(term, languages, extra, host.extraData() ?? null, defaultMode);
 
   const onAddClick = () => {
     host.addRow();
