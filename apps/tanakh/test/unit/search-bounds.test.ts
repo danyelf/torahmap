@@ -1,15 +1,14 @@
+import { type SearchResult, type TextIndex } from '@torahmap/search';
 // A snippet's marked range stays inside the snippet, even where the word ends
 // the verse and carries points.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex, type SearchResult, type TextIndex } from '../../src/search/search';
+import { buildTextIndex } from '../../src/search/search';
 import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
 const result = (verse: number): SearchResult => ({
   id: `Genesis.1.${verse}`,
-  book: 'Genesis',
-  chapter: 1,
-  verse,
+  ref: `Genesis 1:${verse}`,
   matchingTerms: [{ termIndex: 0 }],
 });
 

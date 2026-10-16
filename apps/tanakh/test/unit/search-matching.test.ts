@@ -75,12 +75,7 @@ describe('the search and the highlighter agree', () => {
   });
 
   it('on where the result row centres a phrase', () => {
-    const result = {
-      book: 'Leviticus',
-      chapter: 1,
-      verse: 1,
-      matchingTerms: [],
-    };
+    const result = { id: 'Leviticus.1.1' };
     const { snippet, matchStart, matchEnd } = excerptOf(
       result,
       'וידבר יהוה',
@@ -92,12 +87,7 @@ describe('the search and the highlighter agree', () => {
   });
 
   it('on where the result row centres a phrase cut off mid-word, in substring mode', () => {
-    const result = {
-      book: 'Leviticus',
-      chapter: 1,
-      verse: 1,
-      matchingTerms: [],
-    };
+    const result = { id: 'Leviticus.1.1' };
     const { snippet, matchStart, matchEnd } = excerptOf(
       result,
       'וידבר יהו',

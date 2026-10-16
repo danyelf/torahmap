@@ -1,25 +1,25 @@
-// The list of matching verses under the search panel.
+// The list of matching items under the search panel.
 //
 // Told what to show on every pass, so it holds no opinion about what the search
 // found — only how far down its own list it has drawn.
 import { colorToCss } from '@torahmap/utils';
-import type { SearchResult, Snippet } from './search.ts';
-import { SEARCH_COLORS, colorIndexAt, type SearchTerm } from '@torahmap/search';
-import { termIsHebrew } from './meanings.ts';
+import type { SearchResult, Snippet } from './textIndex.ts';
+import { SEARCH_COLORS, colorIndexAt, type SearchTerm } from './terms.ts';
 import { markRange } from './highlight.ts';
-import { verseRef } from '@torahmap/link/tanakh';
 
 /** Everything one pass of the list needs to know. */
 export interface ResultsView {
-  /** The verses to list, already narrowed to the row being asked about. */
+  /** The items to list, already narrowed to the row being asked about. */
   results: SearchResult[];
   /** The terms being searched, in search order: a match names its term by position here. */
   terms: SearchTerm[];
   /** Which of those terms the list is answering about, or -1 when the open row searches nothing. */
   focus: number;
   onSelect(result: SearchResult): void;
-  /** A result's verse quoted around `term`, or null for a verse the index lacks. */
+  /** A result's text quoted around `term`, or null for an item the index lacks. */
   snippet(result: SearchResult, term: SearchTerm): Snippet | null;
+  /** Whether `term`'s quotations are written right to left. */
+  rtl(term: SearchTerm): boolean;
 }
 
 const RESULTS_BATCH_SIZE = 50;
@@ -46,7 +46,7 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
     termIndicators.appendChild(dot);
   }
   refDiv.appendChild(termIndicators);
-  refDiv.appendChild(document.createTextNode(verseRef(result)));
+  refDiv.appendChild(document.createTextNode(result.ref));
 
   // The snippet is drawn for the word the list is answering about, falling back
   // to whichever term claimed the verse first. Without this, a list narrowed to
@@ -57,10 +57,10 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
 
   const term = view.terms[firstMatch.termIndex];
   const snippetDiv = document.createElement('div');
-  snippetDiv.className = `snippet ${term && termIsHebrew(term) ? 'rtl' : ''}`;
+  snippetDiv.className = `snippet ${term && view.rtl(term) ? 'rtl' : ''}`;
 
   const { snippet, matchStart, matchEnd } = (term && view.snippet(result, term)) ?? {
-    snippet: verseRef(result),
+    snippet: result.ref,
     matchStart: 0,
     matchEnd: 0,
   };

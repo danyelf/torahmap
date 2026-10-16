@@ -1,3 +1,4 @@
+import { matchingTermsOf, type SearchResult, type TextIndex } from '@torahmap/search';
 // The full-text search: the search a term list describes, and the members the
 // app draws, colours and links it through.
 //
@@ -13,12 +14,7 @@ import type { SearchTool } from '@torahmap/shell/app/search.ts';
 import { trackSearchExecute } from '@torahmap/shell/analytics.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
-import {
-  getMatchingVerseTerms,
-  type Dictionary,
-  type SearchResult,
-  type TextIndex,
-} from './search.ts';
+import { type Dictionary } from './search.ts';
 import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from './data.ts';
 import { spellingFor, versesFor, wordsOfVerse } from './dictionary.ts';
 import { excerpt, highlightTerms } from './highlight.ts';
@@ -27,7 +23,7 @@ import {
   requoteResults,
   detachResults,
   type ResultsView,
-} from './resultsList.ts';
+} from '@torahmap/search';
 import { mountTermRows, renderTermRows, unmountTermRows, type TermRowsHost } from './termRows.ts';
 import { searchTelemetry } from './telemetry.ts';
 import { SEARCH_RECORD_DELAY_MS } from '@torahmap/search';
@@ -50,6 +46,7 @@ import {
   effectiveMode,
   resultsForTerms,
   meaningsMode,
+  termIsHebrew,
 } from './meanings.ts';
 import { isSearchableWord } from '@torahmap/utils';
 import { parseSearchTerms } from '@torahmap/search';
@@ -188,7 +185,7 @@ export function matchesForTerms(
   if (active.length === 0) return { results: [], matchingTerms: new Map() };
 
   const results = resultsForTerms(index, dictionary, active);
-  return { results, matchingTerms: getMatchingVerseTerms(results) };
+  return { results, matchingTerms: matchingTermsOf(results) };
 }
 
 /**
@@ -329,6 +326,7 @@ function renderResults(settings: SearchSettings, data: SearchData | null): void 
       focus: -1,
       onSelect: showVerse,
       snippet: () => null,
+      rtl: termIsHebrew,
     });
     return;
   }
@@ -339,6 +337,7 @@ function renderResults(settings: SearchSettings, data: SearchData | null): void 
     focus: openTermIndex(settings),
     onSelect: showVerse,
     snippet: snippetFor(data),
+    rtl: termIsHebrew,
   });
 }
 
@@ -393,9 +392,7 @@ const termRowsHost: TermRowsHost = {
 
 /** Hand a clicked result back to the app as the verse it names. */
 function showVerse(result: SearchResult): void {
-  const verse = verses.find(
-    (v) => v.book === result.book && v.chapter === result.chapter && v.verse === result.verse,
-  );
+  const verse = verses.find((v) => v.id === result.id);
   if (verse && onVerseClickCallback) {
     onVerseClickCallback(verse);
   }

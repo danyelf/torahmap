@@ -1,109 +1,55 @@
-// Marking search terms inside a piece of text: which stretches a term claims,
-// and the <mark> spans that show them.
-//
-// Everything here takes the terms as an argument, so nothing in this file knows
-// what the search currently holds.
-import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
+// What the Tanakh's meanings mode marks in a verse, and a result row's
+// quotation of its verse. Marking itself is @torahmap/search's.
 import { onlySeparators, splitIntoWords, stripNikkud } from '@torahmap/hebrew';
-import { matchRanges } from '@torahmap/search';
-import { searchLanguage } from './languages.ts';
-import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
 import {
-  displayedVerse,
-  quoteVerse,
-  type Dictionary,
+  displayedText,
+  highlightTerms as markTerms,
+  quoteText,
+  termRanges,
   type SearchResult,
+  type SearchTerm,
   type Snippet,
+  type TermMatcher,
   type TextIndex,
-} from './search.ts';
-import { colorIndexAt, type SearchTerm } from '@torahmap/search';
+  type TextRange,
+} from '@torahmap/search';
+import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
+import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
+import type { Dictionary } from './search.ts';
 import { effectiveMode, selectedKeys, termIsHebrew } from './meanings.ts';
+import { searchLanguage } from './languages.ts';
 
 /**
- * A term's colour is carried on the mark's class, and the stylesheet holds one
- * rule per colour slot. Both highlighters in this file go through here, so the
- * class name is written once.
+ * How the Tanakh's terms are matched in a verse's text.
+ *
+ * Meanings mode asks the dictionary, not the spelling: it marks only the words
+ * that are one of the meanings the term still stands for.
+ *
+ * By position rather than by spelling, which is what separates the two words
+ * spelled עלה in Genesis 8:20 — a spelling could be either, and only the place
+ * in the verse says which this one is. A meaning is Hebrew, so it marks nothing
+ * in English.
  */
-function mark(text: string, colorIndex: number): HTMLElement {
-  const element = document.createElement('mark');
-  element.className = `term-${colorIndex}`;
-  element.textContent = text;
-  return element;
-}
-
-/** One mark over a range the search has already located. */
-export function markRange(
-  text: string,
-  start: number,
-  end: number,
-  colorIndex: number,
-): DocumentFragment {
-  const fragment = document.createDocumentFragment();
-
-  if (start > 0) {
-    fragment.appendChild(document.createTextNode(text.slice(0, start)));
-  }
-
-  fragment.appendChild(mark(text.slice(start, end), colorIndex));
-
-  if (end < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(end)));
-  }
-
-  return fragment;
-}
-
-interface Match {
-  start: number;
-  end: number;
-  termIndex: number;
-}
-
-/** Handles nikkud stripping and position mapping; respects each term's own search mode. */
-function findAllTermMatches(
-  text: string,
-  searchTerms: SearchTerm[],
-  isHebrew: boolean,
-  dictionary: Dictionary,
-  words: VerseWords | null,
-): Match[] {
-  const matches: Match[] = [];
-  const language = isHebrew ? HEBREW : ENGLISH;
-  const lang = searchLanguage(language);
-  const folded = lang.fold(text);
-  const toOriginal = (at: number) => lang.toOriginal(text, at);
-
-  for (let termIndex = 0; termIndex < searchTerms.length; termIndex++) {
-    const term = searchTerms[termIndex];
-    // The mode belongs to the term. `isHebrew` is the language of the verse
-    // text being marked up, which is a different question.
-    const mode = effectiveMode(dictionary, term);
-
-    // Meanings mode asks the dictionary, not the spelling: mark only the words
-    // that are one of the meanings this term still stands for.
-    //
-    // By position rather than by spelling, which is what separates the two
-    // words spelled עלה in Genesis 8:20 — a spelling could be either, and only
-    // the place in the verse says which this one is. A meaning is Hebrew, so it
-    // marks nothing in English.
-    if (mode === 'meanings') {
+export function tanakhMatcher(dictionary: Dictionary, words: VerseWords | null): TermMatcher {
+  return {
+    modeOf: (term) => effectiveMode(dictionary, term),
+    rangesOf(term, text, language) {
+      if (effectiveMode(dictionary, term) !== 'meanings') return null;
       const keys = selectedKeys(dictionary, term);
-      if (!isHebrew || keys.length === 0) continue;
+      if (language.id !== HEBREW || keys.length === 0) return [];
+      const folded = language.fold(text);
+      const ranges: TextRange[] = [];
       for (const { word, start, end } of splitIntoWords(folded)) {
         if (wordMatches(dictionary, words, keys, word, text, start)) {
-          matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
+          ranges.push({
+            start: language.toOriginal(text, start),
+            end: language.toOriginal(text, end),
+          });
         }
       }
-      continue;
-    }
-
-    const needle = lang.fold(term.text.trim());
-    for (const { start, end } of matchRanges(folded, needle, { mode, language: lang })) {
-      matches.push({ start: toOriginal(start), end: toOriginal(end), termIndex });
-    }
-  }
-
-  return matches;
+      return ranges;
+    },
+  };
 }
 
 /**
@@ -118,11 +64,12 @@ export function excerpt(
   parse: Parse | null,
 ): Snippet | null {
   const isHebrew = termIsHebrew(term);
-  const text = displayedVerse(index, result, isHebrew ? HEBREW : ENGLISH);
+  const language = searchLanguage(isHebrew ? HEBREW : ENGLISH);
+  const text = displayedText(index, result.id, language);
   if (text === null) return null;
   const words = isHebrew ? wordsOfVerse(parse, result.id, text) : null;
-  const [first, ...rest] = findAllTermMatches(text, [term], isHebrew, dictionary, words);
-  if (!first) return quoteVerse(text, null);
+  const [first, ...rest] = termRanges(text, language, term, tanakhMatcher(dictionary, words));
+  if (!first) return quoteText(text, null);
 
   // Meanings mode marks word by word, so a phrase it finds, בית אל, is joined
   // into one mark; a word repeated, קדוש קדוש קדוש, is not. A word's points
@@ -135,52 +82,10 @@ export function excerpt(
     if (!onlySeparators(between, 0, between.length)) break;
     end = next.end;
   }
-  return quoteVerse(text, { start: first.start, end });
+  return quoteText(text, { start: first.start, end });
 }
 
-/** Assumes matches are already sorted by position. */
-function removeOverlappingMatches(matches: Match[]): Match[] {
-  const filtered: Match[] = [];
-  for (const m of matches) {
-    if (filtered.length === 0 || m.start >= filtered[filtered.length - 1].end) {
-      filtered.push(m);
-    }
-  }
-  return filtered;
-}
-
-function buildHighlightedDomFragment(
-  text: string,
-  matches: Match[],
-  terms: SearchTerm[],
-): DocumentFragment {
-  const fragment = document.createDocumentFragment();
-
-  let pos = 0;
-  for (const m of matches) {
-    if (m.start > pos) {
-      fragment.appendChild(document.createTextNode(text.slice(pos, m.start)));
-    }
-
-    fragment.appendChild(mark(text.slice(m.start, m.end), colorIndexAt(terms, m.termIndex)));
-
-    pos = m.end;
-  }
-
-  if (pos < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(pos)));
-  }
-
-  return fragment;
-}
-
-/**
- * Mark every stretch of `text` that one of `terms` claims.
- *
- * Builds the DOM directly rather than through innerHTML. The terms are the ones
- * being searched, in search order, because a match names its term by position
- * in that list.
- */
+/** Mark every stretch of a verse's `text` that one of `terms` claims. */
 export function highlightTerms(
   text: string,
   language: TextLanguage,
@@ -188,24 +93,5 @@ export function highlightTerms(
   dictionary: Dictionary,
   words: VerseWords | null,
 ): DocumentFragment {
-  const fragment = document.createDocumentFragment();
-
-  if (terms.length === 0) {
-    fragment.appendChild(document.createTextNode(text));
-    return fragment;
-  }
-
-  const isHebrew = language === HEBREW;
-
-  const matches = findAllTermMatches(text, terms, isHebrew, dictionary, words);
-
-  if (matches.length === 0) {
-    fragment.appendChild(document.createTextNode(text));
-    return fragment;
-  }
-
-  // Longest match first, so removeOverlappingMatches keeps it over a shorter one.
-  matches.sort((a, b) => a.start - b.start || b.end - a.end);
-
-  return buildHighlightedDomFragment(text, removeOverlappingMatches(matches), terms);
+  return markTerms(text, searchLanguage(language), terms, tanakhMatcher(dictionary, words));
 }

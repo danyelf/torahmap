@@ -5,7 +5,6 @@
 // "leafage", and more. A meanings-mode search looks for all of them.
 
 import { describe, it, expect } from 'vitest';
-import { verseId } from '@torahmap/link/tanakh';
 import { excerptOf } from '../helpers/excerpt';
 import { findLexemesForWord, getLexeme } from '../../src/search/search';
 import { addTerm } from '@torahmap/search';
@@ -16,8 +15,7 @@ import { stripNikkud } from '@torahmap/hebrew';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { realSearchData } from '../helpers/searchData';
 
-const keys = (results: Array<{ book: string; chapter: number; verse: number }>) =>
-  new Set(results.map((r) => verseId(r.book, r.chapter, r.verse)));
+const keys = (results: Array<{ id: string }>) => new Set(results.map((r) => r.id));
 
 describe('Meanings-mode search over the lexeme index', () => {
   const { index, dictionary, parse } = realSearchData();
@@ -81,9 +79,7 @@ describe('Meanings-mode search over the lexeme index', () => {
 
     it('marks a verse with every term that matched it', () => {
       const results = searchInMeaningsMode(index, dictionary, 'צחק,יצחק');
-      const gen1914 = results.find(
-        (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 14,
-      );
+      const gen1914 = results.find((r) => r.id === 'Genesis.19.14');
       expect(gen1914).toBeDefined();
       expect(gen1914!.matchingTerms.map((m) => m.termIndex).sort()).toEqual([0, 1]);
     });
@@ -108,7 +104,7 @@ describe('Meanings-mode search over the lexeme index', () => {
     it('highlights the word that was typed, not another word sharing a reading', () => {
       // Genesis 19:28 has both עַל and עָלָה. A search for עלה must land on עלה.
       const [result] = searchInMeaningsMode(index, dictionary, 'עלה').filter(
-        (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
+        (r) => r.id === 'Genesis.19.28',
       );
       expect(result).toBeDefined();
       const snippet = excerptOf(result, 'עלה', 'meanings', index, dictionary, parse)!;
@@ -120,7 +116,7 @@ describe('Meanings-mode search over the lexeme index', () => {
       // Genesis 8:20: וַיַּעַל עֹלֹת — "and he offered burnt offerings".
       const [added] = addTerm([], 'עלה');
       const [term] = onlyMeaning([added], added.id, ['<LH/@heb']);
-      const verse = { id: 'Genesis.8.20', book: 'Genesis', chapter: 8, verse: 20 };
+      const verse = { id: 'Genesis.8.20', ref: 'Genesis 8:20' };
       const snippet = excerpt({ ...verse, matchingTerms: [] }, term, index, dictionary, parse)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלת');
@@ -128,7 +124,7 @@ describe('Meanings-mode search over the lexeme index', () => {
 
     it('highlights one word of a word repeated', () => {
       // Isaiah 6:3: קָדוֹשׁ ׀ קָדוֹשׁ ׀ קָדוֹשׁ
-      const verse = { book: 'Isaiah', chapter: 6, verse: 3 };
+      const verse = { id: 'Isaiah.6.3' };
       const snippet = excerptOf(verse, 'קדוש', 'meanings', index, dictionary, parse)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('קדוש');
@@ -136,7 +132,7 @@ describe('Meanings-mode search over the lexeme index', () => {
 
     it('highlights both words of a name printed as two', () => {
       const [result] = searchInMeaningsMode(index, dictionary, 'בית אל').filter(
-        (r) => r.book === 'Genesis' && r.chapter === 28 && r.verse === 19,
+        (r) => r.id === 'Genesis.28.19',
       );
       const snippet = excerptOf(result, 'בית אל', 'meanings', index, dictionary, parse)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);

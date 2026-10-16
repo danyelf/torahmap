@@ -1,6 +1,7 @@
+import { type TextIndex } from '@torahmap/search';
 // Tests for Hebrew search modes (substring, word, meanings)
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildTextIndex, type TextIndex, versesForTerm } from '../../src/search/search';
+import { buildTextIndex, versesForTerm } from '../../src/search/search';
 import type { MatchMode } from '@torahmap/search';
 import type { VerseTexts } from '../../src/verseTexts';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';

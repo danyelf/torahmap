@@ -1,3 +1,4 @@
+import { resultsForItemSets, type SearchResult, type TextIndex } from '@torahmap/search';
 // The Tanakh's meanings mode: a term resolved to the dictionary words its text
 // could be, narrowed to the ones the reader leaves checked. The term list
 // itself is @torahmap/search's; this is what reads the dictionary.
@@ -12,13 +13,7 @@ import {
 } from '@torahmap/search';
 import { splitIntoWords } from '@torahmap/hebrew';
 import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
-import {
-  resultsForVerseSets,
-  versesForTerm,
-  type Dictionary,
-  type SearchResult,
-  type TextIndex,
-} from './search.ts';
+import { versesForTerm, type Dictionary } from './search.ts';
 import { TANAKH_LANGUAGES } from './languages.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 
@@ -224,7 +219,7 @@ export function resultsForTerms(
   dictionary: Dictionary,
   terms: SearchTerm[],
 ): SearchResult[] {
-  return resultsForVerseSets(
+  return resultsForItemSets(
     index,
     terms.map((term) => versesForQuery(index, dictionary, termQuery(dictionary, term))),
   );
