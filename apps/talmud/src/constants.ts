@@ -29,7 +29,7 @@ export const DAF_LABEL_ROOM = {
 
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
 // Each tractate is drawn as a book: a tinted box round its squares, as tall as the tallest
-// tractate's, with BOOK_PADDING left of its squares and room for its daf numbers on the right.
+// tractate's on its shelf, with BOOK_PADDING left of its squares and room for its daf numbers on the right.
 // Books on a shelf stand BOOK_GAP apart.
 export const BOOK_PADDING = 12;
 export const BOOK_GAP = 24;
@@ -74,7 +74,7 @@ export const SEDARIM: readonly Seder[] = [
 ];
 
 // The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a
-// shelf that is 626 from the next, as every shelf is. The gap clears the daf
+// shelf that is 620 from the next; Nezikin's, 390 of 530. The gap clears the daf
 // labels beside each shelf's first tractate, which show from PEREK_LABEL_ZOOM.
 export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 

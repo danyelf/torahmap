@@ -141,8 +141,9 @@ describe('a tractate long enough to wrap into columns', () => {
 });
 
 describe("each tractate's book", () => {
-  // TractB and TractC share Moed's shelf; TractA, on Zeraim's, is the tallest.
-  const tractC = { ...fixture.tractates[1], name: 'TractC' };
+  // TractB and the shorter TractC share Moed's shelf; TractA, on Zeraim's, is the tallest.
+  const tractB = fixture.tractates[1];
+  const tractC = { ...tractB, name: 'TractC', amudim: tractB.amudim.slice(0, 1) };
   const result = computeTalmudLayout({ tractates: [...fixture.tractates, tractC] });
   const book = (name: string) => result.books.find((b) => b.tractate === name)!;
 
@@ -154,8 +155,15 @@ describe("each tractate's book", () => {
     ]);
   });
 
-  it('is as tall as every other, on every shelf', () => {
-    expect(new Set(result.books.map((b) => b.maxY - b.minY)).size).toBe(1);
+  it("is as tall as the tallest tractate's on its shelf", () => {
+    const height = (name: string) => book(name).maxY - book(name).minY;
+    const squaresHeight = (name: string) => {
+      const block = result.tractateBlocks.find((t) => t.name === name)!;
+      return block.maxY - block.minY;
+    };
+    expect(squaresHeight('TractC')).toBeLessThan(squaresHeight('TractB'));
+    expect(height('TractC')).toBe(height('TractB'));
+    expect(height('TractA')).toBeGreaterThan(height('TractB'));
   });
 
   it("holds its tractate's squares, and the room for its daf numbers", () => {

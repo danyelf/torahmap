@@ -5,8 +5,7 @@
 // - Sedarim are stacked vertically (top to bottom in canonical order).
 // - Within a shelf, tractates are arranged right-to-left (RTL reading).
 // - Tractates on a shelf are top-aligned.
-// - Each tractate stands in a book: a box as tall as the tallest tractate's, so every
-//   shelf is the same height.
+// - Each tractate stands in a book: a box as tall as the tallest tractate's on its shelf.
 // - Final coordinates have minX >= 0 (shifted into the first quadrant for
 //   compatibility with the existing camera/render pipeline).
 
@@ -405,10 +404,10 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     );
   }
 
-  const shelfHeight = TRACTATE_LABEL_HEIGHT + Math.max(0, ...laid.map((t) => t.height));
   let shelfY = 0;
   for (const tractates of bySeder.values()) {
     if (tractates.length === 0) continue;
+    const shelfHeight = TRACTATE_LABEL_HEIGHT + Math.max(...tractates.map((t) => t.height));
 
     let shelfRightEdge = 0;
 
