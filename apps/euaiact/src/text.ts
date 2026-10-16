@@ -11,6 +11,7 @@ import { TEXTS_FILE, STRUCTURE_FILE, structureFrom, type ActTexts } from './data
 import { actRef, sourceUrl } from './ids.ts';
 import { computeActLayout, type ActItem } from './layout.ts';
 import { ACT_SEARCH_PARAMS, actSearch, type ActSearchSettings } from './search.ts';
+import { ACT_OVERLAYS, actOverlayParams } from './overlays/index.ts';
 import { euaiactSite } from './site.ts';
 
 // Shortcut: the Act's one story is a single stop showing the whole map, until its first real
@@ -35,7 +36,7 @@ const WHOLE_MAP: Story = {
 const ACT_LINK_KEYS: LinkKeys = {
   square: 'at',
   search: ACT_SEARCH_PARAMS,
-  overlayParams: () => undefined,
+  overlayParams: actOverlayParams,
   // Low enough for the whole Act to fit across a phone.
   zoom: { min: 0.1, max: 12, start: 1 },
 };
@@ -80,7 +81,7 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
         };
       },
 
-      overlays: [],
+      overlays: ACT_OVERLAYS,
 
       search: actSearch,
 
