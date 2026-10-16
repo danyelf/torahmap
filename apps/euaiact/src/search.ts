@@ -1,43 +1,59 @@
-// Shortcut: the Act's search finds nothing. It takes a word and says no
-// paragraph matches, so the shell's search runs on the Act's page, panel, link
-// and Back step included, until the Act has a search of its own.
+// The Act's search: a whole English word, in any case, found in any paragraph's text.
+
 import type { UrlParamSpec } from '@torahmap/link';
 import { SEARCH_BOX_ID, type SearchTool } from '@torahmap/shell/app/search.ts';
+import { hex } from './baseColor.ts';
+import { TEXTS_FILE, type ActTexts } from './data.ts';
 import type { ActItem } from './layout.ts';
 
 export interface ActSearchSettings {
   readonly text: string;
+}
+export interface ActSearchData {
+  texts: ActTexts;
 }
 
 export const ACT_SEARCH_PARAMS = [
   { key: 'search', kind: 'text' },
 ] as const satisfies readonly UrlParamSpec[];
 
+const FOUND = hex('#e8833a');
+
 const wordIn = (settings: ActSearchSettings): string => settings.text.trim();
 
-export const actSearch: SearchTool<ActItem, ActSearchSettings, void> = {
+/** A matcher for `word` as a whole word in any case; null when it is under two letters. */
+export function wordMatcher(word: string): RegExp | null {
+  if (word.length < 2) return null;
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu');
+}
+
+function colorsFor(items: ActItem[], settings: ActSearchSettings, data: ActSearchData) {
+  const matcher = wordMatcher(wordIn(settings));
+  return items.map((item) => (matcher?.test(data.texts[item.id] ?? '') ? FOUND : null));
+}
+
+export const actSearch: SearchTool<ActItem, ActSearchSettings, ActSearchData> = {
   id: 'search',
   name: 'Search',
-  description: 'Finds nothing yet.',
+  description: 'Finds a word in any recital, article or annex.',
+  data: { texts: TEXTS_FILE },
 
-  isSearching: (settings) => wordIn(settings) !== '',
+  isSearching: (settings) => wordMatcher(wordIn(settings)) !== null,
 
   telemetry: { readerChanged() {}, replaced() {}, dataLoaded() {} },
 
-  getItemColor: () => null,
-
-  colorsFor: (items) => items.map(() => null),
+  getItemColor: (item, settings, data) => colorsFor([item], settings, data)[0],
+  colorsFor: (items, settings, _hovered, data) => colorsFor(items, settings, data),
 
   urlParams: ACT_SEARCH_PARAMS,
-
   settingsFromUrl: (params) => ({ text: params.search ?? '' }),
-
   settingsToUrl: (settings): Record<string, string> => {
     const word = wordIn(settings);
     return word ? { search: word } : {};
   },
 
-  renderControls(container, settings, onChange) {
+  renderControls(container, settings, onChange, data) {
     let box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`);
     if (!box) {
       container.innerHTML = `<input id="${SEARCH_BOX_ID}" type="search" aria-label="Search"><p></p>`;
@@ -45,8 +61,14 @@ export const actSearch: SearchTool<ActItem, ActSearchSettings, void> = {
       box.addEventListener('input', () => onChange(() => ({ text: box!.value })));
     }
     if (box.value !== settings.text) box.value = settings.text;
-    container.querySelector('p')!.textContent = wordIn(settings)
-      ? 'No matching paragraphs'
-      : 'Type to search';
+    const word = wordIn(settings);
+    const matcher = wordMatcher(word);
+    const found =
+      data && matcher ? Object.values(data.texts).filter((t) => matcher.test(t)).length : null;
+    container.querySelector('p')!.textContent = !word
+      ? 'Type to search'
+      : found === null
+        ? ''
+        : `${found} matching paragraph${found === 1 ? '' : 's'}`;
   },
 };
