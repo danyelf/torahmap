@@ -80,7 +80,7 @@ import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
-import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
+import { toolsPicture, layerToRecompute, fillDefaultColors, unfoundColor } from './itemColoring.ts';
 import { createOverlaySettings } from './overlays/settings.ts';
 import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
@@ -204,6 +204,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const squares = indexItems(items);
   const baseColors = items.map((item, i) => text.baseColor(item, i));
   const base = (i: number): ItemColor => baseColors[i];
+  const unfound = unfoundColor(base, text.searchKeepsBase ?? false);
   // A picture with its holes filled with each square's base colour.
   const fill = (picture: Picture<ItemColor | null>): Picture<ItemColor> =>
     fillDefaultColors(picture, base);
@@ -351,7 +352,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
   function explorePicture(): Picture<ItemColor | null> {
-    return toolsPicture(toolsNow(), items, hoveredItem, base, dimFor(frontTool));
+    return toolsPicture(toolsNow(), items, hoveredItem, base, dimFor(frontTool), unfound);
   }
 
   function applyTools(): void {
@@ -414,7 +415,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function blendColors(): ColorLayer | null {
     if (driver.by !== 'story' || !driver.blend) return null;
     const { from, to, t } = driver.blend;
-    return computeBlendedColors(from, to, t, items, hoveredItem, loaded, base, textTools);
+    return computeBlendedColors(from, to, t, items, hoveredItem, loaded, base, textTools, unfound);
   }
 
   function blendTransition(): void {
@@ -1401,6 +1402,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         loaded,
         base,
         textTools,
+        unfound,
       ),
     );
   }
