@@ -12,7 +12,12 @@ import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import { SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
-import { TALMUD_SEARCH_PARAMS, talmudSearch, type TalmudSearchSettings } from './search.ts';
+import {
+  TALMUD_SEARCH_PARAMS,
+  configureSearch,
+  talmudSearch,
+  type TalmudSearchSettings,
+} from './search.ts';
 import {
   STRUCTURE_FILE,
   amudIndex,
@@ -127,6 +132,11 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
       overlays: [],
 
       search: talmudSearch,
+
+      start(shell) {
+        // Most hits are off screen, so a result travels to its segment as well as pinning it.
+        configureSearch(laid.items, shell.pinAndGlide);
+      },
 
       stories: {
         list: [WHOLE_MAP],
