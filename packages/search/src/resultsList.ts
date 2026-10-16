@@ -24,12 +24,6 @@ export interface ResultsView {
 
 const RESULTS_BATCH_SIZE = 50;
 
-// How far down the current list we have drawn, and what it is a list of, so a
-// scroll can carry on where the last batch stopped.
-let shown: ResultsView | null = null;
-let renderedCount = 0;
-let scrollHandler: (() => void) | null = null;
-
 function createResultElement(result: SearchResult, view: ResultsView): HTMLDivElement {
   const div = document.createElement('div');
   div.className = 'search-result';
@@ -77,60 +71,76 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
   return div;
 }
 
-function appendResultsBatch(container: HTMLDivElement): void {
-  if (!shown || renderedCount >= shown.results.length) return;
-
-  const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, shown.results.length);
-  for (let i = renderedCount; i < end; i++) {
-    container.appendChild(createResultElement(shown.results[i], shown));
-  }
-  renderedCount = end;
+export interface ResultsList {
+  /** Draw the list from the top, a batch at a time as the reader scrolls. */
+  render(container: HTMLDivElement, view: ResultsView): void;
+  /** Quote the rows already drawn again with `snippet`, in place and without scrolling. */
+  requote(container: HTMLDivElement, snippet: ResultsView['snippet']): void;
+  /** Stop listening for scrolls, for a container about to be thrown away. */
+  detach(container: HTMLDivElement | null): void;
 }
 
-/** Draw the list from the top, a batch at a time as the reader scrolls. */
-export function renderResults(container: HTMLDivElement, view: ResultsView): void {
-  shown = view;
+export function createResultsList(): ResultsList {
+  // How far down the current list we have drawn, and what it is a list of, so a
+  // scroll can carry on where the last batch stopped.
+  let shown: ResultsView | null = null;
+  let renderedCount = 0;
+  let scrollHandler: (() => void) | null = null;
 
-  container.querySelectorAll('.search-result').forEach((el) => el.remove());
-  renderedCount = 0;
-  container.scrollTop = 0;
+  function appendResultsBatch(container: HTMLDivElement): void {
+    if (!shown || renderedCount >= shown.results.length) return;
 
-  detachResults(container);
-
-  if (view.results.length === 0) {
-    container.classList.remove('visible');
-    return;
+    const end = Math.min(renderedCount + RESULTS_BATCH_SIZE, shown.results.length);
+    for (let i = renderedCount; i < end; i++) {
+      container.appendChild(createResultElement(shown.results[i], shown));
+    }
+    renderedCount = end;
   }
 
-  appendResultsBatch(container);
+  function render(container: HTMLDivElement, view: ResultsView): void {
+    shown = view;
 
-  if (renderedCount < view.results.length) {
-    scrollHandler = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      // Load more within 100px of the bottom.
-      if (scrollHeight - scrollTop - clientHeight < 100) {
-        appendResultsBatch(container);
-      }
-    };
-    container.addEventListener('scroll', scrollHandler);
+    container.querySelectorAll('.search-result').forEach((el) => el.remove());
+    renderedCount = 0;
+    container.scrollTop = 0;
+
+    detach(container);
+
+    if (view.results.length === 0) {
+      container.classList.remove('visible');
+      return;
+    }
+
+    appendResultsBatch(container);
+
+    if (renderedCount < view.results.length) {
+      scrollHandler = () => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        // Load more within 100px of the bottom.
+        if (scrollHeight - scrollTop - clientHeight < 100) {
+          appendResultsBatch(container);
+        }
+      };
+      container.addEventListener('scroll', scrollHandler);
+    }
+
+    container.classList.add('visible');
   }
 
-  container.classList.add('visible');
-}
-
-/** Quote the rows already drawn again with `snippet`, in place and without scrolling. */
-export function requoteResults(container: HTMLDivElement, snippet: ResultsView['snippet']): void {
-  if (!shown) return;
-  const view = (shown = { ...shown, snippet });
-  container.querySelectorAll('.search-result').forEach((row, i) => {
-    row.replaceWith(createResultElement(view.results[i], view));
-  });
-}
-
-/** Stop listening for scrolls, for a container about to be thrown away. */
-export function detachResults(container: HTMLDivElement | null): void {
-  if (scrollHandler && container) {
-    container.removeEventListener('scroll', scrollHandler);
+  function requote(container: HTMLDivElement, snippet: ResultsView['snippet']): void {
+    if (!shown) return;
+    const view = (shown = { ...shown, snippet });
+    container.querySelectorAll('.search-result').forEach((row, i) => {
+      row.replaceWith(createResultElement(view.results[i], view));
+    });
   }
-  scrollHandler = null;
+
+  function detach(container: HTMLDivElement | null): void {
+    if (scrollHandler && container) {
+      container.removeEventListener('scroll', scrollHandler);
+    }
+    scrollHandler = null;
+  }
+
+  return { render, requote, detach };
 }

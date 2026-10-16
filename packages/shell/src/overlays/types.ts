@@ -59,7 +59,7 @@ export interface OptionalFile {
   readonly optional: string;
 }
 
-type FileNames<D> = { readonly [K in keyof D]: null extends D[K] ? OptionalFile : string };
+export type FileNames<D> = { readonly [K in keyof D]: null extends D[K] ? OptionalFile : string };
 
 // The app hands an overlay that names no files undefined wherever it hands data.
 interface OverlayWithoutData {

@@ -6,6 +6,7 @@
 import type { SearchLanguage, TextRange } from './language.ts';
 import { matchRanges, type MatchMode } from './matching.ts';
 import { colorIndexAt, type SearchTerm } from './terms.ts';
+import { quoteText, type Snippet } from './textIndex.ts';
 
 /** How each term is matched: its mode, and the stretches its extra mode claims, if it is in one. */
 export interface TermMatcher {
@@ -69,6 +70,22 @@ export function termRanges(
     start: language.toOriginal(text, start),
     end: language.toOriginal(text, end),
   }));
+}
+
+/**
+ * `text` quoted around the first stretch `term` claims in it, or its opening
+ * when it claims none. `quoted` picks the stretch from all of them instead.
+ */
+export function quoteTerm(
+  text: string,
+  language: SearchLanguage,
+  term: SearchTerm,
+  matcher: TermMatcher,
+  quoted?: (ranges: TextRange[]) => TextRange,
+): Snippet {
+  const ranges = termRanges(text, language, term, matcher);
+  if (ranges.length === 0) return quoteText(text, null);
+  return quoteText(text, quoted ? quoted(ranges) : ranges[0]);
 }
 
 interface Match extends TextRange {

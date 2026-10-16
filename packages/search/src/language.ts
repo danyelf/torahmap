@@ -11,6 +11,8 @@ export interface SearchLanguage {
   readonly rtl: boolean;
   /** Does a typed term belong to this language? The last language a text lists takes the rest. */
   claims(term: string): boolean;
+  /** What a typed or pasted term keeps of itself, e.g. Hebrew without its points. */
+  clean?(typed: string): string;
   /** The spelling text is compared under. */
   fold(text: string): string;
   /** Where a position in folded text falls in the text it came from. */

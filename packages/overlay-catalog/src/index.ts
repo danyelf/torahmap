@@ -4,6 +4,7 @@
 // search's, which together make a Tanakh link's keys.
 
 import {
+  TERM_SEARCH_PARAMS,
   writeLink,
   type LinkKeys,
   type UrlParamSpec,
@@ -80,10 +81,7 @@ export const overlayParamSpecs: OverlayParamSpecLookup = (id) => BY_ID.get(id)?.
 
 /** The search's keys, read whatever overlay is on; no overlay may claim them. */
 export const SEARCH_URL_PARAMS = [
-  { key: 'search', kind: 'text' },
-  // Positional across the terms in `search`, one letter each, and an empty
-  // entry for a term still on its default (see MODE_LETTERS in apps/tanakh/src/search/terms.ts).
-  { key: 'mode', kind: 'token' },
+  ...TERM_SEARCH_PARAMS,
   { key: 'm', kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
 

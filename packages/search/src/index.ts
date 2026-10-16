@@ -7,3 +7,6 @@ export * from './terms.ts';
 export * from './textIndex.ts';
 export * from './highlight.ts';
 export * from './resultsList.ts';
+export * from './termRows.ts';
+export * from './telemetry.ts';
+export * from './termSearch.ts';

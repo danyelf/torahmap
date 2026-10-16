@@ -1,54 +1,28 @@
-// What the Tanakh's meanings mode marks in a verse, and a result row's
-// quotation of its verse. Marking itself is @torahmap/search's.
-import { onlySeparators, splitIntoWords, stripNikkud } from '@torahmap/hebrew';
+// How the Tanakh's terms are matched in a verse's text, given its dictionary and
+// per-word parse. Marking and quoting are @torahmap/search's.
 import {
   displayedText,
-  highlightTerms as markTerms,
-  quoteText,
-  termRanges,
+  quoteTerm,
   type SearchResult,
   type SearchTerm,
   type Snippet,
   type TermMatcher,
   type TextIndex,
-  type TextRange,
 } from '@torahmap/search';
-import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
-import { wordMatches, wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
+import { wordsOfVerse, type Parse, type VerseWords } from './dictionary.ts';
 import type { Dictionary } from './search.ts';
-import { effectiveMode, selectedKeys, termIsHebrew } from './meanings.ts';
+import { effectiveMode, meaningRanges, quotedMeaning, termIsHebrew } from './meanings.ts';
 import { searchLanguage } from './languages.ts';
 
-/**
- * How the Tanakh's terms are matched in a verse's text.
- *
- * Meanings mode asks the dictionary, not the spelling: it marks only the words
- * that are one of the meanings the term still stands for.
- *
- * By position rather than by spelling, which is what separates the two words
- * spelled עלה in Genesis 8:20 — a spelling could be either, and only the place
- * in the verse says which this one is. A meaning is Hebrew, so it marks nothing
- * in English.
- */
+/** Each term by its own mode; a term in meanings mode marks the words of its chosen meanings. */
 export function tanakhMatcher(dictionary: Dictionary, words: VerseWords | null): TermMatcher {
   return {
     modeOf: (term) => effectiveMode(dictionary, term),
-    rangesOf(term, text, language) {
-      if (effectiveMode(dictionary, term) !== 'meanings') return null;
-      const keys = selectedKeys(dictionary, term);
-      if (language.id !== HEBREW || keys.length === 0) return [];
-      const folded = language.fold(text);
-      const ranges: TextRange[] = [];
-      for (const { word, start, end } of splitIntoWords(folded)) {
-        if (wordMatches(dictionary, words, keys, word, text, start)) {
-          ranges.push({
-            start: language.toOriginal(text, start),
-            end: language.toOriginal(text, end),
-          });
-        }
-      }
-      return ranges;
-    },
+    rangesOf: (term, text, language) =>
+      effectiveMode(dictionary, term) === 'meanings'
+        ? meaningRanges(dictionary, words, term, text, language)
+        : null,
   };
 }
 
@@ -68,30 +42,9 @@ export function excerpt(
   const text = displayedText(index, result.id, language);
   if (text === null) return null;
   const words = isHebrew ? wordsOfVerse(parse, result.id, text) : null;
-  const [first, ...rest] = termRanges(text, language, term, tanakhMatcher(dictionary, words));
-  if (!first) return quoteText(text, null);
-
-  // Meanings mode marks word by word, so a phrase it finds, בית אל, is joined
-  // into one mark; a word repeated, קדוש קדוש קדוש, is not. A word's points
-  // lie after its mark, so they do not part it from the next.
-  let end = first.end;
-  const joinable =
-    effectiveMode(dictionary, term) === 'meanings' ? splitIntoWords(term.text).length - 1 : 0;
-  for (const next of rest.slice(0, joinable)) {
-    const between = stripNikkud(text.slice(end, next.start));
-    if (!onlySeparators(between, 0, between.length)) break;
-    end = next.end;
-  }
-  return quoteText(text, { start: first.start, end });
-}
-
-/** Mark every stretch of a verse's `text` that one of `terms` claims. */
-export function highlightTerms(
-  text: string,
-  language: TextLanguage,
-  terms: SearchTerm[],
-  dictionary: Dictionary,
-  words: VerseWords | null,
-): DocumentFragment {
-  return markTerms(text, searchLanguage(language), terms, tanakhMatcher(dictionary, words));
+  const quoted =
+    effectiveMode(dictionary, term) === 'meanings'
+      ? (ranges: Parameters<typeof quotedMeaning>[2]) => quotedMeaning(term, text, ranges)
+      : undefined;
+  return quoteTerm(text, language, term, tanakhMatcher(dictionary, words), quoted);
 }

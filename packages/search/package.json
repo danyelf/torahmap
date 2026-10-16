@@ -6,6 +6,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@torahmap/link": "*",
+    "@torahmap/shell": "*",
     "@torahmap/utils": "*"
   }
 }
