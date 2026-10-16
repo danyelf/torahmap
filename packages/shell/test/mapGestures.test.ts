@@ -3,7 +3,13 @@
 // while something is pinned.
 import type { MapItem } from '@torahmap/engine';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createMapGestures, escapeDoes, tapDoes, type MapGestures } from '../src/mapGestures.ts';
+import {
+  arrowStep,
+  createMapGestures,
+  escapeDoes,
+  tapDoes,
+  type MapGestures,
+} from '../src/mapGestures.ts';
 import { DRAG_PX } from '../src/frame.ts';
 import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from '../src/constants.ts';
 
@@ -60,6 +66,7 @@ beforeEach(() => {
     onMap: (e) => ({ x: e.clientX, y: e.clientY }),
     squareUnder: (p) => squareAt(p.x, p.y),
     clickable: (square) => pinned !== null && square !== null,
+    direction: 'rtl',
     intents: {
       grab: () => log.push('grab'),
       pan: (dx, dy) => log.push(`pan ${dx} ${dy}`),
@@ -256,8 +263,8 @@ describe('the keys', () => {
   };
 
   it('step and escape', () => {
-    key('ArrowRight');
     key('ArrowLeft');
+    key('ArrowRight');
     key('Escape');
     expect(heard).toEqual(['step 1', 'step -1', 'escape']);
   });
@@ -276,7 +283,25 @@ describe('the keys', () => {
   it("are the map's in text that cannot be edited", () => {
     document.body.insertAdjacentHTML('beforeend', '<div contenteditable="false"></div>');
     key('ArrowLeft', document.body.lastElementChild!);
-    expect(heard).toEqual(['step -1']);
+    expect(heard).toEqual(['step 1']);
+  });
+});
+
+describe('the arrow keys', () => {
+  it('step opposite ways in a right-to-left text and a left-to-right one', () => {
+    for (const key of ['ArrowLeft', 'ArrowRight']) {
+      expect(arrowStep(key, 'rtl')).toBe(-arrowStep(key, 'ltr')!);
+    }
+  });
+
+  it('step forward the way the text reads', () => {
+    expect(arrowStep('ArrowLeft', 'rtl')).toBe(1);
+    expect(arrowStep('ArrowRight', 'ltr')).toBe(1);
+  });
+
+  it('leave Up and Down alone', () => {
+    expect(arrowStep('ArrowUp', 'rtl')).toBeNull();
+    expect(arrowStep('ArrowDown', 'ltr')).toBeNull();
   });
 });
 

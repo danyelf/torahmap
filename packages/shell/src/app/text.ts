@@ -23,6 +23,8 @@ import type { PopupText } from '../sidebar.ts';
 export interface Site {
   /** Its page, and its name there and everywhere. */
   page: PageCopy;
+  /** Which way the text reads, and so which arrow key steps forward. */
+  direction: 'rtl' | 'ltr';
   /** What a reader calls one square, in plain text: "verse", "segment". */
   squareName: string;
   /** What the map is, as the About panel's opening paragraph. */
