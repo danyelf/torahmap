@@ -17,4 +17,5 @@ export const TANAKH_PAGE: PageCopy = {
   noWebGl:
     'Torahmap lays out all 23,000 verses of the Hebrew Bible as colored squares, each in a fixed place.',
   textUrl: 'https://www.sefaria.org/texts/Tanakh',
+  textSource: 'Sefaria',
 };

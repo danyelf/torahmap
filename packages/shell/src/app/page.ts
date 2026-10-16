@@ -16,6 +16,8 @@ export interface PageCopy {
   noWebGl: string;
   /** Where the text can be read meanwhile. */
   textUrl: string;
+  /** Its name: the popup links each square to its page there. */
+  textSource: string;
 }
 
 /** `html` with each %PLACEHOLDER% filled from `copy`, its map run by the script at `entry`. */
@@ -37,6 +39,7 @@ export function fillPage(html: string, copy: PageCopy, entry: string): string {
     NO_SCRIPT: escapeHtml(copy.noScript),
     NO_WEBGL: escapeHtml(copy.noWebGl),
     TEXT_URL: escapeHtml(copy.textUrl),
+    TEXT_SOURCE: escapeHtml(copy.textSource),
     ENTRY: escapeHtml(entry),
   };
   return html.replace(/%([A-Z_]+)%/g, (whole, name: string) => fills[name] ?? whole);

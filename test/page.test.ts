@@ -6,6 +6,7 @@ import { fillPage } from '../packages/shell/src/app/page.ts';
 import { PAGES, pageAt } from '../pages.ts';
 import { tanakhText } from '@torahmap/tanakh/text.ts';
 import { talmudText } from '@torahmap/talmud/text.ts';
+import { euaiactText } from '@torahmap/euaiact/text.ts';
 
 const TEMPLATE = readFileSync(join(__dirname, '../index.html'), 'utf8');
 
@@ -24,6 +25,7 @@ describe('pageAt', () => {
   it('gives each text the copy its site shows', () => {
     expect(tanakh.copy).toBe(tanakhText.site.page);
     expect(talmud.copy).toBe(talmudText.site.page);
+    expect(euaiact.copy).toBe(euaiactText.site.page);
   });
 });
 
@@ -53,6 +55,13 @@ describe.each(PAGES)('the page at $path', ({ copy, entry }) => {
     expect(doc.querySelector('noscript')?.textContent).toContain(copy.noScript);
     expect(doc.querySelector('#no-webgl')?.textContent).toContain(copy.noWebGl);
     expect(doc.querySelector('#no-webgl a')?.getAttribute('href')).toBe(copy.textUrl);
+  });
+
+  it('names where its text is read, in the popup’s link and the fallback’s', () => {
+    expect(doc.querySelector('#no-webgl a')?.textContent).toBe(copy.textSource);
+    expect(doc.querySelector('#popup .sefaria-link')?.textContent?.trim()).toBe(
+      `View on ${copy.textSource}`,
+    );
   });
 
   it('promises a large preview only with a picture to show', () => {

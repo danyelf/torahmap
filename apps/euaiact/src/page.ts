@@ -19,4 +19,5 @@ export const EUAIACT_PAGE: PageCopy = {
   noScript: SUMMARY,
   noWebGl: SUMMARY,
   textUrl: EUR_LEX,
+  textSource: 'EUR-Lex',
 };
