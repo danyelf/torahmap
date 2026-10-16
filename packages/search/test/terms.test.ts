@@ -22,6 +22,7 @@ const LANGUAGES = [xs, english];
 const tagged: ExtraMode<boolean> = {
   id: 'tagged',
   letter: 't',
+  label: 'tagged',
   offered: (_term, language) => language.id === 'xs',
   possible: (x) => x === true,
   isDefault: (_term, language) => language.id === 'xs',

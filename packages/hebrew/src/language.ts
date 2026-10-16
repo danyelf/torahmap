@@ -1,6 +1,6 @@
 // Hebrew as search reads it. Shaped to @torahmap/search's SearchLanguage, which
 // this package does not import: the apps that pass it to search check the fit.
-import { isHebrew, mapStrippedToOriginal, splitIntoWords } from './letters.ts';
+import { isHebrew, mapStrippedToOriginal, splitIntoWords, stripNikkud } from './letters.ts';
 import { normalizeHebrewForSearch } from './spelling.ts';
 
 interface TextRange {
@@ -76,6 +76,7 @@ export function hebrew(options: { prefixes?: string } = {}) {
     id: 'he',
     rtl: true,
     claims: isHebrew,
+    clean: stripNikkud,
     fold: normalizeHebrewForSearch,
     toOriginal: mapStrippedToOriginal,
     wholeWords: (haystack: string, needle: string, limit: number) =>

@@ -1,7 +1,7 @@
-/* Search Overlay Styles */
+/* The term search: its rows, its results and its marks. */
 
 /* A search is a list of terms. Each gets a row: its colour, its box, how many
-   verses it accounts for, and a way to remove it. */
+   items it accounts for, and a way to remove it. */
 
 #search-terms {
   margin-bottom: 8px;
@@ -180,91 +180,7 @@
   }
 }
 
-/* The meanings of one term. Absent for the 88% of words that mean one thing. */
-.term-meanings {
-  margin-top: 2px;
-}
-
-.meaning-row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 2px 0;
-  font-size: 12px;
-  color: #ccc;
-  cursor: pointer;
-}
-
-.meaning-row input {
-  cursor: pointer;
-  margin: 0;
-}
-
-.meaning-row input {
-  accent-color: #6ab0f3;
-}
-
-/* The only meaning left checked: still plainly on, but not turn-off-able. */
-.meaning-row.locked input {
-  pointer-events: none;
-}
-
-.meaning-row.locked {
-  cursor: default;
-}
-
-/* The pointed Hebrew reads right to left inside a left-to-right row. */
-.meaning-form {
-  direction: rtl;
-  unicode-bidi: isolate;
-  font-size: 14px;
-  color: #fff;
-  min-width: 56px;
-}
-
-.meaning-tag {
-  color: #777;
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.meaning-gloss {
-  flex: 1 1 auto;
-  color: #bbb;
-}
-
-/* "Show only this one". Quiet until wanted, but never hover-only: it stays
-   reachable by keyboard, and on touch, where there is no hover at all. */
-.meaning-only {
-  flex: 0 0 auto;
-  background: none;
-  border: none;
-  padding: 0 4px;
-  font: inherit;
-  font-size: 11px;
-  color: #6ab0f3;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.1s;
-}
-
-.meaning-row:hover .meaning-only,
-.meaning-row:focus-within .meaning-only,
-.meaning-only:focus {
-  opacity: 1;
-}
-
-.meaning-only:hover {
-  text-decoration: underline;
-}
-
-@media (hover: none) {
-  .meaning-only {
-    opacity: 1;
-  }
-}
-
-/* Undo a narrowing. Hidden until there is something to undo. */
+/* Undo what the extra mode chose. Hidden until there is something to undo. */
 .term-all {
   flex: 0 0 auto;
   background: none;
@@ -278,12 +194,6 @@
 
 .term-all:hover {
   text-decoration: underline;
-}
-
-.meaning-count {
-  color: #888;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 /* Adding a word and clearing them all, side by side. */

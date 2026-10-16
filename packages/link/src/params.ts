@@ -264,3 +264,13 @@ export const RESERVED_KEYS: ReadonlySet<string> = new Set(VIEW_KEYS);
 function stripHtmlTags(value: string): string {
   return value.replace(/<[^>]*>/g, '');
 }
+
+/**
+ * The keys every text's search writes: its terms, and, positional across them,
+ * one letter each saying how a term is matched, with an empty entry for a term
+ * still on its default (see MODE_LETTERS in packages/search/src/terms.ts).
+ */
+export const TERM_SEARCH_PARAMS = [
+  { key: 'search', kind: 'text' },
+  { key: 'mode', kind: 'token' },
+] as const satisfies readonly UrlParamSpec[];

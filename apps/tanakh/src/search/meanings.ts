@@ -9,10 +9,19 @@ import {
   modesOffered as modesIn,
   type ExtraMode,
   type MatchMode,
+  type SearchLanguage,
   type SearchTerm,
+  type TextRange,
 } from '@torahmap/search';
-import { splitIntoWords } from '@torahmap/hebrew';
-import { meaningsFor, sameMeaning, versesFor, type Meaning } from './dictionary.ts';
+import { onlySeparators, splitIntoWords, stripNikkud } from '@torahmap/hebrew';
+import {
+  meaningsFor,
+  sameMeaning,
+  versesFor,
+  wordMatches,
+  type Meaning,
+  type VerseWords,
+} from './dictionary.ts';
 import { versesForTerm, type Dictionary } from './search.ts';
 import { TANAKH_LANGUAGES } from './languages.ts';
 import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
@@ -168,6 +177,8 @@ export function meaningsPossible(dictionary: Dictionary | null, term: SearchTerm
 export const meaningsMode: ExtraMode<Dictionary> = {
   id: 'meanings',
   letter: 'm',
+  label: 'meanings',
+  unavailable: "Meanings mode isn't available for phrases",
   offered: (_term, language) => language.id === HEBREW,
   possible: (dictionary, term) => meaningsPossible(dictionary, term),
   isDefault: (_term, language) => language.id === HEBREW,
@@ -223,4 +234,50 @@ export function resultsForTerms(
     index,
     terms.map((term) => versesForQuery(index, dictionary, termQuery(dictionary, term))),
   );
+}
+
+/**
+ * The words of a verse's `text` that are one of the meanings the term still
+ * stands for, in the text's own positions.
+ *
+ * By position rather than by spelling, which is what separates the two words
+ * spelled עלה in Genesis 8:20 — a spelling could be either, and only the place
+ * in the verse says which this one is. A meaning is Hebrew, so it marks nothing
+ * in English.
+ */
+export function meaningRanges(
+  dictionary: Dictionary,
+  words: VerseWords | null,
+  term: SearchTerm,
+  text: string,
+  language: SearchLanguage,
+): TextRange[] {
+  const keys = selectedKeys(dictionary, term);
+  if (language.id !== HEBREW || keys.length === 0) return [];
+  const folded = language.fold(text);
+  const ranges: TextRange[] = [];
+  for (const { word, start, end } of splitIntoWords(folded)) {
+    if (wordMatches(dictionary, words, keys, word, text, start)) {
+      ranges.push({ start: language.toOriginal(text, start), end: language.toOriginal(text, end) });
+    }
+  }
+  return ranges;
+}
+
+/**
+ * The stretch a result row quotes around: the first match, joined to as many
+ * after it as the term has further words. Meanings mode marks word by word, so
+ * a phrase it finds, בית אל, is joined into one mark; a word repeated, קדוש
+ * קדוש קדוש, is not. A word's points lie after its mark, so they do not part it
+ * from the next.
+ */
+export function quotedMeaning(term: SearchTerm, text: string, ranges: TextRange[]): TextRange {
+  const [first, ...rest] = ranges;
+  let end = first.end;
+  for (const next of rest.slice(0, splitIntoWords(term.text).length - 1)) {
+    const between = stripNikkud(text.slice(end, next.start));
+    if (!onlySeparators(between, 0, between.length)) break;
+    end = next.end;
+  }
+  return { start: first.start, end };
 }
