@@ -1,7 +1,7 @@
-// The Talmud map's own marks: a tint behind each seder, and the perek and daf
+// The Talmud map's own marks: each tractate's book, tinted by its seder, and the perek and daf
 // labels, which show by zoom level.
 
-import type { SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
+import type { Book, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
   DAF_LABEL,
   DAF_LABEL_ZOOM_ALL,
@@ -47,8 +47,8 @@ function labelGroup(id: string, labels: Placed[]) {
   };
 }
 
-function sederTint(block: SederBlock): HTMLElement | null {
-  const tint = SEDARIM.find((s) => s.en === block.name)?.tint;
+function bookTint(block: Book): HTMLElement | null {
+  const tint = SEDARIM.find((s) => s.en === block.seder)?.tint;
   if (!tint) return null;
   const [r, g, b] = tint.map((c) => Math.round(c * 255));
   const el = document.createElement('div');
@@ -100,7 +100,7 @@ const numberedFirst = ({ daf, amud }: DafRowAnchor) => amud === 'a' && [0, 3, 6]
 
 /** Draws the marks inside `parent`, and returns what moves them with the map. */
 export function createTalmudLabels(
-  sederBlocks: SederBlock[],
+  books: Book[],
   perekAnchors: PerekAnchor[],
   dafRows: DafRowAnchor[],
   parent: HTMLElement,
@@ -110,9 +110,9 @@ export function createTalmudLabels(
 
   // First, so the labels and the map's own labels sit on top.
   const tints = document.createElement('div');
-  tints.id = 'talmud-seder-bgs';
-  const placedTints = sederBlocks.flatMap((block) => {
-    const el = sederTint(block);
+  tints.id = 'talmud-books';
+  const placedTints = books.flatMap((block) => {
+    const el = bookTint(block);
     if (!el) return [];
     tints.appendChild(el);
     return [{ el, block }];

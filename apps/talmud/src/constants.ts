@@ -28,7 +28,13 @@ export const DAF_LABEL_ROOM = {
 // --- Layout constants ---
 
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
-export const TRACTATE_GAP = 90; // horizontal gap between tractates on a shelf (extra room now that wide tractates wrap into multi-column blocks)
+// Each tractate is drawn as a book: a tinted box round its squares, as tall as the tallest
+// tractate's, with BOOK_PADDING left of its squares and room for its daf numbers on the right.
+// Books on a shelf stand BOOK_GAP apart.
+export const BOOK_PADDING = 12;
+export const BOOK_GAP = 24;
+// Between tractates on a shelf.
+export const TRACTATE_GAP = DAF_LABEL_ROOM.right + BOOK_GAP + BOOK_PADDING;
 export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
 // A tractate's name, a tab above its first row that scales with the map. It fades out below the
 // perek names' smallest size. At 17, the tightest fit, Horayot's, has 15 units to spare inside its
@@ -50,7 +56,7 @@ export const TRACTATE_COLUMN_GAP = DAF_LABEL_ROOM.right + 14;
 
 /**
  * A seder: its name in Hebrew and in English, which is also its name in the data, and the tint
- * behind its shelf, red, green and blue from 0 to 1.
+ * behind its tractates, red, green and blue from 0 to 1.
  */
 export interface Seder extends SectionName {
   tint: readonly [number, number, number];
@@ -68,7 +74,7 @@ export const SEDARIM: readonly Seder[] = [
 ];
 
 // The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a
-// shelf that is 620 from the next; Nezikin's, 390 of 535. The gap clears the daf
+// shelf that is 626 from the next, as every shelf is. The gap clears the daf
 // labels beside each shelf's first tractate, which show from PEREK_LABEL_ZOOM.
 export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 

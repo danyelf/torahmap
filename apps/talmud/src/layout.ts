@@ -5,6 +5,8 @@
 // - Sedarim are stacked vertically (top to bottom in canonical order).
 // - Within a shelf, tractates are arranged right-to-left (RTL reading).
 // - Tractates on a shelf are top-aligned.
+// - Each tractate stands in a book: a box as tall as the tallest tractate's, so every
+//   shelf is the same height.
 // - Final coordinates have minX >= 0 (shifted into the first quadrant for
 //   compatibility with the existing camera/render pipeline).
 
@@ -26,6 +28,7 @@ import {
   POSITION_JITTER,
   SEDARIM,
   DAF_LABEL_ROOM,
+  BOOK_PADDING,
 } from './constants.ts';
 
 export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
@@ -60,8 +63,10 @@ export interface TractateBlock extends BookBox {
   maxY: number;
 }
 
-export interface SederBlock {
-  name: string;
+/** The book a tractate stands in: its squares, its name above them and its daf numbers. */
+export interface Book {
+  tractate: string;
+  seder: string;
   minX: number;
   minY: number;
   maxX: number;
@@ -92,7 +97,7 @@ export interface DafRowAnchor {
 export interface TalmudLayoutResult {
   items: TalmudLayoutItem[];
   tractateBlocks: TractateBlock[];
-  sederBlocks: SederBlock[];
+  books: Book[];
   perekAnchors: PerekAnchor[];
   dafRows: DafRowAnchor[];
   bounds: { width: number; height: number };
@@ -387,7 +392,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
 
   const allItems: TalmudLayoutItem[] = [];
   const tractateBlocks: TractateBlock[] = [];
-  const sederBlocks: SederBlock[] = [];
+  const books: Book[] = [];
   const allPerekAnchors: PerekAnchor[] = [];
   const allDafRows: DafRowAnchor[] = [];
 
@@ -400,12 +405,12 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     );
   }
 
+  const shelfHeight = TRACTATE_LABEL_HEIGHT + Math.max(0, ...laid.map((t) => t.height));
   let shelfY = 0;
-  for (const [seder, tractates] of bySeder) {
+  for (const tractates of bySeder.values()) {
     if (tractates.length === 0) continue;
 
     let shelfRightEdge = 0;
-    let shelfMaxHeight = 0;
 
     for (const t of tractates) {
       const tractateRightEdge = shelfRightEdge;
@@ -456,28 +461,25 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
         });
       }
 
-      if (tractateBottom - shelfY > shelfMaxHeight) {
-        shelfMaxHeight = tractateBottom - shelfY;
-      }
+      books.push({
+        tractate: t.name,
+        seder: t.seder,
+        minX: tractateLeftEdge - BOOK_PADDING,
+        minY: shelfY,
+        maxX: tractateRightEdge + DAF_LABEL_ROOM.right,
+        maxY: shelfY + shelfHeight + DAF_LABEL_ROOM.below,
+      });
+
       shelfRightEdge = tractateLeftEdge - TRACTATE_GAP;
     }
 
-    const shelfLeftEdge = shelfRightEdge + TRACTATE_GAP; // back off the last step
-    sederBlocks.push({
-      name: seder,
-      minX: shelfLeftEdge,
-      minY: shelfY,
-      maxX: DAF_LABEL_ROOM.right,
-      maxY: shelfY + shelfMaxHeight + DAF_LABEL_ROOM.below,
-    });
-
-    shelfY += shelfMaxHeight + SEDER_GAP;
+    shelfY += shelfHeight + SEDER_GAP;
   }
 
-  // 4. Shift everything so minX >= 0.
+  // 4. Shift everything so minX >= 0. The books hold every square.
   let globalMinX = 0;
-  for (const item of allItems) {
-    if (item.x < globalMinX) globalMinX = item.x;
+  for (const book of books) {
+    if (book.minX < globalMinX) globalMinX = book.minX;
   }
   const dx = -globalMinX;
   for (const item of allItems) {
@@ -487,7 +489,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     block.minX += dx;
     block.maxX += dx;
   }
-  for (const block of sederBlocks) {
+  for (const block of books) {
     block.minX += dx;
     block.maxX += dx;
   }
@@ -509,7 +511,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   return {
     items: allItems,
     tractateBlocks,
-    sederBlocks,
+    books,
     perekAnchors: allPerekAnchors,
     dafRows: allDafRows,
     bounds: { width: maxX, height: maxY },

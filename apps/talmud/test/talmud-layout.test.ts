@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { computeTalmudLayout } from '../src/layout.ts';
 import { talmudFixture as fixture } from './helpers/talmudFixture.ts';
 import {
+  BOOK_GAP,
   DAF_LABEL,
   DAF_LABEL_ROOM,
   PEREK_GAP,
@@ -22,11 +23,6 @@ describe('computeTalmudLayout', () => {
   it('emits one tractateBlock per tractate', () => {
     expect(result.tractateBlocks.length).toBe(2);
     expect(result.tractateBlocks.map((t) => t.name).sort()).toEqual(['TractA', 'TractB']);
-  });
-
-  it('emits one sederBlock per represented seder', () => {
-    expect(result.sederBlocks.length).toBe(2);
-    expect(result.sederBlocks.map((s) => s.name).sort()).toEqual(['Moed', 'Zeraim']);
   });
 
   const amud = (daf: number, a: 'a' | 'b') =>
@@ -141,5 +137,42 @@ describe('a tractate long enough to wrap into columns', () => {
       );
       expect(inRoom.map((s) => s.id)).toEqual([]);
     }
+  });
+});
+
+describe("each tractate's book", () => {
+  // TractB and TractC share Moed's shelf; TractA, on Zeraim's, is the tallest.
+  const tractC = { ...fixture.tractates[1], name: 'TractC' };
+  const result = computeTalmudLayout({ tractates: [...fixture.tractates, tractC] });
+  const book = (name: string) => result.books.find((b) => b.tractate === name)!;
+
+  it('stands one to a tractate, in its seder', () => {
+    expect(result.books.map((b) => [b.tractate, b.seder])).toEqual([
+      ['TractA', 'Zeraim'],
+      ['TractB', 'Moed'],
+      ['TractC', 'Moed'],
+    ]);
+  });
+
+  it('is as tall as every other, on every shelf', () => {
+    expect(new Set(result.books.map((b) => b.maxY - b.minY)).size).toBe(1);
+  });
+
+  it("holds its tractate's squares, and the room for its daf numbers", () => {
+    for (const b of result.books) {
+      for (const s of result.items.filter((i) => i.tractate === b.tractate)) {
+        expect(s.x).toBeGreaterThanOrEqual(b.minX);
+        expect(s.y).toBeGreaterThanOrEqual(b.minY);
+        expect(s.y + s.size).toBeLessThanOrEqual(b.maxY);
+      }
+      for (const d of result.dafRows.filter((r) => r.tractate === b.tractate)) {
+        expect(d.rightX + DAF_LABEL_ROOM.right).toBeLessThanOrEqual(b.maxX);
+      }
+    }
+  });
+
+  it('stands BOOK_GAP from the next on its shelf', () => {
+    expect(book('TractB').minX - book('TractC').maxX).toBe(BOOK_GAP);
+    expect(book('TractB').minY).toBe(book('TractC').minY);
   });
 });
