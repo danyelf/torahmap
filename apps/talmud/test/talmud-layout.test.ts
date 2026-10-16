@@ -64,17 +64,6 @@ describe('computeTalmudLayout', () => {
     }
   });
 
-  it('computes bounds consistent with item positions', () => {
-    let maxX = 0;
-    let maxY = 0;
-    for (const item of result.items) {
-      if (item.x + item.size > maxX) maxX = item.x + item.size;
-      if (item.y + item.size > maxY) maxY = item.y + item.size;
-    }
-    expect(result.bounds.width).toBe(maxX);
-    expect(result.bounds.height).toBe(maxY);
-  });
-
   it('returns a daf row for every amud', () => {
     expect(result.dafRows.length).toBe(
       new Set(result.items.map((i) => `${i.tractate}:${i.daf}${i.amud}`)).size,
@@ -140,47 +129,44 @@ describe('a tractate long enough to wrap into columns', () => {
   });
 });
 
-describe("each tractate's book", () => {
+describe("each tractate's cover", () => {
   // TractB and the shorter TractC share Moed's shelf; TractA, on Zeraim's, is the tallest.
   const tractB = fixture.tractates[1];
   const tractC = { ...tractB, name: 'TractC', amudim: tractB.amudim.slice(0, 1) };
   const result = computeTalmudLayout({ tractates: [...fixture.tractates, tractC] });
-  const book = (name: string) => result.books.find((b) => b.tractate === name)!;
-
-  it('stands one to a tractate, in its seder', () => {
-    expect(result.books.map((b) => [b.tractate, b.seder])).toEqual([
-      ['TractA', 'Zeraim'],
-      ['TractB', 'Moed'],
-      ['TractC', 'Moed'],
-    ]);
-  });
+  const block = (name: string) => result.tractateBlocks.find((t) => t.name === name)!;
+  const cover = (name: string) => block(name).cover;
 
   it("is as tall as the tallest tractate's on its shelf", () => {
-    const height = (name: string) => book(name).maxY - book(name).minY;
-    const squaresHeight = (name: string) => {
-      const block = result.tractateBlocks.find((t) => t.name === name)!;
-      return block.maxY - block.minY;
-    };
+    const height = (name: string) => cover(name).maxY - cover(name).minY;
+    const squaresHeight = (name: string) => block(name).maxY - block(name).minY;
     expect(squaresHeight('TractC')).toBeLessThan(squaresHeight('TractB'));
     expect(height('TractC')).toBe(height('TractB'));
     expect(height('TractA')).toBeGreaterThan(height('TractB'));
   });
 
   it("holds its tractate's squares, and the room for its daf numbers", () => {
-    for (const b of result.books) {
-      for (const s of result.items.filter((i) => i.tractate === b.tractate)) {
-        expect(s.x).toBeGreaterThanOrEqual(b.minX);
-        expect(s.y).toBeGreaterThanOrEqual(b.minY);
-        expect(s.y + s.size).toBeLessThanOrEqual(b.maxY);
+    for (const { name, cover } of result.tractateBlocks) {
+      for (const s of result.items.filter((i) => i.tractate === name)) {
+        expect(s.x).toBeGreaterThanOrEqual(cover.minX);
+        expect(s.y).toBeGreaterThanOrEqual(cover.minY);
+        expect(s.y + s.size).toBeLessThanOrEqual(cover.maxY);
       }
-      for (const d of result.dafRows.filter((r) => r.tractate === b.tractate)) {
-        expect(d.rightX + DAF_LABEL_ROOM.right).toBeLessThanOrEqual(b.maxX);
+      for (const d of result.dafRows.filter((r) => r.tractate === name)) {
+        expect(d.rightX + DAF_LABEL_ROOM.right).toBeLessThanOrEqual(cover.maxX);
       }
     }
   });
 
   it('stands BOOK_GAP from the next on its shelf', () => {
-    expect(book('TractB').minX - book('TractC').maxX).toBe(BOOK_GAP);
-    expect(book('TractB').minY).toBe(book('TractC').minY);
+    expect(cover('TractB').minX - cover('TractC').maxX).toBe(BOOK_GAP);
+    expect(cover('TractB').minY).toBe(cover('TractC').minY);
+  });
+
+  it('sets the bounds, starting at 0', () => {
+    const covers = result.tractateBlocks.map((t) => t.cover);
+    expect(Math.min(...covers.map((c) => c.minX))).toBe(0);
+    expect(result.bounds.width).toBe(Math.max(...covers.map((c) => c.maxX)));
+    expect(result.bounds.height).toBe(Math.max(...covers.map((c) => c.maxY)));
   });
 });

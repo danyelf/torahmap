@@ -5,7 +5,6 @@
 // - Sedarim are stacked vertically (top to bottom in canonical order).
 // - Within a shelf, tractates are arranged right-to-left (RTL reading).
 // - Tractates on a shelf are top-aligned.
-// - Each tractate stands in a book: a box as tall as the tallest tractate's on its shelf.
 // - Final coordinates have minX >= 0 (shifted into the first quadrant for
 //   compatibility with the existing camera/render pipeline).
 
@@ -19,7 +18,7 @@ import { bookFromUrl, bookToUrl } from '@torahmap/link';
 import {
   SEGMENT_SIZE,
   PEREK_GAP,
-  TRACTATE_GAP,
+  BOOK_GAP,
   SEDER_GAP,
   TRACTATE_LABEL_HEIGHT,
   TRACTATE_WRAP_ROWS,
@@ -60,12 +59,15 @@ export function talmudRef(s: TalmudIdentity): string {
 /** The box round a tractate's squares; its section is its seder. */
 export interface TractateBlock extends BookBox {
   maxY: number;
+  /**
+   * The tinted box the tractate stands in, as tall as the tallest tractate's on its shelf. It holds
+   * the tractate's name above its squares, BOOK_PADDING left of them and the room for its daf
+   * numbers right of and below them.
+   */
+  cover: Box;
 }
 
-/** The book a tractate stands in: its squares, its name above them and its daf numbers. */
-export interface Book {
-  tractate: string;
-  seder: string;
+interface Box {
   minX: number;
   minY: number;
   maxX: number;
@@ -96,7 +98,6 @@ export interface DafRowAnchor {
 export interface TalmudLayoutResult {
   items: TalmudLayoutItem[];
   tractateBlocks: TractateBlock[];
-  books: Book[];
   perekAnchors: PerekAnchor[];
   dafRows: DafRowAnchor[];
   bounds: { width: number; height: number };
@@ -391,7 +392,6 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
 
   const allItems: TalmudLayoutItem[] = [];
   const tractateBlocks: TractateBlock[] = [];
-  const books: Book[] = [];
   const allPerekAnchors: PerekAnchor[] = [];
   const allDafRows: DafRowAnchor[] = [];
 
@@ -416,6 +416,12 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
       const tractateLeftEdge = tractateRightEdge - t.width;
       const tractateTop = shelfY + TRACTATE_LABEL_HEIGHT;
       const tractateBottom = tractateTop + t.height;
+      const cover = {
+        minX: tractateLeftEdge - BOOK_PADDING,
+        minY: shelfY,
+        maxX: tractateRightEdge + DAF_LABEL_ROOM.right,
+        maxY: shelfY + shelfHeight + DAF_LABEL_ROOM.below,
+      };
 
       // Shift this tractate's items into world coordinates:
       //   local x (<= 0) → tractateRightEdge + local_x
@@ -436,6 +442,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
         minY: tractateTop,
         maxX: tractateRightEdge,
         maxY: tractateBottom,
+        cover,
       });
 
       // Translate the tractate's local perek anchors into world coords.
@@ -460,25 +467,16 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
         });
       }
 
-      books.push({
-        tractate: t.name,
-        seder: t.seder,
-        minX: tractateLeftEdge - BOOK_PADDING,
-        minY: shelfY,
-        maxX: tractateRightEdge + DAF_LABEL_ROOM.right,
-        maxY: shelfY + shelfHeight + DAF_LABEL_ROOM.below,
-      });
-
-      shelfRightEdge = tractateLeftEdge - TRACTATE_GAP;
+      shelfRightEdge = cover.minX - BOOK_GAP - DAF_LABEL_ROOM.right;
     }
 
     shelfY += shelfHeight + SEDER_GAP;
   }
 
-  // 4. Shift everything so minX >= 0. The books hold every square.
+  // 4. Shift everything so minX >= 0. The covers hold every square.
   let globalMinX = 0;
-  for (const book of books) {
-    if (book.minX < globalMinX) globalMinX = book.minX;
+  for (const { cover } of tractateBlocks) {
+    if (cover.minX < globalMinX) globalMinX = cover.minX;
   }
   const dx = -globalMinX;
   for (const item of allItems) {
@@ -487,10 +485,8 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   for (const block of tractateBlocks) {
     block.minX += dx;
     block.maxX += dx;
-  }
-  for (const block of books) {
-    block.minX += dx;
-    block.maxX += dx;
+    block.cover.minX += dx;
+    block.cover.maxX += dx;
   }
   for (const a of allPerekAnchors) {
     a.rightX += dx;
@@ -502,15 +498,14 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
   // 5. Compute bounds
   let maxX = 0;
   let maxY = 0;
-  for (const item of allItems) {
-    if (item.x + item.size > maxX) maxX = item.x + item.size;
-    if (item.y + item.size > maxY) maxY = item.y + item.size;
+  for (const { cover } of tractateBlocks) {
+    if (cover.maxX > maxX) maxX = cover.maxX;
+    if (cover.maxY > maxY) maxY = cover.maxY;
   }
 
   return {
     items: allItems,
     tractateBlocks,
-    books,
     perekAnchors: allPerekAnchors,
     dafRows: allDafRows,
     bounds: { width: maxX, height: maxY },

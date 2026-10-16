@@ -28,13 +28,9 @@ export const DAF_LABEL_ROOM = {
 // --- Layout constants ---
 
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
-// Each tractate is drawn as a book: a tinted box round its squares, as tall as the tallest
-// tractate's on its shelf, with BOOK_PADDING left of its squares and room for its daf numbers on the right.
-// Books on a shelf stand BOOK_GAP apart.
+// A cover's room left of its tractate's squares, and the gap between covers on a shelf.
 export const BOOK_PADDING = 12;
 export const BOOK_GAP = 24;
-// Between tractates on a shelf.
-export const TRACTATE_GAP = DAF_LABEL_ROOM.right + BOOK_GAP + BOOK_PADDING;
 export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
 // A tractate's name, a tab above its first row that scales with the map. It fades out below the
 // perek names' smallest size. At 17, the tightest fit, Horayot's, has 15 units to spare inside its
@@ -98,5 +94,5 @@ export const BRIGHTNESS_JITTER = 0.18;
 // looks like noise rather than texture.
 export const POSITION_JITTER = 0.7;
 
-// The tints are drawn over the canvas at this opacity.
-export const SEDER_BACKGROUND_OPACITY = 0.1;
+// The covers are drawn over the canvas in their seder's tint at this opacity.
+export const COVER_OPACITY = 0.1;
