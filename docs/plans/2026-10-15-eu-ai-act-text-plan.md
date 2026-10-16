@@ -666,6 +666,13 @@ export function ownerOf(id: string): string {
   }
 }
 
+/** A number from a square's id, the seed for its jitter. */
+export function idHash(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return h;
+}
+
 /** A square as readers cite it: "Recital 12", "Article 5(1)(h)", "Annex III". */
 export function actRef(id: string): string {
   switch (layerOf(id)) {
@@ -762,6 +769,11 @@ import type { BookTab, SectionLabelSize, SectionName } from '@torahmap/shell/map
 
 export const SQUARE_SIZE = 6; // map units a square is tall, and a column's pitch
 
+// Each square is nudged by a fixed amount from its id, as the Tanakh's and the Talmud's are.
+// The Talmud's squares are the same size, so its ±0.7 map units and ±18% brightness carry over.
+export const POSITION_JITTER = 0.7;
+export const BRIGHTNESS_JITTER = 0.18;
+
 export const COLUMN_WIDTH = 8; // squares across an article's column
 export const RECITALS_PER_LINE = 50;
 
@@ -846,7 +858,7 @@ export const actFixture: ActStructure = {
 import { indexItems } from '@torahmap/engine';
 import { describe, expect, it } from 'vitest';
 import { computeActLayout } from '../src/layout.ts';
-import { COLUMN_WIDTH, SQUARE_SIZE } from '../src/constants.ts';
+import { COLUMN_WIDTH, POSITION_JITTER, SQUARE_SIZE } from '../src/constants.ts';
 import { actFixture } from './helpers/actFixture.ts';
 
 const order = { recital: 0, article: 1, annex: 2 } as const;
@@ -940,6 +952,16 @@ describe('the Act’s layout', () => {
     expect(three.minX).toBe(at('6').x);
     expect(three.maxX).toBeGreaterThanOrEqual(at('7').x + COLUMN_WIDTH * SQUARE_SIZE - 1);
   });
+
+  it('nudges each square by an amount its id fixes', () => {
+    const again = computeActLayout(actFixture);
+    for (const item of laid.items) {
+      expect(Math.abs(item.jitter!.x)).toBeLessThanOrEqual(POSITION_JITTER);
+      expect(Math.abs(item.jitter!.y)).toBeLessThanOrEqual(POSITION_JITTER);
+      expect(again.items.find((i) => i.id === item.id)!.jitter).toEqual(item.jitter);
+    }
+    expect(new Set(laid.items.map((i) => i.jitter!.x)).size).toBeGreaterThan(1);
+  });
 });
 ```
 
@@ -954,6 +976,7 @@ Run: `npx vitest run apps/euaiact/test/layout.test.ts` — expected FAIL (`layou
 // Where every square of the Act stands: recitals over articles over annexes.
 
 import type { MapItem } from '@torahmap/engine';
+import { seededRandom } from '@torahmap/utils';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
 import type { ActBlock, ActCell, ActGroup, ActStructure, Origin } from './data.ts';
 import type { Layer } from './ids.ts';
@@ -966,8 +989,19 @@ import {
   RECITALS_PER_LINE,
   SECTION_GAP,
   SPLIT_GAP,
+  POSITION_JITTER,
   SQUARE_SIZE as S,
 } from './constants.ts';
+import { idHash } from './ids.ts';
+
+/** A square's nudge, fixed by its id; a recital's is the same as an article's. */
+function jitterFor(id: string): { x: number; y: number } {
+  const seed = idHash(id);
+  return {
+    x: (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER,
+    y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER,
+  };
+}
 
 export interface ActItem extends MapItem {
   layer: Layer;
@@ -1049,6 +1083,7 @@ export function computeActLayout(structure: ActStructure): ActLayout {
             x: x + p.col * S,
             y: y + p.row * S,
             size: S,
+            jitter: jitterFor(p.cell.id),
             layer,
             origin: p.cell.origin,
             lead: p.lead,
@@ -1071,6 +1106,7 @@ export function computeActLayout(structure: ActStructure): ActLayout {
       y: recitalsTop + Math.floor(i / RECITALS_PER_LINE) * S,
       size: S,
       width: 2 * S,
+      jitter: jitterFor(`Recital.${i + 1}`),
       layer: 'recital',
       origin: 'B',
       lead: false,
@@ -1322,7 +1358,9 @@ Check `viewTitle`'s signature in `packages/site` and `Credit`'s fields in `packa
 // apps/euaiact/src/baseColor.ts
 // A square's colour while no tool colours it: its layer.
 
-import type { Color } from '@torahmap/utils';
+import { type Color, seededRandom } from '@torahmap/utils';
+import { BRIGHTNESS_JITTER } from './constants.ts';
+import { idHash } from './ids.ts';
 import type { ActItem } from './layout.ts';
 
 /** A colour from its hex digits. */
@@ -1336,9 +1374,39 @@ export const RECITAL = hex('#b9a27a');
 export const ARTICLE = hex('#9aa3ad');
 export const ANNEX = hex('#5b8fc9');
 
+/** Its layer's colour, a little lighter or darker as its id fixes; multiplied, so the hue holds. */
 export function layerColor(item: ActItem): Color {
-  return item.layer === 'recital' ? RECITAL : item.layer === 'annex' ? ANNEX : ARTICLE;
+  const base = item.layer === 'recital' ? RECITAL : item.layer === 'annex' ? ANNEX : ARTICLE;
+  const f = 1 + (seededRandom(idHash(item.id)) - 0.5) * 2 * BRIGHTNESS_JITTER;
+  return base.map((c) => Math.max(0, Math.min(1, c * f))) as Color;
 }
+```
+
+And a test beside it:
+
+```ts
+// apps/euaiact/test/baseColor.test.ts
+import { describe, expect, it } from 'vitest';
+import { ARTICLE, layerColor } from '../src/baseColor.ts';
+import { BRIGHTNESS_JITTER } from '../src/constants.ts';
+import type { ActItem } from '../src/layout.ts';
+
+const item = (id: string): ActItem => ({
+  id, x: 0, y: 0, size: 6, layer: 'article', origin: 'B', lead: false, chapter: 'I',
+});
+
+describe('a square’s base colour', () => {
+  it('varies by square, within the brightness range, the same every time', () => {
+    const colours = ['1', '2', '3', '4', '5'].map((id) => layerColor(item(id)));
+    expect(new Set(colours.map((c) => c[0])).size).toBeGreaterThan(1);
+    for (const c of colours) {
+      const f = c[0] / ARTICLE[0];
+      expect(f).toBeGreaterThanOrEqual(1 - BRIGHTNESS_JITTER - 1e-9);
+      expect(f).toBeLessThanOrEqual(1 + BRIGHTNESS_JITTER + 1e-9);
+    }
+    expect(layerColor(item('1'))).toEqual(colours[0]);
+  });
+});
 ```
 
 - [ ] **Step 3: Search stub**
@@ -2032,7 +2100,7 @@ In `docs/plans/2026-10-15-eu-ai-act-text-design.md`, "Where the machinery assume
 - **New, found here:** a link's square id may be any text without a slash, pipe, semicolon or backslash, up to 100 characters (`SQUARE_ID` in `packages/link/src/params.ts`), so the Act's ids — parentheses and all — need nothing from it.
 - **New, if true:** the first-version Hebrew-choice key `torahMap.englishOnly` is shared by every page on an origin.
 
-Add rows for anything else you met. The EUR-Lex links (`#art_6`, `#rct_12`, `#anx_III`) were not opened by script, since EUR-Lex answers scripts with a bot check: open three in a browser and record whether the anchors land.
+Add rows for anything else you met. The EUR-Lex links (`#art_6`, `#rct_12`, `#anx_III`) were not opened by script, since EUR-Lex answers scripts with a bot check: open three in the Chrome tools (a real browser passes the check), take a screenshot of each, and record whether the anchor lands on the right recital, article or annex. If the bot check blocks the browser too, say so with the loud-failure line and leave the links as they are.
 
 - [ ] **Step 5: The final gates**
 
