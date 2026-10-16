@@ -1,8 +1,9 @@
+import { resultsForItemSets, type SearchResult } from '@torahmap/search';
 // An English term's result quotes the English verse.
 
 import { describe, it, expect } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex, resultsForVerseSets, type SearchResult } from '../../src/search/search';
+import { buildTextIndex } from '../../src/search/search';
 import type { VerseTexts } from '../../src/verseTexts';
 import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
 
@@ -28,7 +29,7 @@ const texts: VerseTexts = {
 const index = buildTextIndex(texts, inTextsOrder(texts));
 
 function genesis99(): SearchResult {
-  return resultsForVerseSets(index, [new Set(['Genesis.9.9'])])[0];
+  return resultsForItemSets(index, [new Set(['Genesis.9.9'])])[0];
 }
 
 describe('snippets for an English term', () => {
@@ -78,14 +79,14 @@ describe('a Hebrew term beside an English one', () => {
   const englishTerm = 'behold';
 
   function mixedResults() {
-    return resultsForVerseSets(index, [
+    return resultsForItemSets(index, [
       new Set(['Genesis.17.7']),
       new Set(['Genesis.17.7', 'Genesis.9.9']),
     ]);
   }
 
   it('quotes English for a verse only the English term found', () => {
-    const only = mixedResults().find((r) => r.verse === 9)!;
+    const only = mixedResults().find((r) => r.id === 'Genesis.9.9')!;
 
     expect(only.matchingTerms.map((m) => m.termIndex)).toEqual([1]);
 
@@ -95,7 +96,7 @@ describe('a Hebrew term beside an English one', () => {
   });
 
   it('quotes Hebrew for a verse the Hebrew term claimed first', () => {
-    const both = mixedResults().find((r) => r.verse === 7)!;
+    const both = mixedResults().find((r) => r.id === 'Genesis.17.7')!;
 
     expect(both.matchingTerms[0].termIndex).toBe(0);
     expect(excerptOf(both, hebrewTerm, 'meanings', index, EMPTY_DICTIONARY)!.snippet).toMatch(

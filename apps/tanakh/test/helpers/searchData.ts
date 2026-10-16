@@ -1,15 +1,11 @@
+import { type TextIndex } from '@torahmap/search';
 // Search's files for tests: the shipped ones, read from disk, or made-up texts
 // with a dictionary that knows no word.
 import { memoByValue } from '@torahmap/utils';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  buildDictionary,
-  type BookOrder,
-  type Dictionary,
-  type TextIndex,
-} from '../../src/search/search';
+import { buildDictionary, type BookOrder, type Dictionary } from '../../src/search/search';
 import {
   DICTIONARY_FILES,
   dictionaryOf,

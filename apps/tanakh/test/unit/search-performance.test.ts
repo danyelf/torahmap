@@ -1,3 +1,4 @@
+import { type TextIndex } from '@torahmap/search';
 // Correctness checks for Hebrew search at production scale (~23,000 verses).
 //
 // No time budget is asserted here, and adding one measures the wrong thing: a
@@ -7,7 +8,7 @@
 // machine. Meanings-mode search is about 1ms once warm, so a genuinely slow
 // search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildTextIndex, type TextIndex, versesForTerm } from '../../src/search/search';
+import { buildTextIndex, versesForTerm } from '../../src/search/search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';

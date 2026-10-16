@@ -1,6 +1,7 @@
+import { type TextIndex } from '@torahmap/search';
 // Tests for whole-word search functionality
 import { describe, it, expect, beforeEach } from 'vitest';
-import { buildTextIndex, type TextIndex, versesForTerm } from '../../src/search/search';
+import { buildTextIndex, versesForTerm } from '../../src/search/search';
 import type { VerseTexts } from '../../src/verseTexts';
 import { inTextsOrder } from '../helpers/searchData';
 

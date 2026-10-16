@@ -4,3 +4,6 @@ export * from './matching.ts';
 export * from './constants.ts';
 export * from './extraMode.ts';
 export * from './terms.ts';
+export * from './textIndex.ts';
+export * from './highlight.ts';
+export * from './resultsList.ts';

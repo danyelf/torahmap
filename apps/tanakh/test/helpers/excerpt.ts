@@ -1,13 +1,12 @@
-import { verseId } from '@torahmap/link/tanakh';
-import type { Dictionary, SearchResult, TextIndex } from '../../src/search/search';
+import { addTerm, setMode, type SearchResult, type TextIndex } from '@torahmap/search';
+import type { Dictionary } from '../../src/search/search';
 import type { Parse } from '../../src/search/dictionary';
-import { addTerm, setMode } from '@torahmap/search';
 import { type SearchMode } from '../../src/search/meanings.ts';
 import { excerpt } from '../../src/search/highlight';
 
 /** A result row's quotation of its verse, for a term typed as `text` in `mode`. */
 export function excerptOf(
-  result: Pick<SearchResult, 'book' | 'chapter' | 'verse'>,
+  result: Pick<SearchResult, 'id'>,
   text: string,
   mode: SearchMode,
   index: TextIndex,
@@ -16,6 +15,5 @@ export function excerptOf(
 ): ReturnType<typeof excerpt> {
   const [added] = addTerm([], text);
   const [term] = setMode([added], added.id, mode);
-  const id = verseId(result.book, result.chapter, result.verse);
-  return excerpt({ matchingTerms: [], ...result, id }, term, index, dictionary, parse);
+  return excerpt({ matchingTerms: [], ref: result.id, ...result }, term, index, dictionary, parse);
 }

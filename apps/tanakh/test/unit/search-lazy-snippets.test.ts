@@ -1,8 +1,9 @@
+import { type SearchResult, type TextIndex } from '@torahmap/search';
 // A result row's snippet is worked out when the row is drawn, from the verse
 // and the term.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex, type SearchResult, type TextIndex } from '../../src/search/search';
+import { buildTextIndex } from '../../src/search/search';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';
 import type { VerseTexts } from '../../src/verseTexts';
@@ -51,9 +52,7 @@ describe("a result's excerpt", () => {
 
   const genesis11: SearchResult = {
     id: 'Genesis.1.1',
-    book: 'Genesis',
-    chapter: 1,
-    verse: 1,
+    ref: 'Genesis 1:1',
     matchingTerms: [{ termIndex: 0 }],
   };
 
@@ -75,7 +74,7 @@ describe("a result's excerpt", () => {
   });
 
   it('returns null for a verse not in the index', () => {
-    const missing: SearchResult = { ...genesis11, book: 'NonExistent', chapter: 999, verse: 999 };
+    const missing: SearchResult = { ...genesis11, id: 'NonExistent.999.999' };
     expect(excerptOf(missing, 'אלהים', 'meanings', index, dictionary)).toBeNull();
   });
 
