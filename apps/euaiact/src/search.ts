@@ -22,9 +22,9 @@ const FOUND = hex('#e8833a');
 
 const wordIn = (settings: ActSearchSettings): string => settings.text.trim();
 
-/** A matcher for `word` as a whole word in any case; null when it is under two letters. */
+/** A matcher for `word` as a whole word in any case; null when it has under two letters or digits. */
 export function wordMatcher(word: string): RegExp | null {
-  if (word.length < 2) return null;
+  if ((word.match(/[\p{L}\p{N}]/gu) ?? []).length < 2) return null;
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu');
 }

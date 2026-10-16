@@ -13,7 +13,7 @@ const item = (id: string, layer: ActItem['layer'] = 'article'): ActItem => ({
   chapter: 'I',
 });
 const texts = {
-  'Recital.1': 'Deployers should keep records.',
+  'Recital.1': 'Deployers should keep records, as in point (a).',
   '9(2)': 'The provider shall keep records of the system.',
   '9(3)': 'Nothing here.',
 };
@@ -38,6 +38,13 @@ describe('searching the Act for a word', () => {
   it('finds nothing for a single letter', () => {
     expect(colours('a').every((c) => c === null)).toBe(true);
     expect(actSearch.isSearching({ text: 'a' })).toBe(false);
+  });
+
+  it('finds nothing for a single letter with punctuation round it', () => {
+    for (const text of ['(a', 'a.', '(a)']) {
+      expect(actSearch.isSearching({ text })).toBe(false);
+      expect(colours(text).every((c) => c === null)).toBe(true);
+    }
   });
 
   it('treats what a reader types as letters, not as a pattern', () => {
