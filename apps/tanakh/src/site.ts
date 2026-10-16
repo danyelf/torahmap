@@ -7,6 +7,7 @@ import { TANAKH_PAGE } from './page.ts';
 export const tanakhSite: Site = {
   page: TANAKH_PAGE,
   squareName: 'verse',
+  hasHebrew: true,
   aboutHtml:
     '<p>An interactive visualization of the entire Tanakh (Hebrew Bible). Every verse has a fixed position.</p>',
   credits: [

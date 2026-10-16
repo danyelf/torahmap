@@ -8,6 +8,7 @@ import { SEFARIA_TALMUD, TALMUD_PAGE } from './page.ts';
 export const talmudSite: Site = {
   page: TALMUD_PAGE,
   squareName: 'segment',
+  hasHebrew: true,
   aboutHtml:
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [
