@@ -6,18 +6,19 @@ import { type TextIndex } from '@torahmap/search';
 // is doing, not the search itself (see search-performance.test.ts, which hit
 // this directly). A slow search still shows up as a slow test run.
 import { describe, it, expect, beforeAll } from 'vitest';
-import { buildTextIndex } from '../../src/search/search';
+import { textIndexOf, type SearchData } from '../../src/search/data';
 import { versesForTerm } from '../helpers/searchData';
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
-import { inTextsOrder, realSearchData } from '../helpers/searchData';
+import { withRealDictionary } from '../helpers/searchData';
 import { buildLargeVerseTexts } from '../helpers/largeVerseTexts';
 
 describe('Hebrew Search Performance Diagnostics', () => {
+  let data: SearchData;
   let index: TextIndex;
-  const { dictionary } = realSearchData();
   beforeAll(() => {
     const texts = buildLargeVerseTexts(5000);
-    index = buildTextIndex(texts, inTextsOrder(texts));
+    data = withRealDictionary(texts);
+    index = textIndexOf(data);
     // Warmup: JIT-compile the search path before measuring
     versesForTerm(index, 'אלהים', 'he', 'substring');
   });
@@ -37,7 +38,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
       const term = 'אלהים'; // God - appears in ~2600 verses
 
       const { result } = measureTime(() => {
-        return searchInMeaningsMode(index, dictionary, term);
+        return searchInMeaningsMode(data, term);
       }, 'search("אלהים", meanings mode) - ~2600 results');
 
       console.log(`  Found ${result.length} results`);
@@ -51,7 +52,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
       const terms = 'אלהים, יהוה'; // God, LORD
 
       const { result } = measureTime(() => {
-        return searchInMeaningsMode(index, dictionary, terms);
+        return searchInMeaningsMode(data, terms);
       }, 'search("אלהים, יהוה", meanings mode) - multiple terms');
 
       console.log(`  Found ${result.length} results`);
@@ -97,7 +98,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
         'Substring',
       );
       const word = measureTime(() => versesForTerm(index, term, 'he', 'word'), 'Word');
-      const meanings = measureTime(() => searchInMeaningsMode(index, dictionary, term), 'Meanings');
+      const meanings = measureTime(() => searchInMeaningsMode(data, term), 'Meanings');
 
       console.log('\nMode comparison:');
       console.log(
@@ -122,7 +123,7 @@ describe('Hebrew Search Performance Diagnostics', () => {
       console.log('\nSimulating typing (meanings mode):');
       for (const partial of chars) {
         const { result, timeMs } = measureTime(() => {
-          return searchInMeaningsMode(index, dictionary, partial);
+          return searchInMeaningsMode(data, partial);
         }, `  "${partial}"`);
 
         console.log(`    -> ${result.length} results in ${timeMs.toFixed(2)}ms`);

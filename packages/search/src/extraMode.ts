@@ -48,10 +48,14 @@ export interface ExtraMode<X, D = unknown> {
     shown(x: X, term: SearchTerm): boolean;
     apply(terms: SearchTerm[], id: string): SearchTerm[];
   };
-  /** Draw its choices for the open row, below the mode control; `x` is null while the data is missing. */
+  /**
+   * Draw its choices for the open row, below the mode control, or clear them
+   * while the term is not matched this way. `x` is null while the data is missing.
+   */
   renderBody?(
     body: HTMLElement,
     term: SearchTerm,
+    inThisMode: boolean,
     x: X | null,
     edit: (change: (terms: SearchTerm[]) => SearchTerm[]) => void,
   ): void;

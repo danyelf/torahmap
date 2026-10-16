@@ -19,7 +19,14 @@ import { highlightTerms } from './highlight.ts';
 import type { SearchLanguage } from './language.ts';
 import { createResultsList, type ResultsView } from './resultsList.ts';
 import { mountTermRows, type TermRows } from './termRows.ts';
-import { excerptOf, matcherOf, modeIn, resultsOf, type SearchContext } from './searching.ts';
+import {
+  byExtra,
+  excerptOf,
+  matcherOf,
+  modeIn,
+  resultsOf,
+  type SearchContext,
+} from './searching.ts';
 import { NO_TELEMETRY } from './telemetry.ts';
 import {
   addTerm,
@@ -34,7 +41,7 @@ import {
   setTermText,
   type SearchTerm,
 } from './terms.ts';
-import { matchingTermsOf, type SearchResult, type TextIndex } from './textIndex.ts';
+import { matchingTermsOf, type SearchResult, type Snippet, type TextIndex } from './textIndex.ts';
 import type { MatchMode } from './matching.ts';
 
 /**
@@ -68,8 +75,16 @@ export interface TermSearchSpec<D, X> {
   defaultMode?: MatchMode;
   /** Whether going from `before` to `after` changes only what result rows quote, so they are quoted again in place. */
   onlyQuotesChange?(before: D, after: D): boolean;
-  /** Records the search; the caller builds it from this search's members. */
-  telemetry?: SearchTelemetry<TermSettings, D>;
+  /** What records the search, built from what it counts. */
+  telemetry?(search: SearchCounts<D>): SearchTelemetry<TermSettings, D>;
+}
+
+/** What a search says of each of its terms. */
+export interface SearchCounts<D> {
+  /** How many items one term accounts for on its own, or null when it is not being searched. */
+  hitCount(data: D, settings: TermSettings, term: SearchTerm): number | null;
+  /** A term's mode, the extra mode clamped where it cannot apply. */
+  modeOf(data: D | null, term: SearchTerm): string;
 }
 
 /** What a term list finds: the terms searched, and the items they match. */
@@ -109,14 +124,14 @@ export function isSearching(settings: TermSettings): boolean {
 }
 
 /** A search, and the members a text needs beside the tool itself. */
-export interface TermSearch<I extends { id: string }, D, X> {
+export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts<D> {
   tool: SearchTool<I, TermSettings, D>;
   /** Hand the search its items and what a result click does with one. */
   configure(items: readonly I[], onSelect: (item: I) => void): void;
-  /** How many items one term accounts for on its own, or null when it is not being searched. */
-  hitCount(data: D, settings: TermSettings, term: SearchTerm): number | null;
-  /** A term's mode, the extra mode clamped where it cannot apply. */
-  modeOf(data: D | null, term: SearchTerm): string;
+  /** The items these settings find, as the map colours them. */
+  resultsFor(data: D, settings: TermSettings): SearchResult[];
+  /** A result row's quotation of its item for `term`, as the panel quotes it. */
+  excerptFor(data: D, result: SearchResult, term: SearchTerm): Snippet | null;
   /**
    * The search with `text` added as a term matched as `mode`, with `chosen`
    * for the extra mode, or null when the palette is full. Fills the empty row
@@ -214,14 +229,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   }
 
   /**
-   * How many items one term accounts for on its own, or null when it is not
-   * being searched.
-   *
-   * Takes the term, not a row number. Results are indexed by a term's position
-   * among the terms actually being searched, which is not its position among the
-   * rows on screen — a row holding nothing, or one letter, occupies a row but no
-   * search slot. Indexing by row instead gives a row its neighbour's count as
-   * soon as an earlier row is emptied.
+   * Takes the term, not a row number: results name a term by its position among
+   * the terms being searched, and a row holding nothing, or one letter, has no
+   * position there.
    */
   function hitCount(data: D, settings: TermSettings, term: SearchTerm): number | null {
     const { active, results } = searchFor(data, settings);
@@ -366,7 +376,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     data: spec.data,
 
     isSearching,
-    telemetry: spec.telemetry ?? NO_TELEMETRY,
+    telemetry: spec.telemetry?.({ hitCount, modeOf }) ?? NO_TELEMETRY,
 
     prebuild(data) {
       spec.index(data);
@@ -401,9 +411,6 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       const query = active.map((t) => t.text).join(', ');
       if (query) {
         params.search = query;
-        // Both are positional over the same list, so they are written together
-        // and a term that has chosen nothing contributes an empty entry rather
-        // than being skipped — skipping it would shift every later term.
         const modes = encodeModes(active, extra);
         if (modes) params.mode = modes;
 
@@ -439,6 +446,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         );
 
         rows?.unmount();
+        // Nothing is built while no word is typed.
+        const rowsExtra = () =>
+          shown && shownData && typedTerms(shown).length > 0 ? extraOf(shownData) : null;
         rows = mountTermRows(
           {
             container: container.querySelector('#search-terms'),
@@ -447,8 +457,8 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
           {
             terms: () => shown?.terms ?? [],
             openId: () => (shown ? (openTerm(shown)?.id ?? null) : null),
-            extraData: () =>
-              shown && shownData && typedTerms(shown).length > 0 ? extraOf(shownData) : null,
+            extraData: rowsExtra,
+            modeOf: (term) => modeIn(contextOf(rowsExtra()), term),
             hitCount: (term) => (shown && shownData ? hitCount(shownData, shown, term) : null),
             edit(change) {
               requestChange?.((current) => ({ terms: change(current.terms) }));
@@ -462,7 +472,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
               });
             },
           },
-          { languages, extra, placeholder: spec.placeholder, defaultMode: spec.defaultMode },
+          { languages, extra, placeholder: spec.placeholder },
         );
       } else if (settings === previous && data === previousData) {
         // Nothing has changed, and redrawing the list would scroll it to the top.
@@ -491,11 +501,11 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       const termIndices = matchingTerms.get(item.id);
       if (!termIndices) return null;
 
-      const x = extraOf(data);
+      const context = contextFor(data);
       const named = termIndices.map((i) => {
         const term = active[i];
-        if (modeOf(data, term) !== extra?.id || x === null || !extra.hoverNote) return term.text;
-        return extra.hoverNote(x, term, item.id);
+        if (!byExtra(context, term) || !context.extra.hoverNote) return term.text;
+        return context.extra.hoverNote(context.x, term, item.id);
       });
 
       return `Matches: ${named.join(', ')}`;
@@ -533,15 +543,13 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     hitCount,
     modeOf,
     extraOf,
+    resultsFor: (data, settings) => searchFor(data, settings).results,
+    excerptFor: (data, result, term) => snippetFor(data)(result, term),
     addTermOrFill(settings, text, mode, chosen) {
       if (!canAddTerm(settings)) return null;
 
-      // The list always holds one empty row to type into. Fill it rather than
-      // leaving an empty row above the new word. setTermText replaces a term in
-      // place, so the filled row keeps its position - track it by id rather than
-      // assuming it lands last, which is wrong whenever the empty row was not the
-      // last one (a reader who cleared an earlier box while a later one still
-      // held a word).
+      // Fill the empty row, wherever it is, rather than leave it above the new
+      // word; it keeps its place in the list.
       let terms = settings.terms;
       const empty = terms.find((term) => term.text.trim() === '');
       let id: string;

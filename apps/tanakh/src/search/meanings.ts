@@ -4,9 +4,7 @@
 
 import { memoByValue } from '@torahmap/utils';
 import {
-  effectiveMode as modeIn,
   languageOf,
-  modesOffered as modesIn,
   type ExtraMode,
   type MatchMode,
   type SearchLanguage,
@@ -24,7 +22,7 @@ import {
 } from './dictionary.ts';
 import type { Dictionary } from './search.ts';
 import { TANAKH_LANGUAGES } from './languages.ts';
-import { ENGLISH, HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
+import { HEBREW } from '@torahmap/shell/language.ts';
 
 /**
  * How a term is matched. Meanings resolves a written form to the dictionary words
@@ -90,16 +88,8 @@ export function selectedKeys(dictionary: Dictionary, term: SearchTerm): string[]
 }
 
 /**
- * The narrowed meanings, for the URL's `m` parameter.
- *
- * Positional alongside the comma-separated terms in `search`: one entry per term,
- * `|` between the lexemes of one term, and an empty entry for a term the reader
- * has not narrowed. A search with nothing narrowed writes nothing at all, so an
- * ordinary URL is unchanged.
- *
- * Positions are safe here in a way they are not in the live list, because `search`
- * and `m` are written and read as one snapshot. It is editing that needs
- * identity.
+ * The narrowed meanings, for the URL's `m` parameter: one entry per term, as
+ * `encodeModes` writes `mode`, with `|` between the lexemes of one term.
  *
  * The keys go in as `chosen` holds them, so writing a link needs no dictionary.
  * `m` is declared a `names` parameter rather than free text, which is what
@@ -173,7 +163,6 @@ export function meaningsPossible(dictionary: Dictionary | null, term: SearchTerm
   return dictionary !== null && meaningsOf(dictionary, term).length > 0;
 }
 
-/** Meanings, offered to a Hebrew term and its default there. */
 /**
  * What meanings mode works from: the dictionary, and the per-word parse that
  * says which reading each word of a verse is, once it is in.
@@ -194,6 +183,7 @@ export function meaningsData(dictionary: Dictionary, parse: Parse | null = null)
   return pairs(dictionary)(parse);
 }
 
+/** Meanings, offered to a Hebrew term and its default there. */
 export const meaningsMode: ExtraMode<MeaningsData> = {
   id: 'meanings',
   letter: 'm',
@@ -203,36 +193,6 @@ export const meaningsMode: ExtraMode<MeaningsData> = {
   possible: (x, term) => meaningsPossible(x?.dictionary ?? null, term),
   isDefault: (_term, language) => language.id === HEBREW,
 };
-
-/** What the reader chose, or the default for the language the text is in. */
-export function effectiveMode(dictionary: Dictionary | null, term: SearchTerm): SearchMode {
-  const x = dictionary ? meaningsData(dictionary) : null;
-  return modeIn(term, TANAKH_LANGUAGES, meaningsMode, x) as SearchMode;
-}
-
-/** The modes this term's own text can be matched by, in the order shown. */
-export function modesOffered(term: SearchTerm): SearchMode[] {
-  return modesIn(term, TANAKH_LANGUAGES, meaningsMode) as SearchMode[];
-}
-
-/** Everything a term is matched on: terms with equal queries find the same verses. */
-export type TermQuery = { text: string; language: TextLanguage } & (
-  | {
-      mode: 'meanings';
-      /** The lexemes of the chosen meanings. Empty for a word the dictionary does not know. */
-      meaningKeys: string[];
-    }
-  | { mode: MatchMode }
-);
-
-export function termQuery(dictionary: Dictionary, term: SearchTerm): TermQuery {
-  const text = term.text.trim();
-  const language = termIsHebrew(term) ? HEBREW : ENGLISH;
-  const mode = effectiveMode(dictionary, term);
-  return mode === 'meanings'
-    ? { text, language, mode, meaningKeys: selectedKeys(dictionary, term) }
-    : { text, language, mode };
-}
 
 /**
  * The words of a verse's `text` that are one of the meanings the term still

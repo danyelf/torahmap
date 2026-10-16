@@ -10,9 +10,8 @@ import { CONTROL } from '@torahmap/shell/panel.ts';
 import { SEARCH_BOX_ID } from '@torahmap/shell/app/search.ts';
 import type { ExtraMode } from './extraMode.ts';
 import type { SearchLanguage } from './language.ts';
-import type { MatchMode } from './matching.ts';
 import {
-  effectiveMode,
+  languageFor,
   languageOf,
   MAX_TERMS,
   modesOffered,
@@ -31,6 +30,8 @@ export interface TermRowsHost<X> {
   openId(): string | null;
   /** Items this term accounts for on its own, or null when it is not being searched. */
   hitCount(term: SearchTerm): number | null;
+  /** How this term is matched now. */
+  modeOf(term: SearchTerm): string;
   /** What the extra mode works from, or null while search's data is missing or no word is typed. */
   extraData(): X | null;
   /** Ask for a change to the term list, worked out from the list as it is when applied. */
@@ -46,8 +47,6 @@ export interface TermRowsOptions<X> {
   extra?: ExtraMode<X>;
   /** The first box's placeholder. */
   placeholder: string;
-  /** How a term is matched while the reader has not said and the extra mode does not claim it. */
-  defaultMode?: MatchMode;
 }
 
 export interface TermRows {
@@ -55,17 +54,42 @@ export interface TermRows {
   unmount(): void;
 }
 
-const MODE_LABELS: Record<string, string> = { substring: 'substring', word: 'word' };
+function makeSwatch(): HTMLSpanElement {
+  const swatch = document.createElement('span');
+  swatch.className = 'term-swatch';
+  return swatch;
+}
+
+function paintSwatch(row: HTMLElement, term: SearchTerm): void {
+  const swatch = row.querySelector<HTMLElement>('.term-swatch')!;
+  swatch.style.background = colorToCss(SEARCH_COLORS[term.colorIndex]);
+  swatch.style.visibility = term.text.trim() ? 'visible' : 'hidden';
+}
+
+function makeCount(): HTMLSpanElement {
+  const count = document.createElement('span');
+  count.className = 'term-count';
+  return count;
+}
+
+function makeRemove(onClick: (e: MouseEvent) => void): HTMLButtonElement {
+  const remove = document.createElement('button');
+  remove.className = `term-remove ${CONTROL.icon}`;
+  remove.type = 'button';
+  remove.textContent = '×';
+  remove.addEventListener('click', onClick);
+  return remove;
+}
 
 export function mountTermRows<X>(
   elements: { container: HTMLElement | null; addTermButton: HTMLButtonElement | null },
   host: TermRowsHost<X>,
-  { languages, extra, placeholder, defaultMode }: TermRowsOptions<X>,
+  { languages, extra, placeholder }: TermRowsOptions<X>,
 ): TermRows {
   const { container, addTermButton } = elements;
-  const labelOf = (mode: string) => (mode === extra?.id ? extra.label : MODE_LABELS[mode]);
-  const modeOf = (term: SearchTerm) =>
-    effectiveMode(term, languages, extra, host.extraData() ?? null, defaultMode);
+  // The match modes' names are their ids.
+  const labelOf = (mode: string) => (mode === extra?.id ? extra.label : mode);
+  const modeOf = host.modeOf;
 
   const onAddClick = () => {
     host.addRow();
@@ -161,9 +185,7 @@ export function mountTermRows<X>(
     // appears under the pointer is a control you cannot aim at.
     summary.addEventListener('click', () => openRow(term.id));
 
-    const swatch = document.createElement('span');
-    swatch.className = 'term-swatch';
-    summary.appendChild(swatch);
+    summary.appendChild(makeSwatch());
 
     const field = document.createElement('span');
     field.className = 'term-field';
@@ -181,30 +203,22 @@ export function mountTermRows<X>(
     chevron.className = 'term-chevron';
     field.appendChild(chevron);
 
-    const count = document.createElement('span');
-    count.className = 'term-count';
-    summary.appendChild(count);
+    summary.appendChild(makeCount());
 
-    const remove = document.createElement('button');
-    remove.className = `term-remove ${CONTROL.icon}`;
-    remove.type = 'button';
-    remove.textContent = '×';
-    remove.title = 'Remove this word';
-    remove.addEventListener('click', (e) => {
+    const remove = makeRemove((e) => {
       // The × sits inside the summary, so without this the word would be removed
       // and its row opened in the same gesture.
       e.stopPropagation();
       removeOrClear(term.id);
     });
+    remove.title = 'Remove this word';
     summary.appendChild(remove);
 
     row.appendChild(summary);
   }
 
   function updateCollapsedRow(row: HTMLElement, term: SearchTerm): void {
-    const swatch = row.querySelector<HTMLElement>('.term-swatch')!;
-    swatch.style.background = colorToCss(SEARCH_COLORS[term.colorIndex]);
-    swatch.style.visibility = term.text.trim() ? 'visible' : 'hidden';
+    paintSwatch(row, term);
 
     const word = row.querySelector<HTMLElement>('.term-word')!;
     word.textContent = term.text;
@@ -222,9 +236,7 @@ export function mountTermRows<X>(
     const head = document.createElement('div');
     head.className = 'term-head';
 
-    const swatch = document.createElement('span');
-    swatch.className = 'term-swatch';
-    head.appendChild(swatch);
+    head.appendChild(makeSwatch());
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -237,9 +249,7 @@ export function mountTermRows<X>(
     input.addEventListener('paste', (e) => onTermPaste(e, input));
     head.appendChild(input);
 
-    const count = document.createElement('span');
-    count.className = 'term-count';
-    head.appendChild(count);
+    head.appendChild(makeCount());
 
     if (extra?.restore) {
       const { label, title, apply } = extra.restore;
@@ -252,12 +262,8 @@ export function mountTermRows<X>(
       head.appendChild(restore);
     }
 
-    const remove = document.createElement('button');
-    remove.className = `term-remove ${CONTROL.icon}`;
-    remove.type = 'button';
+    const remove = makeRemove(() => removeOrClear(term.id));
     if (index === 0) remove.id = 'search-clear';
-    remove.textContent = '×';
-    remove.addEventListener('click', () => removeOrClear(term.id));
     head.appendChild(remove);
 
     row.appendChild(head);
@@ -308,9 +314,7 @@ export function mountTermRows<X>(
     input.dir = input.value && languageOf(languages, term).rtl ? 'rtl' : 'ltr';
     input.placeholder = index === 0 ? placeholder : 'another word';
 
-    const swatch = row.querySelector<HTMLElement>('.term-swatch')!;
-    swatch.style.background = colorToCss(SEARCH_COLORS[term.colorIndex]);
-    swatch.style.visibility = term.text.trim() ? 'visible' : 'hidden';
+    paintSwatch(row, term);
 
     const count = row.querySelector<HTMLElement>('.term-count')!;
     count.textContent = hitCountText(term);
@@ -328,12 +332,12 @@ export function mountTermRows<X>(
 
     const body = row.querySelector<HTMLElement>('.term-body')!;
     renderModeControl(body, term);
-    extra?.renderBody?.(body, term, x, (change) => host.edit(change));
+    extra?.renderBody?.(body, term, modeOf(term) === extra.id, x, (change) => host.edit(change));
   }
 
   /** What a term keeps of what is typed: its language's own cleaning, if any. */
   function cleaned(text: string): string {
-    const language = languages.find((l) => l.claims(text)) ?? languages[languages.length - 1];
+    const language = languageFor(languages, text);
     return language.clean?.(text) ?? text;
   }
 

@@ -79,10 +79,13 @@ const BY_ID: ReadonlyMap<string, OverlayEntry> = new Map(OVERLAYS.map((e) => [e.
 /** The link keys an overlay declares, by id; undefined for an unknown id. */
 export const overlayParamSpecs: OverlayParamSpecLookup = (id) => BY_ID.get(id)?.urlParams;
 
+/** The link key holding each search term's chosen meanings. */
+export const MEANINGS_KEY = 'm';
+
 /** The search's keys, read whatever overlay is on; no overlay may claim them. */
 export const SEARCH_URL_PARAMS = [
   ...TERM_SEARCH_PARAMS,
-  { key: 'm', kind: 'names' },
+  { key: MEANINGS_KEY, kind: 'names' },
 ] as const satisfies readonly UrlParamSpec[];
 
 export const SEARCH_KEYS: ReadonlySet<string> = new Set(SEARCH_URL_PARAMS.map((p) => p.key));

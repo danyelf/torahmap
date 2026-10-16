@@ -138,9 +138,14 @@ export function setMode(terms: SearchTerm[], id: string, mode: string): SearchTe
   return terms.map((t) => (t.id === id ? { ...t, mode } : t));
 }
 
-/** Each term's own language, decided by its own text: the first that claims it, else the last. */
+/** The language of `text`: the first that claims it, else the last. */
+export function languageFor(languages: readonly SearchLanguage[], text: string): SearchLanguage {
+  return languages.find((l) => l.claims(text)) ?? languages[languages.length - 1];
+}
+
+/** Each term's own language, decided by its own text. */
 export function languageOf(languages: readonly SearchLanguage[], term: SearchTerm): SearchLanguage {
-  return languages.find((l) => l.claims(term.text)) ?? languages[languages.length - 1];
+  return languageFor(languages, term.text);
 }
 
 /**

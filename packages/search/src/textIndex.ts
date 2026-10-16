@@ -135,15 +135,14 @@ export interface Snippet {
 
 /** A text quoted around a stretch of it, or its opening when there is nothing to mark. */
 export function quoteText(text: string, range: TextRange | null): Snippet {
+  const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
   if (!range) {
-    const limit = SEARCH_SNIPPET_MAX_LENGTH;
     return {
-      snippet: text.length > limit ? `${text.slice(0, limit)}...` : text,
+      snippet: text.length > maxLen ? `${text.slice(0, maxLen)}...` : text,
       matchStart: 0,
       matchEnd: 0,
     };
   }
-  const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
   const matchEnd = Math.min(range.end, text.length);
 
   let start = Math.max(0, range.start - SEARCH_SNIPPET_CONTEXT_BEFORE);

@@ -12,6 +12,7 @@ import {
   type TalmudTractateText,
   TALMUD_DATA_DIR,
   SEARCH_FILE,
+  STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
   type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
 import { stripNikkud } from '@torahmap/hebrew';
@@ -288,11 +289,11 @@ async function main(): Promise<void> {
     }
   }
 
-  await writeFile(join(OUTPUT_DIR, 'structure.json'), JSON.stringify(structure), 'utf-8');
+  await writeFile(join(DATA_DIR, TALMUD_STRUCTURE_FILE), JSON.stringify(structure), 'utf-8');
   await writeFile(join(DATA_DIR, SEARCH_FILE), JSON.stringify(search), 'utf-8');
 
   console.log('');
-  console.log(`Structure: ${join(OUTPUT_DIR, 'structure.json')}`);
+  console.log(`Structure: ${join(DATA_DIR, TALMUD_STRUCTURE_FILE)}`);
   console.log(`Search: ${join(DATA_DIR, SEARCH_FILE)}`);
   console.log(`Texts: ${TEXTS_DIR}/*.json (${structure.tractates.length} files)`);
   console.log('');

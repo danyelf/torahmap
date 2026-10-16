@@ -42,10 +42,8 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
   refDiv.appendChild(termIndicators);
   refDiv.appendChild(document.createTextNode(result.ref));
 
-  // The snippet is drawn for the word the list is answering about, falling back
-  // to whichever term claimed the verse first. Without this, a list narrowed to
-  // the second word would quote the first word's match — the reader would have
-  // asked about one word and been shown another.
+  // The snippet quotes the word the list is answering about, else whichever
+  // term claimed the item first.
   const firstMatch =
     result.matchingTerms.find((m) => m.termIndex === view.focus) ?? result.matchingTerms[0];
 
