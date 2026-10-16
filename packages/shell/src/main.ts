@@ -204,7 +204,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const squares = indexItems(items);
   const baseColors = items.map((item, i) => text.baseColor(item, i));
   const base = (i: number): ItemColor => baseColors[i];
-  const unfound = unfoundColor(base, text.searchKeepsBase ?? false);
+  const unfound = unfoundColor(base, text.searchKeepsBase);
   // A picture with its holes filled with each square's base colour.
   const fill = (picture: Picture<ItemColor | null>): Picture<ItemColor> =>
     fillDefaultColors(picture, base);

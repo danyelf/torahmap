@@ -11,7 +11,7 @@ import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.
 import { talmudSite } from './site.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
-import { SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
+import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
@@ -88,7 +88,7 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
       },
 
       baseColor: (item) => mishnahOrGemaraColor(structure, item),
-      searchKeepsBase: true,
+      searchKeepsBase: SEARCH_KEEPS_BASE,
 
       labels(container) {
         const moveMarks = createTalmudLabels(
