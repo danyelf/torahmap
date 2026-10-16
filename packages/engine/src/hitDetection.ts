@@ -8,7 +8,7 @@ import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 export function isPointInItem<T>(worldX: number, worldY: number, item: SpatialItem<T>): boolean {
   return (
     worldX >= item.x &&
-    worldX < item.x + item.size &&
+    worldX < item.x + (item.width ?? item.size) &&
     worldY >= item.y &&
     worldY < item.y + item.size
   );
@@ -42,7 +42,7 @@ export function findNearestItem<T>(
   let nearestDistSq = maxDistance * maxDistance;
 
   for (const v of items) {
-    const centerX = v.x + v.size / 2;
+    const centerX = v.x + (v.width ?? v.size) / 2;
     const centerY = v.y + v.size / 2;
 
     const dx = worldX - centerX;
