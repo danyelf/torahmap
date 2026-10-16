@@ -5,6 +5,7 @@ import {
   fillDefaultColors,
   getDefaultColor,
   toolsPicture,
+  unfoundColor,
 } from '../packages/shell/src/itemColoring.ts';
 import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
@@ -40,6 +41,14 @@ describe('combineLayers', () => {
         ALONE,
         ALONE,
         ALONE,
+      ]);
+    });
+
+    it('dims a square it does not match to the colour the text gives one', () => {
+      const unfound = (i: number): Color => (i === 0 ? RED : BLUE);
+      expect(combineLayers(2, [null, CYAN], null, getDefaultColor, DIM, unfound).colors).toEqual([
+        RED,
+        CYAN,
       ]);
     });
 
@@ -191,5 +200,15 @@ describe('toolsPicture', () => {
     );
 
     expect(picture.colors).toEqual([RED]);
+  });
+});
+
+describe('unfoundColor', () => {
+  it('is grey unless the text keeps its base colour', () => {
+    expect(unfoundColor(() => BLUE, false)(0)).toEqual(DIMMED_GREY);
+  });
+
+  it("dims the text's base colour when it keeps it", () => {
+    expect(unfoundColor(() => BLUE, true)(0)).toEqual(scaled(BLUE, DIM));
   });
 });

@@ -88,6 +88,7 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
       },
 
       baseColor: (item) => mishnahOrGemaraColor(structure, item),
+      searchKeepsBase: true,
 
       labels(container) {
         const moveMarks = createTalmudLabels(
