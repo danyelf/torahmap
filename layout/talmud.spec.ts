@@ -2,6 +2,7 @@
 // shows its text.
 import { expect, test, type Page } from '@playwright/test';
 import { allLoaded, boxes, openMap, shown } from './page.ts';
+import { viaMenu } from './app.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 
@@ -169,6 +170,27 @@ test("a link's search reaches the Talmud's own search, not the Tanakh's", async 
   await openMap(page, 'search=משנה', TALMUD);
   await expect(page.locator('#search-input')).toHaveValue('משנה');
   expect(searchFiles).toEqual([]);
+});
+
+test('a Talmud search lists the segments it finds, each quoted with its match marked', async ({
+  page,
+}, info) => {
+  const errors = await openMap(page, `search=${encodeURIComponent('רבי יוחנן')}`, TALMUD);
+  await viaMenu(page, 'search');
+  await expect(page.locator('.search-result .snippet mark').first()).toBeVisible();
+  const shot = info.outputPath('screen.png');
+  await page.screenshot({ path: shot });
+  await info.attach('layout', { path: shot, contentType: 'image/png' });
+  expect(errors).toEqual([]);
+});
+
+test('a Talmud search result, clicked, pins its segment', async ({ page }) => {
+  await openMap(page, `search=${encodeURIComponent('קל וחומר')}`, TALMUD);
+  await viaMenu(page, 'search');
+  const first = page.locator('.search-result').first();
+  const ref = (await first.locator('.ref').textContent())!.trim();
+  await first.click();
+  await expect(page.locator('#popup.visible .ref-text')).toHaveText(ref);
 });
 
 test('/talmud, without the slash, opens the same page and keeps the link', async ({ page }) => {

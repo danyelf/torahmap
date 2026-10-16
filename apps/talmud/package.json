@@ -10,6 +10,7 @@
     "@torahmap/hebrew": "*",
     "@torahmap/link": "*",
     "@torahmap/overlay-catalog": "*",
+    "@torahmap/search": "*",
     "@torahmap/shell": "*",
     "@torahmap/site": "*",
     "@torahmap/stories": "*",
