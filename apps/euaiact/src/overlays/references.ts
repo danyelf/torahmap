@@ -2,6 +2,7 @@
 
 import type { UrlParamSpec } from '@torahmap/link';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
+import { CONTROL } from '@torahmap/shell/panel.ts';
 import { hex } from '../baseColor.ts';
 import { REFS_FILE, type ActRef } from '../data.ts';
 import { ownerOf } from '../ids.ts';
@@ -44,7 +45,7 @@ export const referencesOverlay: Overlay<ActItem, ReferenceSettings, ReferenceDat
   renderControls(container, settings, onChange) {
     let box = container.querySelector<HTMLInputElement>('input');
     if (!box) {
-      container.innerHTML = '<label>Article <input type="text" inputmode="text" size="6"></label>';
+      container.innerHTML = `<label>Article <input class="${CONTROL.input}" type="text" size="6"></label>`;
       box = container.querySelector('input')!;
       box.addEventListener('input', () => onChange(() => ({ article: box!.value.trim() })));
     }

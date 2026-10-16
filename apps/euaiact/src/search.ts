@@ -2,6 +2,7 @@
 
 import type { UrlParamSpec } from '@torahmap/link';
 import { SEARCH_BOX_ID, type SearchTool } from '@torahmap/shell/app/search.ts';
+import { CONTROL } from '@torahmap/shell/panel.ts';
 import { hex } from './baseColor.ts';
 import { TEXTS_FILE, type ActTexts } from './data.ts';
 import type { ActItem } from './layout.ts';
@@ -56,7 +57,7 @@ export const actSearch: SearchTool<ActItem, ActSearchSettings, ActSearchData> = 
   renderControls(container, settings, onChange, data) {
     let box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`);
     if (!box) {
-      container.innerHTML = `<input id="${SEARCH_BOX_ID}" type="search" aria-label="Search"><p></p>`;
+      container.innerHTML = `<input id="${SEARCH_BOX_ID}" class="${CONTROL.input}" type="search" aria-label="Search"><p></p>`;
       box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`)!;
       box.addEventListener('input', () => onChange(() => ({ text: box!.value })));
     }
