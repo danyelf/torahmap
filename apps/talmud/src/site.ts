@@ -17,6 +17,14 @@ export const talmudSite: Site = {
       note: 'The Hebrew and Aramaic text, from Hebrew Wikisource, downloaded via Sefaria.',
       collected: 'October 2026',
     },
+    {
+      source: 'William Davidson Edition - Vocalized Aramaic',
+      url: 'https://korenpub.co.il/collections/the-noe-edition-koren-talmud-bavli-1',
+      license: 'CC BY-NC 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
+      collected: 'October 2026',
+      note: 'The Aramaic text of the Koren Noé edition, downloaded via Sefaria. The search index is built from it.',
+    },
   ],
   title(link) {
     const segment = link.square ? parseTalmudId(link.square) : null;
