@@ -14,6 +14,7 @@ import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
+import { englishText } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
   STRUCTURE_FILE,
@@ -65,13 +66,14 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
     const laid = computeTalmudLayout(structure);
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
-    /** A segment's text and citations in its tractate's file, which lists both by amud. */
+    /** A segment's text, citations and English in its tractate's file, which lists them by amud. */
     const segmentIn = (s: TalmudLayoutItem, file: TalmudTractateText) => {
       const first = tractates.get(s.tractate)?.amudim[0];
       const ai = first ? amudIndex(s.daf, s.amud, first) : -1;
       return {
         text: file.amudim[ai]?.[s.segment - 1] ?? '',
         citations: file.citations[ai]?.[s.segment - 1] ?? [],
+        english: englishText(file.english[ai]?.[s.segment - 1] ?? ''),
       };
     };
 
@@ -118,7 +120,8 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         return {
           ref: talmudRef(item),
           hebrew: segment?.text ?? '',
-          english: '',
+          english: segment?.english.text ?? '',
+          englishStyles: segment?.english.styles,
           link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
           hebrewLinks: segment?.citations.map(({ start, end, verse }) => ({
             start,
