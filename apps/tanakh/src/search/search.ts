@@ -4,7 +4,11 @@
 import { memoByValue } from '@torahmap/utils';
 import type { VerseTexts } from '../verseTexts';
 import { verseId, verseRef } from '@torahmap/link/tanakh';
-import { buildTextIndex as indexOf, type SearchEntry, type TextIndex } from '@torahmap/search';
+import {
+  buildTextIndex as indexOf,
+  type SearchEntry,
+  type TextIndex,
+} from '@torahmap/search/textIndex.ts';
 import { normalizeHebrewForSearch } from '@torahmap/hebrew';
 import { TANAKH_LANGUAGES } from './languages.ts';
 
