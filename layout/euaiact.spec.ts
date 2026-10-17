@@ -3,9 +3,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { ACT_STATES, CHROME, viaMenu } from './app.ts';
 import { checkLayout } from './check.ts';
-import { apart, outsideOf, type Box } from './geometry.ts';
+import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
 import { boxes, canvasShot, openMap, shown } from './page.ts';
-import { ARTICLE_NUMBER_ZOOM, CHAPTER_TAB } from '@torahmap/euaiact/constants.ts';
+import {
+  ARTICLE_NUMBER_ZOOM,
+  CHAPTER_TAB,
+  COLUMN_WIDTH,
+  SQUARE_SIZE,
+} from '@torahmap/euaiact/constants.ts';
 import { EUAIACT_PAGE, EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
 
 for (const state of ACT_STATES) {
@@ -142,6 +147,18 @@ test('articles are numbered only from their zoom', async ({ page }) => {
   expect(await boxes(page, NUMBERS)).toEqual([]);
   await openMap(page, chapterThree(ARTICLE_NUMBER_ZOOM), ACT);
   expect(await boxes(page, NUMBERS)).not.toEqual([]);
+});
+
+test('every article number is narrower than its column and clear of every other', async ({
+  page,
+}) => {
+  await openMap(page, chapterThree(ARTICLE_NUMBER_ZOOM), ACT);
+  // Off screen too: every number shows from the same zoom.
+  const numbers = (await shown(page, NUMBERS)).map((s) => s.full);
+  expect(numbers).not.toEqual([]);
+  const column = COLUMN_WIDTH * SQUARE_SIZE * ARTICLE_NUMBER_ZOOM;
+  expect(numbers.filter((n) => n.width > column)).toEqual([]);
+  expect(overlapping(numbers)).toEqual([]);
 });
 
 for (const zoom of [ARTICLE_NUMBER_ZOOM, 2, 4]) {

@@ -1,5 +1,5 @@
-// Numbers beside a column, each at the top of the row it numbers, which show by zoom level: the
-// Talmud's daf numbers and the Act's article numbers.
+// Numbers at the rows of a column, which show by zoom level: the Talmud's daf numbers beside
+// each row, and the Act's article numbers above each article.
 
 interface Pan {
   x: number;
@@ -36,7 +36,7 @@ export function labelGroup(id: string, labels: Placed[]) {
   };
 }
 
-/** A row's number: the edge of its column it stands beside, the row's top, and the zoom it shows from. */
+/** A row's number, where it stands in map units, and the zoom it shows from. */
 export interface RowNumber {
   text: string;
   x: number;
@@ -45,13 +45,20 @@ export interface RowNumber {
 }
 
 /**
- * The numbers' size in pixels, which does not change with the zoom, how many pixels they stand
- * off their column, and which side of it.
+ * The numbers' size in pixels, which does not change with the zoom, and which side of its point
+ * each stands, `offset` pixels off it. Beside a column, the point is the column's edge at the row's
+ * top; above, the number's left edge lines up with the point.
  */
 export interface RowNumberStyle {
   fontSize: number;
   offset: number;
-  side: 'left' | 'right';
+  side: 'left' | 'right' | 'above';
+}
+
+function shift({ side, offset }: RowNumberStyle): string {
+  if (side === 'above') return `translate(0, calc(-100% - ${offset}px))`;
+  if (side === 'right') return `translate(${offset}px, 0)`;
+  return `translate(calc(-100% - ${offset}px), 0)`;
 }
 
 /** Draws the numbers in a container of their own inside `parent`, and returns what moves them with the map. */
@@ -59,9 +66,8 @@ export function createRowNumbers(
   id: string,
   rows: readonly RowNumber[],
   parent: HTMLElement,
-  { fontSize, offset, side }: RowNumberStyle,
+  style: RowNumberStyle,
 ): (pan: Pan, zoom: number) => void {
-  const shift = side === 'right' ? `${offset}px` : `calc(-100% - ${offset}px)`;
   const label = (row: RowNumber): Placed => {
     const el = document.createElement('div');
     el.className = 'row-number';
@@ -69,10 +75,10 @@ export function createRowNumbers(
       position:absolute;
       color:#888;
       font-family:system-ui, sans-serif;
-      font-size:${fontSize}px;
+      font-size:${style.fontSize}px;
       white-space:nowrap;
       line-height:1;
-      transform:translate(${shift}, 0);
+      transform:${shift(style)};
     `;
     el.textContent = row.text;
     return { el, x: row.x, y: row.y };

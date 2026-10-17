@@ -30,11 +30,11 @@ export interface ActItem extends MapItem {
   chapter: string;
 }
 
-/** An article's number, set left of its column at the top of its first row. */
+/** Where an article's number goes: its column's left edge, above its first row and that row's jitter. */
 export interface ArticleAnchor {
   number: string;
-  leftX: number;
-  topY: number;
+  x: number;
+  y: number;
 }
 
 export interface ActLayout {
@@ -103,7 +103,7 @@ export function computeActLayout(structure: ActStructure): ActLayout {
     runs.forEach((run, i) => {
       if (i) y += SECTION_GAP;
       for (const block of run) {
-        if (layer === 'article') articles.push({ number: block.number, leftX: x, topY: y });
+        if (layer === 'article') articles.push({ number: block.number, x, y: y - POSITION_JITTER });
         const { placed, rows } = placeGroups(block.groups);
         for (const p of placed) {
           items.push({

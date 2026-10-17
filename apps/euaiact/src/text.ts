@@ -80,9 +80,9 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
         const moveNumbers = createRowNumbers(
           'act-article-numbers',
           laid.articles.map((a) => ({
-            text: a.number,
-            x: a.leftX,
-            y: a.topY,
+            text: `Article ${a.number}`,
+            x: a.x,
+            y: a.y,
             zoom: ARTICLE_NUMBER_ZOOM,
           })),
           container,

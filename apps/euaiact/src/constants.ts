@@ -1,5 +1,6 @@
 import type { BookTab, SectionLabelSize, SectionName } from '@torahmap/shell/mapLabels.ts';
 import type { RowNumberStyle } from '@torahmap/shell/rowNumbers.ts';
+import { SQUARE_GAP } from '@torahmap/engine';
 
 export const SQUARE_SIZE = 6; // map units a square is tall, and a column's pitch
 
@@ -21,10 +22,13 @@ export const LABEL_ROOM = 40;
 
 /** The chapter and annex names, tabs above their columns that scale with the map. */
 export const CHAPTER_TAB: BookTab = { fontSize: 12, above: 28, inset: 4, minPx: 7 };
-// The article numbers, the size of the Talmud's daf numbers, left of their columns. A split
-// chapter's columns are SPLIT_GAP apart, too close for a number below this zoom.
-export const ARTICLE_NUMBER: RowNumberStyle = { fontSize: 9, offset: 4, side: 'left' };
-export const ARTICLE_NUMBER_ZOOM = 1.5;
+// The article numbers, the size of the Talmud's daf numbers, in the gap above each article and a
+// pixel clear of it. They show once that gap, less the jitter of the squares on either side, holds
+// them with a pixel to spare above as well: from zoom 1.67.
+export const ARTICLE_NUMBER: RowNumberStyle = { fontSize: 9, offset: 1, side: 'above' };
+export const ARTICLE_NUMBER_ZOOM =
+  (ARTICLE_NUMBER.fontSize + 2 * ARTICLE_NUMBER.offset) /
+  (ARTICLE_GAP + SQUARE_GAP - 2 * POSITION_JITTER);
 
 export const LAYER_LABEL_SIZE: SectionLabelSize = { fontSize: 14, gapEm: 0.5 };
 
