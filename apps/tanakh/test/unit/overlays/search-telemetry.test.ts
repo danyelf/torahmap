@@ -1,66 +1,76 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
-import { searchTelemetry, termsToRecord, type Recorded } from '../../../src/search/telemetry';
-import type { SearchSettings } from '../../../src/search/index.ts';
-import { EMPTY_DICTIONARY, searchDataFor } from '../../helpers/searchData';
-import { addTerm, setMode, setTermText, type SearchTerm } from '../../../src/search/terms';
+import { recordOf, searchTelemetry } from '../../../src/search/telemetry';
+import { tanakhSearch, type SearchSettings } from '../../../src/search/index.ts';
+import { searchDataFor } from '../../helpers/searchData';
+import {
+  addTerm,
+  setMode,
+  setTermText,
+  termsToRecord as termsToRecordBy,
+  type Recorded,
+  type SearchTerm,
+} from '@torahmap/search';
 
 const none: Recorded = new Map();
+const noWords = searchDataFor({});
+const termsToRecord = (previous: Recorded, active: SearchTerm[]) =>
+  termsToRecordBy((term) => recordOf(tanakhSearch, noWords, term), previous, active);
 
 describe('termsToRecord', () => {
   it('sends a term it has not recorded', () => {
     const terms = addTerm([], 'light');
-    expect(termsToRecord(EMPTY_DICTIONARY, none, terms).send).toEqual(terms);
+    expect(termsToRecord(none, terms).send).toEqual(terms);
   });
 
   it('does not send a term again while it is unchanged', () => {
     const terms = addTerm([], 'light');
-    const { recorded } = termsToRecord(EMPTY_DICTIONARY, none, terms);
-    expect(termsToRecord(EMPTY_DICTIONARY, recorded, terms).send).toEqual([]);
+    const { recorded } = termsToRecord(none, terms);
+    expect(termsToRecord(recorded, terms).send).toEqual([]);
   });
 
   it('sends only the term that is new when another is already recorded', () => {
     const one = addTerm([], 'light');
-    const { recorded } = termsToRecord(EMPTY_DICTIONARY, none, one);
+    const { recorded } = termsToRecord(none, one);
     const two = addTerm(one, 'dark');
-    expect(termsToRecord(EMPTY_DICTIONARY, recorded, two).send).toEqual([two[1]]);
+    expect(termsToRecord(recorded, two).send).toEqual([two[1]]);
   });
 
   it('sends a term whose text changed', () => {
     const before = addTerm([], 'light');
-    const { recorded } = termsToRecord(EMPTY_DICTIONARY, none, before);
+    const { recorded } = termsToRecord(none, before);
     const after = setTermText(before, before[0].id, 'lights');
-    expect(termsToRecord(EMPTY_DICTIONARY, recorded, after).send).toEqual(after);
+    expect(termsToRecord(recorded, after).send).toEqual(after);
   });
 
   it('sends a term whose mode changed', () => {
     const before = addTerm([], 'light');
-    const { recorded } = termsToRecord(EMPTY_DICTIONARY, none, before);
+    const { recorded } = termsToRecord(none, before);
     const after = setMode(before, before[0].id, 'word');
-    expect(termsToRecord(EMPTY_DICTIONARY, recorded, after).send).toEqual(after);
+    expect(termsToRecord(recorded, after).send).toEqual(after);
   });
 
   it('sends a term whose chosen meanings changed', () => {
     const [both] = addTerm([], 'עלה');
-    const { recorded } = termsToRecord(EMPTY_DICTIONARY, none, [both]);
+    const { recorded } = termsToRecord(none, [both]);
     const narrowed = { ...both, chosen: ['a'] };
-    expect(termsToRecord(EMPTY_DICTIONARY, recorded, [narrowed]).send).toEqual([narrowed]);
+    expect(termsToRecord(recorded, [narrowed]).send).toEqual([narrowed]);
   });
 
   it('does not send a term whose chosen meanings changed while it is matched by its text', () => {
     const [plain] = addTerm([], 'עלה');
     const both: SearchTerm = { ...plain, mode: 'substring' };
-    const { recorded } = termsToRecord(EMPTY_DICTIONARY, none, [both]);
+    const { recorded } = termsToRecord(none, [both]);
     const narrowed = { ...both, chosen: ['a'] };
-    expect(termsToRecord(EMPTY_DICTIONARY, recorded, [narrowed]).send).toEqual([]);
+    expect(termsToRecord(recorded, [narrowed]).send).toEqual([]);
   });
 
   it('forgets a removed term, so bringing it back sends it again', () => {
     const terms = addTerm(addTerm([], 'light'), 'dark');
-    const { recorded } = termsToRecord(EMPTY_DICTIONARY, none, terms);
-    const without = termsToRecord(EMPTY_DICTIONARY, recorded, [terms[0]]);
+    const { recorded } = termsToRecord(none, terms);
+    const without = termsToRecord(recorded, [terms[0]]);
     expect(without.send).toEqual([]);
     expect([...without.recorded.keys()]).toEqual([terms[0].id]);
-    expect(termsToRecord(EMPTY_DICTIONARY, without.recorded, terms).send).toEqual([terms[1]]);
+    expect(termsToRecord(without.recorded, terms).send).toEqual([terms[1]]);
   });
 });
 
@@ -73,7 +83,7 @@ describe('searchTelemetry', () => {
     },
   });
   let sent: [string, number][];
-  let telemetry: ReturnType<typeof searchTelemetry>;
+  let telemetry: ReturnType<ReturnType<typeof searchTelemetry>>;
 
   const search = (...words: string[]): SearchSettings => ({ terms: words.reduce(addTerm, []) });
 
@@ -83,7 +93,7 @@ describe('searchTelemetry', () => {
     telemetry = searchTelemetry({
       delayMs: DELAY,
       send: (text, _language, _mode, hits) => sent.push([text, hits]),
-    });
+    })(tanakhSearch);
   });
 
   afterEach(() => vi.useRealTimers());

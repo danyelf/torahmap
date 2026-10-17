@@ -2,7 +2,7 @@
 //
 // The mode belongs to a term and is set on that term's row, so these tests
 // click the row.
-import { SEARCH_COLORS } from '../../src/search/terms.ts';
+import { SEARCH_COLORS } from '@torahmap/search';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../src/search/index';
 import { configure } from '../../src/search/index.ts';

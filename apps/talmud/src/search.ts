@@ -1,52 +1,55 @@
-// Shortcut: the Talmud's search finds nothing. It takes a word and says no
-// segment matches, so the shell's search runs on the Talmud page, panel, link
-// and Back step included, until the Talmud has a search of its own.
-import type { UrlParamSpec } from '@torahmap/link';
-import { SEARCH_BOX_ID, type SearchTool } from '@torahmap/shell/app/search.ts';
-import type { TalmudLayoutItem } from './layout.ts';
+// The Talmud's search: @torahmap/search's term search over every segment, in
+// the Davidson edition, which spells abbreviations out. A whole word may carry
+// the letters Hebrew and Aramaic attach in front of one.
+import { memoByValue } from '@torahmap/utils';
+import { hebrew } from '@torahmap/hebrew';
+import { TERM_SEARCH_PARAMS } from '@torahmap/link';
+import { buildTextIndex, createTermSearch, type SearchEntry } from '@torahmap/search';
+import { talmudId, talmudRef, type TalmudLayoutItem } from './layout.ts';
+import {
+  SEARCH_FILE,
+  STRUCTURE_FILE,
+  type TalmudSearchText,
+  type TalmudStructure,
+} from './data.ts';
 
-export interface TalmudSearchSettings {
-  readonly text: string;
+/** What search reads: the tractates' order and pages, and their search text. */
+export interface TalmudSearchData {
+  structure: TalmudStructure;
+  text: TalmudSearchText;
 }
 
-export const TALMUD_SEARCH_PARAMS = [
-  { key: 'search', kind: 'text' },
-] as const satisfies readonly UrlParamSpec[];
+const LANGUAGES = [hebrew({ prefixes: 'דולבכשמה' })];
 
-const wordIn = (settings: TalmudSearchSettings): string => settings.text.trim();
-
-export const talmudSearch: SearchTool<TalmudLayoutItem, TalmudSearchSettings, void> = {
-  id: 'search',
-  name: 'Search',
-  description: 'Finds nothing yet.',
-
-  isSearching: (settings) => wordIn(settings) !== '',
-
-  telemetry: { readerChanged() {}, replaced() {}, dataLoaded() {} },
-
-  getItemColor: () => null,
-
-  colorsFor: (items) => items.map(() => null),
-
-  urlParams: TALMUD_SEARCH_PARAMS,
-
-  settingsFromUrl: (params) => ({ text: params.search ?? '' }),
-
-  settingsToUrl: (settings): Record<string, string> => {
-    const word = wordIn(settings);
-    return word ? { search: word } : {};
-  },
-
-  renderControls(container, settings, onChange) {
-    let box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`);
-    if (!box) {
-      container.innerHTML = `<input id="${SEARCH_BOX_ID}" type="search" aria-label="Search"><p></p>`;
-      box = container.querySelector<HTMLInputElement>(`#${SEARCH_BOX_ID}`)!;
-      box.addEventListener('input', () => onChange(() => ({ text: box!.value })));
+function* entries(structure: TalmudStructure, text: TalmudSearchText): Iterable<SearchEntry> {
+  for (const { name: tractate, amudim } of structure.tractates) {
+    const pages = text[tractate] ?? [];
+    for (const [ai, { daf, amud }] of amudim.entries()) {
+      for (const [si, he] of (pages[ai] ?? []).entries()) {
+        const segment = { tractate, daf, amud, segment: si + 1 };
+        yield { id: talmudId(segment), ref: talmudRef(segment), text: { he } };
+      }
     }
-    if (box.value !== settings.text) box.value = settings.text;
-    container.querySelector('p')!.textContent = wordIn(settings)
-      ? 'No matching segments'
-      : 'Type to search';
-  },
-};
+  }
+}
+
+// Per structure, then per search text.
+const indexes = memoByValue((structure: TalmudStructure) =>
+  memoByValue((text: TalmudSearchText) => buildTextIndex(entries(structure, text), LANGUAGES)),
+);
+
+const search = createTermSearch<TalmudLayoutItem, TalmudSearchData>({
+  languages: LANGUAGES,
+  data: { structure: STRUCTURE_FILE, text: SEARCH_FILE },
+  index: ({ structure, text }) => indexes(structure)(text),
+  noun: { one: 'segment', many: 'segments' },
+  // A prefix is part of a whole word here, and a short word as a substring
+  // lights most of the map: רב is inside רבי, רבה, רבא and ערב.
+  defaultMode: 'word',
+  placeholder: 'Search Hebrew or Aramaic…',
+  description: 'Any word or phrase of the Talmud.',
+  urlParams: TERM_SEARCH_PARAMS,
+});
+
+export const talmudSearch = search.tool;
+export const configureSearch = search.configure;

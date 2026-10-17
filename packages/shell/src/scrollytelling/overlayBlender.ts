@@ -76,6 +76,7 @@ export function pictureForStop<I extends MapItem>(
   loaded: Loaded,
   base: (index: number) => ItemColor,
   tools: TextTools<I>,
+  keepsBase?: number,
 ): Picture {
   const { search } = tools;
   const overlay = overlayOf(stop, tools);
@@ -102,7 +103,10 @@ export function pictureForStop<I extends MapItem>(
     settingsFromLink(search, stop.searchParams ?? {}),
     loaded,
   );
-  const picture = fillDefaultColors(toolsPicture(shown, items, hovered, base), base);
+  const picture = fillDefaultColors(
+    toolsPicture(shown, items, hovered, base, undefined, keepsBase),
+    base,
+  );
   if (!byHover) cache.set(key, picture);
   return picture;
 }
@@ -119,13 +123,14 @@ export function computeBlendedColors<I extends MapItem>(
   loaded: Loaded,
   base: (index: number) => ItemColor,
   tools: TextTools<I>,
+  keepsBase?: number,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)
-    return still(pictureForStop(fromStop, items, hovered, loaded, base, tools));
-  if (t >= 1) return still(pictureForStop(toStop, items, hovered, loaded, base, tools));
+    return still(pictureForStop(fromStop, items, hovered, loaded, base, tools, keepsBase));
+  if (t >= 1) return still(pictureForStop(toStop, items, hovered, loaded, base, tools, keepsBase));
   return {
-    from: pictureForStop(fromStop, items, hovered, loaded, base, tools),
-    to: pictureForStop(toStop, items, hovered, loaded, base, tools),
+    from: pictureForStop(fromStop, items, hovered, loaded, base, tools, keepsBase),
+    to: pictureForStop(toStop, items, hovered, loaded, base, tools, keepsBase),
     t,
   };
 }

@@ -4,7 +4,7 @@
 import type { Shell } from '@torahmap/shell/app/text.ts';
 import type { TanakhLayout } from '../types.ts';
 import { dataFor } from '@torahmap/shell/dataFiles.ts';
-import { stripNikkud } from '@torahmap/shell/hebrew.ts';
+import { stripNikkud } from '@torahmap/hebrew';
 import { meaningsInVerse, wordsOfVerse } from './dictionary.ts';
 import { dictionaryOf } from './data.ts';
 import { setWordClickHandler } from '@torahmap/shell/sidebar.ts';

@@ -53,7 +53,7 @@ const { findLexemesForWord } = await import('@torahmap/tanakh/search/search.ts')
 const { meaningsInVerse, spellingFor, wordIsNamed, wordsOfVerse } =
   await import('@torahmap/tanakh/search/dictionary.ts');
 const { textWords } = await import('@torahmap/shell/textWords.ts');
-const { stripNikkud } = await import('@torahmap/shell/hebrew.ts');
+const { stripNikkud } = await import('@torahmap/hebrew');
 const { verseId } = await import('@torahmap/link/tanakh');
 
 interface Report {

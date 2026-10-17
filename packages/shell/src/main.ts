@@ -351,7 +351,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
   function explorePicture(): Picture<ItemColor | null> {
-    return toolsPicture(toolsNow(), items, hoveredItem, base, dimFor(frontTool));
+    return toolsPicture(
+      toolsNow(),
+      items,
+      hoveredItem,
+      base,
+      dimFor(frontTool),
+      text.searchKeepsBase,
+    );
   }
 
   function applyTools(): void {
@@ -414,7 +421,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function blendColors(): ColorLayer | null {
     if (driver.by !== 'story' || !driver.blend) return null;
     const { from, to, t } = driver.blend;
-    return computeBlendedColors(from, to, t, items, hoveredItem, loaded, base, textTools);
+    return computeBlendedColors(
+      from,
+      to,
+      t,
+      items,
+      hoveredItem,
+      loaded,
+      base,
+      textTools,
+      text.searchKeepsBase,
+    );
   }
 
   function blendTransition(): void {
@@ -1402,6 +1419,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         loaded,
         base,
         textTools,
+        text.searchKeepsBase,
       ),
     );
   }

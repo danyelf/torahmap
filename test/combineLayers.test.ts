@@ -43,6 +43,14 @@ describe('combineLayers', () => {
       ]);
     });
 
+    it('keeps as much of a square’s base colour as the text asks', () => {
+      const base = (i: number): Color => (i === 0 ? RED : BLUE);
+      expect(combineLayers(2, [null, CYAN], null, base, DIM, 0.6).colors).toEqual([
+        scaled(RED, 0.6),
+        CYAN,
+      ]);
+    });
+
     it('draws no rings', () => {
       expect(combineLayers(1, [CYAN], null, getDefaultColor).rings).toBeUndefined();
     });

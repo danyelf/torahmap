@@ -124,7 +124,7 @@ than chosen by taste, so the reformat moved as few lines as it could:
 `singleQuote` because committed source held 6995 single-quoted strings to 1112
 double, and `printWidth: 100` because line lengths ran to a p99 of 100.
 `quoteProps: preserve` keeps the quotes on Hebrew object keys such as
-`'ך': 'כ'` in `apps/tanakh/src/search/spelling.ts`, which Prettier would otherwise strip — they are
+`'ך': 'כ'` in `packages/hebrew/src/spelling.ts`, which Prettier would otherwise strip — they are
 valid JavaScript identifiers, so nothing forces the quotes, but the letters are
 much easier to pick out with them.
 
@@ -159,7 +159,11 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   drawing), `shell` (the app shell, `createApp(text)`: what every text's page
   runs; the modules a text may use are the ones its `package.json` exports,
   each at its own path, as `@torahmap/shell/main.ts`),
-  `telemetry` (which column of an event holds what, for the page that sends it
+  `search` (a text's term search, `createTermSearch`: terms, matching through
+  the languages a text gives it, results, marks and link; it knows no
+  language but English, and the Tanakh's meanings mode plugs into it as one
+  extra mode), `hebrew` (Hebrew's letters, points and word breaks, and Hebrew
+  as search reads it), `telemetry` (which column of an event holds what, for the page that sends it
   and the Worker that writes it, and who can have the map, which its mode
   column records), `overlay-catalog` (each Tanakh overlay's name and link
   keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (how a

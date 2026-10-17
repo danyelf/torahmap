@@ -10,6 +10,9 @@ export const STRUCTURE_FILE = `${TALMUD_DATA_DIR}/structure.json`;
 /** The file a tractate's text is in. */
 export const textsFile = (tractate: string): string => `${TALMUD_DATA_DIR}/texts/${tractate}.json`;
 
+/** What search reads, a different edition from the popup's: each tractate's amudim of plain-letter segments. */
+export const SEARCH_FILE = `${TALMUD_DATA_DIR}/search.json`;
+
 export interface TalmudAmud {
   daf: number;
   amud: 'a' | 'b';
@@ -46,6 +49,9 @@ export interface TalmudTractateText {
   /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
   citations: Record<number, Record<number, Citation[]>>;
 }
+
+/** Each tractate's search text, shaped as its `amudim`. */
+export type TalmudSearchText = Record<string, string[][]>;
 
 /** Where a segment cites a Tanakh verse: the cited words, by place in its text, and the verse's id. */
 export interface Citation {

@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseVerseId } from '@torahmap/link/tanakh';
 import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../src/search/dictionary';
-import { splitIntoWords, stripNikkud } from '@torahmap/shell/hebrew.ts';
+import { splitIntoWords, stripNikkud } from '@torahmap/hebrew';
 import { textWords } from '@torahmap/shell/textWords.ts';
 import { realSearchData } from '../../helpers/searchData';
 

@@ -75,11 +75,16 @@ export const SEDARIM: readonly Seder[] = [
 export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 
 // --- Base colors (muted, similar, "rainfall over both") ---
-// MISHNAH = slate blue. GEMARA = a warm parchment, so it reads as coloured
-// rather than as the grey of a square nothing colours.
+// MISHNAH = violet, the one hue no search colour is near. GEMARA = a warm
+// parchment, so it reads as coloured rather than as the grey of a square
+// nothing colours.
 
-export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.48, 0.58, 0.82];
+export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.64, 0.5, 0.84];
 export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.66, 0.57, 0.42];
+
+// What a segment a search does not find keeps of its base colour, so Mishnah
+// still shows from Gemara.
+export const SEARCH_KEEPS_BASE = 0.6;
 
 // --- Per-segment brightness jitter ---
 // Each segment is a deterministic ±BRIGHTNESS_JITTER brighter or darker
