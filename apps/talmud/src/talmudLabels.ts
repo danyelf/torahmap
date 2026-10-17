@@ -11,40 +11,11 @@ import {
   SEDER_BACKGROUND_OPACITY,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
+import { createRowNumbers, labelGroup, type Placed } from '@torahmap/shell/rowNumbers.ts';
 
 interface Pan {
   x: number;
   y: number;
-}
-
-interface Placed {
-  el: HTMLElement;
-  x: number;
-  y: number;
-}
-
-/**
- * Labels that show and hide together. They are placed only when the zoom has
- * changed since they last were, and only while they show: a pan moves their
- * whole container.
- */
-function labelGroup(id: string, labels: Placed[]) {
-  const el = document.createElement('div');
-  if (id) el.id = id;
-  for (const label of labels) el.appendChild(label.el);
-  let placedAt = NaN;
-  return {
-    el,
-    show(shown: boolean, zoom: number): void {
-      el.style.display = shown ? '' : 'none';
-      if (!shown || zoom === placedAt) return;
-      placedAt = zoom;
-      for (const { el, x, y } of labels) {
-        el.style.left = `${x * zoom}px`;
-        el.style.top = `${y * zoom}px`;
-      }
-    },
-  };
 }
 
 function sederTint(block: SederBlock): HTMLElement | null {
@@ -79,22 +50,6 @@ function perekLabel(a: PerekAnchor): Placed {
   return { el, x: a.rightX, y: a.topY - 2 };
 }
 
-function dafLabel(row: DafRowAnchor): Placed {
-  const el = document.createElement('div');
-  el.className = 'daf';
-  el.style.cssText = `
-    position:absolute;
-    color:#888;
-    font-family:system-ui, sans-serif;
-    font-size:${DAF_LABEL.fontSize}px;
-    white-space:nowrap;
-    line-height:1;
-    transform:translate(${DAF_LABEL.offset}px, 0);
-  `;
-  el.textContent = `${row.daf}${row.amud}`;
-  return { el, x: row.rightX, y: row.topY };
-}
-
 // With the perek names, the first amud of every third daf is numbered: 3a, 6a, 10a, 13a, …
 const numberedFirst = ({ daf, amud }: DafRowAnchor) => amud === 'a' && [0, 3, 6].includes(daf % 10);
 
@@ -119,14 +74,19 @@ export function createTalmudLabels(
   });
 
   const pereks = labelGroup('talmud-perek-labels', perekAnchors.map(perekLabel));
-  const dapim = document.createElement('div');
-  dapim.id = 'talmud-daf-labels';
-  const someDapim = labelGroup('', dafRows.filter(numberedFirst).map(dafLabel));
-  const otherDapim = labelGroup('', dafRows.filter((r) => !numberedFirst(r)).map(dafLabel));
-  dapim.append(someDapim.el, otherDapim.el);
-
-  container.append(tints, pereks.el, dapim);
+  container.append(tints, pereks.el);
   parent.appendChild(container);
+  const moveDapim = createRowNumbers(
+    'talmud-daf-labels',
+    dafRows.map((row) => ({
+      text: `${row.daf}${row.amud}`,
+      x: row.rightX,
+      y: row.topY,
+      zoom: numberedFirst(row) ? PEREK_LABEL_ZOOM : DAF_LABEL_ZOOM_ALL,
+    })),
+    parent,
+    { ...DAF_LABEL, side: 'right' },
+  );
 
   let tintsAt = NaN;
   return (pan, zoom) => {
@@ -143,7 +103,6 @@ export function createTalmudLabels(
       pereks.el.style.fontSize = `${Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE}px`;
     }
     pereks.show(zoom >= PEREK_LABEL_ZOOM, zoom);
-    someDapim.show(zoom >= PEREK_LABEL_ZOOM, zoom);
-    otherDapim.show(zoom >= DAF_LABEL_ZOOM_ALL, zoom);
+    moveDapim(pan, zoom);
   };
 }

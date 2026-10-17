@@ -106,6 +106,15 @@ describe('the Act’s layout', () => {
     expect(three.maxX).toBeGreaterThanOrEqual(at('7').x + COLUMN_WIDTH * SQUARE_SIZE - 1);
   });
 
+  it('numbers each article at the left edge and top of its first square', () => {
+    expect(laid.articles).toEqual([
+      { number: '1', leftX: at('1(1)').x, topY: at('1(1)').y },
+      { number: '2', leftX: at('2').x, topY: at('2').y },
+      { number: '6', leftX: at('6').x, topY: at('6').y },
+      { number: '7', leftX: at('7').x, topY: at('7').y },
+    ]);
+  });
+
   it('nudges each square by an amount its id fixes', () => {
     const again = computeActLayout(actFixture);
     for (const item of laid.items) {

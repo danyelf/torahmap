@@ -205,6 +205,7 @@ export const STATES: State[] = [
 /** The AI Act's page, at /euaiact/ (euaiact.spec.ts). */
 export const ACT_STATES: State[] = [
   { name: 'act-opening', link: '' },
+  { name: 'act-article-numbers', link: 'zoom=1.5&x=300&y=300' },
   { name: 'act-amendment', link: 'overlay=amendment&zoom=0.6', shown: ['#map-legend'] },
   {
     name: 'act-references',

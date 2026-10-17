@@ -23,14 +23,14 @@ beforeEach(() => {
 const hidden = (el: Element | null): boolean =>
   !!el && ((el as HTMLElement).style.display === 'none' || hidden(el.parentElement));
 const shownDapim = () =>
-  [...parent.querySelectorAll<HTMLElement>('.daf')]
+  [...parent.querySelectorAll<HTMLElement>('.row-number')]
     .filter((el) => !hidden(el))
     .map((el) => el.textContent);
 /** Where an element sits on screen: its container's shift, then its own place. */
 const onScreen = (el: HTMLElement) => {
-  const [x, y] = (parent.firstElementChild as HTMLElement).style.transform
-    .match(/-?[\d.]+/g)!
-    .map(Number);
+  let shifted = el.parentElement!;
+  while (!shifted.style.transform) shifted = shifted.parentElement!;
+  const [x, y] = shifted.style.transform.match(/-?[\d.]+/g)!.map(Number);
   return { x: x + parseFloat(el.style.left), y: y + parseFloat(el.style.top) };
 };
 
@@ -45,7 +45,7 @@ describe('daf numbers', () => {
   });
 
   it('sit at their anchors as the map pans and zooms', () => {
-    const label = [...parent.querySelectorAll<HTMLElement>('.daf')].find(
+    const label = [...parent.querySelectorAll<HTMLElement>('.row-number')].find(
       (el) => el.textContent === '3b',
     )!;
     for (const [pan, zoom] of [

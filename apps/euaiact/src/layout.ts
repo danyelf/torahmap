@@ -30,9 +30,17 @@ export interface ActItem extends MapItem {
   chapter: string;
 }
 
+/** An article's number, set left of its column at the top of its first row. */
+export interface ArticleAnchor {
+  number: string;
+  leftX: number;
+  topY: number;
+}
+
 export interface ActLayout {
   items: ActItem[];
   books: BookBox[];
+  articles: ArticleAnchor[];
   bounds: { width: number; height: number };
 }
 
@@ -81,6 +89,7 @@ function placeGroups(groups: readonly ActGroup[]): { placed: Placed[]; rows: num
 export function computeActLayout(structure: ActStructure): ActLayout {
   const items: ActItem[] = [];
   const books: BookBox[] = [];
+  const articles: ArticleAnchor[] = [];
 
   /** Stands a column of blocks at (x, top) and returns the y below it. */
   const column = (
@@ -94,6 +103,7 @@ export function computeActLayout(structure: ActStructure): ActLayout {
     runs.forEach((run, i) => {
       if (i) y += SECTION_GAP;
       for (const block of run) {
+        if (layer === 'article') articles.push({ number: block.number, leftX: x, topY: y });
         const { placed, rows } = placeGroups(block.groups);
         for (const p of placed) {
           items.push({
@@ -183,5 +193,5 @@ export function computeActLayout(structure: ActStructure): ActLayout {
   }
 
   const width = Math.max(articlesRight, x - CHAPTER_GAP, books[0].maxX);
-  return { items, books, bounds: { width, height: annexesBottom } };
+  return { items, books, articles, bounds: { width, height: annexesBottom } };
 }
