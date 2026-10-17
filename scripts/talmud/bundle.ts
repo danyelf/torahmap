@@ -16,7 +16,7 @@ import {
   type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
 import { stripNikkud } from '@torahmap/hebrew';
-import { markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
+import { HADRAN, markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
 import {
   REPORT_PATH,
   cachePathsFor,
@@ -30,6 +30,7 @@ import {
   type VerseTexts,
 } from '@torahmap/tanakh/verseTexts.ts';
 import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
+import { englishMarkers } from './english.ts';
 
 /**
  * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
@@ -120,12 +121,27 @@ export interface MergedJson {
   text: string[][];
 }
 
+/**
+ * Where the English differs in shape from the Hebrew, or null. The English leaves off a Hadran
+ * line that ends an amud, and keeps every other as an empty string.
+ */
+function englishShapeDiffers(hebrew: string[][], english: string[][]): number | null {
+  if (english.length !== hebrew.length) return Math.min(english.length, hebrew.length);
+  const at = hebrew.findIndex((amud, ai) => {
+    const n = english[ai].length;
+    return !(n === amud.length || (n === amud.length - 1 && HADRAN.test(amud.at(-1)!)));
+  });
+  return at < 0 ? null : at;
+}
+
 export function processTractate(
   seder: string,
   tractateName: string,
   wikisource: WikisourceJson,
   schema: SchemaJson,
   merged: MergedJson,
+  /** The William Davidson English, shaped as `wikisource`. */
+  english: MergedJson,
 ): {
   structure: TalmudTractate;
   text: Omit<TalmudTractateText, 'citations'>;
@@ -148,6 +164,14 @@ export function processTractate(
   });
   const text = wikisource.text.slice(skip);
   const other = merged.text.slice(skip);
+  const translation = english.text.slice(skip);
+  const differs = englishShapeDiffers(text, translation);
+  if (differs !== null) {
+    const { daf, amud } = amudAt(differs);
+    throw new Error(
+      `${tractateName}: the English differs in shape from the Hebrew at ${daf}${amud}`,
+    );
+  }
 
   // Build perakim array and compute per-amud perekIdx + boundary markers.
   const perakim: TalmudPerek[] = [];
@@ -219,7 +243,21 @@ export function processTractate(
       amudim,
       perakim,
     },
-    text: { name: tractateName, amudim: cleanText },
+    text: {
+      name: tractateName,
+      amudim: cleanText,
+      english: text.map((amud, ai) =>
+        amud.map((seg, si) => {
+          if (HADRAN.test(seg)) return '';
+          try {
+            return englishMarkers(translation[ai][si]);
+          } catch (err) {
+            const { daf, amud } = amudAt(ai);
+            throw new Error(`${tractateName} ${daf}${amud}:${si + 1}: ${(err as Error).message}`);
+          }
+        }),
+      ),
+    },
     search: other.map((amud) => amud.map((seg) => stripNikkud(stripHtml(seg)))),
   };
 }
@@ -267,6 +305,7 @@ async function main(): Promise<void> {
         await readJson<WikisourceJson>(paths.wikisource),
         await readJson<SchemaJson>(paths.schema),
         await readJson<MergedJson>(paths.merged),
+        await readJson<MergedJson>(paths.english),
       );
 
       structure.tractates.push(tractateStructure);
@@ -285,7 +324,9 @@ async function main(): Promise<void> {
         `OK (${tractateStructure.amudim.length} amudim, ${segCount} segments, ${tractateStructure.perakim.length} perakim)`,
       );
     } catch (err) {
-      console.log(`SKIP: ${(err as Error).message}`);
+      // A tractate left out would drop from the map and leave its old file behind.
+      console.log('FAILED');
+      throw err;
     }
   }
 

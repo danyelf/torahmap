@@ -105,7 +105,19 @@
   font-size: 14px;
   line-height: 1.5;
   color: #ccc;
+  white-space: pre-line;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* A translation set in bold among its explanation. */
+#popup .popup-english b {
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Under a search mark, the mark's own text colour. */
+#popup .popup-english mark :is(b, i) {
+  color: inherit;
 }
 
 /* While the texts are not in, a strip under the reference says so, and the

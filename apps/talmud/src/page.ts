@@ -8,6 +8,9 @@ export const TALMUD_PATH = '/talmud/';
 
 export const SEFARIA_TALMUD = 'https://www.sefaria.org/texts/Talmud';
 
+export const KOREN_TALMUD =
+  'https://korenpub.co.il/collections/the-noe-edition-koren-talmud-bavli-1';
+
 const SUMMARY =
   'Talmud Map lays out the Babylonian Talmud as colored squares, one for each segment, each in a fixed place.';
 
