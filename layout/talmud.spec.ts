@@ -155,8 +155,8 @@ test("a tractate file that fails says so, and isn't fetched again", async ({ pag
   await page.goto(`${TALMUD}?at=Berakhot.2a.1`);
   await allLoaded(page);
   await expect(page.locator('#popup .popup-notice')).not.toBeEmpty();
-  await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowRight');
   await expect(page.locator('#popup .ref-text')).toHaveText('Berakhot 2a:1');
   expect(requests).toBe(1);
 });

@@ -750,6 +750,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     onMap,
     squareUnder: (p) => findItemAtPoint(items, camera, mapViewport(), p.x, p.y),
     clickable: (square) => pinnedItem !== null && square !== null,
+    direction: source.site.direction,
     intents: {
       grab() {
         // A touch on the map lifts the menu and folds a phone's sheet.
