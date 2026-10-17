@@ -101,6 +101,24 @@ test("the haftarah legend's key shows only in the desktop layout", async ({ page
   await expect(page.locator('.haftarah-key')).toBeVisible({ visible: desktop });
 });
 
+test('each language choice hides the other language in the popup', async ({ page }) => {
+  await openMap(page, 'overlay=commentary&verse=Genesis.12.1');
+  await viaMenu(page, 'about');
+  const hebrew = page.locator('#popup .popup-hebrew');
+  const english = page.locator('#popup .popup-english');
+  const choose = (choice: string) =>
+    page.locator(`#language-choice [data-languages="${choice}"]`).click();
+  await choose('he');
+  await expect(hebrew).toBeVisible();
+  await expect(english).toBeHidden();
+  await choose('en');
+  await expect(hebrew).toBeHidden();
+  await expect(english).toBeVisible();
+  await choose('both');
+  await expect(hebrew).toBeVisible();
+  await expect(english).toBeVisible();
+});
+
 test('the title face loads', async ({ page }) => {
   await openMap(page, 'story=tour&stop=intro');
   // document.fonts.check() is true for a face that was never declared; load() is not.

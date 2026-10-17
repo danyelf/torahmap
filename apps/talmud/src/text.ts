@@ -9,6 +9,7 @@ import type { TermSettings } from '@torahmap/search';
 import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
+import { HEBREW } from '@torahmap/shell/language.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
@@ -55,6 +56,7 @@ export const TALMUD_CATEGORY = 'Talmud';
 export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
   site: talmudSite,
   link: TALMUD_LINK_KEYS,
+  languages: [HEBREW],
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {

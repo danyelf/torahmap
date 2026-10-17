@@ -18,6 +18,7 @@ import type { Overlay, ToolOnMap } from '../overlays/types.ts';
 import type { SearchTool } from './search.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { PopupText } from '../sidebar.ts';
+import type { TextLanguage } from '../language.ts';
 
 /** What a text's site calls itself and its links. */
 export interface Site {
@@ -27,8 +28,6 @@ export interface Site {
   direction: 'rtl' | 'ltr';
   /** What a reader calls one square, in plain text: "verse", "segment". */
   squareName: string;
-  /** Without Hebrew, the page is English only and offers no Hide Hebrew control. */
-  hasHebrew: boolean;
   /** What the map is, as the About panel's opening paragraph. */
   aboutHtml: string;
   /** What the map itself rests on, credited above each tool's sources. */
@@ -40,6 +39,8 @@ export interface Site {
 export interface MapText<I extends MapItem, S = unknown> {
   site: Site;
   link: LinkKeys;
+  /** The languages its popup gives. With two, the reader chooses which to show. */
+  languages: readonly TextLanguage[];
   /** Downloaded before the first frame. */
   firstFiles: string[];
   /** The file whose arrival and download speed load timing reports. */

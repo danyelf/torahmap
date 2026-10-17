@@ -8,7 +8,8 @@ import { PANEL_TITLES, type Panel } from './frame.ts';
 export const CONTROL = {
   button: 'control-button',
   quiet: 'control-button quiet',
-  toggle: 'control-toggle',
+  segments: 'control-segments',
+  segment: 'control-segment',
   icon: 'control-icon',
   select: 'control-select',
   input: 'control-input',

@@ -9,7 +9,6 @@ export const talmudSite: Site = {
   page: TALMUD_PAGE,
   direction: 'rtl',
   squareName: 'segment',
-  hasHebrew: true,
   aboutHtml:
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [

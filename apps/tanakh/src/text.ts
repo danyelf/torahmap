@@ -19,10 +19,12 @@ import type { TanakhLayout } from './types.ts';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { tanakhSite } from './site.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 
 export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
   site: tanakhSite,
   link: LINK_KEYS,
+  languages: [HEBREW, ENGLISH],
   firstFiles: [STRUCTURE_FILE],
   timedFile: TEXTS_FILE,
 

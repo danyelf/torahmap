@@ -96,10 +96,10 @@ test('a link to a square that does not exist pins nothing', async ({ page }) => 
   expect(errors).toEqual([]);
 });
 
-test('offers no Hebrew control, and never writes the Hebrew choice', async ({ page }) => {
+test('offers no language choice, and never writes one', async ({ page }) => {
   await openMap(page, 'zoom=0.6', ACT);
   await viaMenu(page, 'about');
   await expect(page.locator('#about-panel')).toBeVisible();
-  await expect(page.locator('#hebrew-toggle')).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('torahMap.englishOnly'))).toBeNull();
+  await expect(page.locator('#language-choice')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('torahMap.languages'))).toBeNull();
 });

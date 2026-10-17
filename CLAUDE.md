@@ -217,8 +217,8 @@ change can be looked at without checking the branch out —
 `scripts/prpreview.sh <pr>` serves one locally instead.
 
 What the Worker serves is in `apps/worker/src/index.ts`; telemetry's client half is
-`packages/shell/src/analytics.ts`. No cookies; browser storage holds only two settings, Hide
-Hebrew and whether this is a return visit. The dev server sends nothing.
+`packages/shell/src/analytics.ts`. No cookies; browser storage holds only two settings, which
+languages to show and whether this is a return visit. The dev server sends nothing.
 `scripts/telemetry/report.sh` prints every saved query, and `usage.sh` beside
 it writes a chart of page views per day to `telemetry-report/usage.html`; both
 need a Cloudflare account id and an API token. Cloudflare Access keeps chat apps'

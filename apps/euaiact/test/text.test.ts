@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ENGLISH } from '@torahmap/shell/language.ts';
 import { euaiactText } from '../src/text.ts';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../src/data.ts';
 import { actFixture } from './helpers/actFixture.ts';
@@ -24,7 +25,7 @@ describe('the Act as a text', () => {
     expect(open.stories.list.length).toBeGreaterThan(0);
   });
 
-  it('has no Hebrew', () => {
-    expect(euaiactText.site.hasHebrew).toBe(false);
+  it('is in English alone', () => {
+    expect(euaiactText.languages).toEqual([ENGLISH]);
   });
 });

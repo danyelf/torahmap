@@ -134,50 +134,7 @@
 }
 
 .term-mode {
-  display: inline-flex;
-  border: 1px solid #3d3d3d;
-  border-radius: 4px;
-  overflow: hidden;
-  background: #202020;
   margin: 3px 0 5px;
-}
-
-.term-mode-option {
-  font: inherit;
-  font-size: 10.5px;
-  padding: 2.5px 8px;
-  color: #8a8a8a;
-  background: none;
-  border: none;
-  border-right: 1px solid #3d3d3d;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.term-mode-option:last-child {
-  border-right: none;
-}
-
-.term-mode-option:hover:not(:disabled) {
-  color: #fff;
-}
-
-.term-mode-option:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.term-mode-option.on {
-  background: #2f5f8a;
-  color: #fff;
-}
-
-/* On a touch screen each switch is a 24px target; with a mouse it keeps its
-   slimmer look. */
-@media (pointer: coarse) {
-  .term-mode-option {
-    min-height: 24px;
-  }
 }
 
 /* Undo what the extra mode chose. Hidden until there is something to undo. */

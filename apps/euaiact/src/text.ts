@@ -3,6 +3,7 @@
 import { cameraToFit } from '@torahmap/engine';
 import type { LinkKeys } from '@torahmap/link';
 import type { MapText } from '@torahmap/shell/app/text.ts';
+import { ENGLISH } from '@torahmap/shell/language.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
 import { layerColor } from './baseColor.ts';
@@ -44,6 +45,7 @@ const ACT_LINK_KEYS: LinkKeys = {
 export const euaiactText: MapText<ActItem, ActSearchSettings> = {
   site: euaiactSite,
   link: ACT_LINK_KEYS,
+  languages: [ENGLISH],
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {

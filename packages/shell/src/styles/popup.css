@@ -139,6 +139,7 @@
   color: #fff;
 }
 
-body.english-only #popup .popup-hebrew {
+body.english-only #popup .popup-hebrew,
+body.hebrew-only #popup .popup-english {
   display: none;
 }

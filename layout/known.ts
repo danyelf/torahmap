@@ -38,6 +38,11 @@ export const KNOWN: Record<string, Known> = {
   'story-stop-with-verse/tablet/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/tablet/touch-targets': POPUP_KNOWN,
+  ...Object.fromEntries(
+    ['hebrew', 'both', 'english'].flatMap((c) =>
+      ['phone', 'tablet'].map((s) => [`languages-${c}/${s}/touch-targets`, POPUP_KNOWN]),
+    ),
+  ),
   'act-recital-pinned/phone/touch-targets': ACT_POPUP_KNOWN,
   'act-recital-pinned/tablet/touch-targets': ACT_POPUP_KNOWN,
   'explore-trop/phone/touch-targets': TROP_FOLD,
