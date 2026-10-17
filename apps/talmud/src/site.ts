@@ -25,6 +25,14 @@ export const talmudSite: Site = {
       collected: 'October 2026',
       note: 'The Aramaic text of the Koren Noé edition, downloaded via Sefaria. The search index is built from it.',
     },
+    {
+      source: 'William Davidson Edition - English',
+      url: 'https://korenpub.co.il/collections/the-noe-edition-koren-talmud-bavli-1',
+      license: 'CC BY-NC 4.0',
+      licenseUrl: 'https://creativecommons.org/licenses/by-nc/4.0/',
+      collected: 'October 2026',
+      note: 'The English of the Koren Noé edition, its translation in bold, downloaded via Sefaria.',
+    },
   ],
   title(link) {
     const segment = link.square ? parseTalmudId(link.square) : null;

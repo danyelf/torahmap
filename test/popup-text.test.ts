@@ -45,7 +45,8 @@ describe("the Talmud's popup", () => {
   const amudim = [['The first segment of 2a', 'Its second'], ['A segment of 2b']];
   // "Its" in 2a:2 cites a verse.
   const citations = { 0: { 1: [{ start: 0, end: 3, verse: 'Psalms.36.7' }] } };
-  const file = { name: 'TractA', amudim, citations };
+  const english = [['', '*Its* second'], ['']];
+  const file = { name: 'TractA', amudim, english, citations };
   const open = talmudText.open(
     new Map<string, unknown>([
       [STRUCTURE_FILE, talmudFixture],
@@ -54,11 +55,12 @@ describe("the Talmud's popup", () => {
   );
   const second = open.items.find((s) => s.tractate === 'TractA' && s.daf === 2 && s.segment === 2)!;
 
-  it("says the segment's reference and text, and links to it on Sefaria", () => {
+  it("says the segment's reference, text and English, and links to it on Sefaria", () => {
     expect(open.popupText(second, new Map([[textsFile('TractA'), file]]), null)).toMatchObject({
       ref: 'TractA 2a:2',
       hebrew: 'Its second',
-      english: '',
+      english: 'Its second',
+      englishStyles: [{ start: 0, end: 3, style: 'bold' }],
       link: 'https://www.sefaria.org/TractA.2a.2',
     });
   });

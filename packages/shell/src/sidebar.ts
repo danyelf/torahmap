@@ -7,6 +7,9 @@ import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
 import { linkStretches, type TextLink } from './textLinks.ts';
+import { styleStretches, type TextStyle } from './textStyles.ts';
+
+export type { TextStyle };
 
 /** A click on a word in the popup's Hebrew text. */
 export interface WordClick<I extends MapItem = MapItem> {
@@ -112,6 +115,8 @@ export interface PopupText {
   link: string;
   /** Stretches of the Hebrew that link elsewhere, opened in a new window. */
   hebrewLinks?: readonly TextLink[];
+  /** Stretches of the English in bold or italic. */
+  englishStyles?: readonly TextStyle[];
 }
 
 /** What the popup shows beside the square's text, and whether the square is pinned. */
@@ -204,9 +209,17 @@ export function updateSidebar<I extends MapItem>(
   }
   notice?.replaceChildren(...(textsNotice ? [textsNotice] : []));
   if (english) {
-    const highlighted = text.english && marked(text.english, ENGLISH);
-    if (highlighted) english.replaceChildren(highlighted);
-    else english.textContent = text.english;
+    english.replaceChildren(
+      ...(text.english
+        ? [
+            styleStretches(
+              marked(text.english, ENGLISH) ?? textFragment(text.english),
+              text.english,
+              text.englishStyles ?? [],
+            ),
+          ]
+        : []),
+    );
   }
   if (link) link.href = text.link;
 
