@@ -7,7 +7,14 @@ import { ENGLISH } from '@torahmap/shell/language.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
 import { layerColor } from './baseColor.ts';
-import { CHAPTER_TAB, LAYER_LABEL_SIZE, LAYER_NAMES } from './constants.ts';
+import { createRowNumbers } from '@torahmap/shell/rowNumbers.ts';
+import {
+  ARTICLE_NUMBER,
+  ARTICLE_NUMBER_ZOOM,
+  CHAPTER_TAB,
+  LAYER_LABEL_SIZE,
+  LAYER_NAMES,
+} from './constants.ts';
 import { TEXTS_FILE, STRUCTURE_FILE, structureFrom, type ActTexts } from './data.ts';
 import { actRef, sourceUrl } from './ids.ts';
 import { computeActLayout, type ActItem } from './layout.ts';
@@ -63,13 +70,29 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
 
       baseColor: (item) => layerColor(item),
 
-      labels: (container) =>
-        createMapLabels(laid.books, container, {
+      labels(container) {
+        const moveNames = createMapLabels(laid.books, container, {
           sectionNames: LAYER_NAMES,
           sectionSize: LAYER_LABEL_SIZE,
           tab: CHAPTER_TAB,
           direction: 'ltr',
-        }),
+        });
+        const moveNumbers = createRowNumbers(
+          'act-article-numbers',
+          laid.articles.map((a) => ({
+            text: a.number,
+            x: a.leftX,
+            y: a.topY,
+            zoom: ARTICLE_NUMBER_ZOOM,
+          })),
+          container,
+          ARTICLE_NUMBER,
+        );
+        return (offset, zoom) => {
+          moveNames(offset, zoom);
+          moveNumbers(offset, zoom);
+        };
+      },
 
       popupFile: () => TEXTS_FILE,
 

@@ -17,6 +17,7 @@
     "./overlays/settings.ts": "./src/overlays/settings.ts",
     "./overlays/types.ts": "./src/overlays/types.ts",
     "./panel.ts": "./src/panel.ts",
+    "./rowNumbers.ts": "./src/rowNumbers.ts",
     "./scrollytelling/types.ts": "./src/scrollytelling/types.ts",
     "./sidebar.ts": "./src/sidebar.ts",
     "./textWords.ts": "./src/textWords.ts"
