@@ -32,6 +32,11 @@ export const KNOWN: Record<string, Known> = {
   'story-stop-with-verse/tablet/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/tablet/touch-targets': POPUP_KNOWN,
+  ...Object.fromEntries(
+    ['hebrew', 'both', 'english'].flatMap((c) =>
+      ['phone', 'tablet'].map((s) => [`languages-${c}/${s}/touch-targets`, POPUP_KNOWN]),
+    ),
+  ),
   'explore-trop/phone/touch-targets': TROP_FOLD,
   'overlay-none-trop/phone/touch-targets': TROP_FOLD,
 };

@@ -9,7 +9,7 @@ async function about(): Promise<HTMLDivElement> {
   const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
   const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
   const div = document.createElement('div');
-  div.innerHTML = aboutHtml(tanakhSite, getAllOverlays());
+  div.innerHTML = aboutHtml(tanakhSite, getAllOverlays(), true);
   return div;
 }
 
@@ -18,10 +18,33 @@ beforeEach(() => {
 });
 
 describe('the About panel', () => {
-  it('offers the Hebrew toggle as a button', async () => {
+  it('offers a text with two languages a named button for each choice', async () => {
+    const buttons = [
+      ...(await about()).querySelectorAll<HTMLButtonElement>('#language-choice button'),
+    ];
+    expect(buttons.map((b) => b.dataset.languages)).toEqual(['he', 'both', 'en']);
+    for (const b of buttons) {
+      expect(b.type).toBe('button');
+      expect(b.querySelector('.visually-hidden')?.textContent?.trim()).toBeTruthy();
+    }
+  });
+
+  it('names the language choice by its visible caption', async () => {
     const div = await about();
-    const toggle = div.querySelector<HTMLButtonElement>('#hebrew-toggle');
-    expect(toggle?.type).toBe('button');
+    const group = div.querySelector('#language-choice')!;
+    const caption = div.querySelector(`#${group.getAttribute('aria-labelledby')}`);
+    expect(caption?.textContent?.trim()).toBeTruthy();
+  });
+
+  it('offers no choice, and no empty Settings, to a text with one language', async () => {
+    const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
+    const { talmudSite } = await import('@torahmap/talmud/site.ts');
+    const div = document.createElement('div');
+    div.innerHTML = aboutHtml(talmudSite, [], false);
+    expect(div.querySelector('#language-choice')).toBeNull();
+    expect(div.querySelectorAll('.about-section')).toHaveLength(
+      (await about()).querySelectorAll('.about-section').length - 1,
+    );
   });
 
   it('says what the map is and who made it', async () => {
@@ -52,7 +75,7 @@ describe('the About panel', () => {
     const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
     const { talmudSite } = await import('@torahmap/talmud/site.ts');
     const div = document.createElement('div');
-    div.innerHTML = aboutHtml(talmudSite, []);
+    div.innerHTML = aboutHtml(talmudSite, [], false);
     expect(div.textContent).toContain(talmudSite.page.name);
     const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
     expect(div.textContent).not.toContain(tanakhSite.page.name);

@@ -38,6 +38,7 @@ export async function viaMenu(page: Page, action: string): Promise<void> {
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 
 const ABRAHAM = encodeURIComponent('אברם,אברהם');
+
 const BOTH_ROWS = ['.map-legend-row[data-panel="search"]', '.map-legend-row[data-panel="overlay"]'];
 
 export const STATES: State[] = [
@@ -198,6 +199,15 @@ export const STATES: State[] = [
     name: 'about-panel',
     link: 'overlay=commentary',
     then: (page) => viaMenu(page, 'about'),
-    shown: ['#hebrew-toggle'],
+    shown: ['#language-choice'],
   },
+  ...Object.entries({ hebrew: 'he', both: 'both', english: 'en' }).map(([name, choice]) => ({
+    name: `languages-${name}`,
+    link: 'overlay=commentary&verse=Genesis.12.1',
+    then: async (page: Page) => {
+      await viaMenu(page, 'about');
+      await page.locator(`#language-choice [data-languages="${choice}"]`).click();
+    },
+    shown: ['#language-choice', '#popup'],
+  })),
 ];
