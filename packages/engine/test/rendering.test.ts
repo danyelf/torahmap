@@ -250,6 +250,19 @@ describe('rendering', () => {
       expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 10);
     });
 
+    it('draws every square, then the standouts again on top', () => {
+      render(context, state, camera, null, null);
+
+      const draws = vi.mocked(context.gl.drawArraysInstanced).mock.invocationCallOrder;
+      const { calls, invocationCallOrder } = vi.mocked(context.gl.uniform1i).mock;
+      // What the last integer uniform set before a draw held: standoutsOnly's value
+      const setBefore = (draw: number) =>
+        calls.filter((_, k) => invocationCallOrder[k] < draw).at(-1)?.[1];
+      expect(draws).toHaveLength(2);
+      expect(setBefore(draws[0])).toBe(0);
+      expect(setBefore(draws[1])).toBe(1);
+    });
+
     it('does not render outline when no squares hovered or pinned', () => {
       const useProgram = context.gl.useProgram as any;
       useProgram.mockClear();

@@ -38,13 +38,15 @@ export const BAND_OFFSET = 0.08;
  * has several colours. A square's ring, where `rings` gives one, surrounds its
  * fill in colours of its own. `uncoloured` marks the squares whose fill is
  * their default grey, which a hover paints in the highlight colour instead of
- * brightening.
+ * brightening. `standout` marks the squares, such as search hits, drawn over
+ * all the others and never smaller than STANDOUT_MIN_PX.
  */
 export interface Picture<C = ItemColor> {
   colors: C[];
   growth?: number[];
   rings?: (C | null)[];
   uncoloured?: boolean[];
+  standout?: boolean[];
 }
 
 const NO_COLORS: Picture = { colors: [] };
@@ -66,7 +68,7 @@ export const ITEM_ATTRIBUTES = [
   { name: 'a_jitter', size: 2 },
   { name: 'a_fill', size: 4 },
   { name: 'a_ring', size: 4 },
-  { name: 'a_shape', size: 4 }, // fill stripe count, growth, ring stripe count (0 for none), 1 if uncoloured
+  { name: 'a_shape', size: 4 }, // fill stripe count, growth, ring stripe count (0 for none), flags (SHAPE_FLAGS)
   { name: 'a_nextFill', size: 4 },
   { name: 'a_nextRing', size: 4 },
   { name: 'a_nextShape', size: 4 },
@@ -88,6 +90,9 @@ export function packColor([r, g, b]: Color): number {
   const byte = (c: number): number => Math.round(Math.min(1, Math.max(0, c)) * 255);
   return byte(r) * 0x10000 + byte(g) * 0x100 + byte(b);
 }
+
+/** The bits of a shape's last float. */
+export const SHAPE_FLAGS = { UNCOLOURED: 1, STANDOUT: 2 } as const;
 
 const SLOTS = {
   from: { fill: 'a_fill', ring: 'a_ring', shape: 'a_shape' },
@@ -122,7 +127,9 @@ export function buildItemGeometry<T>(
     data[shape] = fill.length;
     data[shape + 1] = picture.growth?.[i] ?? (Math.max(fill.length, ring.length) > 1 ? 1 : 0);
     data[shape + 2] = ring.length;
-    data[shape + 3] = picture.uncoloured?.[i] ? 1 : 0;
+    data[shape + 3] =
+      (picture.uncoloured?.[i] ? SHAPE_FLAGS.UNCOLOURED : 0) |
+      (picture.standout?.[i] ? SHAPE_FLAGS.STANDOUT : 0);
   };
 
   for (let i = 0; i < items.length; i++) {

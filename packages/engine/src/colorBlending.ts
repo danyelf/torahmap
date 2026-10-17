@@ -30,7 +30,9 @@ function growthAt(picture: Picture, i: number, stripes: number): number {
  * differs between the two therefore changes its stripe widths, which the
  * shader's fade between whole pictures avoids; this is only for collapsing a
  * fade in progress when another has to start from it. Rings merge the same
- * way, a square without one counting its fill as its ring.
+ * way, a square without one counting its fill as its ring. A square stands
+ * out if it does on either side, so a hit never drops out of sight while one
+ * fade gives way to the next.
  *
  * If a square ends up with a single slot, the result is returned as a plain
  * Color (not [Color]) so the geometry buffer emits it the same way it would
@@ -62,7 +64,14 @@ export function mergePictures(from: Picture, to: Picture, t: number): Picture {
     growth[i] = grownFrom + (grownTo - grownFrom) * t;
   }
 
-  return from.rings || to.rings ? { colors, growth, rings } : { colors, growth };
+  const merged: Picture = from.rings || to.rings ? { colors, growth, rings } : { colors, growth };
+  if (from.standout || to.standout) {
+    merged.standout = Array.from(
+      { length: len },
+      (_, i) => !!(from.standout?.[i] || to.standout?.[i]),
+    );
+  }
+  return merged;
 }
 
 function mergeStripes(from: Color[], to: Color[], t: number): Color | Color[] {

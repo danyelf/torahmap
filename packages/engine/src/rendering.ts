@@ -20,7 +20,7 @@ import { buildOutlineGeometry } from './outline.ts';
 import type { SpatialItem } from './types.ts';
 import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera.ts';
-import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, RINGS } from './constants.ts';
+import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, RINGS, STANDOUT_MIN_PX } from './constants.ts';
 
 function offsetFor(
   canvas: HTMLCanvasElement,
@@ -154,8 +154,14 @@ export function render<T>(
   // Hit detection hands back an item of `items` itself, so identity finds it.
   gl.uniform1i(programs.main.uniforms.hovered, hoveredItem ? items.indexOf(hoveredItem) : -1);
 
+  gl.uniform1f(programs.main.uniforms.standoutSide, STANDOUT_MIN_PX * dpr);
+
   gl.bindVertexArray(vertexArray);
-  // Six corners (two triangles) for each square
+  // Six corners (two triangles) for each square. The second pass draws the
+  // standouts again, so nothing drawn after them covers them.
+  gl.uniform1i(programs.main.uniforms.standoutsOnly, 0);
+  gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
+  gl.uniform1i(programs.main.uniforms.standoutsOnly, 1);
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
   gl.bindVertexArray(null);
 
