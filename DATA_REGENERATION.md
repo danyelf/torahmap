@@ -242,7 +242,7 @@ bucket. Its source lives in `data/talmud/`, gitignored apart from
 bundle builds.
 
 ```bash
-# Download each tractate's text and chapter boundaries (~49MB), and check them
+# Download each tractate's text, English and chapter boundaries (~99MB), and check them
 npx tsx scripts/talmud/verify-coverage.ts
 # Build public/data/talmud/
 npx tsx scripts/talmud/bundle.ts
@@ -258,3 +258,9 @@ The popup shows Wikisource, and search reads Davidson (`search.json`), which
 spells abbreviations out: רבי for ר׳, קל וחומר for ק״ו. The two editions line up
 segment for segment, and `search.json` is Davidson's text with its points and
 tags removed, laid out as `texts/`'s amudim.
+
+The popup's English is the William Davidson English (`english.json`), segment
+for segment with the Hebrew; the bundle fails if its shape differs. Its HTML
+becomes plain text with `*` around bold and `_` around italic
+(`scripts/talmud/english.ts`), and the bundle fails on a tag it does not know or
+one left open. Hadran lines get none.

@@ -277,13 +277,28 @@ describe('processTractate', () => {
     expect(text.english[2][2]).toBe('');
   });
 
-  it('refuses a segment with no English', () => {
+  const withEnglish = (wikisource: { text: string[][] }, english: { text: string[][] }) => () =>
+    processTractate('Zeraim', 'Test', wikisource, fakeSchema(), wikisource, english);
+
+  it('allows the English to leave off a closing line that ends an amud', () => {
     const wikisource = fakeWikisource();
+    wikisource.text[3][3] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
     const english = englishOf(wikisource);
     english.text[3].pop();
-    expect(() =>
-      processTractate('Zeraim', 'Test', wikisource, fakeSchema(), wikisource, english),
-    ).toThrow();
+    expect(withEnglish(wikisource, english)().text.english[1][3]).toBe('');
+  });
+
+  it('refuses English shaped differently from the Hebrew', () => {
+    const wikisource = fakeWikisource();
+    const missing = englishOf(wikisource);
+    missing.text[3].pop();
+    const extra = englishOf(wikisource);
+    extra.text[3].push('<b>more</b>');
+    const extraAmud = englishOf(wikisource);
+    extraAmud.text.push(['<b>more</b>']);
+    for (const english of [missing, extra, extraAmud]) {
+      expect(withEnglish(wikisource, english)).toThrow();
+    }
   });
 
   it('keeps mid-amud boundary amud in the previous perek', () => {

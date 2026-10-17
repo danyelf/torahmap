@@ -109,10 +109,15 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* The Talmud's English: its translation in bold, the explanation around it plain. */
+/* A translation set in bold among its explanation. */
 #popup .popup-english b {
   font-weight: 600;
   color: #fff;
+}
+
+/* Under a search mark, the mark's own text colour. */
+#popup .popup-english mark :is(b, i) {
+  color: inherit;
 }
 
 /* While the texts are not in, a strip under the reference says so, and the

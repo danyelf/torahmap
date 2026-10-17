@@ -16,7 +16,7 @@ import {
   type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
 import { stripNikkud } from '@torahmap/hebrew';
-import { markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
+import { HADRAN, markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
 import {
   REPORT_PATH,
   cachePathsFor,
@@ -31,7 +31,6 @@ import {
 } from '@torahmap/tanakh/verseTexts.ts';
 import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
 import { englishMarkers } from './english.ts';
-import { readEnglish } from './english-align.ts';
 
 /**
  * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
@@ -122,8 +121,18 @@ export interface MergedJson {
   text: string[][];
 }
 
-// A chapter's closing line, which has no English.
-const HADRAN = /^\s*(?:<[^>]+>\s*)*הדרן/;
+/**
+ * Where the English differs in shape from the Hebrew, or null. The English leaves off a Hadran
+ * line that ends an amud, and keeps every other as an empty string.
+ */
+function englishShapeDiffers(hebrew: string[][], english: string[][]): number | null {
+  if (english.length !== hebrew.length) return Math.min(english.length, hebrew.length);
+  const at = hebrew.findIndex((amud, ai) => {
+    const n = english[ai].length;
+    return !(n === amud.length || (n === amud.length - 1 && HADRAN.test(amud.at(-1)!)));
+  });
+  return at < 0 ? null : at;
+}
 
 export function processTractate(
   seder: string,
@@ -156,6 +165,13 @@ export function processTractate(
   const text = wikisource.text.slice(skip);
   const other = merged.text.slice(skip);
   const translation = english.text.slice(skip);
+  const differs = englishShapeDiffers(text, translation);
+  if (differs !== null) {
+    const { daf, amud } = amudAt(differs);
+    throw new Error(
+      `${tractateName}: the English differs in shape from the Hebrew at ${daf}${amud}`,
+    );
+  }
 
   // Build perakim array and compute per-amud perekIdx + boundary markers.
   const perakim: TalmudPerek[] = [];
@@ -233,11 +249,12 @@ export function processTractate(
       english: text.map((amud, ai) =>
         amud.map((seg, si) => {
           if (HADRAN.test(seg)) return '';
-          const html = translation[ai]?.[si];
-          if (html === undefined) {
-            throw new Error(`${tractateName}: no English for amud ${ai}, segment ${si + 1}`);
+          try {
+            return englishMarkers(translation[ai][si]);
+          } catch (err) {
+            const { daf, amud } = amudAt(ai);
+            throw new Error(`${tractateName} ${daf}${amud}:${si + 1}: ${(err as Error).message}`);
           }
-          return englishMarkers(html);
         }),
       ),
     },
@@ -288,7 +305,7 @@ async function main(): Promise<void> {
         await readJson<WikisourceJson>(paths.wikisource),
         await readJson<SchemaJson>(paths.schema),
         await readJson<MergedJson>(paths.merged),
-        { text: await readEnglish(ref.seder, ref.tractate) },
+        await readJson<MergedJson>(paths.english),
       );
 
       structure.tractates.push(tractateStructure);

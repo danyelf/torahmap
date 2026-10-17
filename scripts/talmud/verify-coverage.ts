@@ -112,11 +112,15 @@ async function fetchToCache(url: string, cachePath: string, force: boolean): Pro
   return cachePath;
 }
 
-function urlsFor(ref: TractateRef): {
+/** What a tractate is downloaded as: its two Hebrew editions, its chapters and its English. */
+interface TractateFiles {
   wikisource: string;
   merged: string;
   schema: string;
-} {
+  english: string;
+}
+
+function urlsFor(ref: TractateRef): TractateFiles {
   const seder = encodeURIComponent(`Seder ${ref.seder}`);
   const tractate = encodeURIComponent(ref.tractate);
   // Schema filenames use underscores for spaces, not URL-encoded spaces.
@@ -126,19 +130,17 @@ function urlsFor(ref: TractateRef): {
     wikisource: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/${encodeURIComponent('Wikisource Talmud Bavli.json')}`,
     merged: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`,
     schema: `${SEFARIA_EXPORT}/schemas/${schemaName}.json`,
+    english: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/English/${encodeURIComponent('William Davidson Edition - English.json')}`,
   };
 }
 
-export function cachePathsFor(ref: TractateRef): {
-  wikisource: string;
-  merged: string;
-  schema: string;
-} {
+export function cachePathsFor(ref: TractateRef): TractateFiles {
   const dir = join(CACHE_ROOT, ref.tractate);
   return {
     wikisource: join(dir, 'wikisource.json'),
     merged: join(dir, 'merged.json'),
     schema: join(dir, 'schema.json'),
+    english: join(dir, 'english.json'),
   };
 }
 
@@ -157,6 +159,8 @@ async function fetchTractate(
     fetchToCache(urls.wikisource, paths.wikisource, force),
     fetchToCache(urls.merged, paths.merged, force),
     fetchToCache(urls.schema, paths.schema, force),
+    // Only the bundle reads it.
+    fetchToCache(urls.english, paths.english, force),
   ]);
 
   const [wsText, mdText, scText] = await Promise.all([

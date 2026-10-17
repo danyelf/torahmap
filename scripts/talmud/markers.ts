@@ -44,6 +44,9 @@ const TRAILING_WORD_RE = new RegExp(`גמ${GERESH}((?:\\s|<\\/[^>]+>)*)$`);
 // separators, but marker matching ignores them.
 const HEBREW_SEPARATORS = /[־׀׃׆]/g;
 
+/** A chapter's closing line, הדרן עלך, which has no English. */
+export const HADRAN = /^\s*(?:<[^>]+>\s*)*הדרן/;
+
 /**
  * Hebrew without points, accents or its four separator marks. The Davidson
  * edition is fully pointed, marker words included (מַתְנִי׳); Wikisource is not.

@@ -37,6 +37,10 @@ describe('englishMarkers', () => {
     ).toBe('x. \n\n*MISHNA:* *One who* sees');
   });
 
+  it('drops the stray letter after the last bold', () => {
+    expect(englishMarkers('<b>did not rest?</b>ב')).toBe('*did not rest?*');
+  });
+
   it('refuses a tag it does not know', () => {
     expect(() => englishMarkers('<a href="x">link</a>')).toThrow();
     expect(() => englishMarkers('<span class="other">x</span>')).toThrow();

@@ -1,31 +1,28 @@
-// A segment's English as the popup files store it: `*` opens and closes bold, `_` italic
-// (scripts/talmud/english.ts writes them).
+// A segment's English as the popup files store it: plain text with a marker on each side of a
+// bold or italic stretch.
 
 import type { TextStyle } from '@torahmap/shell/sidebar.ts';
 
-const MARKERS: Record<string, TextStyle['style']> = { '*': 'bold', _: 'italic' };
+export const BOLD = '*';
+export const ITALIC = '_';
 
-/** `marked` as plain text, with its bold and italic stretches. A stretch left open ends with the text. */
+const STYLE_OF: Record<string, TextStyle['style']> = { [BOLD]: 'bold', [ITALIC]: 'italic' };
+
+/** `marked` as plain text, with its bold and italic stretches. */
 export function englishText(marked: string): { text: string; styles: TextStyle[] } {
   const styles: TextStyle[] = [];
   const open: Partial<Record<TextStyle['style'], number>> = {};
   let text = '';
   for (const char of marked) {
-    const style = MARKERS[char];
+    const style = STYLE_OF[char];
     if (!style) {
       text += char;
-      continue;
-    }
-    const start = open[style];
-    if (start === undefined) {
+    } else if (open[style] === undefined) {
       open[style] = text.length;
     } else {
-      if (start < text.length) styles.push({ start, end: text.length, style });
+      styles.push({ start: open[style], end: text.length, style });
       delete open[style];
     }
-  }
-  for (const [style, start] of Object.entries(open) as [TextStyle['style'], number][]) {
-    if (start < text.length) styles.push({ start, end: text.length, style });
   }
   return { text, styles };
 }
