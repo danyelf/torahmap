@@ -11,6 +11,7 @@ import {
   allLoaded,
   longestDrawnRun,
   openMap,
+  stepShare,
 } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
@@ -116,4 +117,11 @@ test('zoomed far out, a line of verses draws as one unbroken bar', async ({ page
   // Squares 1.2 pixels wide, with 0.6 between them unless they are widened.
   await openMap(page, 'zoom=0.3');
   expect(await longestDrawnRun(page, await canvasShot(page))).toBeGreaterThan(40);
+});
+
+test('zoomed far out, bars keep their vertical jitter', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one screen, at one pixel to the pixel');
+  // Measured 0.087 with the jitter and 0 without it.
+  await openMap(page, 'zoom=0.3');
+  expect(await stepShare(page, await canvasShot(page))).toBeGreaterThan(0.04);
 });

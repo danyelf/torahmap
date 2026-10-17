@@ -11,7 +11,11 @@ import {
   type TalmudTractate,
   type TalmudTractateText,
   TALMUD_DATA_DIR,
+  SEARCH_FILE,
+  STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
+  type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
+import { stripNikkud } from '@torahmap/hebrew';
 import { markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
 import {
   REPORT_PATH,
@@ -122,7 +126,12 @@ export function processTractate(
   wikisource: WikisourceJson,
   schema: SchemaJson,
   merged: MergedJson,
-): { structure: TalmudTractate; text: Omit<TalmudTractateText, 'citations'> } {
+): {
+  structure: TalmudTractate;
+  text: Omit<TalmudTractateText, 'citations'>;
+  /** What search reads: the other edition, which spells abbreviations out, as plain letters. */
+  search: string[][];
+} {
   const shape = shapeMatches(wikisource, merged);
   if (!shape.match) throw new Error(`${tractateName}: the editions differ: ${shape.reason}`);
   const schemaNodes = schema.alts?.Chapters?.nodes ?? [];
@@ -211,6 +220,7 @@ export function processTractate(
       perakim,
     },
     text: { name: tractateName, amudim: cleanText },
+    search: other.map((amud) => amud.map((seg) => stripNikkud(stripHtml(seg)))),
   };
 }
 
@@ -233,6 +243,7 @@ async function main(): Promise<void> {
   await mkdir(TEXTS_DIR, { recursive: true });
 
   const structure: TalmudStructure = { tractates: [] };
+  const search: TalmudSearchText = {};
   const { books } = await readJson<{ books: TanakhBook[] }>(join(DATA_DIR, STRUCTURE_FILE));
   const texts = await readJson<VerseTexts>(join(DATA_DIR, TEXTS_FILE));
   const find = citationFinder({
@@ -246,7 +257,11 @@ async function main(): Promise<void> {
     process.stdout.write(`  ${ref.tractate.padEnd(20)} ... `);
     try {
       const paths = cachePathsFor(ref);
-      const { structure: tractateStructure, text: tractateText } = processTractate(
+      const {
+        structure: tractateStructure,
+        text: tractateText,
+        search: searchText,
+      } = processTractate(
         ref.seder,
         ref.tractate,
         await readJson<WikisourceJson>(paths.wikisource),
@@ -255,6 +270,7 @@ async function main(): Promise<void> {
       );
 
       structure.tractates.push(tractateStructure);
+      search[ref.tractate] = searchText;
 
       const cited = citationsByPlace(tractateText.amudim, find);
       for (const amud of Object.values(cited.citations)) {
@@ -273,10 +289,12 @@ async function main(): Promise<void> {
     }
   }
 
-  await writeFile(join(OUTPUT_DIR, 'structure.json'), JSON.stringify(structure), 'utf-8');
+  await writeFile(join(DATA_DIR, TALMUD_STRUCTURE_FILE), JSON.stringify(structure), 'utf-8');
+  await writeFile(join(DATA_DIR, SEARCH_FILE), JSON.stringify(search), 'utf-8');
 
   console.log('');
-  console.log(`Structure: ${join(OUTPUT_DIR, 'structure.json')}`);
+  console.log(`Structure: ${join(DATA_DIR, TALMUD_STRUCTURE_FILE)}`);
+  console.log(`Search: ${join(DATA_DIR, SEARCH_FILE)}`);
   console.log(`Texts: ${TEXTS_DIR}/*.json (${structure.tractates.length} files)`);
   console.log('');
   console.log(`Tanakh citations linked: ${linked}`);

@@ -4,15 +4,16 @@ import { FIT_MARGIN, cameraToFit } from '@torahmap/engine';
 import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import type { Story } from '@torahmap/stories';
-import type { LinkKeys } from '@torahmap/link';
+import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
+import type { TermSettings } from '@torahmap/search';
 import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
-import { SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
+import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
-import { TALMUD_SEARCH_PARAMS, talmudSearch, type TalmudSearchSettings } from './search.ts';
+import { configureSearch, talmudSearch } from './search.ts';
 import {
   STRUCTURE_FILE,
   amudIndex,
@@ -42,7 +43,7 @@ const WHOLE_MAP: Story = {
 
 const TALMUD_LINK_KEYS: LinkKeys = {
   square: 'at',
-  search: TALMUD_SEARCH_PARAMS,
+  search: TERM_SEARCH_PARAMS,
   overlayParams: () => undefined,
   // Low enough for the whole Talmud to fit across a phone.
   zoom: { min: 0.05, max: 10, start: 1 },
@@ -51,7 +52,7 @@ const TALMUD_LINK_KEYS: LinkKeys = {
 // The commentary overlay's category for the Talmud, as public/data/overlays/commentary/ names it.
 export const TALMUD_CATEGORY = 'Talmud';
 
-export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
+export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
   site: talmudSite,
   link: TALMUD_LINK_KEYS,
   firstFiles: [STRUCTURE_FILE],
@@ -87,10 +88,11 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
       },
 
       baseColor: (item) => mishnahOrGemaraColor(structure, item),
+      searchKeepsBase: SEARCH_KEEPS_BASE,
 
       labels(container) {
         const moveMarks = createTalmudLabels(
-          laid.sederBlocks,
+          laid.tractateBlocks,
           laid.perekAnchors,
           laid.dafRows,
           container,
@@ -127,6 +129,11 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
       overlays: [],
 
       search: talmudSearch,
+
+      start(shell) {
+        // Most hits are off screen, so a result travels to its segment as well as pinning it.
+        configureSearch(laid.items, shell.pinAndGlide);
+      },
 
       stories: {
         list: [WHOLE_MAP],

@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { textWords } from '../src/textWords.ts';
-import { stripNikkud } from '../src/hebrew.ts';
+import { stripNikkud } from '@torahmap/hebrew';
 
 const words = (text: string) => textWords(text).map((w) => w.word);
 

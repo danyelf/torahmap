@@ -1,0 +1,45 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildTextIndex,
+  displayedText,
+  english,
+  itemsForTerm,
+  resultsForItemSets,
+  type SearchLanguage,
+} from '../src/index.ts';
+
+/** A second language, read from each entry's `up` text, compared in capitals. */
+const upper: SearchLanguage = {
+  ...english,
+  id: 'up',
+  claims: (term) => term === term.toUpperCase(),
+  fold: (text) => text.toUpperCase(),
+};
+
+const index = buildTextIndex(
+  [
+    { id: 'a', ref: 'First', text: { en: 'the river runs', up: 'A HILL' } },
+    { id: 'b', ref: 'Second', text: { en: 'a hill stands', up: 'THE RIVER' } },
+  ],
+  [upper, english],
+);
+
+describe('the text index', () => {
+  it('matches a term in its own language’s text only', () => {
+    expect(itemsForTerm(index, 'river', english, 'word')).toEqual(new Set(['a']));
+    expect(itemsForTerm(index, 'RIVER', upper, 'word')).toEqual(new Set(['b']));
+  });
+
+  it('gives back the text as written', () => {
+    expect(displayedText(index, 'b', english)).toBe('a hill stands');
+    expect(displayedText(index, 'missing', english)).toBeNull();
+  });
+
+  it('names each result by its entry’s reference, with the terms that found it', () => {
+    const results = resultsForItemSets(index, [new Set(['a']), new Set(['a', 'b'])]);
+    expect(results.map((r) => [r.id, r.ref, r.matchingTerms.map((m) => m.termIndex)])).toEqual([
+      ['a', 'First', [0, 1]],
+      ['b', 'Second', [1]],
+    ]);
+  });
+});

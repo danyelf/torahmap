@@ -7,6 +7,7 @@ import { EUAIACT_PAGE, EUR_LEX } from './page.ts';
 
 export const euaiactSite: Site = {
   page: EUAIACT_PAGE,
+  direction: 'ltr',
   squareName: 'paragraph',
   hasHebrew: false,
   aboutHtml:

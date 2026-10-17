@@ -3,7 +3,7 @@
 // No WebGL, no map, no verse layout — just the input pipeline
 
 import { dataFor, loadFiles, overlayFiles } from '@torahmap/shell/dataFiles.ts';
-import { isHebrew } from '@torahmap/shell/hebrew.ts';
+import { isHebrew } from '@torahmap/hebrew';
 import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
 import {
   configure as configureSearch,

@@ -30,6 +30,10 @@ without checking the branch out — so say in the PR what to look at and where. 
 a comment from `cloudflare-workers-and-pages` (`gh pr view <n> --json comments`), which is also
 where a failed build shows up.
 
+**Mark each review on the PR.** When a review of the whole branch is done, by a fresh reviewer or
+your own, comment on the PR with the commit it read up to and what it found, one line per finding
+and what became of it. The commits after that one are then plain to see as unreviewed.
+
 **Shorter is better than longer.** Every word earns its place or goes. This
 applies to comments, docstrings, commit messages and documents alike.
 

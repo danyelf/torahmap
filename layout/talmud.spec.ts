@@ -2,6 +2,7 @@
 // shows its text.
 import { expect, test, type Page } from '@playwright/test';
 import { allLoaded, boxes, openMap, shown } from './page.ts';
+import { viaMenu } from './app.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 
@@ -9,11 +10,11 @@ import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 const full = async (page: Page, selector: string) =>
   (await shown(page, selector)).map((s) => s.full).filter((b) => b.width > 0);
 
-/** Each of `labels` that is not inside exactly one seder's box. */
-async function outsideOneSeder(page: Page, labels: Box[]): Promise<string[]> {
-  const sedarim = await full(page, '#talmud-seder-bgs > *');
+/** Each of `labels` that is not inside exactly one tractate's cover. */
+async function outsideOneCover(page: Page, labels: Box[]): Promise<string[]> {
+  const covers = await full(page, '#talmud-books > *');
   return labels
-    .filter((l) => sedarim.filter((s) => outsideOf([l], s).length === 0).length !== 1)
+    .filter((l) => covers.filter((c) => outsideOf([l], c).length === 0).length !== 1)
     .map((l) => `${l.name} at ${l.x},${l.y}`);
 }
 
@@ -27,27 +28,27 @@ const berakhotCorner = (page: Page) =>
   });
 
 /**
- * The squares on screen, from the page's own layout, placed by the first seder's tint, whose box
+ * The squares on screen, from the page's own layout, placed by the first tractate's cover, whose box
  * the layout also gives.
  */
 async function squaresOnScreen(page: Page): Promise<Box[]> {
-  const tint = (await full(page, '#talmud-seder-bgs > *'))[0];
+  const cover = (await full(page, '#talmud-books > *'))[0];
   const view = (await boxes(page, '#canvas'))[0];
-  const squares: Box[] = await page.evaluate(async (tint) => {
+  const squares: Box[] = await page.evaluate(async (cover) => {
     const load = (path: string) => import(/* @vite-ignore */ path);
     const { computeTalmudLayout } = await load('/apps/talmud/src/layout.ts');
     const { SQUARE_GAP } = await load('/packages/engine/src/index.ts');
     const laid = computeTalmudLayout(await (await fetch('/data/talmud/structure.json')).json());
-    const world = laid.sederBlocks[0];
-    const zoom = tint.width / (world.maxX - world.minX);
+    const world = laid.tractateBlocks[0].cover;
+    const zoom = cover.width / (world.maxX - world.minX);
     return laid.items.map((s: { id: string; x: number; y: number; size: number }) => ({
       name: s.id,
-      x: tint.x + (s.x - world.minX) * zoom,
-      y: tint.y + (s.y - world.minY) * zoom,
+      x: cover.x + (s.x - world.minX) * zoom,
+      y: cover.y + (s.y - world.minY) * zoom,
       width: (s.size - SQUARE_GAP) * zoom,
       height: (s.size - SQUARE_GAP) * zoom,
     }));
-  }, tint);
+  }, cover);
   return squares.filter((b) => outsideOf([b], view).length === 0);
 }
 
@@ -60,7 +61,7 @@ test('the Talmud map draws, and names its tractates only once they are big enoug
 });
 
 for (const zoom of [0.4, 1, 2]) {
-  test(`at zoom ${zoom}, each tractate's name sits inside its seder's box, clear of the perek names`, async ({
+  test(`at zoom ${zoom}, each tractate's name sits inside its book, clear of the perek names`, async ({
     page,
   }) => {
     await openMap(page, '', TALMUD);
@@ -73,7 +74,7 @@ for (const zoom of [0.4, 1, 2]) {
 
     const names = await full(page, '#book-labels .book-label');
     expect(names).not.toEqual([]);
-    expect(await outsideOneSeder(page, names)).toEqual([]);
+    expect(await outsideOneCover(page, names)).toEqual([]);
     expect(apart(names, await full(page, '#talmud-perek-labels > *'))).toEqual([]);
   });
 }
@@ -92,11 +93,11 @@ for (const [zoom, labelled] of [
 }
 
 for (const zoom of [0.7, 2]) {
-  test(`at zoom ${zoom}, every daf number sits inside its seder's box`, async ({ page }) => {
+  test(`at zoom ${zoom}, every daf number sits inside its book`, async ({ page }) => {
     await openMap(page, `at=Berakhot.2a.1&zoom=${zoom}`, TALMUD);
     const dapim = await full(page, '#talmud-daf-labels .daf');
     expect(dapim).not.toEqual([]);
-    expect(await outsideOneSeder(page, dapim)).toEqual([]);
+    expect(await outsideOneCover(page, dapim)).toEqual([]);
   });
 }
 
@@ -155,8 +156,8 @@ test("a tractate file that fails says so, and isn't fetched again", async ({ pag
   await page.goto(`${TALMUD}?at=Berakhot.2a.1`);
   await allLoaded(page);
   await expect(page.locator('#popup .popup-notice')).not.toBeEmpty();
-  await page.keyboard.press('ArrowRight');
   await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowRight');
   await expect(page.locator('#popup .ref-text')).toHaveText('Berakhot 2a:1');
   expect(requests).toBe(1);
 });
@@ -169,6 +170,27 @@ test("a link's search reaches the Talmud's own search, not the Tanakh's", async 
   await openMap(page, 'search=משנה', TALMUD);
   await expect(page.locator('#search-input')).toHaveValue('משנה');
   expect(searchFiles).toEqual([]);
+});
+
+test('a Talmud search lists the segments it finds, each quoted with its match marked', async ({
+  page,
+}, info) => {
+  const errors = await openMap(page, `search=${encodeURIComponent('רבי יוחנן')}`, TALMUD);
+  await viaMenu(page, 'search');
+  await expect(page.locator('.search-result .snippet mark').first()).toBeVisible();
+  const shot = info.outputPath('screen.png');
+  await page.screenshot({ path: shot });
+  await info.attach('layout', { path: shot, contentType: 'image/png' });
+  expect(errors).toEqual([]);
+});
+
+test('a Talmud search result, clicked, pins its segment', async ({ page }) => {
+  await openMap(page, `search=${encodeURIComponent('קל וחומר')}`, TALMUD);
+  await viaMenu(page, 'search');
+  const first = page.locator('.search-result').first();
+  const ref = (await first.locator('.ref').textContent())!.trim();
+  await first.click();
+  await expect(page.locator('#popup.visible .ref-text')).toHaveText(ref);
 });
 
 test('/talmud, without the slash, opens the same page and keeps the link', async ({ page }) => {

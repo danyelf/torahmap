@@ -5,21 +5,19 @@
 // "leafage", and more. A meanings-mode search looks for all of them.
 
 import { describe, it, expect } from 'vitest';
-import { verseId } from '@torahmap/link/tanakh';
-import { excerptOf } from '../helpers/excerpt';
+import { excerptForTerm, excerptOf } from '../helpers/excerpt';
 import { findLexemesForWord, getLexeme } from '../../src/search/search';
-import { addTerm, onlyMeaning } from '../../src/search/terms';
-import { excerpt } from '../../src/search/highlight';
-import { stripNikkud } from '@torahmap/shell/hebrew.ts';
+import { addTerm } from '@torahmap/search';
+import { onlyMeaning } from '../../src/search/meanings.ts';
+import { stripNikkud } from '@torahmap/hebrew';
 
 import { searchInMeaningsMode } from '../helpers/meaningsSearch';
 import { realSearchData } from '../helpers/searchData';
 
-const keys = (results: Array<{ book: string; chapter: number; verse: number }>) =>
-  new Set(results.map((r) => verseId(r.book, r.chapter, r.verse)));
+const keys = (results: Array<{ id: string }>) => new Set(results.map((r) => r.id));
 
 describe('Meanings-mode search over the lexeme index', () => {
-  const { index, dictionary, parse } = realSearchData();
+  const { files, dictionary } = realSearchData();
 
   describe('resolving a written form to its readings', () => {
     it('finds the verb צחק "laugh"', () => {
@@ -69,20 +67,18 @@ describe('Meanings-mode search over the lexeme index', () => {
   describe('searching', () => {
     it('finds every inflected form of a verb, not just the one typed', () => {
       // Genesis 1:3 has וַיֹּאמֶר; the search term is the bare verb.
-      const results = keys(searchInMeaningsMode(index, dictionary, 'אמר'));
+      const results = keys(searchInMeaningsMode(files, 'אמר'));
       expect(results.has('Genesis.1.3')).toBe(true);
       expect(results.size).toBeGreaterThan(2000);
     });
 
     it('finds Genesis 19:14 when searching צחק (it has כִּמְצַחֵק)', () => {
-      expect(keys(searchInMeaningsMode(index, dictionary, 'צחק')).has('Genesis.19.14')).toBe(true);
+      expect(keys(searchInMeaningsMode(files, 'צחק')).has('Genesis.19.14')).toBe(true);
     });
 
     it('marks a verse with every term that matched it', () => {
-      const results = searchInMeaningsMode(index, dictionary, 'צחק,יצחק');
-      const gen1914 = results.find(
-        (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 14,
-      );
+      const results = searchInMeaningsMode(files, 'צחק,יצחק');
+      const gen1914 = results.find((r) => r.id === 'Genesis.19.14');
       expect(gen1914).toBeDefined();
       expect(gen1914!.matchingTerms.map((m) => m.termIndex).sort()).toEqual([0, 1]);
     });
@@ -99,18 +95,16 @@ describe('Meanings-mode search over the lexeme index', () => {
       expect(prepositions.map((l) => l.language)).toEqual(['arc']);
       expect(readings.map((id) => getLexeme(dictionary, id)!.gloss)).toContain('ascend');
 
-      const ascend = keys(searchInMeaningsMode(index, dictionary, 'עלה'));
-      const upon = keys(searchInMeaningsMode(index, dictionary, 'על'));
+      const ascend = keys(searchInMeaningsMode(files, 'עלה'));
+      const upon = keys(searchInMeaningsMode(files, 'על'));
       expect(ascend.size).toBeLessThan(upon.size / 2);
     });
 
     it('highlights the word that was typed, not another word sharing a reading', () => {
       // Genesis 19:28 has both עַל and עָלָה. A search for עלה must land on עלה.
-      const [result] = searchInMeaningsMode(index, dictionary, 'עלה').filter(
-        (r) => r.book === 'Genesis' && r.chapter === 19 && r.verse === 28,
-      );
+      const [result] = searchInMeaningsMode(files, 'עלה').filter((r) => r.id === 'Genesis.19.28');
       expect(result).toBeDefined();
-      const snippet = excerptOf(result, 'עלה', 'meanings', index, dictionary, parse)!;
+      const snippet = excerptOf(result, 'עלה', 'meanings', files)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלה');
     });
@@ -119,25 +113,24 @@ describe('Meanings-mode search over the lexeme index', () => {
       // Genesis 8:20: וַיַּעַל עֹלֹת — "and he offered burnt offerings".
       const [added] = addTerm([], 'עלה');
       const [term] = onlyMeaning([added], added.id, ['<LH/@heb']);
-      const verse = { id: 'Genesis.8.20', book: 'Genesis', chapter: 8, verse: 20 };
-      const snippet = excerpt({ ...verse, matchingTerms: [] }, term, index, dictionary, parse)!;
+      const snippet = excerptForTerm({ id: 'Genesis.8.20' }, term, files)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('עלת');
     });
 
     it('highlights one word of a word repeated', () => {
       // Isaiah 6:3: קָדוֹשׁ ׀ קָדוֹשׁ ׀ קָדוֹשׁ
-      const verse = { book: 'Isaiah', chapter: 6, verse: 3 };
-      const snippet = excerptOf(verse, 'קדוש', 'meanings', index, dictionary, parse)!;
+      const verse = { id: 'Isaiah.6.3' };
+      const snippet = excerptOf(verse, 'קדוש', 'meanings', files)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(stripNikkud(matched).replace(/[^א-ת]/g, '')).toBe('קדוש');
     });
 
     it('highlights both words of a name printed as two', () => {
-      const [result] = searchInMeaningsMode(index, dictionary, 'בית אל').filter(
-        (r) => r.book === 'Genesis' && r.chapter === 28 && r.verse === 19,
+      const [result] = searchInMeaningsMode(files, 'בית אל').filter(
+        (r) => r.id === 'Genesis.28.19',
       );
-      const snippet = excerptOf(result, 'בית אל', 'meanings', index, dictionary, parse)!;
+      const snippet = excerptOf(result, 'בית אל', 'meanings', files)!;
       const matched = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
       expect(
         stripNikkud(matched)
@@ -149,7 +142,7 @@ describe('Meanings-mode search over the lexeme index', () => {
 
     it('finds nothing for a word the dictionary does not know', () => {
       // ויאמר half typed.
-      expect(searchInMeaningsMode(index, dictionary, 'ויאמ')).toEqual([]);
+      expect(searchInMeaningsMode(files, 'ויאמ')).toEqual([]);
     });
   });
 });

@@ -5,8 +5,10 @@
 // and a blank row means "nothing yet", not "everything".
 
 import { describe, it, expect } from 'vitest';
-import { buildTextIndex, versesForTerm } from '../../src/search/search.ts';
-import { addTerm, termQuery } from '../../src/search/terms.ts';
+import { buildTextIndex } from '../../src/search/search.ts';
+import { addTerm, itemsForTerm, languageOf } from '@torahmap/search';
+import { TANAKH_LANGUAGES } from '../../src/search/languages.ts';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { ALL_TEXTS_FIXTURE } from '../helpers/mixedLanguageTexts.ts';
 import { meaningsFor, versesFor } from '../../src/search/dictionary.ts';
 import { inTextsOrder, realSearchData } from '../helpers/searchData';
@@ -55,8 +57,8 @@ describe('one language per term, not one per search', () => {
   // A term's own text decides which text it is looked for in, so an English
   // word beside a Hebrew one is not hunted for in the Hebrew.
   const found = (text: string): Set<string> => {
-    const { language } = termQuery(dictionary, addTerm([], text)[0]);
-    return versesForTerm(index, text, language, 'substring');
+    const language = languageOf(TANAKH_LANGUAGES, addTerm([], text)[0]);
+    return itemsForTerm(index, text, language, 'substring');
   };
 
   it('finds an English term in the English text', () => {
@@ -65,5 +67,9 @@ describe('one language per term, not one per search', () => {
 
   it('finds a Hebrew term in the Hebrew text', () => {
     expect(found('אלהים').size).toBeGreaterThan(0);
+  });
+
+  it("names each language as the shell's verse texts do", () => {
+    expect(TANAKH_LANGUAGES.map((l) => l.id)).toEqual([HEBREW, ENGLISH]);
   });
 });

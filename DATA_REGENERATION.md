@@ -254,6 +254,11 @@ Which segments are Mishnah comes from the bold מתני׳ and גמ׳ markers, re
 both editions Sefaria has, Wikisource and the William Davidson Edition (`merged.json`), since
 each misses markers the other has.
 
+The popup shows Wikisource, and search reads Davidson (`search.json`), which
+spells abbreviations out: רבי for ר׳, קל וחומר for ק״ו. The two editions line up
+segment for segment, and `search.json` is Davidson's text with its points and
+tags removed, laid out as `texts/`'s amudim.
+
 ## AI Act
 
 The AI Act is parsed from its EUR-Lex pages in `experiments/eu-ai-act/`: `parse.py`

@@ -8,3 +8,4 @@ export * from './memo.ts';
 export * from './random.ts';
 export * from './scale.ts';
 export * from './sefaria.ts';
+export * from './words.ts';

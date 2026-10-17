@@ -1,42 +1,16 @@
-// Full-text search over Hebrew and English.
+// The Tanakh's verses as search reads them, and the dictionary behind meanings mode.
 // Meanings mode resolves a written form to the ETCBC BHSA lexemes it can be.
 
 import { memoByValue } from '@torahmap/utils';
 import type { VerseTexts } from '../verseTexts';
-import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
-import { verseId } from '@torahmap/link/tanakh';
-
+import { verseId, verseRef } from '@torahmap/link/tanakh';
 import {
-  TERM_SEPARATORS,
-  SEARCH_SNIPPET_MAX_LENGTH,
-  SEARCH_SNIPPET_CONTEXT_BEFORE,
-} from './constants.ts';
-import { isSearchableWord } from '@torahmap/shell/hebrew.ts';
-import { normalizeHebrewForSearch } from './spelling.ts';
-import { foldForMatching, matchRangesInFolded, type MatchMode } from './matching.ts';
-
-export interface TermMatch {
-  termIndex: number;
-}
-
-export interface SearchResult {
-  id: string;
-  book: string;
-  chapter: number;
-  verse: number;
-  matchingTerms: TermMatch[];
-}
-
-interface IndexEntry {
-  id: string;
-  book: string;
-  chapter: number;
-  verse: number;
-  hebrewText: string; // folded for matching: no points, finals and separators normalized
-  hebrewOriginal: string; // original for display
-  englishText: string; // lowercased
-  englishOriginal: string; // original for display
-}
+  buildTextIndex as indexOf,
+  type SearchEntry,
+  type TextIndex,
+} from '@torahmap/search/textIndex.ts';
+import { normalizeHebrewForSearch } from '@torahmap/hebrew';
+import { TANAKH_LANGUAGES } from './languages.ts';
 
 /**
  * A lexeme is a dictionary entry: one word of Hebrew or Aramaic, with its own
@@ -60,12 +34,6 @@ export interface Lexeme {
   /** part of speech: verb, subs, nmpr, prep, ... */
   pos: string;
   language: LexemeLanguage;
-}
-
-/** Every verse folded for matching, in book order, and each by its key. */
-export interface TextIndex {
-  entries: IndexEntry[];
-  byKey: Map<string, IndexEntry>;
 }
 
 /** Written form (nikkud stripped, finals folded) -> the lexemes it can be, likeliest reading first. */
@@ -96,14 +64,6 @@ export interface Dictionary {
  */
 export function lexemeKey(lexeme: Lexeme): string {
   return `${lexeme.id}@${lexeme.language}`;
-}
-
-/** The terms a query string names, dropping ones too short to search on. */
-export function parseSearchTerms(query: string): string[] {
-  return query
-    .split(TERM_SEPARATORS)
-    .map((t) => t.trim())
-    .filter(isSearchableWord);
 }
 
 /** A lexeme as lexicon.json writes it, in the order generate-lexeme-index.py writes. */
@@ -270,8 +230,7 @@ export function buildTextIndex(texts: VerseTexts, structure: BookOrder): TextInd
 }
 
 function textIndexFrom(verseTexts: VerseTexts, books: readonly string[]): TextIndex {
-  const entries: IndexEntry[] = [];
-  const byKey = new Map<string, IndexEntry>();
+  const entries: SearchEntry[] = [];
   for (const book of books) {
     const chapters = verseTexts[book];
     if (!chapters) continue;
@@ -287,22 +246,15 @@ function textIndexFrom(verseTexts: VerseTexts, books: readonly string[]): TextIn
 
       for (const verse of verseNums) {
         const { he, en } = verses[String(verse)];
-        const entry: IndexEntry = {
+        entries.push({
           id: verseId(book, chapter, verse),
-          book,
-          chapter,
-          verse,
-          hebrewText: normalizeHebrewForSearch(he),
-          hebrewOriginal: he,
-          englishText: en.toLowerCase(),
-          englishOriginal: en,
-        };
-        entries.push(entry);
-        byKey.set(entry.id, entry);
+          ref: verseRef({ book, chapter, verse }),
+          text: { he, en },
+        });
       }
     }
   }
-  return { entries, byKey };
+  return indexOf(entries, TANAKH_LANGUAGES);
 }
 
 /**
@@ -329,156 +281,4 @@ export function searchByLexemes(dictionary: Dictionary, lexemes: LexemeId[]): Se
     }
   }
   return matchingVerses;
-}
-
-/** A verse's text as the reader sees it, or null for a verse the index lacks. */
-export function displayedVerse(
-  index: TextIndex,
-  verse: { id: string },
-  language: TextLanguage,
-): string | null {
-  const entry = index.byKey.get(verse.id);
-  if (!entry) return null;
-  return language === HEBREW ? entry.hebrewOriginal : entry.englishOriginal;
-}
-
-/** The text around a match, and where the match sits in it. */
-export interface Snippet {
-  snippet: string;
-  matchStart: number;
-  matchEnd: number;
-}
-
-/** A verse quoted around a stretch of it, or its opening when there is nothing to mark. */
-export function quoteVerse(text: string, range: { start: number; end: number } | null): Snippet {
-  if (!range) {
-    const limit = SEARCH_SNIPPET_MAX_LENGTH;
-    return {
-      snippet: text.length > limit ? `${text.slice(0, limit)}...` : text,
-      matchStart: 0,
-      matchEnd: 0,
-    };
-  }
-  const snippet = createSnippetAtPosition(text, range.start, range.end - range.start);
-  return { snippet: snippet.text, matchStart: snippet.matchStart, matchEnd: snippet.matchEnd };
-}
-
-/**
- * The verses a term's text matches, in the text of its own language.
- *
- * Meanings mode is not a `mode` here: it depends on which meanings the reader
- * has left checked, which the overlay knows and this does not.
- */
-export function versesForTerm(
-  index: TextIndex,
-  text: string,
-  language: TextLanguage,
-  mode: MatchMode,
-): Set<string> {
-  const needle = foldForMatching(text, language);
-  const verses = new Set<string>();
-  for (const entry of index.entries) {
-    const haystack = language === HEBREW ? entry.hebrewText : entry.englishText;
-    if (matchRangesInFolded(haystack, needle, { mode, language, limit: 1 }).length > 0) {
-      verses.add(entry.id);
-    }
-  }
-  return verses;
-}
-
-/**
- * Turn per-term sets of verse keys into search results.
- *
- * The sets arrive already decided. Resolving a term's text to lexemes belongs
- * with the reader's choice of which meanings the term stands for, which the
- * overlay holds and this does not.
- *
- * A term with no hits simply contributes nothing; term indices are positions
- * in the caller's list, so the gap keeps every other term's colour in place.
- */
-export function resultsForVerseSets(
-  index: TextIndex,
-  termVerseKeys: Array<Set<string>>,
-): SearchResult[] {
-  const resultMap = new Map<string, SearchResult>();
-
-  for (let termIndex = 0; termIndex < termVerseKeys.length; termIndex++) {
-    for (const verseKey of termVerseKeys[termIndex]) {
-      const entry = index.byKey.get(verseKey);
-      if (!entry) continue;
-
-      let result = resultMap.get(verseKey);
-      if (!result) {
-        result = {
-          id: entry.id,
-          book: entry.book,
-          chapter: entry.chapter,
-          verse: entry.verse,
-          matchingTerms: [],
-        };
-        resultMap.set(verseKey, result);
-      }
-      if (!result.matchingTerms.some((m) => m.termIndex === termIndex)) {
-        result.matchingTerms.push({ termIndex });
-      }
-    }
-  }
-
-  return Array.from(resultMap.values());
-}
-
-interface SnippetResult {
-  text: string;
-  matchStart: number;
-  matchEnd: number;
-}
-
-/** A snippet around a match whose position is already in the original text (no nikkud mapping). */
-function createSnippetAtPosition(
-  text: string,
-  matchStart: number,
-  matchLen: number,
-): SnippetResult {
-  const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
-  const contextBefore = SEARCH_SNIPPET_CONTEXT_BEFORE;
-
-  const matchEnd = Math.min(matchStart + matchLen, text.length);
-
-  let start = Math.max(0, matchStart - contextBefore);
-  let end = Math.min(text.length, start + maxLen);
-
-  if (end === text.length && end - start < maxLen) {
-    start = Math.max(0, end - maxLen);
-  }
-
-  let snippet = text.slice(start, end);
-  const adjustedMatchStart = matchStart - start;
-  const adjustedMatchEnd = matchEnd - start;
-
-  let prefixLen = 0;
-  if (start > 0) {
-    snippet = '...' + snippet;
-    prefixLen = 3;
-  }
-  if (end < text.length) {
-    snippet = snippet + '...';
-  }
-
-  return {
-    text: snippet,
-    matchStart: adjustedMatchStart + prefixLen,
-    matchEnd: Math.min(adjustedMatchEnd + prefixLen, snippet.length),
-  };
-}
-
-export function getMatchingVerseTerms(results: SearchResult[]): Map<string, number[]> {
-  const map = new Map<string, number[]>();
-  for (const r of results) {
-    const key = r.id;
-    map.set(
-      key,
-      r.matchingTerms.map((m) => m.termIndex),
-    );
-  }
-  return map;
 }

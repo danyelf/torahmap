@@ -31,7 +31,7 @@ import {
   splitIntoWords,
   stripNikkud,
   type TextWord,
-} from '@torahmap/shell/hebrew.ts';
+} from '@torahmap/hebrew';
 import { isSectionMarker, textWords } from '@torahmap/shell/textWords.ts';
 
 // Sefaria prints a corrected word twice: the ketiv, as written, in round

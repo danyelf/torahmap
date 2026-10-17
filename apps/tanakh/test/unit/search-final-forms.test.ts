@@ -14,10 +14,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { verseId } from '@torahmap/link/tanakh';
-import { buildTextIndex, versesForTerm } from '../../src/search/search';
+import { buildTextIndex } from '../../src/search/search';
+import { versesForTerm } from '../helpers/searchData';
 import { inTextsOrder } from '../helpers/searchData';
-import { stripNikkud } from '@torahmap/shell/hebrew.ts';
-import { normalizeHebrewForSearch } from '../../src/search/spelling.ts';
+import { stripNikkud } from '@torahmap/hebrew';
+import { normalizeHebrewForSearch } from '@torahmap/hebrew';
 import type { VerseTexts } from '../../src/verseTexts';
 
 describe('Hebrew Final Forms Normalization', () => {

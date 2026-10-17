@@ -1,4 +1,4 @@
-import { SEARCH_COLORS } from '../../src/search/terms.ts';
+import { SEARCH_COLORS } from '@torahmap/search';
 import { describe, it, expect } from 'vitest';
 import { buildDictionary, buildTextIndex, type LexiconFile } from '../../src/search/search';
 import { searchTool } from '../../src/search/index';
@@ -38,7 +38,7 @@ describe('what search builds from its files', () => {
       Genesis: { 1: { 1: { he: 'א', en: 'a' } } },
     };
     const index = buildTextIndex(shuffled, { books: [{ name: 'Genesis' }, { name: 'Exodus' }] });
-    expect(index.entries.map((entry) => entry.book)).toEqual(['Genesis', 'Exodus']);
+    expect(index.entries.map((entry) => entry.id)).toEqual(['Genesis.1.1', 'Exodus.1.1']);
   });
 
   it('has no data for search until the structure is in', () => {

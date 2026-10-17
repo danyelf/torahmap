@@ -50,6 +50,13 @@ export function escapeDoes(state: {
   return 'close';
 }
 
+/** Which way an arrow key steps: forward is the way the text reads. */
+export function arrowStep(key: string, direction: 'rtl' | 'ltr'): 1 | -1 | null {
+  const [forward, back] =
+    direction === 'rtl' ? ['ArrowLeft', 'ArrowRight'] : ['ArrowRight', 'ArrowLeft'];
+  return key === forward ? 1 : key === back ? -1 : null;
+}
+
 /** What a tap does: pins a square other than the pinned one, and otherwise unpins. */
 export function tapDoes(tapped: MapItem | null, pinned: MapItem | null): 'pin' | 'unpin' | null {
   if (tapped && !sameItem(tapped, pinned)) return 'pin';
@@ -69,9 +76,10 @@ export function createMapGestures<I extends MapItem>(options: {
   squareUnder: (p: ScreenPoint) => I | null;
   /** Whether the cursor over this square, or over empty map, is a pointer. */
   clickable: (square: I | null) => boolean;
+  direction: 'rtl' | 'ltr';
   intents: MapIntents<I>;
 }): MapGestures<I> {
-  const { canvas, onMap, squareUnder, clickable, intents } = options;
+  const { canvas, onMap, squareUnder, clickable, direction, intents } = options;
 
   const touches = createTouchState();
   // Where a press went down and when, until it is released or cancelled.
@@ -207,8 +215,8 @@ export function createMapGestures<I extends MapItem>(options: {
     if (e.key === 'Escape') return intents.escape(inField);
     // A field's arrow keys are its own.
     if (inField) return;
-    if (e.key === 'ArrowRight') intents.step(1);
-    else if (e.key === 'ArrowLeft') intents.step(-1);
+    const by = arrowStep(e.key, direction);
+    if (by) intents.step(by);
   });
 
   return {

@@ -23,6 +23,8 @@ import type { PopupText } from '../sidebar.ts';
 export interface Site {
   /** Its page, and its name there and everywhere. */
   page: PageCopy;
+  /** Which way the text reads, and so which arrow key steps forward. */
+  direction: 'rtl' | 'ltr';
   /** What a reader calls one square, in plain text: "verse", "segment". */
   squareName: string;
   /** Without Hebrew, the page is English only and offers no Hide Hebrew control. */
@@ -52,6 +54,8 @@ export interface OpenText<I extends MapItem, S = unknown> {
   startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */
   baseColor(item: I, index: number): ItemColor;
+  /** While search alone is on, how much of its base colour a square it does not find keeps; without it, the square goes grey. */
+  searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
   /** The file a square's text is in. The shell downloads it when the square's popup first shows. */

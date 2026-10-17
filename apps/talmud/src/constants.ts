@@ -28,7 +28,9 @@ export const DAF_LABEL_ROOM = {
 // --- Layout constants ---
 
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
-export const TRACTATE_GAP = 90; // horizontal gap between tractates on a shelf (extra room now that wide tractates wrap into multi-column blocks)
+// A cover's room left of its tractate's squares, and the gap between covers on a shelf.
+export const BOOK_PADDING = 12;
+export const BOOK_GAP = 24;
 export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
 // A tractate's name, a tab above its first row that scales with the map. It fades out below the
 // perek names' smallest size. At 17, the tightest fit, Horayot's, has 15 units to spare inside its
@@ -50,7 +52,7 @@ export const TRACTATE_COLUMN_GAP = DAF_LABEL_ROOM.right + 14;
 
 /**
  * A seder: its name in Hebrew and in English, which is also its name in the data, and the tint
- * behind its shelf, red, green and blue from 0 to 1.
+ * behind its tractates, red, green and blue from 0 to 1.
  */
 export interface Seder extends SectionName {
   tint: readonly [number, number, number];
@@ -68,29 +70,36 @@ export const SEDARIM: readonly Seder[] = [
 ];
 
 // The seder labels' size. At 56 the longest, Kodashim's, runs 480 units down a
-// shelf that is 620 from the next; Nezikin's, 390 of 535. The gap clears the daf
+// shelf that is 620 from the next; Nezikin's, 390 of 530. The gap clears the daf
 // labels beside each shelf's first tractate, which show from PEREK_LABEL_ZOOM.
 export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 
 // --- Base colors (muted, similar, "rainfall over both") ---
-// MISHNAH = slate blue. GEMARA = a warm parchment, so it reads as coloured
-// rather than as the grey of a square nothing colours.
+// MISHNAH = violet, the one hue no search colour is near. GEMARA = a warm
+// parchment, so it reads as coloured rather than as the grey of a square
+// nothing colours.
 
-export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.48, 0.58, 0.82];
+export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.64, 0.5, 0.84];
 export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.66, 0.57, 0.42];
+
+// What a segment a search does not find keeps of its base colour, so Mishnah
+// still shows from Gemara.
+export const SEARCH_KEEPS_BASE = 0.6;
 
 // --- Per-segment brightness jitter ---
 // Each segment is a deterministic ±BRIGHTNESS_JITTER brighter or darker
-// (baseColor.ts), so the grid reads as rainfall rather than flat tiles.
+// (baseColor.ts), so the grid reads as rainfall rather than flat tiles, and
+// bands less against the screen's pixels (moiré).
 
 export const BRIGHTNESS_JITTER = 0.18;
 
 // --- Per-segment positional jitter (±px) ---
-// Tiny offset on each segment so the grid doesn't read as a perfect mesh.
+// Tiny offset on each segment so the grid doesn't read as a perfect mesh or
+// band against the screen's pixels (moiré).
 // Mirrors the Torah map's ±1px JITTER_RANGE; smaller because Talmud
 // SEGMENT_SIZE is 6 (vs 8 on the Torah side) and over-jitter at this size
 // looks like noise rather than texture.
 export const POSITION_JITTER = 0.7;
 
-// The tints are drawn over the canvas at this opacity.
-export const SEDER_BACKGROUND_OPACITY = 0.1;
+// The covers are drawn over the canvas in their seder's tint at this opacity.
+export const COVER_OPACITY = 0.1;

@@ -8,7 +8,7 @@
 
 import './wordMenu.css';
 import type { Meaning } from './dictionary.ts';
-import { MAX_TERMS } from './terms.ts';
+import { MAX_TERMS } from '@torahmap/search';
 
 export interface WordMenuOptions {
   word: string;

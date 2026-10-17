@@ -4,12 +4,11 @@
 import { describe, it, expect } from 'vitest';
 import {
   isHebrew,
-  isSearchableWord,
   isWordSeparator,
   mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
-} from '../src/hebrew.ts';
+} from '../src/index.ts';
 
 const GENESIS_1_1_END = 'אֵ֥ת הַשָּׁמַ֖יִם וְאֵ֥ת הָאָֽרֶץ׃';
 
@@ -74,21 +73,5 @@ describe('is this Hebrew?', () => {
   it('is not for points or punctuation alone', () => {
     expect(isHebrew('\u05B0\u05B1')).toBe(false);
     expect(isHebrew('׃')).toBe(false);
-  });
-});
-
-describe('a word search deals in', () => {
-  it('has at least two letters', () => {
-    expect(isSearchableWord('אב')).toBe(true);
-    expect(isSearchableWord('ab')).toBe(true);
-    expect(isSearchableWord('א')).toBe(false);
-    expect(isSearchableWord('a')).toBe(false);
-  });
-
-  it('does not count points or punctuation as letters', () => {
-    expect(isSearchableWord('הַ')).toBe(false);
-    expect(isSearchableWord(']')).toBe(false);
-    expect(isSearchableWord('—')).toBe(false);
-    expect(isSearchableWord('(לא)')).toBe(true);
   });
 });

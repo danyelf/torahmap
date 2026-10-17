@@ -1,10 +1,11 @@
+import { resultsForItemSets, type SearchResult } from '@torahmap/search';
 // An English term's result quotes the English verse.
 
 import { describe, it, expect } from 'vitest';
 import { excerptOf } from '../helpers/excerpt';
-import { buildTextIndex, resultsForVerseSets, type SearchResult } from '../../src/search/search';
+import { textIndexOf } from '../../src/search/data';
 import type { VerseTexts } from '../../src/verseTexts';
-import { EMPTY_DICTIONARY, inTextsOrder } from '../helpers/searchData';
+import { searchDataFor } from '../helpers/searchData';
 
 const HEBREW = /[֐-׿]/;
 
@@ -25,15 +26,16 @@ const texts: VerseTexts = {
   },
 };
 
-const index = buildTextIndex(texts, inTextsOrder(texts));
+const data = searchDataFor(texts);
+const index = textIndexOf(data);
 
 function genesis99(): SearchResult {
-  return resultsForVerseSets(index, [new Set(['Genesis.9.9'])])[0];
+  return resultsForItemSets(index, [new Set(['Genesis.9.9'])])[0];
 }
 
 describe('snippets for an English term', () => {
   it('quotes the English verse, not the Hebrew one', () => {
-    const snippet = excerptOf(genesis99(), 'covenant', 'substring', index, EMPTY_DICTIONARY);
+    const snippet = excerptOf(genesis99(), 'covenant', 'substring', data);
 
     expect(snippet).not.toBeNull();
     expect(snippet!.snippet).toContain('covenant');
@@ -41,14 +43,14 @@ describe('snippets for an English term', () => {
   });
 
   it('marks the word that was searched for', () => {
-    const snippet = excerptOf(genesis99(), 'covenant', 'substring', index, EMPTY_DICTIONARY)!;
+    const snippet = excerptOf(genesis99(), 'covenant', 'substring', data)!;
     const marked = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
 
     expect(marked).toBe('covenant');
   });
 
   it('matches without regard to case', () => {
-    const snippet = excerptOf(genesis99(), 'Covenant', 'substring', index, EMPTY_DICTIONARY)!;
+    const snippet = excerptOf(genesis99(), 'Covenant', 'substring', data)!;
     const marked = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
 
     // The verse prints it lowercase; the reader typed it capitalised.
@@ -56,13 +58,13 @@ describe('snippets for an English term', () => {
   });
 
   it('still quotes Hebrew for a Hebrew term', () => {
-    const snippet = excerptOf(genesis99(), 'בריתי', 'meanings', index, EMPTY_DICTIONARY)!;
+    const snippet = excerptOf(genesis99(), 'בריתי', 'meanings', data)!;
 
     expect(snippet.snippet).toMatch(HEBREW);
   });
 
   it('falls back to the English verse when the word is not in it', () => {
-    const snippet = excerptOf(genesis99(), 'chariot', 'substring', index, EMPTY_DICTIONARY)!;
+    const snippet = excerptOf(genesis99(), 'chariot', 'substring', data)!;
 
     // Nothing to mark, but the reader should still be reading the right verse.
     expect(snippet.snippet).not.toMatch(HEBREW);
@@ -78,28 +80,26 @@ describe('a Hebrew term beside an English one', () => {
   const englishTerm = 'behold';
 
   function mixedResults() {
-    return resultsForVerseSets(index, [
+    return resultsForItemSets(index, [
       new Set(['Genesis.17.7']),
       new Set(['Genesis.17.7', 'Genesis.9.9']),
     ]);
   }
 
   it('quotes English for a verse only the English term found', () => {
-    const only = mixedResults().find((r) => r.verse === 9)!;
+    const only = mixedResults().find((r) => r.id === 'Genesis.9.9')!;
 
     expect(only.matchingTerms.map((m) => m.termIndex)).toEqual([1]);
 
-    const snippet = excerptOf(only, englishTerm, 'substring', index, EMPTY_DICTIONARY)!;
+    const snippet = excerptOf(only, englishTerm, 'substring', data)!;
     expect(snippet.snippet).not.toMatch(HEBREW);
     expect(snippet.snippet.slice(snippet.matchStart, snippet.matchEnd)).toBe('behold');
   });
 
   it('quotes Hebrew for a verse the Hebrew term claimed first', () => {
-    const both = mixedResults().find((r) => r.verse === 7)!;
+    const both = mixedResults().find((r) => r.id === 'Genesis.17.7')!;
 
     expect(both.matchingTerms[0].termIndex).toBe(0);
-    expect(excerptOf(both, hebrewTerm, 'meanings', index, EMPTY_DICTIONARY)!.snippet).toMatch(
-      HEBREW,
-    );
+    expect(excerptOf(both, hebrewTerm, 'meanings', data)!.snippet).toMatch(HEBREW);
   });
 });
