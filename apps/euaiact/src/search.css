@@ -1,0 +1,5 @@
+/* The Tanakh's first search colour, as its popup marks a term. */
+#popup mark.act-found {
+  background: rgba(51, 230, 255, 0.4);
+  color: #fff;
+}

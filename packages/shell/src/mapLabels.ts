@@ -1,6 +1,6 @@
-// The map's labels: each book's name at its top-right, and each section's name
-// set sideways beside it. On the Talmud's map a book is a tractate and a
-// section a seder.
+// The map's labels: each book's name at its top-right (top-left in a text read
+// left to right), and each section's name set sideways beside it. On the
+// Talmud's map a book is a tractate and a section a seder.
 
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from './labelTypography.ts';
 
@@ -79,6 +79,8 @@ export interface MapLabelSettings {
   sectionSize: SectionLabelSize;
   /** Without it, a book's label sits above its book at a size held between bounds. */
   tab?: BookTab;
+  /** Which way the text reads: a book's label starts at its right edge, or its left. Right to left unless said. */
+  direction?: 'rtl' | 'ltr';
 }
 
 /** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
@@ -173,12 +175,19 @@ export function bookLabelSize(zoom: number): { fontSize: number; rise: number } 
 export function createMapLabels(
   books: readonly BookBox[],
   parent: HTMLElement,
-  { sectionNames, sectionSize, tab }: MapLabelSettings,
+  { sectionNames, sectionSize, tab, direction = 'rtl' }: MapLabelSettings,
 ): (pan: Pan, zoom: number) => void {
   const container = document.createElement('div');
   container.id = 'book-labels';
+  const inset = tab?.inset ?? 0;
+  // The edge of its book the label's own matching edge meets.
+  const anchorX =
+    direction === 'rtl'
+      ? (book: BookBox) => book.maxX - inset
+      : (book: BookBox) => book.minX + inset;
   const bookLabels = books.map((book) => {
     const el = bookLabel(book);
+    if (direction === 'ltr') el.style.transform = 'none';
     // A tab keeps its length on the map, so whether its English fits does not change.
     if (tab) {
       const englishWidth = tab.fontSize * (ENGLISH_MIN_BOOK_WIDTH_PX / BASE_FONT_SIZE);
@@ -199,8 +208,7 @@ export function createMapLabels(
       ? { fontSize: tab.fontSize * zoom, rise: tab.above * zoom }
       : bookLabelSize(zoom);
     for (const { el, book } of bookLabels) {
-      // Its right edge, which the label's right edge meets.
-      el.style.left = (book.maxX - (tab?.inset ?? 0) + pan.x) * zoom + 'px';
+      el.style.left = (anchorX(book) + pan.x) * zoom + 'px';
       el.style.top = (book.minY + pan.y) * zoom - rise + 'px';
       el.style.fontSize = fontSize + 'px';
       if (tab) el.style.opacity = fontSize < tab.minPx ? '0' : '';

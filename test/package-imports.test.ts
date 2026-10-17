@@ -199,13 +199,16 @@ const TANAKH_CODE = (file: string) =>
   file.startsWith('packages/overlay-catalog/') ||
   /^packages\/[^/]+\/src\/(tanakh|generated)\.ts$/.test(file);
 const TALMUD_CODE = (file: string) => file.startsWith('apps/talmud/');
+const EUAIACT_CODE = (file: string) => file.startsWith('apps/euaiact/');
 
 // Following each import, as a page loads them: a package can reach a text through its own files.
 describe('the code each page runs', () => {
   it('in the app shell, is no text’s own', () => {
     const files = reached('packages/shell/src/main.ts');
     expect(files.length).toBeGreaterThan(1);
-    expect(files.filter((file) => TANAKH_CODE(file) || TALMUD_CODE(file))).toEqual([]);
+    expect(
+      files.filter((file) => TANAKH_CODE(file) || TALMUD_CODE(file) || EUAIACT_CODE(file)),
+    ).toEqual([]);
   });
 
   it('for the Talmud, is none of the Tanakh’s but what it may import', () => {
@@ -216,5 +219,15 @@ describe('the code each page runs', () => {
 
   it('for the Tanakh, is none of the Talmud’s', () => {
     expect(reached('apps/tanakh/src/main.ts').filter(TALMUD_CODE)).toEqual([]);
+  });
+
+  it('for the AI Act, is none of the Tanakh’s or the Talmud’s', () => {
+    const files = reached('apps/euaiact/src/main.ts');
+    expect(files.filter((file) => TANAKH_CODE(file) || TALMUD_CODE(file))).toEqual([]);
+  });
+
+  it('for the Tanakh and the Talmud, is none of the AI Act’s', () => {
+    expect(reached('apps/tanakh/src/main.ts').filter(EUAIACT_CODE)).toEqual([]);
+    expect(reached('apps/talmud/src/main.ts').filter(EUAIACT_CODE)).toEqual([]);
   });
 });

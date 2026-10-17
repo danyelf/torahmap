@@ -211,3 +211,22 @@ export const STATES: State[] = [
     shown: ['#language-choice', '#popup'],
   })),
 ];
+
+/** The AI Act's page, at /euaiact/ (euaiact.spec.ts). */
+export const ACT_STATES: State[] = [
+  { name: 'act-opening', link: '' },
+  { name: 'act-amendment', link: 'overlay=amendment&zoom=0.6', shown: ['#map-legend'] },
+  {
+    name: 'act-references',
+    link: 'overlay=references&article=6&zoom=0.6',
+    shown: ['#map-legend'],
+  },
+  { name: 'act-recital-pinned', link: 'at=Recital.12', shown: ['#popup.visible'] },
+  { name: 'act-search', link: 'search=deployer&zoom=0.6', shown: ['#map-legend'] },
+  {
+    name: 'act-about',
+    link: 'zoom=0.6',
+    then: (page) => viaMenu(page, 'about'),
+    shown: ['#about-panel .about-section:first-of-type .panel-section-heading'],
+  },
+];

@@ -59,9 +59,9 @@ const VERTEX_SHADER = `#version 300 es
   flat out ivec4 v_counts;
   // How the hover changes each picture's fill (see lit).
   flat out ivec2 v_hover;
-  // The drawn square's side in device pixels, growth included, or 0 when the
-  // square is too small for a hole.
-  flat out float v_side;
+  // The drawn square's width and height in device pixels, growth included, or
+  // 0 when the square is too small for a hole.
+  flat out vec2 v_side;
   out vec2 v_uv;
   out vec2 v_seed;
 
@@ -78,7 +78,8 @@ const VERTEX_SHADER = `#version 300 es
 
   void main() {
     vec2 uv = CORNERS[gl_VertexID];
-    float side = (a_rect.z - a_rect.x) * u_zoom;
+    // Its shorter side, which is what has room for a hole or not.
+    float side = min(a_rect.z - a_rect.x, a_rect.w - a_rect.y) * u_zoom;
     bool holes = side >= u_ring.z;
     float grow = mix(reach(a_shape, holes), reach(a_nextShape, holes), u_fade);
     // A square too small to draw cleanly reaches across the gap to its right, so
@@ -104,7 +105,7 @@ const VERTEX_SHADER = `#version 300 es
     v_nextRing = a_nextRing;
     v_counts = ivec4(a_shape.x, a_shape.z, a_nextShape.x, a_nextShape.z);
     v_hover = gl_InstanceID == u_hovered ? 1 + ivec2(a_shape.w, a_nextShape.w) : ivec2(0);
-    v_side = holes ? (rect.z - rect.x) * u_zoom : 0.0;
+    v_side = holes ? (rect.zw - rect.xy) * u_zoom : vec2(0.0);
     v_uv = uv;
     // The square's own corner, which zooming does not move, seeds its dithering noise
     v_seed = a_rect.xy + a_jitter;
@@ -121,7 +122,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in highp vec4 v_nextRing;
   flat in ivec4 v_counts;
   flat in ivec2 v_hover;
-  flat in float v_side;
+  flat in vec2 v_side;
   in vec2 v_uv;
   in vec2 v_seed;
   out vec4 fragColor;
@@ -146,9 +147,9 @@ const FRAGMENT_SHADER = `#version 300 es
   bool inHole(vec2 p) {
     float inset = u_ring.x + u_ring.y;
     vec2 px = p * v_side;
-    return v_side > 0.0 &&
+    return v_side.x > 0.0 &&
       all(greaterThanEqual(px, vec2(inset))) &&
-      all(lessThan(px, vec2(v_side - inset)));
+      all(lessThan(px, v_side - inset));
   }
 
   // Several colors split the square into bands running corner to corner, one

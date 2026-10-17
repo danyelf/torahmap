@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { builtPages, isLiveBuild, unpublished } from '../build.ts';
+import { builtPages, EXTRA_PAGES, type ExtraPage, isLiveBuild, unpublished } from '../build.ts';
 
 describe('which build is the live site’s', () => {
   it('is a build of main', () => {
@@ -13,22 +13,47 @@ describe('which build is the live site’s', () => {
   });
 });
 
+const NONE_LIVE: readonly ExtraPage[] = [
+  { page: 'talmud', dataDir: 'talmud', live: false },
+  { page: 'euaiact', dataDir: 'euaiact', live: false },
+];
+const TALMUD_LIVE = NONE_LIVE.map((p) => (p.page === 'talmud' ? { ...p, live: true } : p));
+
 describe('the live site’s build', () => {
-  it('writes the Tanakh’s page alone', () => {
-    expect(builtPages(true)).toEqual(['main']);
+  it('writes the Tanakh’s page alone while no other page is live', () => {
+    expect(builtPages(true, NONE_LIVE)).toEqual(['main']);
   });
 
-  it('leaves the Talmud’s data unpublished', () => {
-    expect(unpublished(true)).toContain('data/talmud');
+  it('leaves each unpublished page’s data out', () => {
+    expect(unpublished(true, NONE_LIVE)).toEqual(
+      expect.arrayContaining(['data/talmud', 'data/euaiact']),
+    );
+  });
+
+  it('publishes a page whose flag is on, and only that page', () => {
+    expect(builtPages(true, TALMUD_LIVE)).toEqual(['main', 'talmud']);
+    expect(unpublished(true, TALMUD_LIVE)).toContain('data/euaiact');
+    expect(unpublished(true, TALMUD_LIVE)).not.toContain('data/talmud');
+  });
+
+  it('holds no page and no data of an unpublished text', () => {
+    const held = builtPages(true);
+    for (const page of EXTRA_PAGES.filter((p) => !p.live)) {
+      expect(held).not.toContain(page.page);
+      expect(unpublished(true)).toContain(`data/${page.dataDir}`);
+    }
   });
 });
 
 describe('any other branch’s build', () => {
-  it('writes the Talmud’s page too', () => {
-    expect(builtPages(false)).toEqual(['main', 'talmud']);
+  it('writes every page and publishes all their data', () => {
+    expect(builtPages(false, TALMUD_LIVE)).toEqual(['main', 'talmud', 'euaiact']);
+    expect(unpublished(false, TALMUD_LIVE)).toEqual(['.assetsignore']);
   });
+});
 
-  it('publishes the Talmud’s data', () => {
-    expect(unpublished(false)).not.toContain('data/talmud');
+describe('the Act’s page', () => {
+  it('is not live', () => {
+    expect(EXTRA_PAGES.find((p) => p.page === 'euaiact')?.live).toBe(false);
   });
 });

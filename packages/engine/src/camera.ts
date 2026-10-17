@@ -1,7 +1,10 @@
 // Camera module - handles zoom and pan state
 
 import { lerpCamera, easingFunctions } from './interpolation.ts';
-import { DEFAULT_EASING, type CameraPosition, type ZoomRange } from './types.ts';
+import { DEFAULT_EASING, type CameraPosition, type MapItem, type ZoomRange } from './types.ts';
+
+/** Where a square stands and how big it is: all the camera needs to aim at it. */
+export type ItemBox = Pick<MapItem, 'x' | 'y' | 'size' | 'width'>;
 
 export type Camera = CameraPosition;
 
@@ -78,13 +81,13 @@ export function zoomAtPoint(
  * has to aim at where the item will be, not where it is now.
  */
 export function centreForFocus(
-  item: { x: number; y: number; size: number },
+  item: ItemBox,
   zoom: number,
   focus: ScreenPoint,
   viewport: Viewport,
 ): { x: number; y: number } {
   return {
-    x: item.x + item.size / 2 - (focus.x - viewport.width / 2) / zoom,
+    x: item.x + (item.width ?? item.size) / 2 - (focus.x - viewport.width / 2) / zoom,
     y: item.y + item.size / 2 - (focus.y - viewport.height / 2) / zoom,
   };
 }
@@ -134,7 +137,7 @@ export function cameraToFit(
  * their zoom is left alone rather than pulled back.
  */
 export function viewFocusedOn(
-  item: { x: number; y: number; size: number },
+  item: ItemBox,
   currentZoom: number,
   minZoom: number,
   focus: ScreenPoint,

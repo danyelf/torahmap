@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { STATES } from './app.ts';
+import { ACT_STATES, STATES } from './app.ts';
 import { RULES } from './check.ts';
 import { KNOWN } from './known.ts';
 import { SCREENS } from './screens.ts';
 
 test('every known failure names a state, screen and rule that are checked', () => {
-  const states = new Set(STATES.map((s) => s.name));
+  const states = new Set([...STATES, ...ACT_STATES].map((s) => s.name));
   const touch = new Map(SCREENS.map((s) => [s.name, Boolean(s.use?.hasTouch)]));
   for (const key of Object.keys(KNOWN)) {
     const [state, screen, rule] = key.split('/');

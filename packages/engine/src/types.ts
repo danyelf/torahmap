@@ -11,7 +11,9 @@ export interface MapItem {
   id: string;
   x: number;
   y: number;
+  /** The square's height in map units, and its width unless `width` says otherwise. */
   size: number;
+  width?: number;
   /**
    * How far the square is drawn from its place, so the squares do not line up
    * into a grid. Taken out as they are widened into bars.
