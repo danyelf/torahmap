@@ -12,7 +12,9 @@ export const BRIGHTNESS_JITTER = 0.18;
 export const COLUMN_WIDTH = 8; // squares across an article's column
 export const RECITALS_PER_LINE = 50;
 
-export const ARTICLE_GAP = SQUARE_SIZE;
+// Two squares: room for the article's label, which one square holds only from zoom 1.67. Three
+// would let the labels show from 0.59, where a label is wider than a split chapter's column pitch.
+export const ARTICLE_GAP = 2 * SQUARE_SIZE;
 export const SECTION_GAP = 3 * SQUARE_SIZE; // between a chapter's sections, where it is not split
 export const SPLIT_GAP = 2 * SQUARE_SIZE; // between a split chapter's columns
 export const CHAPTER_GAP = 6 * SQUARE_SIZE;
@@ -24,7 +26,7 @@ export const LABEL_ROOM = 40;
 export const CHAPTER_TAB: BookTab = { fontSize: 12, above: 28, inset: 4, minPx: 7 };
 // The article numbers, the size of the Talmud's daf numbers, in the gap above each article and a
 // pixel clear of it. They show once that gap, less the jitter of the squares on either side, holds
-// them with a pixel to spare above as well: from zoom 1.67.
+// them with a pixel to spare above as well: from zoom 0.87.
 export const ARTICLE_NUMBER: RowNumberStyle = { fontSize: 9, offset: 1, side: 'above' };
 export const ARTICLE_NUMBER_ZOOM =
   (ARTICLE_NUMBER.fontSize + 2 * ARTICLE_NUMBER.offset) /

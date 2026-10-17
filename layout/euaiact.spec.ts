@@ -9,6 +9,7 @@ import {
   ARTICLE_NUMBER_ZOOM,
   CHAPTER_TAB,
   COLUMN_WIDTH,
+  SPLIT_GAP,
   SQUARE_SIZE,
 } from '@torahmap/euaiact/constants.ts';
 import { EUAIACT_PAGE, EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
@@ -149,15 +150,16 @@ test('articles are numbered only from their zoom', async ({ page }) => {
   expect(await boxes(page, NUMBERS)).not.toEqual([]);
 });
 
-test('every article number is narrower than its column and clear of every other', async ({
+test('every article number stops short of the next column and is clear of every other', async ({
   page,
 }) => {
   await openMap(page, chapterThree(ARTICLE_NUMBER_ZOOM), ACT);
   // Off screen too: every number shows from the same zoom.
   const numbers = (await shown(page, NUMBERS)).map((s) => s.full);
   expect(numbers).not.toEqual([]);
-  const column = COLUMN_WIDTH * SQUARE_SIZE * ARTICLE_NUMBER_ZOOM;
-  expect(numbers.filter((n) => n.width > column)).toEqual([]);
+  // The columns of a split chapter stand closest together.
+  const pitch = (COLUMN_WIDTH * SQUARE_SIZE + SPLIT_GAP) * ARTICLE_NUMBER_ZOOM;
+  expect(numbers.filter((n) => n.width >= pitch)).toEqual([]);
   expect(overlapping(numbers)).toEqual([]);
 });
 
