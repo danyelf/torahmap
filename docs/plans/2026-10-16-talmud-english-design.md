@@ -1,7 +1,7 @@
 # English for the Talmud
 
-**Status:** Proposal, 2026-10-16, for Danyel to choose from. Nothing is built. Branch
-`talmud-english`, from `worktree-talmud-search` (#390).
+**Status:** Decided, 2026-10-16 (see Decisions, at the end). The popup is built, on branch
+`talmud-english-popup`, from `worktree-talmud-search` (#390). English search is not.
 
 The Talmud's popup has no English, and its search reads only Hebrew and Aramaic. Sefaria's
 William Davidson English (the Koren translation, with Rabbi Steinsaltz's explanation woven in)
@@ -71,6 +71,7 @@ that tractate.
 
 | Popup English, per tractate file | All 37, gzip -9 | Largest (Shabbat) |
 | --- | --- | --- |
+| Markers, `*bold*` and `_italic_` (built; see Decisions) | 12.15 MB | 0.71 MB |
 | Alternating strings (proposed) | 12.37 MB | 0.72 MB |
 | Text plus bold offsets | 14.26 MB | 0.83 MB |
 | Today's Hebrew file, for comparison | | 0.25 MB |
@@ -214,3 +215,35 @@ problem.
    any work in the Worker, is possible.
 6. Does a phrase need to match exactly, or is "all these words in one segment" enough? It decides
    whether (c) is good enough.
+
+## Decisions
+
+Danyel's answers, 2026-10-16.
+
+1. **Search matches the bold translation only**, option (b).
+2. **English search data loads on the first English search, or at idle after startup.** Search is
+   a later piece of work; this records the choice.
+3. **The popup shows the full English**, translation and explanation.
+4. **Italics are kept, and the format is markers rather than alternating strings.** Each segment
+   is one string, with `*` opening and closing bold and `_` italic: two characters per change of
+   style, so the italic transliterations cost little.
+   - Neither `*` nor `_` occurs anywhere in the English, so they need no escape. The converter
+     (`scripts/talmud/english.ts`) fails on a segment that holds one.
+   - About 20,000 segments have italic inside bold, and 29 bold inside italic (`<i>hokhe’aḥ
+     <b>tokhiaḥ</b></i>`); the two markers are independent, so both nest. `<strong>` and the six
+     spans count as bold; bold inside bold is marked once.
+   - `<br>` becomes a line break, which the popup keeps.
+   - Two places leave a tag unbalanced, not one: Berakhot 54a:1 (`<strong>MISHNA:<strong>`), and
+     Pesachim 101a:7, whose last `<b>` is closed at the start of 101a:8. The converter fixes both
+     by name and fails on any other.
+   - One Hadran line, Arakhin 34a:9, has English (a truncated "We will return to you…"). Every
+     Hadran line gets an empty string, as decided, so it is dropped.
+   - Size, at gzip -9: 12.15 MB for all 37 tractates' English with italics, against 12.37 MB for
+     alternating strings without them (row added to the table above). Without the italic markers
+     it would be 12.10 MB, so italics cost 0.05 MB.
+   - The popup files grow from 3.91 MB to 16.07 MB in all at gzip -9; the largest, Shabbat, from
+     0.25 MB to 0.96 MB.
+5. **The Cloudflare account is on the free plan.** Traffic is expected to be very low, and Danyel
+   will pay a little if needed. No server work for now.
+6. **Phrase search is wanted.** Option (b) on the client already matches exact phrases, which is
+   why no server is needed for now.
