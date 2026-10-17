@@ -28,10 +28,10 @@ function brightenBands(color: ItemColor, factor: number): ItemColor {
  *
  * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
  * layers are on: `SEARCH_NON_MATCH_DIM` (the default) while
- * search leads, 1 while the overlay leads; it does nothing with search alone,
- * which always dims to its own grey. With both on, a square neither colours
- * dims from its `base` colour. With search alone, a square it does not find
- * is `unfound`'s colour (unfoundColor).
+ * search leads, 1 while the overlay leads; it does nothing with search alone.
+ * With both on, a square neither colours dims from its `base` colour. With
+ * search alone, a square it does not find keeps `keepsBase` of its base
+ * colour, or goes grey without it.
  */
 export function combineLayers(
   count: number,
@@ -39,7 +39,7 @@ export function combineLayers(
   overlay: readonly (ItemColor | null)[] | null,
   base: (index: number) => ItemColor,
   nonMatchDim: number = SEARCH_NON_MATCH_DIM,
-  unfound: (index: number) => ItemColor = () => DIMMED_GREY,
+  keepsBase?: number,
 ): Picture<ItemColor | null> {
   const colors: (ItemColor | null)[] = new Array(count);
   const rings: (ItemColor | null)[] = new Array(count).fill(null);
@@ -50,7 +50,8 @@ export function combineLayers(
     if (!search) {
       colors[i] = under;
     } else if (!overlay) {
-      colors[i] = match ?? unfound(i);
+      colors[i] =
+        match ?? (keepsBase === undefined ? DIMMED_GREY : brightenBands(base(i), keepsBase));
     } else if (match) {
       colors[i] = under;
       rings[i] = match;
@@ -96,7 +97,7 @@ export function toolsPicture<T>(
   hovered: SpatialItem<T> | null,
   base: (index: number) => ItemColor,
   nonMatchDim?: number,
-  unfound?: (index: number) => ItemColor,
+  keepsBase?: number,
 ): Picture<ItemColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
     on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
@@ -106,16 +107,8 @@ export function toolsPicture<T>(
     colorsOf(tools.overlay),
     base,
     nonMatchDim,
-    unfound,
+    keepsBase,
   );
-}
-
-/** What search alone draws a square it does not find as: grey, or `keepsBase` of its own colour. */
-export function unfoundColor(
-  base: (index: number) => ItemColor,
-  keepsBase: number | undefined,
-): (index: number) => ItemColor {
-  return keepsBase === undefined ? () => DIMMED_GREY : (i) => brightenBands(base(i), keepsBase);
 }
 
 /**
