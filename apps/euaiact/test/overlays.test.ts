@@ -66,11 +66,11 @@ describe('the what-points-here overlay', () => {
     expect(colours([item('Recital.3', { layer: 'recital' })])[0]).toEqual(QUIET);
   });
 
-  it('reads its article from a link and writes it back, leaving none out', () => {
+  it('reads its article from a link and writes it back, leaving the default out', () => {
     expect(referencesOverlay.settingsFromUrl!({ article: '9' })).toEqual({ article: '9' });
-    expect(referencesOverlay.settingsFromUrl!({})).toEqual({ article: '' });
+    expect(referencesOverlay.settingsFromUrl!({})).toEqual({ article: '6' });
     expect(referencesOverlay.settingsToUrl!({ article: '9' })).toEqual({ article: '9' });
-    expect(referencesOverlay.settingsToUrl!({ article: '' })).toEqual({});
+    expect(referencesOverlay.settingsToUrl!({ article: '6' })).toEqual({});
   });
 
   describe('while the pointer is on a square', () => {
@@ -108,29 +108,8 @@ describe('the what-points-here overlay', () => {
     });
   });
 
-  describe('with no article chosen and nothing under the pointer', () => {
-    const atRest = (squares: ActItem[]) =>
-      referencesOverlay.colorsFor(squares, { article: '' }, null, { refs });
-    const brightness = (c: unknown) => (c as number[]).reduce((a, b) => a + b, 0);
-
-    it('brightens an article the more often other articles cite it', () => {
-      // Article 6 is cited twice, by 9 and 40; Article 5 once, by 6.
-      const [six, five] = atRest([item('6(3)'), item('5(4)')]);
-      expect(brightness(six)).toBeGreaterThan(brightness(five));
-      expect(brightness(five)).toBeGreaterThan(brightness(QUIET));
-    });
-
-    it('leaves an article no other article cites quiet, whatever it cites in itself', () => {
-      expect(atRest([item('9(2)'), item('40')])).toEqual([QUIET, QUIET]);
-    });
-
-    it('colours a cited annex, and no recital', () => {
-      const [annex, recital] = atRest([
-        item('Annex.III.2', { layer: 'annex' }),
-        item('Recital.3', { layer: 'recital' }),
-      ]);
-      expect(annex).not.toEqual(QUIET);
-      expect(recital).toEqual(QUIET);
-    });
+  it('marks nothing with the box empty and nothing under the pointer', () => {
+    const squares = [item('6(1)'), item('5(1)'), item('Annex.III.2', { layer: 'annex' })];
+    expect(colours(squares, '')).toEqual([QUIET, QUIET, QUIET]);
   });
 });
