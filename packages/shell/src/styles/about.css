@@ -224,3 +224,9 @@ span.credit-source {
   color: #bbb;
   font-size: 14px;
 }
+
+@media (pointer: coarse) {
+  #language-choice .control-segment {
+    min-height: var(--tap);
+  }
+}

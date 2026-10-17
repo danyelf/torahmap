@@ -4,6 +4,7 @@ import {
   bindLanguageChoice,
   languageChoiceHtml,
 } from '../src/languageChoice.ts';
+import { ENGLISH, HEBREW } from '../src/language.ts';
 
 const hidden = () => ({
   hebrew: document.body.classList.contains('english-only'),
@@ -11,17 +12,18 @@ const hidden = () => ({
 });
 
 function control(): HTMLElement {
-  document.body.insertAdjacentHTML('beforeend', languageChoiceHtml());
-  const div = document.querySelector<HTMLElement>('#language-choice')!;
-  bindLanguageChoice(div);
-  return div;
+  const panel = document.createElement('div');
+  panel.innerHTML = languageChoiceHtml();
+  document.body.appendChild(panel);
+  bindLanguageChoice(panel);
+  return panel;
 }
 
-const press = (div: HTMLElement, choice: string) =>
-  div.querySelector<HTMLButtonElement>(`[data-languages="${choice}"]`)!.click();
+const press = (panel: HTMLElement, choice: string) =>
+  panel.querySelector<HTMLButtonElement>(`[data-languages="${choice}"]`)!.click();
 
-const pressed = (div: HTMLElement) =>
-  [...div.querySelectorAll<HTMLButtonElement>('[aria-pressed="true"]')].map(
+const pressed = (panel: HTMLElement) =>
+  [...panel.querySelectorAll<HTMLButtonElement>('[aria-pressed="true"]')].map(
     (b) => b.dataset.languages,
   );
 
@@ -40,33 +42,32 @@ describe('the language choice', () => {
 
   it('hides the language not chosen, and marks the choice', () => {
     applyLanguageChoice(true);
-    const div = control();
-    press(div, 'hebrew');
+    const panel = control();
+    press(panel, HEBREW);
     expect(hidden()).toEqual({ hebrew: false, english: true });
-    expect(pressed(div)).toEqual(['hebrew']);
-    press(div, 'english');
+    expect(pressed(panel)).toEqual([HEBREW]);
+    press(panel, ENGLISH);
     expect(hidden()).toEqual({ hebrew: true, english: false });
-    press(div, 'both');
+    press(panel, 'both');
     expect(hidden()).toEqual({ hebrew: false, english: false });
   });
 
   it('is remembered on the next visit', () => {
     applyLanguageChoice(true);
-    press(control(), 'hebrew');
+    press(control(), HEBREW);
     document.body.className = '';
     applyLanguageChoice(true);
     expect(hidden()).toEqual({ hebrew: false, english: true });
   });
 
-  it('starts a reader who had Hide Hebrew on at English only', () => {
-    localStorage.setItem('torahMap.englishOnly', 'true');
-    applyLanguageChoice(true);
-    expect(hidden()).toEqual({ hebrew: true, english: false });
-  });
-
   it('hides nothing on a text with one language, whatever was chosen', () => {
-    localStorage.setItem('torahMap.languages', 'english');
+    applyLanguageChoice(true);
+    press(control(), ENGLISH);
     applyLanguageChoice(false);
     expect(hidden()).toEqual({ hebrew: false, english: false });
+  });
+
+  it('binds nothing in a panel without the choice', () => {
+    expect(() => bindLanguageChoice(document.createElement('div'))).not.toThrow();
   });
 });

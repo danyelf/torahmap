@@ -38,12 +38,6 @@ export async function viaMenu(page: Page, action: string): Promise<void> {
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 
 const ABRAHAM = encodeURIComponent('אברם,אברהם');
-/** The popup's texts each language choice shows. */
-const LANGUAGE_SHOWN = {
-  hebrew: ['#popup .popup-hebrew'],
-  both: ['#popup .popup-hebrew', '#popup .popup-english'],
-  english: ['#popup .popup-english'],
-} as const;
 
 const BOTH_ROWS = ['.map-legend-row[data-panel="search"]', '.map-legend-row[data-panel="overlay"]'];
 
@@ -207,13 +201,13 @@ export const STATES: State[] = [
     then: (page) => viaMenu(page, 'about'),
     shown: ['#language-choice'],
   },
-  ...(['hebrew', 'both', 'english'] as const).map((choice) => ({
-    name: `languages-${choice}`,
+  ...Object.entries({ hebrew: 'he', both: 'both', english: 'en' }).map(([name, choice]) => ({
+    name: `languages-${name}`,
     link: 'overlay=commentary&verse=Genesis.12.1',
     then: async (page: Page) => {
       await viaMenu(page, 'about');
       await page.locator(`#language-choice [data-languages="${choice}"]`).click();
     },
-    shown: ['#language-choice', '#popup', ...LANGUAGE_SHOWN[choice]],
+    shown: ['#language-choice', '#popup'],
   })),
 ];

@@ -108,10 +108,10 @@ test('each language choice hides the other language in the popup', async ({ page
   const english = page.locator('#popup .popup-english');
   const choose = (choice: string) =>
     page.locator(`#language-choice [data-languages="${choice}"]`).click();
-  await choose('hebrew');
+  await choose('he');
   await expect(hebrew).toBeVisible();
   await expect(english).toBeHidden();
-  await choose('english');
+  await choose('en');
   await expect(hebrew).toBeHidden();
   await expect(english).toBeVisible();
   await choose('both');

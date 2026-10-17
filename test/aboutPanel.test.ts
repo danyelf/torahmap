@@ -22,10 +22,10 @@ describe('the About panel', () => {
     const buttons = [
       ...(await about()).querySelectorAll<HTMLButtonElement>('#language-choice button'),
     ];
-    expect(buttons.map((b) => b.dataset.languages)).toEqual(['hebrew', 'both', 'english']);
+    expect(buttons.map((b) => b.dataset.languages)).toEqual(['he', 'both', 'en']);
     for (const b of buttons) {
       expect(b.type).toBe('button');
-      expect(b.getAttribute('aria-label')).toBeTruthy();
+      expect(b.querySelector('.visually-hidden')?.textContent?.trim()).toBeTruthy();
     }
   });
 

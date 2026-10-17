@@ -143,7 +143,7 @@ test("a pinned segment's popup shows its text", async ({ page }) => {
 test('the Talmud, with only Hebrew, offers no language choice and shows its Hebrew', async ({
   page,
 }) => {
-  await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'english'));
+  await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'en'));
   await openMap(page, 'at=Berakhot.2a.1', TALMUD);
   await expect(page.locator('#popup .popup-hebrew')).toBeVisible();
   await viaMenu(page, 'about');

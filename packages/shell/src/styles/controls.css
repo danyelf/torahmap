@@ -19,7 +19,7 @@
   color: #ddd;
 }
 
-/* A row of buttons, one of them on: the search's substring | word. */
+/* A row of buttons, one of them on. */
 .control-segments {
   display: inline-flex;
   border: 1px solid #3d3d3d;
