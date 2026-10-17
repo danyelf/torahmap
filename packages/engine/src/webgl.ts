@@ -81,12 +81,14 @@ const VERTEX_SHADER = `#version 300 es
     float side = (a_rect.z - a_rect.x) * u_zoom;
     bool holes = side >= u_ring.z;
     float grow = mix(reach(a_shape, holes), reach(a_nextShape, holes), u_fade);
-    // A square too small to draw cleanly loses its jitter and reaches across the
-    // gap to its right, so a row of them reads as one bar. Never under one device
-    // pixel, so it is always drawn. Where rows are under a pixel apart, that makes
-    // them overlap, and each row covers part of the one above it, search hits included.
+    // A square too small to draw cleanly reaches across the gap to its right, so
+    // a row of them reads as one bar, and loses its sideways jitter, so the bar
+    // has no notches. It keeps its vertical jitter: bars on an exact grid band
+    // against the pixel rows (moiré). Never under one device pixel, so it is
+    // always drawn. Where rows are under a pixel apart, that makes them overlap,
+    // and each row covers part of the one above it, search hits included.
     float widen = clamp((${BARS.START_PX.toFixed(4)} - side) / ${(BARS.START_PX - BARS.FULL_PX).toFixed(4)}, 0.0, 1.0);
-    vec2 nudge = a_jitter * (1.0 - widen);
+    vec2 nudge = a_jitter * vec2(1.0 - widen, 1.0);
     vec4 rect = a_rect + vec4(nudge - grow, nudge + grow);
     rect.z = max(rect.z, a_rect.z + nudge.x + ${SQUARE_GAP.toFixed(4)} * widen);
     rect.zw = max(rect.zw, rect.xy + 1.0 / u_zoom);

@@ -213,6 +213,41 @@ export async function clippedText(page: Page, selector: string): Promise<string[
   );
 }
 
+/**
+ * How often a drawn line steps up or down a pixel: the share of drawn pixels
+ * whose right-hand neighbour is empty while the one above or below it is drawn.
+ */
+export async function stepShare(page: Page, png: Buffer): Promise<number> {
+  return page.evaluate(
+    async ({ b64, bg, delta }) => {
+      const img = new Image();
+      img.src = `data:image/png;base64,${b64}`;
+      await img.decode();
+      const c = document.createElement('canvas');
+      c.width = img.width;
+      c.height = img.height;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const { data } = ctx.getImageData(0, 0, c.width, c.height);
+      const drawn = (x: number, y: number) => {
+        const i = (y * c.width + x) * 4;
+        return Math.max(...[0, 1, 2].map((k) => Math.abs(data[i + k] - bg))) > delta;
+      };
+      let total = 0;
+      let steps = 0;
+      for (let y = 1; y < c.height - 1; y++) {
+        for (let x = 0; x < c.width - 1; x++) {
+          if (!drawn(x, y)) continue;
+          total++;
+          if (!drawn(x + 1, y) && (drawn(x + 1, y - 1) || drawn(x + 1, y + 1))) steps++;
+        }
+      }
+      return total ? steps / total : 0;
+    },
+    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
+  );
+}
+
 /** The longest unbroken run of drawn pixels along any one row of `png`. */
 export async function longestDrawnRun(page: Page, png: Buffer): Promise<number> {
   return page.evaluate(
