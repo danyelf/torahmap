@@ -66,10 +66,71 @@ describe('the what-points-here overlay', () => {
     expect(colours([item('Recital.3', { layer: 'recital' })])[0]).toEqual(QUIET);
   });
 
-  it('reads its article from a link and writes it back, leaving the default out', () => {
+  it('reads its article from a link and writes it back, leaving none out', () => {
     expect(referencesOverlay.settingsFromUrl!({ article: '9' })).toEqual({ article: '9' });
-    expect(referencesOverlay.settingsFromUrl!({})).toEqual({ article: '6' });
+    expect(referencesOverlay.settingsFromUrl!({})).toEqual({ article: '' });
     expect(referencesOverlay.settingsToUrl!({ article: '9' })).toEqual({ article: '9' });
-    expect(referencesOverlay.settingsToUrl!({ article: '6' })).toEqual({});
+    expect(referencesOverlay.settingsToUrl!({ article: '' })).toEqual({});
+  });
+
+  describe('while the pointer is on a square', () => {
+    const hover = (squares: ActItem[], on: ActItem, article = '') =>
+      referencesOverlay.colorsFor(squares, { article }, on, { refs });
+
+    it('shows the references of the article the square is in', () => {
+      const shown = hover([item('9(1)'), item('6(1)'), item('6(2)')], item('9(3)'));
+      expect(shown).toEqual([FOCUS, CITES, QUIET]);
+    });
+
+    it('shows them over the article typed in the box', () => {
+      expect(hover([item('5(1)')], item('9(3)'), '6')).toEqual([QUIET]);
+    });
+
+    it('shows what cites an annex the pointer is on', () => {
+      const annex = item('Annex.III.1.1', { layer: 'annex' });
+      expect(hover([annex, item('6(2)'), item('6(1)')], annex)).toEqual([FOCUS, CITED_BY, QUIET]);
+    });
+
+    it('leaves the map as it was on a recital', () => {
+      const squares = [item('6(1)'), item('40')];
+      const recital = item('Recital.3', { layer: 'recital' });
+      expect(hover(squares, recital, '6')).toEqual(colours(squares, '6'));
+    });
+
+    it('changes the map only when the pointer moves to another article', () => {
+      const changes = (a: ActItem | null, b: ActItem | null) =>
+        referencesOverlay.hoverChangesColors!(a, b, { article: '' }, { refs });
+      const recital = item('Recital.3', { layer: 'recital' });
+      expect(changes(item('6(1)'), item('6(2)'))).toBe(false);
+      expect(changes(item('6(1)'), item('9(2)'))).toBe(true);
+      expect(changes(item('6(1)'), null)).toBe(true);
+      expect(changes(recital, null)).toBe(false);
+    });
+  });
+
+  describe('with no article chosen and nothing under the pointer', () => {
+    const atRest = (squares: ActItem[]) =>
+      referencesOverlay.colorsFor(squares, { article: '' }, null, { refs });
+    const brightness = (c: unknown) => (c as number[]).reduce((a, b) => a + b, 0);
+
+    it('brightens an article the more often other articles cite it', () => {
+      // Article 6 is cited twice, by 9 and 40; Article 5 once, by 6.
+      const [six, five] = atRest([item('6(3)'), item('5(4)')]);
+      expect(brightness(six)).toBeGreaterThan(brightness(five));
+      expect(brightness(five)).toBeGreaterThan(brightness(QUIET));
+    });
+
+    it('leaves an article no other article cites quiet, whatever it cites in itself', () => {
+      expect(atRest([item('9(2)'), item('40')])).toEqual([QUIET, QUIET]);
+    });
+
+    it('colours a cited annex, and no recital', () => {
+      const [annex, recital] = atRest([
+        item('Annex.III.2', { layer: 'annex' }),
+        item('Recital.3', { layer: 'recital' }),
+      ]);
+      expect(annex).not.toEqual(QUIET);
+      expect(recital).toEqual(QUIET);
+    });
   });
 });

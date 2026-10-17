@@ -11,7 +11,7 @@ export const AMENDED: Readonly<Record<Origin, { plain: Color; lead: Color; name:
   'M1 inserted': { plain: hex('#e8833a'), lead: hex('#b85a17'), name: 'Inserted in 2026' },
   'M1 replaced': { plain: hex('#e6c229'), lead: hex('#b39410'), name: 'Replaced in 2026' },
 };
-const ANNEX_LEAD = hex('#2a5a92');
+const ANNEX_LEAD = hex('#2f4256');
 
 function colorOf(item: ActItem): Color {
   if (item.layer === 'recital') return RECITAL;

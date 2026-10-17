@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ActItem } from '../src/layout.ts';
+import { ENGLISH } from '@torahmap/shell/language.ts';
+import { AMENDED } from '../src/overlays/amendment.ts';
 import { actSearch, wordMatcher } from '../src/search.ts';
 
 const item = (id: string, layer: ActItem['layer'] = 'article'): ActItem => ({
@@ -50,6 +52,40 @@ describe('searching the Act for a word', () => {
   it('treats what a reader types as letters, not as a pattern', () => {
     expect(() => colours('(a')).not.toThrow();
     expect(wordMatcher('a.b')?.test('a-b')).toBe(false);
+  });
+
+  it('colours a hit apart from every colour the Amendment overlay paints', () => {
+    const hit = colours('records')[1];
+    for (const { plain, lead } of Object.values(AMENDED)) {
+      expect(hit).not.toEqual(plain);
+      expect(hit).not.toEqual(lead);
+    }
+  });
+
+  it('marks each whole-word match in a paragraph’s text, in any case', () => {
+    const text = 'Records, recordsets and RECORDS.';
+    const marked = (word: string) => {
+      const div = document.createElement('div');
+      div.append(
+        actSearch.highlightItemText!(
+          item('9(2)'),
+          text,
+          ENGLISH,
+          { text: word },
+          {
+            texts,
+          },
+        ),
+      );
+      return div;
+    };
+    const div = marked('records');
+    expect([...div.querySelectorAll('mark')].map((m) => m.textContent)).toEqual([
+      'Records',
+      'RECORDS',
+    ]);
+    expect(div.textContent).toBe(text);
+    expect(marked('a').querySelectorAll('mark')).toHaveLength(0);
   });
 
   it('reads its word from a link and writes it back', () => {

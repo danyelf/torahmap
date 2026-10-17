@@ -6,6 +6,7 @@ import { CONTROL } from '@torahmap/shell/panel.ts';
 import { hex } from './baseColor.ts';
 import { TEXTS_FILE, type ActTexts } from './data.ts';
 import type { ActItem } from './layout.ts';
+import './search.css';
 
 export interface ActSearchSettings {
   readonly text: string;
@@ -18,7 +19,8 @@ export const ACT_SEARCH_PARAMS = [
   { key: 'search', kind: 'text' },
 ] as const satisfies readonly UrlParamSpec[];
 
-const FOUND = hex('#e8833a');
+// The Tanakh's first search colour, so a search looks the same in every text.
+const FOUND = hex('#1ab3cc');
 
 const wordIn = (settings: ActSearchSettings): string => settings.text.trim();
 
@@ -46,6 +48,23 @@ export const actSearch: SearchTool<ActItem, ActSearchSettings, ActSearchData> = 
 
   getItemColor: (item, settings, data) => colorsFor([item], settings, data)[0],
   colorsFor: (items, settings, _hovered, data) => colorsFor(items, settings, data),
+
+  highlightItemText(_item, text, _language, settings) {
+    const fragment = document.createDocumentFragment();
+    const matcher = wordMatcher(wordIn(settings));
+    let at = 0;
+    if (matcher) {
+      for (const found of text.matchAll(new RegExp(matcher.source, 'giu'))) {
+        const mark = document.createElement('mark');
+        mark.className = 'act-found';
+        mark.textContent = found[0];
+        fragment.append(text.slice(at, found.index), mark);
+        at = found.index + found[0].length;
+      }
+    }
+    fragment.append(text.slice(at));
+    return fragment;
+  },
 
   urlParams: ACT_SEARCH_PARAMS,
   settingsFromUrl: (params) => ({ text: params.search ?? '' }),

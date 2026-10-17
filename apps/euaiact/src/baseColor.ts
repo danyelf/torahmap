@@ -14,7 +14,7 @@ export const hex = (rgb: string): Color => [
 
 export const RECITAL = hex('#b9a27a');
 export const ARTICLE = hex('#9aa3ad');
-export const ANNEX = hex('#5b8fc9');
+export const ANNEX = hex('#4a6582');
 
 export function layerColor(item: ActItem): Color {
   const base = item.layer === 'recital' ? RECITAL : item.layer === 'annex' ? ANNEX : ARTICLE;

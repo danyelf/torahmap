@@ -68,10 +68,10 @@ test.describe('on a dense screen', () => {
       c.height = img.height;
       const ctx = c.getContext('2d')!;
       ctx.drawImage(img, 0, 0);
-      // The search's orange, #e8833a.
+      // The search's cyan, #1ab3cc.
       const ring = (x: number, y: number) => {
         const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
-        return Math.abs(r - 232) + Math.abs(g - 131) + Math.abs(b - 58) < 60;
+        return Math.abs(r - 26) + Math.abs(g - 179) + Math.abs(b - 204) < 60;
       };
       // From the recital's middle outward: its fill, then its ring, a run of orange.
       const run = (step: (i: number) => [number, number]) => {
