@@ -8,6 +8,7 @@ import {
   MULTICOLOR_GROWTH,
   ITEM_ATTRIBUTES,
   ITEM_OFFSETS,
+  SHAPE_FLAGS,
   type ItemAttributeName,
 } from '../src/index.ts';
 import { createItem, createItems, RED, GREEN, BLUE, WHITE } from './fixtures.ts';
@@ -200,6 +201,19 @@ describe('buildItemGeometry', () => {
       );
       expect(field(buffer, 0, 'a_shape')[3]).toBe(1);
       expect(field(buffer, 0, 'a_nextShape')[3]).toBe(0);
+    });
+
+    it('marks each picture standing out on its own, beside uncoloured', () => {
+      const buffer = buildItemGeometry(
+        createItems(2),
+        { colors: [WHITE, WHITE], uncoloured: [true, false], standout: [true, false] },
+        { colors: [RED, RED], standout: [false, true] },
+      );
+      const flags = (i: number, name: ItemAttributeName) => field(buffer, i, name)[3];
+      expect(flags(0, 'a_shape')).toBe(SHAPE_FLAGS.UNCOLOURED | SHAPE_FLAGS.STANDOUT);
+      expect(flags(0, 'a_nextShape')).toBe(0);
+      expect(flags(1, 'a_shape')).toBe(0);
+      expect(flags(1, 'a_nextShape')).toBe(SHAPE_FLAGS.STANDOUT);
     });
   });
 });

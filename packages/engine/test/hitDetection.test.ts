@@ -5,6 +5,7 @@ import {
   findFuzzyHit,
   findNearestItem,
   findItemAtPoint,
+  STANDOUT_MIN_PX,
   type MapItem,
   type Camera,
 } from '../src/index.ts';
@@ -205,6 +206,27 @@ describe('hitDetection', () => {
       const hit = findItemAtPoint(items, camera, VIEW, 12, 5);
 
       expect(hit).toBe(items[0]);
+    });
+
+    describe('far out, where a standout is drawn bigger than its cell', () => {
+      const row: MapItem[] = [
+        createItem({ x: 0, y: 0, size: 1 }),
+        createItem({ id: '2', x: 1, y: 0, size: 1 }),
+      ];
+      // A standout drawn four cells wide
+      const zoom = STANDOUT_MIN_PX / 4;
+      // World (1.6, 0.5): inside the second cell, and inside the first's drawn square
+      const [sx, sy] = [1.6 * zoom, 0.5 * zoom];
+
+      it('finds the standout under the point, outside its own cell', () => {
+        expect(findItemAtPoint(row, withOrigin(0, 0, zoom), VIEW, sx, sy, [true, false])).toBe(
+          row[0],
+        );
+      });
+
+      it('finds the cell under the point with no standouts', () => {
+        expect(findItemAtPoint(row, withOrigin(0, 0, zoom), VIEW, sx, sy)).toBe(row[1]);
+      });
     });
 
     it('returns null when no exact or fuzzy hit', () => {

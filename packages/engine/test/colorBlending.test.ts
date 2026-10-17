@@ -122,3 +122,20 @@ describe('mergePictures with rings', () => {
     expect(mergePictures({ colors: [RED] }, { colors: [BLUE] }, 0.5).rings).toBeUndefined();
   });
 });
+
+describe('mergePictures with standouts', () => {
+  const RED: Color = [1, 0, 0];
+
+  it('keeps a square standing out that does on either side', () => {
+    const merged = mergePictures(
+      { colors: [RED, RED, RED], standout: [true, false, false] },
+      { colors: [RED, RED, RED], standout: [false, true, false] },
+      0.5,
+    );
+    expect(merged.standout).toEqual([true, true, false]);
+  });
+
+  it('marks none when neither side has standouts', () => {
+    expect(mergePictures({ colors: [RED] }, { colors: [RED] }, 0.5).standout).toBeUndefined();
+  });
+});
