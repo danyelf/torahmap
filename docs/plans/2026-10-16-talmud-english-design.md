@@ -8,8 +8,8 @@ William Davidson English (the Koren translation, with Rabbi Steinsaltz's explana
 can supply both. This document checks that the English fits the map, proposes how the popup
 shows its bold literal translation, and measures five ways to search it.
 
-All figures come from `scripts/talmud/english-align.ts` and `scripts/talmud/english-measure.ts`,
-run on all 37 tractates. Timings are Node 24 on an Apple M4 Pro, the median of five runs; a phone
+All figures were measured on all 37 tractates, by two one-off scripts that are in this
+document's first commit and removed since; the bundle now checks the English's shape itself. Timings are Node 24 on an Apple M4 Pro, the median of five runs; a phone
 will be slower, by how much I have not measured. Anything not measured is marked as a guess.
 
 ## The English fits the map

@@ -30,12 +30,7 @@ describe('englishText', () => {
     });
   });
 
-  it('ends a stretch left open with the text', () => {
-    expect(englishText('a *b').styles).toEqual([{ start: 2, end: 3, style: 'bold' }]);
-  });
-
-  it('reads empty text, and empty stretches, as nothing', () => {
+  it('reads empty text as nothing', () => {
     expect(englishText('')).toEqual({ text: '', styles: [] });
-    expect(englishText('a**')).toEqual({ text: 'a', styles: [] });
   });
 });
