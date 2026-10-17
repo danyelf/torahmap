@@ -121,7 +121,7 @@ test('zoomed far out, a line of verses draws as one unbroken bar', async ({ page
 
 test('zoomed far out, bars keep their vertical jitter', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop', 'one screen, at one pixel to the pixel');
-  // Bars on an exact grid band against the pixel rows.
+  // Measured 0.087 with the jitter and 0 without it.
   await openMap(page, 'zoom=0.3');
-  expect(await stepShare(page, await canvasShot(page))).toBeGreaterThan(0);
+  expect(await stepShare(page, await canvasShot(page))).toBeGreaterThan(0.04);
 });

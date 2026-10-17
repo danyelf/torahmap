@@ -12,21 +12,6 @@ The core design principle is **position stability** - each verse occupies a perm
 - Comparison across different analyses on the same substrate
 - The "ragged edge" of chapters naturally encodes chapter length
 
-Much of how the squares are drawn exists to avoid moiré: light and dark bands
-that appear when a regular grid of squares, each a pixel or two across, lands
-unevenly on the screen's pixels, and that crawl when the map moves. The pieces
-that are there for it:
-
-- every square's small fixed nudge in position (each layout's `jitter`, added
-  in the shader in `packages/engine/src/webgl.ts`);
-- the default grey's varied brightness (`getDefaultColor`) and the shader's
-  dithering noise;
-- squares under 2 device pixels drawn as bars along their row, which keep
-  their vertical nudge and lose only the sideways one.
-
-Before merging a change to any of these, look at the map at small zoom
-(0.25 and 0.22) on screens of density 1.5 and 2, at rest and while panning.
-
 ## Features
 
 What the map does is in [README.md](README.md). What an agent also needs:
@@ -259,6 +244,10 @@ The codebase follows a **functional, modular design** with clear separation of c
 - Any animated change to what the map shows goes through the renderer's
   picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
   story stops ease with. Don't add another animation path for it.
+- Much of how the squares are drawn exists to avoid moiré, the light and dark
+  bands a grid of tiny squares makes against the screen's pixels; the comments
+  that mention it mark each piece. Before changing one, look at the map at zoom
+  0.25 and 0.22 on screens of density 1.5 and 2, at rest and while panning.
 
 ## Data
 

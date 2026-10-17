@@ -87,15 +87,18 @@ export async function canvasShot(page: Page): Promise<Buffer> {
   }
 }
 
-/** How many of `png`'s pixels are drawn, and how many of those are coloured rather than grey. */
-export async function pixelCounts(
+const DRAWN = 1;
+const COLOURED = 2;
+
+/** `png`'s pixels, row by row, each flagged DRAWN, COLOURED, both or neither. */
+async function pixelFlags(
   page: Page,
   png: Buffer,
-): Promise<{ drawn: number; coloured: number }> {
-  return page.evaluate(
-    async ({ b64, bg, delta, spread }) => {
+): Promise<{ width: number; height: number; flags: Buffer }> {
+  const { width, height, b64 } = await page.evaluate(
+    async ({ png, bg, delta, spread, drawnFlag, colouredFlag }) => {
       const img = new Image();
-      img.src = `data:image/png;base64,${b64}`;
+      img.src = `data:image/png;base64,${png}`;
       await img.decode();
       const c = document.createElement('canvas');
       c.width = img.width;
@@ -103,17 +106,41 @@ export async function pixelCounts(
       const ctx = c.getContext('2d')!;
       ctx.drawImage(img, 0, 0);
       const { data } = ctx.getImageData(0, 0, c.width, c.height);
-      let drawn = 0;
-      let coloured = 0;
+      let bytes = '';
       for (let i = 0; i < data.length; i += 4) {
         const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-        if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta) drawn++;
-        if (Math.max(r, g, b) - Math.min(r, g, b) > spread) coloured++;
+        let f = 0;
+        if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta) f |= drawnFlag;
+        if (Math.max(r, g, b) - Math.min(r, g, b) > spread) f |= colouredFlag;
+        bytes += String.fromCharCode(f);
       }
-      return { drawn, coloured };
+      return { width: c.width, height: c.height, b64: btoa(bytes) };
     },
-    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA, spread: COLOURED_SPREAD },
+    {
+      png: png.toString('base64'),
+      bg: BACKGROUND,
+      delta: DRAWN_DELTA,
+      spread: COLOURED_SPREAD,
+      drawnFlag: DRAWN,
+      colouredFlag: COLOURED,
+    },
   );
+  return { width, height, flags: Buffer.from(b64, 'base64') };
+}
+
+/** How many of `png`'s pixels are drawn, and how many are coloured rather than grey. */
+export async function pixelCounts(
+  page: Page,
+  png: Buffer,
+): Promise<{ drawn: number; coloured: number }> {
+  const { flags } = await pixelFlags(page, png);
+  let drawn = 0;
+  let coloured = 0;
+  for (const f of flags) {
+    if (f & DRAWN) drawn++;
+    if (f & COLOURED) coloured++;
+  }
+  return { drawn, coloured };
 }
 
 /** Counts the map's drawn pixels. */
@@ -218,61 +245,29 @@ export async function clippedText(page: Page, selector: string): Promise<string[
  * whose right-hand neighbour is empty while the one above or below it is drawn.
  */
 export async function stepShare(page: Page, png: Buffer): Promise<number> {
-  return page.evaluate(
-    async ({ b64, bg, delta }) => {
-      const img = new Image();
-      img.src = `data:image/png;base64,${b64}`;
-      await img.decode();
-      const c = document.createElement('canvas');
-      c.width = img.width;
-      c.height = img.height;
-      const ctx = c.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-      const { data } = ctx.getImageData(0, 0, c.width, c.height);
-      const drawn = (x: number, y: number) => {
-        const i = (y * c.width + x) * 4;
-        return Math.max(...[0, 1, 2].map((k) => Math.abs(data[i + k] - bg))) > delta;
-      };
-      let total = 0;
-      let steps = 0;
-      for (let y = 1; y < c.height - 1; y++) {
-        for (let x = 0; x < c.width - 1; x++) {
-          if (!drawn(x, y)) continue;
-          total++;
-          if (!drawn(x + 1, y) && (drawn(x + 1, y - 1) || drawn(x + 1, y + 1))) steps++;
-        }
-      }
-      return total ? steps / total : 0;
-    },
-    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
-  );
+  const { width, height, flags } = await pixelFlags(page, png);
+  const drawn = (x: number, y: number) => (flags[y * width + x] & DRAWN) !== 0;
+  let total = 0;
+  let steps = 0;
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 0; x < width - 1; x++) {
+      if (!drawn(x, y)) continue;
+      total++;
+      if (!drawn(x + 1, y) && (drawn(x + 1, y - 1) || drawn(x + 1, y + 1))) steps++;
+    }
+  }
+  return total ? steps / total : 0;
 }
 
 /** The longest unbroken run of drawn pixels along any one row of `png`. */
 export async function longestDrawnRun(page: Page, png: Buffer): Promise<number> {
-  return page.evaluate(
-    async ({ b64, bg, delta }) => {
-      const img = new Image();
-      img.src = `data:image/png;base64,${b64}`;
-      await img.decode();
-      const c = document.createElement('canvas');
-      c.width = img.width;
-      c.height = img.height;
-      const ctx = c.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-      const { data } = ctx.getImageData(0, 0, c.width, c.height);
-      let longest = 0;
-      for (let y = 0; y < c.height; y++) {
-        let run = 0;
-        for (let x = 0; x < c.width; x++) {
-          const i = (y * c.width + x) * 4;
-          const d = Math.max(...[0, 1, 2].map((k) => Math.abs(data[i + k] - bg)));
-          run = d > delta ? run + 1 : 0;
-          longest = Math.max(longest, run);
-        }
-      }
-      return longest;
-    },
-    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
-  );
+  const { width, flags } = await pixelFlags(page, png);
+  let longest = 0;
+  let run = 0;
+  flags.forEach((f, i) => {
+    if (i % width === 0) run = 0;
+    run = f & DRAWN ? run + 1 : 0;
+    longest = Math.max(longest, run);
+  });
+  return longest;
 }
