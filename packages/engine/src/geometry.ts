@@ -38,8 +38,7 @@ export const BAND_OFFSET = 0.08;
  * has several colours. A square's ring, where `rings` gives one, surrounds its
  * fill in colours of its own. `uncoloured` marks the squares whose fill is
  * their default grey, which a hover paints in the highlight colour instead of
- * brightening. `standout` marks the squares, such as search hits, drawn over
- * all the others and never smaller than STANDOUT_MIN_PX.
+ * brightening. `standout` marks the squares drawn over all the others and never smaller than STANDOUT_MIN_PX.
  */
 export interface Picture<C = ItemColor> {
   colors: C[];

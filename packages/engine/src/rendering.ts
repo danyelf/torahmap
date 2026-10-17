@@ -54,6 +54,8 @@ export interface RenderState<T> {
   dpr: number;
   /** How far the squares have gone from their first picture to their second, 0 to 1. */
   fade: number;
+  /** The squares that stand out in either picture, as drawn, for hit detection. */
+  standout: boolean[];
 }
 
 export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
@@ -98,6 +100,7 @@ export function createRenderState<T>(
     items,
     dpr,
     fade: 0,
+    standout: [],
   };
 }
 
@@ -114,6 +117,7 @@ export function rebuildGeometry<T>(
   to?: Picture,
 ): void {
   const geometry = buildItemGeometry(state.items, from, to);
+  state.standout = state.items.map((_, i) => !!(from?.standout?.[i] || to?.standout?.[i]));
   gl.bindBuffer(gl.ARRAY_BUFFER, state.buffer);
   gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
 }
@@ -157,11 +161,10 @@ export function render<T>(
   gl.uniform1f(programs.main.uniforms.standoutSide, STANDOUT_MIN_PX * dpr);
 
   gl.bindVertexArray(vertexArray);
-  // Six corners (two triangles) for each square. The second pass draws the
-  // standouts again, so nothing drawn after them covers them.
-  gl.uniform1i(programs.main.uniforms.standoutsOnly, 0);
+  // Six corners (two triangles) for each square: the rest, then the standouts over them.
+  gl.uniform1i(programs.main.uniforms.drawingStandouts, 0);
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
-  gl.uniform1i(programs.main.uniforms.standoutsOnly, 1);
+  gl.uniform1i(programs.main.uniforms.drawingStandouts, 1);
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
   gl.bindVertexArray(null);
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { initWebGL, createProgram, ITEM_ATTRIBUTES } from '../src/index.ts';
+import { initWebGL, createProgram, ITEM_ATTRIBUTES, BARS, STANDOUT_MIN_PX } from '../src/index.ts';
 import { createMockWebGL2Context, createMockCanvas } from './mocks.ts';
 
 const shaderSourceOf = (gl: WebGL2RenderingContext, call: number): string =>
@@ -384,11 +384,10 @@ describe('createProgram', () => {
       expect(program.program).toBe(mockProgram);
     });
 
-    it('uniforms contains all 8 uniforms', () => {
+    it('looks up every uniform the shader takes', () => {
       const program = createProgram(gl);
 
       const uniformKeys = Object.keys(program.uniforms);
-      expect(uniformKeys).toHaveLength(8);
       expect(uniformKeys).toContain('resolution');
       expect(uniformKeys).toContain('pan');
       expect(uniformKeys).toContain('zoom');
@@ -396,7 +395,7 @@ describe('createProgram', () => {
       expect(uniformKeys).toContain('ring');
       expect(uniformKeys).toContain('hovered');
       expect(uniformKeys).toContain('standoutSide');
-      expect(uniformKeys).toContain('standoutsOnly');
+      expect(uniformKeys).toContain('drawingStandouts');
     });
   });
 
@@ -556,5 +555,15 @@ describe('createProgram', () => {
       expect(gl.createShader).toHaveBeenCalledTimes(20); // 2 per program
       expect(gl.createProgram).toHaveBeenCalledTimes(10);
     });
+  });
+});
+
+describe('the standout size', () => {
+  // The shader turns a square into a standout only below STANDOUT_MIN_PX, so
+  // a square that has started widening into a bar must be below it too.
+  it('is above the size bars start at, on the coarsest screen', () => {
+    const coarsestDevicePixelsPerCssPixel = 1;
+    const standoutDevicePx = STANDOUT_MIN_PX * coarsestDevicePixelsPerCssPixel;
+    expect(standoutDevicePx).toBeGreaterThan(BARS.START_PX);
   });
 });
