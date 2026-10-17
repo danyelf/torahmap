@@ -269,10 +269,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const { from, to, t } = colorLayer;
     renderState.fade = to ? t : 0;
 
-    // The colour arrays, not the pictures: a story stop's are cached, while
+    // The pictures' fields, not the pictures: a story stop's are cached, while
     // the pictures around them are made afresh each frame.
-    const inputs = [from, to].flatMap((p) => [p?.colors, p?.growth, p?.rings, p?.standout]);
-    if (inputs.every((input, i) => input === built[i])) return;
+    const inputs = [from, to].flatMap((p) => (p ? Object.entries(p).flat() : [null]));
+    if (inputs.length === built.length && inputs.every((input, i) => input === built[i])) return;
     built = inputs;
 
     rebuildGeometry(renderContext.gl, renderState, fill(from), to && fill(to));
@@ -765,7 +765,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     zoomIn: document.getElementById('zoom-in'),
     zoomOut: document.getElementById('zoom-out'),
     onMap,
-    squareUnder: (p) => findItemAtPoint(items, camera, mapViewport(), p.x, p.y),
+    squareUnder: (p) =>
+      findItemAtPoint(items, camera, mapViewport(), p.x, p.y, renderState.standout),
     clickable: (square) => pinnedItem !== null && square !== null,
     direction: source.site.direction,
     intents: {

@@ -44,10 +44,12 @@ export function combineLayers(
 ): Picture<ItemColor | null> {
   const colors: (ItemColor | null)[] = new Array(count);
   const rings: (ItemColor | null)[] = new Array(count).fill(null);
+  const standout: boolean[] | undefined = search ? new Array(count) : undefined;
 
   for (let i = 0; i < count; i++) {
     const under = overlay?.[i] ?? null;
     const match = search?.[i] ?? null;
+    if (standout) standout[i] = !!match;
     if (!search) {
       colors[i] = under;
     } else if (!overlay) {
@@ -62,7 +64,7 @@ export function combineLayers(
   }
 
   const picture: Picture<ItemColor | null> = search && overlay ? { colors, rings } : { colors };
-  if (search) picture.standout = Array.from({ length: count }, (_, i) => !!search[i]);
+  if (standout) picture.standout = standout;
   return picture;
 }
 

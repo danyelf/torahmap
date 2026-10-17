@@ -55,5 +55,5 @@ export const BARS = {
   FULL_PX: 1.5,
 } as const;
 
-/** A square that stands out, such as a search hit, is never drawn smaller than this a side, in CSS pixels. */
+/** A square that stands out is never drawn smaller than this a side, in CSS pixels. */
 export const STANDOUT_MIN_PX = 4;

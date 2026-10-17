@@ -250,12 +250,12 @@ describe('rendering', () => {
       expect(context.gl.drawArraysInstanced).toHaveBeenCalledWith(context.gl.TRIANGLES, 0, 6, 10);
     });
 
-    it('draws every square, then the standouts again on top', () => {
+    it('draws the other squares, then the standouts over them', () => {
       render(context, state, camera, null, null);
 
       const draws = vi.mocked(context.gl.drawArraysInstanced).mock.invocationCallOrder;
       const { calls, invocationCallOrder } = vi.mocked(context.gl.uniform1i).mock;
-      // What the last integer uniform set before a draw held: standoutsOnly's value
+      // What the last integer uniform set before a draw held: drawingStandouts's value
       const setBefore = (draw: number) =>
         calls.filter((_, k) => invocationCallOrder[k] < draw).at(-1)?.[1];
       expect(draws).toHaveLength(2);

@@ -2,7 +2,7 @@
 
 import type { SpatialItem } from './types.ts';
 import { screenToWorld, type Camera, type Viewport } from './camera.ts';
-import { HIGHLIGHT_CONSTANTS } from './constants.ts';
+import { HIGHLIGHT_CONSTANTS, STANDOUT_MIN_PX } from './constants.ts';
 
 /** Check if a point (in world coordinates) is inside a spatial item's bounds. */
 export function isPointInItem<T>(worldX: number, worldY: number, item: SpatialItem<T>): boolean {
@@ -68,8 +68,32 @@ export function findFuzzyHit<T>(
 }
 
 /**
- * Find square at screen coordinates: exact hit detection first, falling back
- * to fuzzy matching so a near-miss still lands on something.
+ * The standout under a world point, by the square it is drawn as: at least
+ * STANDOUT_MIN_PX a side around its cell's centre. The last one drawn is on top.
+ */
+export function findStandoutHit<T>(
+  items: SpatialItem<T>[],
+  standout: readonly boolean[],
+  zoom: number,
+  worldX: number,
+  worldY: number,
+): SpatialItem<T> | null {
+  let hit: SpatialItem<T> | null = null;
+  for (let i = 0; i < items.length; i++) {
+    if (!standout[i]) continue;
+    const v = items[i];
+    const half = Math.max(v.size, STANDOUT_MIN_PX / zoom) / 2;
+    const dx = Math.abs(worldX - (v.x + v.size / 2));
+    const dy = Math.abs(worldY - (v.y + v.size / 2));
+    if (dx < half && dy < half) hit = v;
+  }
+  return hit;
+}
+
+/**
+ * Find square at screen coordinates: a standout as drawn first, then exact hit
+ * detection, falling back to fuzzy matching so a near-miss still lands on
+ * something.
  */
 export function findItemAtPoint<T>(
   items: SpatialItem<T>[],
@@ -77,8 +101,12 @@ export function findItemAtPoint<T>(
   viewport: Viewport,
   screenX: number,
   screenY: number,
+  standout: readonly boolean[] = [],
 ): SpatialItem<T> | null {
   const { x: worldX, y: worldY } = screenToWorld({ x: screenX, y: screenY }, camera, viewport);
+
+  const standoutHit = findStandoutHit(items, standout, camera.zoom, worldX, worldY);
+  if (standoutHit) return standoutHit;
 
   const exactHit = findExactHit(items, worldX, worldY);
   if (exactHit) {

@@ -21,7 +21,7 @@ export interface ShaderProgram {
     ring: WebGLUniformLocation | null;
     hovered: WebGLUniformLocation | null;
     standoutSide: WebGLUniformLocation | null;
-    standoutsOnly: WebGLUniformLocation | null;
+    drawingStandouts: WebGLUniformLocation | null;
   };
 }
 
@@ -45,8 +45,9 @@ const VERTEX_SHADER = `#version 300 es
   uniform int u_hovered;
   // The smallest side a standout square is drawn at, in device pixels.
   uniform float u_standoutSide;
-  // True in the pass that draws only the standout squares, over the rest.
-  uniform bool u_standoutsOnly;
+  // Which pass this is: the squares that stand out in either picture, drawn
+  // second so they lie over the rest, or the rest.
+  uniform bool u_drawingStandouts;
 
   ${ITEM_INPUTS}
 
@@ -89,7 +90,7 @@ const VERTEX_SHADER = `#version 300 es
 
   void main() {
     float standsOut = mix(standout(a_shape), standout(a_nextShape), u_fade);
-    if (u_standoutsOnly && standout(a_shape) + standout(a_nextShape) == 0.0) {
+    if ((standout(a_shape) + standout(a_nextShape) > 0.0) != u_drawingStandouts) {
       // Outside the clip box, so the square is not drawn
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       return;
@@ -109,9 +110,7 @@ const VERTEX_SHADER = `#version 300 es
     vec4 rect = a_rect + vec4(nudge - grow, nudge + grow);
     rect.z = max(rect.z, a_rect.z + nudge.x + ${SQUARE_GAP.toFixed(4)} * widen);
     rect.zw = max(rect.zw, rect.xy + 1.0 / u_zoom);
-    // A standout smaller than u_standoutSide is drawn as a square of that side
-    // around its own centre instead. Bars start below that size, so a larger
-    // standout keeps the rect above.
+    // A standout smaller than u_standoutSide is a square of that side around its own centre.
     if (side + 2.0 * grow * u_zoom < u_standoutSide) {
       vec2 centre = (a_rect.xy + a_rect.zw) * 0.5 + nudge;
       float halfSide = u_standoutSide * 0.5 / u_zoom;
@@ -305,7 +304,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       ring: gl.getUniformLocation(program, 'u_ring'),
       hovered: gl.getUniformLocation(program, 'u_hovered'),
       standoutSide: gl.getUniformLocation(program, 'u_standoutSide'),
-      standoutsOnly: gl.getUniformLocation(program, 'u_standoutsOnly'),
+      drawingStandouts: gl.getUniformLocation(program, 'u_drawingStandouts'),
     },
   };
 }
