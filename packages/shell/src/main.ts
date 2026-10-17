@@ -554,7 +554,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(source.site, allOverlays);
-      bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
+      const hebrewToggle = aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle');
+      if (hebrewToggle) bindHebrewToggle(hebrewToggle);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
     measureSheet();
@@ -1108,7 +1109,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   });
   searchChanged(true);
 
-  applyHebrewChoice();
+  applyHebrewChoice(source.site.hasHebrew);
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
 

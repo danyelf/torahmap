@@ -21,7 +21,7 @@ export default defineConfig({
     ...SCREENS.map((s) => ({
       name: s.name,
       use: s.use,
-      testMatch: ['app.spec.ts', 'talmud.spec.ts'],
+      testMatch: ['app.spec.ts', 'talmud.spec.ts', 'euaiact.spec.ts'],
     })),
   ],
   webServer: {

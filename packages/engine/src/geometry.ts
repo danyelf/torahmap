@@ -130,7 +130,7 @@ export function buildItemGeometry<T>(
     const rect = i * FLOATS_PER_ITEM + ITEM_OFFSETS.a_rect;
     data[rect] = v.x;
     data[rect + 1] = v.y;
-    data[rect + 2] = v.x + v.size - SQUARE_GAP;
+    data[rect + 2] = v.x + (v.width ?? v.size) - SQUARE_GAP;
     data[rect + 3] = v.y + v.size - SQUARE_GAP;
     const jitter = i * FLOATS_PER_ITEM + ITEM_OFFSETS.a_jitter;
     data[jitter] = v.jitter?.x ?? 0;

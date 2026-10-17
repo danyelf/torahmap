@@ -20,12 +20,15 @@ export function aboutHtml(
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
 ): string {
   const square = escapeHtml(site.squareName);
-  return panelHtml(
-    'about',
-    `<section class="about-section">
+  const settings = site.hasHebrew
+    ? `<section class="about-section">
       <h3 class="panel-section-heading">Settings</h3>
       <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
-    </section>
+    </section>`
+    : '';
+  return panelHtml(
+    'about',
+    `${settings}
     <section class="about-section">
       <h3 class="panel-section-heading">${escapeHtml(site.page.name)}</h3>
       ${site.aboutHtml}

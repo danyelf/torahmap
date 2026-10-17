@@ -4,7 +4,7 @@ import { HIGHLIGHT_CONSTANTS } from './constants.ts';
 import { SQUARE_GAP } from './geometry.ts';
 import type { MapItem } from './types.ts';
 
-export type OutlineBounds = Pick<MapItem, 'x' | 'y' | 'size' | 'jitter'>;
+export type OutlineBounds = Pick<MapItem, 'x' | 'y' | 'size' | 'width' | 'jitter'>;
 
 /** Build outline geometry as 4 border rectangles (24 corners, x and y each) around a square. */
 export function buildOutlineGeometry(
@@ -21,7 +21,7 @@ export function buildOutlineGeometry(
   const top = bounds.y + (bounds.jitter?.y ?? 0);
   const x0 = left - thickness;
   const y0 = top - thickness;
-  const x1 = left + bounds.size - SQUARE_GAP + thickness;
+  const x1 = left + (bounds.width ?? bounds.size) - SQUARE_GAP + thickness;
   const y1 = top + bounds.size - SQUARE_GAP + thickness;
 
   let offset = 0;

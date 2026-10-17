@@ -118,6 +118,22 @@ describe('a book label set as a tab', () => {
     }
   });
 
+  it('in a text read left to right, starts at its book’s left edge, inset from it', () => {
+    const {
+      move,
+      books: [label],
+    } = labels([book('Genesis', 'torah', 100, 106, 200)], {
+      ...SETTINGS,
+      tab,
+      direction: 'ltr',
+    });
+    for (const zoom of [0.5, 1, 4]) {
+      move({ x: 10, y: 20 }, zoom);
+      expect(label.style.left).toBe(`${(100 + 6 + 10) * zoom}px`);
+      expect(label.style.transform).toBe('none');
+    }
+  });
+
   it('scales with the map, without the bounds an ordinary label is held to', () => {
     expect(tabAt(0.1).style.fontSize).toBe('2px');
     expect(tabAt(10).style.fontSize).toBe('200px');

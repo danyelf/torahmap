@@ -20,9 +20,12 @@ function save(englishOnly: boolean): void {
   }
 }
 
-/** Applies the reader's stored choice. Runs at startup, before any panel exists. */
-export function applyHebrewChoice(): void {
-  document.body.classList.toggle(CLASS, load());
+/**
+ * Applies the reader's stored choice, or English only for a text with no Hebrew, whatever was
+ * chosen on another page of the site. Runs at startup, before any panel exists.
+ */
+export function applyHebrewChoice(hasHebrew: boolean): void {
+  document.body.classList.toggle(CLASS, !hasHebrew || load());
 }
 
 /** Makes `button` show and flip the choice. The About panel draws it afresh each time it opens. */

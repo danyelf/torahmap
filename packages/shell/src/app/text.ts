@@ -25,6 +25,8 @@ export interface Site {
   page: PageCopy;
   /** What a reader calls one square, in plain text: "verse", "segment". */
   squareName: string;
+  /** Without Hebrew, the page is English only and offers no Hide Hebrew control. */
+  hasHebrew: boolean;
   /** What the map is, as the About panel's opening paragraph. */
   aboutHtml: string;
   /** What the map itself rests on, credited above each tool's sources. */

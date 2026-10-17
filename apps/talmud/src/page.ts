@@ -18,4 +18,5 @@ export const TALMUD_PAGE: PageCopy = {
   noScript: SUMMARY,
   noWebGl: SUMMARY,
   textUrl: SEFARIA_TALMUD,
+  textSource: 'Sefaria',
 };

@@ -24,6 +24,14 @@ describe('the About panel', () => {
     expect(toggle?.type).toBe('button');
   });
 
+  it('has no Hebrew toggle for a text with no Hebrew', async () => {
+    const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
+    const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
+    const div = document.createElement('div');
+    div.innerHTML = aboutHtml({ ...tanakhSite, hasHebrew: false }, []);
+    expect(div.querySelector('#hebrew-toggle')).toBeNull();
+  });
+
   it('says what the map is and who made it', async () => {
     const text = (await about()).textContent ?? '';
     expect(text).toContain('Torahmap');

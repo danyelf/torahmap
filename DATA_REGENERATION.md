@@ -253,3 +253,16 @@ The download keeps what is already on disk; `--force` fetches it again.
 Which segments are Mishnah comes from the bold מתני׳ and גמ׳ markers, read from
 both editions Sefaria has, Wikisource and the William Davidson Edition (`merged.json`), since
 each misses markers the other has.
+
+## AI Act
+
+The AI Act is parsed from its EUR-Lex pages in `experiments/eu-ai-act/`: `parse.py`
+writes `ai-act.json` and `refs.py` writes `refs.json`; its README says how. The app
+reads neither; it reads what the bundler makes of them.
+
+```bash
+# Build public/data/euaiact/
+python3 -I scripts/euaiact/bundle.py
+```
+
+An empty `git diff` after regenerating means nothing changed.

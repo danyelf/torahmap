@@ -1,4 +1,10 @@
-import { centreForFocus, type Camera, type ScreenPoint, type Viewport } from '@torahmap/engine';
+import {
+  centreForFocus,
+  type Camera,
+  type ItemBox,
+  type ScreenPoint,
+  type Viewport,
+} from '@torahmap/engine';
 import { linkKind, type OverlayParams, type UrlParamValues, type UrlState } from '@torahmap/link';
 import type { Frame } from './frame.ts';
 import { NO_OVERLAY } from './overlays/types.ts';
@@ -63,7 +69,7 @@ export function opensFolded(link: UrlState, hasVisited: boolean): boolean {
  */
 export function cameraForView(
   camera: Camera,
-  item: { x: number; y: number; size: number } | null,
+  item: ItemBox | null,
   focus: ScreenPoint,
   viewport: Viewport,
 ): Camera {

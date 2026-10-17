@@ -4,6 +4,7 @@ import { TANAKH_PATH } from '@torahmap/site';
 import type { PageCopy } from '@torahmap/shell/app/page.ts';
 import { TANAKH_PAGE } from '@torahmap/tanakh/page.ts';
 import { TALMUD_PAGE, TALMUD_PATH } from '@torahmap/talmud/page.ts';
+import { EUAIACT_PAGE, EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
 
 export interface Page {
   path: string;
@@ -11,10 +12,11 @@ export interface Page {
   entry: string;
 }
 
-/** The Tanakh's at the root; the Talmud's at /talmud/. */
+/** The Tanakh's at the root; the Talmud's at /talmud/; the AI Act's at /euaiact/. */
 export const PAGES: readonly Page[] = [
   { path: TANAKH_PATH, copy: TANAKH_PAGE, entry: '/apps/tanakh/src/main.ts' },
   { path: TALMUD_PATH, copy: TALMUD_PAGE, entry: '/apps/talmud/src/main.ts' },
+  { path: EUAIACT_PATH, copy: EUAIACT_PAGE, entry: '/apps/euaiact/src/main.ts' },
 ];
 
 /** The page an address asks for, with or without its query and index.html; the root's for any other. */

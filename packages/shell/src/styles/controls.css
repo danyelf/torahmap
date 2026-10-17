@@ -45,6 +45,23 @@
   cursor: pointer;
 }
 
+/* A text box, as the Tanakh's search term box is drawn. */
+.control-input {
+  min-width: 0;
+  padding: 7px 9px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #222;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+}
+
+.control-input:focus {
+  outline: none;
+  border-color: #6ab0f3;
+}
+
 /* A glyph alone, such as ×: the search's ×, on the 24px square the layout
    suite asks of a touch target. */
 .control-icon {

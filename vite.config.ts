@@ -5,6 +5,7 @@ import { resolve } from 'path';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
+import { EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
 import { builtPages, isLiveBuild, unpublished, type BuiltPage } from './build.ts';
 import { pageAt } from './pages.ts';
 
@@ -39,32 +40,40 @@ function pagePlugin(): Plugin {
 }
 
 const TEMPLATE = resolve(__dirname, 'index.html');
-const TALMUD_HTML_PATH = `${TALMUD_PATH}index.html`;
-// No such file: talmudPlugin gives the build index.html under this name.
-const TALMUD_HTML = resolve(__dirname, `.${TALMUD_HTML_PATH}`);
-const PAGE_FILES: Record<BuiltPage, string> = { main: TEMPLATE, talmud: TALMUD_HTML };
+type ExtraPage = Exclude<BuiltPage, 'main'>;
+const PAGE_PATHS: Record<ExtraPage, string> = { talmud: TALMUD_PATH, euaiact: EUAIACT_PATH };
+const htmlPath = (page: ExtraPage) => `${PAGE_PATHS[page]}index.html`;
+// No such file: pageAddressPlugin gives the build index.html under this name.
+const htmlFile = (page: ExtraPage) => resolve(__dirname, `.${htmlPath(page)}`);
+const PAGE_FILES: Record<BuiltPage, string> = {
+  main: TEMPLATE,
+  talmud: htmlFile('talmud'),
+  euaiact: htmlFile('euaiact'),
+};
 
-// The Talmud's page is index.html at its own address: the dev server serves
-// it, sending /talmud, without the slash, there too, and a build reads it.
-function talmudPlugin(): Plugin {
+// A page beside the Tanakh's is index.html at its own address: the dev server
+// serves it, sending the address without its slash there too, and a build reads it.
+function pageAddressPlugin(page: ExtraPage): Plugin {
+  const address = PAGE_PATHS[page];
+  const file = htmlFile(page);
   return {
-    name: 'talmud-address',
-    resolveId: (id) => (id === TALMUD_HTML ? id : null),
-    load: (id) => (id === TALMUD_HTML ? readFile(TEMPLATE, 'utf8') : null),
+    name: `${page}-address`,
+    resolveId: (id) => (id === file ? id : null),
+    load: (id) => (id === file ? readFile(TEMPLATE, 'utf8') : null),
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const [path, query] = (req.url ?? '').split('?');
-        if (`${path}/` === TALMUD_PATH) {
+        if (`${path}/` === address) {
           res.writeHead(302, {
-            Location: `${TALMUD_PATH}${query === undefined ? '' : `?${query}`}`,
+            Location: `${address}${query === undefined ? '' : `?${query}`}`,
           });
           res.end();
           return;
         }
-        if (pageAt(path).path !== TALMUD_PATH) return next();
+        if (pageAt(path).path !== address) return next();
         try {
           const template = await readFile(TEMPLATE, 'utf8');
-          const html = await server.transformIndexHtml(TALMUD_HTML_PATH, template, req.originalUrl);
+          const html = await server.transformIndexHtml(htmlPath(page), template, req.originalUrl);
           res.setHeader('Content-Type', 'text/html');
           res.setHeader('Cache-Control', 'no-cache');
           res.end(html);
@@ -94,7 +103,13 @@ export default defineConfig(({ command }) => {
   const branch = getGitBranch();
   const live = isLiveBuild(command, branch);
   return {
-    plugins: [storiesPlugin(), pagePlugin(), talmudPlugin(), assetsIgnorePlugin(live)],
+    plugins: [
+      storiesPlugin(),
+      pagePlugin(),
+      pageAddressPlugin('talmud'),
+      pageAddressPlugin('euaiact'),
+      assetsIgnorePlugin(live),
+    ],
     // Declared in packages/shell/src/env.d.ts.
     define: {
       __GIT_BRANCH__: JSON.stringify(branch),

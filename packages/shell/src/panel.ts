@@ -11,6 +11,7 @@ export const CONTROL = {
   toggle: 'control-toggle',
   icon: 'control-icon',
   select: 'control-select',
+  input: 'control-input',
 } as const;
 
 export function panelHtml(panel: Panel, body: string): string {
