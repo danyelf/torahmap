@@ -30,6 +30,8 @@ import {
   type VerseTexts,
 } from '@torahmap/tanakh/verseTexts.ts';
 import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
+import { englishMarkers } from './english.ts';
+import { readEnglish } from './english-align.ts';
 
 /**
  * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
@@ -120,12 +122,17 @@ export interface MergedJson {
   text: string[][];
 }
 
+// A chapter's closing line, which has no English.
+const HADRAN = /^\s*(?:<[^>]+>\s*)*הדרן/;
+
 export function processTractate(
   seder: string,
   tractateName: string,
   wikisource: WikisourceJson,
   schema: SchemaJson,
   merged: MergedJson,
+  /** The William Davidson English, shaped as `wikisource`. */
+  english: MergedJson,
 ): {
   structure: TalmudTractate;
   text: Omit<TalmudTractateText, 'citations'>;
@@ -148,6 +155,7 @@ export function processTractate(
   });
   const text = wikisource.text.slice(skip);
   const other = merged.text.slice(skip);
+  const translation = english.text.slice(skip);
 
   // Build perakim array and compute per-amud perekIdx + boundary markers.
   const perakim: TalmudPerek[] = [];
@@ -219,7 +227,20 @@ export function processTractate(
       amudim,
       perakim,
     },
-    text: { name: tractateName, amudim: cleanText },
+    text: {
+      name: tractateName,
+      amudim: cleanText,
+      english: text.map((amud, ai) =>
+        amud.map((seg, si) => {
+          if (HADRAN.test(seg)) return '';
+          const html = translation[ai]?.[si];
+          if (html === undefined) {
+            throw new Error(`${tractateName}: no English for amud ${ai}, segment ${si + 1}`);
+          }
+          return englishMarkers(html);
+        }),
+      ),
+    },
     search: other.map((amud) => amud.map((seg) => stripNikkud(stripHtml(seg)))),
   };
 }
@@ -267,6 +288,7 @@ async function main(): Promise<void> {
         await readJson<WikisourceJson>(paths.wikisource),
         await readJson<SchemaJson>(paths.schema),
         await readJson<MergedJson>(paths.merged),
+        { text: await readEnglish(ref.seder, ref.tractate) },
       );
 
       structure.tractates.push(tractateStructure);
@@ -285,7 +307,9 @@ async function main(): Promise<void> {
         `OK (${tractateStructure.amudim.length} amudim, ${segCount} segments, ${tractateStructure.perakim.length} perakim)`,
       );
     } catch (err) {
-      console.log(`SKIP: ${(err as Error).message}`);
+      // A tractate left out would drop from the map and leave its old file behind.
+      console.log('FAILED');
+      throw err;
     }
   }
 
