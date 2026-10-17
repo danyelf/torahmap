@@ -207,3 +207,9 @@ span.credit-source {
 .about-section h3 {
   margin: 0 0 8px;
 }
+
+/* Big enough to read the Hebrew letter. */
+#language-choice .control-segment {
+  font-size: 14px;
+  padding: 4px 14px;
+}

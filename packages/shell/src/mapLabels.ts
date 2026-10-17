@@ -150,6 +150,7 @@ function sectionLabel(section: string, name: SectionName | undefined): HTMLDivEl
   label.dataset.section = section;
   label.appendChild(hebrewSpan(name?.he ?? section, 'section-label-he'));
   const enSpan = document.createElement('span');
+  enSpan.className = 'section-label-en';
   enSpan.style.fontFamily = 'system-ui,sans-serif';
   enSpan.textContent = ` ${name?.en ?? ''}`;
   label.appendChild(enSpan);

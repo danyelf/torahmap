@@ -60,7 +60,9 @@ canvas {
 }
 
 body.english-only .book-label-he,
-body.english-only .section-label-he {
+body.english-only .section-label-he,
+body.hebrew-only .book-label-en,
+body.hebrew-only .section-label-en {
   display: none;
 }
 

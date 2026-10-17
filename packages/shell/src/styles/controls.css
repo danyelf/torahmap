@@ -19,17 +19,51 @@
   color: #ddd;
 }
 
-/* The Hebrew toggle. */
-.control-toggle {
-  min-height: var(--tap);
-  padding: 0 14px;
-  border: 1px solid #444;
+/* A row of buttons, one of them on: the search's substring | word. */
+.control-segments {
+  display: inline-flex;
+  border: 1px solid #3d3d3d;
   border-radius: 4px;
-  background: #222;
-  color: #fff;
+  overflow: hidden;
+  background: #202020;
+}
+
+.control-segment {
   font: inherit;
-  font-size: 14px;
+  font-size: 10.5px;
+  padding: 2.5px 8px;
+  color: #8a8a8a;
+  background: none;
+  border: none;
+  border-right: 1px solid #3d3d3d;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.control-segment:last-child {
+  border-right: none;
+}
+
+.control-segment:hover:not(:disabled) {
+  color: #fff;
+}
+
+.control-segment:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.control-segment.on {
+  background: #2f5f8a;
+  color: #fff;
+}
+
+/* On a touch screen each button is a 24px target; with a mouse it keeps its
+   slimmer look. */
+@media (pointer: coarse) {
+  .control-segment {
+    min-height: 24px;
+  }
 }
 
 /* The overlay picker. color-scheme matters as much as the colours: without it

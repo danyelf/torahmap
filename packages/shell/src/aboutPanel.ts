@@ -1,7 +1,8 @@
 import { escapeHtml } from '@torahmap/utils';
 import './styles/about.css';
 import { renderCreditsHtml, type Credit } from './credits.ts';
-import { CONTROL, panelHtml } from './panel.ts';
+import { panelHtml } from './panel.ts';
+import { languageChoiceHtml } from './languageChoice.ts';
 import type { Site } from './app/text.ts';
 
 // GitHub's Octicons (MIT): mark-github and mail.
@@ -18,15 +19,20 @@ const EMAIL_ICON = icon(
 export function aboutHtml(
   site: Site,
   overlays: readonly { name: string; credits?: readonly Credit[] }[],
+  twoLanguages: boolean,
 ): string {
   const square = escapeHtml(site.squareName);
   const [next, previous] = site.direction === 'rtl' ? ['&larr;', '&rarr;'] : ['&rarr;', '&larr;'];
   return panelHtml(
     'about',
-    `<section class="about-section">
+    `${
+      twoLanguages
+        ? `<section class="about-section">
       <h3 class="panel-section-heading">Settings</h3>
-      <button type="button" id="hebrew-toggle" class="${CONTROL.toggle}"></button>
-    </section>
+      ${languageChoiceHtml()}
+    </section>`
+        : ''
+    }
     <section class="about-section">
       <h3 class="panel-section-heading">${escapeHtml(site.page.name)}</h3>
       ${site.aboutHtml}
