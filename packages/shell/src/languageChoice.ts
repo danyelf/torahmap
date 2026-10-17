@@ -63,7 +63,10 @@ export function languageChoiceHtml(): string {
     ({ choice, glyph, name }) =>
       `<button type="button" class="${CONTROL.segment}" data-languages="${choice}" aria-label="${name}" title="${name}">${glyph}</button>`,
   ).join('');
-  return `<div class="${CONTROL.segments}" id="language-choice" role="group" aria-label="Languages">${buttons}</div>`;
+  return `<div class="setting">
+    <span class="setting-label" id="language-choice-label">Text Language</span>
+    <div class="${CONTROL.segments}" id="language-choice" role="group" aria-labelledby="language-choice-label">${buttons}</div>
+  </div>`;
 }
 
 /** Makes the buttons languageChoiceHtml drew show and change the choice. */

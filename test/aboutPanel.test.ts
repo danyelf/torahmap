@@ -29,6 +29,13 @@ describe('the About panel', () => {
     }
   });
 
+  it('names the language choice by its visible caption', async () => {
+    const div = await about();
+    const group = div.querySelector('#language-choice')!;
+    const caption = div.querySelector(`#${group.getAttribute('aria-labelledby')}`);
+    expect(caption?.textContent?.trim()).toBeTruthy();
+  });
+
   it('offers no choice, and no empty Settings, to a text with one language', async () => {
     const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
     const { talmudSite } = await import('@torahmap/talmud/site.ts');

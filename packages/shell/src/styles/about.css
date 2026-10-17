@@ -213,3 +213,14 @@ span.credit-source {
   font-size: 14px;
   padding: 4px 14px;
 }
+
+#about-panel .setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#about-panel .setting-label {
+  color: #bbb;
+  font-size: 14px;
+}
