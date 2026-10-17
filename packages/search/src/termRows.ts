@@ -128,12 +128,12 @@ export function mountTermRows<X>(
   /** The ways this term's own text can be matched, as one control. */
   function buildModeControl(term: SearchTerm): HTMLDivElement {
     const control = document.createElement('div');
-    control.className = 'term-mode';
+    control.className = `term-mode ${CONTROL.segments}`;
 
     for (const mode of modesOffered(term, languages, extra)) {
       const option = document.createElement('button');
       option.type = 'button';
-      option.className = 'term-mode-option';
+      option.className = `term-mode-option ${CONTROL.segment}`;
       option.dataset.mode = mode;
       option.textContent = labelOf(mode);
       option.addEventListener('click', () => {

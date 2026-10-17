@@ -207,3 +207,26 @@ span.credit-source {
 .about-section h3 {
   margin: 0 0 8px;
 }
+
+/* Big enough to read the Hebrew letter. */
+#language-choice .control-segment {
+  font-size: 14px;
+  padding: 4px 14px;
+}
+
+#about-panel .setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#about-panel .setting-label {
+  color: #bbb;
+  font-size: 14px;
+}
+
+@media (pointer: coarse) {
+  #language-choice .control-segment {
+    min-height: var(--tap);
+  }
+}

@@ -52,7 +52,7 @@ import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
-import { applyHebrewChoice, bindHebrewToggle } from './hebrewDisplay.ts';
+import { applyLanguageChoice, bindLanguageChoice } from './languageChoice.ts';
 import {
   arrivedWith,
   configureAnalytics,
@@ -154,6 +154,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // Before the data loads, so the branch name shows from the start.
   showTitle(source);
   const zoomRange = source.link.zoom;
+  const twoLanguages = source.languages.length > 1;
 
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   if (!canvas) throw new Error('Canvas not found');
@@ -570,8 +571,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays);
-      bindHebrewToggle(aboutPanel.querySelector<HTMLButtonElement>('#hebrew-toggle')!);
+      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages);
+      bindLanguageChoice(aboutPanel);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
     measureSheet();
@@ -1126,7 +1127,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   });
   searchChanged(true);
 
-  applyHebrewChoice();
+  applyLanguageChoice(twoLanguages);
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
 

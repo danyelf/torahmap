@@ -38,7 +38,7 @@ describe('every panel is built by panelHtml, with shared controls', () => {
         },
       ]),
     ],
-    ['about', aboutHtml(tanakhSite, [])],
+    ['about', aboutHtml(tanakhSite, [], true)],
   ];
 
   it('search opens with its title', () => {

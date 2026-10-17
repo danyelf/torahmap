@@ -182,6 +182,10 @@
     display: block;
   }
 
+  body.hebrew-only #popup .popup-english {
+    display: none;
+  }
+
   /* A full-height sheet covers the map the popup belongs to, and the menu,
      dropping from the top, reaches down over it; it is back when either goes. */
   body[data-full] #popup,
