@@ -88,12 +88,14 @@ export const SEARCH_KEEPS_BASE = 0.6;
 
 // --- Per-segment brightness jitter ---
 // Each segment is a deterministic ±BRIGHTNESS_JITTER brighter or darker
-// (baseColor.ts), so the grid reads as rainfall rather than flat tiles.
+// (baseColor.ts), so the grid reads as rainfall rather than flat tiles, and
+// bands less against the screen's pixels (moiré).
 
 export const BRIGHTNESS_JITTER = 0.18;
 
 // --- Per-segment positional jitter (±px) ---
-// Tiny offset on each segment so the grid doesn't read as a perfect mesh.
+// Tiny offset on each segment so the grid doesn't read as a perfect mesh or
+// band against the screen's pixels (moiré).
 // Mirrors the Torah map's ±1px JITTER_RANGE; smaller because Talmud
 // SEGMENT_SIZE is 6 (vs 8 on the Torah side) and over-jitter at this size
 // looks like noise rather than texture.
