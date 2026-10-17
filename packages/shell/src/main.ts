@@ -272,7 +272,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     // The colour arrays, not the pictures: a story stop's are cached, while
     // the pictures around them are made afresh each frame.
-    const inputs = [from.colors, from.growth, from.rings, to?.colors, to?.growth, to?.rings];
+    const inputs = [from, to].flatMap((p) => [p?.colors, p?.growth, p?.rings, p?.standout]);
     if (inputs.every((input, i) => input === built[i])) return;
     built = inputs;
 

@@ -31,7 +31,8 @@ function brightenBands(color: ItemColor, factor: number): ItemColor {
  * search leads, 1 while the overlay leads; it does nothing with search alone.
  * With both on, a square neither colours dims from its `base` colour. With
  * search alone, a square it does not find keeps `keepsBase` of its base
- * colour, or goes grey without it.
+ * colour, or goes grey without it. Every match stands out, so it shows at any
+ * zoom.
  */
 export function combineLayers(
   count: number,
@@ -60,7 +61,9 @@ export function combineLayers(
     }
   }
 
-  return search && overlay ? { colors, rings } : { colors };
+  const picture: Picture<ItemColor | null> = search && overlay ? { colors, rings } : { colors };
+  if (search) picture.standout = Array.from({ length: count }, (_, i) => !!search[i]);
+  return picture;
 }
 
 /**

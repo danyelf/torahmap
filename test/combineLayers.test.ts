@@ -127,6 +127,21 @@ describe('combineLayers', () => {
       );
     });
   });
+
+  describe('standouts', () => {
+    it('makes every match stand out with search alone', () => {
+      expect(combineLayers(2, [CYAN, null], null, getDefaultColor).standout).toEqual([true, false]);
+    });
+
+    it('makes every match stand out over an overlay', () => {
+      const { standout } = combineLayers(2, [null, CYAN], [RED, RED], getDefaultColor);
+      expect(standout).toEqual([false, true]);
+    });
+
+    it('makes nothing stand out with no search', () => {
+      expect(combineLayers(1, null, [RED], getDefaultColor).standout).toBeUndefined();
+    });
+  });
 });
 
 describe('fillDefaultColors', () => {
