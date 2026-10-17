@@ -90,7 +90,7 @@ export const talmudText: MapText<TalmudLayoutItem, TalmudSearchSettings> = {
 
       labels(container) {
         const moveMarks = createTalmudLabels(
-          laid.sederBlocks,
+          laid.tractateBlocks,
           laid.perekAnchors,
           laid.dafRows,
           container,

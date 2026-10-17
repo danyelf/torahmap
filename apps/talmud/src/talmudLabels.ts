@@ -1,14 +1,14 @@
-// The Talmud map's own marks: a tint behind each seder, and the perek and daf
+// The Talmud map's own marks: each tractate's cover, tinted by its seder, and the perek and daf
 // labels, which show by zoom level.
 
-import type { SederBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
+import type { TractateBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
+  COVER_OPACITY,
   DAF_LABEL,
   DAF_LABEL_ZOOM_ALL,
   PEREK_LABEL_ZOOM,
   PEREK_SIZE,
   SEDARIM,
-  SEDER_BACKGROUND_OPACITY,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
 
@@ -47,14 +47,14 @@ function labelGroup(id: string, labels: Placed[]) {
   };
 }
 
-function sederTint(block: SederBlock): HTMLElement | null {
-  const tint = SEDARIM.find((s) => s.en === block.name)?.tint;
+function coverOf(block: TractateBlock): HTMLElement | null {
+  const tint = SEDARIM.find((s) => s.en === block.section)?.tint;
   if (!tint) return null;
   const [r, g, b] = tint.map((c) => Math.round(c * 255));
   const el = document.createElement('div');
   el.style.cssText = `
     position:absolute;
-    background:rgba(${r},${g},${b},${SEDER_BACKGROUND_OPACITY});
+    background:rgba(${r},${g},${b},${COVER_OPACITY});
     border-radius:4px;
   `;
   return el;
@@ -100,7 +100,7 @@ const numberedFirst = ({ daf, amud }: DafRowAnchor) => amud === 'a' && [0, 3, 6]
 
 /** Draws the marks inside `parent`, and returns what moves them with the map. */
 export function createTalmudLabels(
-  sederBlocks: SederBlock[],
+  tractateBlocks: TractateBlock[],
   perekAnchors: PerekAnchor[],
   dafRows: DafRowAnchor[],
   parent: HTMLElement,
@@ -109,13 +109,13 @@ export function createTalmudLabels(
   container.id = 'talmud-labels';
 
   // First, so the labels and the map's own labels sit on top.
-  const tints = document.createElement('div');
-  tints.id = 'talmud-seder-bgs';
-  const placedTints = sederBlocks.flatMap((block) => {
-    const el = sederTint(block);
+  const covers = document.createElement('div');
+  covers.id = 'talmud-books';
+  const placedCovers = tractateBlocks.flatMap((block) => {
+    const el = coverOf(block);
     if (!el) return [];
-    tints.appendChild(el);
-    return [{ el, block }];
+    covers.appendChild(el);
+    return [{ el, cover: block.cover }];
   });
 
   const pereks = labelGroup('talmud-perek-labels', perekAnchors.map(perekLabel));
@@ -125,19 +125,19 @@ export function createTalmudLabels(
   const otherDapim = labelGroup('', dafRows.filter((r) => !numberedFirst(r)).map(dafLabel));
   dapim.append(someDapim.el, otherDapim.el);
 
-  container.append(tints, pereks.el, dapim);
+  container.append(covers, pereks.el, dapim);
   parent.appendChild(container);
 
-  let tintsAt = NaN;
+  let coversAt = NaN;
   return (pan, zoom) => {
     container.style.transform = `translate(${pan.x * zoom}px, ${pan.y * zoom}px)`;
-    if (zoom !== tintsAt) {
-      tintsAt = zoom;
-      for (const { el, block } of placedTints) {
-        el.style.left = `${block.minX * zoom}px`;
-        el.style.top = `${block.minY * zoom}px`;
-        el.style.width = `${(block.maxX - block.minX) * zoom}px`;
-        el.style.height = `${(block.maxY - block.minY) * zoom}px`;
+    if (zoom !== coversAt) {
+      coversAt = zoom;
+      for (const { el, cover } of placedCovers) {
+        el.style.left = `${cover.minX * zoom}px`;
+        el.style.top = `${cover.minY * zoom}px`;
+        el.style.width = `${(cover.maxX - cover.minX) * zoom}px`;
+        el.style.height = `${(cover.maxY - cover.minY) * zoom}px`;
       }
       const { base, min, max } = PEREK_SIZE;
       pereks.el.style.fontSize = `${Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE}px`;
