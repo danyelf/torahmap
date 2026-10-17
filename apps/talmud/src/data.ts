@@ -46,6 +46,8 @@ export interface TalmudStructure {
 export interface TalmudTractateText {
   name: string;
   amudim: string[][];
+  /** The William Davidson English, shaped as `amudim`, in the markers `englishText` reads. */
+  english: string[][];
   /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
   citations: Record<number, Record<number, Citation[]>>;
 }
