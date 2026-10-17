@@ -263,6 +263,24 @@ describe('rendering', () => {
       expect(setBefore(draws[1])).toBe(1);
     });
 
+    it('blends the standouts over the other squares, and nothing else', () => {
+      render(context, state, camera, null, null);
+
+      const { gl } = context;
+      const [rest, standouts] = vi.mocked(gl.drawArraysInstanced).mock.invocationCallOrder;
+      const toggles = (fn: typeof gl.enable, on: boolean) => {
+        const { calls, invocationCallOrder } = vi.mocked(fn).mock;
+        return calls.map(([cap], k) => ({ cap, at: invocationCallOrder[k], on }));
+      };
+      const blend = [...toggles(gl.enable, true), ...toggles(gl.disable, false)]
+        .filter((t) => t.cap === gl.BLEND)
+        .sort((a, b) => a.at - b.at);
+      const blendingAt = (moment: number) => blend.filter((t) => t.at < moment).at(-1)?.on ?? false;
+      expect(blendingAt(rest)).toBe(false);
+      expect(blendingAt(standouts)).toBe(true);
+      expect(blendingAt(Infinity)).toBe(false);
+    });
+
     it('does not render outline when no squares hovered or pinned', () => {
       const useProgram = context.gl.useProgram as any;
       useProgram.mockClear();

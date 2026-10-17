@@ -165,7 +165,11 @@ export function render<T>(
   gl.uniform1i(programs.main.uniforms.drawingStandouts, 0);
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
   gl.uniform1i(programs.main.uniforms.drawingStandouts, 1);
+  // A standout's glow blends over the squares under it; the canvas stays opaque.
+  gl.enable(gl.BLEND);
+  gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
+  gl.disable(gl.BLEND);
   gl.bindVertexArray(null);
 
   if (hoveredItem && !sameItem(hoveredItem, pinnedItem)) {

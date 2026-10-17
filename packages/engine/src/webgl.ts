@@ -8,7 +8,7 @@ import {
   SHAPE_FLAGS,
   type ItemAttributeName,
 } from './geometry.ts';
-import { BARS, HIGHLIGHT_CONSTANTS } from './constants.ts';
+import { BARS, HIGHLIGHT_CONSTANTS, STANDOUT_GLOW, STANDOUT_MIN_PX } from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -70,6 +70,7 @@ const VERTEX_SHADER = `#version 300 es
   // The drawn square's width and height in device pixels, growth included, or
   // 0 when the square is too small for a hole.
   flat out vec2 v_side;
+  flat out float v_glow;
   out vec2 v_uv;
   out vec2 v_seed;
 
@@ -111,11 +112,15 @@ const VERTEX_SHADER = `#version 300 es
     vec4 rect = a_rect + vec4(nudge - grow, nudge + grow);
     rect.z = max(rect.z, a_rect.z + nudge.x + ${SQUARE_GAP.toFixed(4)} * widen);
     rect.zw = max(rect.zw, rect.xy + 1.0 / u_zoom);
-    // A standout smaller than u_standoutSide is a square of that side around its own centre.
+    // A standout smaller than u_standoutSide is a glowing dot around its own centre.
+    v_glow = 0.0;
     if (side + 2.0 * grow * u_zoom < u_standoutSide) {
       vec2 centre = (a_rect.xy + a_rect.zw) * 0.5 + nudge;
-      float halfSide = u_standoutSide * 0.5 / u_zoom;
+      // Its core is never smaller than the square itself.
+      float core = max(u_standoutSide * ${(STANDOUT_GLOW.CORE_PX / STANDOUT_MIN_PX).toFixed(4)}, side);
+      float halfSide = core * ${(STANDOUT_GLOW.SIDE_PX / STANDOUT_GLOW.CORE_PX / 2).toFixed(4)} / u_zoom;
       rect = mix(rect, vec4(centre - halfSide, centre + halfSide), standsOut);
+      v_glow = standsOut;
     }
     float pad = max(bandReach(a_shape), bandReach(a_nextShape));
     uv = mix(vec2(-pad), vec2(1.0 + pad), uv);
@@ -149,6 +154,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in ivec4 v_counts;
   flat in ivec2 v_hover;
   flat in vec2 v_side;
+  flat in float v_glow;
   in vec2 v_uv;
   in vec2 v_seed;
   out vec4 fragColor;
@@ -228,7 +234,12 @@ const FRAGMENT_SHADER = `#version 300 es
     float noise = (hash(noiseCoord + v_seed * 0.01) - 0.5) * 0.1;
     color = color + noise;
 
-    fragColor = vec4(color, 1.0);
+    float d = length(v_uv - 0.5) * 2.0;
+    float core = ${(STANDOUT_GLOW.CORE_PX / STANDOUT_GLOW.SIDE_PX).toFixed(4)};
+    float glow = d < core ? 1.0 : ${STANDOUT_GLOW.ALPHA.toFixed(4)} * (1.0 - smoothstep(core, 1.0, d));
+    float alpha = mix(1.0, glow, v_glow);
+    if (alpha <= 0.0) discard;
+    fragColor = vec4(color, alpha);
   }
 `;
 

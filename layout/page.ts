@@ -87,16 +87,16 @@ export async function canvasShot(page: Page): Promise<Buffer> {
   }
 }
 
-const DRAWN = 1;
-const COLOURED = 2;
-
-/** `png`'s pixels, row by row, each flagged DRAWN, COLOURED, both or neither. */
-async function pixelFlags(
+/**
+ * `png`'s pixels, row by row: whether each is drawn, and how far apart its
+ * channels spread, 0 for grey.
+ */
+async function readPixels(
   page: Page,
   png: Buffer,
-): Promise<{ width: number; height: number; flags: Buffer }> {
-  const { width, height, b64 } = await page.evaluate(
-    async ({ png, bg, delta, spread, drawnFlag, colouredFlag }) => {
+): Promise<{ width: number; height: number; drawn: Buffer; spread: Buffer }> {
+  const { width, height, drawn, spread } = await page.evaluate(
+    async ({ png, bg, delta }) => {
       const img = new Image();
       img.src = `data:image/png;base64,${png}`;
       await img.decode();
@@ -106,26 +106,24 @@ async function pixelFlags(
       const ctx = c.getContext('2d')!;
       ctx.drawImage(img, 0, 0);
       const { data } = ctx.getImageData(0, 0, c.width, c.height);
-      let bytes = '';
+      let drawn = '';
+      let spread = '';
       for (let i = 0; i < data.length; i += 4) {
         const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-        let f = 0;
-        if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta) f |= drawnFlag;
-        if (Math.max(r, g, b) - Math.min(r, g, b) > spread) f |= colouredFlag;
-        bytes += String.fromCharCode(f);
+        const d = Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta;
+        drawn += String.fromCharCode(d ? 1 : 0);
+        spread += String.fromCharCode(Math.max(r, g, b) - Math.min(r, g, b));
       }
-      return { width: c.width, height: c.height, b64: btoa(bytes) };
+      return { width: c.width, height: c.height, drawn: btoa(drawn), spread: btoa(spread) };
     },
-    {
-      png: png.toString('base64'),
-      bg: BACKGROUND,
-      delta: DRAWN_DELTA,
-      spread: COLOURED_SPREAD,
-      drawnFlag: DRAWN,
-      colouredFlag: COLOURED,
-    },
+    { png: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
   );
-  return { width, height, flags: Buffer.from(b64, 'base64') };
+  return {
+    width,
+    height,
+    drawn: Buffer.from(drawn, 'base64'),
+    spread: Buffer.from(spread, 'base64'),
+  };
 }
 
 /** How many of `png`'s pixels are drawn, and how many are coloured rather than grey. */
@@ -133,14 +131,19 @@ export async function pixelCounts(
   page: Page,
   png: Buffer,
 ): Promise<{ drawn: number; coloured: number }> {
-  const { flags } = await pixelFlags(page, png);
-  let drawn = 0;
-  let coloured = 0;
-  for (const f of flags) {
-    if (f & DRAWN) drawn++;
-    if (f & COLOURED) coloured++;
-  }
-  return { drawn, coloured };
+  const { drawn, spread } = await readPixels(page, png);
+  return {
+    drawn: drawn.filter((d) => d).length,
+    coloured: spread.filter((s) => s > COLOURED_SPREAD).length,
+  };
+}
+
+/** Of `png`'s coloured pixels, the share that are faint: a colour under half strength. */
+export async function faintShare(page: Page, png: Buffer): Promise<number> {
+  const { spread } = await readPixels(page, png);
+  const coloured = spread.filter((s) => s > COLOURED_SPREAD);
+  const strongest = Math.max(0, ...coloured);
+  return coloured.length ? coloured.filter((s) => s < strongest / 2).length / coloured.length : 0;
 }
 
 /** Counts the map's drawn pixels. */
@@ -245,8 +248,8 @@ export async function clippedText(page: Page, selector: string): Promise<string[
  * whose right-hand neighbour is empty while the one above or below it is drawn.
  */
 export async function stepShare(page: Page, png: Buffer): Promise<number> {
-  const { width, height, flags } = await pixelFlags(page, png);
-  const drawn = (x: number, y: number) => (flags[y * width + x] & DRAWN) !== 0;
+  const { width, height, drawn: mask } = await readPixels(page, png);
+  const drawn = (x: number, y: number) => mask[y * width + x] === 1;
   let total = 0;
   let steps = 0;
   for (let y = 1; y < height - 1; y++) {
@@ -261,12 +264,12 @@ export async function stepShare(page: Page, png: Buffer): Promise<number> {
 
 /** The longest unbroken run of drawn pixels along any one row of `png`. */
 export async function longestDrawnRun(page: Page, png: Buffer): Promise<number> {
-  const { width, flags } = await pixelFlags(page, png);
+  const { width, drawn } = await readPixels(page, png);
   let longest = 0;
   let run = 0;
-  flags.forEach((f, i) => {
+  drawn.forEach((d, i) => {
     if (i % width === 0) run = 0;
-    run = f & DRAWN ? run + 1 : 0;
+    run = d ? run + 1 : 0;
     longest = Math.max(longest, run);
   });
   return longest;
