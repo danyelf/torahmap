@@ -96,6 +96,24 @@ test('a link to a square that does not exist pins nothing', async ({ page }) => 
   expect(errors).toEqual([]);
 });
 
+test('names every chapter and annex, in English, once its tabs are big enough', async ({
+  page,
+}) => {
+  // The tabs fade out below zoom 0.58; a phone's opening view sits under it.
+  await openMap(page, 'zoom=0.6', ACT);
+  // A small screen holds only part of the map, so one name on it is enough.
+  expect(await boxes(page, '#book-labels .book-label-en')).not.toEqual([]);
+  const unnamed = await page.$$eval(
+    '#book-labels .book-label',
+    (els) =>
+      els.filter((el) => {
+        const en = el.querySelector('.book-label-en');
+        return !en?.textContent?.trim() || getComputedStyle(en).display === 'none';
+      }).length,
+  );
+  expect(unnamed).toBe(0);
+});
+
 test('offers no language choice, and never writes one', async ({ page }) => {
   await openMap(page, 'zoom=0.6', ACT);
   await viaMenu(page, 'about');

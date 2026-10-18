@@ -33,15 +33,17 @@ beforeEach(() => {
   document.body.innerHTML = '';
 });
 
+const BOTH = [HEBREW, ENGLISH] as const;
+
 describe('the language choice', () => {
   it('shows both languages by default', () => {
-    applyLanguageChoice(true);
+    applyLanguageChoice(BOTH);
     expect(hidden()).toEqual({ hebrew: false, english: false });
     expect(pressed(control())).toEqual(['both']);
   });
 
   it('hides the language not chosen, and marks the choice', () => {
-    applyLanguageChoice(true);
+    applyLanguageChoice(BOTH);
     const panel = control();
     press(panel, HEBREW);
     expect(hidden()).toEqual({ hebrew: false, english: true });
@@ -53,18 +55,25 @@ describe('the language choice', () => {
   });
 
   it('is remembered on the next visit', () => {
-    applyLanguageChoice(true);
+    applyLanguageChoice(BOTH);
     press(control(), HEBREW);
     document.body.className = '';
-    applyLanguageChoice(true);
+    applyLanguageChoice(BOTH);
     expect(hidden()).toEqual({ hebrew: false, english: true });
   });
 
-  it('hides nothing on a text with one language, whatever was chosen', () => {
-    applyLanguageChoice(true);
+  it('shows a text with only English in English alone, whatever was chosen', () => {
+    applyLanguageChoice(BOTH);
+    press(control(), HEBREW);
+    applyLanguageChoice([ENGLISH]);
+    expect(hidden()).toEqual({ hebrew: true, english: false });
+  });
+
+  it('shows a text with only Hebrew in Hebrew alone, whatever was chosen', () => {
+    applyLanguageChoice(BOTH);
     press(control(), ENGLISH);
-    applyLanguageChoice(false);
-    expect(hidden()).toEqual({ hebrew: false, english: false });
+    applyLanguageChoice([HEBREW]);
+    expect(hidden()).toEqual({ hebrew: false, english: true });
   });
 
   it('binds nothing in a panel without the choice', () => {
