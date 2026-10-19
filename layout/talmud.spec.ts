@@ -87,7 +87,7 @@ for (const [zoom, labelled] of [
     page,
   }) => {
     await openMap(page, `at=Berakhot.2a.1&zoom=${zoom}`, TALMUD);
-    expect((await boxes(page, '#talmud-daf-labels .daf')).length > 0).toBe(labelled);
+    expect((await boxes(page, '#talmud-daf-labels .row-number')).length > 0).toBe(labelled);
     expect((await boxes(page, '#talmud-perek-labels > *')).length > 0).toBe(labelled);
   });
 }
@@ -95,7 +95,7 @@ for (const [zoom, labelled] of [
 for (const zoom of [0.7, 2]) {
   test(`at zoom ${zoom}, every daf number sits inside its book`, async ({ page }) => {
     await openMap(page, `at=Berakhot.2a.1&zoom=${zoom}`, TALMUD);
-    const dapim = await full(page, '#talmud-daf-labels .daf');
+    const dapim = await full(page, '#talmud-daf-labels .row-number');
     expect(dapim).not.toEqual([]);
     expect(await outsideOneCover(page, dapim)).toEqual([]);
   });
@@ -105,7 +105,7 @@ for (const zoom of [0.7, 1, 1.5]) {
   test(`at zoom ${zoom}, no daf number touches a square`, async ({ page }) => {
     // Shabbat wraps into several columns, each numbered beside the next.
     await openMap(page, `at=Shabbat.2a.1&zoom=${zoom}`, TALMUD);
-    const dapim = await boxes(page, '#talmud-daf-labels .daf');
+    const dapim = await boxes(page, '#talmud-daf-labels .row-number');
     expect(dapim).not.toEqual([]);
     expect(apart(dapim, await squaresOnScreen(page))).toEqual([]);
   });

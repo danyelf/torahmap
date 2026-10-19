@@ -1,8 +1,14 @@
 // apps/euaiact/test/layout.test.ts
-import { indexItems } from '@torahmap/engine';
+import { indexItems, SQUARE_GAP } from '@torahmap/engine';
 import { describe, expect, it } from 'vitest';
 import { computeActLayout } from '../src/layout.ts';
-import { COLUMN_WIDTH, POSITION_JITTER, SQUARE_SIZE } from '../src/constants.ts';
+import {
+  ARTICLE_NUMBER,
+  ARTICLE_NUMBER_ZOOM,
+  COLUMN_WIDTH,
+  POSITION_JITTER,
+  SQUARE_SIZE,
+} from '../src/constants.ts';
 import { actFixture } from './helpers/actFixture.ts';
 
 const order = { recital: 0, article: 1, annex: 2 } as const;
@@ -104,6 +110,36 @@ describe('the Act’s layout', () => {
     const three = laid.books.find((b) => b.name === 'Ch. III')!;
     expect(three.minX).toBe(at('6').x);
     expect(three.maxX).toBeGreaterThanOrEqual(at('7').x + COLUMN_WIDTH * SQUARE_SIZE - 1);
+  });
+
+  it('numbers each article above its first square, at its column’s left edge', () => {
+    const firsts = ['1(1)', '2', '6', '7'].map(at);
+    expect(laid.articles.map((a) => a.number)).toEqual(['1', '2', '6', '7']);
+    laid.articles.forEach((a, i) => {
+      expect(a.x).toBe(firsts[i].x);
+      expect(a.y).toBeLessThan(firsts[i].y);
+    });
+  });
+
+  it('keeps each article number a pixel clear of every square, from its zoom', () => {
+    const { fontSize, offset } = ARTICLE_NUMBER;
+    const slack = 1e-9;
+    for (const zoom of [ARTICLE_NUMBER_ZOOM, 4]) {
+      const px = 1 / zoom;
+      for (const a of laid.articles) {
+        const bottom = a.y - offset * px;
+        const top = bottom - fontSize * px;
+        const column = laid.items.filter(
+          (s) => s.layer === 'article' && s.x >= a.x && s.x < a.x + COLUMN_WIDTH * SQUARE_SIZE,
+        );
+        for (const s of column) {
+          const squareTop = s.y - POSITION_JITTER;
+          const squareBottom = s.y + s.size - SQUARE_GAP + POSITION_JITTER;
+          if (squareTop > a.y - slack) expect(bottom + px).toBeLessThanOrEqual(squareTop + slack);
+          else expect(top - px).toBeGreaterThanOrEqual(squareBottom - slack);
+        }
+      }
+    }
   });
 
   it('nudges each square by an amount its id fixes', () => {
