@@ -140,15 +140,19 @@ test("a pinned segment's popup shows its text", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('the Talmud, with only Hebrew, offers no language choice and shows its Hebrew', async ({
-  page,
-}) => {
-  await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'en'));
+test("the Talmud's language choice hides the other language in the popup", async ({ page }) => {
   await openMap(page, 'at=Berakhot.2a.1', TALMUD);
-  await expect(page.locator('#popup .popup-hebrew')).toBeVisible();
   await viaMenu(page, 'about');
-  await expect(page.locator('#about-panel .controls-table')).toBeVisible();
-  await expect(page.locator('#language-choice')).toHaveCount(0);
+  const hebrew = page.locator('#popup .popup-hebrew');
+  const english = page.locator('#popup .popup-english');
+  const choose = (choice: string) =>
+    page.locator(`#language-choice [data-languages="${choice}"]`).click();
+  await choose('he');
+  await expect(hebrew).toBeVisible();
+  await expect(english).toBeHidden();
+  await choose('en');
+  await expect(hebrew).toBeHidden();
+  await expect(english).toBeVisible();
 });
 
 test('a link to a segment that does not exist pins nothing', async ({ page }) => {
