@@ -17,6 +17,7 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
     ARRAY_BUFFER: 34962,
     STATIC_DRAW: 35044,
     TRIANGLES: 4,
+    BLEND: 3042,
     FLOAT: 5126,
 
     // Shader operations
@@ -87,6 +88,7 @@ export function createMockWebGL2Context(): WebGL2RenderingContext {
     enable: vi.fn(),
     disable: vi.fn(),
     blendFunc: vi.fn(),
+    blendFuncSeparate: vi.fn(),
 
     // Canvas
     canvas: {

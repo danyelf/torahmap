@@ -8,6 +8,7 @@ import {
   canvasShot,
   DRAWN_FLOOR,
   drawnPixels,
+  faintShare,
   allLoaded,
   longestDrawnRun,
   openMap,
@@ -142,4 +143,11 @@ test('zoomed far out, bars keep their vertical jitter', async ({ page }, info) =
   // Measured 0.087 with the jitter and 0 without it.
   await openMap(page, 'zoom=0.3');
   expect(await stepShare(page, await canvasShot(page))).toBeGreaterThan(0.04);
+});
+
+test('zoomed far out, a search hit glows, fading out from a solid core', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'one screen, at one pixel to the pixel');
+  // Measured 0.44 with the glow and 0.08 with solid squares.
+  await openMap(page, `search=${encodeURIComponent('אליהו')}&zoom=0.1`);
+  expect(await faintShare(page, await canvasShot(page))).toBeGreaterThan(0.25);
 });

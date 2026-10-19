@@ -5,9 +5,10 @@ import {
   MULTICOLOR_GROWTH,
   SQUARE_GAP,
   ITEM_ATTRIBUTES,
+  SHAPE_FLAGS,
   type ItemAttributeName,
 } from './geometry.ts';
-import { BARS, HIGHLIGHT_CONSTANTS } from './constants.ts';
+import { BARS, HIGHLIGHT_CONSTANTS, STANDOUT_GLOW, STANDOUT_MIN_PX } from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -19,6 +20,8 @@ export interface ShaderProgram {
     fade: WebGLUniformLocation | null;
     ring: WebGLUniformLocation | null;
     hovered: WebGLUniformLocation | null;
+    standoutSide: WebGLUniformLocation | null;
+    drawingStandouts: WebGLUniformLocation | null;
   };
 }
 
@@ -40,6 +43,11 @@ const VERTEX_SHADER = `#version 300 es
   uniform highp vec3 u_ring;
   // The hovered square's place in the list, or -1 for none.
   uniform int u_hovered;
+  // The smallest side a standout square is drawn at, in device pixels.
+  uniform float u_standoutSide;
+  // Which pass this is: the squares that stand out in either picture, drawn
+  // second so they lie over the rest, or the rest.
+  uniform bool u_drawingStandouts;
 
   ${ITEM_INPUTS}
 
@@ -62,6 +70,7 @@ const VERTEX_SHADER = `#version 300 es
   // The drawn square's width and height in device pixels, growth included, or
   // 0 when the square is too small for a hole.
   flat out vec2 v_side;
+  flat out float v_glow;
   out vec2 v_uv;
   out vec2 v_seed;
 
@@ -76,7 +85,17 @@ const VERTEX_SHADER = `#version 300 es
     return shape.z > 0.0 && holes ? max(grow, u_ring.x / u_zoom) : grow;
   }
 
+  float standout(vec4 shape) {
+    return float((int(shape.w) & ${SHAPE_FLAGS.STANDOUT}) != 0);
+  }
+
   void main() {
+    float standsOut = mix(standout(a_shape), standout(a_nextShape), u_fade);
+    if ((standout(a_shape) + standout(a_nextShape) > 0.0) != u_drawingStandouts) {
+      // Outside the clip box, so the square is not drawn
+      gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+      return;
+    }
     vec2 uv = CORNERS[gl_VertexID];
     // Its shorter side, which is what has room for a hole or not.
     float side = min(a_rect.z - a_rect.x, a_rect.w - a_rect.y) * u_zoom;
@@ -87,12 +106,22 @@ const VERTEX_SHADER = `#version 300 es
     // has no notches. It keeps its vertical jitter: bars on an exact grid band
     // against the pixel rows (moiré). Never under one device pixel, so it is
     // always drawn. Where rows are under a pixel apart, that makes them overlap,
-    // and each row covers part of the one above it, search hits included.
+    // and each row covers part of the one above it.
     float widen = clamp((${BARS.START_PX.toFixed(4)} - side) / ${(BARS.START_PX - BARS.FULL_PX).toFixed(4)}, 0.0, 1.0);
     vec2 nudge = a_jitter * vec2(1.0 - widen, 1.0);
     vec4 rect = a_rect + vec4(nudge - grow, nudge + grow);
     rect.z = max(rect.z, a_rect.z + nudge.x + ${SQUARE_GAP.toFixed(4)} * widen);
     rect.zw = max(rect.zw, rect.xy + 1.0 / u_zoom);
+    // A standout smaller than u_standoutSide is a glowing dot around its own centre.
+    v_glow = 0.0;
+    if (side + 2.0 * grow * u_zoom < u_standoutSide) {
+      vec2 centre = (a_rect.xy + a_rect.zw) * 0.5 + nudge;
+      // Its core is never smaller than the square itself.
+      float core = max(u_standoutSide * ${(STANDOUT_GLOW.CORE_PX / STANDOUT_MIN_PX).toFixed(4)}, side);
+      float halfSide = core * ${(STANDOUT_GLOW.SIDE_PX / STANDOUT_GLOW.CORE_PX / 2).toFixed(4)} / u_zoom;
+      rect = mix(rect, vec4(centre - halfSide, centre + halfSide), standsOut);
+      v_glow = standsOut;
+    }
     float pad = max(bandReach(a_shape), bandReach(a_nextShape));
     uv = mix(vec2(-pad), vec2(1.0 + pad), uv);
     vec2 world = mix(rect.xy, rect.zw, uv);
@@ -104,7 +133,9 @@ const VERTEX_SHADER = `#version 300 es
     v_nextFill = a_nextFill;
     v_nextRing = a_nextRing;
     v_counts = ivec4(a_shape.x, a_shape.z, a_nextShape.x, a_nextShape.z);
-    v_hover = gl_InstanceID == u_hovered ? 1 + ivec2(a_shape.w, a_nextShape.w) : ivec2(0);
+    v_hover = gl_InstanceID == u_hovered
+      ? 1 + (ivec2(a_shape.w, a_nextShape.w) & ${SHAPE_FLAGS.UNCOLOURED})
+      : ivec2(0);
     v_side = holes ? (rect.zw - rect.xy) * u_zoom : vec2(0.0);
     v_uv = uv;
     // The square's own corner, which zooming does not move, seeds its dithering noise
@@ -123,6 +154,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in ivec4 v_counts;
   flat in ivec2 v_hover;
   flat in vec2 v_side;
+  flat in float v_glow;
   in vec2 v_uv;
   in vec2 v_seed;
   out vec4 fragColor;
@@ -202,7 +234,12 @@ const FRAGMENT_SHADER = `#version 300 es
     float noise = (hash(noiseCoord + v_seed * 0.01) - 0.5) * 0.1;
     color = color + noise;
 
-    fragColor = vec4(color, 1.0);
+    float d = length(v_uv - 0.5) * 2.0;
+    float core = ${(STANDOUT_GLOW.CORE_PX / STANDOUT_GLOW.SIDE_PX).toFixed(4)};
+    float glow = d < core ? 1.0 : ${STANDOUT_GLOW.ALPHA.toFixed(4)} * (1.0 - smoothstep(core, 1.0, d));
+    float alpha = mix(1.0, glow, v_glow);
+    if (alpha <= 0.0) discard;
+    fragColor = vec4(color, alpha);
   }
 `;
 
@@ -278,6 +315,8 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       fade: gl.getUniformLocation(program, 'u_fade'),
       ring: gl.getUniformLocation(program, 'u_ring'),
       hovered: gl.getUniformLocation(program, 'u_hovered'),
+      standoutSide: gl.getUniformLocation(program, 'u_standoutSide'),
+      drawingStandouts: gl.getUniformLocation(program, 'u_drawingStandouts'),
     },
   };
 }

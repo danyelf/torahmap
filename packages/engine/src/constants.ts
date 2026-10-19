@@ -54,3 +54,17 @@ export const BARS = {
   START_PX: 2,
   FULL_PX: 1.5,
 } as const;
+
+/** A square that stands out is never drawn smaller than this a side, in CSS pixels. */
+export const STANDOUT_MIN_PX = 4;
+
+/**
+ * Below STANDOUT_MIN_PX a standout is a dot: a solid core, in a glow that
+ * starts at ALPHA and fades out by SIDE_PX across, in CSS pixels. Solid
+ * squares that size merge into blocks where hits are close; dots stay apart.
+ */
+export const STANDOUT_GLOW = {
+  CORE_PX: 2.7,
+  SIDE_PX: 7.6,
+  ALPHA: 0.45,
+} as const;
