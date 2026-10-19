@@ -1127,7 +1127,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   });
   searchChanged(true);
 
-  applyLanguageChoice(twoLanguages);
+  applyLanguageChoice(source.languages);
 
   const initialCamera = { x: camera.x, y: camera.y, zoom: camera.zoom };
 

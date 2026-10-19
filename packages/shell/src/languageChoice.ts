@@ -45,9 +45,12 @@ function show(choice: LanguageChoice): void {
   }
 }
 
-/** Applies the reader's stored choice to a text with two languages. Runs at startup. */
-export function applyLanguageChoice(twoLanguages: boolean): void {
-  show(twoLanguages ? load() : 'both');
+/**
+ * A text with two languages shows the reader's stored choice; a text with one shows that language
+ * alone, whatever was chosen on another page. Runs at startup.
+ */
+export function applyLanguageChoice(languages: readonly TextLanguage[]): void {
+  show(languages.length === 1 ? languages[0] : load());
 }
 
 export function languageChoiceHtml(): string {
