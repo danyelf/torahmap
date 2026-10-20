@@ -88,15 +88,8 @@ describe("the Talmud's popup", () => {
     });
   });
 
-  it('asks for the English only while English is shown', () => {
-    expect(open.popupFiles(second, [HEBREW])).toEqual([textsFile('TractA')]);
-    expect(open.popupFiles(second, [HEBREW, ENGLISH])).toEqual([
-      textsFile('TractA'),
-      englishFile('TractA'),
-    ]);
-    expect(open.popupFiles(second, [ENGLISH])).toEqual([
-      textsFile('TractA'),
-      englishFile('TractA'),
-    ]);
+  it('keeps each language in a file of its own', () => {
+    expect(open.popupFile(second, HEBREW)).toBe(textsFile('TractA'));
+    expect(open.popupFile(second, ENGLISH)).toBe(englishFile('TractA'));
   });
 });

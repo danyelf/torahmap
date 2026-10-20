@@ -170,7 +170,7 @@ test("a tractate file that fails says so, and isn't fetched again", async ({ pag
   // Not openMap: the failed download is reported, as a console error.
   await page.goto(`${TALMUD}?at=Berakhot.2a.1`);
   await allLoaded(page);
-  await expect(page.locator('#popup .popup-notice')).not.toBeEmpty();
+  await expect(page.locator('#popup .popup-notice[data-language="he"]')).not.toBeEmpty();
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('#popup .ref-text')).toHaveText('Berakhot 2a:1');

@@ -53,6 +53,7 @@ import { startingPointsHtml, startChosen, type StartChoice } from './startingPoi
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
+import type { TextLanguage } from './language.ts';
 import {
   arrivedWith,
   configureAnalytics,
@@ -877,7 +878,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** The files `item`'s popup needs for the languages shown; none without an item. */
   function popupFilesOf(item: I | null): string[] {
-    return item ? text.popupFiles(item, shownLanguages()) : [];
+    return item
+      ? [...new Set(shownLanguages().map((language) => text.popupFile(item, language)))]
+      : [];
+  }
+
+  /** The shown languages of `item`'s popup whose file is not in, with one notice for each file. */
+  function waitingLanguages(item: I): Partial<Record<TextLanguage, Node | null>> {
+    const waiting: Partial<Record<TextLanguage, Node | null>> = {};
+    const told = new Set<string>();
+    for (const language of shownLanguages()) {
+      const file = text.popupFile(item, language);
+      if (waitingOn([file], downloads) === null) continue;
+      waiting[language] = told.has(file) ? null : noticeFor([file]);
+      told.add(file);
+    }
+    return waiting;
   }
 
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
@@ -885,7 +901,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     for (const file of files) fetchPopupFile(file);
     const tools = toolsNow();
     updateSidebar(sidebarElements, item, (shown) => text.popupText(shown, loaded, tools.overlay), {
-      textsNotice: noticeFor(files.slice(0, 1)),
+      waiting: item ? waitingLanguages(item) : {},
       wordsClickable: dataFor(searchTool, loaded) !== null,
       ...tools,
       pinned: isPinned,

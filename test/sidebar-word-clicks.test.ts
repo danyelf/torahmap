@@ -20,7 +20,8 @@ function mountPopup(): void {
       <div class="popup-ref"><span class="ref-text"></span><button class="close-btn"></button></div>
       <div class="overlay-info"></div>
       <div class="popup-hebrew"></div>
-      <div class="popup-notice"></div>
+      <div class="popup-notice" data-language="he"></div>
+      <div class="popup-notice" data-language="en"></div>
       <div class="popup-english"></div>
       <a class="sefaria-link">View on Sefaria</a>
     </div>`;
@@ -41,7 +42,6 @@ describe('words in the popup', () => {
       overlay: null,
       search: null,
       pinned: true,
-      textsNotice: null,
       wordsClickable: true,
     });
 
@@ -58,7 +58,6 @@ describe('words in the popup', () => {
       overlay: null,
       search: null,
       pinned: true,
-      textsNotice: null,
       wordsClickable: false,
     });
 
@@ -77,7 +76,6 @@ describe('words in the popup', () => {
       overlay: null,
       search: null,
       pinned: true,
-      textsNotice: null,
       wordsClickable: true,
     });
 
@@ -101,7 +99,6 @@ describe('words in the popup', () => {
       overlay: null,
       search: null,
       pinned: true,
-      textsNotice: null,
       wordsClickable: true,
     });
 
@@ -120,7 +117,6 @@ describe('words in the popup', () => {
       overlay: null,
       search: null,
       pinned: true,
-      textsNotice: null,
       wordsClickable: true,
     });
 
@@ -135,7 +131,6 @@ describe('words in the popup', () => {
       overlay: null,
       search: null,
       pinned: true,
-      textsNotice: null,
       wordsClickable: true,
     });
 
@@ -178,7 +173,6 @@ describe('words in the popup', () => {
       overlay: { tool: mockOverlay, settings: undefined, data: undefined },
       search: null,
       pinned: true,
-      textsNotice: null,
       wordsClickable: true,
     });
 

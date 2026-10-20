@@ -168,18 +168,14 @@
     max-height: 200px;
   }
 
-  /* In the Hebrew's place and set as the Hebrew is, above the empty English. */
-  #popup .popup-notice {
+  /* Set as the Hebrew is, in its place. */
+  #popup .popup-notice[data-language='he'] {
     padding: 14px;
     font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
     font-size: 18px;
     line-height: 1.6;
     text-align: right;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  #popup:has(.popup-notice:not(:empty)) .popup-english {
-    display: block;
   }
 
   body.hebrew-only #popup .popup-english {

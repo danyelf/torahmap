@@ -60,10 +60,10 @@ export interface OpenText<I extends MapItem, S = unknown> {
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
   /**
-   * The files a square's popup needs to show `shown`. The shell downloads them when the popup
-   * first shows. The first holds what the popup cannot show without; the rest fill in as they land.
+   * The file a square's text in `language` is in. The shell downloads it when the popup first
+   * shows that language, and shows each language as soon as its own file is in.
    */
-  popupFiles(item: I, shown: readonly TextLanguage[]): string[];
+  popupFile(item: I, language: TextLanguage): string;
   /** What a square's popup says; the shell marks it and makes its words clickable. */
   popupText(item: I, loaded: Loaded, overlay: ToolOnMap<I> | null): PopupText;
   overlays: Overlay<I>[];

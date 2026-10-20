@@ -19,7 +19,7 @@ function show(text: Partial<PopupText>, search: ToolOnMap<MapItem> | null = null
     getSidebarElements(),
     item,
     () => ({ ref: '', hebrew: HEBREW, english: '', link: '', ...text }),
-    { textsNotice: null, wordsClickable: true, overlay: null, search, pinned: true },
+    { wordsClickable: true, overlay: null, search, pinned: true },
   );
 }
 

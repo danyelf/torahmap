@@ -109,10 +109,8 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         };
       },
 
-      popupFiles: (item, shown) => [
-        textsFile(item.tractate),
-        ...(shown.includes(ENGLISH) ? [englishFile(item.tractate)] : []),
-      ],
+      popupFile: (item, language) =>
+        language === ENGLISH ? englishFile(item.tractate) : textsFile(item.tractate),
 
       popupText(item, loaded) {
         const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;

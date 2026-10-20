@@ -13,7 +13,7 @@ import {
   SEARCH_REQUIRED,
   TEXTS_FILE,
 } from './files.ts';
-import { englishFile } from '@torahmap/talmud/data.ts';
+import { englishFile, textsFile } from '@torahmap/talmud/data.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import {
   expectPlainMap,
@@ -180,50 +180,36 @@ test('the texts download once, however often the popup asks for them before they
 });
 
 /**
- * The popup's notice on a story stop that pins a verse. On a desktop it is a
- * strip along the popup's bottom, apart from where the text goes; on a phone it
- * stands where the Hebrew goes, above the English.
+ * The popup's notice on a story stop that pins a verse: the Hebrew and English
+ * are in one file, so one notice, in the Hebrew's place, stands for both.
  */
-async function expectPopupNotice(
-  page: Page,
-  state: 'loading' | 'failed',
-  screen: string,
-): Promise<void> {
-  const notice = page.locator(`#popup.visible .load-notice[data-state="${state}"]`);
+async function expectPopupNotice(page: Page, state: 'loading' | 'failed'): Promise<void> {
+  const notice = page.locator(
+    `#popup.visible .popup-notice[data-language="he"] .load-notice[data-state="${state}"]`,
+  );
   await expect(notice).toBeVisible();
-  await expect(page.locator('#popup .popup-hebrew .load-notice')).toHaveCount(0);
-  const strip = (await page.locator('#popup .popup-notice').boundingBox())!;
-  const popup = (await page.locator('#popup').boundingBox())!;
-  if (screen === 'phone') {
-    const english = (await page.locator('#popup .popup-english').boundingBox())!;
-    expect(strip.y + strip.height).toBeLessThanOrEqual(english.y);
-  } else {
-    // The popup's border is 1px.
-    expect(Math.abs(strip.y + strip.height - (popup.y + popup.height - 1))).toBeLessThanOrEqual(1);
-    await expect(page.locator('#popup .popup-hebrew')).toBeHidden();
-    await expect(page.locator('#popup .popup-english')).toBeHidden();
-  }
+  await expect(page.locator('#popup .load-notice')).toHaveCount(1);
+  await expect(page.locator('#popup .popup-hebrew')).toBeHidden();
+  await expect(page.locator('#popup .popup-english')).toBeHidden();
 }
 
-test("a story stop's verse says its text is loading apart from the text", async ({
-  page,
-}, info) => {
+test("a story stop's verse says its text is loading in the text's place", async ({ page }) => {
   const { release, errors } = await open(page, 'story=tour&stop=verses', [TEXTS_FILE]);
-  await expectPopupNotice(page, 'loading', info.project.name);
+  await expectPopupNotice(page, 'loading');
   release();
   await allLoaded(page);
   await expect(page.locator('#popup.visible .popup-word').first()).toBeVisible();
-  await expect(page.locator('#popup .popup-notice')).toBeHidden();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test("a story stop's verse says its text failed apart from the text", async ({ page }, info) => {
+test("a story stop's verse says its text failed in the text's place", async ({ page }) => {
   await fail(page, [TEXTS_FILE]);
   const { errors } = await open(page, 'story=tour&stop=verses', [], {
     console: false,
     until: 'loaded',
   });
-  await expectPopupNotice(page, 'failed', info.project.name);
+  await expectPopupNotice(page, 'failed');
   await page.locator('#popup .load-notice-close').click();
   await expect(page.locator('#popup .load-notice')).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -423,7 +409,35 @@ test("the Talmud's English downloads only once English is shown, and its Hebrew 
   await page.locator('#language-choice [data-languages="both"]').click();
   await expect.poll(() => english.length).toBe(1);
   await expect(page.locator('#popup .popup-hebrew')).toBeVisible();
-  await expect(page.locator('#popup .popup-english')).toBeEmpty();
+  await expect(
+    page.locator('#popup .popup-notice[data-language="en"] .load-notice[data-state="loading"]'),
+  ).toBeVisible();
+  await expect(page.locator('#popup .popup-english')).toBeHidden();
   release();
   await expect(page.locator('#popup .popup-english')).not.toBeEmpty();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
+});
+
+test("the Talmud's English alone downloads no Hebrew, and a failed English says so in its place", async ({
+  page,
+}) => {
+  const hebrew: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith(textsFile('Berakhot'))) hebrew.push(r.url());
+  });
+  await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'en'));
+  await fail(page, [englishFile('Berakhot')]);
+  await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
+  await allLoaded(page);
+  await expect(
+    page.locator(
+      '#popup.visible .popup-notice[data-language="en"] .load-notice[data-state="failed"]',
+    ),
+  ).toBeVisible();
+  expect(hebrew).toEqual([]);
+
+  await viaMenu(page, 'about');
+  await page.locator('#language-choice [data-languages="both"]').click();
+  await expect(page.locator('#popup .popup-hebrew')).not.toBeEmpty();
+  await expect(page.locator('#popup .popup-notice[data-language="en"] .load-notice')).toBeVisible();
 });
