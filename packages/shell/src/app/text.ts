@@ -59,8 +59,11 @@ export interface OpenText<I extends MapItem, S = unknown> {
   searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
-  /** The file a square's text is in. The shell downloads it when the square's popup first shows. */
-  popupFile(item: I): string;
+  /**
+   * The file a square's text in `language` is in. The shell downloads it when the popup first
+   * shows that language, and shows each language as soon as its own file is in.
+   */
+  popupFile(item: I, language: TextLanguage): string;
   /** What a square's popup says; the shell marks it and makes its words clickable. */
   popupText(item: I, loaded: Loaded, overlay: ToolOnMap<I> | null): PopupText;
   overlays: Overlay<I>[];

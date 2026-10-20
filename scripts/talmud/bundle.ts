@@ -2,7 +2,7 @@
 // Build public/data/talmud/ from the tractates verify-coverage.ts downloaded and passed.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import {
   amudIndex,
   type TalmudAmud,
@@ -10,13 +10,15 @@ import {
   type TalmudStructure,
   type TalmudTractate,
   type TalmudTractateText,
-  TALMUD_DATA_DIR,
+  type TalmudTractateEnglish,
+  englishFile,
+  textsFile,
   SEARCH_FILE,
   STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
   type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
 import { stripNikkud } from '@torahmap/hebrew';
-import { markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
+import { HADRAN, markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
 import {
   REPORT_PATH,
   cachePathsFor,
@@ -30,6 +32,7 @@ import {
   type VerseTexts,
 } from '@torahmap/tanakh/verseTexts.ts';
 import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
+import { englishMarkers } from './english.ts';
 
 /**
  * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
@@ -120,15 +123,31 @@ export interface MergedJson {
   text: string[][];
 }
 
+/**
+ * Where the English differs in shape from the Hebrew, or null. The English leaves off a Hadran
+ * line that ends an amud, and keeps every other as an empty string.
+ */
+function englishShapeDiffers(hebrew: string[][], english: string[][]): number | null {
+  if (english.length !== hebrew.length) return Math.min(english.length, hebrew.length);
+  const at = hebrew.findIndex((amud, ai) => {
+    const n = english[ai].length;
+    return !(n === amud.length || (n === amud.length - 1 && HADRAN.test(amud.at(-1)!)));
+  });
+  return at < 0 ? null : at;
+}
+
 export function processTractate(
   seder: string,
   tractateName: string,
   wikisource: WikisourceJson,
   schema: SchemaJson,
   merged: MergedJson,
+  /** The William Davidson English, shaped as `wikisource`. */
+  english: MergedJson,
 ): {
   structure: TalmudTractate;
   text: Omit<TalmudTractateText, 'citations'>;
+  english: TalmudTractateEnglish;
   /** What search reads: the other edition, which spells abbreviations out, as plain letters. */
   search: string[][];
 } {
@@ -148,6 +167,14 @@ export function processTractate(
   });
   const text = wikisource.text.slice(skip);
   const other = merged.text.slice(skip);
+  const translation = english.text.slice(skip);
+  const differs = englishShapeDiffers(text, translation);
+  if (differs !== null) {
+    const { daf, amud } = amudAt(differs);
+    throw new Error(
+      `${tractateName}: the English differs in shape from the Hebrew at ${daf}${amud}`,
+    );
+  }
 
   // Build perakim array and compute per-amud perekIdx + boundary markers.
   const perakim: TalmudPerek[] = [];
@@ -220,16 +247,32 @@ export function processTractate(
       perakim,
     },
     text: { name: tractateName, amudim: cleanText },
+    english: text.map((amud, ai) =>
+      amud.map((seg, si) => {
+        if (HADRAN.test(seg)) return '';
+        try {
+          return englishMarkers(translation[ai][si]);
+        } catch (err) {
+          const { daf, amud } = amudAt(ai);
+          throw new Error(`${tractateName} ${daf}${amud}:${si + 1}: ${(err as Error).message}`);
+        }
+      }),
+    ),
     search: other.map((amud) => amud.map((seg) => stripNikkud(stripHtml(seg)))),
   };
 }
 
 const DATA_DIR = 'public/data';
-const OUTPUT_DIR = join(DATA_DIR, TALMUD_DATA_DIR);
-const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, 'utf-8')) as T;
+}
+
+/** Writes `value` to `file`, a path under `public/data/` as the app asks for it. */
+async function writeData(file: string, value: unknown): Promise<void> {
+  const path = join(DATA_DIR, file);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, JSON.stringify(value), 'utf-8');
 }
 
 async function main(): Promise<void> {
@@ -239,8 +282,6 @@ async function main(): Promise<void> {
   const passed = report.tractates.filter((t) => t.status === 'pass');
   console.log(`${passed.length} passed tractates to bundle`);
   console.log('');
-
-  await mkdir(TEXTS_DIR, { recursive: true });
 
   const structure: TalmudStructure = { tractates: [] };
   const search: TalmudSearchText = {};
@@ -260,6 +301,7 @@ async function main(): Promise<void> {
       const {
         structure: tractateStructure,
         text: tractateText,
+        english: tractateEnglish,
         search: searchText,
       } = processTractate(
         ref.seder,
@@ -267,6 +309,7 @@ async function main(): Promise<void> {
         await readJson<WikisourceJson>(paths.wikisource),
         await readJson<SchemaJson>(paths.schema),
         await readJson<MergedJson>(paths.merged),
+        await readJson<MergedJson>(paths.english),
       );
 
       structure.tractates.push(tractateStructure);
@@ -278,14 +321,17 @@ async function main(): Promise<void> {
       }
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
       const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
-      await writeFile(join(TEXTS_DIR, `${ref.tractate}.json`), JSON.stringify(shipped), 'utf-8');
+      await writeData(textsFile(ref.tractate), shipped);
+      await writeData(englishFile(ref.tractate), tractateEnglish);
 
       const segCount = tractateStructure.amudim.reduce((a, b) => a + b.segmentCount, 0);
       console.log(
         `OK (${tractateStructure.amudim.length} amudim, ${segCount} segments, ${tractateStructure.perakim.length} perakim)`,
       );
     } catch (err) {
-      console.log(`SKIP: ${(err as Error).message}`);
+      // A tractate left out would drop from the map and leave its old file behind.
+      console.log('FAILED');
+      throw err;
     }
   }
 
@@ -295,7 +341,10 @@ async function main(): Promise<void> {
   console.log('');
   console.log(`Structure: ${join(DATA_DIR, TALMUD_STRUCTURE_FILE)}`);
   console.log(`Search: ${join(DATA_DIR, SEARCH_FILE)}`);
-  console.log(`Texts: ${TEXTS_DIR}/*.json (${structure.tractates.length} files)`);
+  console.log(
+    `Texts: ${join(DATA_DIR, dirname(textsFile('')))} (${structure.tractates.length} files)`,
+  );
+  console.log(`English: ${join(DATA_DIR, dirname(englishFile('')))}`);
   console.log('');
   console.log(`Tanakh citations linked: ${linked}`);
   console.log(`Looked like citations but named no verse: ${missed.length}`);

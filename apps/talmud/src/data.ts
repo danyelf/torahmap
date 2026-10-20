@@ -10,6 +10,10 @@ export const STRUCTURE_FILE = `${TALMUD_DATA_DIR}/structure.json`;
 /** The file a tractate's text is in. */
 export const textsFile = (tractate: string): string => `${TALMUD_DATA_DIR}/texts/${tractate}.json`;
 
+/** The file a tractate's English is in, apart so that a reader of the Hebrew alone never downloads it. */
+export const englishFile = (tractate: string): string =>
+  `${TALMUD_DATA_DIR}/english/${tractate}.json`;
+
 /** What search reads, a different edition from the popup's: each tractate's amudim of plain-letter segments. */
 export const SEARCH_FILE = `${TALMUD_DATA_DIR}/search.json`;
 
@@ -49,6 +53,9 @@ export interface TalmudTractateText {
   /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
   citations: Record<number, Record<number, Citation[]>>;
 }
+
+/** The William Davidson English, shaped as a tractate's `amudim`, in the markers `englishText` reads. */
+export type TalmudTractateEnglish = string[][];
 
 /** Each tractate's search text, shaped as its `amudim`. */
 export type TalmudSearchText = Record<string, string[][]>;

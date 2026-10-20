@@ -7,6 +7,9 @@ import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
 import { linkStretches, type TextLink } from './textLinks.ts';
+import { styleStretches, type TextStyle } from './textStyles.ts';
+
+export type { TextStyle };
 
 /** A click on a word in the popup's Hebrew text. */
 export interface WordClick<I extends MapItem = MapItem> {
@@ -82,8 +85,9 @@ export interface SidebarElements {
   ref: Element | null;
   overlayInfo: Element | null;
   hebrew: Element | null;
-  /** Where the popup says the texts are loading or failed, apart from the text. */
-  notice: Element | null;
+  /** Where the popup says a language's text is loading or failed, in that text's place. */
+  hebrewNotice: Element | null;
+  englishNotice: Element | null;
   english: Element | null;
   link: HTMLAnchorElement | null;
   closeBtn: Element | null;
@@ -97,7 +101,8 @@ export function getSidebarElements(): SidebarElements {
     ref: sidebar?.querySelector('.ref-text') ?? null,
     overlayInfo: sidebar?.querySelector('.overlay-info') ?? null,
     hebrew: sidebar?.querySelector('.popup-hebrew') ?? null,
-    notice: sidebar?.querySelector('.popup-notice') ?? null,
+    hebrewNotice: sidebar?.querySelector(`.popup-notice[data-language="${HEBREW}"]`) ?? null,
+    englishNotice: sidebar?.querySelector(`.popup-notice[data-language="${ENGLISH}"]`) ?? null,
     english: sidebar?.querySelector('.popup-english') ?? null,
     link: (sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement) ?? null,
     closeBtn: sidebar?.querySelector('.close-btn') ?? null,
@@ -112,12 +117,17 @@ export interface PopupText {
   link: string;
   /** Stretches of the Hebrew that link elsewhere, opened in a new window. */
   hebrewLinks?: readonly TextLink[];
+  /** Stretches of the English in bold or italic. */
+  englishStyles?: readonly TextStyle[];
 }
 
 /** What the popup shows beside the square's text, and whether the square is pinned. */
 export interface PopupView<I extends MapItem> {
-  /** Shown while the square's file is not in. */
-  textsNotice: Node | null;
+  /**
+   * The languages whose text is not in, each with the notice shown in its place. Languages
+   * in one file share its notice, shown in the first one's place.
+   */
+  waiting?: Partial<Record<TextLanguage, Node | null>>;
   /** Whether search has its data, so a clicked word has a search to join. */
   wordsClickable: boolean;
   overlay: ToolOnMap<I> | null;
@@ -132,8 +142,9 @@ export function updateSidebar<I extends MapItem>(
   say: (item: I) => PopupText,
   view: PopupView<I>,
 ): void {
-  const { sidebar, ref, overlayInfo, hebrew, notice, english, link } = elements;
-  const { textsNotice, search, pinned: isPinned } = view;
+  const { sidebar, ref, overlayInfo, hebrew, hebrewNotice, english, englishNotice, link } =
+    elements;
+  const { waiting = {}, search, pinned: isPinned } = view;
   // Words are clickable only while something listens for them.
   const heard = view.wordsClickable ? wordClickHandler : null;
   const currentOverlay = view.overlay?.tool ?? null;
@@ -202,11 +213,26 @@ export function updateSidebar<I extends MapItem>(
       }
     }
   }
-  notice?.replaceChildren(...(textsNotice ? [textsNotice] : []));
   if (english) {
-    const highlighted = text.english && marked(text.english, ENGLISH);
-    if (highlighted) english.replaceChildren(highlighted);
-    else english.textContent = text.english;
+    english.replaceChildren(
+      ...(text.english
+        ? [
+            styleStretches(
+              marked(text.english, ENGLISH) ?? textFragment(text.english),
+              text.english,
+              text.englishStyles ?? [],
+            ),
+          ]
+        : []),
+    );
+  }
+  for (const [language, row, notice] of [
+    [HEBREW, hebrew, hebrewNotice],
+    [ENGLISH, english, englishNotice],
+  ] as const) {
+    if (row) (row as HTMLElement).hidden = language in waiting;
+    const shown = waiting[language];
+    notice?.replaceChildren(...(shown ? [shown] : []));
   }
   if (link) link.href = text.link;
 

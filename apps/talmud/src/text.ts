@@ -9,17 +9,20 @@ import type { TermSettings } from '@torahmap/search';
 import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
-import { HEBREW } from '@torahmap/shell/language.ts';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
+import { englishText } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
   STRUCTURE_FILE,
   amudIndex,
+  englishFile,
   structureFrom,
   textsFile,
+  type TalmudTractateEnglish,
   type TalmudTractateText,
 } from './data.ts';
 
@@ -56,7 +59,7 @@ export const TALMUD_CATEGORY = 'Talmud';
 export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
   site: talmudSite,
   link: TALMUD_LINK_KEYS,
-  languages: [HEBREW],
+  languages: [HEBREW, ENGLISH],
   firstFiles: [STRUCTURE_FILE],
 
   open(loaded) {
@@ -65,14 +68,10 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
     const laid = computeTalmudLayout(structure);
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
-    /** A segment's text and citations in its tractate's file, which lists both by amud. */
-    const segmentIn = (s: TalmudLayoutItem, file: TalmudTractateText) => {
+    /** Where a segment is in its tractate's files, which list segments by amud. */
+    const placeOf = (s: TalmudLayoutItem) => {
       const first = tractates.get(s.tractate)?.amudim[0];
-      const ai = first ? amudIndex(s.daf, s.amud, first) : -1;
-      return {
-        text: file.amudim[ai]?.[s.segment - 1] ?? '',
-        citations: file.citations[ai]?.[s.segment - 1] ?? [],
-      };
+      return { ai: first ? amudIndex(s.daf, s.amud, first) : -1, si: s.segment - 1 };
     };
 
     return {
@@ -110,17 +109,22 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         };
       },
 
-      popupFile: (item) => textsFile(item.tractate),
+      popupFile: (item, language) =>
+        language === ENGLISH ? englishFile(item.tractate) : textsFile(item.tractate),
 
       popupText(item, loaded) {
         const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;
-        const segment = file && segmentIn(item, file);
+        const translation = loaded.get(englishFile(item.tractate)) as
+          TalmudTractateEnglish | undefined;
+        const { ai, si } = placeOf(item);
+        const english = englishText(translation?.[ai]?.[si] ?? '');
         return {
           ref: talmudRef(item),
-          hebrew: segment?.text ?? '',
-          english: '',
+          hebrew: file?.amudim[ai]?.[si] ?? '',
+          english: english.text,
+          englishStyles: english.styles,
           link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
-          hebrewLinks: segment?.citations.map(({ start, end, verse }) => ({
+          hebrewLinks: (file?.citations[ai]?.[si] ?? []).map(({ start, end, verse }) => ({
             start,
             end,
             href: commentaryLink(verse, TALMUD_CATEGORY),

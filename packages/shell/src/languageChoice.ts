@@ -53,6 +53,11 @@ export function applyLanguageChoice(languages: readonly TextLanguage[]): void {
   show(languages.length === 1 ? languages[0] : load());
 }
 
+/** The languages the popup shows now. */
+export function shownLanguages(): readonly TextLanguage[] {
+  return current === 'both' ? [HEBREW, ENGLISH] : [current];
+}
+
 export function languageChoiceHtml(): string {
   const buttons = CHOICES.map(
     ({ choice, glyph, name }) =>
@@ -64,8 +69,8 @@ export function languageChoiceHtml(): string {
   </div>`;
 }
 
-/** Makes the choice in `panel`, if it has one, show and change what is shown. */
-export function bindLanguageChoice(panel: HTMLElement): void {
+/** Makes the choice in `panel`, if it has one, show and change what is shown, then call `changed`. */
+export function bindLanguageChoice(panel: HTMLElement, changed: () => void): void {
   const control = panel.querySelector('#language-choice');
   if (!control) return;
   const buttons = CHOICES.map(
@@ -84,6 +89,7 @@ export function bindLanguageChoice(panel: HTMLElement): void {
       show(choice);
       save(choice);
       mark();
+      changed();
     });
   }
 }

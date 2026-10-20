@@ -4,7 +4,8 @@ import { readLink } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { popupText } from '@torahmap/tanakh/popup.ts';
 import { talmudText } from '@torahmap/talmud/text.ts';
-import { STRUCTURE_FILE, textsFile } from '@torahmap/talmud/data.ts';
+import { STRUCTURE_FILE, englishFile, textsFile } from '@torahmap/talmud/data.ts';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { TEXTS_FILE } from '@torahmap/tanakh/verseTexts.ts';
 import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/index';
 import { talmudFixture } from '../apps/talmud/test/helpers/talmudFixture';
@@ -46,29 +47,26 @@ describe("the Talmud's popup", () => {
   // "Its" in 2a:2 cites a verse.
   const citations = { 0: { 1: [{ start: 0, end: 3, verse: 'Psalms.36.7' }] } };
   const file = { name: 'TractA', amudim, citations };
-  const open = talmudText.open(
-    new Map<string, unknown>([
-      [STRUCTURE_FILE, talmudFixture],
-      [textsFile('TractA'), file],
-    ]),
-  );
+  const english = [['', '*Its* second'], ['']];
+  const both = new Map<string, unknown>([
+    [textsFile('TractA'), file],
+    [englishFile('TractA'), english],
+  ]);
+  const open = talmudText.open(new Map<string, unknown>([[STRUCTURE_FILE, talmudFixture]]));
   const second = open.items.find((s) => s.tractate === 'TractA' && s.daf === 2 && s.segment === 2)!;
 
-  it("says the segment's reference and text, and links to it on Sefaria", () => {
-    expect(open.popupText(second, new Map([[textsFile('TractA'), file]]), null)).toMatchObject({
+  it("says the segment's reference, text and English, and links to it on Sefaria", () => {
+    expect(open.popupText(second, both, null)).toMatchObject({
       ref: 'TractA 2a:2',
       hebrew: 'Its second',
-      english: '',
+      english: 'Its second',
+      englishStyles: [{ start: 0, end: 3, style: 'bold' }],
       link: 'https://www.sefaria.org/TractA.2a.2',
     });
   });
 
   it('links each verse the segment cites to the Tanakh map, shaded by the Talmud’s commentary', () => {
-    const [cited] = open.popupText(
-      second,
-      new Map([[textsFile('TractA'), file]]),
-      null,
-    ).hebrewLinks!;
+    const [cited] = open.popupText(second, both, null).hebrewLinks!;
     expect(cited).toMatchObject({ start: 0, end: 3 });
     expect(cited.href.startsWith('/?')).toBe(true);
     expect(readLink(cited.href.slice(1), LINK_KEYS)).toMatchObject({
@@ -80,5 +78,18 @@ describe("the Talmud's popup", () => {
 
   it('is empty until its tractate is in', () => {
     expect(open.popupText(second, new Map(), null).hebrew).toBe('');
+  });
+
+  it('shows the Hebrew while the English is still on its way', () => {
+    const hebrewOnly = new Map<string, unknown>([[textsFile('TractA'), file]]);
+    expect(open.popupText(second, hebrewOnly, null)).toMatchObject({
+      hebrew: 'Its second',
+      english: '',
+    });
+  });
+
+  it('keeps each language in a file of its own', () => {
+    expect(open.popupFile(second, HEBREW)).toBe(textsFile('TractA'));
+    expect(open.popupFile(second, ENGLISH)).toBe(englishFile('TractA'));
   });
 });

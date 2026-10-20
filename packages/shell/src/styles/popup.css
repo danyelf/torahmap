@@ -105,21 +105,28 @@
   font-size: 14px;
   line-height: 1.5;
   color: #ccc;
+  white-space: pre-line;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* While the texts are not in, a strip under the reference says so, and the
-   empty text rows are left out. A phone keeps it where the Hebrew goes
-   (phone.css). */
+/* A translation set in bold among its explanation. */
+#popup .popup-english b {
+  font-weight: 600;
+  color: #fff;
+}
+
+/* Under a search mark, the mark's own text colour. */
+#popup .popup-english mark :is(b, i) {
+  color: inherit;
+}
+
+/* While a language's text is not in, a strip in its place says so. A phone
+   sets the Hebrew's as the Hebrew is (phone.css). */
 #popup .popup-notice {
   padding: 10px 14px;
 }
 
 #popup .popup-notice:empty {
-  display: none;
-}
-
-#popup:has(.popup-notice:not(:empty)) :is(.popup-hebrew, .popup-english) {
   display: none;
 }
 

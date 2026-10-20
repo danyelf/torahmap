@@ -46,14 +46,27 @@ describe('sidebar', () => {
       hebrew.className = 'popup-hebrew';
       const english = document.createElement('div');
       english.className = 'popup-english';
-      const notice = document.createElement('div');
-      notice.className = 'popup-notice';
+      const hebrewNotice = document.createElement('div');
+      hebrewNotice.className = 'popup-notice';
+      hebrewNotice.dataset.language = 'he';
+      const englishNotice = document.createElement('div');
+      englishNotice.className = 'popup-notice';
+      englishNotice.dataset.language = 'en';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, notice, english, link, closeBtn);
+      sidebar.append(
+        ref,
+        overlayInfo,
+        hebrew,
+        hebrewNotice,
+        englishNotice,
+        english,
+        link,
+        closeBtn,
+      );
 
       const elements = getSidebarElements();
       expect(elements.sidebar).toBe(sidebar);
@@ -61,7 +74,8 @@ describe('sidebar', () => {
       expect(elements.overlayInfo).toBe(overlayInfo);
       expect(elements.hebrew).toBe(hebrew);
       expect(elements.english).toBe(english);
-      expect(elements.notice).toBe(notice);
+      expect(elements.hebrewNotice).toBe(hebrewNotice);
+      expect(elements.englishNotice).toBe(englishNotice);
       expect(elements.link).toBeInstanceOf(HTMLAnchorElement);
       expect(elements.link).toBe(link);
       expect(elements.closeBtn).toBe(closeBtn);
@@ -189,14 +203,27 @@ describe('sidebar', () => {
       hebrew.className = 'popup-hebrew';
       const english = document.createElement('div');
       english.className = 'popup-english';
-      const notice = document.createElement('div');
-      notice.className = 'popup-notice';
+      const hebrewNotice = document.createElement('div');
+      hebrewNotice.className = 'popup-notice';
+      hebrewNotice.dataset.language = 'he';
+      const englishNotice = document.createElement('div');
+      englishNotice.className = 'popup-notice';
+      englishNotice.dataset.language = 'en';
       const link = document.createElement('a');
       link.className = 'sefaria-link';
       const closeBtn = document.createElement('button');
       closeBtn.className = 'close-btn';
 
-      sidebar.append(ref, overlayInfo, hebrew, notice, english, link, closeBtn);
+      sidebar.append(
+        ref,
+        overlayInfo,
+        hebrew,
+        hebrewNotice,
+        englishNotice,
+        english,
+        link,
+        closeBtn,
+      );
       document.body.appendChild(sidebar);
 
       elements = {
@@ -204,7 +231,8 @@ describe('sidebar', () => {
         ref,
         overlayInfo,
         hebrew,
-        notice,
+        hebrewNotice,
+        englishNotice,
         english,
         link,
         closeBtn,
@@ -237,7 +265,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -251,7 +278,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -265,7 +291,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -279,7 +304,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -293,7 +317,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -307,7 +330,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -315,7 +337,26 @@ describe('sidebar', () => {
         expect(elements.english?.textContent).toBe('');
       });
 
-      it('shows the notice apart from the text while the texts are not in', () => {
+      it("shows a waiting language's notice in its place, and the other language as it is", () => {
+        const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+        const loading = document.createElement('span');
+        showVerse(elements, verse, {
+          verseTexts,
+          overlay: null,
+          search: null,
+          pinned: true,
+          waiting: { en: loading },
+          wordsClickable: true,
+        });
+
+        expect(elements.englishNotice?.contains(loading)).toBe(true);
+        expect((elements.english as HTMLElement).hidden).toBe(true);
+        expect(elements.hebrewNotice?.childNodes).toHaveLength(0);
+        expect((elements.hebrew as HTMLElement).hidden).toBe(false);
+        expect(elements.hebrew?.textContent).not.toBe('');
+      });
+
+      it("leaves out every row of a file whose notice stands in another's place", () => {
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
         const loading = document.createElement('span');
         showVerse(elements, verse, {
@@ -323,13 +364,14 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: true,
-          textsNotice: loading,
+          waiting: { he: loading, en: null },
           wordsClickable: true,
         });
 
-        expect(elements.notice?.contains(loading)).toBe(true);
-        expect(elements.hebrew?.textContent).toBe('');
-        expect(elements.english?.textContent).toBe('');
+        expect(elements.hebrewNotice?.contains(loading)).toBe(true);
+        expect(elements.englishNotice?.childNodes).toHaveLength(0);
+        expect((elements.hebrew as HTMLElement).hidden).toBe(true);
+        expect((elements.english as HTMLElement).hidden).toBe(true);
         expect(elements.sidebar?.classList.contains('visible')).toBe(true);
       });
     });
@@ -342,7 +384,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: true,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -356,7 +397,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -372,7 +412,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -388,7 +427,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -402,7 +440,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -418,7 +455,8 @@ describe('sidebar', () => {
           english: null,
           link: null,
           closeBtn: null,
-          notice: null,
+          hebrewNotice: null,
+          englishNotice: null,
         };
 
         expect(() => {
@@ -427,7 +465,6 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
-            textsNotice: null,
             wordsClickable: true,
           });
         }).not.toThrow();
@@ -450,7 +487,6 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -471,7 +507,6 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings: undefined, data: undefined },
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -485,7 +520,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -523,7 +557,6 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -564,7 +597,6 @@ describe('sidebar', () => {
           overlay: { tool: mockOverlay, settings, data: undefined },
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -591,7 +623,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
@@ -634,7 +665,6 @@ describe('sidebar', () => {
             overlay: { tool: overlay, settings: undefined, data: undefined },
             search: searchOn('Matches: אברם'),
             pinned: false,
-            textsNotice: null,
             wordsClickable: true,
           });
 
@@ -683,7 +713,6 @@ describe('sidebar', () => {
             overlay: { tool: overlay, settings: undefined, data: undefined },
             search: search,
             pinned: false,
-            textsNotice: null,
             wordsClickable: true,
           });
           expect(elements.english?.textContent).toBe('In the beginning');
@@ -713,7 +742,6 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
-            textsNotice: null,
             wordsClickable: true,
           });
         }).not.toThrow();
@@ -729,7 +757,6 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
-            textsNotice: null,
             wordsClickable: true,
           });
         }).not.toThrow();
@@ -745,7 +772,6 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
-            textsNotice: null,
             wordsClickable: true,
           });
         }).not.toThrow();
@@ -761,7 +787,6 @@ describe('sidebar', () => {
             overlay: null,
             search: null,
             pinned: false,
-            textsNotice: null,
             wordsClickable: true,
           });
         }).not.toThrow();
@@ -780,7 +805,6 @@ describe('sidebar', () => {
           overlay: null,
           search: null,
           pinned: false,
-          textsNotice: null,
           wordsClickable: true,
         });
 
