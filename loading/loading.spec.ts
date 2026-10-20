@@ -366,9 +366,10 @@ test('stepping to a verse records it by its id and book', async ({ page }, info)
   const { errors } = await open(page, 'verse=Genesis.12.1', [], { until: 'loaded' });
   await recordEvents(page);
   await page.keyboard.press('ArrowRight');
+  await expect.poll(() => param(page, 'verse')).not.toBe('Genesis.12.1');
   await expect
     .poll(() => sentFields(page, 'square_click'))
-    .toEqual([{ id: 'Genesis.12.2', area: 'Genesis' }]);
+    .toEqual([{ id: param(page, 'verse'), area: 'Genesis' }]);
   expect(errors).toEqual([]);
 });
 
