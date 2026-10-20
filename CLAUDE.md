@@ -219,9 +219,9 @@ change can be looked at without checking the branch out —
 What the Worker serves is in `apps/worker/src/index.ts`; telemetry's client half is
 `packages/shell/src/analytics.ts`. No cookies; browser storage holds only two settings, which
 languages to show and whether this is a return visit. The dev server sends nothing.
-`scripts/telemetry/report.sh` prints every saved query, and `usage.sh` beside
-it writes a chart of page views per day to `telemetry-report/usage.html`; both
-need a Cloudflare account id and an API token. Cloudflare Access keeps chat apps'
+`scripts/telemetry/report.sh` prints every saved query, `report-html.sh` beside
+it writes the same to `telemetry-report/report.html`, and `usage.sh` writes a
+chart of page views per day to `telemetry-report/usage.html`; all three need a Cloudflare account id and an API token. Cloudflare Access keeps chat apps'
 fetchers off PR preview links, so a preview is checked on torahmap.org after
 merge.
 

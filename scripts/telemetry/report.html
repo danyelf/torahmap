@@ -1,0 +1,197 @@
+<!doctype html>
+<!-- The page report-html.sh fills with data; open what it writes, not this. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Torah Map telemetry</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f9f9f7;
+        --surface: #fcfcfb;
+        --ink: #0b0b0b;
+        --ink-2: #52514e;
+        --muted: #898781;
+        --grid: #e1e0d9;
+        --ring: rgba(11, 11, 11, 0.1);
+        --bar: #2a78d6;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --page: #0d0d0d;
+          --surface: #1a1a19;
+          --ink: #ffffff;
+          --ink-2: #c3c2b7;
+          --grid: #2c2c2a;
+          --ring: rgba(255, 255, 255, 0.1);
+          --bar: #3987e5;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font:
+          15px/1.45 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 16px 48px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 4px;
+        font-weight: 600;
+      }
+      h2 {
+        font-size: 17px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .sub {
+        color: var(--ink-2);
+        margin: 0 0 20px;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+      nav a {
+        color: var(--ink-2);
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+      }
+      .empty {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      table {
+        border-collapse: collapse;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        padding: 3px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--grid);
+        vertical-align: top;
+      }
+      th {
+        color: var(--ink-2);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .num {
+        text-align: right;
+        white-space: nowrap;
+      }
+      td.blank {
+        color: var(--muted);
+      }
+      td.bar {
+        width: 160px;
+        min-width: 80px;
+        vertical-align: middle;
+      }
+      td.bar i {
+        display: block;
+        height: 10px;
+        border-radius: 2px;
+        background: var(--bar);
+      }
+      details {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      pre {
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Torah Map telemetry</h1>
+      <p class="sub" id="range"></p>
+      <nav id="contents"></nav>
+      <div id="queries"></div>
+    </main>
+
+    <script>
+      const data = /*DATA*/ null;
+
+      const NUMERIC = /Int|Float/;
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
+        );
+      // Rows past this many start folded away, so the page can be scanned.
+      const SHOWN = 15;
+
+      document.getElementById('range').textContent =
+        `torahmap.org, last ${data.days} days · fetched ${data.fetched.replace('T', ' ')} · ` +
+        'counts are weighted by the sample interval, so they are estimates';
+      document.getElementById('contents').innerHTML = data.queries
+        .map((q) => `<a href="#${q.name}">${q.name}</a>`)
+        .join('');
+
+      function table(q, rows) {
+        const cols = q.meta.map((c) => ({ name: c.name, num: NUMERIC.test(c.type) }));
+        // The last column is what each query counts; a bar beside it shows the proportions.
+        const last = cols.at(-1);
+        const max = last.num ? Math.max(...q.data.map((r) => Number(r[last.name]))) : 0;
+        const head = cols.map((c) => `<th class="${c.num ? 'num' : ''}">${esc(c.name)}</th>`);
+        if (max) head.push('<th></th>');
+        const body = rows.map((r) => {
+          const cells = cols.map((c) => {
+            const v = r[c.name];
+            if (v === '') return '<td class="blank">–</td>';
+            return `<td class="${c.num ? 'num' : ''}">${esc(c.num ? Number(v).toLocaleString() : v)}</td>`;
+          });
+          if (max)
+            cells.push(
+              `<td class="bar"><i style="width:${(100 * Number(r[last.name])) / max}%"></i></td>`,
+            );
+          return `<tr>${cells.join('')}</tr>`;
+        });
+        return `<table><tr>${head.join('')}</tr>${body.join('')}</table>`;
+      }
+
+      document.getElementById('queries').innerHTML = data.queries
+        .map((q) => {
+          const rows = q.data;
+          let content = rows.length
+            ? table(q, rows.slice(0, SHOWN))
+            : '<p class="empty">No rows in this range.</p>';
+          if (rows.length > SHOWN)
+            content += `<details><summary>All ${rows.length} rows</summary>${table(q, rows)}</details>`;
+          return (
+            `<section class="card" id="${q.name}"><h2>${esc(q.name)}</h2>${content}` +
+            `<details><summary>Query</summary><pre>${esc(q.sql)}</pre></details></section>`
+          );
+        })
+        .join('');
+    </script>
+  </body>
+</html>
