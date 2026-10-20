@@ -201,6 +201,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let searchPrebuilt = false;
   let downloadsSettled = false;
   let downloadsStarted = false;
+  /** The files whose download has begun: a stage's once it starts, and any fetched at once. */
+  const requested = new Set<string>();
   let timingSent = false;
 
   const squares = indexItems(items);
@@ -898,7 +900,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
     const files = popupFilesOf(item);
-    for (const file of files) fetchPopupFile(file);
+    for (const file of files) fetchNow(file);
     const tools = toolsNow();
     updateSidebar(sidebarElements, item, (shown) => text.popupText(shown, loaded, tools.overlay), {
       waiting: item ? waitingLanguages(item) : {},
@@ -909,15 +911,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * A square's text downloads when its popup first shows, unless it is in, on
-   * its way or failed. Until the downloads start, the opening view's popup
-   * file is left to their first stage (filesFirst).
+   * A file a popup or a search needs now: downloaded at once, ahead of its
+   * stage if it is waiting in one, unless it is in, on its way or failed.
+   * Until the downloads start, the opening view's files are left to their
+   * first stage (filesFirst).
    */
-  function fetchPopupFile(path: string): void {
+  function fetchNow(path: string): void {
     if (!downloadsStarted) return;
-    if (loaded.has(path) || downloads.pending.has(path) || downloads.failed.has(path)) return;
+    if (loaded.has(path) || requested.has(path) || downloads.failed.has(path)) return;
+    requested.add(path);
     downloads.pending.add(path);
     void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
+  }
+
+  /** The files the search's settings ask for at once. */
+  function searchFilesNow(): readonly string[] {
+    return searchTool.filesFor?.(overlaySettings.get(searchTool)) ?? [];
   }
 
   /**
@@ -934,7 +943,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function showSearchNotice(): void {
     const caption = searchControls.querySelector('#search-hit-caption');
     if (!caption) return;
-    const notice = noticeFor(requiredFiles(searchTool));
+    const notice = noticeFor([...requiredFiles(searchTool), ...searchFilesNow()]);
     if (notice) caption.replaceChildren(notice);
     else caption.querySelector('.load-notice')?.remove();
   }
@@ -1051,6 +1060,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * them, keeping their focus.
    */
   function searchChanged(fresh: boolean): void {
+    for (const path of searchFilesNow()) fetchNow(path);
     drawSearchPanel(fresh);
     updateLegend();
     refreshPopup();
@@ -1522,10 +1532,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView<I> {
-    if (frame.mode !== 'story') return { tools: pickedTools(), popup: popupFilesOf(pinnedItem) };
+    const searchFiles = searchFilesNow();
+    if (frame.mode !== 'story') {
+      return { tools: pickedTools(), popup: popupFilesOf(pinnedItem), searchFiles };
+    }
     const { stop } = storyColumn.where();
     const item = stop.pin ? squares.find(stop.pin) : null;
-    return { tools: stopTools(stop, textTools), popup: popupFilesOf(item) };
+    return { tools: stopTools(stop, textTools), popup: popupFilesOf(item), searchFiles };
   }
 
   function landingView(): LandingView<I> {
@@ -1712,7 +1725,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   showLoadState();
 
   for (const stage of stages) {
-    await downloadFiles(stage, { landed: fileLanded, failed: fileFailed });
+    const fresh = stage.filter((path) => !requested.has(path));
+    for (const path of fresh) requested.add(path);
+    await downloadFiles(fresh, { landed: fileLanded, failed: fileFailed });
   }
   // The layout tests, the video harness and the loading tests wait on this;
   // nothing in the app reads it.

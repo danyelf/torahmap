@@ -119,6 +119,8 @@ export interface PopupText {
   hebrewLinks?: readonly TextLink[];
   /** Stretches of the English in bold or italic. */
   englishStyles?: readonly TextStyle[];
+  /** The stretches of the English that search reads, and so marks; all of it when absent. */
+  englishSearched?: readonly { start: number; end: number }[];
 }
 
 /** What the popup shows beside the square's text, and whether the square is pinned. */
@@ -174,7 +176,11 @@ export function updateSidebar<I extends MapItem>(
   }
 
   // Both tools mark the text; where they mark the same letters, the search's mark is kept.
-  const marked = (words: string, language: TextLanguage): DocumentFragment | null => {
+  const marked = (
+    words: string,
+    language: TextLanguage,
+    searched?: readonly { start: number; end: number }[],
+  ): DocumentFragment | null => {
     const overlayMarks = currentOverlay?.highlightItemText?.(
       item,
       words,
@@ -188,6 +194,7 @@ export function updateSidebar<I extends MapItem>(
       language,
       search.settings,
       search.data,
+      searched,
     );
     if (overlayMarks && searchMarks) return combineMarks(words, overlayMarks, searchMarks);
     return searchMarks ?? overlayMarks ?? null;
@@ -218,7 +225,7 @@ export function updateSidebar<I extends MapItem>(
       ...(text.english
         ? [
             styleStretches(
-              marked(text.english, ENGLISH) ?? textFragment(text.english),
+              marked(text.english, ENGLISH, text.englishSearched) ?? textFragment(text.english),
               text.english,
               text.englishStyles ?? [],
             ),

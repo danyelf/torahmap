@@ -63,6 +63,10 @@ describe('filesFirst', () => {
     expect(filesFirst({ tools: [], popup })).toEqual(popup);
   });
 
+  it('names the files the opening search asks for at once, though optional', () => {
+    expect(filesFirst({ tools: [searchTool], popup: [], searchFiles: [PARSE] })).toContain(PARSE);
+  });
+
   it('names nothing for a view with no tool and no verse', () => {
     expect(filesFirst({ tools: [], popup: [] })).toEqual([]);
   });
@@ -153,13 +157,18 @@ describe('staleAfterLanding', () => {
 
   it('redraws the search panel and the popup when the per-word parse lands', () => {
     const withParse = new Map(SAMPLE_LOADED).set(PARSE, { realigned: {}, verses: {} });
-    expect(
-      staleAfterLanding(SAMPLE_LOADED, withParse, explore([searchTool], null, [TEXTS_FILE])),
-    ).toEqual({
+    expect(staleAfterLanding(SAMPLE_LOADED, withParse, explore([], null, [TEXTS_FILE]))).toEqual({
       ...NOTHING,
       searchPanel: true,
       popup: true,
     });
+  });
+
+  it('redraws the map when an optional file of a search on it lands', () => {
+    const withParse = new Map(SAMPLE_LOADED).set(PARSE, { realigned: {}, verses: {} });
+    expect(staleAfterLanding(SAMPLE_LOADED, withParse, explore([searchTool], null, [])).map).toBe(
+      'overlay',
+    );
   });
 
   it('redraws nothing when the per-word parse lands before the rest of search', () => {

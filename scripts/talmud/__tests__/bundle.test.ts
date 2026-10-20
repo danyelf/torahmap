@@ -402,6 +402,20 @@ describe('processTractate', () => {
     expect(search[0][0]).toBe('אמר רבי יוחנן');
   });
 
+  it('gives English search the bold of each segment, as the English is laid out', () => {
+    const wikisource = fakeWikisource();
+    const { english, searchEnglish } = processTractate(
+      'Zeraim',
+      'Test',
+      wikisource,
+      fakeSchema(),
+      wikisource,
+      englishOf(wikisource),
+    );
+    expect(searchEnglish.map((amud) => amud.length)).toEqual(english.map((amud) => amud.length));
+    expect(searchEnglish[1][0]).toBe('3');
+  });
+
   it('removes the marker word where only the other edition marks the segment', () => {
     const wikisource = fakeWikisource();
     wikisource.text[2] = ["מתני' סתם נזירות", "גמ' מנהני מילי", 'a3', 'a4', 'a5'];

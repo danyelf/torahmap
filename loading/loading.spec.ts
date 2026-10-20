@@ -3,7 +3,7 @@
 // the case sets rather than a race it hopes to win.
 import { expect, test, type Page } from '@playwright/test';
 import { viaMenu } from '../layout/app.ts';
-import { allLoaded } from '../layout/page.ts';
+import { allLoaded, firstFrame } from '../layout/page.ts';
 import {
   COMMENTARY,
   DICTIONARY,
@@ -13,7 +13,7 @@ import {
   SEARCH_REQUIRED,
   TEXTS_FILE,
 } from './files.ts';
-import { englishFile, textsFile } from '@torahmap/talmud/data.ts';
+import { englishFile, SEARCH_ENGLISH_FILE, SEARCH_FILE, textsFile } from '@torahmap/talmud/data.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import {
   expectPlainMap,
@@ -442,3 +442,51 @@ test("the Talmud's English alone downloads no Hebrew, and a failed English says 
   await expect(page.locator('#popup .popup-hebrew')).not.toBeEmpty();
   await expect(page.locator('#popup .popup-notice[data-language="en"] .load-notice')).toBeVisible();
 });
+
+test("the Talmud's English search downloads once after the rest, though nothing searches English", async ({
+  page,
+}) => {
+  const english = requestsFor(page, SEARCH_ENGLISH_FILE);
+  await page.goto(TALMUD_PATH);
+  await allLoaded(page);
+  expect(english).toHaveLength(1);
+});
+
+test("an English term fetches the Talmud's English search at once, once, and finds it", async ({
+  page,
+}) => {
+  const english = requestsFor(page, SEARCH_ENGLISH_FILE);
+  // Held, the Hebrew keeps the downloads from reaching the English in their turn.
+  const release = await hold(page, [SEARCH_FILE]);
+  await page.goto(`${TALMUD_PATH}?search=${encodeURIComponent('רבי')}`);
+  await firstFrame(page, 90_000);
+  await viaMenu(page, 'search');
+  await page.locator('#search-input').fill('rabbi');
+  await expect.poll(() => english.length).toBe(1);
+  release();
+  await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
+  await allLoaded(page);
+  expect(english).toHaveLength(1);
+});
+
+test("a link with an English term fetches the Talmud's English search with the opening view", async ({
+  page,
+}) => {
+  const english = requestsFor(page, SEARCH_ENGLISH_FILE);
+  const release = await hold(page, [SEARCH_FILE]);
+  await page.goto(`${TALMUD_PATH}?search=rabbi`);
+  await firstFrame(page, 90_000);
+  await expect.poll(() => english.length).toBe(1);
+  release();
+  await allLoaded(page);
+  expect(english).toHaveLength(1);
+});
+
+/** The requests for one data file, as they are made. */
+function requestsFor(page: Page, path: string): string[] {
+  const urls: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith(`/data/${path}`)) urls.push(r.url());
+  });
+  return urls;
+}

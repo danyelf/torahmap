@@ -17,6 +17,9 @@ export const englishFile = (tractate: string): string =>
 /** What search reads, a different edition from the popup's: each tractate's amudim of plain-letter segments. */
 export const SEARCH_FILE = `${TALMUD_DATA_DIR}/search.json`;
 
+/** What English search reads: each segment's bold, laid out as `SEARCH_FILE`. */
+export const SEARCH_ENGLISH_FILE = `${TALMUD_DATA_DIR}/search-english.json`;
+
 export interface TalmudAmud {
   daf: number;
   amud: 'a' | 'b';
