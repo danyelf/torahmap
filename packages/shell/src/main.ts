@@ -206,9 +206,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const squares = indexItems(items);
   const baseColors = items.map((item, i) => text.baseColor(item, i));
   const base = (i: number): ItemColor => baseColors[i];
-  // A picture with its holes filled with each square's base colour.
+  const baseRings = text.baseRing && items.map((item, i) => text.baseRing!(item, i));
+  // A picture with its holes filled with each square's base colour, and its base ring.
   const fill = (picture: Picture<ItemColor | null>): Picture<ItemColor> =>
-    fillDefaultColors(picture, base);
+    fillDefaultColors(picture, base, baseRings && ((i) => baseRings[i]));
 
   // Placed over the map; render() moves them with it.
   const labelLayer = document.createElement('div');

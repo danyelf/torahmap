@@ -8,11 +8,11 @@
 // - Final coordinates have minX >= 0 (shifted into the first quadrant for
 //   compatibility with the existing camera/render pipeline).
 
-import type { SpatialItem } from '@torahmap/engine';
+import { SQUARE_GAP, type SpatialItem } from '@torahmap/engine';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
 import { seededRandom } from '@torahmap/utils';
 import type { TalmudIdentity } from './types.ts';
-import type { TalmudStructure, TalmudTractate } from './data.ts';
+import { isHadran, type TalmudStructure, type TalmudTractate } from './data.ts';
 import { segmentHashId } from './segmentHash.ts';
 import { bookFromUrl, bookToUrl } from '@torahmap/link';
 import {
@@ -95,11 +95,19 @@ export interface DafRowAnchor {
   topY: number;
 }
 
+/** A hadran line's square, and where its label goes: the square's left edge, half way down. */
+export interface HadranAnchor {
+  id: string;
+  x: number;
+  y: number;
+}
+
 export interface TalmudLayoutResult {
   items: TalmudLayoutItem[];
   tractateBlocks: TractateBlock[];
   perekAnchors: PerekAnchor[];
   dafRows: DafRowAnchor[];
+  hadrans: HadranAnchor[];
   bounds: { width: number; height: number };
 }
 
@@ -503,11 +511,20 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     if (cover.maxY > maxY) maxY = cover.maxY;
   }
 
+  const hadrans = allItems
+    .filter((s) => isHadran(structure, s.tractate, s.daf, s.amud, s.segment))
+    .map((s) => ({
+      id: s.id,
+      x: s.x + (s.jitter?.x ?? 0),
+      y: s.y + (s.jitter?.y ?? 0) + (s.size - SQUARE_GAP) / 2,
+    }));
+
   return {
     items: allItems,
     tractateBlocks,
     perekAnchors: allPerekAnchors,
     dafRows: allDafRows,
+    hadrans,
     bounds: { width: maxX, height: maxY },
   };
 }

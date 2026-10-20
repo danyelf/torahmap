@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeTalmudLayout } from '../src/layout.ts';
 import { talmudFixture as fixture } from './helpers/talmudFixture.ts';
+import { SQUARE_GAP } from '@torahmap/engine';
 import {
   BOOK_GAP,
   DAF_LABEL,
@@ -76,6 +77,15 @@ describe('computeTalmudLayout', () => {
     expect(new Set(rows.map((r) => r.rightX)).size).toBe(1);
     const S = SEGMENT_SIZE;
     expect(rows.map((r) => r.topY - rows[0].topY)).toEqual([0, S, 2 * S, 3 * S + PEREK_GAP]);
+  });
+
+  it("anchors a hadran label at each perek's last square: its left edge, half way down", () => {
+    expect(result.hadrans.map((h) => h.id)).toEqual(['TractA.3a.6', 'TractA.3b.3', 'TractB.2b.2']);
+    for (const h of result.hadrans) {
+      const s = result.items.find((i) => i.id === h.id)!;
+      expect(h.x).toBe(s.x + s.jitter!.x);
+      expect(h.y).toBe(s.y + s.jitter!.y + (s.size - SQUARE_GAP) / 2);
+    }
   });
 });
 

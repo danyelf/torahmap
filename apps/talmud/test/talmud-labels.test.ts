@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTalmudLabels } from '../src/talmudLabels.ts';
-import { DAF_LABEL_ZOOM_ALL, PEREK_LABEL_ZOOM } from '../src/constants.ts';
-import type { DafRowAnchor, PerekAnchor } from '../src/layout.ts';
+import { DAF_LABEL_ZOOM_ALL, HADRAN_LABEL, PEREK_LABEL_ZOOM } from '../src/constants.ts';
+import type { DafRowAnchor, HadranAnchor, PerekAnchor } from '../src/layout.ts';
 
 const daf = (n: number, amud: 'a' | 'b', topY: number): DafRowAnchor => ({
   tractate: 'T',
@@ -12,12 +12,13 @@ const daf = (n: number, amud: 'a' | 'b', topY: number): DafRowAnchor => ({
 });
 const DAPIM = [daf(2, 'a', 0), daf(2, 'b', 6), daf(3, 'a', 12), daf(3, 'b', 18), daf(10, 'a', 24)];
 const PEREK: PerekAnchor = { tractate: 'T', perekIdx: 0, hebrewName: 'פרק', rightX: 100, topY: 0 };
+const HADRAN: HadranAnchor = { id: 'T.10a.4', x: 76, y: 26 };
 
 let parent: HTMLElement;
 let move: (pan: { x: number; y: number }, zoom: number) => void;
 beforeEach(() => {
   parent = document.createElement('div');
-  move = createTalmudLabels([], [PEREK], DAPIM, parent);
+  move = createTalmudLabels([], [PEREK], DAPIM, [HADRAN], parent);
 });
 
 const hidden = (el: Element | null): boolean =>
@@ -56,6 +57,35 @@ describe('daf numbers', () => {
       move(pan, zoom);
       expect(onScreen(label)).toEqual({ x: (100 + pan.x) * zoom, y: (18 + pan.y) * zoom });
     }
+  });
+});
+
+describe('hadran labels', () => {
+  const label = () => parent.querySelector<HTMLElement>('#talmud-hadran-labels > *')!;
+  /** How opaque the label is, from its own opacity and its containers'. */
+  const opacity = (el: HTMLElement | null): number =>
+    !el ? 1 : (el.style.opacity === '' ? 1 : Number(el.style.opacity)) * opacity(el.parentElement);
+
+  it('fade out as the map zooms out', () => {
+    const at = (zoom: number) => {
+      move({ x: 0, y: 0 }, zoom);
+      return hidden(label()) ? 0 : opacity(label());
+    };
+    const { fadesFrom, goneAt } = HADRAN_LABEL;
+    expect(at(fadesFrom + 1)).toBe(1);
+    expect(at(fadesFrom)).toBe(1);
+    const half = at((fadesFrom + goneAt) / 2);
+    expect(half).toBeGreaterThan(0);
+    expect(half).toBeLessThan(1);
+    expect(at((fadesFrom + 3 * goneAt) / 4)).toBeLessThan(half);
+    expect(at(goneAt)).toBe(0);
+    expect(at(goneAt - 0.01)).toBe(0);
+  });
+
+  it('sit left of their square, at its middle, moving with the map', () => {
+    move({ x: 5, y: 10 }, 2);
+    expect(onScreen(label())).toEqual({ x: (HADRAN.x + 5) * 2, y: (HADRAN.y + 10) * 2 });
+    expect(label().textContent).not.toBe('');
   });
 });
 

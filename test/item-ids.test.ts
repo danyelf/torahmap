@@ -9,6 +9,13 @@ import { initBookData } from '@torahmap/tanakh/books.ts';
 import { computeLayout } from '@torahmap/tanakh/layout.ts';
 import { computeTalmudLayout } from '@torahmap/talmud/layout.ts';
 import { parseTalmudId, talmudId } from '@torahmap/talmud/layout.ts';
+import {
+  STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
+  isHadran,
+  textsFile,
+  type TalmudStructure,
+  type TalmudTractateText,
+} from '@torahmap/talmud/data.ts';
 import type { TorahData } from '@torahmap/tanakh/types.ts';
 import { talmudFixture } from '../apps/talmud/test/helpers/talmudFixture.ts';
 
@@ -70,6 +77,21 @@ describe('the shipped data', () => {
     expect(() =>
       indexItems(computeTalmudLayout(shipped('talmud/structure.json')).items),
     ).not.toThrow();
+  });
+
+  it('closes every perek with its hadran line, and has none elsewhere', () => {
+    const structure: TalmudStructure = shipped(TALMUD_STRUCTURE_FILE);
+    const misplaced = structure.tractates.flatMap((t) => {
+      const text: TalmudTractateText = shipped(textsFile(t.name));
+      return t.amudim.flatMap((amud, ai) =>
+        text.amudim[ai].flatMap((segment, si) =>
+          segment.startsWith('הדרן') === isHadran(structure, t.name, amud.daf, amud.amud, si + 1)
+            ? []
+            : [`${t.name} ${amud.daf}${amud.amud}:${si + 1}`],
+        ),
+      );
+    });
+    expect(misplaced).toEqual([]);
   });
 });
 
