@@ -369,7 +369,7 @@
             const svg = document.createElementNS(SVG, 'svg');
             svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
             svg.setAttribute('role', 'img');
-            svg.setAttribute('aria-label', `Readers at each stop of ${story || 'a story'}`);
+            svg.setAttribute('aria-label', `Readers at each stop of ${story}`);
             const y = (v) => m.t + (H - m.t - m.b) * (1 - v / scale.top);
             gridlines(svg, scale, y, m.l, W - m.r);
             const slots = Math.max(stops.length, 12);
@@ -395,8 +395,7 @@
                 s.stop_id.length > 22 ? s.stop_id.slice(0, 21) + '…' : s.stop_id,
               );
             });
-            const name = story ? esc(story) : '<span class="blank">story not recorded</span>';
-            return `<h3>${name}</h3>${svg.outerHTML}`;
+            return `<h3>${esc(story)}</h3>${svg.outerHTML}`;
           })
           .join('');
       }
