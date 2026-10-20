@@ -23,12 +23,19 @@ export const CHROME: Chrome = {
   interactive:
     '#panel button, #panel select, #panel input, ' +
     '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
-    '#menu-toggle, #menu button, #map-legend button, ' +
+    '#menu-toggle, #menu button, #menu input, #map-legend button, ' +
     '#popup button, #popup a, #zoom-controls button',
   text:
     '.map-legend-summary, .menu-title, .menu-item, .column-title, .panel-title, #panel label, ' +
-    '.story-card-place, #popup .ref-text',
+    '.story-card-place, #popup .ref-text, .goto-label, .goto-ref, .goto-none',
 };
+
+/** Types `typed` into the menu's go-to box, and takes the offer with Enter if `take`. */
+export async function goTo(page: Page, typed: string, take = false): Promise<void> {
+  await page.locator('#menu-toggle').click();
+  await page.locator('#goto-input').fill(typed);
+  if (take) await page.locator('#goto-input').press('Enter');
+}
 
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 
@@ -45,6 +52,34 @@ export const STATES: State[] = [
     name: 'story-stop-with-verse',
     link: 'story=tour&stop=abraham_call',
     shown: ['#map-legend', stop('abraham_call')],
+  },
+  {
+    name: 'goto-offer',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, '1 Sam 3:17'),
+    shown: ['#goto-input', '.goto-offer'],
+  },
+  {
+    name: 'goto-hebrew-offer',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'שמואל א ג:יז'),
+    shown: ['#goto-input', '.goto-offer'],
+  },
+  {
+    name: 'goto-not-found',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'Genesis 51'),
+    shown: ['#goto-input', '.goto-none'],
+  },
+  {
+    name: 'goto-chapter-taken',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'Isaiah 40', true),
+    shown: ['#popup.visible'],
   },
   {
     name: 'story-menu-down',
@@ -228,6 +263,18 @@ export const ACT_STATES: State[] = [
   },
   { name: 'act-recital-pinned', link: 'at=Recital.12', shown: ['#popup.visible'] },
   { name: 'act-search', link: 'search=deployer&zoom=0.6', shown: ['#map-legend'] },
+  {
+    name: 'act-goto-offer',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'Annex 3'),
+    shown: ['#goto-input', '.goto-offer'],
+  },
+  {
+    name: 'act-goto-taken',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'Annex 3', true),
+    shown: ['#popup.visible'],
+  },
   {
     name: 'act-about',
     link: 'zoom=0.6',

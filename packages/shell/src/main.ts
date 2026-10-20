@@ -7,6 +7,7 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
+  cameraToFit,
   type Camera,
   type ScreenPoint,
   type Viewport,
@@ -31,7 +32,7 @@ import {
   lerpCamera,
 } from '@torahmap/engine';
 import { debounce } from '@torahmap/utils';
-import type { MapText, Site } from './app/text.ts';
+import type { MapText, Reference, Site } from './app/text.ts';
 import { SEARCH_BOX_ID } from './app/search.ts';
 import {
   DRAG_PX,
@@ -46,13 +47,16 @@ import {
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, SHARE, menuHtml } from './menu.ts';
+import { drawGoToAnswer, GO_TO, GO_TO_BOX_ID } from './goTo.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
-import { applyLanguageChoice, bindLanguageChoice } from './languageChoice.ts';
+import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
+import { ENGLISH, HEBREW } from './language.ts';
+import { isHebrew } from '@torahmap/hebrew';
 import {
   arrivedWith,
   configureAnalytics,
@@ -551,12 +555,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
-      droppedMenu.innerHTML = menuHtml(source.site, { ...place, title: story.data.title });
+      droppedMenu.innerHTML = menuHtml(
+        source.site,
+        { ...place, title: story.data.title },
+        text.goTo && { example: text.goTo.example, typed: goToTyped },
+      );
+      answerGoTo();
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages);
+      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages, text.goTo?.example);
       bindLanguageChoice(aboutPanel, refreshPopup);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
@@ -706,6 +715,101 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       debouncedCameraSettled();
     });
   }
+
+  // Fitted to the screen, a short chapter would be a few squares filling it.
+  const FIT_ZOOM_MAX = 4;
+
+  /** Travel to show all of `list`, fitted above the focus as far as below it, as on a phone clear of the popup. */
+  function glideToFit(list: readonly I[]): void {
+    cancelCameraGlide();
+    const box = {
+      minX: Math.min(...list.map((i) => i.x)),
+      minY: Math.min(...list.map((i) => i.y)),
+      maxX: Math.max(...list.map((i) => i.x + (i.width ?? i.size))),
+      maxY: Math.max(...list.map((i) => i.y + i.size)),
+    };
+    const view = mapViewport();
+    const focus = mapFocus();
+    const range = { ...zoomRange, max: Math.min(zoomRange.max, FIT_ZOOM_MAX) };
+    const fitted = cameraToFit(box, view.width, 2 * focus.y, range);
+    const target = {
+      zoom: fitted.zoom,
+      x: fitted.x - (focus.x - view.width / 2) / fitted.zoom,
+      y: fitted.y - (focus.y - view.height / 2) / fitted.zoom,
+    };
+    stopCameraGlide = animateCameraTo(camera, target, () => {
+      render();
+      debouncedCameraSettled();
+    });
+  }
+
+  /** What the menu's go-to box holds. It stays there after the reader goes, for the next look-up. */
+  let goToTyped = '';
+
+  /** The place the go-to box names, and its squares in reading order. */
+  function goToPlace(): { found: Reference; squares: I[] } | null {
+    const found = text.goTo?.read(goToTyped) ?? null;
+    if (!found) return null;
+    const named = found.ids.map((id) => squares.find(id)).filter((item) => item !== null);
+    return named.length > 0 ? { found, squares: named } : null;
+  }
+
+  /**
+   * A square's text in the first shown language whose file is in, or null while none is;
+   * the language the reference was typed in comes first.
+   */
+  function quoteOf(item: I): string | null {
+    const said = text.popupText(item, loader.loaded(), null);
+    const typedIn = isHebrew(goToTyped) ? HEBREW : ENGLISH;
+    const languages = [...shownLanguages()].sort(
+      (a, b) => Number(b === typedIn) - Number(a === typedIn),
+    );
+    for (const language of languages) {
+      if (!loader.loaded().has(source.files.popup(item, language))) continue;
+      const words = language === ENGLISH ? said.english : said.hebrew;
+      if (words) return words;
+    }
+    return null;
+  }
+
+  /** Redraw what the go-to box answers, fetching the text its offer quotes. */
+  function answerGoTo(): void {
+    const container = droppedMenu.querySelector<HTMLElement>('.goto-answer');
+    if (!container) return;
+    const place = goToPlace();
+    const first = place?.squares[0];
+    if (first) viewFiles.fetchPopup(first);
+    drawGoToAnswer(container, {
+      typed: goToTyped,
+      found: place?.found ?? null,
+      quote: first ? quoteOf(first) : null,
+    });
+  }
+
+  /** Go where the go-to box says: pin its first square, and show all of the place. */
+  function takeGoTo(): void {
+    const place = goToPlace();
+    if (!place) return;
+    if (frame.menu) dispatch({ type: 'menu' });
+    // A full-height sheet would hide the glide.
+    if (frame.full) setFrame({ ...frame, full: false });
+    const [first] = place.squares;
+    pinItem(first);
+    if (place.squares.length === 1) glideToItem(first);
+    else glideToFit(place.squares);
+  }
+
+  droppedMenu.addEventListener('input', (e) => {
+    const box = e.target as HTMLInputElement;
+    if (box.id !== GO_TO_BOX_ID) return;
+    goToTyped = box.value;
+    answerGoTo();
+  });
+  droppedMenu.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' || (e.target as Element).id !== GO_TO_BOX_ID) return;
+    e.preventDefault();
+    takeGoTo();
+  });
 
   // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
@@ -1239,6 +1343,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
     if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
+    if (action === GO_TO) return takeGoTo();
     if (action === SHARE) {
       // A share already in flight ignores a second tap: sharing again would
       // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
@@ -1526,6 +1631,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stale.searchPanel) drawSearchPanel(false);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
     if (stale.popup) refreshPopupAfterDownload();
+    if (frame.menu) answerGoTo();
   }
 
   function fileFailed(): void {

@@ -259,6 +259,93 @@ body[data-menu] #panel-body {
   color: #fff;
 }
 
+.menu-goto {
+  padding: 6px 16px 8px;
+}
+
+.goto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.goto-label {
+  flex: none;
+  color: #eee;
+  font-size: 15px;
+}
+
+.goto-input {
+  flex: 1 1 auto;
+  min-height: var(--tap);
+  box-sizing: border-box;
+}
+
+.goto-answer:not(:empty) {
+  margin-top: 6px;
+}
+
+.goto-offer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #6ab0f3;
+  border-radius: 6px;
+  background: rgba(106, 176, 243, 0.12);
+  color: #eee;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.goto-offer:hover {
+  background: rgba(106, 176, 243, 0.22);
+}
+
+.goto-ref {
+  color: #6ab0f3;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.goto-quote {
+  grid-column: 1 / -1;
+  text-align: start;
+  overflow: hidden;
+  color: #aaa;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.goto-quote:empty {
+  display: none;
+}
+
+.goto-key {
+  grid-row: 1;
+  grid-column: 2;
+  color: #999;
+  font: 11px system-ui;
+}
+
+@media (pointer: coarse) {
+  .goto-key {
+    display: none;
+  }
+}
+
+.goto-none {
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px dashed #555;
+  border-radius: 6px;
+  color: #aaa;
+  font-size: 13px;
+}
+
 .menu-item {
   display: flex;
   align-items: center;
