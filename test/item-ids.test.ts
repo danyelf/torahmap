@@ -11,7 +11,7 @@ import { computeTalmudLayout } from '@torahmap/talmud/layout.ts';
 import { parseTalmudId, talmudId } from '@torahmap/talmud/layout.ts';
 import {
   STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
-  isHadran,
+  hadranLines,
   textsFile,
   type TalmudStructure,
   type TalmudTractateText,
@@ -83,12 +83,13 @@ describe('the shipped data', () => {
     const structure: TalmudStructure = shipped(TALMUD_STRUCTURE_FILE);
     const misplaced = structure.tractates.flatMap((t) => {
       const text: TalmudTractateText = shipped(textsFile(t.name));
+      const place = (daf: number, amud: string, segment: number) => `${daf}${amud}:${segment}`;
+      const hadrans = new Set(hadranLines(t).map((h) => place(h.daf, h.amud, h.segment)));
       return t.amudim.flatMap((amud, ai) =>
-        text.amudim[ai].flatMap((segment, si) =>
-          segment.startsWith('הדרן') === isHadran(structure, t.name, amud.daf, amud.amud, si + 1)
-            ? []
-            : [`${t.name} ${amud.daf}${amud.amud}:${si + 1}`],
-        ),
+        text.amudim[ai].flatMap((segment, si) => {
+          const at = place(amud.daf, amud.amud, si + 1);
+          return segment.startsWith('הדרן') === hadrans.has(at) ? [] : [`${t.name} ${at}`];
+        }),
       );
     });
     expect(misplaced).toEqual([]);

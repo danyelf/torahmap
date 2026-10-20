@@ -142,7 +142,12 @@ describe('a tractate long enough to wrap into columns', () => {
 describe("each tractate's cover", () => {
   // TractB and the shorter TractC share Moed's shelf; TractA, on Zeraim's, is the tallest.
   const tractB = fixture.tractates[1];
-  const tractC = { ...tractB, name: 'TractC', amudim: tractB.amudim.slice(0, 1) };
+  const tractC = {
+    ...tractB,
+    name: 'TractC',
+    amudim: tractB.amudim.slice(0, 1),
+    perakim: [{ ...tractB.perakim[0], endAmudIdx: 0, endSegmentInLastAmud: 4 }],
+  };
   const result = computeTalmudLayout({ tractates: [...fixture.tractates, tractC] });
   const block = (name: string) => result.tractateBlocks.find((t) => t.name === name)!;
   const cover = (name: string) => block(name).cover;

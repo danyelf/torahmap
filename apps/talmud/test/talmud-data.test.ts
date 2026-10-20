@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { amudIndex, isHadran, isSegmentMishnah, type TalmudStructure } from '../src/data.ts';
+import { amudIndex, hadranLines, isSegmentMishnah, type TalmudStructure } from '../src/data.ts';
 
 describe('isSegmentMishnah', () => {
   const structure: TalmudStructure = {
@@ -44,7 +44,7 @@ describe('isSegmentMishnah', () => {
   });
 });
 
-describe('isHadran', () => {
+describe('hadranLines', () => {
   // Two perakim, the first ending mid-amud at 2b:2.
   const structure: TalmudStructure = {
     tractates: [
@@ -82,18 +82,11 @@ describe('isHadran', () => {
       },
     ],
   };
-  const hadrans = (amud: 'a' | 'b', count: number) =>
-    Array.from({ length: count }, (_, i) => i + 1).filter((s) =>
-      isHadran(structure, 'Berakhot', 2, amud, s),
-    );
-
-  it("is each perek's last segment, and no other", () => {
-    expect(hadrans('a', 3)).toEqual([]);
-    expect(hadrans('b', 4)).toEqual([2, 4]);
-  });
-
-  it('is false for an unknown tractate', () => {
-    expect(isHadran(structure, 'Nonexistent', 2, 'b', 2)).toBe(false);
+  it("are each perek's last segment", () => {
+    expect(hadranLines(structure.tractates[0])).toEqual([
+      { daf: 2, amud: 'b', segment: 2 },
+      { daf: 2, amud: 'b', segment: 4 },
+    ]);
   });
 });
 

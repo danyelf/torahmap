@@ -98,16 +98,12 @@ export function isSegmentMishnah(
   return amudEntry.mishnahMask[segment - 1] ?? false;
 }
 
-/** Whether a segment is its perek's closing line, הדרן עלך, which is always the perek's last. */
-export function isHadran(
-  structure: TalmudStructure,
-  tractateName: string,
-  daf: number,
-  amud: 'a' | 'b',
-  segment: number,
-): boolean {
-  const tractate = structure.tractates.find((t) => t.name === tractateName);
-  if (!tractate) return false;
-  const ai = amudIndex(daf, amud, tractate.amudim[0]);
-  return tractate.perakim.some((p) => p.endAmudIdx === ai && p.endSegmentInLastAmud === segment);
+/** A tractate's hadran lines, the הדרן עלך that closes each perek: each perek's last segment. */
+export function hadranLines(
+  tractate: TalmudTractate,
+): { daf: number; amud: 'a' | 'b'; segment: number }[] {
+  return tractate.perakim.map((p) => {
+    const { daf, amud } = tractate.amudim[p.endAmudIdx];
+    return { daf, amud, segment: p.endSegmentInLastAmud };
+  });
 }

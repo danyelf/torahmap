@@ -12,7 +12,7 @@ import { SQUARE_GAP, type SpatialItem } from '@torahmap/engine';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
 import { seededRandom } from '@torahmap/utils';
 import type { TalmudIdentity } from './types.ts';
-import { isHadran, type TalmudStructure, type TalmudTractate } from './data.ts';
+import { hadranLines, type TalmudStructure, type TalmudTractate } from './data.ts';
 import { segmentHashId } from './segmentHash.ts';
 import { bookFromUrl, bookToUrl } from '@torahmap/link';
 import {
@@ -511,8 +511,13 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     if (cover.maxY > maxY) maxY = cover.maxY;
   }
 
+  const hadranIds = new Set(
+    structure.tractates.flatMap((t) =>
+      hadranLines(t).map((line) => talmudId({ tractate: t.name, ...line })),
+    ),
+  );
   const hadrans = allItems
-    .filter((s) => isHadran(structure, s.tractate, s.daf, s.amud, s.segment))
+    .filter((s) => hadranIds.has(s.id))
     .map((s) => ({
       id: s.id,
       x: s.x + (s.jitter?.x ?? 0),
