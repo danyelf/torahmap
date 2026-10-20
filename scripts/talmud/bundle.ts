@@ -2,7 +2,7 @@
 // Build public/data/talmud/ from the tractates verify-coverage.ts downloaded and passed.
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import {
   amudIndex,
   type TalmudAmud,
@@ -10,6 +10,8 @@ import {
   type TalmudStructure,
   type TalmudTractate,
   type TalmudTractateText,
+  type TalmudTractateEnglish,
+  englishFile,
   TALMUD_DATA_DIR,
   SEARCH_FILE,
   STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
@@ -145,6 +147,7 @@ export function processTractate(
 ): {
   structure: TalmudTractate;
   text: Omit<TalmudTractateText, 'citations'>;
+  english: TalmudTractateEnglish;
   /** What search reads: the other edition, which spells abbreviations out, as plain letters. */
   search: string[][];
 } {
@@ -243,21 +246,18 @@ export function processTractate(
       amudim,
       perakim,
     },
-    text: {
-      name: tractateName,
-      amudim: cleanText,
-      english: text.map((amud, ai) =>
-        amud.map((seg, si) => {
-          if (HADRAN.test(seg)) return '';
-          try {
-            return englishMarkers(translation[ai][si]);
-          } catch (err) {
-            const { daf, amud } = amudAt(ai);
-            throw new Error(`${tractateName} ${daf}${amud}:${si + 1}: ${(err as Error).message}`);
-          }
-        }),
-      ),
-    },
+    text: { name: tractateName, amudim: cleanText },
+    english: text.map((amud, ai) =>
+      amud.map((seg, si) => {
+        if (HADRAN.test(seg)) return '';
+        try {
+          return englishMarkers(translation[ai][si]);
+        } catch (err) {
+          const { daf, amud } = amudAt(ai);
+          throw new Error(`${tractateName} ${daf}${amud}:${si + 1}: ${(err as Error).message}`);
+        }
+      }),
+    ),
     search: other.map((amud) => amud.map((seg) => stripNikkud(stripHtml(seg)))),
   };
 }
@@ -298,6 +298,7 @@ async function main(): Promise<void> {
       const {
         structure: tractateStructure,
         text: tractateText,
+        english: tractateEnglish,
         search: searchText,
       } = processTractate(
         ref.seder,
@@ -318,6 +319,9 @@ async function main(): Promise<void> {
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
       const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
       await writeFile(join(TEXTS_DIR, `${ref.tractate}.json`), JSON.stringify(shipped), 'utf-8');
+      const englishPath = join(DATA_DIR, englishFile(ref.tractate));
+      await mkdir(dirname(englishPath), { recursive: true });
+      await writeFile(englishPath, JSON.stringify(tractateEnglish), 'utf-8');
 
       const segCount = tractateStructure.amudim.reduce((a, b) => a + b.segmentCount, 0);
       console.log(

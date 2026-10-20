@@ -52,7 +52,7 @@ import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
-import { applyLanguageChoice, bindLanguageChoice } from './languageChoice.ts';
+import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
 import {
   arrivedWith,
   configureAnalytics,
@@ -572,7 +572,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages);
-      bindLanguageChoice(aboutPanel);
+      bindLanguageChoice(aboutPanel, refreshPopup);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
     measureSheet();
@@ -875,12 +875,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     trackViewSettled(where.area, where.section, camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
+  /** The files `item`'s popup needs for the languages shown; none without an item. */
+  function popupFilesOf(item: I | null): string[] {
+    return item ? text.popupFiles(item, shownLanguages()) : [];
+  }
+
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
-    const file = item && text.popupFile(item);
-    if (file) fetchPopupFile(file);
+    const files = popupFilesOf(item);
+    for (const file of files) fetchPopupFile(file);
     const tools = toolsNow();
     updateSidebar(sidebarElements, item, (shown) => text.popupText(shown, loaded, tools.overlay), {
-      textsNotice: file ? noticeFor([file]) : null,
+      textsNotice: noticeFor(files.slice(0, 1)),
       wordsClickable: dataFor(searchTool, loaded) !== null,
       ...tools,
       pinned: isPinned,
@@ -1501,11 +1506,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView<I> {
-    if (frame.mode !== 'story')
-      return { tools: pickedTools(), popup: pinnedItem && text.popupFile(pinnedItem) };
+    if (frame.mode !== 'story') return { tools: pickedTools(), popup: popupFilesOf(pinnedItem) };
     const { stop } = storyColumn.where();
     const item = stop.pin ? squares.find(stop.pin) : null;
-    return { tools: stopTools(stop, textTools), popup: item && text.popupFile(item) };
+    return { tools: stopTools(stop, textTools), popup: popupFilesOf(item) };
   }
 
   function landingView(): LandingView<I> {
@@ -1522,7 +1526,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       map,
       panel: currentOverlay,
       search: searchTool,
-      popup: shown && text.popupFile(shown),
+      popup: popupFilesOf(shown),
     };
   }
 

@@ -55,7 +55,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
         };
       },
 
-      popupFile: () => TEXTS_FILE,
+      popupFiles: () => [TEXTS_FILE],
 
       popupText,
 

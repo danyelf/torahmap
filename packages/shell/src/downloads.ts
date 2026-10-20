@@ -4,15 +4,15 @@ import { dataFor, optionalFiles, requiredFiles, type Loaded } from './dataFiles.
 import type { Overlay } from './overlays/types.ts';
 import type { ColorSource } from './scrollytelling/driver.ts';
 
-/** What the first view shows: the tools it names, and the file its pinned square is in, if it pins one. */
+/** What the first view shows: the tools it names, and the files its pinned square's popup needs, if it pins one. */
 export interface OpeningView<T> {
   tools: readonly Overlay<T>[];
-  popup: string | null;
+  popup: readonly string[];
 }
 
 /** The files the opening view requires, its pinned square's among them. */
 export function filesFirst<T>(view: OpeningView<T>): string[] {
-  return [...new Set([...view.tools.flatMap(requiredFiles), ...(view.popup ? [view.popup] : [])])];
+  return [...new Set([...view.tools.flatMap(requiredFiles), ...view.popup])];
 }
 
 /**
@@ -71,8 +71,8 @@ export interface LandingView<T> {
   /** The overlay whose controls are drawn. Search's always are. */
   panel: Overlay<T> | null;
   search: Overlay<T>;
-  /** The file the square the popup shows is in, or null with no popup. */
-  popup: string | null;
+  /** The files the popup shows its square from; none with no popup. */
+  popup: readonly string[];
 }
 
 export interface Stale {
@@ -86,7 +86,7 @@ export interface Stale {
  * What a file landing put out of date: whatever is drawn from a tool whose
  * data it changed. The map and the overlay's panel are drawn from the files a
  * tool requires; the search panel also from its optional ones, and the popup
- * from both tools' optional ones and the file its square's text is in.
+ * from both tools' optional ones and the files its square's text is in.
  */
 export function staleAfterLanding<T>(before: Loaded, after: Loaded, view: LandingView<T>): Stale {
   const drawn = (tool: Overlay<T>): boolean => changed(tool, before, after, requiredFiles(tool));
@@ -96,8 +96,8 @@ export function staleAfterLanding<T>(before: Loaded, after: Loaded, view: Landin
     overlayPanel: view.panel !== null && drawn(view.panel),
     searchPanel: read(view.search),
     popup:
-      view.popup !== null &&
-      (before.get(view.popup) !== after.get(view.popup) ||
+      view.popup.length > 0 &&
+      (view.popup.some((path) => before.get(path) !== after.get(path)) ||
         read(view.search) ||
         (view.panel !== null && read(view.panel))),
   };

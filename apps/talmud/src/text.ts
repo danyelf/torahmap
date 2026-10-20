@@ -19,8 +19,10 @@ import { configureSearch, talmudSearch } from './search.ts';
 import {
   STRUCTURE_FILE,
   amudIndex,
+  englishFile,
   structureFrom,
   textsFile,
+  type TalmudTractateEnglish,
   type TalmudTractateText,
 } from './data.ts';
 
@@ -66,15 +68,10 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
     const laid = computeTalmudLayout(structure);
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
-    /** A segment's text, citations and English in its tractate's file, which lists them by amud. */
-    const segmentIn = (s: TalmudLayoutItem, file: TalmudTractateText) => {
+    /** Where a segment is in its tractate's files, which list segments by amud. */
+    const placeOf = (s: TalmudLayoutItem) => {
       const first = tractates.get(s.tractate)?.amudim[0];
-      const ai = first ? amudIndex(s.daf, s.amud, first) : -1;
-      return {
-        text: file.amudim[ai]?.[s.segment - 1] ?? '',
-        citations: file.citations[ai]?.[s.segment - 1] ?? [],
-        english: englishText(file.english[ai]?.[s.segment - 1] ?? ''),
-      };
+      return { ai: first ? amudIndex(s.daf, s.amud, first) : -1, si: s.segment - 1 };
     };
 
     return {
@@ -112,18 +109,24 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         };
       },
 
-      popupFile: (item) => textsFile(item.tractate),
+      popupFiles: (item, shown) => [
+        textsFile(item.tractate),
+        ...(shown.includes(ENGLISH) ? [englishFile(item.tractate)] : []),
+      ],
 
       popupText(item, loaded) {
         const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;
-        const segment = file && segmentIn(item, file);
+        const translation = loaded.get(englishFile(item.tractate)) as
+          TalmudTractateEnglish | undefined;
+        const { ai, si } = placeOf(item);
+        const english = englishText(translation?.[ai]?.[si] ?? '');
         return {
           ref: talmudRef(item),
-          hebrew: segment?.text ?? '',
-          english: segment?.english.text ?? '',
-          englishStyles: segment?.english.styles,
+          hebrew: file?.amudim[ai]?.[si] ?? '',
+          english: english.text,
+          englishStyles: english.styles,
           link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
-          hebrewLinks: segment?.citations.map(({ start, end, verse }) => ({
+          hebrewLinks: (file?.citations[ai]?.[si] ?? []).map(({ start, end, verse }) => ({
             start,
             end,
             href: commentaryLink(verse, TALMUD_CATEGORY),

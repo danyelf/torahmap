@@ -13,9 +13,12 @@ import {
   SEARCH_REQUIRED,
   TEXTS_FILE,
 } from './files.ts';
+import { englishFile } from '@torahmap/talmud/data.ts';
+import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import {
   expectPlainMap,
   fail,
+  hold,
   mapChangesFrom,
   open,
   param,
@@ -400,4 +403,27 @@ test('the capture shortcut keeps an overlay whose file has not landed', async ({
     .poll(() => page.evaluate(() => (window as unknown as { copied?: string }).copied))
     .toContain('commentary');
   expect(errors).toEqual([]);
+});
+
+test("the Talmud's English downloads only once English is shown, and its Hebrew does not wait for it", async ({
+  page,
+}) => {
+  const english: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().includes('/data/talmud/english/')) english.push(r.url());
+  });
+  await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'he'));
+  const release = await hold(page, [englishFile('Berakhot')]);
+  await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
+  await allLoaded(page);
+  await expect(page.locator('#popup.visible .popup-hebrew')).not.toBeEmpty();
+  expect(english).toEqual([]);
+
+  await viaMenu(page, 'about');
+  await page.locator('#language-choice [data-languages="both"]').click();
+  await expect.poll(() => english.length).toBe(1);
+  await expect(page.locator('#popup .popup-hebrew')).toBeVisible();
+  await expect(page.locator('#popup .popup-english')).toBeEmpty();
+  release();
+  await expect(page.locator('#popup .popup-english')).not.toBeEmpty();
 });

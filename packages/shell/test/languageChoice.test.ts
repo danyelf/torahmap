@@ -3,6 +3,7 @@ import {
   applyLanguageChoice,
   bindLanguageChoice,
   languageChoiceHtml,
+  shownLanguages,
 } from '../src/languageChoice.ts';
 import { ENGLISH, HEBREW } from '../src/language.ts';
 
@@ -11,11 +12,11 @@ const hidden = () => ({
   english: document.body.classList.contains('hebrew-only'),
 });
 
-function control(): HTMLElement {
+function control(changed: () => void = () => {}): HTMLElement {
   const panel = document.createElement('div');
   panel.innerHTML = languageChoiceHtml();
   document.body.appendChild(panel);
-  bindLanguageChoice(panel);
+  bindLanguageChoice(panel, changed);
   return panel;
 }
 
@@ -76,7 +77,17 @@ describe('the language choice', () => {
     expect(hidden()).toEqual({ hebrew: false, english: true });
   });
 
+  it('says which languages are shown, and when the reader changes them', () => {
+    applyLanguageChoice(BOTH);
+    const seen: (readonly string[])[] = [];
+    const panel = control(() => seen.push(shownLanguages()));
+    expect(shownLanguages()).toEqual([HEBREW, ENGLISH]);
+    press(panel, HEBREW);
+    press(panel, ENGLISH);
+    expect(seen).toEqual([[HEBREW], [ENGLISH]]);
+  });
+
   it('binds nothing in a panel without the choice', () => {
-    expect(() => bindLanguageChoice(document.createElement('div'))).not.toThrow();
+    expect(() => bindLanguageChoice(document.createElement('div'), () => {})).not.toThrow();
   });
 });

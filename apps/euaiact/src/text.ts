@@ -94,7 +94,7 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
         };
       },
 
-      popupFile: () => TEXTS_FILE,
+      popupFiles: () => [TEXTS_FILE],
 
       popupText(item, loadedFiles) {
         const texts = loadedFiles.get(TEXTS_FILE) as ActTexts | undefined;

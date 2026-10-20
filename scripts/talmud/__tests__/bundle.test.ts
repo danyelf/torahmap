@@ -261,10 +261,10 @@ describe('processTractate', () => {
     return { text: wikisource.text.map((amud, ai) => amud.map((_, si) => `<b>${ai}</b>:${si}`)) };
   }
 
-  it('gives each segment its English in markers, and a chapter’s closing line none', () => {
+  it('gives each segment its English in markers, apart from the Hebrew, and a chapter’s closing line none', () => {
     const wikisource = fakeWikisource();
     wikisource.text[4][2] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
-    const { text } = processTractate(
+    const { text, english } = processTractate(
       'Zeraim',
       'Test',
       wikisource,
@@ -272,9 +272,10 @@ describe('processTractate', () => {
       wikisource,
       englishOf(wikisource),
     );
-    expect(text.english.map((amud) => amud.length)).toEqual([5, 4, 3]);
-    expect(text.english[1][0]).toBe('*3*:0');
-    expect(text.english[2][2]).toBe('');
+    expect(english.map((amud) => amud.length)).toEqual([5, 4, 3]);
+    expect(english[1][0]).toBe('*3*:0');
+    expect(english[2][2]).toBe('');
+    expect(text).not.toHaveProperty('english');
   });
 
   const withEnglish = (wikisource: { text: string[][] }, english: { text: string[][] }) => () =>
@@ -285,7 +286,7 @@ describe('processTractate', () => {
     wikisource.text[3][3] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
     const english = englishOf(wikisource);
     english.text[3].pop();
-    expect(withEnglish(wikisource, english)().text.english[1][3]).toBe('');
+    expect(withEnglish(wikisource, english)().english[1][3]).toBe('');
   });
 
   it('refuses English shaped differently from the Hebrew', () => {
