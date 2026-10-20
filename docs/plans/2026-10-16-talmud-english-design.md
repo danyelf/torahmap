@@ -1,7 +1,10 @@
 # English for the Talmud
 
 **Status:** Decided, 2026-10-16 (see Decisions, at the end). The popup is built, on branch
-`talmud-english-popup`, from `worktree-talmud-search` (#390). English search is not.
+`talmud-english-popup`, from `worktree-talmud-search` (#390). English search is built on branch
+`talmud-english-search`: it reads the bold from `public/data/talmud/search-english.json` (5.0 MB
+gzipped), which downloads after every other file, or at once for an English term; the popup marks
+it only in the bold.
 
 The Talmud's popup has no English, and its search reads only Hebrew and Aramaic. Sefaria's
 William Davidson English (the Koren translation, with Rabbi Steinsaltz's explanation woven in)

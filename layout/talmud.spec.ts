@@ -229,6 +229,7 @@ test('an English Talmud search lists what it finds, and marks the popup’s Engl
     ),
   );
   expect(outsideBold).toHaveLength(0);
+  await marks.first().scrollIntoViewIfNeeded();
   const shot = info.outputPath('screen.png');
   await page.screenshot({ path: shot });
   await info.attach('layout', { path: shot, contentType: 'image/png' });
