@@ -266,6 +266,20 @@ showing English downloads. Its HTML becomes plain text with `*` around bold and
 `_` around italic (`scripts/talmud/english.ts`), and the bundle fails on a tag it
 does not know or one left open. Hadran lines get none.
 
+### Talmud word forms
+
+Sefaria's word-form table, which maps a written form to Jastrow headwords, is
+in its database dump (2.6 GB compressed; the two collections read are 430 MB). Nothing
+shipped is built from it yet; `scripts/talmud/word-forms-report.ts` measures
+how much of `search.json` it covers.
+
+```bash
+mkdir -p data/talmud/raw/sefaria-dump && cd data/talmud/raw/sefaria-dump
+curl -O https://storage.googleapis.com/sefaria-mongo-backup/dump_small.tar.gz
+tar -xzf dump_small.tar.gz ./dump/sefaria/word_form.bson ./dump/sefaria/lexicon_entry.bson
+cd - && npx tsx scripts/talmud/word-forms-report.ts
+```
+
 ## AI Act
 
 The AI Act is parsed from its EUR-Lex pages in `experiments/eu-ai-act/`: `parse.py`
