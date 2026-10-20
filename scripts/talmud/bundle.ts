@@ -12,7 +12,7 @@ import {
   type TalmudTractateText,
   type TalmudTractateEnglish,
   englishFile,
-  TALMUD_DATA_DIR,
+  textsFile,
   SEARCH_FILE,
   STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
   type TalmudSearchText,
@@ -263,11 +263,16 @@ export function processTractate(
 }
 
 const DATA_DIR = 'public/data';
-const OUTPUT_DIR = join(DATA_DIR, TALMUD_DATA_DIR);
-const TEXTS_DIR = join(OUTPUT_DIR, 'texts');
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, 'utf-8')) as T;
+}
+
+/** Writes `value` to `file`, a path under `public/data/` as the app asks for it. */
+async function writeData(file: string, value: unknown): Promise<void> {
+  const path = join(DATA_DIR, file);
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, JSON.stringify(value), 'utf-8');
 }
 
 async function main(): Promise<void> {
@@ -277,8 +282,6 @@ async function main(): Promise<void> {
   const passed = report.tractates.filter((t) => t.status === 'pass');
   console.log(`${passed.length} passed tractates to bundle`);
   console.log('');
-
-  await mkdir(TEXTS_DIR, { recursive: true });
 
   const structure: TalmudStructure = { tractates: [] };
   const search: TalmudSearchText = {};
@@ -318,10 +321,8 @@ async function main(): Promise<void> {
       }
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
       const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
-      await writeFile(join(TEXTS_DIR, `${ref.tractate}.json`), JSON.stringify(shipped), 'utf-8');
-      const englishPath = join(DATA_DIR, englishFile(ref.tractate));
-      await mkdir(dirname(englishPath), { recursive: true });
-      await writeFile(englishPath, JSON.stringify(tractateEnglish), 'utf-8');
+      await writeData(textsFile(ref.tractate), shipped);
+      await writeData(englishFile(ref.tractate), tractateEnglish);
 
       const segCount = tractateStructure.amudim.reduce((a, b) => a + b.segmentCount, 0);
       console.log(
@@ -340,7 +341,10 @@ async function main(): Promise<void> {
   console.log('');
   console.log(`Structure: ${join(DATA_DIR, TALMUD_STRUCTURE_FILE)}`);
   console.log(`Search: ${join(DATA_DIR, SEARCH_FILE)}`);
-  console.log(`Texts: ${TEXTS_DIR}/*.json (${structure.tractates.length} files)`);
+  console.log(
+    `Texts: ${join(DATA_DIR, dirname(textsFile('')))} (${structure.tractates.length} files)`,
+  );
+  console.log(`English: ${join(DATA_DIR, dirname(englishFile('')))}`);
   console.log('');
   console.log(`Tanakh citations linked: ${linked}`);
   console.log(`Looked like citations but named no verse: ${missed.length}`);

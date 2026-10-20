@@ -410,7 +410,7 @@ test("the Talmud's English downloads only once English is shown, and its Hebrew 
 }) => {
   const english: string[] = [];
   page.on('request', (r) => {
-    if (r.url().includes('/data/talmud/english/')) english.push(r.url());
+    if (r.url().endsWith(englishFile('Berakhot'))) english.push(r.url());
   });
   await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'he'));
   const release = await hold(page, [englishFile('Berakhot')]);

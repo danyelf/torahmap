@@ -262,10 +262,9 @@ tags removed, laid out as `texts/`'s amudim.
 The popup's English is the William Davidson English (`english.json`), segment
 for segment with the Hebrew; the bundle fails if its shape differs. It ships
 apart from the Hebrew, in `english/`, one file per tractate, which only a reader
-showing English downloads. Its HTML
-becomes plain text with `*` around bold and `_` around italic
-(`scripts/talmud/english.ts`), and the bundle fails on a tag it does not know or
-one left open. Hadran lines get none.
+showing English downloads. Its HTML becomes plain text with `*` around bold and
+`_` around italic (`scripts/talmud/english.ts`), and the bundle fails on a tag it
+does not know or one left open. Hadran lines get none.
 
 ## AI Act
 
