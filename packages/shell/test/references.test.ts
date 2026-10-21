@@ -1,5 +1,13 @@
-import { describe, it, expect } from 'vitest';
-import { eachWord, nameTable, numberIn, referenceTokens, type Token } from '../src/references.ts';
+import { describe, it, expect, vi } from 'vitest';
+import {
+  byNames,
+  eachWord,
+  nameTable,
+  numberIn,
+  referenceReader,
+  referenceTokens,
+  type Token,
+} from '../src/references.ts';
 
 const texts = (tokens: Token[]) => tokens.map((t) => t.text);
 
@@ -157,5 +165,42 @@ describe('numberIn', () => {
   it('reads nothing from a word', () => {
     expect(numberIn({ text: 'a', mark: '' })).toBeNull();
     expect(numberIn({ text: 'זי', mark: '' })).toBeNull();
+  });
+});
+
+describe('referenceReader', () => {
+  const where = vi.fn((key: string, rest: Token[]) =>
+    rest.length > 1 ? null : { ref: `${key} ${texts(rest).join('')}`.trim(), ids: [key] },
+  );
+  const reader = referenceReader({
+    named: PLACES,
+    filler: new Set(['gate', 'no']),
+    place: where,
+    unnamed: (tokens) => (texts(tokens).join('') === '7' ? { ref: 'Seven', ids: ['7'] } : null),
+  });
+
+  it('reads the place the tokens after a name give, filler gone', () => {
+    expect(reader.read('South no 3')).toEqual({ ref: 'south 3', ids: ['south'] });
+    expect(where).toHaveBeenLastCalledWith('south', [{ text: '3', mark: '' }]);
+  });
+
+  it('reads tokens that begin with no name as the text says', () => {
+    expect(reader.read('7')).toEqual({ ref: 'Seven', ids: ['7'] });
+    expect(reader.read('East 1')).toBeNull();
+  });
+
+  it('completes from the same names it reads', () => {
+    expect(reader.complete('sou')).toEqual(['South', 'Southampton']);
+  });
+});
+
+describe('byNames', () => {
+  it('names each item by its name, its Hebrew name and any others given for it', () => {
+    const genesis = { name: 'Genesis', hebrewName: 'בראשית' };
+    const exodus = { name: 'Exodus', hebrewName: 'שמות' };
+    expect(byNames([genesis, exodus], { Exodus: ['Shemot'] })).toEqual([
+      { key: genesis, names: ['Genesis', 'בראשית'] },
+      { key: exodus, names: ['Exodus', 'שמות', 'Shemot'] },
+    ]);
   });
 });

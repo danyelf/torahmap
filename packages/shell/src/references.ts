@@ -2,6 +2,7 @@
 // tokens, and finding what the tokens begin by naming.
 
 import { hebrewNumber, withoutPointsOrGeresh } from '@torahmap/hebrew';
+import type { Reference, ReferenceReader } from './app/text.ts';
 
 /** A run of letters or of digits, and the full stop or colon right after it, if any. */
 export interface Token {
@@ -134,6 +135,45 @@ export function nameTable<K>(
       }
       return offered.slice(0, COMPLETIONS);
     },
+  };
+}
+
+/** Each of `items`, named by its name, its name in Hebrew and any `others` listed under its name. */
+export function byNames<T extends { name: string; hebrewName: string }>(
+  items: readonly T[],
+  others: Readonly<Record<string, readonly string[]>>,
+): Named<T>[] {
+  return items.map((item) => ({
+    key: item,
+    names: [item.name, item.hebrewName, ...(others[item.name] ?? [])],
+  }));
+}
+
+/** How a text reads a reference: what one may begin by naming, and what may follow the name. */
+export interface Reading<K> {
+  named: readonly Named<K>[];
+  folds?: readonly Fold[];
+  /** Words that may follow the name and say nothing. */
+  filler?: ReadonlySet<string>;
+  /** The place the tokens after `key`'s name give, its filler gone. */
+  place(key: K, rest: Token[]): Reference | null;
+  /** The place tokens that begin with no name give. */
+  unnamed?(tokens: Token[]): Reference | null;
+}
+
+export function referenceReader<K>(how: Reading<K>): ReferenceReader {
+  const names = nameTable(how.named, how.folds);
+  return {
+    read(typed) {
+      const tokens = referenceTokens(typed);
+      const found = names.read(tokens);
+      if (!found) return how.unnamed?.(tokens) ?? null;
+      return how.place(
+        found.key,
+        found.rest.filter((t) => !how.filler?.has(t.text)),
+      );
+    },
+    complete: names.complete,
   };
 }
 

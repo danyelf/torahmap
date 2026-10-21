@@ -3,10 +3,10 @@
 import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
 import {
+  byNames,
   eachWord,
-  nameTable,
   numberIn,
-  referenceTokens,
+  referenceReader,
   type Token,
 } from '@torahmap/shell/references.ts';
 import { talmudId } from './layout.ts';
@@ -52,8 +52,8 @@ interface Place {
   segment?: number;
 }
 
-/** The place `tokens` give after the tractate's name, or null when they give none. */
-function placeIn(tokens: readonly Token[]): Place | null {
+/** The page and segment `tokens` give after the tractate's name, or null when they give none. */
+function pageIn(tokens: readonly Token[]): Place | null {
   const [first, ...rest] = tokens;
   if (!first) return null;
   const latin = /^\d+$/.test(first.text);
@@ -71,37 +71,32 @@ function placeIn(tokens: readonly Token[]): Place | null {
   return segment === null ? null : { daf, side, segment };
 }
 
+/** The place `rest`, after the tractate's name, gives in `tractate`: all of it, a daf, an amud or a segment. */
+function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null {
+  const place = rest.length === 0 ? null : pageIn(rest);
+  if (rest.length > 0 && !place) return null;
+
+  const ids: string[] = [];
+  for (const { daf, amud, segmentCount } of tractate.amudim) {
+    if (place && (daf !== place.daf || (place.side && amud !== place.side))) continue;
+    for (let segment = 1; segment <= segmentCount; segment++) {
+      if (place?.segment !== undefined && segment !== place.segment) continue;
+      ids.push(talmudId({ tractate: tractate.name, daf, amud, segment }));
+    }
+  }
+  if (ids.length === 0) return null;
+
+  const page = place ? ` ${place.daf}${place.side ?? ''}` : '';
+  const segment = place?.segment !== undefined ? `:${place.segment}` : '';
+  return { ref: `${tractate.name}${page}${segment}`, ids };
+}
+
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
 export function segmentReader(tractates: readonly ReferencedTractate[]): ReferenceReader {
-  const byName = new Map(tractates.map((t) => [t.name, t]));
-  const entries = tractates.map((t) => ({
-    key: t.name,
-    names: [t.name, t.hebrewName, ...(OTHER_NAMES[t.name] ?? [])],
-  }));
-  const names = nameTable(entries, FOLDS);
-
-  function read(typed: string): Reference | null {
-    const named = names.read(referenceTokens(typed));
-    if (!named) return null;
-    const tractate = byName.get(named.key)!;
-    const rest = named.rest.filter((t) => !FILLER.has(t.text));
-    const place = rest.length === 0 ? null : placeIn(rest);
-    if (rest.length > 0 && !place) return null;
-
-    const ids: string[] = [];
-    for (const { daf, amud, segmentCount } of tractate.amudim) {
-      if (place && (daf !== place.daf || (place.side && amud !== place.side))) continue;
-      for (let segment = 1; segment <= segmentCount; segment++) {
-        if (place?.segment !== undefined && segment !== place.segment) continue;
-        ids.push(talmudId({ tractate: tractate.name, daf, amud, segment }));
-      }
-    }
-    if (ids.length === 0) return null;
-
-    const page = place ? ` ${place.daf}${place.side ?? ''}` : '';
-    const segment = place?.segment !== undefined ? `:${place.segment}` : '';
-    return { ref: `${tractate.name}${page}${segment}`, ids };
-  }
-
-  return { read, complete: names.complete };
+  return referenceReader({
+    named: byNames(tractates, OTHER_NAMES),
+    folds: FOLDS,
+    filler: FILLER,
+    place: placeIn,
+  });
 }

@@ -4,11 +4,11 @@ import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
 import { verseId } from '@torahmap/link/tanakh';
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
 import {
-  nameTable,
+  byNames,
   numberIn,
   type Fold,
   RANGE,
-  referenceTokens,
+  referenceReader,
   type Token,
 } from '@torahmap/shell/references.ts';
 
@@ -108,52 +108,47 @@ function versesBetween(book: ReferencedBook, from: Place, to: Place): string[] |
 
 const written = (p: Place) => (p.verse === undefined ? `${p.chapter}` : `${p.chapter}:${p.verse}`);
 
-/** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */
-export function verseReader(books: readonly ReferencedBook[]): ReferenceReader {
-  const byName = new Map(books.map((b) => [b.name, b]));
-  const entries = books.map((b) => ({
-    key: b.name,
-    names: [b.name, b.hebrewName, ...(OTHER_NAMES[b.name] ?? [])],
-  }));
-  const names = nameTable(entries, FOLDS);
-
-  function read(typed: string): Reference | null {
-    const named = names.read(referenceTokens(typed));
-    if (!named) return null;
-    const book = byName.get(named.key)!;
-    const rest = named.rest.filter((t) => !FILLER.has(t.text));
-    if (rest.length === 0) {
-      const last = book.chapters.length;
-      const ids = versesBetween(book, { chapter: 1 }, { chapter: last });
-      return ids && { ref: book.name, ids };
-    }
-
-    const dash = rest.findIndex((t) => t.text === RANGE);
-    const numbers = (tokens: Token[]) => tokens.map(numberIn);
-    const before = numbers(dash === -1 ? rest : rest.slice(0, dash));
-    const after = dash === -1 ? null : numbers(rest.slice(dash + 1));
-    if ([...before, ...(after ?? [])].some((n) => n === null)) return null;
-    if (before.length > 2 || (after && (after.length === 0 || after.length > 2))) return null;
-
-    const from: Place = { chapter: before[0]!, verse: before[1] ?? undefined };
-    // "1:2-3" ends at verse 3 of chapter 1; "1-2" at chapter 2.
-    const to: Place = !after
-      ? from
-      : after.length === 2
-        ? { chapter: after[0]!, verse: after[1]! }
-        : from.verse === undefined
-          ? { chapter: after[0]! }
-          : { chapter: from.chapter, verse: after[0]! };
-
-    const ids = versesBetween(book, from, to);
-    if (!ids) return null;
-    const end = !after
-      ? ''
-      : to.chapter === from.chapter
-        ? `–${to.verse ?? to.chapter}`
-        : `–${written(to)}`;
-    return { ref: `${book.name} ${written(from)}${end}`, ids };
+/** The place `rest`, after the book's name, gives in `book`: all of it, a chapter, a verse or a range. */
+function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
+  if (rest.length === 0) {
+    const last = book.chapters.length;
+    const ids = versesBetween(book, { chapter: 1 }, { chapter: last });
+    return ids && { ref: book.name, ids };
   }
 
-  return { read, complete: names.complete };
+  const dash = rest.findIndex((t) => t.text === RANGE);
+  const numbers = (tokens: Token[]) => tokens.map(numberIn);
+  const before = numbers(dash === -1 ? rest : rest.slice(0, dash));
+  const after = dash === -1 ? null : numbers(rest.slice(dash + 1));
+  if ([...before, ...(after ?? [])].some((n) => n === null)) return null;
+  if (before.length > 2 || (after && (after.length === 0 || after.length > 2))) return null;
+
+  const from: Place = { chapter: before[0]!, verse: before[1] ?? undefined };
+  // "1:2-3" ends at verse 3 of chapter 1; "1-2" at chapter 2.
+  const to: Place = !after
+    ? from
+    : after.length === 2
+      ? { chapter: after[0]!, verse: after[1]! }
+      : from.verse === undefined
+        ? { chapter: after[0]! }
+        : { chapter: from.chapter, verse: after[0]! };
+
+  const ids = versesBetween(book, from, to);
+  if (!ids) return null;
+  const end = !after
+    ? ''
+    : to.chapter === from.chapter
+      ? `–${to.verse ?? to.chapter}`
+      : `–${written(to)}`;
+  return { ref: `${book.name} ${written(from)}${end}`, ids };
+}
+
+/** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */
+export function verseReader(books: readonly ReferencedBook[]): ReferenceReader {
+  return referenceReader({
+    named: byNames(books, OTHER_NAMES),
+    folds: FOLDS,
+    filler: FILLER,
+    place: placeIn,
+  });
 }
