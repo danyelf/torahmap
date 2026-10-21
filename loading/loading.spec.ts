@@ -482,6 +482,19 @@ test("a link with an English term fetches the Talmud's English search with the o
   expect(english).toHaveLength(1);
 });
 
+test('a failed English search file says so for an English term, and Hebrew search still finds', async ({
+  page,
+}) => {
+  await fail(page, [SEARCH_ENGLISH_FILE]);
+  await page.goto(`${TALMUD_PATH}?search=rabbi`);
+  await allLoaded(page);
+  await viaMenu(page, 'search');
+  await expect(page.locator('#search-hit-caption .load-notice[data-state="failed"]')).toBeVisible();
+  await page.locator('#search-input').fill('רבי');
+  await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
+  await expect(page.locator('#search-hit-caption .load-notice')).toHaveCount(0);
+});
+
 /** The requests for one data file, as they are made. */
 function requestsFor(page: Page, path: string): string[] {
   const urls: string[] = [];
