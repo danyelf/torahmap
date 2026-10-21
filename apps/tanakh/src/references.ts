@@ -12,7 +12,6 @@ import {
   type Token,
 } from '@torahmap/shell/references.ts';
 
-/** References offered under the Go to box, to try. */
 export const EXAMPLES = ['II Samuel 17', 'Genesis 2:2', 'Shemot 4:1', 'שמות כב'];
 
 /** A book as the reader needs it: its names and how many verses each chapter has. */

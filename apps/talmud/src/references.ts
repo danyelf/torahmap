@@ -15,7 +15,6 @@ import type { TalmudIdentity } from './types.ts';
 
 type Side = TalmudAmud['amud'];
 
-/** References offered under the Go to box, to try. */
 export const EXAMPLES = ['Berakhot 17a'];
 
 /** A tractate as the reader needs it: its names and how many segments each amud has. */

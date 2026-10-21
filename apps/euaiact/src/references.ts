@@ -4,7 +4,6 @@ import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import { referenceReader, type Named, type Token } from '@torahmap/shell/references.ts';
 import { actRef, ownerOf, type Layer } from './ids.ts';
 
-/** References offered under the Go to box, to try. */
 export const EXAMPLES = ['Article 7', 'Annex III'];
 
 const LAYERS: Named<Layer>[] = [

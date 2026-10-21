@@ -102,7 +102,7 @@ export interface Reference {
 
 /** Reads what is typed in the Go to box. */
 export interface GoTo {
-  /** References offered under the box, to try. */
+  /** Examples offered under the box, to try. */
   examples: readonly string[];
   /** The place `typed` names, or null when it names none. */
   read(typed: string): Reference | null;
