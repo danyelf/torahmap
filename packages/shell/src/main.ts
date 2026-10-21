@@ -561,12 +561,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(
-        source.site,
-        allOverlays,
-        twoLanguages,
-        text.goTo.examples[0],
-      );
+      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages, text.goTo.examples);
       bindLanguageChoice(aboutPanel, refreshPopup);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
