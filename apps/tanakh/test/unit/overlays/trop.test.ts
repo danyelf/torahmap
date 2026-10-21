@@ -774,6 +774,36 @@ describe('Trop Overlay', () => {
     });
   });
 
+  describe('standing out', () => {
+    const verses = [
+      createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
+      createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
+    ];
+    // Verse 1 carries a shalshelet once and a tipcha `tipchas` times; verse 2 neither.
+    const textsWith = (tipchas: number): VerseTexts => ({
+      'Genesis': {
+        '1': {
+          '1': { he: 'ב֓' + 'ב֖'.repeat(tipchas), en: '' },
+          '2': { he: 'ב', en: '' },
+        },
+      },
+    });
+    const standouts = (mark: string | null, texts: VerseTexts) =>
+      tropOverlay.standoutsFor!(verses, { mark, preview: null }, { texts });
+
+    it('makes the verses holding a rare mark stand out, and no others', () => {
+      expect(standouts('shalshelet', textsWith(1))).toEqual([true, false]);
+    });
+
+    it('makes nothing stand out for a mark drawn on a scale', () => {
+      expect(standouts('tipcha', textsWith(RARITY_THRESHOLDS.UNCOMMON))).toEqual([false, false]);
+    });
+
+    it('makes nothing stand out with no mark chosen', () => {
+      expect(standouts(null, textsWith(1))).toEqual([false, false]);
+    });
+  });
+
   describe('Integration with Trop Module', () => {
     it('uses getRarityTier from trop module', () => {
       expect(getRarityTier(10)).toBe('rare');
