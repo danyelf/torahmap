@@ -9,7 +9,7 @@ async function about(): Promise<HTMLDivElement> {
   const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
   const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
   const div = document.createElement('div');
-  div.innerHTML = aboutHtml(tanakhSite, getAllOverlays(), true, []);
+  div.innerHTML = aboutHtml(tanakhSite, getAllOverlays(), true, ['Genesis 1']);
   return div;
 }
 
@@ -40,7 +40,7 @@ describe('the About panel', () => {
     const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
     const { talmudSite } = await import('@torahmap/talmud/site.ts');
     const div = document.createElement('div');
-    div.innerHTML = aboutHtml(talmudSite, [], false, []);
+    div.innerHTML = aboutHtml(talmudSite, [], false, ['Genesis 1']);
     expect(div.querySelector('#language-choice')).toBeNull();
     expect(div.querySelectorAll('.about-section')).toHaveLength(
       (await about()).querySelectorAll('.about-section').length - 1,
@@ -75,7 +75,7 @@ describe('the About panel', () => {
     const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
     const { talmudSite } = await import('@torahmap/talmud/site.ts');
     const div = document.createElement('div');
-    div.innerHTML = aboutHtml(talmudSite, [], false, []);
+    div.innerHTML = aboutHtml(talmudSite, [], false, ['Genesis 1']);
     expect(div.textContent).toContain(talmudSite.page.name);
     const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
     expect(div.textContent).not.toContain(tanakhSite.page.name);

@@ -51,7 +51,7 @@ export function aboutHtml(
         <tr><td>Hover</td><td>Preview ${square} details</td></tr>
         <tr><td>Click / Tap</td><td>Pin ${square} details; repeat to unpin</td></tr>
         <tr><td>${next} / ${previous} arrow keys</td><td>Next / previous ${square}</td></tr>
-        ${goToExamples.length ? `<tr><td>Go to</td><td>Type a reference, such as ${escapeHtml(goToExamples[0])}, to go there</td></tr>` : ''}
+        <tr><td>Go to</td><td>Type a reference, such as ${escapeHtml(goToExamples[0])}, to go there</td></tr>
         <tr><td>Escape</td><td>Close the menu, unpin the ${square}, or close the panel or the story</td></tr>
         <tr><td>Legend</td><td>Shows colors for the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>

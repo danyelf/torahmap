@@ -2,7 +2,7 @@
 // tokens, and finding what the tokens begin by naming.
 
 import { hebrewNumber, withoutPointsOrGeresh } from '@torahmap/hebrew';
-import type { Reference, ReferenceReader } from './app/text.ts';
+import type { GoTo, Reference } from './app/text.ts';
 
 /** A run of letters or of digits, and the full stop or colon right after it, if any. */
 export interface Token {
@@ -161,7 +161,7 @@ export interface Reading<K> {
   unnamed?(tokens: Token[]): Reference | null;
 }
 
-export function referenceReader<K>(how: Reading<K>): ReferenceReader {
+export function referenceReader<K>(how: Reading<K>): Omit<GoTo, 'examples'> {
   const names = nameTable(how.named, how.folds);
   return {
     read(typed) {

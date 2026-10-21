@@ -101,16 +101,13 @@ export interface Reference {
 }
 
 /** Reads what is typed in the Go to box. */
-export interface ReferenceReader {
+export interface GoTo {
+  /** References offered under the box, to try. */
+  examples: readonly string[];
   /** The place `typed` names, or null when it names none. */
   read(typed: string): Reference | null;
   /** The names, of what a reference may begin by naming, that `typed` is the start of. */
   complete(typed: string): string[];
-}
-
-export interface GoTo extends ReferenceReader {
-  /** References offered under the box, to try. */
-  examples: readonly string[];
 }
 
 /** What a text's own code may ask of the shell. */

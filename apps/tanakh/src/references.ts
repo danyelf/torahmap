@@ -2,7 +2,7 @@
 
 import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
 import { verseId } from '@torahmap/link/tanakh';
-import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
+import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import {
   byNames,
   numberIn,
@@ -144,7 +144,7 @@ function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
 }
 
 /** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */
-export function verseReader(books: readonly ReferencedBook[]): ReferenceReader {
+export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examples'> {
   return referenceReader({
     named: byNames(books, OTHER_NAMES),
     folds: FOLDS,

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import type { ReferenceReader } from '@torahmap/shell/app/text.ts';
+import type { GoTo } from '@torahmap/shell/app/text.ts';
 import { STRUCTURE_FILE } from '@torahmap/tanakh/verseTexts.ts';
 import { computeLayout } from '@torahmap/tanakh/layout.ts';
 import { EXAMPLES as TANAKH_EXAMPLES, verseReader } from '@torahmap/tanakh/references.ts';
@@ -14,7 +14,11 @@ import { EXAMPLES as ACT_EXAMPLES, provisionReader } from '@torahmap/euaiact/ref
 const shipped = (path: string) => JSON.parse(readFileSync(`public/data/${path}`, 'utf8'));
 
 /** The examples that read to no place, or to a square the map lacks. */
-function unread(examples: readonly string[], reader: ReferenceReader, ids: string[]): string[] {
+function unread(
+  examples: readonly string[],
+  reader: Omit<GoTo, 'examples'>,
+  ids: string[],
+): string[] {
   const held = new Set(ids);
   return examples.filter((typed) => {
     const found = reader.read(typed);

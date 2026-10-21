@@ -1,6 +1,6 @@
 // Reads a reference to the Act, such as "Article 5(1)(h)", "Recital 12" or "Annex 3".
 
-import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
+import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import { referenceReader, type Named, type Token } from '@torahmap/shell/references.ts';
 import { actRef, ownerOf, type Layer } from './ids.ts';
 
@@ -40,7 +40,7 @@ function annexNumber(text: string): string | null {
 }
 
 /** Reads a reference to the squares `ids` name: an article, recital or annex, or a part of one. */
-export function provisionReader(ids: readonly string[]): ReferenceReader {
+export function provisionReader(ids: readonly string[]): Omit<GoTo, 'examples'> {
   const articles = new Set(ids.map(ownerOf));
 
   /** The squares that are `key` or inside it, `below` joining the parts of an id. */

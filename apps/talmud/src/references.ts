@@ -1,7 +1,7 @@
 // Reads a reference to the Talmud, such as "Berakhot 3b:4" or ברכות ג:.
 
 import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
-import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
+import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import {
   byNames,
   eachWord,
@@ -95,7 +95,7 @@ function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null 
 }
 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
-export function segmentReader(tractates: readonly ReferencedTractate[]): ReferenceReader {
+export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<GoTo, 'examples'> {
   return referenceReader({
     named: byNames(tractates, OTHER_NAMES),
     folds: FOLDS,
