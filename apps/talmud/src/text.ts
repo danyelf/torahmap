@@ -7,7 +7,7 @@ import type { Story } from '@torahmap/stories';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
 import { commentaryLink } from '@torahmap/overlay-catalog';
-import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
+import { computeTalmudLayout, talmudId, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
@@ -26,6 +26,7 @@ import {
   STRUCTURE_FILE,
   amudIndex,
   englishFile,
+  hadranLines,
   structureFrom,
   textsFile,
   type TalmudTractateEnglish,
@@ -72,7 +73,11 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
     const structure = structureFrom(loaded);
     const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
     const laid = computeTalmudLayout(structure);
-    const hadrans = new Set(laid.hadrans.map((h) => h.id));
+    const hadrans = new Set(
+      structure.tractates.flatMap((t) =>
+        hadranLines(t).map((line) => talmudId({ tractate: t.name, ...line })),
+      ),
+    );
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
     /** Where a segment is in its tractate's files, which list segments by amud. */
@@ -105,7 +110,6 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           laid.tractateBlocks,
           laid.perekAnchors,
           laid.dafRows,
-          laid.hadrans,
           container,
         );
         const moveNames = createMapLabels(laid.tractateBlocks, container, {

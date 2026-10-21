@@ -1,14 +1,11 @@
-// The Talmud map's own marks: each tractate's cover, tinted by its seder, and the perek, daf and
-// hadran labels, which show by zoom level.
+// The Talmud map's own marks: each tractate's cover, tinted by its seder, and the perek and daf
+// labels, which show by zoom level.
 
-import type { TractateBlock, PerekAnchor, DafRowAnchor, HadranAnchor } from './layout.ts';
-import { colorToCss } from '@torahmap/utils';
+import type { TractateBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
 import {
   COVER_OPACITY,
   DAF_LABEL,
   DAF_LABEL_ZOOM_ALL,
-  HADRAN_LABEL,
-  HADRAN_RING_COLOR,
   PEREK_LABEL_ZOOM,
   PEREK_SIZE,
   SEDARIM,
@@ -53,29 +50,6 @@ function perekLabel(a: PerekAnchor): Placed {
   return { el, x: a.rightX, y: a.topY - 2 };
 }
 
-function hadranLabel(a: HadranAnchor): Placed {
-  const el = document.createElement('div');
-  el.style.cssText = `
-    position:absolute;
-    color:${colorToCss(HADRAN_RING_COLOR)};
-    font-family:${HEBREW_LABEL_FONT};
-    font-size:${HADRAN_LABEL.fontSize * HEBREW_LABEL_SCALE}px;
-    text-shadow:0 1px 2px rgba(0,0,0,0.7);
-    white-space:nowrap;
-    line-height:1;
-    direction:rtl;
-    transform:translate(calc(-100% - ${HADRAN_LABEL.offset}px), -50%);
-  `;
-  el.textContent = 'הדרן';
-  return { el, x: a.x, y: a.y };
-}
-
-/** How much of the hadran labels shows at `zoom`, from 0 to 1. */
-function hadranOpacity(zoom: number): number {
-  const { fadesFrom, goneAt } = HADRAN_LABEL;
-  return Math.min(1, Math.max(0, (zoom - goneAt) / (fadesFrom - goneAt)));
-}
-
 // With the perek names, the first amud of every third daf is numbered: 3a, 6a, 10a, 13a, …
 const numberedFirst = ({ daf, amud }: DafRowAnchor) => amud === 'a' && [0, 3, 6].includes(daf % 10);
 
@@ -84,7 +58,6 @@ export function createTalmudLabels(
   tractateBlocks: TractateBlock[],
   perekAnchors: PerekAnchor[],
   dafRows: DafRowAnchor[],
-  hadrans: HadranAnchor[],
   parent: HTMLElement,
 ): (pan: Pan, zoom: number) => void {
   const container = document.createElement('div');
@@ -101,8 +74,7 @@ export function createTalmudLabels(
   });
 
   const pereks = labelGroup('talmud-perek-labels', perekAnchors.map(perekLabel));
-  const hadranLabels = labelGroup('talmud-hadran-labels', hadrans.map(hadranLabel));
-  container.append(covers, pereks.el, hadranLabels.el);
+  container.append(covers, pereks.el);
   parent.appendChild(container);
   const moveDapim = createRowNumbers(
     'talmud-daf-labels',
@@ -131,9 +103,6 @@ export function createTalmudLabels(
       pereks.el.style.fontSize = `${Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE}px`;
     }
     pereks.show(zoom >= PEREK_LABEL_ZOOM, zoom);
-    const shown = hadranOpacity(zoom);
-    hadranLabels.el.style.opacity = String(shown);
-    hadranLabels.show(shown > 0, zoom);
     moveDapim(pan, zoom);
   };
 }

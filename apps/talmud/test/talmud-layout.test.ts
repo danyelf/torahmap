@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeTalmudLayout } from '../src/layout.ts';
 import { talmudFixture as fixture } from './helpers/talmudFixture.ts';
-import { SQUARE_GAP } from '@torahmap/engine';
 import {
   BOOK_GAP,
   DAF_LABEL,
@@ -78,15 +77,6 @@ describe('computeTalmudLayout', () => {
     const S = SEGMENT_SIZE;
     expect(rows.map((r) => r.topY - rows[0].topY)).toEqual([0, S, 2 * S, 3 * S + PEREK_GAP]);
   });
-
-  it("anchors a hadran label at each perek's last square: its left edge, half way down", () => {
-    expect(result.hadrans.map((h) => h.id)).toEqual(['TractA.3a.6', 'TractA.3b.3', 'TractB.2b.2']);
-    for (const h of result.hadrans) {
-      const s = result.items.find((i) => i.id === h.id)!;
-      expect(h.x).toBe(s.x + s.jitter!.x);
-      expect(h.y).toBe(s.y + s.jitter!.y + (s.size - SQUARE_GAP) / 2);
-    }
-  });
 });
 
 describe('a tractate long enough to wrap into columns', () => {
@@ -142,12 +132,7 @@ describe('a tractate long enough to wrap into columns', () => {
 describe("each tractate's cover", () => {
   // TractB and the shorter TractC share Moed's shelf; TractA, on Zeraim's, is the tallest.
   const tractB = fixture.tractates[1];
-  const tractC = {
-    ...tractB,
-    name: 'TractC',
-    amudim: tractB.amudim.slice(0, 1),
-    perakim: [{ ...tractB.perakim[0], endAmudIdx: 0, endSegmentInLastAmud: 4 }],
-  };
+  const tractC = { ...tractB, name: 'TractC', amudim: tractB.amudim.slice(0, 1) };
   const result = computeTalmudLayout({ tractates: [...fixture.tractates, tractC] });
   const block = (name: string) => result.tractateBlocks.find((t) => t.name === name)!;
   const cover = (name: string) => block(name).cover;
