@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
-import { allLoaded, viaMenu } from '../browser/page.ts';
+import { viaMenu } from '../browser/page.ts';
 
 export interface State {
   name: string;
@@ -35,10 +35,24 @@ export async function goTo(page: Page, typed = '', take = false): Promise<void> 
   await viaMenu(page, 'goto');
   if (!typed) return;
   await page.locator('#goto-input').fill(typed);
-  // An offer grows when the text it quotes arrives, and the sheet takes its new height a frame later.
+  // An offer grows when the text it quotes arrives.
   await page.locator('.goto-quote:not(:empty), .goto-none, .goto-completion').first().waitFor();
-  await allLoaded(page);
+  await sheetMeasured(page);
   if (take) await page.locator('#goto-input').press('Enter');
+}
+
+/** Waits for a phone's map to make room for the sheet, which main.ts measures after it changes height. */
+async function sheetMeasured(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const style = getComputedStyle(document.documentElement);
+        if (style.getPropertyValue('--layout').trim() !== 'phone') return true;
+        const sheet = document.getElementById('panel')!;
+        return style.getPropertyValue('--sheet-shown') === `${sheet.offsetHeight}px`;
+      }),
+    )
+    .toBe(true);
 }
 
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;

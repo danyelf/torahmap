@@ -582,7 +582,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (!phone || frame.full) return;
     document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
   }
-  new ResizeObserver(measureSheet).observe(panel);
+  // Watching the sheet alone misses a change: when a panel opens shorter than
+  // the one before and grows back to its height within a frame, the observer
+  // sees no change, though measureSheet has already recorded the shorter one.
+  const sheetWatch = new ResizeObserver(measureSheet);
+  for (const watched of [panel, ...panelBody.children]) sheetWatch.observe(watched);
 
   // On a phone the popup stacks above the legend, which grows a row for
   // each thing on the map.
