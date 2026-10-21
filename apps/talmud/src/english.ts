@@ -42,11 +42,24 @@ export function searchedStretches(
   return stretches;
 }
 
-/** What search reads of `marked`: each searched stretch, apart, so no phrase runs from one to the next. */
+const LEADING_ELLIPSIS = /^(?:\.\.\.|…)\s*/;
+const TRAILING_ELLIPSIS = /\s*(?:\.\.\.|…)$/;
+
+/**
+ * What search reads of `marked`: each searched stretch, apart, so no phrase runs from one to the
+ * next. Where a stretch begins or ends with its own ellipsis beside the one between, one is shown.
+ */
 export function englishSearchText(marked: string): string {
   const { text, styles } = englishText(marked);
-  return searchedStretches(text, styles)
+  const stretches = searchedStretches(text, styles)
     .map(({ start, end }) => text.slice(start, end).trim())
+    .filter((stretch) => stretch !== '');
+  const last = stretches.length - 1;
+  return stretches
+    .map((stretch, i) => {
+      const from = i > 0 ? stretch.replace(LEADING_ELLIPSIS, '') : stretch;
+      return i < last ? from.replace(TRAILING_ELLIPSIS, '') : from;
+    })
     .filter((stretch) => stretch !== '')
     .join(' … ');
 }

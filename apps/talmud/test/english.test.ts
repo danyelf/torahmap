@@ -57,6 +57,21 @@ describe('what search reads of the English', () => {
     );
   });
 
+  it('shows one ellipsis where a stretch already ends or begins with one', () => {
+    for (const marked of [
+      '*Your maidservant…* and *not forget*',
+      '*Your maidservant...* and *not forget*',
+      '*Your maidservant* and *…not forget*',
+      '*Your maidservant …* and *... not forget*',
+      '*Blessed…* and *…* and *Who*',
+    ]) {
+      expect(englishSearchText(marked)).not.toMatch(/(\.\.\.|…)\s*(\.\.\.|…)/);
+    }
+    expect(englishSearchText('*…Your maidservant* and *not forget…*')).toBe(
+      '…Your maidservant … not forget…',
+    );
+  });
+
   it('is nothing for English with no bold', () => {
     expect(englishSearchText('only _explanation_')).toBe('');
   });
