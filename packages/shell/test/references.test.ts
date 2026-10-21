@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nameReader, referenceTokens, type Token } from '../src/references.ts';
+import { nameCompleter, nameReader, referenceTokens, type Token } from '../src/references.ts';
 
 const texts = (tokens: Token[]) => tokens.map((t) => t.text);
 
@@ -168,5 +168,53 @@ describe('nameReader', () => {
       expect(key('B.K.')).toBe('Bava Kamma');
       expect(key('b m')).toBe('Bava Metzia');
     });
+  });
+});
+
+describe('nameCompleter', () => {
+  const complete = nameCompleter([
+    { key: 'Exodus', names: ['Exodus', 'שמות', 'Shemot'] },
+    { key: 'Joshua', names: ['Joshua', 'יהושע'] },
+    { key: 'Job', names: ['Job', 'איוב'] },
+    { key: 'I Samuel', names: ['I Samuel', 'שמואל א'] },
+    { key: 'II Samuel', names: ['II Samuel', 'שמואל ב'] },
+    { key: 'Isaiah', names: ['Isaiah', 'ישעיהו'] },
+    { key: 'Article', names: ['Article', 'Articles', 'Art'] },
+  ]);
+
+  it('offers each name that starts as typed, in order, in any case', () => {
+    expect(complete('jo')).toEqual(['Joshua', 'Job']);
+    expect(complete('ISA')).toEqual(['Isaiah']);
+  });
+
+  it('offers an entry once, by its first name that starts as typed', () => {
+    expect(complete('ar')).toEqual(['Article']);
+    expect(complete('shem')).toEqual(['Shemot']);
+    expect(complete('שמ')).toEqual(['שמות', 'שמואל א', 'שמואל ב']);
+  });
+
+  it('reads a book number as a digit or a Roman numeral', () => {
+    expect(complete('1 sa')).toEqual(['I Samuel']);
+    expect(complete('II S')).toEqual(['II Samuel']);
+  });
+
+  it('offers nothing once a name is typed in full', () => {
+    expect(complete('Job')).toEqual([]);
+    expect(complete('Article')).toEqual([]);
+    expect(complete('שמואל א')).toEqual([]);
+  });
+
+  it('offers nothing once numbers follow the name, or for nothing', () => {
+    expect(complete('Isaiah 4')).toEqual([]);
+    expect(complete('שמות כ')).toEqual([]);
+    expect(complete(' ')).toEqual([]);
+  });
+
+  it('offers at most a handful', () => {
+    const many = nameCompleter(
+      Array.from({ length: 20 }, (_, i) => ({ key: i, names: [`Book${i}`] })),
+    );
+    expect(many('bo').length).toBeLessThan(20);
+    expect(many('bo').length).toBeGreaterThan(1);
   });
 });

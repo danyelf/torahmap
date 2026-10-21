@@ -125,6 +125,32 @@ export function nameReader<K>(
   };
 }
 
+const COMPLETIONS = 6;
+
+/**
+ * The names `typed` is the start of, one per entry and at most a handful, to
+ * finish it with. An entry already named in full is offered no longer.
+ */
+export function nameCompleter<K>(entries: readonly Named<K>[]): (typed: string) => string[] {
+  const folded = entries.map(({ names }) =>
+    names.map((name) => ({ name, fold: joined(texts(referenceTokens(name)), plain) })),
+  );
+  return (typed) => {
+    const words = texts(referenceTokens(typed));
+    if (words.length === 0) return [];
+    // A Roman numeral alone may be the start of a numbered book.
+    const roman = words.length === 1 ? ROMAN[words[0]] : undefined;
+    const starts = [joined(words, plain), ...(roman ? [roman] : [])];
+    const offered: string[] = [];
+    for (const names of folded) {
+      if (names.some(({ fold }) => fold === starts[0])) continue;
+      const hit = names.find(({ fold }) => starts.some((start) => fold.startsWith(start)));
+      if (hit) offered.push(hit.name);
+    }
+    return offered.slice(0, COMPLETIONS);
+  };
+}
+
 const texts = (tokens: readonly Token[]) => tokens.map((t) => t.text);
 const letterCount = (words: readonly string[]) => words.join('').replace(/[^\p{L}]/gu, '').length;
 
