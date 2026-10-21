@@ -27,7 +27,10 @@ export function englishText(marked: string): { text: string; styles: TextStyle[]
   return { text, styles };
 }
 
-/** Where search reads the English: its bold, the literal translation, joined where only space parts it. */
+/**
+ * Where search reads the English: its bold, the literal translation, joined where only space parts it.
+ * Changing it means re-running scripts/talmud/bundle.ts.
+ */
 export function searchedStretches(text: string, styles: readonly TextStyle[]): TextRange[] {
   const bold = styles.filter((s) => s.style === 'bold').sort((a, b) => a.start - b.start);
   const stretches: TextRange[] = [];
