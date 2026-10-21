@@ -7,6 +7,7 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
+  boxAround,
   cameraToFit,
   type Camera,
   type ScreenPoint,
@@ -721,24 +722,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // Fitted to the screen, a short chapter would be a few squares filling it.
   const FIT_ZOOM_MAX = 4;
 
-  /** Travel to show all of `list`, fitted above the focus as far as below it, as on a phone clear of the popup. */
+  /** Fit `list` into the map above and below the focus. */
   function glideToFit(list: readonly I[]): void {
     cancelCameraGlide();
-    const box = {
-      minX: Math.min(...list.map((i) => i.x)),
-      minY: Math.min(...list.map((i) => i.y)),
-      maxX: Math.max(...list.map((i) => i.x + (i.width ?? i.size))),
-      maxY: Math.max(...list.map((i) => i.y + i.size)),
-    };
     const view = mapViewport();
     const focus = mapFocus();
     const range = { ...zoomRange, max: Math.min(zoomRange.max, FIT_ZOOM_MAX) };
-    const fitted = cameraToFit(box, view.width, 2 * focus.y, range);
-    const target = {
-      zoom: fitted.zoom,
-      x: fitted.x - (focus.x - view.width / 2) / fitted.zoom,
-      y: fitted.y - (focus.y - view.height / 2) / fitted.zoom,
-    };
+    const { zoom, x, y } = cameraToFit(boxAround(list), view.width, 2 * focus.y, range);
+    // The fitted centre, put at the focus.
+    const target = { zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) };
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
       debouncedCameraSettled();

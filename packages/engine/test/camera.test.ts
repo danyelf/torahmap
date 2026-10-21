@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  boxAround,
   clampZoom,
   cameraToFit,
   screenToWorld,
@@ -131,5 +132,16 @@ describe('centreForFocus', () => {
     const screen = worldToScreen({ x: 403, y: 303 }, { ...centre, zoom: 2.5 }, view);
     expect(screen.x).toBeCloseTo(focus.x, 10);
     expect(screen.y).toBeCloseTo(focus.y, 10);
+  });
+});
+
+describe('boxAround', () => {
+  it('bounds every item, a wide one by its width', () => {
+    expect(
+      boxAround([
+        { x: 10, y: 20, size: 6 },
+        { x: 0, y: 40, size: 6, width: 30 },
+      ]),
+    ).toEqual({ minX: 0, minY: 20, maxX: 30, maxY: 46 });
   });
 });
