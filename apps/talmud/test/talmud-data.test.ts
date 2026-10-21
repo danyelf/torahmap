@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { amudIndex, isSegmentMishnah, type TalmudStructure } from '../src/data.ts';
+import { amudIndex, hadranLines, isSegmentMishnah, type TalmudStructure } from '../src/data.ts';
 
 describe('isSegmentMishnah', () => {
   const structure: TalmudStructure = {
@@ -41,6 +41,52 @@ describe('isSegmentMishnah', () => {
 
   it('returns false for an out-of-range daf', () => {
     expect(isSegmentMishnah(structure, 'Berakhot', 99, 'a', 1)).toBe(false);
+  });
+});
+
+describe('hadranLines', () => {
+  // Two perakim, the first ending mid-amud at 2b:2.
+  const structure: TalmudStructure = {
+    tractates: [
+      {
+        name: 'Berakhot',
+        hebrewName: 'ברכות',
+        seder: 'Zeraim',
+        amudim: [
+          { daf: 2, amud: 'a', segmentCount: 3, perekIdx: 0, mishnahMask: [true, false, false] },
+          {
+            daf: 2,
+            amud: 'b',
+            segmentCount: 4,
+            perekIdx: 0,
+            perekBoundaryAt: 2,
+            mishnahMask: [false, false, true, false],
+          },
+        ],
+        perakim: [
+          {
+            hebrewName: 'פרק א',
+            startAmudIdx: 0,
+            endAmudIdx: 1,
+            startSegmentInFirstAmud: 1,
+            endSegmentInLastAmud: 2,
+          },
+          {
+            hebrewName: 'פרק ב',
+            startAmudIdx: 1,
+            endAmudIdx: 1,
+            startSegmentInFirstAmud: 3,
+            endSegmentInLastAmud: 4,
+          },
+        ],
+      },
+    ],
+  };
+  it("are each perek's last segment", () => {
+    expect(hadranLines(structure.tractates[0])).toEqual([
+      { daf: 2, amud: 'b', segment: 2 },
+      { daf: 2, amud: 'b', segment: 4 },
+    ]);
   });
 });
 

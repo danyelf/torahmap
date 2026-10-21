@@ -55,6 +55,8 @@ export interface OpenText<I extends MapItem, S = unknown> {
   startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */
   baseColor(item: I, index: number): ItemColor;
+  /** A square's ring while no tool rings it, or null for none. */
+  baseRing?(item: I, index: number): ItemColor | null;
   /** While search alone is on, how much of its base colour a square it does not find keeps; without it, the square goes grey. */
   searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */

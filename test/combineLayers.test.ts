@@ -171,6 +171,20 @@ describe('fillDefaultColors', () => {
     expect(picture.growth).toEqual([0.5]);
     expect(picture.rings).toEqual([CYAN]);
   });
+
+  it("rings a square in the text's base ring where the picture gives it none", () => {
+    const picture = fillDefaultColors(
+      { colors: [null, RED, null], rings: [null, null, CYAN] },
+      getDefaultColor,
+      (i) => (i === 1 ? null : ORANGE),
+    );
+    expect(picture.rings).toEqual([ORANGE, null, CYAN]);
+  });
+
+  it('gives a picture with no rings the base rings', () => {
+    const picture = fillDefaultColors({ colors: [null, RED] }, getDefaultColor, () => ORANGE);
+    expect(picture.rings).toEqual([ORANGE, ORANGE]);
+  });
 });
 
 describe('toolsPicture', () => {

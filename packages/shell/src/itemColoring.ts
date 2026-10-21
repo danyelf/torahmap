@@ -72,13 +72,18 @@ export function combineLayers(
  * `picture` with every null colour replaced by its square's base colour, and
  * marked `uncoloured` for the hover. A cross-fade needs them so a still-uncoloured square blends from its
  * own colour rather than mergePictures's placeholder for "nothing here".
+ * With `baseRing`, a square the picture gives no ring takes its base ring.
  */
 export function fillDefaultColors(
   picture: Picture<ItemColor | null>,
   base: (index: number) => ItemColor,
+  baseRing?: (index: number) => ItemColor | null,
 ): Picture<ItemColor> {
   return {
     ...picture,
+    ...(baseRing && {
+      rings: picture.colors.map((_, i) => picture.rings?.[i] ?? baseRing(i)),
+    }),
     colors: picture.colors.map((c, i) => c ?? base(i)),
     uncoloured: picture.colors.map((c) => c === null),
   };

@@ -1,6 +1,7 @@
 // Talmud-specific layout and color constants.
 
 import type { BookTab, SectionLabelSize, SectionName } from '@torahmap/shell/mapLabels.ts';
+import type { Color } from '@torahmap/utils';
 
 export const SEGMENT_SIZE = 6; // px per segment square
 
@@ -81,6 +82,10 @@ export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 
 export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.64, 0.5, 0.84];
 export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.66, 0.57, 0.42];
+
+// A hadran line, which closes each perek, is a hollow square: a ring in this ivory round a hole of
+// the map's background. A square too small for the hole is solid ivory.
+export const HADRAN_RING_COLOR: Color = [0.95, 0.93, 0.86];
 
 // What a segment a search does not find keeps of its base colour, so Mishnah
 // still shows from Gemara.

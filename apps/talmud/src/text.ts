@@ -1,18 +1,24 @@
 // The Babylonian Talmud as a text for the app shell.
 
-import { FIT_MARGIN, cameraToFit } from '@torahmap/engine';
+import { FIT_MARGIN, MAP_BACKGROUND, cameraToFit } from '@torahmap/engine';
 import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import type { Story } from '@torahmap/stories';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
 import { commentaryLink } from '@torahmap/overlay-catalog';
-import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
+import { computeTalmudLayout, talmudId, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
-import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
+import {
+  HADRAN_RING_COLOR,
+  SEARCH_KEEPS_BASE,
+  SEDARIM,
+  SEDER_LABEL_SIZE,
+  TRACTATE_TAB,
+} from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
@@ -20,6 +26,7 @@ import {
   STRUCTURE_FILE,
   amudIndex,
   englishFile,
+  hadranLines,
   structureFrom,
   textsFile,
   type TalmudTractateEnglish,
@@ -66,6 +73,11 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
     const structure = structureFrom(loaded);
     const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
     const laid = computeTalmudLayout(structure);
+    const hadrans = new Set(
+      structure.tractates.flatMap((t) =>
+        hadranLines(t).map((line) => talmudId({ tractate: t.name, ...line })),
+      ),
+    );
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
     /** Where a segment is in its tractate's files, which list segments by amud. */
@@ -88,7 +100,9 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         return overhang > 0 ? { ...camera, x: camera.x + overhang } : camera;
       },
 
-      baseColor: (item) => mishnahOrGemaraColor(structure, item),
+      baseColor: (item) =>
+        hadrans.has(item.id) ? MAP_BACKGROUND : mishnahOrGemaraColor(structure, item),
+      baseRing: (item) => (hadrans.has(item.id) ? HADRAN_RING_COLOR : null),
       searchKeepsBase: SEARCH_KEEPS_BASE,
 
       labels(container) {
