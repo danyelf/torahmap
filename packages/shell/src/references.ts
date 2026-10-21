@@ -1,7 +1,7 @@
 // What every text's reference reader shares: breaking what was typed into
 // tokens, and finding which book, tractate or part the tokens begin by naming.
 
-import { foldFinalLetters, withoutPointsOrGeresh } from '@torahmap/hebrew';
+import { foldFinalLetters, hebrewNumber, withoutPointsOrGeresh } from '@torahmap/hebrew';
 
 /** A run of letters or of digits, and the full stop or colon right after it, if any. */
 export interface Token {
@@ -41,6 +41,12 @@ export function referenceTokens(typed: string): Token[] {
 }
 
 const isDigit = (char: string) => char >= '0' && char <= '9';
+
+/** A token's number, in digits or Hebrew letters; null for anything else. */
+export function numberIn(token: Token): number | null {
+  if (/^\d+$/.test(token.text)) return Number(token.text);
+  return hebrewNumber(token.text);
+}
 
 const ROMAN: Record<string, string> = { i: '1', ii: '2', iii: '3' };
 

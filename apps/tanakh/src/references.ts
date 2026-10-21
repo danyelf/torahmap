@@ -1,11 +1,11 @@
 // Reads a reference to the Tanakh, such as "I Samuel 3:17" or שמואל א ג:יז.
 
-import { hebrewNumber } from '@torahmap/hebrew';
 import { verseId } from '@torahmap/link/tanakh';
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
 import {
   nameCompleter,
   nameReader,
+  numberIn,
   RANGE,
   referenceTokens,
   type Token,
@@ -66,12 +66,6 @@ const FILLER = new Set([
   'פסוק',
   'פסוקים',
 ]);
-
-/** A token's number, in digits or Hebrew letters; null for anything else. */
-export function numberIn(token: Token): number | null {
-  if (/^\d+$/.test(token.text)) return Number(token.text);
-  return hebrewNumber(token.text);
-}
 
 type Place = { chapter: number; verse?: number };
 

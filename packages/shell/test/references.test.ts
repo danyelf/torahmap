@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { nameCompleter, nameReader, referenceTokens, type Token } from '../src/references.ts';
+import {
+  nameCompleter,
+  nameReader,
+  numberIn,
+  referenceTokens,
+  type Token,
+} from '../src/references.ts';
 
 const texts = (tokens: Token[]) => tokens.map((t) => t.text);
 
@@ -216,5 +222,17 @@ describe('nameCompleter', () => {
     );
     expect(many('bo').length).toBeLessThan(20);
     expect(many('bo').length).toBeGreaterThan(1);
+  });
+});
+
+describe('numberIn', () => {
+  it('reads a token written in digits or in Hebrew letters', () => {
+    expect(numberIn({ text: '17', mark: '' })).toBe(17);
+    expect(numberIn({ text: 'יז', mark: ':' })).toBe(17);
+  });
+
+  it('reads nothing from a word', () => {
+    expect(numberIn({ text: 'a', mark: '' })).toBeNull();
+    expect(numberIn({ text: 'זי', mark: '' })).toBeNull();
   });
 });

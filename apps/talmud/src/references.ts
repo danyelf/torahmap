@@ -1,10 +1,10 @@
 // Reads a reference to the Talmud, such as "Berakhot 3b:4" or ברכות ג:.
 
-import { hebrewNumber } from '@torahmap/hebrew';
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
 import {
   nameCompleter,
   nameReader,
+  numberIn,
   referenceTokens,
   type Token,
 } from '@torahmap/shell/references.ts';
@@ -53,7 +53,7 @@ function placeIn(tokens: readonly Token[]): Place | null {
   const [first, ...rest] = tokens;
   if (!first) return null;
   const latin = /^\d+$/.test(first.text);
-  const daf = latin ? Number(first.text) : hebrewNumber(first.text);
+  const daf = numberIn(first);
   if (daf === null) return null;
 
   let side = latin ? undefined : MARKED[first.mark];
@@ -63,7 +63,7 @@ function placeIn(tokens: readonly Token[]): Place | null {
   }
   if (rest.length === 0) return { daf, side };
   if (!side || rest.length > 1) return null;
-  const segment = /^\d+$/.test(rest[0].text) ? Number(rest[0].text) : hebrewNumber(rest[0].text);
+  const segment = numberIn(rest[0]);
   return segment === null ? null : { daf, side, segment };
 }
 
