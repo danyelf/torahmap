@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
-  byNames,
   eachWord,
   nameTable,
   numberIn,
@@ -191,16 +190,5 @@ describe('referenceReader', () => {
 
   it('completes from the same names it reads', () => {
     expect(reader.complete('sou')).toEqual(['South', 'Southampton']);
-  });
-});
-
-describe('byNames', () => {
-  it('names each item by its name, its Hebrew name and any others given for it', () => {
-    const genesis = { name: 'Genesis', hebrewName: 'בראשית' };
-    const exodus = { name: 'Exodus', hebrewName: 'שמות' };
-    expect(byNames([genesis, exodus], { Exodus: ['Shemot'] })).toEqual([
-      { key: genesis, names: ['Genesis', 'בראשית'] },
-      { key: exodus, names: ['Exodus', 'שמות', 'Shemot'] },
-    ]);
   });
 });

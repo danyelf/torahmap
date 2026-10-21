@@ -138,17 +138,6 @@ export function nameTable<K>(
   };
 }
 
-/** Each of `items`, named by its name, its name in Hebrew and any `others` listed under its name. */
-export function byNames<T extends { name: string; hebrewName: string }>(
-  items: readonly T[],
-  others: Readonly<Record<string, readonly string[]>>,
-): Named<T>[] {
-  return items.map((item) => ({
-    key: item,
-    names: [item.name, item.hebrewName, ...(others[item.name] ?? [])],
-  }));
-}
-
 /** How a text reads a reference: what one may begin by naming, and what may follow the name. */
 export interface Reading<K> {
   named: readonly Named<K>[];

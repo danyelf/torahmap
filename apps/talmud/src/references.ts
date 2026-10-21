@@ -2,13 +2,7 @@
 
 import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
-import {
-  byNames,
-  eachWord,
-  numberIn,
-  referenceReader,
-  type Token,
-} from '@torahmap/shell/references.ts';
+import { eachWord, numberIn, referenceReader, type Token } from '@torahmap/shell/references.ts';
 import type { TalmudAmud } from './data.ts';
 import { talmudId, talmudRef } from './layout.ts';
 import type { TalmudIdentity } from './types.ts';
@@ -96,7 +90,10 @@ function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
 export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<GoTo, 'examples'> {
   return referenceReader({
-    named: byNames(tractates, OTHER_NAMES),
+    named: tractates.map((tractate) => ({
+      key: tractate,
+      names: [tractate.name, tractate.hebrewName, ...(OTHER_NAMES[tractate.name] ?? [])],
+    })),
     folds: FOLDS,
     filler: FILLER,
     place: placeIn,
