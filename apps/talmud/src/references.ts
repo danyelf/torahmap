@@ -9,9 +9,11 @@ import {
   referenceReader,
   type Token,
 } from '@torahmap/shell/references.ts';
-import { talmudId } from './layout.ts';
+import type { TalmudAmud } from './data.ts';
+import { talmudId, talmudRef } from './layout.ts';
+import type { TalmudIdentity } from './types.ts';
 
-type Side = 'a' | 'b';
+type Side = TalmudAmud['amud'];
 
 /** References offered under the Go to box, to try. */
 export const EXAMPLES = ['Berakhot 17a'];
@@ -20,7 +22,7 @@ export const EXAMPLES = ['Berakhot 17a'];
 export interface ReferencedTractate {
   name: string;
   hebrewName: string;
-  amudim: readonly { daf: number; amud: Side; segmentCount: number }[];
+  amudim: readonly Pick<TalmudAmud, 'daf' | 'amud' | 'segmentCount'>[];
 }
 
 // The abbreviations readers write tractates as, which are not the start of their names, and
@@ -76,19 +78,20 @@ function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null 
   const place = rest.length === 0 ? null : pageIn(rest);
   if (rest.length > 0 && !place) return null;
 
-  const ids: string[] = [];
+  const found: TalmudIdentity[] = [];
   for (const { daf, amud, segmentCount } of tractate.amudim) {
     if (place && (daf !== place.daf || (place.side && amud !== place.side))) continue;
     for (let segment = 1; segment <= segmentCount; segment++) {
       if (place?.segment !== undefined && segment !== place.segment) continue;
-      ids.push(talmudId({ tractate: tractate.name, daf, amud, segment }));
+      found.push({ tractate: tractate.name, daf, amud, segment });
     }
   }
-  if (ids.length === 0) return null;
+  if (found.length === 0) return null;
 
+  const ids = found.map(talmudId);
+  if (place?.segment !== undefined) return { ref: talmudRef(found[0]), ids };
   const page = place ? ` ${place.daf}${place.side ?? ''}` : '';
-  const segment = place?.segment !== undefined ? `:${place.segment}` : '';
-  return { ref: `${tractate.name}${page}${segment}`, ids };
+  return { ref: `${tractate.name}${page}`, ids };
 }
 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
