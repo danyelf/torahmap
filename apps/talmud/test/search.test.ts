@@ -117,7 +117,7 @@ describe('the Talmud’s search in English', () => {
 
   it('asks for the English file at once only for an English term', () => {
     const files = (search: string) =>
-      talmudSearch.filesFor!(talmudSearch.settingsFromUrl!({ search }));
+      talmudSearch.filesNow!(talmudSearch.settingsFromUrl!({ search }));
     expect(files('רבי')).toEqual([]);
     expect(files('a')).toEqual([]);
     expect(files('rabbi')).toEqual([SEARCH_ENGLISH_FILE]);

@@ -66,7 +66,7 @@ const search = createTermSearch<TalmudLayoutItem, TalmudSearchData>({
   languages: LANGUAGES,
   data: { structure: STRUCTURE_FILE, text: SEARCH_FILE, english: optional(SEARCH_ENGLISH_FILE) },
   index: ({ structure, text, english: translation }) => indexes(structure)(text, translation),
-  filesFor: (settings) =>
+  filesNow: (settings) =>
     activeTerms(settings).some((term) => languageOf(LANGUAGES, term) === english)
       ? [SEARCH_ENGLISH_FILE]
       : [],
