@@ -561,6 +561,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
+    if (opened && frame.open === 'goto') goToPanel.redraw();
     if (opened && frame.open === 'about') {
       aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages, text.goTo.examples);
       bindLanguageChoice(aboutPanel, refreshPopup);
@@ -1598,7 +1599,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stale.searchPanel) drawSearchPanel(false);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
     if (stale.popup) refreshPopupAfterDownload();
-    goToPanel.redraw();
+    if (frame.open === 'goto') goToPanel.redraw();
   }
 
   function fileFailed(): void {

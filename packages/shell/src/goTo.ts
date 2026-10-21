@@ -69,13 +69,16 @@ export function bindGoTo(
     else box.removeAttribute('aria-activedescendant');
   }
 
+  /** The place the answer offers, if any. */
+  let found: Reference | null = null;
+
   function drawAnswer(): void {
     const typed = box.value;
+    found = typed.trim() ? goTo.read(typed) : null;
     if (!typed.trim()) {
       answer.replaceChildren();
       return;
     }
-    const found = goTo.read(typed);
     if (!found) {
       // A name still being typed is not yet a miss.
       answer.innerHTML = completions.length ? '' : `<p class="goto-none">Not found</p>`;
@@ -103,7 +106,6 @@ export function bindGoTo(
   }
 
   function take(): void {
-    const found = goTo.read(box.value);
     if (found) hooks.take(found);
   }
 

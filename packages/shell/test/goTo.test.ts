@@ -141,3 +141,20 @@ describe('the Go to panel', () => {
     expect(box.value).toBe('E');
   });
 });
+
+describe('the Go to panel, taking an offer', () => {
+  it('takes the place it offered, without reading the box again', () => {
+    const read = vi.fn(goTo.read);
+    const panel = document.createElement('div');
+    panel.innerHTML = goToPanelHtml(goTo.examples);
+    const take = vi.fn();
+    bindGoTo(panel, { ...goTo, read }, { take, quote: () => null });
+    const box = panel.querySelector<HTMLInputElement>(`#${GO_TO_BOX_ID}`)!;
+    box.value = 'Genesis 1';
+    box.dispatchEvent(new Event('input'));
+    const reads = read.mock.calls.length;
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(take).toHaveBeenCalledWith(PLACES['genesis 1']);
+    expect(read.mock.calls.length).toBe(reads);
+  });
+});
