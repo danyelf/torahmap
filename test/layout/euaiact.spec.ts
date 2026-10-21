@@ -1,8 +1,8 @@
 // The AI Act's page, at /euaiact/: it draws, keeps the layout rules the Tanakh's page keeps, and a
 // pinned square shows its text.
 import { expect, test, type Page } from '@playwright/test';
-import { ACT_STATES, CHROME } from './app.ts';
-import { checkLayout } from './check.ts';
+import { ACT_STATES } from './app.ts';
+import { testStates } from './check.ts';
 import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
 import { canvasShot, desktopOnly, openMap, viaMenu } from '../browser/page.ts';
 import {
@@ -21,17 +21,7 @@ import {
 } from '@torahmap/euaiact/constants.ts';
 import { EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
 
-for (const state of ACT_STATES) {
-  test(state.name, async ({ page }, info) => {
-    const errors = await openMap(page, state.link, ACT);
-    await state.then?.(page);
-    const shot = info.outputPath('screen.png');
-    await page.screenshot({ path: shot });
-    await info.attach('layout', { path: shot, contentType: 'image/png' });
-    await checkLayout(page, state, CHROME);
-    expect(errors, 'page errors').toEqual([]);
-  });
-}
+testStates(ACT_STATES, ACT);
 
 test("a pinned square's popup shows its text, in English, linked to EUR-Lex", async ({ page }) => {
   desktopAndPhoneOnly();

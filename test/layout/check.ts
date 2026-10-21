@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { State } from './app.ts';
+import { CHROME, type State } from './app.ts';
 import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
 import { KNOWN } from './known.ts';
-import { boxes, clippedText, shown } from './page.ts';
+import { asReturningReader, boxes, clippedText, openMap, shown } from './page.ts';
 
 /** The selectors the rules measure, which belong to the interface being tested. */
 export interface Chrome {
@@ -82,5 +82,22 @@ export async function checkLayout(page: Page, state: State, chrome: Chrome): Pro
         .soft(violations, `${key} no longer measures what known.ts records: update or remove it`)
         .toEqual(known.violations);
     }
+  }
+}
+
+/** A test for each of `states` on the page at `path`: open it, screenshot it, and check its layout. */
+export function testStates(states: readonly State[], path = '/'): void {
+  for (const state of states) {
+    test(state.name, async ({ page }, info) => {
+      if (state.returning) await asReturningReader(page);
+      const errors = await openMap(page, state.link, path);
+      await state.then?.(page);
+      expect(errors, `page errors after opening ${state.name}`).toEqual([]);
+      const shot = info.outputPath('screen.png');
+      await page.screenshot({ path: shot });
+      await info.attach('layout', { path: shot, contentType: 'image/png' });
+      await checkLayout(page, state, CHROME);
+      expect(errors, 'page errors while measuring').toEqual([]);
+    });
   }
 }
