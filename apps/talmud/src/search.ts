@@ -1,7 +1,6 @@
 // The Talmud's search: @torahmap/search's term search over every segment, in
 // the Davidson edition, which spells abbreviations out. A whole word may carry
-// the letters Hebrew and Aramaic attach in front of one. English searches the
-// Davidson translation's bold, its literal translation.
+// the letters Hebrew and Aramaic attach in front of one.
 import { memoByValue, memoByValueAndKey } from '@torahmap/utils';
 import { hebrew } from '@torahmap/hebrew';
 import { TERM_SEARCH_PARAMS } from '@torahmap/link';
