@@ -1311,11 +1311,24 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
       return;
     }
+    const close = target.closest('.map-legend-close')?.closest<HTMLElement>('.map-legend-row');
+    if (close) return turnOff(close.dataset.panel);
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
-    const chooser = target.closest<HTMLElement>('.map-legend-row');
+    const chooser = target.closest('.map-legend-open')?.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
+  }
+
+  /** A legend card's ×: what the search panel's Clear, or the overlay's None, does. */
+  function turnOff(panel: string | undefined): void {
+    takeOver('takeover');
+    if (panel === 'search') changeSearch(() => searchTool.cleared());
+    else setOverlay(NO_OVERLAY);
+    // The × went with its row.
+    (
+      mapLegend.querySelector<HTMLElement>('.map-legend-row:not([hidden]) button') ?? menuToggle
+    ).focus();
   }
 
   /** A pan's debounced address write may not have landed yet, so it is brought current first. */

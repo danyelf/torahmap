@@ -236,7 +236,9 @@ async function setPanel(page: Page, sceneId: string, want: PanelState): Promise<
     const control =
       panel === 'closed'
         ? document.querySelector<HTMLElement>('.panel-close')
-        : document.querySelector<HTMLElement>(`.map-legend-row[data-panel="${panel}"]`);
+        : document.querySelector<HTMLElement>(
+            `.map-legend-row[data-panel="${panel}"] .map-legend-open`,
+          );
     control?.click();
   }, want);
   await page.clock.runFor(50);

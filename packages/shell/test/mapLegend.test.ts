@@ -7,8 +7,9 @@ function legend(): HTMLElement {
     ['search', 'overlay']
       .map(
         (panel) =>
-          `<button class="map-legend-row" data-panel="${panel}" hidden>` +
-          `<span class="map-legend-summary"></span></button>`,
+          `<div class="map-legend-row" data-panel="${panel}" hidden>` +
+          `<button class="map-legend-open"><span class="map-legend-summary"></span></button>` +
+          `<button class="map-legend-close"></button></div>`,
       )
       .join('') + '<div class="map-legend-warning" hidden></div>';
   return div;
@@ -45,6 +46,15 @@ describe('showLegend', () => {
     showLegend(el, [SEARCH, OVERLAY], []);
     showLegend(el, [OVERLAY], []);
     expect(shownRows(el)).toEqual(['overlay']);
+  });
+
+  it("names the overlay's × after the overlay it turns off", () => {
+    const el = legend();
+    const close = el.querySelector('[data-panel="overlay"] .map-legend-close')!;
+    showLegend(el, [OVERLAY], []);
+    expect(close.getAttribute('aria-label')).toContain('Commentary');
+    showLegend(el, [{ ...OVERLAY, name: 'Haftarah' }], []);
+    expect(close.getAttribute('aria-label')).toContain('Haftarah');
   });
 
   it('hides the card with neither on', () => {

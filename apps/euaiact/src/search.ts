@@ -43,6 +43,7 @@ export const actSearch: SearchTool<ActItem, ActSearchSettings, ActSearchData> = 
   data: { texts: TEXTS_FILE },
 
   isSearching: (settings) => wordMatcher(wordIn(settings)) !== null,
+  cleared: () => ({ text: '' }),
 
   telemetry: { readerChanged() {}, replaced() {}, dataLoaded() {} },
 

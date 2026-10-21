@@ -37,9 +37,12 @@ export async function viaMenu(page: Page, action: string): Promise<void> {
 
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 
-const ABRAHAM = encodeURIComponent('אברם,אברהם');
+export const ABRAHAM = encodeURIComponent('אברם,אברהם');
 
-const BOTH_ROWS = ['.map-legend-row[data-panel="search"]', '.map-legend-row[data-panel="overlay"]'];
+const BOTH_ROWS = ['search', 'overlay'].flatMap((panel) => [
+  `.map-legend-row[data-panel="${panel}"]`,
+  `.map-legend-row[data-panel="${panel}"] .map-legend-close`,
+]);
 
 export const STATES: State[] = [
   { name: 'story-opening', link: 'story=tour&stop=intro', shown: [stop('intro')] },

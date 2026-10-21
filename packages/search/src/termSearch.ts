@@ -120,6 +120,9 @@ export function canAddTerm(settings: TermSettings): boolean {
   return typedTerms(settings).length < MAX_TERMS;
 }
 
+/** A search on nothing, with one empty box to type in. */
+const cleared = (): TermSettings => ({ terms: addTerm([], '') });
+
 /** Whether the search has a term it searches on. */
 export function isSearching(settings: TermSettings): boolean {
   return activeTerms(settings).length > 0;
@@ -378,6 +381,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     data: spec.data,
 
     isSearching,
+    cleared,
     ...(spec.filesFor ? { filesFor: spec.filesFor } : {}),
     telemetry: spec.telemetry?.({ hitCount, modeOf }) ?? NO_TELEMETRY,
 
@@ -444,9 +448,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         searchHitCaption = container.querySelector('#search-hit-caption');
         searchResults = container.querySelector('#search-results');
         searchClear = container.querySelector('#search-clear-all');
-        searchClear?.addEventListener('click', () =>
-          requestChange?.(() => ({ terms: addTerm([], '') })),
-        );
+        searchClear?.addEventListener('click', () => requestChange?.(cleared));
 
         rows?.unmount();
         // Nothing is built while no word is typed.

@@ -13,6 +13,8 @@ export type SearchTool<T, S = unknown, D = unknown> = Overlay<T, S, D> & SearchM
 interface SearchMembers<S, D> {
   /** Whether `settings` search on anything. While not, search colours nothing. */
   isSearching(settings: S): boolean;
+  /** Settings that search on nothing: what the panel's Clear and the legend's × set. */
+  cleared(): S;
   /** Files `settings` search, to download at once rather than in their turn. */
   filesFor?(settings: S): readonly string[];
   /** Told what happens to the search, for telemetry. */

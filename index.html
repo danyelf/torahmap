@@ -89,14 +89,20 @@
     </div>
 
     <div id="map-legend" hidden>
-      <button class="map-legend-row" type="button" data-panel="search" hidden>
-        <span class="map-legend-summary"></span>
-        <span class="chevron" aria-hidden="true"></span>
-      </button>
-      <button class="map-legend-row" type="button" data-panel="overlay" hidden>
-        <span class="map-legend-summary"></span>
-        <span class="chevron" aria-hidden="true"></span>
-      </button>
+      <div class="map-legend-row" data-panel="search" hidden>
+        <button class="map-legend-open" type="button">
+          <span class="map-legend-summary"></span>
+          <span class="chevron" aria-hidden="true"></span>
+        </button>
+        <button class="map-legend-close control-icon" type="button">×</button>
+      </div>
+      <div class="map-legend-row" data-panel="overlay" hidden>
+        <button class="map-legend-open" type="button">
+          <span class="map-legend-summary"></span>
+          <span class="chevron" aria-hidden="true"></span>
+        </button>
+        <button class="map-legend-close control-icon" type="button">×</button>
+      </div>
       <div class="map-legend-warning" hidden></div>
     </div>
 
