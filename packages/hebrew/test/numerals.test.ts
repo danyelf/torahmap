@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hebrewNumber } from '../src/index.ts';
+import { hebrewNumber, withoutPointsOrGeresh } from '../src/index.ts';
 
 describe('hebrewNumber', () => {
   it('reads units, tens and hundreds', () => {
@@ -27,6 +27,9 @@ describe('hebrewNumber', () => {
     expect(hebrewNumber('י״ז')).toBe(17);
     expect(hebrewNumber('י"ז')).toBe(17);
     expect(hebrewNumber("ג'")).toBe(3);
+    expect(hebrewNumber('ג’')).toBe(3);
+    expect(hebrewNumber('ג‘')).toBe(3);
+    expect(hebrewNumber('ג`')).toBe(3);
   });
 
   it('ignores points', () => {
@@ -43,5 +46,13 @@ describe('hebrewNumber', () => {
     expect(hebrewNumber('17')).toBeNull();
     expect(hebrewNumber('יz')).toBeNull();
     expect(hebrewNumber('״')).toBeNull();
+  });
+});
+
+describe('withoutPointsOrGeresh', () => {
+  it('drops points, geresh, gershayim and the quotes typed for them, and nothing else', () => {
+    expect(withoutPointsOrGeresh('שְׁמ֑וֹת י״ז')).toBe('שמות יז');
+    expect(withoutPointsOrGeresh(`ע'א ע"ב ג’ ג‘ ג\``)).toBe('עא עב ג ג ג');
+    expect(withoutPointsOrGeresh('Ta-anit 2:3')).toBe('Ta-anit 2:3');
   });
 });

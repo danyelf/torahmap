@@ -22,6 +22,11 @@ const FINAL_FORM_MAP: Record<string, string> = {
   'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
 };
 
+/** `text` with its final letters written as their plain ones. */
+export function foldFinalLetters(text: string): string {
+  return text.replace(/[ךםןףץ]/g, (char) => FINAL_FORM_MAP[char]);
+}
+
 /**
  * The spelling a word is indexed and searched under: points and accents gone,
  * final forms folded to their plain letters, and every separator written as a

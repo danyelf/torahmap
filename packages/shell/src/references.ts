@@ -1,7 +1,7 @@
 // What every text's reference reader shares: breaking what was typed into
 // tokens, and finding which book, tractate or part the tokens begin by naming.
 
-import { isNikkud } from '@torahmap/hebrew';
+import { foldFinalLetters, withoutPointsOrGeresh } from '@torahmap/hebrew';
 
 /** A run of letters or of digits, and the full stop or colon right after it, if any. */
 export interface Token {
@@ -12,16 +12,13 @@ export interface Token {
 /** The token a dash becomes, between the two ends of a range. */
 export const RANGE = '-';
 
-// Dropped inside a token: geresh, gershayim and the quotes typed for them.
-const JOINERS = /['"`’‘׳״]/g;
 const SEPARATOR = /[\s,;()[\]/\\]/;
 const DASH = /[-–—־]/;
 
 /** `typed` lower-cased and broken into tokens, splitting where digits meet letters. */
 export function referenceTokens(typed: string): Token[] {
-  const clean = [...typed.normalize('NFC').toLowerCase().replace(JOINERS, '')]
-    .filter((char) => !isNikkud(char.charCodeAt(0)))
-    .join('');
+  // Geresh and gershayim join the letters either side, as in ע״א.
+  const clean = withoutPointsOrGeresh(typed.normalize('NFC').toLowerCase());
   const tokens: Token[] = [];
   let run = '';
   const end = (mark: Token['mark'] = '') => {
@@ -45,11 +42,9 @@ export function referenceTokens(typed: string): Token[] {
 
 const isDigit = (char: string) => char >= '0' && char <= '9';
 
-const FINAL_LETTERS: Record<string, string> = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
 const ROMAN: Record<string, string> = { i: '1', ii: '2', iii: '3' };
 
-/** A token's letters, final Hebrew letters written as plain ones. */
-const plain = (text: string) => text.replace(/[ךםןףץ]/g, (c) => FINAL_LETTERS[c]);
+const plain = foldFinalLetters;
 
 /**
  * A token as it sounds rather than as it is spelled: the transliterations of

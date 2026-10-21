@@ -1,6 +1,6 @@
 // Numbers written in Hebrew letters, as chapters, verses and dapim are.
 
-import { isNikkud } from './letters.ts';
+import { stripNikkud } from './letters.ts';
 
 const VALUES: Record<string, number> = {
   'א': 1,
@@ -33,7 +33,12 @@ const VALUES: Record<string, number> = {
 };
 
 // Geresh and gershayim, and the quotes typed for them.
-const MARKS = new Set(['׳', '״', "'", '"', '’', '`']);
+const GERESH = /['"`’‘׳״]/g;
+
+/** `text` without points, geresh, gershayim or the quotes typed for them. */
+export function withoutPointsOrGeresh(text: string): string {
+  return stripNikkud(text).replace(GERESH, '');
+}
 
 /**
  * The number Hebrew letters write, such as יז for 17; null for anything else.
@@ -43,8 +48,7 @@ const MARKS = new Set(['׳', '״', "'", '"', '’', '`']);
 export function hebrewNumber(text: string): number | null {
   let total = 0;
   let last = Infinity;
-  for (const char of text) {
-    if (MARKS.has(char) || isNikkud(char.charCodeAt(0))) continue;
+  for (const char of withoutPointsOrGeresh(text)) {
     const value = VALUES[char];
     if (value === undefined || value > last) return null;
     total += value;
