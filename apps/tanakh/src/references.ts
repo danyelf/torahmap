@@ -3,8 +3,7 @@
 import { verseId } from '@torahmap/link/tanakh';
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
 import {
-  nameCompleter,
-  nameReader,
+  nameTable,
   numberIn,
   RANGE,
   referenceTokens,
@@ -103,10 +102,10 @@ export function verseReader(books: readonly ReferencedBook[]): ReferenceReader {
     key: b.name,
     names: [b.name, b.hebrewName, ...(OTHER_NAMES[b.name] ?? [])],
   }));
-  const readName = nameReader(entries);
+  const names = nameTable(entries);
 
   function read(typed: string): Reference | null {
-    const named = readName(referenceTokens(typed));
+    const named = names.read(referenceTokens(typed));
     if (!named) return null;
     const book = byName.get(named.key)!;
     const rest = named.rest.filter((t) => !FILLER.has(t.text));
@@ -143,5 +142,5 @@ export function verseReader(books: readonly ReferencedBook[]): ReferenceReader {
     return { ref: `${book.name} ${written(from)}${end}`, ids };
   }
 
-  return { read, complete: nameCompleter(entries) };
+  return { read, complete: names.complete };
 }

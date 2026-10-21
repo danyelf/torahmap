@@ -1,13 +1,7 @@
 // Reads a reference to the Talmud, such as "Berakhot 3b:4" or ברכות ג:.
 
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
-import {
-  nameCompleter,
-  nameReader,
-  numberIn,
-  referenceTokens,
-  type Token,
-} from '@torahmap/shell/references.ts';
+import { nameTable, numberIn, referenceTokens, type Token } from '@torahmap/shell/references.ts';
 import { talmudId } from './layout.ts';
 
 type Side = 'a' | 'b';
@@ -74,10 +68,10 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Referen
     key: t.name,
     names: [t.name, t.hebrewName, ...(OTHER_NAMES[t.name] ?? [])],
   }));
-  const readName = nameReader(entries);
+  const names = nameTable(entries);
 
   function read(typed: string): Reference | null {
-    const named = readName(referenceTokens(typed));
+    const named = names.read(referenceTokens(typed));
     if (!named) return null;
     const tractate = byName.get(named.key)!;
     const rest = named.rest.filter((t) => !FILLER.has(t.text));
@@ -99,5 +93,5 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Referen
     return { ref: `${tractate.name}${page}${segment}`, ids };
   }
 
-  return { read, complete: nameCompleter(entries) };
+  return { read, complete: names.complete };
 }

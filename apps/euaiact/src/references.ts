@@ -1,13 +1,7 @@
 // Reads a reference to the Act, such as "Article 5(1)(h)", "Recital 12" or "Annex 3".
 
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
-import {
-  nameCompleter,
-  nameReader,
-  referenceTokens,
-  type Named,
-  type Token,
-} from '@torahmap/shell/references.ts';
+import { nameTable, referenceTokens, type Named, type Token } from '@torahmap/shell/references.ts';
 
 /** References offered under the Go to box, to try. */
 export const EXAMPLES = ['Article 7', 'Annex III'];
@@ -19,7 +13,7 @@ const PARTS: Named<Part>[] = [
   { key: 'recital', names: ['Recital', 'Recitals', 'Rec'] },
   { key: 'annex', names: ['Annex', 'Annexes', 'Anx'] },
 ];
-const readPart = nameReader(PARTS);
+const parts = nameTable(PARTS);
 
 const ROMAN: [number, string][] = [
   [100, 'C'],
@@ -87,10 +81,10 @@ export function provisionReader(ids: readonly string[]): ReferenceReader {
   return {
     read(typed) {
       const tokens = referenceTokens(typed);
-      const named = readPart(tokens);
+      const named = parts.read(tokens);
       if (named) return read(named.key, named.rest);
       return read('article', tokens);
     },
-    complete: nameCompleter(PARTS),
+    complete: parts.complete,
   };
 }

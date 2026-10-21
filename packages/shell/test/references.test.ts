@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  nameCompleter,
-  nameReader,
-  numberIn,
-  referenceTokens,
-  type Token,
-} from '../src/references.ts';
+import { nameTable, numberIn, referenceTokens, type Token } from '../src/references.ts';
 
 const texts = (tokens: Token[]) => tokens.map((t) => t.text);
 
@@ -52,8 +46,8 @@ describe('referenceTokens', () => {
   });
 });
 
-describe('nameReader', () => {
-  const books = nameReader([
+describe('nameTable.read', () => {
+  const books = nameTable([
     { key: 'Genesis', names: ['Genesis', 'בראשית', 'Bereshit'] },
     { key: 'Exodus', names: ['Exodus', 'שמות'] },
     { key: 'Joshua', names: ['Joshua', 'יהושע'] },
@@ -67,7 +61,7 @@ describe('nameReader', () => {
     { key: 'I Chronicles', names: ['I Chronicles', 'דברי הימים א'] },
   ]);
   const read = (typed: string) => {
-    const found = books(referenceTokens(typed));
+    const found = books.read(referenceTokens(typed));
     return found && { key: found.key, rest: texts(found.rest) };
   };
 
@@ -129,7 +123,7 @@ describe('nameReader', () => {
   });
 
   describe('spellings', () => {
-    const tractates = nameReader([
+    const tractates = nameTable([
       { key: 'Berakhot', names: ['Berakhot', 'ברכות'] },
       { key: 'Shabbat', names: ['Shabbat', 'שבת'] },
       { key: 'Pesachim', names: ['Pesachim', 'פסחים'] },
@@ -142,7 +136,7 @@ describe('nameReader', () => {
       { key: 'Megillah', names: ['Megillah', 'מגילה'] },
       { key: 'Taanit', names: ['Taanit', 'תענית'] },
     ]);
-    const key = (typed: string) => tractates(referenceTokens(typed))?.key ?? null;
+    const key = (typed: string) => tractates.read(referenceTokens(typed))?.key ?? null;
 
     it('reads a name spelled as it is often transliterated', () => {
       expect(key('Brachot')).toBe('Berakhot');
@@ -177,8 +171,8 @@ describe('nameReader', () => {
   });
 });
 
-describe('nameCompleter', () => {
-  const complete = nameCompleter([
+describe('nameTable.complete', () => {
+  const { complete } = nameTable([
     { key: 'Exodus', names: ['Exodus', 'שמות', 'Shemot'] },
     { key: 'Joshua', names: ['Joshua', 'יהושע'] },
     { key: 'Job', names: ['Job', 'איוב'] },
@@ -202,6 +196,8 @@ describe('nameCompleter', () => {
   it('reads a book number as a digit or a Roman numeral', () => {
     expect(complete('1 sa')).toEqual(['I Samuel']);
     expect(complete('II S')).toEqual(['II Samuel']);
+    // As reading does, a Roman numeral is read as the number of a book.
+    expect(complete('I')).toEqual(['I Samuel']);
   });
 
   it('offers nothing once a name is typed in full', () => {
@@ -217,9 +213,9 @@ describe('nameCompleter', () => {
   });
 
   it('offers at most a handful', () => {
-    const many = nameCompleter(
+    const many = nameTable(
       Array.from({ length: 20 }, (_, i) => ({ key: i, names: [`Book${i}`] })),
-    );
+    ).complete;
     expect(many('bo').length).toBeLessThan(20);
     expect(many('bo').length).toBeGreaterThan(1);
   });

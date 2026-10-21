@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { GoTo, Reference } from '../src/app/text.ts';
-import { nameCompleter } from '../src/references.ts';
+import { nameTable } from '../src/references.ts';
 import { bindGoTo, goToPanelHtml, GO_TO_BOX_ID } from '../src/goTo.ts';
 
 const PLACES: Record<string, Reference> = {
@@ -11,11 +11,11 @@ const PLACES: Record<string, Reference> = {
 const goTo: GoTo = {
   examples: ['Genesis 2:2', 'שמות כב'],
   read: (typed) => PLACES[typed.trim().toLowerCase()] ?? null,
-  complete: nameCompleter([
+  complete: nameTable([
     { key: 'Genesis', names: ['Genesis'] },
     { key: 'Exodus', names: ['Exodus'] },
     { key: 'Ezra', names: ['Ezra'] },
-  ]),
+  ]).complete,
 };
 
 function open() {

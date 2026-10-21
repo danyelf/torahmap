@@ -72,9 +72,7 @@ function skeleton(text: string): string {
 
 /** Tokens written as one name, a leading Roman numeral read as its number. */
 function joined(tokens: readonly string[], fold: (text: string) => string): string {
-  return tokens
-    .map((text, i) => (i === 0 && tokens.length > 1 && ROMAN[text] ? ROMAN[text] : fold(text)))
-    .join('');
+  return tokens.map((text, i) => (i === 0 && ROMAN[text] ? ROMAN[text] : fold(text))).join('');
 }
 
 const FOLDS = [plain, skeleton];
@@ -85,76 +83,74 @@ export interface Named<K> {
   names: readonly string[];
 }
 
+const COMPLETIONS = 6;
+
 /**
- * Reads which entry tokens begin by naming, and the tokens after its name.
+ * Every name of `entries`, written once as each fold writes it, to read and
+ * to complete from.
  *
- * The longest run of tokens that names something wins, so the א of שמואל א
- * is part of the book rather than its chapter. A name is matched as written,
- * then as it sounds; at each, a whole name beats the start of one, and the
- * start of several names is no name.
+ * Reading takes the longest run of tokens that names something, so the א of
+ * שמואל א is part of the book rather than its chapter. A name is matched as
+ * written, then as it sounds; at each, a whole name beats the start of one,
+ * and the start of several names is no name. Completing goes by names as
+ * written.
  */
-export function nameReader<K>(
-  entries: readonly Named<K>[],
-): (tokens: readonly Token[]) => { key: K; rest: Token[] } | null {
-  const folded = FOLDS.map((fold) =>
-    entries.map(({ key, names }) => ({
-      key,
-      names: names.map((name) => joined(texts(referenceTokens(name)), fold)),
-    })),
-  );
+export function nameTable<K>(entries: readonly Named<K>[]): {
+  /** The entry `tokens` begin by naming, and the tokens after its name. */
+  read(tokens: readonly Token[]): { key: K; rest: Token[] } | null;
+  /** The names `typed` is the start of, one per entry and at most a handful. */
+  complete(typed: string): string[];
+} {
+  const table = entries.map(({ key, names }) => ({
+    key,
+    names: names.map((name) => {
+      const words = texts(referenceTokens(name));
+      return { name, folds: FOLDS.map((fold) => joined(words, fold)) };
+    }),
+  }));
+
+  /** The keys with a name that, as fold `i` writes it, passes `test`. */
+  const keysWhere = (i: number, test: (name: string) => boolean): K[] => [
+    ...new Set(table.filter((e) => e.names.some((n) => test(n.folds[i]))).map((e) => e.key)),
+  ];
 
   function named(words: readonly string[]): K | null {
     for (const [i, fold] of FOLDS.entries()) {
       const typed = joined(words, fold);
-      const whole = keysWhere(folded[i], (name) => name === typed);
+      const whole = keysWhere(i, (name) => name === typed);
       if (whole.length === 1) return whole[0];
-      const starts = keysWhere(folded[i], (name) => name.startsWith(typed));
+      const starts = keysWhere(i, (name) => name.startsWith(typed));
       if (starts.length === 1) return starts[0];
       if (whole.length + starts.length > 0) return null;
     }
     return null;
   }
 
-  return (tokens) => {
-    for (let k = tokens.length; k > 0; k--) {
-      const words = texts(tokens.slice(0, k));
-      if (words.includes(RANGE) || letterCount(words) < 2) continue;
-      const key = named(words);
-      if (key !== null) return { key, rest: tokens.slice(k) };
-    }
-    return null;
-  };
-}
-
-const COMPLETIONS = 6;
-
-/**
- * The names `typed` is the start of, one per entry and at most a handful, to
- * finish it with. An entry already named in full is offered no longer.
- */
-export function nameCompleter<K>(entries: readonly Named<K>[]): (typed: string) => string[] {
-  const folded = entries.map(({ names }) =>
-    names.map((name) => ({ name, fold: joined(texts(referenceTokens(name)), plain) })),
-  );
-  return (typed) => {
-    const words = texts(referenceTokens(typed));
-    if (words.length === 0) return [];
-    // A Roman numeral alone may be the start of a numbered book.
-    const roman = words.length === 1 ? ROMAN[words[0]] : undefined;
-    const starts = [joined(words, plain), ...(roman ? [roman] : [])];
-    const offered: string[] = [];
-    for (const names of folded) {
-      if (names.some(({ fold }) => fold === starts[0])) continue;
-      const hit = names.find(({ fold }) => starts.some((start) => fold.startsWith(start)));
-      if (hit) offered.push(hit.name);
-    }
-    return offered.slice(0, COMPLETIONS);
+  return {
+    read(tokens) {
+      for (let k = tokens.length; k > 0; k--) {
+        const words = texts(tokens.slice(0, k));
+        if (words.includes(RANGE) || letterCount(words) < 2) continue;
+        const key = named(words);
+        if (key !== null) return { key, rest: tokens.slice(k) };
+      }
+      return null;
+    },
+    // An entry already named in full is offered no longer.
+    complete(typed) {
+      const words = texts(referenceTokens(typed));
+      if (words.length === 0) return [];
+      const start = joined(words, FOLDS[0]);
+      const offered: string[] = [];
+      for (const { names } of table) {
+        if (names.some((n) => n.folds[0] === start)) continue;
+        const hit = names.find((n) => n.folds[0].startsWith(start));
+        if (hit) offered.push(hit.name);
+      }
+      return offered.slice(0, COMPLETIONS);
+    },
   };
 }
 
 const texts = (tokens: readonly Token[]) => tokens.map((t) => t.text);
 const letterCount = (words: readonly string[]) => words.join('').replace(/[^\p{L}]/gu, '').length;
-
-function keysWhere<K>(entries: readonly Named<K>[], test: (name: string) => boolean): K[] {
-  return [...new Set(entries.filter((e) => e.names.some(test)).map((e) => e.key))];
-}
