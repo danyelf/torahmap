@@ -14,7 +14,7 @@ import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
-import { englishText } from './english.ts';
+import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
   STRUCTURE_FILE,
@@ -123,6 +123,7 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           hebrew: file?.amudim[ai]?.[si] ?? '',
           english: english.text,
           englishStyles: english.styles,
+          englishSearched: searchedStretches(english.text, english.styles),
           link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
           hebrewLinks: (file?.citations[ai]?.[si] ?? []).map(({ start, end, verse }) => ({
             start,

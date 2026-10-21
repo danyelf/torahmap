@@ -213,3 +213,25 @@ test('/talmud, without the slash, opens the same page and keeps the link', async
   await expect(page).toHaveURL(/\/talmud\/\?at=Berakhot\.2a\.1$/);
   await expect(page.locator('#talmud-labels')).toHaveCount(1);
 });
+
+test('an English Talmud search lists what it finds, and marks the popup’s English only in bold', async ({
+  page,
+}, info) => {
+  // Berakhot 2a:1 says Shema in its bold translation and in the explanation around it.
+  const errors = await openMap(page, 'search=shema&at=Berakhot.2a.1', TALMUD);
+  await viaMenu(page, 'search');
+  await expect(page.locator('.search-result .snippet mark').first()).toBeVisible();
+  const marks = page.locator('#popup .popup-english mark');
+  await expect(marks.first()).toBeVisible();
+  const outsideBold = await marks.evaluateAll((all) =>
+    all.filter((mark) =>
+      [...mark.childNodes].some((node) => node.nodeType !== 1 || (node as Element).tagName !== 'B'),
+    ),
+  );
+  expect(outsideBold).toHaveLength(0);
+  await marks.first().scrollIntoViewIfNeeded();
+  const shot = info.outputPath('screen.png');
+  await page.screenshot({ path: shot });
+  await info.attach('layout', { path: shot, contentType: 'image/png' });
+  expect(errors).toEqual([]);
+});

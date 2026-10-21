@@ -129,7 +129,8 @@ function buildHighlightedDomFragment(
 }
 
 /**
- * Mark every stretch of `text` that one of `terms` claims.
+ * Mark every stretch of `text` that one of `terms` claims, and that lies
+ * inside one of `within` when given.
  *
  * Builds the DOM directly rather than through innerHTML. The terms are the ones
  * being searched, in search order, because a match names its term by position
@@ -140,9 +141,14 @@ export function highlightTerms(
   language: SearchLanguage,
   terms: SearchTerm[],
   matcher: TermMatcher,
+  within?: readonly TextRange[],
 ): DocumentFragment {
+  const inside = (range: TextRange) =>
+    !within || within.some((w) => w.start <= range.start && range.end <= w.end);
   const matches: Match[] = terms.flatMap((term, termIndex) =>
-    termRanges(text, language, term, matcher).map((range) => ({ ...range, termIndex })),
+    termRanges(text, language, term, matcher)
+      .filter(inside)
+      .map((range) => ({ ...range, termIndex })),
   );
 
   if (matches.length === 0) {

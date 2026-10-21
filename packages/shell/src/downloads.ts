@@ -4,15 +4,18 @@ import { dataFor, optionalFiles, requiredFiles, type Loaded } from './dataFiles.
 import type { Overlay } from './overlays/types.ts';
 import type { ColorSource } from './scrollytelling/driver.ts';
 
-/** What the first view shows: the tools it names, and the files its pinned square's popup needs, if it pins one. */
+/** What the first view shows: the tools it names, the files its pinned square's popup needs, if it pins one, and the files its search asks for at once. */
 export interface OpeningView<T> {
   tools: readonly Overlay<T>[];
   popup: readonly string[];
+  searchFiles?: readonly string[];
 }
 
-/** The files the opening view requires, its pinned square's among them. */
+/** The files the opening view requires, its pinned square's and its search's among them. */
 export function filesFirst<T>(view: OpeningView<T>): string[] {
-  return [...new Set([...view.tools.flatMap(requiredFiles), ...view.popup])];
+  return [
+    ...new Set([...view.tools.flatMap(requiredFiles), ...view.popup, ...(view.searchFiles ?? [])]),
+  ];
 }
 
 /**
@@ -84,15 +87,15 @@ export interface Stale {
 
 /**
  * What a file landing put out of date: whatever is drawn from a tool whose
- * data it changed. The map and the overlay's panel are drawn from the files a
- * tool requires; the search panel also from its optional ones, and the popup
- * from both tools' optional ones and the files its square's text is in.
+ * data it changed. The overlay's panel is drawn from the files a tool
+ * requires; the map and the search panel also from its optional ones, and the
+ * popup from both tools' optional ones and the files its square's text is in.
  */
 export function staleAfterLanding<T>(before: Loaded, after: Loaded, view: LandingView<T>): Stale {
   const drawn = (tool: Overlay<T>): boolean => changed(tool, before, after, requiredFiles(tool));
   const read = (tool: Overlay<T>): boolean => changed(tool, before, after, null);
   return {
-    map: view.map.some(drawn) ? view.source : null,
+    map: view.map.some(read) ? view.source : null,
     overlayPanel: view.panel !== null && drawn(view.panel),
     searchPanel: read(view.search),
     popup:

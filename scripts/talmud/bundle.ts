@@ -14,6 +14,7 @@ import {
   englishFile,
   textsFile,
   SEARCH_FILE,
+  SEARCH_ENGLISH_FILE,
   STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
   type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
@@ -33,6 +34,7 @@ import {
 } from '@torahmap/tanakh/verseTexts.ts';
 import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
 import { englishMarkers } from './english.ts';
+import { englishSearchText } from '@torahmap/talmud/english.ts';
 
 /**
  * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
@@ -150,6 +152,8 @@ export function processTractate(
   english: TalmudTractateEnglish;
   /** What search reads: the other edition, which spells abbreviations out, as plain letters. */
   search: string[][];
+  /** What English search reads, shaped as `english`. */
+  searchEnglish: string[][];
 } {
   const shape = shapeMatches(wikisource, merged);
   if (!shape.match) throw new Error(`${tractateName}: the editions differ: ${shape.reason}`);
@@ -238,6 +242,18 @@ export function processTractate(
     };
   });
 
+  const englishMarked = text.map((amud, ai) =>
+    amud.map((seg, si) => {
+      if (HADRAN.test(seg)) return '';
+      try {
+        return englishMarkers(translation[ai][si]);
+      } catch (err) {
+        const { daf, amud } = amudAt(ai);
+        throw new Error(`${tractateName} ${daf}${amud}:${si + 1}: ${(err as Error).message}`);
+      }
+    }),
+  );
+
   return {
     structure: {
       name: tractateName,
@@ -247,18 +263,9 @@ export function processTractate(
       perakim,
     },
     text: { name: tractateName, amudim: cleanText },
-    english: text.map((amud, ai) =>
-      amud.map((seg, si) => {
-        if (HADRAN.test(seg)) return '';
-        try {
-          return englishMarkers(translation[ai][si]);
-        } catch (err) {
-          const { daf, amud } = amudAt(ai);
-          throw new Error(`${tractateName} ${daf}${amud}:${si + 1}: ${(err as Error).message}`);
-        }
-      }),
-    ),
+    english: englishMarked,
     search: other.map((amud) => amud.map((seg) => stripNikkud(stripHtml(seg)))),
+    searchEnglish: englishMarked.map((amud) => amud.map(englishSearchText)),
   };
 }
 
@@ -285,6 +292,7 @@ async function main(): Promise<void> {
 
   const structure: TalmudStructure = { tractates: [] };
   const search: TalmudSearchText = {};
+  const searchEnglish: TalmudSearchText = {};
   const { books } = await readJson<{ books: TanakhBook[] }>(join(DATA_DIR, STRUCTURE_FILE));
   const texts = await readJson<VerseTexts>(join(DATA_DIR, TEXTS_FILE));
   const find = citationFinder({
@@ -303,6 +311,7 @@ async function main(): Promise<void> {
         text: tractateText,
         english: tractateEnglish,
         search: searchText,
+        searchEnglish: searchEnglishText,
       } = processTractate(
         ref.seder,
         ref.tractate,
@@ -314,6 +323,7 @@ async function main(): Promise<void> {
 
       structure.tractates.push(tractateStructure);
       search[ref.tractate] = searchText;
+      searchEnglish[ref.tractate] = searchEnglishText;
 
       const cited = citationsByPlace(tractateText.amudim, find);
       for (const amud of Object.values(cited.citations)) {
@@ -337,10 +347,12 @@ async function main(): Promise<void> {
 
   await writeFile(join(DATA_DIR, TALMUD_STRUCTURE_FILE), JSON.stringify(structure), 'utf-8');
   await writeFile(join(DATA_DIR, SEARCH_FILE), JSON.stringify(search), 'utf-8');
+  await writeFile(join(DATA_DIR, SEARCH_ENGLISH_FILE), JSON.stringify(searchEnglish), 'utf-8');
 
   console.log('');
   console.log(`Structure: ${join(DATA_DIR, TALMUD_STRUCTURE_FILE)}`);
   console.log(`Search: ${join(DATA_DIR, SEARCH_FILE)}`);
+  console.log(`English search: ${join(DATA_DIR, SEARCH_ENGLISH_FILE)}`);
   console.log(
     `Texts: ${join(DATA_DIR, dirname(textsFile('')))} (${structure.tractates.length} files)`,
   );
