@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nameTable, numberIn, referenceTokens, type Token } from '../src/references.ts';
+import { eachWord, nameTable, numberIn, referenceTokens, type Token } from '../src/references.ts';
 
 const texts = (tokens: Token[]) => tokens.map((t) => t.text);
 
@@ -46,170 +46,97 @@ describe('referenceTokens', () => {
   });
 });
 
+const PLACES = [
+  { key: 'north gate', names: ['North Gate', 'NG'] },
+  { key: 'north', names: ['North'] },
+  { key: 'northwick', names: ['Northwick'] },
+  { key: 'south', names: ['South'] },
+  { key: 'southampton', names: ['Southampton', 'Soton'] },
+];
+
 describe('nameTable.read', () => {
-  const books = nameTable([
-    { key: 'Genesis', names: ['Genesis', 'בראשית', 'Bereshit'] },
-    { key: 'Exodus', names: ['Exodus', 'שמות'] },
-    { key: 'Joshua', names: ['Joshua', 'יהושע'] },
-    { key: 'Job', names: ['Job', 'איוב'] },
-    { key: 'Joel', names: ['Joel', 'יואל'] },
-    { key: 'I Samuel', names: ['I Samuel', 'שמואל א'] },
-    { key: 'II Samuel', names: ['II Samuel', 'שמואל ב'] },
-    { key: 'I Kings', names: ['I Kings', 'מלכים א', '1 Kgs'] },
-    { key: 'Song of Songs', names: ['Song of Songs', 'שיר השירים'] },
-    { key: 'Deuteronomy', names: ['Deuteronomy', 'דברים'] },
-    { key: 'I Chronicles', names: ['I Chronicles', 'דברי הימים א'] },
-  ]);
+  const places = nameTable(PLACES);
   const read = (typed: string) => {
-    const found = books.read(referenceTokens(typed));
+    const found = places.read(referenceTokens(typed));
     return found && { key: found.key, rest: texts(found.rest) };
   };
 
-  it('reads a name in full, in any case', () => {
-    expect(read('Genesis 1 1')).toEqual({ key: 'Genesis', rest: ['1', '1'] });
-    expect(read('GENESIS')).toEqual({ key: 'Genesis', rest: [] });
-    expect(read('בראשית א')).toEqual({ key: 'Genesis', rest: ['א'] });
+  it('reads a name in full, in any case, and the tokens after it', () => {
+    expect(read('Northwick 1 2')).toEqual({ key: 'northwick', rest: ['1', '2'] });
+    expect(read('SOUTH')).toEqual({ key: 'south', rest: [] });
   });
 
   it('reads the start of a name when only one name starts that way', () => {
-    expect(read('Gen 3')?.key).toBe('Genesis');
-    expect(read('Ex')?.key).toBe('Exodus');
-    expect(read('Song 2')?.key).toBe('Song of Songs');
-    expect(read('Josh')?.key).toBe('Joshua');
+    expect(read('Northw 3')?.key).toBe('northwick');
+    expect(read('Southa')?.key).toBe('southampton');
   });
 
   it('reads a whole name before the start of a longer one', () => {
-    expect(read('Job 3')?.key).toBe('Job');
+    expect(read('South 3')?.key).toBe('south');
+  });
+
+  it('reads the longest name it can, so a name of several words is not cut short', () => {
+    expect(read('North Gate 2')).toEqual({ key: 'north gate', rest: ['2'] });
+    expect(read('North 2')).toEqual({ key: 'north', rest: ['2'] });
   });
 
   it('reads nothing where several names start the same way', () => {
-    expect(read('Jo 3')).toBeNull();
-    expect(read('Samuel 3')).toBeNull();
-    expect(read('שמואל ג')).toBeNull();
+    expect(read('Nor 3')).toBeNull();
   });
 
   it('never reads a single letter as a name', () => {
-    expect(read('G 3')).toBeNull();
-    expect(read('1 S 3')).toBeNull();
-  });
-
-  it('reads a book number as a digit or a Roman numeral, with or without a space', () => {
-    for (const typed of ['I Samuel 3', '1 Samuel 3', '1Samuel 3', '1 Sam 3', 'i sam. 3', '1Sam3']) {
-      expect(read(typed)).toEqual({ key: 'I Samuel', rest: ['3'] });
-    }
-    expect(read('II Sam 3')?.key).toBe('II Samuel');
-  });
-
-  it('reads the longest name it can, so a Hebrew book number is not taken as a chapter', () => {
-    expect(read('שמואל א ג:יז')).toEqual({ key: 'I Samuel', rest: ['ג', 'יז'] });
-    expect(read('שמואל ב')).toEqual({ key: 'II Samuel', rest: [] });
-    expect(read('דברי הימים א ב')).toEqual({ key: 'I Chronicles', rest: ['ב'] });
-    expect(read('דברים א')).toEqual({ key: 'Deuteronomy', rest: ['א'] });
-  });
-
-  it('reads Hebrew written with final letters or without', () => {
-    expect(read('דברימ')?.key).toBe('Deuteronomy');
+    expect(read('S 3')).toBeNull();
   });
 
   it('reads any of the names an entry is given', () => {
-    expect(read('1 Kgs 17')).toEqual({ key: 'I Kings', rest: ['17'] });
-    expect(read('Bereshit 1')?.key).toBe('Genesis');
+    expect(read('NG 2')).toEqual({ key: 'north gate', rest: ['2'] });
+    expect(read('Soton')?.key).toBe('southampton');
   });
 
   it('reads nothing that names nothing', () => {
-    expect(read('Matthew 1')).toBeNull();
+    expect(read('East 1')).toBeNull();
     expect(read('3 17')).toBeNull();
     expect(read('')).toBeNull();
   });
 
-  describe('spellings', () => {
-    const tractates = nameTable([
-      { key: 'Berakhot', names: ['Berakhot', 'ברכות'] },
-      { key: 'Shabbat', names: ['Shabbat', 'שבת'] },
-      { key: 'Pesachim', names: ['Pesachim', 'פסחים'] },
-      { key: 'Chullin', names: ['Chullin', 'חולין'] },
-      { key: 'Kiddushin', names: ['Kiddushin', 'קידושין'] },
-      { key: 'Sukkah', names: ['Sukkah', 'סוכה'] },
-      { key: 'Bava Kamma', names: ['Bava Kamma', 'בבא קמא', 'BK'] },
-      { key: 'Bava Metzia', names: ['Bava Metzia', 'בבא מציעא', 'BM'] },
-      { key: 'Beitzah', names: ['Beitzah', 'ביצה'] },
-      { key: 'Megillah', names: ['Megillah', 'מגילה'] },
-      { key: 'Taanit', names: ['Taanit', 'תענית'] },
+  it('tries each fold in turn', () => {
+    const spoken = nameTable(PLACES, [
+      eachWord((word) => word),
+      eachWord((word) => word.replace(/ou/g, 'u')),
     ]);
-    const key = (typed: string) => tractates.read(referenceTokens(typed))?.key ?? null;
-
-    it('reads a name spelled as it is often transliterated', () => {
-      expect(key('Brachot')).toBe('Berakhot');
-      expect(key('Berachos')).toBe('Berakhot');
-      expect(key('Shabbos')).toBe('Shabbat');
-      expect(key('Pesahim')).toBe('Pesachim');
-      expect(key('Hullin')).toBe('Chullin');
-      expect(key('Qiddushin')).toBe('Kiddushin');
-      expect(key('Succah')).toBe('Sukkah');
-      expect(key('Suka')).toBe('Sukkah');
-      expect(key('Baba Kama')).toBe('Bava Kamma');
-      expect(key('Betzah')).toBe('Beitzah');
-      expect(key('Megila')).toBe('Megillah');
-      expect(key("Ta'anis")).toBe('Taanit');
-    });
-
-    it('reads a Hebrew name spelled with or without its vowel letters', () => {
-      expect(key('חלין')).toBe('Chullin');
-      expect(key('קדושין')).toBe('Kiddushin');
-    });
-
-    it('reads the start of a two-word name', () => {
-      expect(key('Bava K')).toBe('Bava Kamma');
-      expect(key('Bava')).toBeNull();
-    });
-
-    it('reads an abbreviation given as a name, with or without its full stops', () => {
-      expect(key('BK')).toBe('Bava Kamma');
-      expect(key('B.K.')).toBe('Bava Kamma');
-      expect(key('b m')).toBe('Bava Metzia');
-    });
+    expect(spoken.read(referenceTokens('Suth 1'))?.key).toBe('south');
   });
 });
 
 describe('nameTable.complete', () => {
-  const { complete } = nameTable([
-    { key: 'Exodus', names: ['Exodus', 'שמות', 'Shemot'] },
-    { key: 'Joshua', names: ['Joshua', 'יהושע'] },
-    { key: 'Job', names: ['Job', 'איוב'] },
-    { key: 'I Samuel', names: ['I Samuel', 'שמואל א'] },
-    { key: 'II Samuel', names: ['II Samuel', 'שמואל ב'] },
-    { key: 'Isaiah', names: ['Isaiah', 'ישעיהו'] },
-    { key: 'Article', names: ['Article', 'Articles', 'Art'] },
-  ]);
+  const { complete } = nameTable(PLACES);
 
   it('offers each name that starts as typed, in order, in any case', () => {
-    expect(complete('jo')).toEqual(['Joshua', 'Job']);
-    expect(complete('ISA')).toEqual(['Isaiah']);
+    expect(complete('NO')).toEqual(['North Gate', 'North', 'Northwick']);
+    expect(complete('sou')).toEqual(['South', 'Southampton']);
   });
 
   it('offers an entry once, by its first name that starts as typed', () => {
-    expect(complete('ar')).toEqual(['Article']);
-    expect(complete('shem')).toEqual(['Shemot']);
-    expect(complete('שמ')).toEqual(['שמות', 'שמואל א', 'שמואל ב']);
+    expect(complete('so')).toEqual(['South', 'Southampton']);
+    expect(complete('sot')).toEqual(['Soton']);
   });
 
-  it('reads a book number as a digit or a Roman numeral', () => {
-    expect(complete('1 sa')).toEqual(['I Samuel']);
-    expect(complete('II S')).toEqual(['II Samuel']);
-    // As reading does, a Roman numeral is read as the number of a book.
-    expect(complete('I')).toEqual(['I Samuel']);
-  });
-
-  it('offers nothing once a name is typed in full', () => {
-    expect(complete('Job')).toEqual([]);
-    expect(complete('Article')).toEqual([]);
-    expect(complete('שמואל א')).toEqual([]);
+  it('offers nothing for an entry once one of its names is typed in full', () => {
+    expect(complete('North')).toEqual(['North Gate', 'Northwick']);
+    expect(complete('Northwick')).toEqual([]);
   });
 
   it('offers nothing once numbers follow the name, or for nothing', () => {
-    expect(complete('Isaiah 4')).toEqual([]);
-    expect(complete('שמות כ')).toEqual([]);
+    expect(complete('North 4')).toEqual([]);
     expect(complete(' ')).toEqual([]);
+  });
+
+  it('goes by the first fold alone', () => {
+    const spoken = nameTable(PLACES, [
+      eachWord((word) => word),
+      eachWord((word) => word.replace(/ou/g, 'u')),
+    ]);
+    expect(spoken.complete('Su')).toEqual([]);
   });
 
   it('offers at most a handful', () => {

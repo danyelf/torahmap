@@ -104,12 +104,12 @@ export interface Reference {
 export interface ReferenceReader {
   /** The place `typed` names, or null when it names none. */
   read(typed: string): Reference | null;
-  /** The names of books, tractates or parts `typed` is the start of. */
+  /** The names, of what a reference may begin by naming, that `typed` is the start of. */
   complete(typed: string): string[];
 }
 
 export interface GoTo extends ReferenceReader {
-  /** References offered under the box, to try: "II Samuel 17". */
+  /** References offered under the box, to try. */
   examples: readonly string[];
 }
 

@@ -9,9 +9,10 @@ const dapim = (from: number, to: number, count: number): Amud[] =>
     { daf: from + i, amud: 'b' as const, segmentCount: count },
   ]).flat();
 
-const { read } = segmentReader([
+const { read, complete } = segmentReader([
   { name: 'Berakhot', hebrewName: 'ברכות', amudim: dapim(2, 30, 5) },
   { name: 'Shabbat', hebrewName: 'שבת', amudim: dapim(2, 3, 2) },
+  { name: 'Chullin', hebrewName: 'חולין', amudim: dapim(2, 3, 2) },
   { name: 'Ketubot', hebrewName: 'כתובות', amudim: dapim(2, 3, 2) },
   { name: 'Bava Kamma', hebrewName: 'בבא קמא', amudim: dapim(2, 3, 2) },
   { name: 'Bava Metzia', hebrewName: 'בבא מציעא', amudim: dapim(2, 3, 2) },
@@ -121,5 +122,30 @@ describe('segmentReader', () => {
     ]) {
       expect(read(typed), typed).toBeNull();
     }
+  });
+});
+
+describe('segmentReader names', () => {
+  it('reads a tractate spelled as it is often transliterated', () => {
+    expect(idsOf('Hullin 2a')).toEqual(idsOf('Chullin 2a'));
+  });
+
+  it('reads a Hebrew name spelled with or without its vowel letters', () => {
+    expect(idsOf('חלין ב.')).toEqual(idsOf('Chullin 2a'));
+  });
+
+  it('reads the start of a two-word name', () => {
+    expect(idsOf('Bava K 2a')).toEqual(idsOf('Bava Kamma 2a'));
+  });
+});
+
+describe('segmentReader completion', () => {
+  it('offers the tractates that start as typed', () => {
+    expect(complete('Bava')).toEqual(['Bava Kamma', 'Bava Metzia']);
+    expect(complete('בר')).toEqual(['ברכות']);
+  });
+
+  it('offers nothing once a tractate is named in full', () => {
+    expect(complete('Berakhot')).toEqual([]);
   });
 });

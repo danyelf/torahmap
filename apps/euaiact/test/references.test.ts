@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { provisionReader } from '../src/references.ts';
 
-const { read } = provisionReader([
+const { read, complete } = provisionReader([
   'Recital.1',
   'Recital.12',
   '4a(1)',
@@ -91,5 +91,16 @@ describe('provisionReader', () => {
     for (const typed of ['', 'Article', 'Recital', 'deployer', 'Annex x', 'Recital 12 3']) {
       expect(read(typed), typed).toBeNull();
     }
+  });
+});
+
+describe('provisionReader completion', () => {
+  it('offers the parts of the Act that start as typed', () => {
+    expect(complete('a')).toEqual(['Article', 'Annex']);
+    expect(complete('reci')).toEqual(['Recital']);
+  });
+
+  it('offers nothing once a part is named in full', () => {
+    expect(complete('Annex')).toEqual([]);
   });
 });

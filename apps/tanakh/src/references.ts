@@ -1,10 +1,12 @@
 // Reads a reference to the Tanakh, such as "I Samuel 3:17" or שמואל א ג:יז.
 
+import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
 import { verseId } from '@torahmap/link/tanakh';
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
 import {
   nameTable,
   numberIn,
+  type Fold,
   RANGE,
   referenceTokens,
   type Token,
@@ -51,6 +53,17 @@ const OTHER_NAMES: Record<string, readonly string[]> = {
   'I Chronicles': ['I Chr', 'I Divrei HaYamim'],
   'II Chronicles': ['II Chr', 'II Divrei HaYamim'],
 };
+
+// A numbered book's I, II or III, read as its number so that "I Sam" and "1 Sam" are one.
+const ROMAN: Record<string, string> = { i: '1', ii: '2', iii: '3' };
+
+const numbered =
+  (fold: (word: string) => string): Fold =>
+  ([first, ...rest]) =>
+    [ROMAN[first] ?? first, ...rest].map(fold).join('');
+
+// Names as written, then as they sound.
+const FOLDS = [numbered(foldFinalLetters), numbered(soundOfName)];
 
 // Words a reference may carry that name no number.
 const FILLER = new Set([
@@ -102,7 +115,7 @@ export function verseReader(books: readonly ReferencedBook[]): ReferenceReader {
     key: b.name,
     names: [b.name, b.hebrewName, ...(OTHER_NAMES[b.name] ?? [])],
   }));
-  const names = nameTable(entries);
+  const names = nameTable(entries, FOLDS);
 
   function read(typed: string): Reference | null {
     const named = names.read(referenceTokens(typed));

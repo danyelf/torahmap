@@ -1,7 +1,7 @@
 // What every text's reference reader shares: breaking what was typed into
-// tokens, and finding which book, tractate or part the tokens begin by naming.
+// tokens, and finding what the tokens begin by naming.
 
-import { foldFinalLetters, hebrewNumber, withoutPointsOrGeresh } from '@torahmap/hebrew';
+import { hebrewNumber, withoutPointsOrGeresh } from '@torahmap/hebrew';
 
 /** A run of letters or of digits, and the full stop or colon right after it, if any. */
 export interface Token {
@@ -48,34 +48,17 @@ export function numberIn(token: Token): number | null {
   return hebrewNumber(token.text);
 }
 
-const ROMAN: Record<string, string> = { i: '1', ii: '2', iii: '3' };
+/** How a name's words are written for matching, so that spellings of one name come out alike. */
+export type Fold = (words: readonly string[]) => string;
 
-const plain = foldFinalLetters;
+/** A fold that writes each word with `fold` and joins them. */
+export const eachWord =
+  (fold: (word: string) => string): Fold =>
+  (words) =>
+    words.map(fold).join('');
 
-/**
- * A token as it sounds rather than as it is spelled: the transliterations of
- * one Hebrew letter written alike, a closing -ah or -s dropped or written as -t,
- * vowels after the first letter gone, and doubled letters single.
- */
-function skeleton(text: string): string {
-  const sounds = plain(text)
-    .replace(/kh|ch/g, 'h')
-    .replace(/ph/g, 'f')
-    .replace(/tz|ts/g, 'z')
-    .replace(/[qc]/g, 'k')
-    .replace(/[vw]/g, 'b')
-    .replace(/ah$/, 'a')
-    .replace(/s$/, 't');
-  const consonants = sounds[0] + sounds.slice(1).replace(/[aeiouוי]/g, '');
-  return consonants.replace(/(.)\1+/g, '$1');
-}
-
-/** Tokens written as one name, a leading Roman numeral read as its number. */
-function joined(tokens: readonly string[], fold: (text: string) => string): string {
-  return tokens.map((text, i) => (i === 0 && ROMAN[text] ? ROMAN[text] : fold(text))).join('');
-}
-
-const FOLDS = [plain, skeleton];
+/** Words joined as written, lower-cased as every token is. */
+const AS_WRITTEN = eachWord((word) => word);
 
 /** Something a reference can begin by naming, and every name it goes by. */
 export interface Named<K> {
@@ -86,16 +69,18 @@ export interface Named<K> {
 const COMPLETIONS = 6;
 
 /**
- * Every name of `entries`, written once as each fold writes it, to read and
- * to complete from.
+ * Every name of `entries`, written once by each of `folds`, to read and to
+ * complete from.
  *
- * Reading takes the longest run of tokens that names something, so the א of
- * שמואל א is part of the book rather than its chapter. A name is matched as
- * written, then as it sounds; at each, a whole name beats the start of one,
- * and the start of several names is no name. Completing goes by names as
- * written.
+ * Reading takes the longest run of tokens that names something, so a name of
+ * several words is not cut short by a shorter name inside it. It tries the
+ * folds in turn; at each, a whole name beats the start of one, and the start
+ * of several names is no name. Completing goes by the first fold.
  */
-export function nameTable<K>(entries: readonly Named<K>[]): {
+export function nameTable<K>(
+  entries: readonly Named<K>[],
+  folds: readonly Fold[] = [AS_WRITTEN],
+): {
   /** The entry `tokens` begin by naming, and the tokens after its name. */
   read(tokens: readonly Token[]): { key: K; rest: Token[] } | null;
   /** The names `typed` is the start of, one per entry and at most a handful. */
@@ -105,7 +90,7 @@ export function nameTable<K>(entries: readonly Named<K>[]): {
     key,
     names: names.map((name) => {
       const words = texts(referenceTokens(name));
-      return { name, folds: FOLDS.map((fold) => joined(words, fold)) };
+      return { name, folds: folds.map((fold) => fold(words)) };
     }),
   }));
 
@@ -115,8 +100,8 @@ export function nameTable<K>(entries: readonly Named<K>[]): {
   ];
 
   function named(words: readonly string[]): K | null {
-    for (const [i, fold] of FOLDS.entries()) {
-      const typed = joined(words, fold);
+    for (const [i, fold] of folds.entries()) {
+      const typed = fold(words);
       const whole = keysWhere(i, (name) => name === typed);
       if (whole.length === 1) return whole[0];
       const starts = keysWhere(i, (name) => name.startsWith(typed));
@@ -140,7 +125,7 @@ export function nameTable<K>(entries: readonly Named<K>[]): {
     complete(typed) {
       const words = texts(referenceTokens(typed));
       if (words.length === 0) return [];
-      const start = joined(words, FOLDS[0]);
+      const start = folds[0](words);
       const offered: string[] = [];
       for (const { names } of table) {
         if (names.some((n) => n.folds[0] === start)) continue;

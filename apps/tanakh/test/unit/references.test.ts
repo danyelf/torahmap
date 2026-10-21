@@ -3,7 +3,7 @@ import { verseReader } from '../../src/references.ts';
 
 const chapters = (count: number, verses: number) => Array.from({ length: count }, () => verses);
 
-const { read } = verseReader([
+const { read, complete } = verseReader([
   { name: 'Genesis', hebrewName: 'בראשית', chapters: [3, 2] },
   { name: 'Exodus', hebrewName: 'שמות', chapters: chapters(30, 4) },
   { name: 'Joshua', hebrewName: 'יהושע', chapters: [2] },
@@ -109,5 +109,41 @@ describe('verseReader', () => {
   it('never reads a single letter as a reference', () => {
     expect(read('G')).toBeNull();
     expect(read('G 1')).toBeNull();
+  });
+});
+
+describe('verseReader names', () => {
+  it('reads a Hebrew book number as part of the name, not as its chapter', () => {
+    expect(idsOf('שמואל ב א:ב')).toEqual(['II.Samuel.1.2']);
+  });
+
+  it('reads Hebrew written with final letters or without', () => {
+    expect(idsOf('תהלימ א:א')).toEqual(idsOf('תהלים א:א'));
+  });
+
+  it('reads a Roman numeral, a digit or neither before a numbered book', () => {
+    expect(idsOf('II Sam 1:2')).toEqual(['II.Samuel.1.2']);
+    expect(idsOf('2Sam 1:2')).toEqual(['II.Samuel.1.2']);
+  });
+});
+
+describe('verseReader completion', () => {
+  it('offers the books that start as typed, by the name that fits', () => {
+    expect(complete('jo')).toEqual(['Joshua', 'Job']);
+    expect(complete('shem')).toEqual(['Shemot']);
+    expect(complete('שמ')).toEqual(['שמות', 'שמואל א', 'שמואל ב']);
+  });
+
+  it('reads a book number as a digit or a Roman numeral', () => {
+    expect(complete('1 sa')).toEqual(['I Samuel']);
+    expect(complete('II S')).toEqual(['II Samuel']);
+    expect(complete('I')).toEqual(['I Samuel']);
+  });
+
+  it('offers nothing once a book is named in full, or numbers follow', () => {
+    expect(complete('Job')).toEqual([]);
+    expect(complete('שמואל א')).toEqual([]);
+    expect(complete('Isaiah 4')).toEqual([]);
+    expect(complete('שמות כ')).toEqual([]);
   });
 });

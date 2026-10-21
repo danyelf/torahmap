@@ -1,7 +1,14 @@
 // Reads a reference to the Talmud, such as "Berakhot 3b:4" or ברכות ג:.
 
+import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
 import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
-import { nameTable, numberIn, referenceTokens, type Token } from '@torahmap/shell/references.ts';
+import {
+  eachWord,
+  nameTable,
+  numberIn,
+  referenceTokens,
+  type Token,
+} from '@torahmap/shell/references.ts';
 import { talmudId } from './layout.ts';
 
 type Side = 'a' | 'b';
@@ -29,6 +36,9 @@ const OTHER_NAMES: Record<string, readonly string[]> = {
   Keritot: ['Kerisos'],
   Arakhin: ['Erchin'],
 };
+
+// Names as written, then as they sound.
+const FOLDS = [eachWord(foldFinalLetters), eachWord(soundOfName)];
 
 const FILLER = new Set(['daf', 'amud', 'page', 'דף', 'עמוד']);
 const SIDES: Record<string, Side> = { a: 'a', b: 'b', עא: 'a', עב: 'b' };
@@ -68,7 +78,7 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Referen
     key: t.name,
     names: [t.name, t.hebrewName, ...(OTHER_NAMES[t.name] ?? [])],
   }));
-  const names = nameTable(entries);
+  const names = nameTable(entries, FOLDS);
 
   function read(typed: string): Reference | null {
     const named = names.read(referenceTokens(typed));
