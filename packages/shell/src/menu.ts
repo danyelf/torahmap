@@ -1,7 +1,6 @@
 import { escapeHtml } from '@torahmap/utils';
 import { PANELS, type Panel } from './frame.ts';
 import type { Site } from './app/text.ts';
-import { goToHtml } from './goTo.ts';
 
 /** Where the story is: its stop, counted from one, and how many it has. */
 export interface StoryPlace {
@@ -18,6 +17,7 @@ export const SHARE = 'share';
 // The menu offers a choice of overlays, where the open panel shows one; the
 // rest match PANEL_TITLES.
 const MENU_LABELS: Record<Panel, string> = {
+  goto: 'Go to',
   search: 'Search',
   overlay: 'Overlays',
   stories: 'Stories',
@@ -29,18 +29,10 @@ const item = (action: string, label: string, detail = ''): string =>
   (detail ? ` <span class="menu-detail">${detail}</span>` : '') +
   `</button>`;
 
-/**
- * The menu: the site's name, the go-to box for a text that reads references, then its items.
- * Each item carries the action it takes; the click handler reads it.
- */
-export function menuHtml(
-  site: Site,
-  place: StoryPlace & { title: string },
-  goTo?: { example: string; typed: string },
-): string {
+/** The menu: the site's name, then its items. Each item carries the action it takes; the click handler reads it. */
+export function menuHtml(site: Site, place: StoryPlace & { title: string }): string {
   return [
     `<h2 class="menu-title">${escapeHtml(site.page.name)}</h2>`,
-    goTo ? `<div class="menu-goto">${goToHtml(goTo.example, goTo.typed)}</div>` : '',
     item(CONTINUE_STORY, `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
     item(SHARE, 'Share'),
     '<div class="menu-divider" role="separator"></div>',

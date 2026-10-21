@@ -47,7 +47,7 @@ import {
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, SHARE, menuHtml } from './menu.ts';
-import { drawGoToAnswer, GO_TO, GO_TO_BOX_ID } from './goTo.ts';
+import { bindGoTo, goToPanelHtml, GO_TO_BOX_ID } from './goTo.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
@@ -508,6 +508,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
+  document.getElementById('goto-panel')!.innerHTML = goToPanelHtml(text.goTo.examples);
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
@@ -555,17 +556,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
-      droppedMenu.innerHTML = menuHtml(
-        source.site,
-        { ...place, title: story.data.title },
-        text.goTo && { example: text.goTo.example, typed: goToTyped },
-      );
-      answerGoTo();
+      droppedMenu.innerHTML = menuHtml(source.site, { ...place, title: story.data.title });
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages, text.goTo?.example);
+      aboutPanel.innerHTML = aboutHtml(
+        source.site,
+        allOverlays,
+        twoLanguages,
+        text.goTo.examples[0],
+      );
       bindLanguageChoice(aboutPanel, refreshPopup);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
@@ -615,6 +616,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (event.type === 'menu' && frame.menu) {
       droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
     }
+    // On a phone it would raise the keyboard over the examples before they are read.
+    if (event.type === 'choose' && frame.open === 'goto' && !phone) goToPanel.focus();
   }
 
   // Off until the page view is sent: who drives when the page opens is part of it.
@@ -743,24 +746,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     });
   }
 
-  /** What the menu's go-to box holds. It stays there after the reader goes, for the next look-up. */
-  let goToTyped = '';
-
-  /** The place the go-to box names, and its squares in reading order. */
-  function goToPlace(): { found: Reference; squares: I[] } | null {
-    const found = text.goTo?.read(goToTyped) ?? null;
-    if (!found) return null;
-    const named = found.ids.map((id) => squares.find(id)).filter((item) => item !== null);
-    return named.length > 0 ? { found, squares: named } : null;
-  }
+  /** The squares of a place, in reading order. */
+  const squaresOf = (found: Reference): I[] =>
+    found.ids.map((id) => squares.find(id)).filter((item) => item !== null);
 
   /**
-   * A square's text in the first shown language whose file is in, or null while none is;
-   * the language the reference was typed in comes first.
+   * A square's text in the first shown language whose file is in, fetching its files, or
+   * null while none is in; the language the reference was typed in comes first.
    */
-  function quoteOf(item: I): string | null {
+  function quoteOf(item: I, typed: string): string | null {
+    viewFiles.fetchPopup(item);
     const said = text.popupText(item, loader.loaded(), null);
-    const typedIn = isHebrew(goToTyped) ? HEBREW : ENGLISH;
+    const typedIn = isHebrew(typed) ? HEBREW : ENGLISH;
     const languages = [...shownLanguages()].sort(
       (a, b) => Number(b === typedIn) - Number(a === typedIn),
     );
@@ -772,43 +769,21 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return null;
   }
 
-  /** Redraw what the go-to box answers, fetching the text its offer quotes. */
-  function answerGoTo(): void {
-    const container = droppedMenu.querySelector<HTMLElement>('.goto-answer');
-    if (!container) return;
-    const place = goToPlace();
-    const first = place?.squares[0];
-    if (first) viewFiles.fetchPopup(first);
-    drawGoToAnswer(container, {
-      typed: goToTyped,
-      found: place?.found ?? null,
-      quote: first ? quoteOf(first) : null,
-    });
-  }
-
-  /** Go where the go-to box says: pin its first square, and show all of the place. */
-  function takeGoTo(): void {
-    const place = goToPlace();
-    if (!place) return;
-    if (frame.menu) dispatch({ type: 'menu' });
-    // A full-height sheet would hide the glide.
-    if (frame.full) setFrame({ ...frame, full: false });
-    const [first] = place.squares;
-    pinItem(first);
-    if (place.squares.length === 1) glideToItem(first);
-    else glideToFit(place.squares);
-  }
-
-  droppedMenu.addEventListener('input', (e) => {
-    const box = e.target as HTMLInputElement;
-    if (box.id !== GO_TO_BOX_ID) return;
-    goToTyped = box.value;
-    answerGoTo();
-  });
-  droppedMenu.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' || (e.target as Element).id !== GO_TO_BOX_ID) return;
-    e.preventDefault();
-    takeGoTo();
+  const goToPanel = bindGoTo(document.getElementById('goto-panel')!, text.goTo, {
+    quote(found, typed) {
+      const [first] = squaresOf(found);
+      return first ? quoteOf(first, typed) : null;
+    },
+    // Pin the place's first square, and show all of it.
+    take(found) {
+      const place = squaresOf(found);
+      if (place.length === 0) return;
+      // A full-height sheet would hide the glide.
+      if (frame.full) setFrame({ ...frame, full: false });
+      pinItem(place[0]);
+      if (place.length === 1) glideToItem(place[0]);
+      else glideToFit(place);
+    },
   });
 
   // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
@@ -1343,7 +1318,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
     if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
-    if (action === GO_TO) return takeGoTo();
     if (action === SHARE) {
       // A share already in flight ignores a second tap: sharing again would
       // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
@@ -1446,10 +1420,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     dispatch({ type: 'drag', dy: frame.full ? DRAG_PX : -DRAG_PX });
   });
 
-  // Typing wants room for the words and their results.
+  // Typing wants room for the words and their results. Go to's answer is one line, and
+  // the map above it shows where it leads.
   panel.addEventListener('focusin', (e) => {
     const t = e.target;
     if (t instanceof HTMLInputElement && (t.type === 'text' || t.type === 'search')) {
+      if (t.id === GO_TO_BOX_ID) return;
       dispatch({ type: 'typing' });
     }
   });
@@ -1631,7 +1607,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stale.searchPanel) drawSearchPanel(false);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
     if (stale.popup) refreshPopupAfterDownload();
-    if (frame.menu) answerGoTo();
+    goToPanel.redraw();
   }
 
   function fileFailed(): void {

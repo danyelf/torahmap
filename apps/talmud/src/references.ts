@@ -1,11 +1,19 @@
 // Reads a reference to the Talmud, such as "Berakhot 3b:4" or ברכות ג:.
 
 import { hebrewNumber } from '@torahmap/hebrew';
-import type { Reference } from '@torahmap/shell/app/text.ts';
-import { nameReader, referenceTokens, type Token } from '@torahmap/shell/references.ts';
+import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
+import {
+  nameCompleter,
+  nameReader,
+  referenceTokens,
+  type Token,
+} from '@torahmap/shell/references.ts';
 import { talmudId } from './layout.ts';
 
 type Side = 'a' | 'b';
+
+/** References offered under the Go to box, to try. */
+export const EXAMPLES = ['Berakhot 17a'];
 
 /** A tractate as the reader needs it: its names and how many segments each amud has. */
 export interface ReferencedTractate {
@@ -60,18 +68,15 @@ function placeIn(tokens: readonly Token[]): Place | null {
 }
 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
-export function segmentReader(
-  tractates: readonly ReferencedTractate[],
-): (typed: string) => Reference | null {
+export function segmentReader(tractates: readonly ReferencedTractate[]): ReferenceReader {
   const byName = new Map(tractates.map((t) => [t.name, t]));
-  const readName = nameReader(
-    tractates.map((t) => ({
-      key: t.name,
-      names: [t.name, t.hebrewName, ...(OTHER_NAMES[t.name] ?? [])],
-    })),
-  );
+  const entries = tractates.map((t) => ({
+    key: t.name,
+    names: [t.name, t.hebrewName, ...(OTHER_NAMES[t.name] ?? [])],
+  }));
+  const readName = nameReader(entries);
 
-  return (typed) => {
+  function read(typed: string): Reference | null {
     const named = readName(referenceTokens(typed));
     if (!named) return null;
     const tractate = byName.get(named.key)!;
@@ -92,5 +97,7 @@ export function segmentReader(
     const page = place ? ` ${place.daf}${place.side ?? ''}` : '';
     const segment = place?.segment !== undefined ? `:${place.segment}` : '';
     return { ref: `${tractate.name}${page}${segment}`, ids };
-  };
+  }
+
+  return { read, complete: nameCompleter(entries) };
 }

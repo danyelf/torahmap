@@ -2,8 +2,17 @@
 
 import { hebrewNumber } from '@torahmap/hebrew';
 import { verseId } from '@torahmap/link/tanakh';
-import type { Reference } from '@torahmap/shell/app/text.ts';
-import { nameReader, RANGE, referenceTokens, type Token } from '@torahmap/shell/references.ts';
+import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
+import {
+  nameCompleter,
+  nameReader,
+  RANGE,
+  referenceTokens,
+  type Token,
+} from '@torahmap/shell/references.ts';
+
+/** References offered under the Go to box, to try. */
+export const EXAMPLES = ['II Samuel 17', 'Genesis 2:2', 'Shemot 4:1', 'שמות כב'];
 
 /** A book as the reader needs it: its names and how many verses each chapter has. */
 export interface ReferencedBook {
@@ -94,16 +103,15 @@ function versesBetween(book: ReferencedBook, from: Place, to: Place): string[] |
 const written = (p: Place) => (p.verse === undefined ? `${p.chapter}` : `${p.chapter}:${p.verse}`);
 
 /** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */
-export function verseReader(books: readonly ReferencedBook[]): (typed: string) => Reference | null {
+export function verseReader(books: readonly ReferencedBook[]): ReferenceReader {
   const byName = new Map(books.map((b) => [b.name, b]));
-  const readName = nameReader(
-    books.map((b) => ({
-      key: b.name,
-      names: [b.name, b.hebrewName, ...(OTHER_NAMES[b.name] ?? [])],
-    })),
-  );
+  const entries = books.map((b) => ({
+    key: b.name,
+    names: [b.name, b.hebrewName, ...(OTHER_NAMES[b.name] ?? [])],
+  }));
+  const readName = nameReader(entries);
 
-  return (typed) => {
+  function read(typed: string): Reference | null {
     const named = readName(referenceTokens(typed));
     if (!named) return null;
     const book = byName.get(named.key)!;
@@ -139,5 +147,7 @@ export function verseReader(books: readonly ReferencedBook[]): (typed: string) =
         ? `–${to.verse ?? to.chapter}`
         : `–${written(to)}`;
     return { ref: `${book.name} ${written(from)}${end}`, ids };
-  };
+  }
+
+  return { read, complete: nameCompleter(entries) };
 }

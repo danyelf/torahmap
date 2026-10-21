@@ -8,7 +8,7 @@ import { structureFrom } from './verseTexts.ts';
 import { initBookData } from './books.ts';
 import { getDefaultColor } from '@torahmap/shell/itemColoring.ts';
 import { popupText } from './popup.ts';
-import { verseReader } from './references.ts';
+import { EXAMPLES, verseReader } from './references.ts';
 import { createCamera } from './camera.ts';
 import { reportError } from '@torahmap/shell/analytics.ts';
 import { STORIES } from '@torahmap/stories/tanakh';
@@ -67,7 +67,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
         resolve: (...args) => resolveStops(...args, LINK_KEYS.zoom),
       },
 
-      goTo: { example: 'II Kings 17', read: verseReader(data.books) },
+      goTo: { examples: EXAMPLES, ...verseReader(data.books) },
 
       area: (v) => ({ area: v.book, section: sections.get(v.book) ?? '' }),
 

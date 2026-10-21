@@ -9,7 +9,7 @@ const dapim = (from: number, to: number, count: number): Amud[] =>
     { daf: from + i, amud: 'b' as const, segmentCount: count },
   ]).flat();
 
-const read = segmentReader([
+const { read } = segmentReader([
   { name: 'Berakhot', hebrewName: 'ברכות', amudim: dapim(2, 30, 5) },
   { name: 'Shabbat', hebrewName: 'שבת', amudim: dapim(2, 3, 2) },
   { name: 'Ketubot', hebrewName: 'כתובות', amudim: dapim(2, 3, 2) },

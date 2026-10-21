@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { menuHtml } from '../packages/shell/src/menu.ts';
-import { GO_TO_BOX_ID } from '../packages/shell/src/goTo.ts';
 import { tanakhSite } from '@torahmap/tanakh/site.ts';
 import { talmudSite } from '@torahmap/talmud/site.ts';
 
@@ -24,11 +23,11 @@ describe('menuHtml', () => {
     expect(div.querySelector('img')).toBeNull();
   });
 
-  it('then share, the search, the overlays, the stories, and about', () => {
+  it('then share, go to, the search, the overlays, the stories, and about', () => {
     const actions = items(menuHtml(tanakhSite, { number: 1, total: 21, title: 'x' })).map(
       (b) => b.dataset.action,
     );
-    expect(actions).toEqual(['story', 'share', 'search', 'overlay', 'stories', 'about']);
+    expect(actions).toEqual(['story', 'share', 'goto', 'search', 'overlay', 'stories', 'about']);
   });
 
   it('makes every item a real button', () => {
@@ -40,18 +39,6 @@ describe('menuHtml', () => {
     const div = document.createElement('div');
     div.innerHTML = menuHtml(talmudSite, { number: 1, total: 2, title: 'x' });
     expect(div.firstElementChild?.textContent).toBe(talmudSite.page.name);
-  });
-
-  it('has a go-to box under its name, holding what was typed, for a text that reads references', () => {
-    const div = document.createElement('div');
-    const place = { number: 1, total: 2, title: 'x' };
-    div.innerHTML = menuHtml(tanakhSite, place, { example: 'II Kings 17', typed: 'Gen 1' });
-    const box = div.querySelector<HTMLInputElement>(`#${GO_TO_BOX_ID}`);
-    expect(box?.value).toBe('Gen 1');
-    expect(div.firstElementChild?.nextElementSibling?.contains(box!)).toBe(true);
-
-    div.innerHTML = menuHtml(tanakhSite, place);
-    expect(div.querySelector(`#${GO_TO_BOX_ID}`)).toBeNull();
   });
 
   it('sets the two actions apart from the tools', () => {

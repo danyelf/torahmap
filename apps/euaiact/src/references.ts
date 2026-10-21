@@ -1,15 +1,25 @@
 // Reads a reference to the Act, such as "Article 5(1)(h)", "Recital 12" or "Annex 3".
 
-import type { Reference } from '@torahmap/shell/app/text.ts';
-import { nameReader, referenceTokens, type Token } from '@torahmap/shell/references.ts';
+import type { Reference, ReferenceReader } from '@torahmap/shell/app/text.ts';
+import {
+  nameCompleter,
+  nameReader,
+  referenceTokens,
+  type Named,
+  type Token,
+} from '@torahmap/shell/references.ts';
+
+/** References offered under the Go to box, to try. */
+export const EXAMPLES = ['Article 7', 'Annex III'];
 
 type Part = 'article' | 'recital' | 'annex';
 
-const readPart = nameReader<Part>([
+const PARTS: Named<Part>[] = [
   { key: 'article', names: ['Article', 'Articles', 'Art', 'Arts'] },
   { key: 'recital', names: ['Recital', 'Recitals', 'Rec'] },
   { key: 'annex', names: ['Annex', 'Annexes', 'Anx'] },
-]);
+];
+const readPart = nameReader(PARTS);
 
 const ROMAN: [number, string][] = [
   [100, 'C'],
@@ -38,7 +48,7 @@ function annexNumber(text: string): string | null {
 }
 
 /** Reads a reference to the squares `ids` name: an article, recital or annex, or a part of one. */
-export function provisionReader(ids: readonly string[]): (typed: string) => Reference | null {
+export function provisionReader(ids: readonly string[]): ReferenceReader {
   const articles = new Set(ids.map((id) => id.split('(')[0]));
 
   /** The squares that are `key` or inside it, `below` joining the parts of an id. */
@@ -74,10 +84,13 @@ export function provisionReader(ids: readonly string[]): (typed: string) => Refe
     }
   }
 
-  return (typed) => {
-    const tokens = referenceTokens(typed);
-    const named = readPart(tokens);
-    if (named) return read(named.key, named.rest);
-    return read('article', tokens);
+  return {
+    read(typed) {
+      const tokens = referenceTokens(typed);
+      const named = readPart(tokens);
+      if (named) return read(named.key, named.rest);
+      return read('article', tokens);
+    },
+    complete: nameCompleter(PARTS),
   };
 }

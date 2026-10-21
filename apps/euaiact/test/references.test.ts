@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { provisionReader } from '../src/references.ts';
 
-const read = provisionReader([
+const { read } = provisionReader([
   'Recital.1',
   'Recital.12',
   '4a(1)',

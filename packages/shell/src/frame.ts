@@ -3,11 +3,12 @@
 // can be dragged to full height.
 
 /** Every panel, in the order the menu offers them. */
-export const PANELS = ['search', 'overlay', 'stories', 'about'] as const;
+export const PANELS = ['goto', 'search', 'overlay', 'stories', 'about'] as const;
 export type Panel = (typeof PANELS)[number];
 
 /** What each panel is called, in the column's header and at the top of the panel. */
 export const PANEL_TITLES: Record<Panel, string> = {
+  goto: 'Go to',
   search: 'Search',
   overlay: 'Overlay',
   stories: 'Stories',

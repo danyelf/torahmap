@@ -3,7 +3,7 @@ import { verseReader } from '../../src/references.ts';
 
 const chapters = (count: number, verses: number) => Array.from({ length: count }, () => verses);
 
-const read = verseReader([
+const { read } = verseReader([
   { name: 'Genesis', hebrewName: 'בראשית', chapters: [3, 2] },
   { name: 'Exodus', hebrewName: 'שמות', chapters: chapters(30, 4) },
   { name: 'Joshua', hebrewName: 'יהושע', chapters: [2] },

@@ -3,7 +3,7 @@
 import { FIT_MARGIN, MAP_BACKGROUND, cameraToFit } from '@torahmap/engine';
 import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '@torahmap/shell/app/text.ts';
-import { segmentReader } from './references.ts';
+import { EXAMPLES, segmentReader } from './references.ts';
 import type { Story } from '@torahmap/stories';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
@@ -159,7 +159,7 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
       },
 
-      goTo: { example: 'Berakhot 23a:14', read: segmentReader(structure.tractates) },
+      goTo: { examples: EXAMPLES, ...segmentReader(structure.tractates) },
 
       area: (s) => ({ area: s.tractate, section: sederOf(s) }),
     };

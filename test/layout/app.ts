@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
-import { viaMenu } from '../browser/page.ts';
+import { allLoaded, viaMenu } from '../browser/page.ts';
 
 export interface State {
   name: string;
@@ -23,17 +23,21 @@ export const CHROME: Chrome = {
   interactive:
     '#panel button, #panel select, #panel input, ' +
     '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
-    '#menu-toggle, #menu button, #menu input, #map-legend button, ' +
+    '#menu-toggle, #menu button, #map-legend button, ' +
     '#popup button, #popup a, #zoom-controls button',
   text:
     '.map-legend-summary, .menu-title, .menu-item, .column-title, .panel-title, #panel label, ' +
-    '.story-card-place, #popup .ref-text, .goto-label, .goto-ref, .goto-none',
+    '.story-card-place, #popup .ref-text, .goto-ref, .goto-none, .goto-completion, .goto-example',
 };
 
-/** Types `typed` into the menu's go-to box, and takes the offer with Enter if `take`. */
-export async function goTo(page: Page, typed: string, take = false): Promise<void> {
-  await page.locator('#menu-toggle').click();
+/** Opens Go to through the ☰, types `typed` there, and takes the offer with Enter if `take`. */
+export async function goTo(page: Page, typed = '', take = false): Promise<void> {
+  await viaMenu(page, 'goto');
+  if (!typed) return;
   await page.locator('#goto-input').fill(typed);
+  // An offer grows when the text it quotes arrives, and the sheet takes its new height a frame later.
+  await page.locator('.goto-quote:not(:empty), .goto-none, .goto-completion').first().waitFor();
+  await allLoaded(page);
   if (take) await page.locator('#goto-input').press('Enter');
 }
 
@@ -52,6 +56,20 @@ export const STATES: State[] = [
     name: 'story-stop-with-verse',
     link: 'story=tour&stop=abraham_call',
     shown: ['#map-legend', stop('abraham_call')],
+  },
+  {
+    name: 'goto-panel',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page),
+    shown: ['#goto-input', '.goto-example'],
+  },
+  {
+    name: 'goto-completing',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'שמ'),
+    shown: ['#goto-input', '.goto-completion'],
   },
   {
     name: 'goto-offer',
@@ -264,15 +282,27 @@ export const ACT_STATES: State[] = [
   { name: 'act-recital-pinned', link: 'at=Recital.12', shown: ['#popup.visible'] },
   { name: 'act-search', link: 'search=deployer&zoom=0.6', shown: ['#map-legend'] },
   {
+    name: 'act-goto-panel',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page),
+    shown: ['#goto-input', '.goto-example'],
+  },
+  {
+    name: 'act-goto-completing',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'a'),
+    shown: ['#goto-input', '.goto-completion'],
+  },
+  {
     name: 'act-goto-offer',
     link: 'zoom=0.6',
-    then: (page) => goTo(page, 'Annex 3'),
+    then: (page) => goTo(page, 'Annex III'),
     shown: ['#goto-input', '.goto-offer'],
   },
   {
     name: 'act-goto-taken',
     link: 'zoom=0.6',
-    then: (page) => goTo(page, 'Annex 3', true),
+    then: (page) => goTo(page, 'Annex III', true),
     shown: ['#popup.visible'],
   },
   {
@@ -280,5 +310,33 @@ export const ACT_STATES: State[] = [
     link: 'zoom=0.6',
     then: (page) => viaMenu(page, 'about'),
     shown: ['#about-panel .about-section:first-of-type .panel-section-heading'],
+  },
+];
+
+/** The Talmud's page, at /talmud/ (talmud.spec.ts). */
+export const TALMUD_STATES: State[] = [
+  {
+    name: 'talmud-goto-panel',
+    link: '',
+    then: (page) => goTo(page),
+    shown: ['#goto-input', '.goto-example'],
+  },
+  {
+    name: 'talmud-goto-completing',
+    link: '',
+    then: (page) => goTo(page, 'Ba'),
+    shown: ['#goto-input', '.goto-completion'],
+  },
+  {
+    name: 'talmud-goto-offer',
+    link: '',
+    then: (page) => goTo(page, 'Berakhot 17a'),
+    shown: ['#goto-input', '.goto-offer'],
+  },
+  {
+    name: 'talmud-goto-not-found',
+    link: '',
+    then: (page) => goTo(page, 'Berakhot 99a'),
+    shown: ['#goto-input', '.goto-none'],
   },
 ];

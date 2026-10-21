@@ -9,6 +9,8 @@ import {
   desktopTabletAndPhoneOnly,
   shown,
 } from './page.ts';
+import { CHROME, TALMUD_STATES } from './app.ts';
+import { checkLayout } from './check.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 
@@ -66,6 +68,18 @@ async function squaresOnScreen(page: Page): Promise<Box[]> {
     }));
   }, cover);
   return squares.filter((b) => outsideOf([b], view).length === 0);
+}
+
+for (const state of TALMUD_STATES) {
+  test(state.name, async ({ page }, info) => {
+    const errors = await openMap(page, state.link, TALMUD);
+    await state.then?.(page);
+    const shot = info.outputPath('screen.png');
+    await page.screenshot({ path: shot });
+    await info.attach('layout', { path: shot, contentType: 'image/png' });
+    await checkLayout(page, state, CHROME);
+    expect(errors, 'page errors').toEqual([]);
+  });
 }
 
 test('the Talmud map draws, and names its tractates only once they are big enough to read', async ({

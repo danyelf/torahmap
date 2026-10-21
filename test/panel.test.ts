@@ -5,6 +5,7 @@ import { storiesHtml } from '../packages/shell/src/storiesPanel.ts';
 import { aboutHtml } from '../packages/shell/src/aboutPanel.ts';
 import { tanakhSite } from '@torahmap/tanakh/site.ts';
 import { overlayPanelHtml, searchPanelHtml } from '../packages/shell/src/toolPanels.ts';
+import { goToPanelHtml } from '../packages/shell/src/goTo.ts';
 
 function parse(html: string): HTMLDivElement {
   const div = document.createElement('div');
@@ -25,6 +26,7 @@ describe('panelHtml', () => {
 
 describe('every panel is built by panelHtml, with shared controls', () => {
   const panels: [Panel, string][] = [
+    ['goto', goToPanelHtml(['Genesis 2:2'])],
     ['overlay', overlayPanelHtml()],
     [
       'stories',
