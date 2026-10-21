@@ -132,6 +132,12 @@ export const STATES: State[] = [
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select'],
   },
+  // A rare mark lights a few dozen verses, which must show with the whole map in view.
+  {
+    name: 'explore-trop-rare',
+    link: 'overlay=trop&trop=shalshelet&zoom=0.1',
+    shown: ['#map-legend'],
+  },
   {
     name: 'explore-search',
     link: `search=${encodeURIComponent('אברהם')}`,

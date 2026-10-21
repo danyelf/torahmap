@@ -241,6 +241,13 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     return items.map((item) => tropColorAt(item, derived));
   },
 
+  // A rare mark is in a few dozen verses at most, which zoomed out would vanish into the bars.
+  standoutsFor(items, settings, data) {
+    const derived = derivationFor(data, settings);
+    if (!derived || derived.counts) return items.map(() => false);
+    return items.map((item) => countAt(item, derived) > 0);
+  },
+
   settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {
     return { mark: params.trop ?? null, preview: null };
   },

@@ -32,7 +32,7 @@ function brightenBands(color: ItemColor, factor: number): ItemColor {
  * With both on, a square neither colours dims from its `base` colour. With
  * search alone, a square it does not find keeps `keepsBase` of its base
  * colour, or goes grey without it. Every match stands out, so it shows at any
- * zoom.
+ * zoom, and so does every square `overlayStandout` marks.
  */
 export function combineLayers(
   count: number,
@@ -41,15 +41,16 @@ export function combineLayers(
   base: (index: number) => ItemColor,
   nonMatchDim: number = SEARCH_NON_MATCH_DIM,
   keepsBase?: number,
+  overlayStandout?: readonly boolean[] | null,
 ): Picture<ItemColor | null> {
   const colors: (ItemColor | null)[] = new Array(count);
   const rings: (ItemColor | null)[] = new Array(count).fill(null);
-  const standout: boolean[] | undefined = search ? new Array(count) : undefined;
+  const standout: boolean[] | undefined = search || overlayStandout ? new Array(count) : undefined;
 
   for (let i = 0; i < count; i++) {
     const under = overlay?.[i] ?? null;
     const match = search?.[i] ?? null;
-    if (standout) standout[i] = !!match;
+    if (standout) standout[i] = !!match || !!overlayStandout?.[i];
     if (!search) {
       colors[i] = under;
     } else if (!overlay) {
@@ -111,13 +112,15 @@ export function toolsPicture<T>(
 ): Picture<ItemColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
     on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
+  const { overlay } = tools;
   return combineLayers(
     items.length,
     colorsOf(tools.search),
-    colorsOf(tools.overlay),
+    colorsOf(overlay),
     base,
     nonMatchDim,
     keepsBase,
+    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data),
   );
 }
 

@@ -110,6 +110,10 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): (Color | Color[] | null)[];
 
+  // Which of `items` stand out, as a search match does: drawn over the rest and
+  // never too small to see. For an overlay that can light only a few squares.
+  standoutsFor?(items: SpatialItem<T>[], settings: S, data: D): boolean[];
+
   // The panel may be drawn without the overlay's data; then data is null.
   //
   // Draw the controls for `settings`. The app calls this again with the same

@@ -141,6 +141,32 @@ describe('combineLayers', () => {
     it('makes nothing stand out with no search', () => {
       expect(combineLayers(1, null, [RED], getDefaultColor).standout).toBeUndefined();
     });
+
+    it('makes the squares the overlay marks stand out', () => {
+      const { standout } = combineLayers(
+        2,
+        null,
+        [RED, RED],
+        getDefaultColor,
+        undefined,
+        undefined,
+        [false, true],
+      );
+      expect(standout).toEqual([false, true]);
+    });
+
+    it('makes a search match and an overlay standout both stand out', () => {
+      const { standout } = combineLayers(
+        3,
+        [CYAN, null, null],
+        [RED, RED, RED],
+        getDefaultColor,
+        undefined,
+        undefined,
+        [false, true, false],
+      );
+      expect(standout).toEqual([true, true, false]);
+    });
   });
 });
 
@@ -209,6 +235,23 @@ describe('toolsPicture', () => {
 
     expect(picture.colors).toEqual([RED, scaled(RED, DIM)]);
     expect(picture.rings).toEqual([CYAN, null]);
+  });
+
+  it('asks the overlay which of its squares stand out', () => {
+    const overlay = {
+      ...testOverlay({ id: 'o', name: 'O', getItemColor: () => RED }),
+      standoutsFor: (items: { verse: number }[]) => items.map((v) => v.verse === 2),
+    };
+    const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
+
+    const picture = toolsPicture(
+      { overlay: { tool: overlay, settings: undefined, data: undefined }, search: null },
+      items,
+      null,
+      getDefaultColor,
+    );
+
+    expect(picture.standout).toEqual([false, true]);
   });
 
   it('passes a non-match dim through to combineLayers', () => {
