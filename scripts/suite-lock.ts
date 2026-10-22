@@ -22,8 +22,8 @@ export interface Owner {
 
 const POLL_MS = 2000;
 
-// The slowest full run measured was the layout suite's 262 s, and 532 s before
-// it was sped up, with other suites running beside it.
+// A full run takes about 5 minutes, and took 9 before the suites were sped up,
+// with other suites running beside it.
 const LIMIT_MS = 20 * 60_000;
 /** How long a stopped suite has to exit before it is killed outright. */
 const GRACE_MS = 10_000;
