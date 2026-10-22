@@ -33,7 +33,12 @@ export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
 
 /** A segment's id: Bava Kamma 2a:1 is "Bava.Kamma.2a.1". */
 export function talmudId(s: TalmudIdentity): string {
-  return `${bookToUrl(s.tractate)}.${s.daf}${s.amud}.${s.segment}`;
+  return `${bookToUrl(s.tractate)}.${amudName(s)}.${s.segment}`;
+}
+
+/** A daf as numbered, "2", or one side of it, "2a". */
+export function amudName(s: { daf: number; amud?: string }): string {
+  return `${s.daf}${s.amud ?? ''}`;
 }
 
 /** Read a segment's id: "Bava.Kamma.2a.1" is Bava Kamma 2a:1; null for anything else. */
@@ -58,7 +63,7 @@ export function talmudRef(s: TalmudIdentity): string {
 
 /** A daf, or one side of it, as readers write it: "Bava Kamma 2" or "Bava Kamma 2a". */
 export function dafRef(s: { tractate: string; daf: number; amud?: string }): string {
-  return `${s.tractate} ${s.daf}${s.amud ?? ''}`;
+  return `${s.tractate} ${amudName(s)}`;
 }
 
 /** The box round a tractate's squares; its section is its seder. */
@@ -287,7 +292,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           topY: y,
         });
       }
-      const amud = `${row.daf}${row.amud}`;
+      const amud = amudName(row);
       if (!amudimSeen.has(amud)) {
         amudimSeen.add(amud);
         colDafs.push({ daf: row.daf, amud: row.amud, rightX: 0, topY: y });
