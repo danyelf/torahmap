@@ -47,6 +47,16 @@ export function bits(v: number): string {
   return `${shown > 0 ? '+' : shown < 0 ? '−' : ''}${Math.abs(shown).toFixed(2)} bits`;
 }
 
+/**
+ * A division score as a factor: the score is a difference in bits per split,
+ * so 2 to its power is how many times rarer, on average, the passage's splits are.
+ */
+export function timesRarer(v: number): string {
+  const factor = Number((2 ** Math.abs(v)).toFixed(2));
+  if (factor === 1) return 'usual';
+  return `${factor.toFixed(2)}× ${v > 0 ? 'rarer' : 'more common'}`;
+}
+
 /** A list of names as prose: "A, B and C". */
 export const listed = (names: readonly string[]): string =>
   names.length < 2
