@@ -346,8 +346,14 @@ export function wordIsNamed(words: VerseWords | null, wordIndex: number): boolea
  * scripts/search/generate-lexeme-index.py, which the file was aligned against.
  */
 export function wordsBhsaParsed(hebrew: string): TextWord[] {
-  const blanked = hebrew.replace(KETIV, (m) => ' '.repeat(m.length));
-  return splitIntoWords(blanked).filter(({ word }) => !isSectionMarker(word) && isHebrew(word));
+  return splitIntoWords(withoutKetiv(hebrew)).filter(
+    ({ word }) => !isSectionMarker(word) && isHebrew(word),
+  );
+}
+
+/** The verse text with each ketiv blanked to spaces, so every offset still points where it did. */
+export function withoutKetiv(hebrew: string): string {
+  return hebrew.replace(KETIV, (m) => ' '.repeat(m.length));
 }
 
 /**

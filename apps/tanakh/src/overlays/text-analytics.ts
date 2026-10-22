@@ -14,6 +14,19 @@ import { CONTROL } from '@torahmap/shell/panel.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { TEXT_ANALYTICS, TEXT_ANALYTICS_MEASURES } from '@torahmap/overlay-catalog';
+import {
+  HIGH_PERCENTILE,
+  LOW_PERCENTILE,
+  MEASURE_LABELS,
+  SCORES_FILE,
+  bits,
+  listed,
+  percent,
+  percentile,
+  type Measure,
+  type ScoreParameters,
+  type ScoresFile,
+} from './text-analytics/scores.ts';
 import { NO_DATA } from './colors.ts';
 
 // Cividis, slate blue through grey to yellow, for both measures: even in
@@ -27,58 +40,40 @@ const CIVIDIS_STOPS: ColorStop[] = [
   { t: 1, color: [0xff / 255, 0xea / 255, 0x46 / 255] },
 ];
 
-type Measure = (typeof TEXT_ANALYTICS_MEASURES)[number];
-
 export interface TextAnalyticsSettings {
   readonly measure: Measure;
 }
 
-/** Book → chapter → each verse's score, from verse 1; null for a verse with none. */
-type Scores = Record<string, Record<string, (number | null)[]>>;
-
 export interface TextAnalyticsData {
-  scores: {
-    parameters: { windowVerses: number; minWords: number; runWords: number; reachVerses: number };
-  } & Record<Measure, Scores>;
+  scores: ScoresFile;
 }
-
-// The colours span the middle of the scores, so a handful of extreme passages
-// do not push every other verse into one end of the palette.
-const LOW_PERCENTILE = 0.02;
-const HIGH_PERCENTILE = 0.98;
-
-const percent = (v: number): string => `${Math.round(v * 100)}%`;
-const bits = (v: number): string => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(2)}`;
 
 const MEASURES: Record<
   Measure,
   {
-    label: string;
     format: (v: number) => string;
     hover: (v: number) => string;
-    legend: (p: TextAnalyticsData['scores']['parameters']) => string[];
+    legend: (p: ScoreParameters) => string[];
   }
 > = {
   repetition: {
-    label: 'Repetitive wording',
     format: percent,
     hover: (v) => `${percent(v)} of nearby words repeated`,
     legend: (p) => [
       `Share of the words in the ${p.windowVerses} verses around each verse that sit in a ` +
         `${p.runWords}-word phrase its book repeats within ${p.reachVerses} verses`,
       'Blue = little repetition · Yellow = a lot',
-      'Stock phrases found across many books are left out',
+      `Phrases found in ${p.formulaBooks} or more books are left out as stock phrases`,
     ],
   },
-  trop: {
-    label: 'Common and rare trop',
-    format: (v) => `${bits(v)} bits`,
-    hover: (v) => `Trop ${bits(v)} bits against verses this long`,
+  division: {
+    format: bits,
+    hover: (v) => `Verse division ${bits(v)} against verses this long`,
     legend: (p) => [
-      `How rarely the trop divides the ${p.windowVerses} verses around each verse the way it ` +
-        'does, in bits, against verses of the same length',
-      'Blue = common divisions · Yellow = rare ones',
-      'Psalms, Proverbs and Job use other marks and are not coloured',
+      `How unusually the trop divides the ${p.windowVerses} verses around each verse, ` +
+        'in bits, against verses of the same length',
+      'Blue = usual divisions · Yellow = unusual ones',
+      `${listed(p.poeticBooks)} use other marks and are not coloured`,
     ],
   },
 };
@@ -95,12 +90,11 @@ const scalesOf = memoByValue(
         .flatMap((chapters) => Object.values(chapters).flat())
         .filter((v) => v !== null)
         .sort((a, b) => a - b);
-      const at = (q: number) => values[Math.floor(q * (values.length - 1))] ?? 0;
-      const low = at(LOW_PERCENTILE);
-      const high = at(HIGH_PERCENTILE);
+      const low = percentile(values, LOW_PERCENTILE);
+      const high = percentile(values, HIGH_PERCENTILE);
       return { scale: scale(low, high, LINEAR, CIVIDIS_STOPS), low, high };
     };
-    return { repetition: build('repetition'), trop: build('trop') };
+    return { repetition: build('repetition'), division: build('division') };
   },
 );
 
@@ -115,7 +109,7 @@ export const textAnalyticsOverlay: Overlay<
   TextAnalyticsData
 > = {
   ...TEXT_ANALYTICS,
-  data: { scores: 'overlays/text-analytics/scores.json' },
+  data: { scores: SCORES_FILE },
 
   prebuild(data) {
     scalesOf(data);
@@ -142,7 +136,7 @@ export const textAnalyticsOverlay: Overlay<
     if (!buttons.length) {
       container.innerHTML = `<div class="${CONTROL.segments}" role="group" aria-label="Measure">${TEXT_ANALYTICS_MEASURES.map(
         (m) =>
-          `<button type="button" class="${CONTROL.segment}" data-measure="${m}">${MEASURES[m].label}</button>`,
+          `<button type="button" class="${CONTROL.segment}" data-measure="${m}">${MEASURE_LABELS[m]}</button>`,
       ).join('')}</div>`;
       buttons = container.querySelectorAll<HTMLButtonElement>('[data-measure]');
       buttons.forEach((button) =>
@@ -169,14 +163,17 @@ export const textAnalyticsOverlay: Overlay<
     const parameters = data.scores.parameters;
     container.innerHTML =
       renderAxis(scale, low < 0 && high > 0 ? [low, 0, high] : [low, high], measure.format) +
-      [...measure.legend(parameters), `Verses under ${parameters.minWords} words are not coloured`]
+      [
+        ...measure.legend(parameters),
+        `Verses under ${parameters.minWords} words are not coloured; words joined by a maqaf count as one`,
+      ]
         .map(legendCaption)
         .join('');
   },
 
   summary(settings, data) {
     return {
-      detail: MEASURES[settings.measure].label,
+      detail: MEASURE_LABELS[settings.measure],
       colors: [axisGradient(scalesOf(data)[settings.measure].scale)],
     };
   },
