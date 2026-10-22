@@ -56,7 +56,7 @@ import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
-import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
+import { applyLanguageChoice, bindLanguageChoice } from './languageChoice.ts';
 import { ENGLISH, type TextLanguage } from './language.ts';
 import {
   arrivedWith,
