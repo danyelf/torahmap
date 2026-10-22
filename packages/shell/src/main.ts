@@ -56,7 +56,7 @@ import { startingPointsHtml, startChosen, type StartChoice } from './startingPoi
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
-import { ENGLISH } from './language.ts';
+import { ENGLISH, type TextLanguage } from './language.ts';
 import {
   arrivedWith,
   configureAnalytics,
@@ -741,11 +741,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     viewFiles.fetchPopup(item);
     const said = text.popupText(item, loader.loaded(), null);
     const typedIn = text.goTo.languageOf(typed);
-    const languages = [...shownLanguages()].sort(
-      (a, b) => Number(b === typedIn) - Number(a === typedIn),
-    );
-    for (const language of languages) {
-      if (!loader.loaded().has(source.files.popup(item, language))) continue;
+    const first = (language: TextLanguage) => Number(language === typedIn);
+    const files = viewFiles.popupFiles(item).sort((a, b) => first(b.language) - first(a.language));
+    for (const { language, file } of files) {
+      if (!loader.loaded().has(file)) continue;
       const words = language === ENGLISH ? said.english : said.hebrew;
       if (words) return words;
     }
