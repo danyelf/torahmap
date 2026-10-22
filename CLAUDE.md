@@ -37,7 +37,7 @@ npm run build
 npm test               # vitest; test:watch, test:coverage
 npm run typecheck
 npm run format         # Prettier owns formatting; format:check reports only
-npm run test:layout    # before any PR that changes the interface
+npm run test:layout    # see UI Changes in AGENTS.md
 npm run test:loading   # before any PR that changes startup or what loads when
 ```
 
@@ -97,6 +97,5 @@ names the view (`describeLink`).
 
 ## Deployment
 
-The map is live at [torahmap.org](https://torahmap.org). Cloudflare builds and deploys every push
-to main, and gives every pull request its own `workers.dev` preview link; there is no deploy
-command to run by hand.
+The map is live at [torahmap.org](https://torahmap.org). Cloudflare deploys every push to main;
+there is no deploy command to run by hand.

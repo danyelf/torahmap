@@ -4,12 +4,9 @@ What CLAUDE.md leaves out because most tasks don't need it.
 
 ## The pre-commit hook
 
-`.githooks/pre-commit` checks formatting, typechecks and runs the test suite before every commit;
-read the file for what it does and how to bypass it deliberately. `npm install` points git at it
-through the `prepare` script, but not if your npm config sets `ignore-scripts=true` (a reasonable
-supply-chain precaution, and the setting on Danyel's machine) — then `prepare` is skipped silently
-and you must run `./scripts/install-hooks.sh` by hand. See it for what else it checks and when it
-refuses to run.
+Read `.githooks/pre-commit` for how to bypass it deliberately. `npm install` points git at it
+through the `prepare` script, which `ignore-scripts=true` (a reasonable supply-chain precaution)
+skips silently. See `scripts/install-hooks.sh` for what else it checks and when it refuses to run.
 
 ## Layout tests
 
