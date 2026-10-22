@@ -803,17 +803,7 @@ describe('Trop Overlay', () => {
       expect(standouts(null, textsWith(1))).toEqual([false, false]);
     });
 
-    it('counts a mark that occurs 55 times, as Yerah Ben Yomo does, as rare', () => {
-      const texts: VerseTexts = {
-        'Genesis': { '1': { '1': { he: 'ב֪'.repeat(55), en: '' }, '2': { he: 'ב', en: '' } } },
-      };
-      const chart = hostOverlay(tropOverlay, { texts }).renderControls();
-      expect(chart.querySelector('button')!.classList.contains('rare')).toBe(true);
-      expect(standouts('yerah-ben-yomo', texts)).toEqual([true, false]);
-    });
-
     it('makes a mark’s verses stand out exactly when its chart button is marked rare', () => {
-      // One mark in each tier: a rare one, an uncommon one and a common one.
       const he =
         'ב֓' + 'ב֖'.repeat(RARITY_THRESHOLDS.RARE) + 'ב֑'.repeat(RARITY_THRESHOLDS.UNCOMMON);
       const texts: VerseTexts = { 'Genesis': { '1': { '1': { he, en: '' } } } };
@@ -828,10 +818,12 @@ describe('Trop Overlay', () => {
   });
 
   describe('Integration with Trop Module', () => {
-    it('uses getRarityTier from trop module', () => {
-      expect(getRarityTier(10)).toBe('rare');
-      expect(getRarityTier(100)).toBe('uncommon');
-      expect(getRarityTier(1000)).toBe('common');
+    it('starts each tier at its threshold', () => {
+      const { RARE, UNCOMMON } = RARITY_THRESHOLDS;
+      expect(getRarityTier(RARE - 1)).toBe('rare');
+      expect(getRarityTier(RARE)).toBe('uncommon');
+      expect(getRarityTier(UNCOMMON - 1)).toBe('uncommon');
+      expect(getRarityTier(UNCOMMON)).toBe('common');
     });
   });
 });

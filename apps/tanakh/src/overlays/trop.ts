@@ -11,8 +11,9 @@ import {
   scale,
   LINEAR,
   LOG,
-  type Scale,
   memoByValue,
+  memoByValueAndKey,
+  type Transform,
 } from '@torahmap/utils';
 import './trop.css';
 import type { Overlay, UrlParamValues, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
@@ -66,21 +67,45 @@ function entryFor(data: TropData, mark: string | null): TropIndexEntry | null {
   return marksOf(data).get(mark) ?? null;
 }
 
-/**
- * How a mark is drawn. A rare mark is present or absent, with its verses as
- * gold spots that stand out zoomed far out and its button in the chart marked;
- * any other is a count, on a scale.
- */
+/** A rare mark is drawn as present or absent; any other as a count, on a scale. */
 function tierOf(entry: TropIndexEntry): RarityTier {
   return getRarityTier(entry.totalCount);
 }
 
-/** A rare mark's legend is two swatches, "contains" and "does not"; any other's a gradient. */
-function markColors(entry: TropIndexEntry): string[] {
-  const tier = tierOf(entry);
-  if (tier === 'rare') return [colorToCss(RARE_MATCH_COLOR), colorToCss(NO_MATCH_COLOR.rare)];
-  return [axisGradient(countScale(entry, tier))];
+interface Tier {
+  label: string;
+  noMatch: Color;
 }
+
+interface CountedTier extends Tier {
+  transform: Transform;
+  gradient: ColorStop[];
+}
+
+const TIERS: { rare: Tier & { match: Color }; uncommon: CountedTier; common: CountedTier } = {
+  rare: { label: 'Rare', match: [1.0, 0.84, 0.0], noMatch: [0.25, 0.25, 0.25] }, // Gold on grey
+  uncommon: {
+    label: 'Uncommon',
+    noMatch: [0.25, 0.25, 0.28],
+    transform: LINEAR,
+    gradient: [
+      { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
+      { t: 1, color: [0.9, 0.4, 0.95] }, // Bright purple
+    ],
+  },
+  // Common marks span a wide range of counts, so their scale is logarithmic.
+  common: {
+    label: 'Common',
+    noMatch: [0.25, 0.23, 0.28],
+    transform: LOG,
+    gradient: [
+      { t: 0, color: [0.2, 0.1, 0.3] }, // Dark purple
+      { t: 0.33, color: [0.4, 0.2, 0.5] }, // Purple
+      { t: 0.66, color: [0.7, 0.3, 0.7] }, // Magenta
+      { t: 1.0, color: [0.95, 0.6, 0.9] }, // Pink
+    ],
+  },
+};
 
 interface TropDerivation {
   entry: TropIndexEntry;
@@ -88,24 +113,8 @@ interface TropDerivation {
   verseLookup: Map<string, number>;
   /** A verse's colour, from how many times it carries the mark. */
   colorOf: (count: number) => Color;
-}
-
-const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
-const NO_MATCH_COLOR: Record<RarityTier, Color> = {
-  rare: [0.25, 0.25, 0.25],
-  uncommon: [0.25, 0.25, 0.28],
-  common: [0.25, 0.23, 0.28],
-};
-
-/**
- * How many times a verse carries the mark, as a colour. Common marks span a
- * wide range of counts, so their scale is logarithmic.
- */
-function countScale(entry: TropIndexEntry, tier: 'uncommon' | 'common'): Scale {
-  const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
-  return tier === 'uncommon'
-    ? scale(0, maxCount, LINEAR, UNCOMMON_TROP_GRADIENT)
-    : scale(0, maxCount, LOG, COMMON_TROP_GRADIENT);
+  /** CSS colours for the key: "contains" and "does not" for a rare mark, else one gradient. */
+  legend: string[];
 }
 
 /** The colours and lookup table for one trop mark, named by its URL slug. */
@@ -119,51 +128,42 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
   }
 
   const tier = tierOf(entry);
-  const noMatch = NO_MATCH_COLOR[tier];
   if (tier === 'rare') {
-    return { entry, tier, verseLookup, colorOf: (count) => (count ? RARE_MATCH_COLOR : noMatch) };
+    const { match, noMatch } = TIERS.rare;
+    return {
+      entry,
+      tier,
+      verseLookup,
+      colorOf: (count) => (count ? match : noMatch),
+      legend: [colorToCss(match), colorToCss(noMatch)],
+    };
   }
-  const counts = countScale(entry, tier);
+  const { noMatch, transform, gradient } = TIERS[tier];
+  const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
+  const counts = scale(0, maxCount, transform, gradient);
   return {
     entry,
     tier,
     verseLookup,
     colorOf: (count) => (count ? counts.colorOf(count) : noMatch),
+    legend: [axisGradient(counts)],
   };
 }
 
-// Per data value, then per settings value.
-const derivationsOf = memoByValue((data: TropData) =>
-  memoByValue((settings: TropSettings) => deriveTrop(data, shownMark(settings))),
-);
+/** Once per data value and mark. */
+const derivationOf = memoByValueAndKey(deriveTrop);
 
+/** The mark the map shows: the one the pointer is over in the chart, else the one clicked. */
 function derivationFor(data: TropData, settings: TropSettings): TropDerivation | null {
-  return derivationsOf(data)(settings);
-}
-
-const UNCOMMON_TROP_GRADIENT: ColorStop[] = [
-  { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
-  { t: 1, color: [0.9, 0.4, 0.95] }, // Bright purple
-];
-
-const COMMON_TROP_GRADIENT: ColorStop[] = [
-  { t: 0, color: [0.2, 0.1, 0.3] }, // Dark purple
-  { t: 0.33, color: [0.4, 0.2, 0.5] }, // Purple
-  { t: 0.66, color: [0.7, 0.3, 0.7] }, // Magenta
-  { t: 1.0, color: [0.95, 0.6, 0.9] }, // Pink
-];
-
-function tierLabel(tier: RarityTier): string {
-  return tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
+  return derivationOf(data, shownMark(settings));
 }
 
 /** The "name (hebrew) · count · tier" line shown for a trop mark's info. */
 function tropInfoLine(entry: TropIndexEntry, options?: { withOccurrencesWord?: boolean }): string {
-  const tier = tierOf(entry);
   const count = options?.withOccurrencesWord
     ? `${entry.totalCount.toLocaleString()} occurrences`
     : entry.totalCount.toLocaleString();
-  return `${entry.name} (${entry.hebrewName}) · ${count} · ${tierLabel(tier)}`;
+  return `${entry.name} (${entry.hebrewName}) · ${count} · ${TIERS[tierOf(entry)].label}`;
 }
 
 function countAt(verse: TanakhLayout, derived: TropDerivation): number {
@@ -171,9 +171,7 @@ function countAt(verse: TanakhLayout, derived: TropDerivation): number {
 }
 
 function tropColorAt(verse: TanakhLayout, derived: TropDerivation | null): Color | null {
-  if (!derived) return null;
-
-  return derived.colorOf(countAt(verse, derived));
+  return derived && derived.colorOf(countAt(verse, derived));
 }
 
 /**
@@ -278,19 +276,20 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
       container.innerHTML = '';
       return;
     }
-    const entry = entryFor(data, shownMark(settings));
-    if (!entry) {
+    const derived = derivationFor(data, settings);
+    if (!derived) {
       container.innerHTML = legendCaption('Select a trop mark above');
       return;
     }
 
-    const colors = markColors(entry);
-    if (colors.length === 2) {
+    if (derived.tier === 'rare') {
+      const [contains, without] = derived.legend;
       container.innerHTML =
-        legendRow(colors[0], `Contains ${entry.name}`) + legendRow(colors[1], 'Does not contain');
+        legendRow(contains, `Contains ${derived.entry.name}`) +
+        legendRow(without, 'Does not contain');
     } else {
       container.innerHTML = `
-        <div class="trop-gradient" style="background: ${colors[0]}"></div>
+        <div class="trop-gradient" style="background: ${derived.legend[0]}"></div>
         <div class="trop-gradient-labels">
           <span>0</span>
           <span>Count</span>
@@ -301,8 +300,8 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
   },
 
   summary(settings, data) {
-    const entry = entryFor(data, settings.mark);
-    return entry ? { detail: settings.mark ?? undefined, colors: markColors(entry) } : {};
+    const derived = derivationOf(data, settings.mark);
+    return derived ? { detail: settings.mark ?? undefined, colors: derived.legend } : {};
   },
 
   getHoverInfo(verse, settings, data) {
