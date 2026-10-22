@@ -21,6 +21,20 @@
   text-align: start;
 }
 
+/* A phone's sheet holds about four rows, so there the names wrap side by side. */
+@media (max-width: 768px) {
+  .goto-completions {
+    flex-flow: row wrap;
+    gap: 4px;
+  }
+
+  .goto-completion {
+    min-height: 36px;
+    padding: 0 10px;
+    border: 1px solid #444;
+  }
+}
+
 .goto-completion:hover,
 .goto-completion[aria-selected='true'] {
   background: #2a2a2a;

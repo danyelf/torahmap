@@ -86,6 +86,13 @@ export const STATES: State[] = [
     shown: ['#goto-input', '.goto-completion'],
   },
   {
+    name: 'goto-completing-word',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'Sam'),
+    shown: ['#goto-input', '.goto-completion'],
+  },
+  {
     name: 'goto-offer',
     link: '',
     returning: true,
@@ -305,6 +312,12 @@ export const ACT_STATES: State[] = [
     name: 'act-goto-completing',
     link: 'zoom=0.6',
     then: (page) => goTo(page, 'a'),
+    shown: ['#goto-input', '.goto-completion'],
+  },
+  {
+    name: 'act-goto-article',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'Article'),
     shown: ['#goto-input', '.goto-completion'],
   },
   {
