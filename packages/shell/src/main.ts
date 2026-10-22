@@ -86,7 +86,6 @@ import { dataFor, loadFiles, type Loaded } from './dataFiles.ts';
 import { filesFirst, staleAfterLanding, type LandingView, type OpeningView } from './downloads.ts';
 import { createLoader } from './loader.ts';
 import { createViewFiles } from './viewFiles.ts';
-import { LOADING } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
 import { URL_UPDATE_DEBOUNCE_MS, SEARCH_NON_MATCH_DIM, MAP_FADE } from './constants.ts';
@@ -178,6 +177,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     text.overlays.find((overlay) => overlay.id === id);
   // What a story stop may name.
   const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
+  // What main.ts asks of the loader and viewFiles is the loading suite's to
+  // check: creating them, starting the downloads, asking for a fetch, what
+  // showLoadState redraws, and what the map does as a file lands or fails.
+  // npm run test:browser sees a change to this file as the interface's, so run
+  // npm run test:loading after changing one of them.
   const loader = createLoader({
     first,
     overlays: allOverlays,
@@ -323,13 +327,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
           summary: on.tool.summary?.(on.settings, on.data) ?? {},
         });
       } else if (tool) {
-        // A picked tool without its data: its files are on their way, or one failed.
-        const waiting = viewFiles.waitingTool(tool);
-        if (waiting === 'loading') {
-          rows.push({ panel, name: tool.name, summary: { detail: LOADING }, loading: true });
-        } else if (waiting) {
-          warnings.push(waiting);
-        }
+        const waiting = viewFiles.waitingTool(panel, tool);
+        if (waiting instanceof HTMLElement) warnings.push(waiting);
+        else if (waiting) rows.push(waiting);
       }
     }
     showLegend(mapLegend, rows, warnings);
@@ -1519,9 +1519,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  // What the map does as a file lands or fails is the loading suite's to check:
-  // npm run test:browser does not see a change here as loading's, so run
-  // npm run test:loading after one.
+  // Loading's, like every call into the loader and viewFiles: see createLoader.
   function fileLanded(before: Loaded, after: Loaded): void {
     const stale = staleAfterLanding(before, after, landingView());
     if (stale.map) redrawMap(stale.map);

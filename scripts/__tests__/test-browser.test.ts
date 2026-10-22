@@ -32,7 +32,13 @@ describe('suitesFor', () => {
   });
 
   it('runs both for the page, its server and dependencies, and what both suites read', () => {
-    for (const path of ['vite.config.ts', 'package-lock.json', 'test/browser/page.ts'])
+    for (const path of [
+      'vite.config.ts',
+      'package-lock.json',
+      'test/browser/page.ts',
+      'public/data/talmud/structure.json',
+      'packages/shell/src/analytics.ts',
+    ])
       expect(suites(path), path).toEqual(['layout', 'loading']);
   });
 

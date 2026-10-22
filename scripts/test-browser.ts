@@ -21,14 +21,15 @@ const RULES: [RegExp, Suite[]][] = [
   // Stories are Markdown the map shows; the rest is documents.
   [/^packages\/stories\/markdown\//, LAYOUT],
   [/\.md$/, NEITHER],
-  // What downloads when. main.ts's landing callback is loading's too, but its
-  // file is the interface's; a comment there asks for the loading suite.
+  // What downloads when, and what the page says while it waits. main.ts's
+  // calls into the loader and viewFiles are loading's too, but its file is the
+  // interface's; a comment there asks for the loading suite.
   [
     /^packages\/shell\/src\/(loader|viewFiles|downloads|dataFiles|loadNotice|overlays\/prebuild)\.ts$/,
     LOADING,
   ],
   [/^apps\/[^/]+\/src\/files\.ts$/, LOADING],
-  // The map is laid out from the data, and the layout suite records what a reader does.
+  // Both suites draw the map from the data and record what the app sends.
   [/^public\/data\/|^packages\/shell\/src\/analytics\.ts$/, BOTH],
   [/^test\/loading\//, LOADING],
   [/^test\/browser\//, BOTH],

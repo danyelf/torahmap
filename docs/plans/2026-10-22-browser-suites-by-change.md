@@ -23,8 +23,8 @@ script, not judgment, should decide which.
 4. `npm run test:browser` reads the files changed against `origin/main` and runs the suites they
    call for. The instructions point at it.
 
-Not covered: what the map does once a file lands stays in `main.ts`'s landing callback, which a
-comment there marks as loading's.
+Not covered: what `main.ts` asks of the loader and `viewFiles`, which a comment above
+`createLoader` marks as loading's.
 
 ## Open questions, assumptions, surprises
 
@@ -44,7 +44,8 @@ comment there marks as loading's.
 - The loading suite relies on interface hooks, such as `data-loading` in `mapLegend.ts` and the
   tour's stop ids. Renaming one breaks it while the script runs layout; that is the ordinary
   coupling of a test to a selector.
-- Not covered, besides the landing callback: an overlay's or search's `data`, which names the
+- Not covered, besides what `main.ts` asks of the loader and `viewFiles` (listed above
+  `createLoader`): an overlay's or search's `data`, which names the
   files it needs, lives in its own module and counts as layout's. Changing which files a tool
   needs is rare; a change there should run the loading suite by hand.
 - The serving tests run in vitest against Vite's dev server started in the test (about 0.2 s),

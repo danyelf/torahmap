@@ -6,7 +6,9 @@ import type { LandingView, OpeningView } from './downloads.ts';
 import type { ColorSource } from './scrollytelling/driver.ts';
 import { shownLanguages } from './languageChoice.ts';
 import type { TextLanguage } from './language.ts';
-import { loadNotice } from './loadNotice.ts';
+import { LOADING, loadNotice } from './loadNotice.ts';
+import type { LegendRow } from './mapLegend.ts';
+import type { FrontTool } from './frame.ts';
 import type { Loader } from './loader.ts';
 import type { Overlay } from './overlays/types.ts';
 import type { SearchTool } from './app/search.ts';
@@ -28,8 +30,11 @@ export interface ViewFiles<I> {
   fetchSearch(): void;
   /** The shown languages of `item`'s popup whose file is not in, with one notice for each file. */
   waitingLanguages(item: I): Partial<Record<TextLanguage, Node | null>>;
-  /** What a picked tool without its data says: its files are loading, a warning, or nothing. */
-  waitingTool(tool: Overlay<I>): 'loading' | HTMLElement | null;
+  /**
+   * What the legend shows for a picked tool without its data: a card saying its
+   * files are on their way, a warning that one failed, or nothing.
+   */
+  waitingTool(panel: FrontTool, tool: Overlay<I>): LegendRow | HTMLElement | null;
   /** Says in the search caption that search's files are loading or failed; search fills it once they are in. */
   showSearchNotice(): void;
 }
@@ -89,9 +94,11 @@ export function createViewFiles<I>(options: {
       }
       return waiting;
     },
-    waitingTool(tool) {
+    waitingTool(panel, tool) {
       const required = requiredFiles(tool);
-      return loader.waitingOn(required) === 'loading' ? 'loading' : noticeFor(required);
+      return loader.waitingOn(required) === 'loading'
+        ? { panel, name: tool.name, summary: { detail: LOADING }, loading: true }
+        : noticeFor(required);
     },
     showSearchNotice() {
       const caption = searchControls.querySelector('#search-hit-caption');
