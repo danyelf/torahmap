@@ -2,12 +2,11 @@
 
 import {
   foldFinalLetters,
-  isHebrew,
+  hebrewOrEnglish,
   soundOfName,
   withoutPointsOrGeresh,
   writtenNumber,
 } from '@torahmap/hebrew';
-import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { fromRoman } from '@torahmap/utils';
 import { passageRef, verseId, type ChapterPlace } from '@torahmap/link/tanakh';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
@@ -178,6 +177,6 @@ export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examp
   return {
     read,
     complete: completeNames,
-    languageOf: (typed) => (isHebrew(typed) ? HEBREW : ENGLISH),
+    languageOf: hebrewOrEnglish,
   };
 }

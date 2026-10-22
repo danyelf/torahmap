@@ -2,12 +2,11 @@
 
 import {
   foldFinalLetters,
-  isHebrew,
+  hebrewOrEnglish,
   soundOfName,
   withoutPointsOrGeresh,
   writtenNumber,
 } from '@torahmap/hebrew';
-import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import { eachWord, namedBy, referenceReader, type Token } from '@torahmap/shell/references.ts';
 import type { TalmudAmud } from './data.ts';
@@ -118,6 +117,6 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<Go
   return {
     read,
     complete: completeNames,
-    languageOf: (typed) => (isHebrew(typed) ? HEBREW : ENGLISH),
+    languageOf: hebrewOrEnglish,
   };
 }
