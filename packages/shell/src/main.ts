@@ -52,8 +52,7 @@ import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
-import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
-import type { TextLanguage } from './language.ts';
+import { applyLanguageChoice, bindLanguageChoice } from './languageChoice.ts';
 import {
   arrivedWith,
   configureAnalytics,
@@ -83,10 +82,11 @@ import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColorin
 import { createOverlaySettings, settingsFromLink } from './overlays/settings.ts';
 import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
-import { dataFor, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';
+import { dataFor, loadFiles, type Loaded } from './dataFiles.ts';
 import { filesFirst, staleAfterLanding, type LandingView, type OpeningView } from './downloads.ts';
 import { createLoader } from './loader.ts';
-import { LOADING, loadNotice } from './loadNotice.ts';
+import { createViewFiles } from './viewFiles.ts';
+import { LOADING } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
 import { URL_UPDATE_DEBOUNCE_MS, SEARCH_NON_MATCH_DIM, MAP_FADE } from './constants.ts';
@@ -324,12 +324,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         });
       } else if (tool) {
         // A picked tool without its data: its files are on their way, or one failed.
-        const files = requiredFiles(tool);
-        if (loader.waitingOn(files) === 'loading') {
+        const waiting = viewFiles.waitingTool(tool);
+        if (waiting === 'loading') {
           rows.push({ panel, name: tool.name, summary: { detail: LOADING }, loading: true });
-        } else {
-          const notice = noticeFor(files);
-          if (notice) warnings.push(notice);
+        } else if (waiting) {
+          warnings.push(waiting);
         }
       }
     }
@@ -861,46 +860,20 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     trackViewSettled(where.area, where.section, camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
-  /** The files `item`'s popup needs for the languages shown; none without an item. */
-  function popupFilesOf(item: I | null): string[] {
-    return item
-      ? [...new Set(shownLanguages().map((language) => source.files.popup(item, language)))]
-      : [];
-  }
-
-  /** The shown languages of `item`'s popup whose file is not in, with one notice for each file. */
-  function waitingLanguages(item: I): Partial<Record<TextLanguage, Node | null>> {
-    const waiting: Partial<Record<TextLanguage, Node | null>> = {};
-    const told = new Set<string>();
-    for (const language of shownLanguages()) {
-      const file = source.files.popup(item, language);
-      if (loader.waitingOn([file]) === null) continue;
-      waiting[language] = told.has(file) ? null : noticeFor([file]);
-      told.add(file);
-    }
-    return waiting;
-  }
-
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
-    const files = popupFilesOf(item);
-    for (const file of files) loader.fetchNow(file);
+    viewFiles.fetchPopup(item);
     const tools = toolsNow();
     updateSidebar(
       sidebarElements,
       item,
       (shown) => text.popupText(shown, loader.loaded(), tools.overlay),
       {
-        waiting: item ? waitingLanguages(item) : {},
+        waiting: item ? viewFiles.waitingLanguages(item) : {},
         wordsClickable: dataFor(searchTool, loader.loaded()) !== null,
         ...tools,
         pinned: isPinned,
       },
     );
-  }
-
-  /** The files the search's settings ask for at once. */
-  function searchFilesNow(): readonly string[] {
-    return searchTool.filesNow?.(overlaySettings.get(searchTool)) ?? [];
   }
 
   /**
@@ -913,32 +886,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     else if (hoveredItem) updateSidebarWrapper(hoveredItem, false);
   }
 
-  /** Say in the search caption that search's files are loading or failed; search fills it once they are in. */
-  function showSearchNotice(): void {
-    const caption = searchControls.querySelector('#search-hit-caption');
-    if (!caption) return;
-    const notice = noticeFor([...requiredFiles(searchTool), ...searchFilesNow()]);
-    if (notice) caption.replaceChildren(notice);
-    else caption.querySelector('.load-notice')?.remove();
-  }
-
-  /** What a place waiting on `paths` shows: a loading notice, a closable warning, or nothing. */
-  function noticeFor(paths: readonly string[]): HTMLElement | null {
-    const state = loader.waitingOn(paths);
-    return state && loadNotice(state, () => closeWarning(paths));
-  }
-
   /** Redraw every place that says a file is loading or failed. */
   function showLoadState(): void {
     updateLegend();
-    showSearchNotice();
+    viewFiles.showSearchNotice();
     refreshPopup();
-  }
-
-  /** The reader closed a warning: it stays closed for those files. */
-  function closeWarning(paths: readonly string[]): void {
-    loader.close(paths);
-    showLoadState();
   }
 
   sidebarElements.closeBtn?.addEventListener('click', () => {
@@ -958,6 +910,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   const overlayControlsContainer = document.getElementById('overlay-controls');
   const searchControls = document.getElementById('search-controls')!;
+  const viewFiles = createViewFiles({
+    loader,
+    files: source.files,
+    search: searchTool,
+    searchSettings: () => overlaySettings.get(searchTool),
+    searchControls,
+    closed: showLoadState,
+  });
   const overlayLegendContainer = document.getElementById('overlay-legend');
   const overlayStarts = document.getElementById('overlay-starts')!;
 
@@ -1038,7 +998,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * them, keeping their focus.
    */
   function searchChanged(fresh: boolean): void {
-    for (const path of searchFilesNow()) loader.fetchNow(path);
+    viewFiles.fetchSearch();
     drawSearchPanel(fresh);
     updateLegend();
     refreshPopup();
@@ -1059,7 +1019,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       changeSearch,
       dataFor(searchTool, loader.loaded()),
     );
-    showSearchNotice();
+    viewFiles.showSearchNotice();
   }
 
   function changeSearch(update: (current: S) => S): void {
@@ -1527,13 +1487,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView<I> {
-    const searchFiles = searchFilesNow();
-    if (frame.mode !== 'story') {
-      return { tools: pickedTools(), popup: popupFilesOf(pinnedItem), searchFiles };
-    }
+    if (frame.mode !== 'story') return viewFiles.opening(pickedTools(), pinnedItem);
     const { stop } = storyColumn.where();
     const item = stop.pin ? squares.find(stop.pin) : null;
-    return { tools: stopTools(stop, textTools), popup: popupFilesOf(item), searchFiles };
+    return viewFiles.opening(stopTools(stop, textTools), item);
   }
 
   function landingView(): LandingView<I> {
@@ -1545,13 +1502,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       const state = storyColumn.view();
       map = [...stopTools(state.fromStop, textTools), ...stopTools(state.toStop, textTools)];
     }
-    return {
-      source: colorSource(driver),
-      map,
-      panel: currentOverlay,
-      search: searchTool,
-      popup: popupFilesOf(shown),
-    };
+    return viewFiles.landing(colorSource(driver), map, currentOverlay, shown);
   }
 
   /** Bring the map up to date with data that just landed, the way it is being drawn. */
@@ -1582,7 +1533,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function fileFailed(): void {
     updateLegend();
-    showSearchNotice();
+    viewFiles.showSearchNotice();
     refreshPopupAfterDownload();
   }
 

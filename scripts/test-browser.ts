@@ -24,7 +24,7 @@ const RULES: [RegExp, Suite[]][] = [
   // What downloads when. main.ts's landing callback is loading's too, but its
   // file is the interface's; a comment there asks for the loading suite.
   [
-    /^packages\/shell\/src\/(loader|downloads|dataFiles|loadNotice|overlays\/prebuild)\.ts$/,
+    /^packages\/shell\/src\/(loader|viewFiles|downloads|dataFiles|loadNotice|overlays\/prebuild)\.ts$/,
     LOADING,
   ],
   [/^apps\/[^/]+\/src\/files\.ts$/, LOADING],

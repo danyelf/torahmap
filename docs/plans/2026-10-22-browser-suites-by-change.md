@@ -12,8 +12,10 @@ script, not judgment, should decide which.
 ## The plan
 
 1. `packages/shell/src/loader.ts` runs the downloads: the loaded files, which are pending, begun,
-   failed or closed, fetching a file at once, the staged downloads, load timing. `main.ts` hears
-   when a file lands or fails and redraws.
+   failed or closed, fetching a file at once, the staged downloads, load timing. `viewFiles.ts`
+   holds which files what the reader sees needs, fetches them when it needs them, and says what
+   each place shows while they are on their way. `main.ts` says what is shown, and hears when a
+   file lands or fails and redraws.
 2. Each text's file names (`firstFiles`, `timedFile`, `popupFile`) move from its `text.ts` to its
    own `files.ts`.
 3. Each test moves to the suite whose files can break it (#408): the serving tests to vitest, the
@@ -34,6 +36,14 @@ comment there marks as loading's.
   `test/browser/`, which runs both; the layout's own helpers run layout alone.
 - `index.html` counts as layout's: the layout suite checks every element in it. The root
   `package.json` counts as neither: a dependency changes `package-lock.json`, which runs both.
+- The first version left the view's files in `main.ts` (the opening view, the search's and the
+  popup's fetches, the loading notices); the review found a change there would break the loading
+  suite unseen, so they moved to `viewFiles.ts`. The calls that ask it to fetch, as the search
+  changes or a popup opens, stay in `main.ts`: they are interface events, and no file rule sees
+  one removed.
+- The loading suite relies on interface hooks, such as `data-loading` in `mapLegend.ts` and the
+  tour's stop ids. Renaming one breaks it while the script runs layout; that is the ordinary
+  coupling of a test to a selector.
 - Not covered, besides the landing callback: an overlay's or search's `data`, which names the
   files it needs, lives in its own module and counts as layout's. Changing which files a tool
   needs is rare; a change there should run the loading suite by hand.

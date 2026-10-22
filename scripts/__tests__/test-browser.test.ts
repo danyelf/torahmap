@@ -8,6 +8,7 @@ describe('suitesFor', () => {
   it('sends a change to what downloads when to the loading suite alone', () => {
     for (const path of [
       'packages/shell/src/loader.ts',
+      'packages/shell/src/viewFiles.ts',
       'packages/shell/src/downloads.ts',
       'packages/shell/src/overlays/prebuild.ts',
       'apps/talmud/src/files.ts',
