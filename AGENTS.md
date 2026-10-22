@@ -1,7 +1,8 @@
 # Agent Instructions
 
 **Say each thing once.** Before you write a value, a list, a rule or a function, look for where it
-already exists and read it from there. Never write it a second time.
+already exists and read it from there. The test is whether the two must change together: things
+that only happen to look alike can stay apart, and a test states its own expected values.
 
 This project tracks issues on **GitHub Issues**: https://github.com/danyelf/torahmap/issues
 
