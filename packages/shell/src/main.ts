@@ -187,8 +187,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     text.overlays.find((overlay) => overlay.id === id);
   // What a story stop may name.
   const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
-  // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
+    /** Every file not yet in: each stage's, from before the first frame, and any fetched at once. */
     pending: new Set<string>(),
     /** The files whose download has begun: a stage's once it starts, and any fetched at once. */
     started: new Set<string>(),
@@ -202,7 +202,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let searchReady = 0;
   let searchPrebuilt = false;
   let downloadsSettled = false;
-  let downloadsStarted = false;
+  let stagesBegun = false;
   let timingSent = false;
 
   const squares = indexItems(items);
@@ -913,19 +913,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /**
    * A file a popup or a search needs now: downloaded at once, ahead of its
-   * stage if it is waiting in one, unless it is in, on its way or failed.
+   * stage if it is waiting in one, unless it is in or its download has begun.
    * Until the downloads start, the opening view's files are left to their
    * first stage (filesFirst).
    */
   function fetchNow(path: string): void {
-    if (!downloadsStarted) return;
-    if (loaded.has(path) || downloads.started.has(path) || downloads.failed.has(path)) return;
+    if (!stagesBegun) return;
+    if (loaded.has(path) || downloads.started.has(path)) return;
     downloads.started.add(path);
     downloads.pending.add(path);
     void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
   }
 
-  /** The files the search's settings ask for at once. */
   function searchFilesNow(): readonly string[] {
     return searchTool.filesNow?.(overlaySettings.get(searchTool)) ?? [];
   }
@@ -1732,7 +1731,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   const stages = downloadStages(filesFirst(openingView()), allOverlays, loaded);
   for (const path of stages.flat()) downloads.pending.add(path);
-  downloadsStarted = true;
+  stagesBegun = true;
 
   // The loading tests wait on this; nothing in the app reads it.
   document.documentElement.dataset.firstFrame = '';

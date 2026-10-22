@@ -1,4 +1,5 @@
-import type { SearchLanguage, TextRange } from './language.ts';
+import type { TextRange } from '@torahmap/utils';
+import type { SearchLanguage } from './language.ts';
 import type { SearchTerm } from './terms.ts';
 
 /**

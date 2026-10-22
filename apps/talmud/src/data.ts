@@ -1,7 +1,7 @@
 // The shapes of the Talmud data files in public/data/talmud/, and how to read them.
 
 import type { Loaded } from '@torahmap/shell/dataFiles.ts';
-import type { TextRange } from '@torahmap/shell/sidebar.ts';
+import type { TextRange } from '@torahmap/utils';
 
 /** The Talmud's folder in public/data/. */
 export const TALMUD_DATA_DIR = 'talmud';

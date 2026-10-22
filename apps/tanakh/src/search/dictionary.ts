@@ -12,7 +12,7 @@
 // not decoration: 461 ETCBC ids are shared by a Hebrew word and an Aramaic one,
 // and `<LH/` is both burnt-offering and pretext.
 
-import { memoByValue, memoByValueAndKey } from '@torahmap/utils';
+import { memoByValue, memoByValueAndKey, type TextRange } from '@torahmap/utils';
 import {
   findLexemesForWord,
   printedSpelling,
@@ -412,7 +412,7 @@ function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>, words: TextWo
     end: m.index + m[0].length,
     ketiv: m[0].startsWith('('),
   }));
-  const within = (group: { start: number; end: number }) =>
+  const within = (group: TextRange) =>
     words.filter((w) => w.start >= group.start && w.start < group.end);
   // A qere belongs to one ketiv, with nothing but word breaks between them. In
   // (K1) [Q1] (K2) [Q2], Q1 is beside K2 too.
