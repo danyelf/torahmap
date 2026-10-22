@@ -4,7 +4,7 @@ import {
   tropOverlay,
   highlightTropInText,
   RARE_MATCH_COLOR,
-  RARE_NO_MATCH_COLOR,
+  NO_MATCH_COLOR,
   type TropSettings,
 } from '../../../src/overlays/trop';
 import { colorToCss } from '@torahmap/utils';
@@ -380,7 +380,7 @@ describe('Trop Overlay', () => {
         rareButton!.click();
 
         const colors = testVerses.map((v) => host.getItemColor(v));
-        expect(colors).toContainEqual(RARE_NO_MATCH_COLOR);
+        expect(colors).toContainEqual(NO_MATCH_COLOR);
       });
 
       it('uses binary coloring for rare marks', () => {
@@ -474,7 +474,7 @@ describe('Trop Overlay', () => {
       const swatches = [...container.querySelectorAll<HTMLElement>('.legend-row .swatch')];
       expect(swatches.map((swatch) => swatch.style.background)).toEqual([
         colorToCss(RARE_MATCH_COLOR),
-        colorToCss(RARE_NO_MATCH_COLOR),
+        colorToCss(NO_MATCH_COLOR),
       ]);
     });
 
@@ -506,7 +506,7 @@ describe('Trop Overlay', () => {
       rare.click();
       const { colors, strip } = host.summary();
       expect(colors).toContain(colorToCss(RARE_MATCH_COLOR));
-      expect(colors).not.toContain(colorToCss(RARE_NO_MATCH_COLOR));
+      expect(colors).not.toContain(colorToCss(NO_MATCH_COLOR));
       expect(strip).toBeUndefined();
     });
   });

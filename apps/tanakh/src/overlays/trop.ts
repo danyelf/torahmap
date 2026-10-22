@@ -72,27 +72,25 @@ function tierOf(entry: TropIndexEntry): RarityTier {
 }
 
 export const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
-export const RARE_NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
+// A verse without the mark, at every tier.
+export const NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
 
 interface RareTier {
   label: string;
   match: Color;
-  noMatch: Color;
 }
 
 interface CountedTier {
   label: string;
-  noMatch: Color;
   transform: Transform;
   gradient: ColorStop[];
 }
 
 /** How each tier is drawn: a rare mark as present or absent, any other as a count, on a scale. */
 const TIERS = {
-  rare: { label: 'Rare', match: RARE_MATCH_COLOR, noMatch: RARE_NO_MATCH_COLOR },
+  rare: { label: 'Rare', match: RARE_MATCH_COLOR },
   uncommon: {
     label: 'Uncommon',
-    noMatch: [0.25, 0.25, 0.28],
     transform: LINEAR,
     gradient: [
       { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
@@ -102,7 +100,6 @@ const TIERS = {
   // Common marks span a wide range of counts, so their scale is logarithmic.
   common: {
     label: 'Common',
-    noMatch: [0.25, 0.23, 0.28],
     transform: LOG,
     gradient: [
       { t: 0, color: [0.2, 0.1, 0.3] }, // Dark purple
@@ -138,23 +135,27 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
 
   const tier = tierOf(entry);
   if (tier === 'rare') {
-    const { match, noMatch } = TIERS.rare;
+    const { match } = TIERS.rare;
     return {
       entry,
       tier,
       verseLookup,
-      colorOf: (count) => (count ? match : noMatch),
-      legend: { kind: 'swatches', contains: colorToCss(match), without: colorToCss(noMatch) },
+      colorOf: (count) => (count ? match : NO_MATCH_COLOR),
+      legend: {
+        kind: 'swatches',
+        contains: colorToCss(match),
+        without: colorToCss(NO_MATCH_COLOR),
+      },
     };
   }
-  const { noMatch, transform, gradient } = TIERS[tier];
+  const { transform, gradient } = TIERS[tier];
   const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
   const counts = scale(0, maxCount, transform, gradient);
   return {
     entry,
     tier,
     verseLookup,
-    colorOf: (count) => (count ? counts.colorOf(count) : noMatch),
+    colorOf: (count) => (count ? counts.colorOf(count) : NO_MATCH_COLOR),
     legend: { kind: 'gradient', gradient: axisGradient(counts) },
   };
 }
