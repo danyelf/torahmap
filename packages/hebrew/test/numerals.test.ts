@@ -10,6 +10,8 @@ describe('hebrewNumber', () => {
     expect(hebrewNumber('מ')).toBe(40);
     expect(hebrewNumber('קנ')).toBe(150);
     expect(hebrewNumber('קעו')).toBe(176);
+    expect(hebrewNumber('צט')).toBe(99);
+    expect(hebrewNumber('קיט')).toBe(119);
   });
 
   it('reads 15 and 16 as they are written, ט before ו and ז', () => {
@@ -17,9 +19,22 @@ describe('hebrewNumber', () => {
     expect(hebrewNumber('טז')).toBe(16);
   });
 
-  it('reads final letters as their plain ones', () => {
-    expect(hebrewNumber('ך')).toBe(20);
-    expect(hebrewNumber('קם')).toBe(140);
+  it('refuses final letters, which no numeral is written with, so a word such as שם is no number', () => {
+    expect(hebrewNumber('ך')).toBeNull();
+    expect(hebrewNumber('קם')).toBeNull();
+    expect(hebrewNumber('שם')).toBeNull();
+  });
+
+  it('refuses יה and יו, never written for 15 and 16', () => {
+    expect(hebrewNumber('יה')).toBeNull();
+    expect(hebrewNumber('יו')).toBeNull();
+    expect(hebrewNumber('קטז')).toBe(116);
+  });
+
+  it('refuses a hundred, a ten or a unit written twice', () => {
+    expect(hebrewNumber('ככ')).toBeNull();
+    expect(hebrewNumber('קק')).toBeNull();
+    expect(hebrewNumber('יכ')).toBeNull();
   });
 
   it('ignores geresh and gershayim, in Hebrew or typed as quotes', () => {

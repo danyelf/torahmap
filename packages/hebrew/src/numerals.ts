@@ -2,35 +2,16 @@
 
 import { stripNikkud } from './letters.ts';
 
-const VALUES: Record<string, number> = {
-  'א': 1,
-  'ב': 2,
-  'ג': 3,
-  'ד': 4,
-  'ה': 5,
-  'ו': 6,
-  'ז': 7,
-  'ח': 8,
-  'ט': 9,
-  'י': 10,
-  'כ': 20,
-  'ך': 20,
-  'ל': 30,
-  'מ': 40,
-  'ם': 40,
-  'נ': 50,
-  'ן': 50,
-  'ס': 60,
-  'ע': 70,
-  'פ': 80,
-  'ף': 80,
-  'צ': 90,
-  'ץ': 90,
-  'ק': 100,
-  'ר': 200,
-  'ש': 300,
-  'ת': 400,
+// Nine units, nine tens, then the four hundreds.
+const LETTERS = 'אבגדהוזחטיכלמנסעפצקרשת';
+const value = (letter: string): number => {
+  const at = LETTERS.indexOf(letter);
+  return ((at % 9) + 1) * 10 ** Math.floor(at / 9);
 };
+
+// A hundred, then a ten, then a unit, each at most once and in plain letters, never final ones.
+// Fifteen and sixteen are written טו and טז, since יה and יו spell the divine name.
+const NUMERAL = /^([קרשת]?)(?:(ט[וז])|([יכלמנסעפצ]?)([אבגדהוזחט]?))$/;
 
 // Geresh and gershayim, and the quotes typed for them.
 const GERESH = /['"`’‘׳״]/g;
@@ -41,18 +22,13 @@ export function withoutPointsOrGeresh(text: string): string {
 }
 
 /**
- * The number Hebrew letters write, such as יז for 17; null for anything else.
- * The letters must fall from largest to smallest, as numbers are written, so
- * most words are not numbers.
+ * The number Hebrew letters write, 1 to 499, such as יז for 17, read past points, geresh
+ * and gershayim; null for anything else, so most words are not numbers.
  */
 export function hebrewNumber(text: string): number | null {
-  let total = 0;
-  let last = Infinity;
-  for (const char of withoutPointsOrGeresh(text)) {
-    const value = VALUES[char];
-    if (value === undefined || value > last) return null;
-    total += value;
-    last = value;
-  }
-  return total > 0 ? total : null;
+  const letters = withoutPointsOrGeresh(text);
+  const match = letters.match(NUMERAL);
+  if (!letters || !match) return null;
+  if (match[3] === 'י' && (match[4] === 'ה' || match[4] === 'ו')) return null;
+  return [...letters].reduce((sum, letter) => sum + value(letter), 0);
 }
