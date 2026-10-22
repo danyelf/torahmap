@@ -1,6 +1,9 @@
 import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
 import { viaMenu } from '../browser/page.ts';
+import { GO_TO_BOX_ID } from '../../packages/shell/src/goToBox.ts';
+
+const GO_TO_BOX = `#${GO_TO_BOX_ID}`;
 
 export interface State {
   name: string;
@@ -34,11 +37,11 @@ export const CHROME: Chrome = {
 export async function goTo(page: Page, typed = '', take = false): Promise<void> {
   await viaMenu(page, 'goto');
   if (!typed) return;
-  await page.locator('#goto-input').fill(typed);
+  await page.locator(GO_TO_BOX).fill(typed);
   // An offer grows when the text it quotes arrives.
   await page.locator('.goto-quote:not(:empty), .goto-none, .goto-completion').first().waitFor();
   await sheetMeasured(page);
-  if (take) await page.locator('#goto-input').press('Enter');
+  if (take) await page.locator(GO_TO_BOX).press('Enter');
 }
 
 /** Waits for a phone's map to make room for the sheet, which main.ts measures after it changes height. */
@@ -76,42 +79,42 @@ export const STATES: State[] = [
     link: '',
     returning: true,
     then: (page) => goTo(page),
-    shown: ['#goto-input', '.goto-example'],
+    shown: [GO_TO_BOX, '.goto-example'],
   },
   {
     name: 'goto-completing',
     link: '',
     returning: true,
     then: (page) => goTo(page, 'שמ'),
-    shown: ['#goto-input', '.goto-completion'],
+    shown: [GO_TO_BOX, '.goto-completion'],
   },
   {
     name: 'goto-completing-word',
     link: '',
     returning: true,
     then: (page) => goTo(page, 'Sam'),
-    shown: ['#goto-input', '.goto-completion'],
+    shown: [GO_TO_BOX, '.goto-completion'],
   },
   {
     name: 'goto-offer',
     link: '',
     returning: true,
     then: (page) => goTo(page, '1 Sam 3:17'),
-    shown: ['#goto-input', '.goto-offer'],
+    shown: [GO_TO_BOX, '.goto-offer'],
   },
   {
     name: 'goto-hebrew-offer',
     link: '',
     returning: true,
     then: (page) => goTo(page, 'שמואל א ג:יז'),
-    shown: ['#goto-input', '.goto-offer'],
+    shown: [GO_TO_BOX, '.goto-offer'],
   },
   {
     name: 'goto-not-found',
     link: '',
     returning: true,
     then: (page) => goTo(page, 'Genesis 51'),
-    shown: ['#goto-input', '.goto-none'],
+    shown: [GO_TO_BOX, '.goto-none'],
   },
   {
     name: 'goto-chapter-taken',
@@ -306,25 +309,25 @@ export const ACT_STATES: State[] = [
     name: 'act-goto-panel',
     link: 'zoom=0.6',
     then: (page) => goTo(page),
-    shown: ['#goto-input', '.goto-example'],
+    shown: [GO_TO_BOX, '.goto-example'],
   },
   {
     name: 'act-goto-completing',
     link: 'zoom=0.6',
     then: (page) => goTo(page, 'a'),
-    shown: ['#goto-input', '.goto-completion'],
+    shown: [GO_TO_BOX, '.goto-completion'],
   },
   {
     name: 'act-goto-article',
     link: 'zoom=0.6',
     then: (page) => goTo(page, 'Article'),
-    shown: ['#goto-input', '.goto-completion'],
+    shown: [GO_TO_BOX, '.goto-completion'],
   },
   {
     name: 'act-goto-offer',
     link: 'zoom=0.6',
     then: (page) => goTo(page, 'Annex III'),
-    shown: ['#goto-input', '.goto-offer'],
+    shown: [GO_TO_BOX, '.goto-offer'],
   },
   {
     name: 'act-goto-taken',
@@ -346,24 +349,24 @@ export const TALMUD_STATES: State[] = [
     name: 'talmud-goto-panel',
     link: '',
     then: (page) => goTo(page),
-    shown: ['#goto-input', '.goto-example'],
+    shown: [GO_TO_BOX, '.goto-example'],
   },
   {
     name: 'talmud-goto-completing',
     link: '',
     then: (page) => goTo(page, 'Ba'),
-    shown: ['#goto-input', '.goto-completion'],
+    shown: [GO_TO_BOX, '.goto-completion'],
   },
   {
     name: 'talmud-goto-offer',
     link: '',
     then: (page) => goTo(page, 'Berakhot 17a'),
-    shown: ['#goto-input', '.goto-offer'],
+    shown: [GO_TO_BOX, '.goto-offer'],
   },
   {
     name: 'talmud-goto-not-found',
     link: '',
     then: (page) => goTo(page, 'Berakhot 99a'),
-    shown: ['#goto-input', '.goto-none'],
+    shown: [GO_TO_BOX, '.goto-none'],
   },
 ];

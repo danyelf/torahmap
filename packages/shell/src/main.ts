@@ -48,7 +48,8 @@ import {
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, SHARE, menuHtml } from './menu.ts';
-import { bindGoTo, goToPanelHtml, GO_TO_BOX_ID } from './goTo.ts';
+import { bindGoTo, goToPanelHtml } from './goTo.ts';
+import { GO_TO_BOX_ID } from './goToBox.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';

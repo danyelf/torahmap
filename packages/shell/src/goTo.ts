@@ -6,7 +6,7 @@ import type { GoTo, Reference } from './app/text.ts';
 import { CONTROL, panelHtml } from './panel.ts';
 import './styles/go-to.css';
 
-export const GO_TO_BOX_ID = 'goto-input';
+import { GO_TO_BOX_ID } from './goToBox.ts';
 const LIST_ID = 'goto-completions';
 const optionId = (i: number) => `goto-completion-${i}`;
 

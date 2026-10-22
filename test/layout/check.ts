@@ -62,9 +62,9 @@ export async function measureLayout(
 }
 
 /** Measures the page and fails on every violation that `KNOWN` does not record exactly. */
-export async function checkLayout(page: Page, state: State, chrome: Chrome): Promise<void> {
+export async function checkLayout(page: Page, state: State): Promise<void> {
   const info = test.info();
-  const measured = await measureLayout(page, chrome, state.shown);
+  const measured = await measureLayout(page, CHROME, state.shown);
   for (const rule of RULES) {
     const violations = measured[rule];
     if (!violations) continue;
@@ -96,7 +96,7 @@ export function testStates(states: readonly State[], path = '/'): void {
       const shot = info.outputPath('screen.png');
       await page.screenshot({ path: shot });
       await info.attach('layout', { path: shot, contentType: 'image/png' });
-      await checkLayout(page, state, CHROME);
+      await checkLayout(page, state);
       expect(errors, 'page errors while measuring').toEqual([]);
     });
   }

@@ -2,7 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import type { GoTo, Reference } from '../src/app/text.ts';
 import { nameTable } from '../src/references.ts';
 import { ENGLISH } from '../src/language.ts';
-import { bindGoTo, goToPanelHtml, GO_TO_BOX_ID } from '../src/goTo.ts';
+import { bindGoTo, goToPanelHtml } from '../src/goTo.ts';
+import { GO_TO_BOX_ID } from '../src/goToBox.ts';
 
 const PLACES: Record<string, Reference> = {
   'genesis 1': { ref: 'Genesis 1', ids: ['Genesis.1.1', 'Genesis.1.2'] },
