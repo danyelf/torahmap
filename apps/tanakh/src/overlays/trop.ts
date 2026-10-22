@@ -116,10 +116,6 @@ const TIERS = {
 type TropLegend =
   { kind: 'swatches'; contains: string; without: string } | { kind: 'gradient'; gradient: string };
 
-function legendColors(legend: TropLegend): string[] {
-  return legend.kind === 'swatches' ? [legend.contains, legend.without] : [legend.gradient];
-}
-
 interface TropDerivation {
   entry: TropIndexEntry;
   tier: RarityTier;
@@ -313,8 +309,11 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
   summary(settings, data) {
     const derived = derivationOf(data, settings.mark);
     if (!derived) return {};
-    const summary = { detail: settings.mark ?? undefined, colors: legendColors(derived.legend) };
-    return derived.legend.kind === 'swatches' ? summary : { ...summary, ends: ['few', 'many'] };
+    const detail = settings.mark ?? undefined;
+    const { legend } = derived;
+    return legend.kind === 'swatches'
+      ? { detail, colors: [legend.contains, legend.without] }
+      : { detail, strip: { gradient: legend.gradient, ends: ['few', 'many'] } };
   },
 
   getHoverInfo(verse, settings, data) {

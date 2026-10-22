@@ -42,7 +42,7 @@ export function assertApproximately(actual: number, expected: number, epsilon: n
 
 /** A summary's strip names its low and high ends, and not alike. */
 export function assertNamedEnds(summary: OverlaySummary) {
-  const [low, high] = summary.ends ?? [];
+  const [low, high] = summary.strip?.ends ?? [];
   expect(low).toBeTruthy();
   expect(high).toBeTruthy();
   expect(low).not.toBe(high);

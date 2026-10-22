@@ -181,9 +181,10 @@ export interface OverlaySummary {
   /** Words, each in its own colour, as search shows its terms. */
   terms?: { text: string; color: string }[];
   detail?: string;
+  /** Colours shown as squares. */
   colors?: string[];
-  /** Words for the low and high ends of a gradient in `colors`. */
-  ends?: [low: string, high: string];
+  /** A continuous scale: its CSS gradient, between words for its low and high ends. */
+  strip?: { gradient: string; ends: [low: string, high: string] };
 }
 
 /** A tool on the map, with the settings the app holds for it and its data. */

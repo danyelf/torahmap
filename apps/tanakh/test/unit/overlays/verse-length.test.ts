@@ -435,22 +435,16 @@ describe('Verse Length Overlay', () => {
       expect(html).toContain('16 words'); // Max
     });
 
-    it('includes explanatory text about cool colors', () => {
+    it('names its ends in the words the legend card uses', () => {
       const container = document.createElement('div');
       verseLengthOverlay.renderLegend(container);
+      const captions = [...container.querySelectorAll('.legend-caption')].map(
+        (caption) => caption.textContent,
+      );
 
-      const html = container.innerHTML;
-      expect(html).toMatch(/Purple\/blue|Purple/);
-      expect(html).toContain('shorter verses');
-    });
-
-    it('includes explanatory text about warm colors', () => {
-      const container = document.createElement('div');
-      verseLengthOverlay.renderLegend(container);
-
-      const html = container.innerHTML;
-      expect(html).toMatch(/Green\/yellow|Orange\/yellow/);
-      expect(html).toContain('longer verses');
+      for (const end of verseLengthOverlay.summary().strip!.ends) {
+        expect(captions.some((caption) => caption?.includes(end))).toBe(true);
+      }
     });
 
     it('mentions logarithmic scale in legend', () => {

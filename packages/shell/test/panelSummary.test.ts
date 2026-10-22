@@ -38,20 +38,20 @@ describe('summaryHtml', () => {
     expect(text(summaryHtml('Haftarah', {}))).toBe('Haftarah');
   });
 
-  it('draws a gradient as a strip rather than a square', () => {
-    const html = summaryHtml('Commentary', { colors: ['linear-gradient(red, blue)', 'red'] });
-    expect(swatches(html).map((el) => el.classList.contains('strip'))).toEqual([true, false]);
-  });
-
-  it('puts the low end before the strip and the high end after it', () => {
+  it('draws a strip between its low and high ends', () => {
     const html = summaryHtml('Verse Length', {
-      colors: ['linear-gradient(red, blue)'],
-      ends: ['low', 'high'],
+      strip: { gradient: 'linear-gradient(red, blue)', ends: ['low', 'high'] },
     });
     const order = [...parse(html).querySelectorAll('.summary-end, .summary-swatch')].map((el) =>
-      el.classList.contains('summary-swatch') ? 'strip' : el.textContent,
+      el.classList.contains('strip') ? 'strip' : el.textContent,
     );
     expect(order).toEqual(['low', 'strip', 'high']);
+  });
+
+  it('draws colours as squares, with no ends', () => {
+    const html = summaryHtml('Trop', { colors: ['red', 'blue'] });
+    expect(swatches(html).some((el) => el.classList.contains('strip'))).toBe(false);
+    expect(parse(html).querySelector('.summary-end')).toBeNull();
   });
 
   it('keeps the line short when there are many colours', () => {
@@ -63,7 +63,7 @@ describe('summaryHtml', () => {
     const html = summaryHtml('<b>', {
       terms: [{ text: '<i>', color: 'red' }],
       detail: '<u>',
-      ends: ['<s>', '<q>'],
+      strip: { gradient: 'red', ends: ['<s>', '<q>'] },
     });
     expect(html).not.toContain('<s>');
     expect(html).not.toContain('<q>');

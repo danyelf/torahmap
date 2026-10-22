@@ -510,7 +510,7 @@ describe('Trop Overlay', () => {
       ) as HTMLButtonElement;
       rare.click();
       expect(host.summary().colors).toHaveLength(2);
-      expect(host.summary().ends).toBeUndefined();
+      expect(host.summary().strip).toBeUndefined();
     });
   });
 
