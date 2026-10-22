@@ -44,3 +44,15 @@ describe('the Go to examples', () => {
     expect(unread(ACT_EXAMPLES, provisionReader(ids), ids)).toEqual([]);
   });
 });
+
+describe('the places Go to offers after a part of the Act', () => {
+  it('each read to a place in the Act', () => {
+    const ids = computeActLayout(shipped(ACT_STRUCTURE)).items.map((item) => item.id);
+    const reader = provisionReader(ids);
+    for (const part of ['Article', 'Recital', 'Annex']) {
+      const offered = reader.complete(part);
+      expect(offered.length, part).toBeGreaterThan(1);
+      expect(unread(offered, reader, ids), part).toEqual([]);
+    }
+  });
+});

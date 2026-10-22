@@ -123,6 +123,11 @@ describe('nameTable.complete', () => {
     expect(complete('sou')).toEqual(['South', 'Southampton']);
   });
 
+  it('offers a name when a later word of it starts as typed', () => {
+    expect(complete('gate')).toEqual(['North Gate']);
+    expect(complete('ton')).toEqual([]);
+  });
+
   it('offers an entry once, by its first name that starts as typed', () => {
     expect(complete('so')).toEqual(['South', 'Southampton']);
     expect(complete('sot')).toEqual(['Soton']);
@@ -168,6 +173,18 @@ describe('numberIn', () => {
 });
 
 describe('referenceReader', () => {
+  it('offers what may follow a name once the name is typed in full, a handful at most', () => {
+    const following = Array.from({ length: 30 }, (_, i) => `NG ${i + 1}`);
+    const gate = referenceReader({ named: PLACES, place: () => null, following: () => following });
+    for (const typed of ['North Gate', 'North Gate ', 'ng']) {
+      const offered = gate.complete(typed);
+      expect(offered.length, typed).toBeGreaterThan(1);
+      expect(offered.length, typed).toBeLessThan(following.length);
+      expect(following).toEqual(expect.arrayContaining(offered));
+    }
+    expect(gate.complete('North Gate 3')).toEqual([]);
+  });
+
   const where = vi.fn((key: string, rest: Token[]) =>
     rest.length > 1 ? null : { ref: `${key} ${texts(rest).join('')}`.trim(), ids: [key] },
   );

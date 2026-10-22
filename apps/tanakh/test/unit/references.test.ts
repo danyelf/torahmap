@@ -140,6 +140,11 @@ describe('verseReader completion', () => {
     expect(complete('I')).toEqual(['I Samuel']);
   });
 
+  it('offers every book a later word of whose name starts as typed', () => {
+    expect(complete('Sam')).toEqual(['I Samuel', 'II Samuel']);
+    expect(complete('Samuel')).toEqual(['I Samuel', 'II Samuel']);
+  });
+
   it('offers nothing once a book is named in full, or numbers follow', () => {
     expect(complete('Job')).toEqual([]);
     expect(complete('שמואל א')).toEqual([]);

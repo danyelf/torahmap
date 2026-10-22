@@ -2,7 +2,7 @@
 
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import { referenceReader, type Named, type Token } from '@torahmap/shell/references.ts';
-import { actRef, ownerOf, type Layer } from './ids.ts';
+import { actRef, layerOf, ownerOf, type Layer } from './ids.ts';
 
 export const EXAMPLES = ['Article 7', 'Annex III'];
 
@@ -78,5 +78,13 @@ export function provisionReader(ids: readonly string[]): Omit<GoTo, 'examples'> 
     place: placeIn,
     // A bare number is an article's.
     unnamed: (tokens) => placeIn('article', tokens),
+    // Each article, recital or annex in order, as readers cite it.
+    following: (layer) => [
+      ...new Set(
+        ids
+          .filter((id) => layerOf(id) === layer)
+          .map((id) => actRef(layer === 'article' ? ownerOf(id) : id)),
+      ),
+    ],
   });
 }

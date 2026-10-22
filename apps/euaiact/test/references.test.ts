@@ -100,7 +100,11 @@ describe('provisionReader completion', () => {
     expect(complete('reci')).toEqual(['Recital']);
   });
 
-  it('offers nothing once a part is named in full', () => {
-    expect(complete('Annex')).toEqual([]);
+  it('offers, once a part is named in full, places in it that each read', () => {
+    for (const typed of ['Article', 'Article ', 'art', 'Annex', 'Recital']) {
+      const offered = complete(typed);
+      expect(offered.length, typed).toBeGreaterThan(0);
+      for (const place of offered) expect(read(place), place).not.toBeNull();
+    }
   });
 });

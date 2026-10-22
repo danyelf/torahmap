@@ -67,7 +67,8 @@ export interface Named<K> {
   names: readonly string[];
 }
 
-const COMPLETIONS = 6;
+// The most names, or places, completion offers at once.
+const COMPLETIONS = 10;
 
 /**
  * Every name of `entries`, written once by each of `folds`, to read and to
@@ -84,14 +85,19 @@ export function nameTable<K>(
 ): {
   /** The entry `tokens` begin by naming, and the tokens after its name. */
   read(tokens: readonly Token[]): { key: K; rest: Token[] } | null;
-  /** The names `typed` is the start of, one per entry and at most a handful. */
+  /** The names `typed` is the start of, or of a later word of, one per entry and at most a handful. */
   complete(typed: string): string[];
 } {
   const table = entries.map(({ key, names }) => ({
     key,
     names: names.map((name) => {
       const words = texts(referenceTokens(name));
-      return { name, folds: folds.map((fold) => fold(words)) };
+      return {
+        name,
+        folds: folds.map((fold) => fold(words)),
+        // Where completion may start: the name, and the rest of it from each later word.
+        starts: words.map((_, i) => folds[0](words.slice(i))),
+      };
     }),
   }));
 
@@ -130,7 +136,7 @@ export function nameTable<K>(
       const offered: string[] = [];
       for (const { names } of table) {
         if (names.some((n) => n.folds[0] === start)) continue;
-        const hit = names.find((n) => n.folds[0].startsWith(start));
+        const hit = names.find((n) => n.starts.some((from) => from.startsWith(start)));
         if (hit) offered.push(hit.name);
       }
       return offered.slice(0, COMPLETIONS);
@@ -146,6 +152,8 @@ export interface Reading<K> {
   filler?: ReadonlySet<string>;
   /** The place the tokens after `key`'s name give, its filler gone. */
   place(key: K, rest: Token[]): Reference | null;
+  /** The places to offer, in order, once `key`'s name is typed in full with nothing after it. */
+  following?(key: K): readonly string[];
   /** The place tokens that begin with no name give. */
   unnamed?(tokens: Token[]): Reference | null;
 }
@@ -162,7 +170,12 @@ export function referenceReader<K>(how: Reading<K>): Omit<GoTo, 'examples'> {
         found.rest.filter((t) => !how.filler?.has(t.text)),
       );
     },
-    complete: names.complete,
+    complete(typed) {
+      const offered = names.complete(typed);
+      if (offered.length > 0 || !how.following) return offered;
+      const found = names.read(referenceTokens(typed));
+      return found && found.rest.length === 0 ? how.following(found.key).slice(0, COMPLETIONS) : [];
+    },
   };
 }
 
