@@ -19,12 +19,12 @@ import {
   LOW_PERCENTILE,
   MEASURE_LABELS,
   SCORES_FILE,
-  bits,
   listed,
   percent,
   percentile,
   type Measure,
   type ScoreParameters,
+  timesRarer,
   type ScoresFile,
 } from './text-analytics/scores.ts';
 import { NO_DATA } from './colors.ts';
@@ -63,19 +63,25 @@ const MEASURES: Record<
     hover: (v) => `${percent(v)} of nearby words repeated`,
     ends: ['varied', 'repetitive'],
     legend: (p, [low, high]) => [
-      `Share of the words in the ${p.windowVerses} verses around each verse that sit in a ` +
-        `${p.runWords}-word phrase its book repeats within ${p.reachVerses} verses`,
+      `How much of the passage around each verse repeats itself: the share of the words in its ` +
+        `${p.windowVerses} verses that belong to a ${p.runWords}-word phrase the book uses again ` +
+        `within ${p.reachVerses} verses`,
+      `Common idioms such as "thus says the LORD" (found in ${p.formulaBooks} or more books) don't count`,
       `Blue = ${low} wording · Yellow = ${high} wording`,
-      `Phrases found in ${p.formulaBooks} or more books are left out as stock phrases`,
     ],
   },
   division: {
-    format: bits,
-    hover: (v) => `Verse division ${bits(v)} against verses this long`,
+    format: timesRarer,
+    hover: (v) =>
+      timesRarer(v) === 'usual'
+        ? 'Divisions usual for verses this long'
+        : `Divisions ${timesRarer(v)} than usual for verses this long`,
     ends: ['common', 'unusual'],
     legend: (p, [low, high]) => [
       `How unusually the trop divides the ${p.windowVerses} verses around each verse, ` +
-        'in bits, against verses of the same length',
+        'compared with verses of the same length',
+      '1.2× rarer: on average, each split the trop makes here is 1.2 times less common ' +
+        'than in a typical verse',
       `Blue = ${low} divisions · Yellow = ${high} ones`,
       `${listed(p.poeticBooks)} use other marks and are not coloured`,
     ],

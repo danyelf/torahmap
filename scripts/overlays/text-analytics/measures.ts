@@ -171,7 +171,7 @@ export function formulas(books: ParsedBook[]): Set<string> {
 }
 
 /** Each book's repetitive-wording scores, parallel to `books`. */
-export function repetitionScores(books: ParsedBook[]): BookScores[] {
+export function repetitionScores(books: ParsedBook[], reach = REACH_VERSES): BookScores[] {
   const stock = formulas(books);
   return wordsOf(books).map((verses) => {
     // Where each run is found in the book.
@@ -189,7 +189,7 @@ export function repetitionScores(books: ParsedBook[]): BookScores[] {
       if (places.length < 2) continue;
       for (const place of places) {
         const recurs = places.some(
-          (other) => other !== place && Math.abs(other.verse - place.verse) <= REACH_VERSES,
+          (other) => other !== place && Math.abs(other.verse - place.verse) <= reach,
         );
         if (!recurs) continue;
         for (let k = 0; k < RUN_WORDS; k++) repeated[place.verse][place.position + k] = true;
