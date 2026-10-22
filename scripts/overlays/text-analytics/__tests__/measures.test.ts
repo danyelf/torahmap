@@ -3,6 +3,7 @@ import {
   FORMULA_BOOKS,
   MIN_WORDS,
   REACH_VERSES,
+  RUN_WORDS,
   WINDOW_VERSES,
   pieces,
   repetitionScores,
@@ -51,13 +52,13 @@ describe('units', () => {
 });
 
 describe('repetitionScores', () => {
-  const phrase = ['אמר', 'משה', 'לאהרן'];
+  const phrase = ['אמר', 'משה', 'לאהרן', 'ולבניו', 'לאמר'].slice(0, RUN_WORDS);
 
-  it('marks a three-word run that comes back within reach', () => {
+  it('marks a run that comes back within reach', () => {
     const verses = [
-      [...phrase, ...fresh(5)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
       ...Array.from({ length: REACH_VERSES - 1 }, () => fresh(8)),
-      [...phrase, ...fresh(5)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
     ];
     const [scores] = repetitionScores([book('A', verses)]);
     expect(scores[0]).toBeGreaterThan(0);
@@ -66,18 +67,19 @@ describe('repetitionScores', () => {
 
   it('does not mark a run that comes back only beyond reach', () => {
     const verses = [
-      [...phrase, ...fresh(5)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
       ...Array.from({ length: REACH_VERSES }, () => fresh(8)),
-      [...phrase, ...fresh(5)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
     ];
     const [scores] = repetitionScores([book('A', verses)]);
     expect(scores[0]).toBe(0);
   });
 
-  it('does not mark two words that repeat without a third', () => {
+  it('does not mark words that repeat one short of a run', () => {
+    const short = phrase.slice(0, -1);
     const verses = [
-      ['אמר', 'משה', ...fresh(6)],
-      ['אמר', 'משה', ...fresh(6)],
+      [...short, ...fresh(8 - short.length)],
+      [...short, ...fresh(8 - short.length)],
     ];
     expect(repetitionScores([book('A', verses)])[0]).toEqual([0, 0]);
   });
@@ -85,27 +87,27 @@ describe('repetitionScores', () => {
   it('ignores a run found in enough books to be a stock phrase', () => {
     const books = Array.from({ length: FORMULA_BOOKS }, (_, i) =>
       book(`B${i}`, [
-        [...phrase, ...fresh(5)],
-        [...phrase, ...fresh(5)],
+        [...phrase, ...fresh(8 - RUN_WORDS)],
+        [...phrase, ...fresh(8 - RUN_WORDS)],
       ]),
     );
     for (const scores of repetitionScores(books)) expect(scores).toEqual([0, 0]);
   });
 
   it('scores a verse by the share of repeated words in its window, within its book', () => {
-    // Two verses of eight words each, three of them repeated in each.
+    // Two verses of eight words each, a run's worth repeated in each.
     const verses = [
-      [...phrase, ...fresh(5)],
-      [...phrase, ...fresh(5)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
     ];
     const [scores] = repetitionScores([book('A', verses), book('B', [fresh(8)])]);
-    expect(scores).toEqual([6 / 16, 6 / 16]);
+    expect(scores).toEqual([(2 * RUN_WORDS) / 16, (2 * RUN_WORDS) / 16]);
   });
 
   it('leaves a verse under the minimum length without a score', () => {
     const verses = [
-      [...phrase, ...fresh(MIN_WORDS - 4)],
-      [...phrase, ...fresh(5)],
+      [...phrase, ...fresh(MIN_WORDS - 1 - RUN_WORDS)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
     ];
     const [scores] = repetitionScores([book('A', verses)]);
     expect(scores[0]).toBeNull();
@@ -115,8 +117,8 @@ describe('repetitionScores', () => {
   it('averages over the verses around a verse, not the whole book', () => {
     const half = (WINDOW_VERSES - 1) / 2;
     const verses = [
-      [...phrase, ...fresh(5)],
-      [...phrase, ...fresh(5)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
+      [...phrase, ...fresh(8 - RUN_WORDS)],
       ...Array.from({ length: WINDOW_VERSES }, () => fresh(8)),
     ];
     const [scores] = repetitionScores([book('A', verses)]);
