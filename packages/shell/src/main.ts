@@ -913,7 +913,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /**
    * A file a popup or a search needs now: downloaded at once, ahead of its
-   * stage if it is waiting in one, unless it is in, on its way or failed.
+   * stage if it is waiting in one, unless it is in or its download has begun.
    * Until the downloads start, the opening view's files are left to their
    * first stage (filesFirst).
    */
