@@ -1,4 +1,4 @@
-import { type Color, scale, SQRT, type Scale, memoByValue } from '@torahmap/utils';
+import { type Color, type ColorStop, scale, SQRT, type Scale, memoByValue } from '@torahmap/utils';
 import './verse-length.css';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
@@ -7,7 +7,16 @@ import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { textWords } from '@torahmap/shell/textWords.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
-import { NO_DATA, PLASMA_STOPS } from './colors.ts';
+import { NO_DATA } from './colors.ts';
+
+// Perceptually uniform and colorblind-friendly: purple -> pink -> orange -> yellow.
+const PLASMA_STOPS: ColorStop[] = [
+  { t: 0.0, color: [13 / 255, 8 / 255, 135 / 255] }, // dark purple
+  { t: 0.25, color: [126 / 255, 3 / 255, 168 / 255] }, // magenta
+  { t: 0.5, color: [204 / 255, 71 / 255, 120 / 255] }, // pink/red
+  { t: 0.75, color: [248 / 255, 149 / 255, 64 / 255] }, // orange
+  { t: 1.0, color: [240 / 255, 249 / 255, 33 / 255] }, // yellow
+];
 
 // The words for the low and high ends, on the legend card and in the legend.
 const ENDS: [low: string, high: string] = ['short', 'long'];
