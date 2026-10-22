@@ -257,6 +257,7 @@ export const SAMPLE_TEXT_ANALYTICS_SCORES: TextAnalyticsData['scores'] = {
   },
   repetition: { Genesis: { '1': [0.1, 0.4, null] } },
   division: { Genesis: { '1': [-0.1, 0.2, null] } },
+  divisionPiecesPerVerse: 8,
   divisionExamples: [
     {
       ref: 'Genesis 1:1',
