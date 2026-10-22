@@ -48,13 +48,15 @@ off to prove that wait can't pass on a blank canvas.
   text (`CHROME`), and which states to open (`STATES`). A redesign changes this file.
 - `check.ts`: the six rules, and how a result is compared with `known.ts`.
 - `geometry.ts`: the box arithmetic behind the rules, with unit tests in `geometry.test.ts`.
-- `page.ts`: everything that reads from the browser. That covers waiting for the map, measuring the
-  visible part of each element, finding clipped text and counting drawn pixels.
+- `page.ts`: what reads the layout from the browser: measuring the visible part of each element
+  and finding clipped text. It passes on `test/browser/page.ts`, which the loading suite shares:
+  waiting for the map, counting drawn pixels and recording what the app sends.
 - `known.ts`: failures accepted for now. Each records why, and exactly what it measures, so a fix
   or a new failure in the same place still fails the run. `known.test.ts` checks that every entry
   names a real state, screen and rule. Both run with `npm test`, not in this suite.
-- `screens.ts`: the four screen sizes.
+- `test/browser/screens.ts`: the four screen sizes, shared with the loading suite.
 - `contactSheet.ts`: the reporter that writes `layout-report/`.
+- `analytics.spec.ts`: what the reader's actions record.
 - `app.spec.ts`: the tests. One per state, plus checks that the rules can fail at all: a layout
   broken on purpose, and a map that drew nothing.
 

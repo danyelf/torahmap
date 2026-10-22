@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 import { ACT_STATES, STATES } from './app.ts';
 import { RULES } from './check.ts';
 import { KNOWN } from './known.ts';
-import { SCREENS } from './screens.ts';
+import { SCREENS } from '../browser/screens.ts';
 
 it('every known failure names a state, screen and rule that are checked', () => {
   const states = new Set([...STATES, ...ACT_STATES].map((s) => s.name));

@@ -1,5 +1,5 @@
 import { defineConfig } from '@playwright/test';
-import { LAUNCH_ARGS, SCREENS, webServer } from './screens.ts';
+import { LAUNCH_ARGS, SCREENS, webServer } from '../browser/screens.ts';
 
 const PORT = Number(process.env.LAYOUT_PORT ?? 5199);
 
@@ -18,7 +18,7 @@ export default defineConfig({
   projects: SCREENS.map((s) => ({
     name: s.name,
     use: s.use,
-    testMatch: ['app.spec.ts', 'talmud.spec.ts', 'euaiact.spec.ts'],
+    testMatch: '*.spec.ts',
   })),
   webServer: webServer(PORT),
 });

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ABRAHAM, CHROME, STATES, viaMenu } from './app.ts';
+import { ABRAHAM, CHROME, STATES } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
 import {
@@ -17,6 +17,7 @@ import {
   longestDrawnRun,
   openMap,
   stepShare,
+  viaMenu,
 } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {

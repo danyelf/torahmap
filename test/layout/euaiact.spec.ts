@@ -1,7 +1,7 @@
 // The AI Act's page, at /euaiact/: it draws, keeps the layout rules the Tanakh's page keeps, and a
 // pinned square shows its text.
 import { expect, test, type Page } from '@playwright/test';
-import { ACT_STATES, CHROME, viaMenu } from './app.ts';
+import { ACT_STATES, CHROME } from './app.ts';
 import { checkLayout } from './check.ts';
 import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
 import {
@@ -13,6 +13,7 @@ import {
   desktopTabletAndPhoneOnly,
   openMap,
   shown,
+  viaMenu,
 } from './page.ts';
 import {
   ARTICLE_NUMBER_ZOOM,
@@ -21,7 +22,7 @@ import {
   SPLIT_GAP,
   SQUARE_SIZE,
 } from '@torahmap/euaiact/constants.ts';
-import { EUAIACT_PAGE, EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
+import { EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
 
 for (const state of ACT_STATES) {
   test(state.name, async ({ page }, info) => {
@@ -34,20 +35,6 @@ for (const state of ACT_STATES) {
     expect(errors, 'page errors').toEqual([]);
   });
 }
-
-test('the dev server fills the Act’s page with its own copy', async ({ request }) => {
-  desktopOnly('what the server sends does not depend on the screen');
-  for (const address of [ACT, `${ACT}index.html`, `${ACT}?at=6(2)`]) {
-    const html = await (await request.get(address)).text();
-    expect(html).toContain(`<title>${EUAIACT_PAGE.name}</title>`);
-  }
-});
-
-test('/euaiact, without the slash, opens the same page and keeps the link', async ({ page }) => {
-  desktopAndPhoneOnly();
-  await page.goto('/euaiact?at=6(2)');
-  await expect(page).toHaveURL(/\/euaiact\/\?at=6\(2\)$/);
-});
 
 test("a pinned square's popup shows its text, in English, linked to EUR-Lex", async ({ page }) => {
   desktopAndPhoneOnly();
