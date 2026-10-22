@@ -16,9 +16,12 @@ const COLOURED_FLOOR = 100;
 /**
  * A slow phone, for the dev server: it sends files uncompressed, about four
  * times the bytes the site sends, so this is four times a 4 Mbit/s connection.
+ * Only the data files cross it: the dev server sends the code as some 160
+ * separate files, where the site sends a few, so throttled code is slower than
+ * any reader's and made the suite take a quarter longer.
  */
-const SLOW_MOBILE = {
-  offline: false,
+const SLOW_MOBILE_DATA = {
+  urlPattern: '*://*:*/data/*',
   latency: 150,
   downloadThroughput: 2_000_000,
   uploadThroughput: 375_000,
@@ -27,7 +30,10 @@ const SLOW_MOBILE = {
 export async function throttle(page: Page): Promise<void> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Network.enable');
-  await cdp.send('Network.emulateNetworkConditions', SLOW_MOBILE);
+  await cdp.send('Network.emulateNetworkConditionsByRule', {
+    offline: false,
+    matchedNetworkConditions: [SLOW_MOBILE_DATA],
+  });
 }
 
 /**

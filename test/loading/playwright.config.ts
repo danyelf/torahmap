@@ -7,8 +7,8 @@ export default defineConfig({
   testDir: '.',
   outputDir: '../../test-results/loading',
   fullyParallel: true,
-  workers: 4,
-  // Every file crosses a throttled connection once a case lets it through.
+  workers: 8,
+  // Every data file crosses a throttled connection once a case lets it through.
   timeout: 180_000,
   expect: { timeout: 60_000 },
   reporter: [['list']],
