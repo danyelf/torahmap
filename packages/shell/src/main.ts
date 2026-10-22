@@ -920,7 +920,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    */
   function fetchNow(path: string): void {
     if (!stagesBegun) return;
-    if (loaded.has(path) || downloads.started.has(path) || downloads.failed.has(path)) return;
+    if (loaded.has(path) || downloads.started.has(path)) return;
     downloads.started.add(path);
     downloads.pending.add(path);
     void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
