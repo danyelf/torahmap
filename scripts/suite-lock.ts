@@ -3,7 +3,8 @@
 //
 //   node scripts/suite-lock.ts playwright test -c test/layout [args...]
 //
-// SUITE_LOCK=off runs it at once.
+// SUITE_LOCK=off runs it at once. A suite still running after LIMIT_MS is
+// stopped, so a hung one cannot keep the others waiting.
 
 import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
@@ -15,9 +16,22 @@ export interface Owner {
   pid: number;
   dir: string;
   command: string;
+  /** When the lock was taken, in ms since the epoch. */
+  since?: number;
 }
 
 const POLL_MS = 2000;
+
+// The slowest full run measured was the layout suite's 262 s, and 532 s before
+// it was sped up, with other suites running beside it.
+const LIMIT_MS = 20 * 60_000;
+/** How long a stopped suite has to exit before it is killed outright. */
+const GRACE_MS = 10_000;
+/**
+ * A lock this old is stale even if its process number is running: after a
+ * restart, an unrelated program can have that number.
+ */
+export const STALE_AFTER_MS = LIMIT_MS + GRACE_MS + 60_000;
 
 const lockPath = () => join(tmpdir(), 'torahmap-browser-suite.lock');
 
@@ -43,11 +57,11 @@ function ownerOf(lock: string): Owner | undefined {
  * it now. The lock is a directory holding its owner, renamed into place whole,
  * so no one ever sees it without one.
  */
-export function tryAcquire(lock: string, me: Owner): Owner {
+export function tryAcquire(lock: string, me: Owner, now = Date.now()): Owner {
   const mine = `${lock}.${me.pid}`;
   for (;;) {
     mkdirSync(mine, { recursive: true });
-    writeFileSync(join(mine, 'owner.json'), JSON.stringify(me));
+    writeFileSync(join(mine, 'owner.json'), JSON.stringify({ ...me, since: now }));
     try {
       renameSync(mine, lock);
       return me;
@@ -57,15 +71,16 @@ export function tryAcquire(lock: string, me: Owner): Owner {
       if (code !== 'ENOTEMPTY' && code !== 'EEXIST') throw e;
     }
     const owner = ownerOf(lock);
-    if (owner && alive(owner.pid)) return owner;
+    if (owner && alive(owner.pid) && now - (owner.since ?? now) <= STALE_AFTER_MS) return owner;
     clearStale(lock, owner, me);
   }
 }
 
 /**
- * Deletes the lock `seen` held, its owner having exited. Moved aside before it
- * is deleted, so of two processes that find it, only one clears it; the other
- * may move aside the lock the first has since taken, and puts it back.
+ * Deletes the lock `seen` held, its owner having exited or held it too long.
+ * Moved aside before it is deleted, so of two processes that find it, only one
+ * clears it; the other may move aside the lock the first has since taken, and
+ * puts it back.
  */
 export function clearStale(lock: string, seen: Owner | undefined, me: Owner): void {
   const aside = `${lock}.stale.${me.pid}`;
@@ -125,6 +140,16 @@ async function main([command, ...args]: string[]): Promise<void> {
   });
   if (locked) await acquire(lock, me);
   child = spawn(command, args, { stdio: 'inherit' });
+  const limit = Number(process.env.SUITE_LOCK_LIMIT_MS) || LIMIT_MS; // Shorter for its tests.
+  let timedOut = false;
+  setTimeout(() => {
+    timedOut = true;
+    console.error(
+      `The browser suite was still running after ${limit / 60_000} minutes; stopping it.`,
+    );
+    child!.kill('SIGTERM');
+    setTimeout(() => child!.kill('SIGKILL'), GRACE_MS).unref();
+  }, limit).unref();
   child.on('error', (e) => {
     console.error(e.message);
     if (locked) release(lock, me);
@@ -132,7 +157,7 @@ async function main([command, ...args]: string[]): Promise<void> {
   });
   child.on('exit', (code) => {
     if (locked) release(lock, me);
-    process.exit(code ?? 1);
+    process.exit(timedOut ? 124 : (code ?? 1));
   });
 }
 
