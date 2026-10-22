@@ -246,7 +246,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     return items.map((item) => tropColorAt(item, derived));
   },
 
-  standoutsFor(items, settings, _hovered, data) {
+  standoutsFor(items, settings, data) {
     const derived = derivationFor(data, settings);
     if (!derived || !isRare(derived.entry)) return items.map(() => false);
     return items.map((item) => countAt(item, derived) > 0);

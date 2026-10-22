@@ -237,18 +237,17 @@ describe('toolsPicture', () => {
     expect(picture.rings).toEqual([CYAN, null]);
   });
 
-  it('asks the overlay which of its squares stand out, for the hovered square', () => {
-    const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
+  it('asks the overlay which of its squares stand out', () => {
     const overlay = {
       ...testOverlay({ id: 'o', name: 'O', getItemColor: () => RED }),
-      standoutsFor: (list: unknown[], _settings: unknown, hovered: unknown) =>
-        list.map((v) => v === hovered),
+      standoutsFor: (items: { verse: number }[]) => items.map((v) => v.verse === 2),
     };
+    const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
     const picture = toolsPicture(
       { overlay: { tool: overlay, settings: undefined, data: undefined }, search: null },
       items,
-      items[1],
+      null,
       getDefaultColor,
     );
 

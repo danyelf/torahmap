@@ -6,8 +6,6 @@ import { createVerse, SAMPLE_HAFTARAH_MAPPINGS, SAMPLE_STRUCTURE } from '../../h
 import { assertValidColor } from '../../helpers/assertions';
 import { overlayColorsFor } from '@torahmap/shell/itemColoring.ts';
 import type { HaftarahData } from '../../../src/overlays/haftarah/readings';
-import type { HaftarahSettings } from '../../../src/overlays/haftarah';
-import type { TanakhLayout } from '../../../src/types';
 import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 
 const DATA: HaftarahData = { mappings: SAMPLE_HAFTARAH_MAPPINGS, structure: SAMPLE_STRUCTURE };
@@ -573,51 +571,6 @@ describe('Haftarah Overlay', () => {
 
       haftarahOverlay.restore({ custom: 'ashkenazi' });
       expect(haftarahOverlay.hoverChangesColors(null, sephardiOnly)).toBe(false);
-    });
-  });
-
-  describe('standing out', () => {
-    const torah = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
-    const itsHaftarah = createVerse({ book: 'Isaiah', chapter: 42, verse: 5 });
-    const otherParsha = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });
-    const noReading = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
-    const items = [torah, itsHaftarah, otherParsha, noReading];
-    const settings = (lit: { reading?: string; preview?: string } = {}) => ({
-      custom: 'ashkenazi' as const,
-      preview: lit.preview ?? null,
-      reading: lit.reading ?? null,
-    });
-    const standouts = (s: HaftarahSettings, hovered: TanakhLayout | null) =>
-      overlay.standoutsFor!(items, s, hovered, DATA);
-
-    it('makes a hovered portion’s haftarah stand out, but not the portion itself', () => {
-      expect(standouts(settings(), torah)).toEqual([false, true, false, false]);
-    });
-
-    it('makes a hovered haftarah’s portion stand out, but not the haftarah itself', () => {
-      expect(standouts(settings(), itsHaftarah)).toEqual([true, false, false, false]);
-    });
-
-    it('makes both halves stand out when a story stop lights the reading', () => {
-      expect(standouts(settings({ reading: 'Bereshit' }), null)).toEqual([
-        true,
-        true,
-        false,
-        false,
-      ]);
-    });
-
-    it('makes both halves stand out when the key previews the reading', () => {
-      expect(standouts(settings({ preview: 'Bereshit' }), otherParsha)).toEqual([
-        true,
-        true,
-        false,
-        false,
-      ]);
-    });
-
-    it('makes nothing stand out with no reading lit', () => {
-      expect(standouts(settings(), noReading)).toEqual([false, false, false, false]);
     });
   });
 

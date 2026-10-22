@@ -789,7 +789,7 @@ describe('Trop Overlay', () => {
       },
     });
     const standouts = (mark: string | null, texts: VerseTexts) =>
-      tropOverlay.standoutsFor!(verses, { mark, preview: null }, null, { texts });
+      tropOverlay.standoutsFor!(verses, { mark, preview: null }, { texts });
 
     it('makes the verses holding a rare mark stand out, and no others', () => {
       expect(standouts('shalshelet', textsWith(1))).toEqual([true, false]);
