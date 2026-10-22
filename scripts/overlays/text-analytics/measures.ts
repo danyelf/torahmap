@@ -27,8 +27,12 @@ export const WINDOW_VERSES = 11;
 /** Verses shorter than this get no score: short list items (Ezra 2) otherwise dominate both maps. */
 export const MIN_WORDS = 7;
 
-/** Words in a repeated run. */
-export const RUN_WORDS = 3;
+/**
+ * Words in a repeated run. Three counts a chapter's technical formulas, such as
+ * Leviticus 13's "the priest shall look at the plague", as repetition; four
+ * keeps passages that repeat themselves (Numbers 7, Job 1) and halves those.
+ */
+export const RUN_WORDS = 4;
 
 /**
  * How far apart, in verses of the same book, a run may recur and still count:
