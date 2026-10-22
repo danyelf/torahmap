@@ -3,6 +3,7 @@ import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overl
 import { NO_DATA } from '../../../src/overlays/colors';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { assertNamedEnds } from '../../helpers/assertions';
 
 const data: TextAnalyticsData = {
   scores: {
@@ -53,5 +54,12 @@ describe('Text analytics overlay', () => {
     expect(controls.querySelector('[data-measure="division"]')!.getAttribute('aria-pressed')).toBe(
       'true',
     );
+  });
+
+  it('names the ends of its strip in the legend card, for each measure', () => {
+    const h = host();
+    assertNamedEnds(h.summary());
+    h.change((s) => ({ ...s, measure: 'division' }));
+    assertNamedEnds(h.summary());
   });
 });
