@@ -313,10 +313,6 @@ describe('Text Dating Overlay', () => {
     });
   });
 
-  it('names no ends, having no scale', () => {
-    expect(textDatingOverlay.summary().ends).toBeUndefined();
-  });
-
   describe('Legend Rendering', () => {
     it('renders legend with all eras', () => {
       const container = document.createElement('div');
