@@ -47,7 +47,9 @@ background with this brief, filled in:
 ## Bringing it back
 
 Open each cited line before relaying it: reviewers misread, and the code may
-have moved. Drop what does not hold up, and correct what only partly does. Show
-Danyel the numbered list in chat, one line per finding with its proposed fix,
+have moved. Drop what does not hold up, and correct what only partly does. Post
+the checked list on the pull request as a comment that names the commit the
+review read up to, so the review and any later commits are plain to see there.
+Show Danyel the same numbered list in chat, one line per finding with its proposed fix,
 so he can answer by number ("1 yes, 2 don't care"). Change nothing until he
 answers. Fixes to a merged pull request go on a new branch from main.
