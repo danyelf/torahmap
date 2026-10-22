@@ -1,19 +1,16 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
 import { expect, test, type Page } from '@playwright/test';
+import { openMap, viaMenu } from '../browser/page.ts';
 import {
-  allLoaded,
   boxes,
   closeFromLegend,
   desktopAndPhoneOnly,
-  desktopOnly,
   desktopTabletAndPhoneOnly,
-  openMap,
   shown,
 } from './page.ts';
-import { viaMenu } from './app.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
-import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
+import { TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 
 /** Whole boxes, so what is off screen is checked too. */
 const full = async (page: Page, selector: string) =>
@@ -147,15 +144,6 @@ test('the Talmud opens with every seder’s label on the map', async ({ page }) 
   ).toEqual([]);
 });
 
-test('the dev server fills the Talmud’s page with its own copy', async ({ request }) => {
-  desktopOnly('what the server sends does not depend on the screen');
-  for (const address of [TALMUD, `${TALMUD}index.html`, `${TALMUD}?at=Berakhot.2a.1`]) {
-    const html = await (await request.get(address)).text();
-    expect(html).toContain(`<title>${TALMUD_PAGE.name}</title>`);
-    expect(html).toContain(`content="${TALMUD_PAGE.tagline}"`);
-  }
-});
-
 test("a pinned segment's popup shows its text", async ({ page }) => {
   desktopAndPhoneOnly();
   const errors = await openMap(page, 'at=Berakhot.2a.1', TALMUD);
@@ -187,34 +175,6 @@ test('a link to a segment that does not exist pins nothing', async ({ page }) =>
   await expect(page.locator('#popup.visible')).toHaveCount(0);
 });
 
-test("a tractate file that fails says so, and isn't fetched again", async ({ page }) => {
-  desktopAndPhoneOnly();
-  let requests = 0;
-  await page.route('**/talmud/texts/Berakhot.json', (route) => {
-    requests++;
-    return route.fulfill({ status: 404 });
-  });
-  // Not openMap: the failed download is reported, as a console error.
-  await page.goto(`${TALMUD}?at=Berakhot.2a.1`);
-  await allLoaded(page);
-  await expect(page.locator('#popup .popup-notice[data-language="he"]')).not.toBeEmpty();
-  await page.keyboard.press('ArrowLeft');
-  await page.keyboard.press('ArrowRight');
-  await expect(page.locator('#popup .ref-text')).toHaveText('Berakhot 2a:1');
-  expect(requests).toBe(1);
-});
-
-test("a link's search reaches the Talmud's own search, not the Tanakh's", async ({ page }) => {
-  desktopAndPhoneOnly();
-  const searchFiles: string[] = [];
-  page.on('request', (request) => {
-    if (request.url().includes('/data/search/')) searchFiles.push(request.url());
-  });
-  await openMap(page, 'search=משנה', TALMUD);
-  await expect(page.locator('#search-input')).toHaveValue('משנה');
-  expect(searchFiles).toEqual([]);
-});
-
 test('a Talmud search lists the segments it finds, each quoted with its match marked', async ({
   page,
 }, info) => {
@@ -236,13 +196,6 @@ test('a Talmud search result, clicked, pins its segment', async ({ page }) => {
   const ref = (await first.locator('.ref').textContent())!.trim();
   await first.click();
   await expect(page.locator('#popup.visible .ref-text')).toHaveText(ref);
-});
-
-test('/talmud, without the slash, opens the same page and keeps the link', async ({ page }) => {
-  desktopAndPhoneOnly();
-  await page.goto('/talmud?at=Berakhot.2a.1');
-  await expect(page).toHaveURL(/\/talmud\/\?at=Berakhot\.2a\.1$/);
-  await expect(page.locator('#talmud-labels')).toHaveCount(1);
 });
 
 test('an English Talmud search lists what it finds, and marks the popup’s English only in bold', async ({

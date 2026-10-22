@@ -19,6 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "test:layout": "node scripts/suite-lock.ts playwright test -c test/layout",
     "test:loading": "node scripts/suite-lock.ts playwright test -c test/loading",
+    "test:browser": "node scripts/test-browser.ts",
     "video": "node video/render.ts",
     "mix": "node video/mix.ts",
     "rehearse": "vite --open '/video/rehearse.html?script=sample'",

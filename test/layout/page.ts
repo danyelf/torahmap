@@ -1,61 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { Box, Shown } from './geometry.ts';
-import { DESKTOP_AND_PHONE, DESKTOP_TABLET_AND_PHONE } from './screens.ts';
+import { DESKTOP_AND_PHONE, DESKTOP_TABLET_AND_PHONE } from '../browser/screens.ts';
 import { VISITED_KEY } from '../../packages/shell/src/visits.ts';
-
-/** The canvas's clear colour and the page's background: #1a1a1a. */
-const BACKGROUND = 26;
-/** A channel this far from the background counts as drawn. */
-const DRAWN_DELTA = 12;
-/** Fewer drawn pixels than this is a map that did not draw. */
-export const DRAWN_FLOOR = 1000;
-
-/** A pixel whose channels spread this far apart is coloured rather than grey. */
-const COLOURED_SPREAD = 24;
-
-/** Waits for the first frame: the map drawn before any file but the structure. */
-export async function firstFrame(page: Page, timeout = 30_000): Promise<void> {
-  // Everything in the body is position: fixed, so <html> never has the
-  // nonzero box waitFor's default 'visible' state requires.
-  await page.locator('html[data-first-frame]').waitFor({ state: 'attached', timeout });
-}
-
-/**
- * Waits until every file has landed or failed and been drawn, and the map has
- * settled: the story applies a stop on the animation frame after startup, and
- * the title face arrives from Google Fonts with display=swap, changing text
- * widths.
- */
-export async function allLoaded(page: Page): Promise<void> {
-  await page.locator('html[data-loaded]').waitFor({ state: 'attached', timeout: 60_000 });
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-  });
-}
-
-/**
- * The page's uncaught errors, each with its stack, and, unless `console` is
- * false, its console errors (prefixed `console:`) from now on. They keep
- * arriving, so check the list again after acting on the page.
- */
-export function collectErrors(page: Page, { console = true } = {}): string[] {
-  const errors: string[] = [];
-  page.on('pageerror', (e) => errors.push(e.stack ?? e.message));
-  if (console) {
-    page.on('console', (m) => {
-      if (m.type() === 'error') errors.push(`console: ${m.text()}`);
-    });
-  }
-  return errors;
-}
-
-/** Skips every screen but `screens`, saying why. */
-function onlyOn(screens: readonly string[], reason: string): void {
-  test.skip(!screens.includes(test.info().project.name), reason);
-}
-
-export const desktopOnly = (reason: string) => onlyOn(['desktop'], reason);
+import { COLOURED_SPREAD, onlyOn, readPixels } from '../browser/page.ts';
 
 export const desktopAndPhoneOnly = () =>
   onlyOn(DESKTOP_AND_PHONE, 'one screen of each layout is enough');
@@ -68,101 +15,12 @@ export async function asReturningReader(page: Page): Promise<void> {
   await page.addInitScript((key) => localStorage.setItem(key, 'true'), VISITED_KEY);
 }
 
-/** Loads the map at `link` on the page at `path` and waits until it has settled and drawn. Returns `collectErrors`'s list. */
-export async function openMap(page: Page, link: string, path = '/'): Promise<string[]> {
-  const errors = collectErrors(page);
-  await page.goto(link ? `${path}?${link}` : path);
-  await allLoaded(page);
-  await expect
-    .poll(async () => drawnPixels(page), { timeout: 15_000 })
-    .toBeGreaterThan(DRAWN_FLOOR);
-  expect(errors, 'page errors').toEqual([]);
-  return errors;
-}
-
-/**
- * The map as the reader sees it, with everything over it hidden: the labels,
- * the title and the controls carry enough text to pass for a map on their own.
- * A screenshot rather than the WebGL buffer, which would depend on
- * preserveDrawingBuffer.
- */
-export async function canvasShot(page: Page): Promise<Buffer> {
-  // Hiding the focused element blurs it, so focus is handed back after.
-  const focused = await page.evaluateHandle(() => document.activeElement);
-  const hide = await page.addStyleTag({
-    content: 'body *:not(#canvas) { visibility: hidden !important; }',
-  });
-  try {
-    return await page.locator('#canvas').screenshot();
-  } finally {
-    await hide.evaluate((el: Element) => el.remove());
-    await focused.evaluate((el) => (el as HTMLElement | null)?.focus({ preventScroll: true }));
-    await focused.dispose();
-  }
-}
-
-/**
- * `png`'s pixels, row by row: whether each is drawn, and how far apart its
- * channels spread, 0 for grey.
- */
-async function readPixels(
-  page: Page,
-  png: Buffer,
-): Promise<{ width: number; height: number; drawn: Buffer; spread: Buffer }> {
-  const { width, height, drawn, spread } = await page.evaluate(
-    async ({ png, bg, delta }) => {
-      const img = new Image();
-      img.src = `data:image/png;base64,${png}`;
-      await img.decode();
-      const c = document.createElement('canvas');
-      c.width = img.width;
-      c.height = img.height;
-      const ctx = c.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-      const { data } = ctx.getImageData(0, 0, c.width, c.height);
-      let drawn = '';
-      let spread = '';
-      for (let i = 0; i < data.length; i += 4) {
-        const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-        const d = Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta;
-        drawn += String.fromCharCode(d ? 1 : 0);
-        spread += String.fromCharCode(Math.max(r, g, b) - Math.min(r, g, b));
-      }
-      return { width: c.width, height: c.height, drawn: btoa(drawn), spread: btoa(spread) };
-    },
-    { png: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
-  );
-  return {
-    width,
-    height,
-    drawn: Buffer.from(drawn, 'base64'),
-    spread: Buffer.from(spread, 'base64'),
-  };
-}
-
-/** How many of `png`'s pixels are drawn, and how many are coloured rather than grey. */
-export async function pixelCounts(
-  page: Page,
-  png: Buffer,
-): Promise<{ drawn: number; coloured: number }> {
-  const { drawn, spread } = await readPixels(page, png);
-  return {
-    drawn: drawn.filter((d) => d).length,
-    coloured: spread.filter((s) => s > COLOURED_SPREAD).length,
-  };
-}
-
 /** Of `png`'s coloured pixels, the share that are faint: a colour under half strength. */
 export async function faintShare(page: Page, png: Buffer): Promise<number> {
   const { spread } = await readPixels(page, png);
   const coloured = spread.filter((s) => s > COLOURED_SPREAD);
   const strongest = Math.max(0, ...coloured);
   return coloured.length ? coloured.filter((s) => s < strongest / 2).length / coloured.length : 0;
-}
-
-/** Counts the map's drawn pixels. */
-export async function drawnPixels(page: Page): Promise<number> {
-  return (await pixelCounts(page, await canvasShot(page))).drawn;
 }
 
 /**

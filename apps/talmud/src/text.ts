@@ -9,6 +9,7 @@ import type { TermSettings } from '@torahmap/search';
 import { commentaryLink } from '@torahmap/overlay-catalog';
 import { computeTalmudLayout, talmudId, talmudRef, type TalmudLayoutItem } from './layout.ts';
 import { talmudSite } from './site.ts';
+import { talmudFiles } from './files.ts';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
@@ -23,7 +24,6 @@ import { mishnahOrGemaraColor } from './baseColor.ts';
 import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
-  STRUCTURE_FILE,
   amudIndex,
   englishFile,
   hadranLines,
@@ -67,7 +67,7 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
   site: talmudSite,
   link: TALMUD_LINK_KEYS,
   languages: [HEBREW, ENGLISH],
-  firstFiles: [STRUCTURE_FILE],
+  files: talmudFiles,
 
   open(loaded) {
     const structure = structureFrom(loaded);
@@ -122,9 +122,6 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           moveNames(offset, zoom);
         };
       },
-
-      popupFile: (item, language) =>
-        language === ENGLISH ? englishFile(item.tractate) : textsFile(item.tractate),
 
       popupText(item, loaded) {
         const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;

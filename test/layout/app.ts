@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
+import { viaMenu } from '../browser/page.ts';
 
 export interface State {
   name: string;
@@ -28,12 +29,6 @@ export const CHROME: Chrome = {
     '.map-legend-summary, .menu-title, .menu-item, .column-title, .panel-title, #panel label, ' +
     '.story-card-place, #popup .ref-text',
 };
-
-/** Opens a menu item through the ☰. */
-export async function viaMenu(page: Page, action: string): Promise<void> {
-  await page.locator('#menu-toggle').click();
-  await page.locator(`.menu-item[data-action="${action}"]:visible`).click();
-}
 
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 

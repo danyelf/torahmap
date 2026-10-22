@@ -1,21 +1,24 @@
 import { expect, test } from '@playwright/test';
-import { ABRAHAM, CHROME, STATES, viaMenu } from './app.ts';
+import { ABRAHAM, CHROME, STATES } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
 import {
-  asReturningReader,
-  boxes,
   canvasShot,
-  closeFromLegend,
-  desktopAndPhoneOnly,
   desktopOnly,
-  desktopTabletAndPhoneOnly,
   DRAWN_FLOOR,
   drawnPixels,
-  faintShare,
   allLoaded,
-  longestDrawnRun,
   openMap,
+  viaMenu,
+} from '../browser/page.ts';
+import {
+  asReturningReader,
+  boxes,
+  closeFromLegend,
+  desktopAndPhoneOnly,
+  desktopTabletAndPhoneOnly,
+  faintShare,
+  longestDrawnRun,
   stepShare,
 } from './page.ts';
 

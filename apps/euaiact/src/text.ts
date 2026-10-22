@@ -15,12 +15,13 @@ import {
   LAYER_LABEL_SIZE,
   LAYER_NAMES,
 } from './constants.ts';
-import { TEXTS_FILE, STRUCTURE_FILE, structureFrom, type ActTexts } from './data.ts';
+import { TEXTS_FILE, structureFrom, type ActTexts } from './data.ts';
 import { actRef, sourceUrl } from './ids.ts';
 import { computeActLayout, type ActItem } from './layout.ts';
 import { ACT_SEARCH_PARAMS, actSearch, type ActSearchSettings } from './search.ts';
 import { ACT_OVERLAYS, actOverlayParams } from './overlays/index.ts';
 import { euaiactSite } from './site.ts';
+import { euaiactFiles } from './files.ts';
 
 // Shortcut: the Act's one story is a single stop showing the whole map, until its first real
 // story is written.
@@ -53,7 +54,7 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
   site: euaiactSite,
   link: ACT_LINK_KEYS,
   languages: [ENGLISH],
-  firstFiles: [STRUCTURE_FILE],
+  files: euaiactFiles,
 
   open(loaded) {
     const laid = computeActLayout(structureFrom(loaded));
@@ -93,8 +94,6 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
           moveNumbers(offset, zoom);
         };
       },
-
-      popupFile: () => TEXTS_FILE,
 
       popupText(item, loadedFiles) {
         const texts = loadedFiles.get(TEXTS_FILE) as ActTexts | undefined;

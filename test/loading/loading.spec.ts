@@ -2,8 +2,17 @@
 // holds files back on a throttled connection, so "before the data" is a state
 // the case sets rather than a race it hopes to win.
 import { expect, test, type Page } from '@playwright/test';
-import { viaMenu } from '../layout/app.ts';
-import { allLoaded, desktopOnly, firstFrame } from '../layout/page.ts';
+import {
+  allLoaded,
+  desktopOnly,
+  firstFrame,
+  hold,
+  openMap,
+  param,
+  recordEvents,
+  sentSearches,
+  viaMenu,
+} from '../browser/page.ts';
 import {
   COMMENTARY,
   DICTIONARY,
@@ -12,22 +21,10 @@ import {
   PARSE,
   SEARCH_REQUIRED,
   TEXTS_FILE,
-} from './files.ts';
+} from '../browser/files.ts';
 import { englishFile, SEARCH_ENGLISH_FILE, SEARCH_FILE, textsFile } from '@torahmap/talmud/data.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
-import {
-  expectPlainMap,
-  fail,
-  hold,
-  mapChangesFrom,
-  open,
-  param,
-  recordEvents,
-  sentFields,
-  sentLoadTiming,
-  sentSearches,
-  stillShot,
-} from './page.ts';
+import { expectPlainMap, fail, mapChangesFrom, open, sentLoadTiming, stillShot } from './page.ts';
 
 const WORD = 'אלהים';
 const overlayRow = '.map-legend-row[data-panel="overlay"]';
@@ -319,21 +316,6 @@ test('a search typed before its files land is recorded once they do', async ({ p
   expect(errors).toEqual([]);
 });
 
-test('a linked search is never recorded; a word the reader adds is', async ({ page }) => {
-  desktopOnly('what is recorded does not depend on the screen');
-  const { release, errors } = await open(page, 'search=light', SEARCH_REQUIRED);
-  await recordEvents(page);
-  release();
-  await allLoaded(page);
-  await viaMenu(page, 'search');
-  await page.locator('#add-term').click();
-  await page.locator('.term-row[data-open="true"] .term-input').fill('dark');
-  await expect.poll(() => sentSearches(page)).toEqual(['dark']);
-  await allLoaded(page);
-  expect(await sentSearches(page)).toEqual(['dark']);
-  expect(errors).toEqual([]);
-});
-
 test('a lexicon search cannot build from fails its prebuild alone, and the rest still load', async ({
   page,
 }) => {
@@ -364,18 +346,6 @@ test('load timing says when the texts landed, after the first frame', async ({ p
   await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
   const [timing] = await sentLoadTiming(page);
   expect(timing.texts_in).toBeGreaterThan(timing.first_frame as number);
-  expect(errors).toEqual([]);
-});
-
-test('stepping to a verse records it by its id and book', async ({ page }) => {
-  desktopOnly('the arrow keys are the same on every screen');
-  const { errors } = await open(page, 'verse=Genesis.12.1', [], { until: 'loaded' });
-  await recordEvents(page);
-  await page.keyboard.press('ArrowRight');
-  await expect.poll(() => param(page, 'verse')).not.toBe('Genesis.12.1');
-  await expect
-    .poll(() => sentFields(page, 'square_click'))
-    .toEqual([{ id: param(page, 'verse'), area: 'Genesis' }]);
   expect(errors).toEqual([]);
 });
 
@@ -493,4 +463,30 @@ test('a failed English search file says so for an English term, and Hebrew searc
   await page.locator('#search-input').fill('רבי');
   await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
   await expect(page.locator('#search-hit-caption .load-notice')).toHaveCount(0);
+});
+
+test("a tractate file that fails says so, and isn't fetched again", async ({ page }) => {
+  let requests = 0;
+  await page.route(`**/data/${textsFile('Berakhot')}`, (route) => {
+    requests++;
+    return route.fulfill({ status: 404 });
+  });
+  // Not openMap: the failed download is reported, as a console error.
+  await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
+  await allLoaded(page);
+  await expect(page.locator('#popup .popup-notice[data-language="he"]')).not.toBeEmpty();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#popup .ref-text')).toHaveText('Berakhot 2a:1');
+  expect(requests).toBe(1);
+});
+
+test("a link's search reaches the Talmud's own search, not the Tanakh's", async ({ page }) => {
+  const searchFiles: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/data/search/')) searchFiles.push(request.url());
+  });
+  await openMap(page, 'search=משנה', TALMUD_PATH);
+  await expect(page.locator('#search-input')).toHaveValue('משנה');
+  expect(searchFiles).toEqual([]);
 });

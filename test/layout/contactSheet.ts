@@ -1,7 +1,7 @@
 import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { FullConfig, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
-import { SCREENS } from './screens.ts';
+import { SCREENS } from '../browser/screens.ts';
 
 interface Cell {
   shot?: string;
