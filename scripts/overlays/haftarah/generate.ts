@@ -15,6 +15,7 @@
 
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { passageRef } from '@torahmap/link/tanakh';
 
 interface VerseRef {
   chapter: number;
@@ -257,9 +258,7 @@ function validateVerseRange(range: VerseRange, structure: TanakhStructure, conte
 }
 
 function describe(ranges: VerseRange[]): string {
-  return ranges
-    .map((r) => `${r.book} ${r.start.chapter}:${r.start.verse}-${r.end.chapter}:${r.end.verse}`)
-    .join('; ');
+  return ranges.map((r) => passageRef(r.book, r.start, r.end)).join('; ');
 }
 
 async function readJson<T>(relativePath: string): Promise<T> {
