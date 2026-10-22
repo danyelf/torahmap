@@ -25,6 +25,7 @@ import {
   buildTropIndex,
   getTropByFrequency,
   getRarityTier,
+  type RarityTier,
   type TropIndexEntry,
 } from './trop/marks.ts';
 import { axisGradient, legendCaption, legendRow } from './legend.ts';
@@ -66,39 +67,43 @@ function entryFor(data: TropData, mark: string | null): TropIndexEntry | null {
 }
 
 /**
- * A rare mark is drawn as present or absent, with its verses as gold spots that
- * stand out zoomed far out, and its button in the chart is marked.
+ * How a mark is drawn. A rare mark is present or absent, with its verses as
+ * gold spots that stand out zoomed far out and its button in the chart marked;
+ * any other is a count, on a scale.
  */
-function isRare(entry: TropIndexEntry): boolean {
-  return getRarityTier(entry.totalCount) === 'rare';
+function tierOf(entry: TropIndexEntry): RarityTier {
+  return getRarityTier(entry.totalCount);
 }
 
 /** A rare mark's legend is two swatches, "contains" and "does not"; any other's a gradient. */
 function markColors(entry: TropIndexEntry): string[] {
-  const counts = countScale(entry);
-  if (!counts) return [colorToCss(RARE_MATCH_COLOR), colorToCss(RARE_NO_MATCH_COLOR)];
-  return [axisGradient(counts)];
+  const tier = tierOf(entry);
+  if (tier === 'rare') return [colorToCss(RARE_MATCH_COLOR), colorToCss(NO_MATCH_COLOR.rare)];
+  return [axisGradient(countScale(entry, tier))];
 }
 
 interface TropDerivation {
   entry: TropIndexEntry;
+  tier: RarityTier;
   verseLookup: Map<string, number>;
-  /** Null for a rare mark, which is drawn as present or absent. */
-  counts: Scale | null;
-  noMatch: Color;
+  /** A verse's colour, from how many times it carries the mark. */
+  colorOf: (count: number) => Color;
 }
 
 const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
-const RARE_NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
+const NO_MATCH_COLOR: Record<RarityTier, Color> = {
+  rare: [0.25, 0.25, 0.25],
+  uncommon: [0.25, 0.25, 0.28],
+  common: [0.25, 0.23, 0.28],
+};
 
 /**
  * How many times a verse carries the mark, as a colour. Common marks span a
- * wide range of counts, so their scale is logarithmic. Null for a rare mark.
+ * wide range of counts, so their scale is logarithmic.
  */
-function countScale(entry: TropIndexEntry): Scale | null {
-  if (isRare(entry)) return null;
+function countScale(entry: TropIndexEntry, tier: 'uncommon' | 'common'): Scale {
   const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
-  return getRarityTier(entry.totalCount) === 'uncommon'
+  return tier === 'uncommon'
     ? scale(0, maxCount, LINEAR, UNCOMMON_TROP_GRADIENT)
     : scale(0, maxCount, LOG, COMMON_TROP_GRADIENT);
 }
@@ -113,12 +118,18 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
     verseLookup.set(verseId(loc.book, loc.chapter, loc.verse), loc.count);
   }
 
-  const noMatch: Color = isRare(entry)
-    ? RARE_NO_MATCH_COLOR
-    : getRarityTier(entry.totalCount) === 'uncommon'
-      ? [0.25, 0.25, 0.28]
-      : [0.25, 0.23, 0.28];
-  return { entry, verseLookup, counts: countScale(entry), noMatch };
+  const tier = tierOf(entry);
+  const noMatch = NO_MATCH_COLOR[tier];
+  if (tier === 'rare') {
+    return { entry, tier, verseLookup, colorOf: (count) => (count ? RARE_MATCH_COLOR : noMatch) };
+  }
+  const counts = countScale(entry, tier);
+  return {
+    entry,
+    tier,
+    verseLookup,
+    colorOf: (count) => (count ? counts.colorOf(count) : noMatch),
+  };
 }
 
 // Per data value, then per settings value.
@@ -142,13 +153,13 @@ const COMMON_TROP_GRADIENT: ColorStop[] = [
   { t: 1.0, color: [0.95, 0.6, 0.9] }, // Pink
 ];
 
-function tierLabel(tier: 'rare' | 'uncommon' | 'common'): string {
+function tierLabel(tier: RarityTier): string {
   return tier === 'rare' ? 'Rare' : tier === 'uncommon' ? 'Uncommon' : 'Common';
 }
 
 /** The "name (hebrew) · count · tier" line shown for a trop mark's info. */
 function tropInfoLine(entry: TropIndexEntry, options?: { withOccurrencesWord?: boolean }): string {
-  const tier = getRarityTier(entry.totalCount);
+  const tier = tierOf(entry);
   const count = options?.withOccurrencesWord
     ? `${entry.totalCount.toLocaleString()} occurrences`
     : entry.totalCount.toLocaleString();
@@ -162,9 +173,7 @@ function countAt(verse: TanakhLayout, derived: TropDerivation): number {
 function tropColorAt(verse: TanakhLayout, derived: TropDerivation | null): Color | null {
   if (!derived) return null;
 
-  const count = countAt(verse, derived);
-  if (count === 0) return derived.noMatch;
-  return derived.counts ? derived.counts.colorOf(count) : RARE_MATCH_COLOR;
+  return derived.colorOf(countAt(verse, derived));
 }
 
 /**
@@ -200,7 +209,7 @@ function renderTropChart(
       button.dataset.unicode = entry.unicode;
       button.dataset.slug = slug;
 
-      if (isRare(entry)) {
+      if (tierOf(entry) === 'rare') {
         button.classList.add('rare');
       }
 
@@ -248,7 +257,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
 
   standoutsFor(items, settings, data) {
     const derived = derivationFor(data, settings);
-    if (!derived || !isRare(derived.entry)) return items.map(() => false);
+    if (derived?.tier !== 'rare') return items.map(() => false);
     return items.map((item) => countAt(item, derived) > 0);
   },
 
