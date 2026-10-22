@@ -89,7 +89,7 @@ describe("the Talmud's popup", () => {
   });
 
   it('keeps each language in a file of its own', () => {
-    expect(open.popupFile(second, HEBREW)).toBe(textsFile('TractA'));
-    expect(open.popupFile(second, ENGLISH)).toBe(englishFile('TractA'));
+    expect(talmudText.files.popup(second, HEBREW)).toBe(textsFile('TractA'));
+    expect(talmudText.files.popup(second, ENGLISH)).toBe(englishFile('TractA'));
   });
 });

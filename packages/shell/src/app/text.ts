@@ -36,15 +36,25 @@ export interface Site {
   title(link: UrlState): string;
 }
 
+/** What the shell downloads for a text, apart from its tools' files. */
+export interface TextFiles<I> {
+  /** Downloaded before the first frame. */
+  first: string[];
+  /** The file whose arrival and download speed load timing reports. */
+  timed?: string;
+  /**
+   * The file a square's text in `language` is in. The shell downloads it when the popup first
+   * shows that language, and shows each language as soon as its own file is in.
+   */
+  popup(item: I, language: TextLanguage): string;
+}
+
 export interface MapText<I extends MapItem, S = unknown> {
   site: Site;
   link: LinkKeys;
   /** The languages its popup gives. With two, the reader chooses which to show. */
   languages: readonly TextLanguage[];
-  /** Downloaded before the first frame. */
-  firstFiles: string[];
-  /** The file whose arrival and download speed load timing reports. */
-  timedFile?: string;
+  files: TextFiles<I>;
   /** The text, laid out from its first files. */
   open(loaded: Loaded): OpenText<I, S>;
 }
@@ -61,11 +71,6 @@ export interface OpenText<I extends MapItem, S = unknown> {
   searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
-  /**
-   * The file a square's text in `language` is in. The shell downloads it when the popup first
-   * shows that language, and shows each language as soon as its own file is in.
-   */
-  popupFile(item: I, language: TextLanguage): string;
   /** What a square's popup says; the shell marks it and makes its words clickable. */
   popupText(item: I, loaded: Loaded, overlay: ToolOnMap<I> | null): PopupText;
   overlays: Overlay<I>[];

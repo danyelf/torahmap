@@ -58,8 +58,6 @@ import {
   arrivedWith,
   configureAnalytics,
   driverChangeEvent,
-  downloadKbps,
-  trackLoadTiming,
   reportError,
   trackOverlaySwitch,
   trackPageView,
@@ -84,17 +82,10 @@ import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import { createOverlaySettings, settingsFromLink } from './overlays/settings.ts';
 import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
-import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
-import { dataFor, downloadFiles, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';
-import {
-  downloadStages,
-  filesFirst,
-  staleAfterLanding,
-  waitingOn,
-  type LandingView,
-  type OpeningView,
-} from './downloads.ts';
+import { dataFor, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';
+import { filesFirst, staleAfterLanding, type LandingView, type OpeningView } from './downloads.ts';
+import { createLoader } from './loader.ts';
 import { LOADING, loadNotice } from './loadNotice.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
@@ -166,7 +157,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return;
   }
   // Everything but the text's first files loads behind the first frame (fileLanded).
-  const firstFiles = loadFiles(source.firstFiles);
+  const firstFiles = loadFiles(source.files.first);
   // Compiled while the first files download. Some browsers with WebGL 2 still
   // fail to compile the shaders.
   let renderContext: RenderContext;
@@ -178,8 +169,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return;
   }
 
-  let loaded: Loaded = await firstFiles;
-  const text = source.open(loaded);
+  const first = await firstFiles;
+  const text = source.open(first);
   const items = text.items;
   const searchTool = text.search;
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
@@ -187,23 +178,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     text.overlays.find((overlay) => overlay.id === id);
   // What a story stop may name.
   const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
-  const downloads = {
-    /** Every file not yet in: each stage's, from before the first frame, and any fetched at once. */
-    pending: new Set<string>(),
-    /** The files whose download has begun: a stage's once it starts, and any fetched at once. */
-    started: new Set<string>(),
-    failed: new Set<string>(),
-    closed: new Set<string>(),
-  };
-
-  // For load_timing (sendLoadTiming).
-  let firstFrame = 0;
-  let timedIn = 0;
-  let searchReady = 0;
-  let searchPrebuilt = false;
-  let downloadsSettled = false;
-  let stagesBegun = false;
-  let timingSent = false;
+  const loader = createLoader({
+    first,
+    overlays: allOverlays,
+    search: searchTool,
+    timedFile: source.files.timed,
+    landed: fileLanded,
+    failed: fileFailed,
+  });
 
   const squares = indexItems(items);
   const baseColors = items.map((item, i) => text.baseColor(item, i));
@@ -295,7 +277,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       currentSettings(),
       searchTool,
       overlaySettings.get(searchTool),
-      loaded,
+      loader.loaded(),
     );
   }
 
@@ -343,7 +325,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       } else if (tool) {
         // A picked tool without its data: its files are on their way, or one failed.
         const files = requiredFiles(tool);
-        if (waitingOn(files, downloads) === 'loading') {
+        if (loader.waitingOn(files) === 'loading') {
           rows.push({ panel, name: tool.name, summary: { detail: LOADING }, loading: true });
         } else {
           const notice = noticeFor(files);
@@ -432,7 +414,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       t,
       items,
       hoveredItem,
-      loaded,
+      loader.loaded(),
       base,
       textTools,
       text.searchKeepsBase,
@@ -882,7 +864,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   /** The files `item`'s popup needs for the languages shown; none without an item. */
   function popupFilesOf(item: I | null): string[] {
     return item
-      ? [...new Set(shownLanguages().map((language) => text.popupFile(item, language)))]
+      ? [...new Set(shownLanguages().map((language) => source.files.popup(item, language)))]
       : [];
   }
 
@@ -891,8 +873,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const waiting: Partial<Record<TextLanguage, Node | null>> = {};
     const told = new Set<string>();
     for (const language of shownLanguages()) {
-      const file = text.popupFile(item, language);
-      if (waitingOn([file], downloads) === null) continue;
+      const file = source.files.popup(item, language);
+      if (loader.waitingOn([file]) === null) continue;
       waiting[language] = told.has(file) ? null : noticeFor([file]);
       told.add(file);
     }
@@ -901,30 +883,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
     const files = popupFilesOf(item);
-    for (const file of files) fetchNow(file);
+    for (const file of files) loader.fetchNow(file);
     const tools = toolsNow();
-    updateSidebar(sidebarElements, item, (shown) => text.popupText(shown, loaded, tools.overlay), {
-      waiting: item ? waitingLanguages(item) : {},
-      wordsClickable: dataFor(searchTool, loaded) !== null,
-      ...tools,
-      pinned: isPinned,
-    });
+    updateSidebar(
+      sidebarElements,
+      item,
+      (shown) => text.popupText(shown, loader.loaded(), tools.overlay),
+      {
+        waiting: item ? waitingLanguages(item) : {},
+        wordsClickable: dataFor(searchTool, loader.loaded()) !== null,
+        ...tools,
+        pinned: isPinned,
+      },
+    );
   }
 
-  /**
-   * A file a popup or a search needs now: downloaded at once, ahead of its
-   * stage if it is waiting in one, unless it is in or its download has begun.
-   * Until the downloads start, the opening view's files are left to their
-   * first stage (filesFirst).
-   */
-  function fetchNow(path: string): void {
-    if (!stagesBegun) return;
-    if (loaded.has(path) || downloads.started.has(path)) return;
-    downloads.started.add(path);
-    downloads.pending.add(path);
-    void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
-  }
-
+  /** The files the search's settings ask for at once. */
   function searchFilesNow(): readonly string[] {
     return searchTool.filesNow?.(overlaySettings.get(searchTool)) ?? [];
   }
@@ -950,7 +924,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** What a place waiting on `paths` shows: a loading notice, a closable warning, or nothing. */
   function noticeFor(paths: readonly string[]): HTMLElement | null {
-    const state = waitingOn(paths, downloads);
+    const state = loader.waitingOn(paths);
     return state && loadNotice(state, () => closeWarning(paths));
   }
 
@@ -963,7 +937,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** The reader closed a warning: it stays closed for those files. */
   function closeWarning(paths: readonly string[]): void {
-    for (const path of paths) if (downloads.failed.has(path)) downloads.closed.add(path);
+    loader.close(paths);
     showLoadState();
   }
 
@@ -998,7 +972,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       overlayLegendContainer.innerHTML = '';
       const overlay = currentOverlay;
       if (overlay) {
-        overlay.renderLegend?.(overlayLegendContainer, currentSettings(), dataFor(overlay, loaded));
+        overlay.renderLegend?.(
+          overlayLegendContainer,
+          currentSettings(),
+          dataFor(overlay, loader.loaded()),
+        );
       }
     }
   }
@@ -1011,7 +989,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       overlayControlsContainer,
       overlaySettings.get(overlay),
       (update) => changeSettings(overlay, update),
-      dataFor(overlay, loaded),
+      dataFor(overlay, loader.loaded()),
     );
   }
 
@@ -1060,7 +1038,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * them, keeping their focus.
    */
   function searchChanged(fresh: boolean): void {
-    for (const path of searchFilesNow()) fetchNow(path);
+    for (const path of searchFilesNow()) loader.fetchNow(path);
     drawSearchPanel(fresh);
     updateLegend();
     refreshPopup();
@@ -1070,13 +1048,16 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
-      searchTool.telemetry.replaced(overlaySettings.get(searchTool), dataFor(searchTool, loaded));
+      searchTool.telemetry.replaced(
+        overlaySettings.get(searchTool),
+        dataFor(searchTool, loader.loaded()),
+      );
     }
     searchTool.renderControls?.(
       searchControls,
       overlaySettings.get(searchTool),
       changeSearch,
-      dataFor(searchTool, loaded),
+      dataFor(searchTool, loader.loaded()),
     );
     showSearchNotice();
   }
@@ -1085,7 +1066,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const before = overlaySettings.get(searchTool);
     const after = update(before);
     overlaySettings.set(searchTool, after);
-    searchTool.telemetry.readerChanged(after, dataFor(searchTool, loaded));
+    searchTool.telemetry.readerChanged(after, dataFor(searchTool, loader.loaded()));
     applyTools();
     searchChanged(false);
     render();
@@ -1133,7 +1114,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   text.start?.({
-    loaded: () => loaded,
+    loaded: loader.loaded,
     holdPopup: popupHold.hold,
     pinAndGlide: (item) => {
       // A full-height sheet would hide the glide.
@@ -1463,7 +1444,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         state.t,
         items,
         null,
-        loaded,
+        loader.loaded(),
         base,
         textTools,
         text.searchKeepsBase,
@@ -1587,16 +1568,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  function fileLanded(path: string, content: unknown): void {
-    if (path === source.timedFile) timedIn = performance.now();
-    downloads.pending.delete(path);
-    const before = loaded;
-    loaded = new Map(before).set(path, content);
-    // Before the redraws, so one that throws cannot hold back load timing.
-    prebuildCompleted(allOverlays, before, loaded, prebuilt);
-    const search = dataFor(searchTool, loaded);
-    if (search && search !== dataFor(searchTool, before)) searchTool.telemetry.dataLoaded(search);
-    const stale = staleAfterLanding(before, loaded, landingView());
+  // What the map does as a file lands or fails is the loading suite's to check:
+  // npm run test:browser does not see a change here as loading's, so run
+  // npm run test:loading after one.
+  function fileLanded(before: Loaded, after: Loaded): void {
+    const stale = staleAfterLanding(before, after, landingView());
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) drawOverlayPanel(false);
     if (stale.searchPanel) drawSearchPanel(false);
@@ -1604,9 +1580,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stale.popup) refreshPopupAfterDownload();
   }
 
-  function fileFailed(path: string): void {
-    downloads.pending.delete(path);
-    downloads.failed.add(path);
+  function fileFailed(): void {
     updateLegend();
     showSearchNotice();
     refreshPopupAfterDownload();
@@ -1614,33 +1588,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function refreshPopupAfterDownload(): void {
     if (!popupHold.held()) refreshPopup();
-  }
-
-  function prebuilt(overlay: Overlay<I>, built: boolean): void {
-    if (overlay !== searchTool) return;
-    searchPrebuilt = true;
-    if (built) searchReady = performance.now();
-    sendLoadTiming();
-  }
-
-  /** Sends load_timing once its fields are known; @torahmap/telemetry says what each marks. */
-  function sendLoadTiming(): void {
-    if (timingSent || !downloadsSettled) return;
-    if (dataFor(searchTool, loaded) && !searchPrebuilt) return;
-    timingSent = true;
-    const { timedFile } = source;
-    const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-    const timedEntry = timedFile
-      ? resources.find((e) => e.name.endsWith(`/${timedFile}`))
-      : undefined;
-    const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
-    trackLoadTiming({
-      first_frame: Math.round(firstFrame),
-      texts_in: Math.round(timedIn),
-      search_ready: Math.round(searchReady),
-      texts_kbps: downloadKbps(timedEntry),
-      connection: connection?.effectiveType ?? '',
-    });
   }
 
   // Everything this does came out of the URL, so nothing it does may write to
@@ -1729,23 +1676,5 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   scheduleStoryFrame();
 
-  const stages = downloadStages(filesFirst(openingView()), allOverlays, loaded);
-  for (const path of stages.flat()) downloads.pending.add(path);
-  stagesBegun = true;
-
-  // The loading tests wait on this; nothing in the app reads it.
-  document.documentElement.dataset.firstFrame = '';
-  firstFrame = performance.now();
-  showLoadState();
-
-  for (const stage of stages) {
-    const fresh = stage.filter((path) => !downloads.started.has(path));
-    for (const path of fresh) downloads.started.add(path);
-    await downloadFiles(fresh, { landed: fileLanded, failed: fileFailed });
-  }
-  // The layout tests, the video harness and the loading tests wait on this;
-  // nothing in the app reads it.
-  document.documentElement.dataset.loaded = '';
-  downloadsSettled = true;
-  sendLoadTiming();
+  await loader.run(filesFirst(openingView()), showLoadState);
 }
