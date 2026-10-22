@@ -136,7 +136,7 @@ function exampleHtml({ ref, share, words }: DivisionExample): string {
 }
 
 /** A link to, and a popup of, verses showing common and uncommon ways a first half is divided. */
-function examplesHtml(examples: DivisionExample[]): string {
+function examplesHtml(examples: DivisionExample[], top: number): string {
   const marks = [...new Set(examples.flatMap((e) => e.words.flatMap((w) => w.mark ?? [])))];
   const group = (common: boolean, title: string) =>
     `<h3 class="ta-examples-group">${title}</h3>` +
@@ -157,6 +157,7 @@ function examplesHtml(examples: DivisionExample[]): string {
         .join('')}</div>
       ${group(true, 'Common')}
       ${group(false, 'Uncommon')}
+      <p>At the top of the map's scale, ${timesRarer(top)}, most verses in a passage divide in uncommon ways like these.</p>
       </div>
     </dialog>`;
 }
@@ -238,7 +239,7 @@ export const textAnalyticsOverlay: Overlay<
       ]
         .map(legendCaption)
         .join('') +
-      (settings.measure === 'division' ? examplesHtml(data.scores.divisionExamples) : '');
+      (settings.measure === 'division' ? examplesHtml(data.scores.divisionExamples, high) : '');
     wireExamples(container);
   },
 
