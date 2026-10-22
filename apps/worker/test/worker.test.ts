@@ -8,7 +8,7 @@ import { columns, type DataPoint } from '@torahmap/telemetry';
 function env() {
   return {
     TORAHMAP_EVENTS: { writeDataPoint: vi.fn() },
-    ASSETS: { fetch: vi.fn(async () => new Response('asset', { status: 404 })) },
+    ASSETS: { fetch: vi.fn(async (_request: Request) => new Response('asset', { status: 404 })) },
   };
 }
 
@@ -223,6 +223,20 @@ describe('the page at /', () => {
     e.ASSETS.fetch = vi.fn(async () => new Response(null, { status: 304 }));
     const response = await worker.fetch(page('https://torahmap.org/?verse=Genesis.12.1', slack), e);
     expect(response.status).toBe(304);
+  });
+
+  it("serves a text's page at the root of its own subdomain", async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://talmud.torahmap.org/?at=Berakhot.2a', slack), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[0][0].url).pathname).toBe('/talmud/');
+    await worker.fetch(page('https://talmud.torahmap.org/data/talmud/a.json'), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[1][0].url).pathname).toBe('/data/talmud/a.json');
+  });
+
+  it('serves the Tanakh at the root of a preview whose name has another text in it', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://talmud-fix-torahmap.example.workers.dev/'), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[0][0].url).pathname).toBe('/');
   });
 
   it('leaves other paths to the static files', async () => {

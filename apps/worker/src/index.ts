@@ -117,10 +117,23 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
   }
 }
 
+// Each named page is also served at the root of a subdomain of its own name, as
+// talmud.torahmap.org for /talmud/; its other files come from the same paths on
+// every host.
+const SUBDOMAIN_PAGES = ['talmud', 'euaiact'];
+
+/** The page a subdomain serves at its root, or null for any other host. */
+function subdomainPage(url: URL): string | null {
+  const name = url.hostname.split('.')[0];
+  return SUBDOMAIN_PAGES.includes(name) ? `/${name}/` : null;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === '/api/event') return handleEvent(request, url, env);
+    const subdomain = url.pathname === '/' ? subdomainPage(url) : null;
+    if (subdomain) return env.ASSETS.fetch(new Request(new URL(subdomain, url), request));
     if (url.pathname === '/' && request.method === 'GET') return linkPage(request, url, env);
     return env.ASSETS.fetch(request);
   },
