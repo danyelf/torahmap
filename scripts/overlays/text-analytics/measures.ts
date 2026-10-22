@@ -1,13 +1,15 @@
 /**
  * The Text analytics overlay's two measures, each a score per verse:
  *
- * - Repetitive wording: the share of the words around a verse that sit in a
- *   three-word run its own book repeats nearby.
+ * - Repetitive wording: the share of a verse's words that sit in a run of
+ *   words its own book repeats nearby. A verse is scored alone: averaged over
+ *   its neighbours, a chapter such as Genesis 5 reads as one even block, and
+ *   the verses that leave its formula (5:24, 5:29) disappear.
  * - Unusual verse division: how unusual the way the verses around it are
- *   divided by their pauses is, against verses of the same length.
+ *   divided by their pauses is, against verses of the same length, averaged
+ *   over a window of verses within the book.
  *
- * Both are averaged over a window of verses within the book, and neither
- * scores a short verse.
+ * Neither scores a short verse.
  *
  * Both count a maqaf-joined group as one word: it carries one accent, so it is
  * the unit a verse is divided into, and the unit a repeated run is made of.
@@ -21,7 +23,7 @@ import type {
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 import { isHebrew } from '@torahmap/hebrew';
 
-/** The verses a score is averaged over, centred on the verse: a passage rather than a single verse. */
+/** The verses a verse-division score is averaged over, centred on the verse: a passage rather than a single verse. */
 export const WINDOW_VERSES = 11;
 
 /** Verses shorter than this get no score: short list items (Ezra 2) otherwise dominate both maps. */
@@ -148,9 +150,8 @@ function windowed(
   count: number,
   scored: (i: number) => boolean,
   ratio: (from: number, to: number) => number,
-  window = WINDOW_VERSES,
 ): BookScores {
-  const half = (window - 1) / 2;
+  const half = (WINDOW_VERSES - 1) / 2;
   return Array.from({ length: count }, (_, i) =>
     scored(i) ? ratio(Math.max(0, i - half), Math.min(count - 1, i + half)) : null,
   );
@@ -192,7 +193,6 @@ export function repetitionScores(
   books: ParsedBook[],
   reach = REACH_VERSES,
   words = RUN_WORDS,
-  window = WINDOW_VERSES,
 ): BookScores[] {
   const stock = formulas(books, words);
   return wordsOf(books).map((verses) => {
@@ -218,13 +218,8 @@ export function repetitionScores(
       }
     }
 
-    const total = prefixSums(verses.map((v) => v.length));
-    const marked = prefixSums(repeated.map((v) => v.filter(Boolean).length));
-    return windowed(
-      verses.length,
-      (i) => verses[i].length >= MIN_WORDS,
-      (from, to) => marked(from, to) / total(from, to),
-      window,
+    return repeated.map((marks) =>
+      marks.length >= MIN_WORDS ? marks.filter(Boolean).length / marks.length : null,
     );
   });
 }

@@ -94,14 +94,13 @@ describe('repetitionScores', () => {
     for (const scores of repetitionScores(books)) expect(scores).toEqual([0, 0]);
   });
 
-  it('scores a verse by the share of repeated words in its window, within its book', () => {
-    // Two verses of eight words each, a run's worth repeated in each.
+  it('scores a verse by the share of its own words that are repeated, within its book', () => {
     const verses = [
       [...phrase, ...fresh(8 - RUN_WORDS)],
-      [...phrase, ...fresh(8 - RUN_WORDS)],
+      [...phrase, ...fresh(12 - RUN_WORDS)],
     ];
     const [scores] = repetitionScores([book('A', verses), book('B', [fresh(8)])]);
-    expect(scores).toEqual([(2 * RUN_WORDS) / 16, (2 * RUN_WORDS) / 16]);
+    expect(scores).toEqual([RUN_WORDS / 8, RUN_WORDS / 12]);
   });
 
   it('leaves a verse under the minimum length without a score', () => {
@@ -114,16 +113,13 @@ describe('repetitionScores', () => {
     expect(scores[1]).not.toBeNull();
   });
 
-  it('averages over the verses around a verse, not the whole book', () => {
-    const half = (WINDOW_VERSES - 1) / 2;
+  it('scores a verse alone, whatever its neighbours repeat', () => {
     const verses = [
       [...phrase, ...fresh(8 - RUN_WORDS)],
+      fresh(8),
       [...phrase, ...fresh(8 - RUN_WORDS)],
-      ...Array.from({ length: WINDOW_VERSES }, () => fresh(8)),
     ];
-    const [scores] = repetitionScores([book('A', verses)]);
-    expect(scores[1 + half + 1]).toBe(0);
-    expect(scores[1 + half]).toBeGreaterThan(0);
+    expect(repetitionScores([book('A', verses)])[0][1]).toBe(0);
   });
 });
 

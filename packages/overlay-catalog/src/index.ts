@@ -80,8 +80,8 @@ export const TEXT_ANALYTICS = {
   id: 'text-analytics',
   name: 'Text Analytics',
   description:
-    'Patterns in the wording and the trop. Choose a measure: how much a passage repeats ' +
-    'its own wording, or how unusual the way its trop divides its verses is.',
+    'Patterns in the wording and the trop. Choose a measure: how much of a verse repeats ' +
+    'wording from nearby, or how unusual the way the trop divides a passage is.',
   urlParams: TEXT_ANALYTICS_PARAMS,
 } as const satisfies OverlayEntry;
 
