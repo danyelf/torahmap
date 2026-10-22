@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { GoTo, Reference } from '../src/app/text.ts';
 import { nameTable } from '../src/references.ts';
+import { ENGLISH } from '../src/language.ts';
 import { bindGoTo, goToPanelHtml, GO_TO_BOX_ID } from '../src/goTo.ts';
 
 const PLACES: Record<string, Reference> = {
@@ -16,6 +17,7 @@ const goTo: GoTo = {
     { key: 'Exodus', names: ['Exodus'] },
     { key: 'Ezra', names: ['Ezra'] },
   ]).complete,
+  languageOf: () => ENGLISH,
 };
 
 function open() {

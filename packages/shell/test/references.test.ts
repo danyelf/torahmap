@@ -2,7 +2,6 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   eachWord,
   nameTable,
-  numberIn,
   placeCompleter,
   referenceReader,
   referenceTokens,
@@ -30,12 +29,6 @@ describe('referenceTokens', () => {
       { text: 'ג', mark: ':' },
       { text: 'ד', mark: '.' },
     ]);
-  });
-
-  it('drops quotes, geresh, gershayim and points inside a token', () => {
-    expect(texts(referenceTokens('ע״א'))).toEqual(['עא']);
-    expect(texts(referenceTokens("Ta'anit"))).toEqual(['taanit']);
-    expect(texts(referenceTokens('שְׁמוֹת'))).toEqual(['שמות']);
   });
 
   it('gives a dash a token of its own, for a range', () => {
@@ -154,18 +147,6 @@ describe('nameTable.complete', () => {
   });
 });
 
-describe('numberIn', () => {
-  it('reads a token written in digits or in Hebrew letters', () => {
-    expect(numberIn({ text: '17', mark: '' })).toBe(17);
-    expect(numberIn({ text: 'יז', mark: ':' })).toBe(17);
-  });
-
-  it('reads nothing from a word', () => {
-    expect(numberIn({ text: 'a', mark: '' })).toBeNull();
-    expect(numberIn({ text: 'זי', mark: '' })).toBeNull();
-  });
-});
-
 describe('referenceReader', () => {
   const where = vi.fn((key: string, rest: Token[]) =>
     rest.length > 1 ? null : { ref: `${key} ${texts(rest).join('')}`.trim(), ids: [key] },
@@ -175,6 +156,22 @@ describe('referenceReader', () => {
     filler: new Set(['gate', 'no']),
     place: where,
     unnamed: (tokens) => (texts(tokens).join('') === '7' ? { ref: 'Seven', ids: ['7'] } : null),
+  });
+
+  it('reads what was typed as the text cleans it, names included', () => {
+    const cleaned = referenceReader({
+      named: [{ key: 'south', names: ["Sou'th"] }],
+      place: (key) => ({ ref: key, ids: [key] }),
+      clean: (typed) => typed.replace(/'/g, ''),
+    });
+    expect(cleaned.read('South')?.ids).toEqual(['south']);
+    expect(cleaned.read("So'uth")?.ids).toEqual(['south']);
+    expect(cleaned.completeNames('so')).toEqual(["Sou'th"]);
+    const uncleaned = referenceReader({
+      named: PLACES,
+      place: (key) => ({ ref: key, ids: [key] }),
+    });
+    expect(uncleaned.read("So'uth")).toBeNull();
   });
 
   it('reads the place the tokens after a name give, filler gone', () => {

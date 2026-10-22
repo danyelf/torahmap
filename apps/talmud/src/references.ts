@@ -1,8 +1,15 @@
 // Reads a reference to the Talmud, such as "Berakhot 3b:4" or ברכות ג:.
 
-import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
+import {
+  foldFinalLetters,
+  isHebrew,
+  soundOfName,
+  withoutPointsOrGeresh,
+  writtenNumber,
+} from '@torahmap/hebrew';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
-import { eachWord, numberIn, referenceReader, type Token } from '@torahmap/shell/references.ts';
+import { eachWord, referenceReader, type Token } from '@torahmap/shell/references.ts';
 import type { TalmudAmud } from './data.ts';
 import { talmudId, talmudRef } from './layout.ts';
 import type { TalmudIdentity } from './types.ts';
@@ -55,7 +62,7 @@ function pageIn(tokens: readonly Token[]): Place | null {
   const [first, ...rest] = tokens;
   if (!first) return null;
   const latin = /^\d+$/.test(first.text);
-  const daf = numberIn(first);
+  const daf = writtenNumber(first.text);
   if (daf === null) return null;
 
   let side = latin ? undefined : MARKED[first.mark];
@@ -65,7 +72,7 @@ function pageIn(tokens: readonly Token[]): Place | null {
   }
   if (rest.length === 0) return { daf, side };
   if (!side || rest.length > 1) return null;
-  const segment = numberIn(rest[0]);
+  const segment = writtenNumber(rest[0].text);
   return segment === null ? null : { daf, side, segment };
 }
 
@@ -105,8 +112,13 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<Go
       spellings: [tractate.name, tractate.hebrewName, ...(ASHKENAZI_NAMES[tractate.name] ?? [])],
     })),
     folds: FOLDS,
+    clean: withoutPointsOrGeresh,
     filler: FILLER,
     place: placeIn,
   });
-  return { read, complete: completeNames };
+  return {
+    read,
+    complete: completeNames,
+    languageOf: (typed) => (isHebrew(typed) ? HEBREW : ENGLISH),
+  };
 }

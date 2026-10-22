@@ -32,3 +32,8 @@ export function hebrewNumber(text: string): number | null {
   if (match[3] === 'י' && (match[4] === 'ה' || match[4] === 'ו')) return null;
   return [...letters].reduce((sum, letter) => sum + value(letter), 0);
 }
+
+/** A number written in digits or in Hebrew letters; null for anything else. */
+export function writtenNumber(text: string): number | null {
+  return /^\d+$/.test(text) ? Number(text) : hebrewNumber(text);
+}

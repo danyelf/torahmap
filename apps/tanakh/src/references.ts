@@ -1,15 +1,16 @@
 // Reads a reference to the Tanakh, such as "I Samuel 3:17" or שמואל א ג:יז.
 
-import { foldFinalLetters, soundOfName } from '@torahmap/hebrew';
+import {
+  foldFinalLetters,
+  isHebrew,
+  soundOfName,
+  withoutPointsOrGeresh,
+  writtenNumber,
+} from '@torahmap/hebrew';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { verseId } from '@torahmap/link/tanakh';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
-import {
-  numberIn,
-  type Fold,
-  RANGE,
-  referenceReader,
-  type Token,
-} from '@torahmap/shell/references.ts';
+import { type Fold, RANGE, referenceReader, type Token } from '@torahmap/shell/references.ts';
 
 export const EXAMPLES = ['II Samuel 17', 'Genesis 2:2', 'Shemot 4:1', 'שמות כב'];
 
@@ -127,7 +128,7 @@ function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
   }
 
   const dash = rest.findIndex((t) => t.text === RANGE);
-  const numbers = (tokens: Token[]) => tokens.map(numberIn);
+  const numbers = (tokens: Token[]) => tokens.map((t) => writtenNumber(t.text));
   const before = numbers(dash === -1 ? rest : rest.slice(0, dash));
   const after = dash === -1 ? null : numbers(rest.slice(dash + 1));
   if ([...before, ...(after ?? [])].some((n) => n === null)) return null;
@@ -167,8 +168,13 @@ export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examp
       spellings: [book.hebrewName, ...(HEBREW_NAMES[book.name] ?? [])],
     })),
     folds: FOLDS,
+    clean: withoutPointsOrGeresh,
     filler: FILLER,
     place: placeIn,
   });
-  return { read, complete: completeNames };
+  return {
+    read,
+    complete: completeNames,
+    languageOf: (typed) => (isHebrew(typed) ? HEBREW : ENGLISH),
+  };
 }

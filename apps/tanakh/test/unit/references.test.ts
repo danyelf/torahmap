@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { verseReader } from '../../src/references.ts';
 
 const chapters = (count: number, verses: number) => Array.from({ length: count }, () => verses);
@@ -165,5 +166,16 @@ describe('verseReader spellings', () => {
     expect(idsOf('Canticles 1:1')).toEqual(songs);
     expect(read('Kantikles 1:1')).toBeNull();
     expect(read('kin 1')).toBeNull();
+  });
+});
+
+describe('verseReader writing', () => {
+  it('reads Hebrew written with points, geresh or gershayim', () => {
+    expect(idsOf('שְׁמוּאֵל א ג׳:י״ז')).toEqual(['I.Samuel.3.17']);
+  });
+
+  it('says a reference typed in Hebrew is in Hebrew', () => {
+    expect(verseReader([]).languageOf('שמות כב')).toBe(HEBREW);
+    expect(verseReader([]).languageOf('Exodus 22')).toBe(ENGLISH);
   });
 });

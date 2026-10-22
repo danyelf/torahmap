@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ENGLISH } from '@torahmap/shell/language.ts';
 import { provisionReader } from '../src/references.ts';
 
 const { read, complete } = provisionReader([
@@ -111,5 +112,11 @@ describe('provisionReader completion', () => {
 
   it('offers the article an article number with a letter names', () => {
     expect(complete('art 4').map((place) => read(place)?.ids[0])).toContain('4a(1)');
+  });
+});
+
+describe('provisionReader writing', () => {
+  it('says every reference is in English', () => {
+    expect(provisionReader([]).languageOf('Article 5')).toBe(ENGLISH);
   });
 });

@@ -1,7 +1,6 @@
 // What every text's reference reader shares: breaking what was typed into
 // tokens, and finding what the tokens begin by naming.
 
-import { hebrewNumber, withoutPointsOrGeresh } from '@torahmap/hebrew';
 import type { GoTo, Reference } from './app/text.ts';
 
 /** A run of letters or of digits, and the full stop or colon right after it, if any. */
@@ -18,8 +17,7 @@ const DASH = /[-–—־]/;
 
 /** `typed` lower-cased and broken into tokens, splitting where digits meet letters. */
 export function referenceTokens(typed: string): Token[] {
-  // Geresh and gershayim join the letters either side, as in ע״א.
-  const clean = withoutPointsOrGeresh(typed.normalize('NFC').toLowerCase());
+  const clean = typed.normalize('NFC').toLowerCase();
   const tokens: Token[] = [];
   let run = '';
   const end = (mark: Token['mark'] = '') => {
@@ -43,11 +41,8 @@ export function referenceTokens(typed: string): Token[] {
 
 const isDigit = (char: string) => char >= '0' && char <= '9';
 
-/** A token's number, in digits or Hebrew letters; null for anything else. */
-export function numberIn(token: Token): number | null {
-  if (/^\d+$/.test(token.text)) return Number(token.text);
-  return hebrewNumber(token.text);
-}
+/** A text written as it is to be read. */
+export type Clean = (text: string) => string;
 
 /** How a name's words are written for matching, so that spellings of one name come out alike. */
 export type Fold = (words: readonly string[]) => string;
@@ -82,6 +77,7 @@ export interface Named<K> {
 export function nameTable<K>(
   entries: readonly Named<K>[],
   folds: readonly Fold[] = [AS_WRITTEN],
+  clean: Clean = (text) => text,
 ): {
   /** The entry `tokens` begin by naming, and the tokens after its name. */
   read(tokens: readonly Token[]): { key: K; rest: Token[] } | null;
@@ -91,7 +87,7 @@ export function nameTable<K>(
   const table = entries.map(({ key, names, spellings = [] }) => ({
     key,
     names: names.map((name) => {
-      const words = texts(referenceTokens(name));
+      const words = texts(referenceTokens(clean(name)));
       const spelled = spellings.includes(name);
       return {
         name,
@@ -136,7 +132,7 @@ export function nameTable<K>(
     },
     // An entry already named in full is offered no longer.
     complete(typed) {
-      const words = texts(referenceTokens(typed));
+      const words = texts(referenceTokens(clean(typed)));
       if (words.length === 0) return [];
       const start = folds[0](words);
       const offered: string[] = [];
@@ -154,6 +150,8 @@ export function nameTable<K>(
 export interface Reading<K> {
   named: readonly Named<K>[];
   folds?: readonly Fold[];
+  /** What a reference typed, and a name, are written as before they are read: marks dropped, say. */
+  clean?: Clean;
   /** Words that may follow the name and say nothing. */
   filler?: ReadonlySet<string>;
   /** The place the tokens after `key`'s name give, its filler gone. */
@@ -167,10 +165,10 @@ export function referenceReader<K>(how: Reading<K>): {
   read: GoTo['read'];
   completeNames: GoTo['complete'];
 } {
-  const names = nameTable(how.named, how.folds);
+  const names = nameTable(how.named, how.folds, how.clean);
   return {
     read(typed) {
-      const tokens = referenceTokens(typed);
+      const tokens = referenceTokens(how.clean?.(typed) ?? typed);
       const found = names.read(tokens);
       if (!found) return how.unnamed?.(tokens) ?? null;
       return how.place(

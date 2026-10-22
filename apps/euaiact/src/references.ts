@@ -7,6 +7,7 @@ import {
   type Named,
   type Token,
 } from '@torahmap/shell/references.ts';
+import { ENGLISH } from '@torahmap/shell/language.ts';
 import { actRef, layerOf, ownerOf, type Layer } from './ids.ts';
 
 export const EXAMPLES = ['Article 7', 'Annex III'];
@@ -92,5 +93,5 @@ export function provisionReader(ids: readonly string[]): Omit<GoTo, 'examples'> 
         .map((id) => actRef(layer === 'article' ? ownerOf(id) : id)),
     ),
   ]);
-  return { read, complete: placeCompleter(places) };
+  return { read, complete: placeCompleter(places), languageOf: () => ENGLISH };
 }

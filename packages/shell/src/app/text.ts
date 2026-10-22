@@ -108,6 +108,8 @@ export interface GoTo {
   read(typed: string): Reference | null;
   /** What `typed` may be completed to, in the order to offer them. */
   complete(typed: string): string[];
+  /** The language `typed` is written in, which the offer quotes first. */
+  languageOf(typed: string): TextLanguage;
 }
 
 /** What a text's own code may ask of the shell. */

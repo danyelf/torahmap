@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hebrewNumber, withoutPointsOrGeresh } from '../src/index.ts';
+import { hebrewNumber, withoutPointsOrGeresh, writtenNumber } from '../src/index.ts';
 
 describe('hebrewNumber', () => {
   it('reads units, tens and hundreds', () => {
@@ -69,5 +69,18 @@ describe('withoutPointsOrGeresh', () => {
     expect(withoutPointsOrGeresh('שְׁמ֑וֹת י״ז')).toBe('שמות יז');
     expect(withoutPointsOrGeresh(`ע'א ע"ב ג’ ג‘ ג\``)).toBe('עא עב ג ג ג');
     expect(withoutPointsOrGeresh('Ta-anit 2:3')).toBe('Ta-anit 2:3');
+  });
+});
+
+describe('writtenNumber', () => {
+  it('reads a number written in digits or in Hebrew letters', () => {
+    expect(writtenNumber('17')).toBe(17);
+    expect(writtenNumber('יז')).toBe(17);
+  });
+
+  it('reads nothing from a word', () => {
+    expect(writtenNumber('a')).toBeNull();
+    expect(writtenNumber('זי')).toBeNull();
+    expect(writtenNumber('1a')).toBeNull();
   });
 });

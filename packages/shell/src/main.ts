@@ -56,8 +56,7 @@ import { startingPointsHtml, startChosen, type StartChoice } from './startingPoi
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
-import { ENGLISH, HEBREW } from './language.ts';
-import { isHebrew } from '@torahmap/hebrew';
+import { ENGLISH } from './language.ts';
 import {
   arrivedWith,
   configureAnalytics,
@@ -749,7 +748,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function quoteOf(item: I, typed: string): string | null {
     viewFiles.fetchPopup(item);
     const said = text.popupText(item, loader.loaded(), null);
-    const typedIn = isHebrew(typed) ? HEBREW : ENGLISH;
+    const typedIn = text.goTo.languageOf(typed);
     const languages = [...shownLanguages()].sort(
       (a, b) => Number(b === typedIn) - Number(a === typedIn),
     );
