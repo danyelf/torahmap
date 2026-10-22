@@ -1,13 +1,31 @@
 // Text analytics: each verse coloured by a measure of the passage around it,
 // computed ahead of time by scripts/overlays/text-analytics/generate.ts.
 
-import { type Color, scale, LINEAR, type Scale, memoByValue } from '@torahmap/utils';
+import {
+  type Color,
+  type ColorStop,
+  scale,
+  LINEAR,
+  type Scale,
+  memoByValue,
+} from '@torahmap/utils';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { TEXT_ANALYTICS, TEXT_ANALYTICS_MEASURES } from '@torahmap/overlay-catalog';
-import { NO_DATA, PLASMA_STOPS } from './colors.ts';
+import { NO_DATA } from './colors.ts';
+
+// Cividis, slate blue through grey to yellow, for both measures: even in
+// lightness, made to read the same with red-green colour blindness, and unlike
+// any other overlay's scale. Its darkest quarter, navy, is left off: on the dark
+// map it is hard to tell from a verse with no score.
+const CIVIDIS_STOPS: ColorStop[] = [
+  { t: 0, color: [0x41 / 255, 0x4d / 255, 0x6b / 255] },
+  { t: 1 / 3, color: [0x7c / 255, 0x7b / 255, 0x78 / 255] },
+  { t: 2 / 3, color: [0xbc / 255, 0xaf / 255, 0x6f / 255] },
+  { t: 1, color: [0xff / 255, 0xea / 255, 0x46 / 255] },
+];
 
 type Measure = (typeof TEXT_ANALYTICS_MEASURES)[number];
 
@@ -48,7 +66,7 @@ const MEASURES: Record<
     legend: (p) => [
       `Share of the words in the ${p.windowVerses} verses around each verse that sit in a ` +
         `${p.runWords}-word phrase its book repeats within ${p.reachVerses} verses`,
-      'Purple = little repetition · Yellow = a lot',
+      'Blue = little repetition · Yellow = a lot',
       'Stock phrases found across many books are left out',
     ],
   },
@@ -59,7 +77,7 @@ const MEASURES: Record<
     legend: (p) => [
       `How rarely the trop divides the ${p.windowVerses} verses around each verse the way it ` +
         'does, in bits, against verses of the same length',
-      'Purple = common divisions · Yellow = rare ones',
+      'Blue = common divisions · Yellow = rare ones',
       'Psalms, Proverbs and Job use other marks and are not coloured',
     ],
   },
@@ -80,7 +98,7 @@ const scalesOf = memoByValue(
       const at = (q: number) => values[Math.floor(q * (values.length - 1))] ?? 0;
       const low = at(LOW_PERCENTILE);
       const high = at(HIGH_PERCENTILE);
-      return { scale: scale(low, high, LINEAR, PLASMA_STOPS), low, high };
+      return { scale: scale(low, high, LINEAR, CIVIDIS_STOPS), low, high };
     };
     return { repetition: build('repetition'), trop: build('trop') };
   },
@@ -122,7 +140,7 @@ export const textAnalyticsOverlay: Overlay<
   renderControls(container, settings, onChange) {
     let buttons = container.querySelectorAll<HTMLButtonElement>('[data-measure]');
     if (!buttons.length) {
-      container.innerHTML = `<div class="${CONTROL.segments} text-analytics-measures" role="group" aria-label="Measure">${TEXT_ANALYTICS_MEASURES.map(
+      container.innerHTML = `<div class="${CONTROL.segments}" role="group" aria-label="Measure">${TEXT_ANALYTICS_MEASURES.map(
         (m) =>
           `<button type="button" class="${CONTROL.segment}" data-measure="${m}">${MEASURES[m].label}</button>`,
       ).join('')}</div>`;
