@@ -15,5 +15,7 @@ export const PARSE = SEARCH_FILES.parse.optional;
 // Playwright cannot load.
 export const COMMENTARY = 'overlays/commentary/counts.json';
 export const HAFTARAH = HAFTARAH_FILES.mappings;
+// As apps/tanakh/src/overlays/text-analytics.ts names it, for the same reason.
+export const TEXT_ANALYTICS = 'overlays/text-analytics/scores.json';
 /** Every file but the structure. */
-export const EVERYTHING = [TEXTS_FILE, ...DICTIONARY, PARSE, COMMENTARY, HAFTARAH];
+export const EVERYTHING = [TEXTS_FILE, ...DICTIONARY, PARSE, COMMENTARY, HAFTARAH, TEXT_ANALYTICS];
