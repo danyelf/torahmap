@@ -1,5 +1,5 @@
 import { defineConfig } from '@playwright/test';
-import { LAUNCH_ARGS, SCREENS } from '../layout/screens.ts';
+import { DESKTOP_AND_PHONE, LAUNCH_ARGS, SCREENS, webServer } from '../layout/screens.ts';
 
 const PORT = Number(process.env.LOADING_PORT ?? 5198);
 
@@ -17,16 +17,9 @@ export default defineConfig({
     launchOptions: { args: LAUNCH_ARGS },
   },
   // One desktop screen and one phone: this checks what loads when, not layout.
-  projects: SCREENS.filter((s) => s.name === 'desktop' || s.name === 'phone').map((s) => ({
+  projects: SCREENS.filter((s) => DESKTOP_AND_PHONE.includes(s.name)).map((s) => ({
     name: s.name,
     use: s.use,
   })),
-  webServer: {
-    // The stories are generated before Vite loads its config, which imports them.
-    command: `node packages/stories/generate.mjs && npx vite --port ${PORT} --strictPort`,
-    cwd: '../..',
-    url: `http://localhost:${PORT}/`,
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  webServer: webServer(PORT),
 });
