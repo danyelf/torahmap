@@ -28,6 +28,11 @@ export interface TropMark {
   unicode: string; // The Unicode character
   name: string; // English name
   hebrewName: string; // Hebrew name
+  /**
+   * How strongly a disjunctive mark divides a prose verse, 1 strongest; absent
+   * for the rest. The end of a verse, silluq, outranks them all and is no mark.
+   */
+  rank?: 1 | 2 | 3 | 4;
 }
 
 export interface TropIndexEntry extends TropMark {
@@ -40,22 +45,26 @@ export type TropIndex = Map<string, TropIndexEntry>;
 // The trop marks, with their names, ordered by traditional grouping.
 export const TROP_MARKS: TropMark[] = [
   // Disjunctive accents (מפסיקים) - Emperors
-  { unicode: '\u0592', name: 'Segol', hebrewName: 'סגול' },
-  { unicode: '\u0593', name: 'Shalshelet', hebrewName: 'שלשלת' },
-  { unicode: '\u0594', name: 'Zaqef Qatan', hebrewName: 'זקף קטן' },
-  { unicode: '\u0595', name: 'Zaqef Gadol', hebrewName: 'זקף גדול' },
-  { unicode: '\u0596', name: 'Tipcha', hebrewName: 'טפחא' },
-  { unicode: '\u0597', name: 'Revia', hebrewName: 'רביע' },
+  { unicode: '\u0592', name: 'Segol', hebrewName: 'סגול', rank: 2 },
+  { unicode: '\u0593', name: 'Shalshelet', hebrewName: 'שלשלת', rank: 2 },
+  { unicode: '\u0594', name: 'Zaqef Qatan', hebrewName: 'זקף קטן', rank: 2 },
+  { unicode: '\u0595', name: 'Zaqef Gadol', hebrewName: 'זקף גדול', rank: 2 },
+  { unicode: '\u0596', name: 'Tipcha', hebrewName: 'טפחא', rank: 2 },
+  { unicode: '\u0597', name: 'Revia', hebrewName: 'רביע', rank: 3 },
+  // Zinor is the zarqa of the prose books, the pause before a segol. Zarqa, the
+  // other code point, is written beside it on the same word to mark the stress;
+  // alone it occurs only in Psalms, Proverbs and Job.
+  { unicode: '\u05AE', name: 'Zinor', hebrewName: 'זינור', rank: 3 },
   { unicode: '\u0598', name: 'Zarqa', hebrewName: 'זרקא' },
-  { unicode: '\u0599', name: 'Pashta', hebrewName: 'פשטא' },
-  { unicode: '\u059A', name: 'Yetiv', hebrewName: 'יתיב' },
-  { unicode: '\u059B', name: 'Tevir', hebrewName: 'תביר' },
-  { unicode: '\u059C', name: 'Geresh', hebrewName: 'גרש' },
-  { unicode: '\u059D', name: 'Geresh Muqdam', hebrewName: 'גרש מוקדם' },
-  { unicode: '\u059E', name: 'Gershayim', hebrewName: 'גרשיים' },
-  { unicode: '\u059F', name: 'Karnei Parah', hebrewName: 'קרני פרה' },
-  { unicode: '\u05A0', name: 'Telisha Gedola', hebrewName: 'תלישא גדולה' },
-  { unicode: '\u05A1', name: 'Pazer', hebrewName: 'פזר' },
+  { unicode: '\u0599', name: 'Pashta', hebrewName: 'פשטא', rank: 3 },
+  { unicode: '\u059A', name: 'Yetiv', hebrewName: 'יתיב', rank: 3 },
+  { unicode: '\u059B', name: 'Tevir', hebrewName: 'תביר', rank: 3 },
+  { unicode: '\u059C', name: 'Geresh', hebrewName: 'גרש', rank: 4 },
+  { unicode: '\u059D', name: 'Geresh Muqdam', hebrewName: 'גרש מוקדם', rank: 4 },
+  { unicode: '\u059E', name: 'Gershayim', hebrewName: 'גרשיים', rank: 4 },
+  { unicode: '\u059F', name: 'Karnei Parah', hebrewName: 'קרני פרה', rank: 4 },
+  { unicode: '\u05A0', name: 'Telisha Gedola', hebrewName: 'תלישא גדולה', rank: 4 },
+  { unicode: '\u05A1', name: 'Pazer', hebrewName: 'פזר', rank: 4 },
   // Conjunctive accents (משרתים)
   { unicode: '\u05A3', name: 'Munach', hebrewName: 'מונח' },
   { unicode: '\u05A4', name: 'Mahapakh', hebrewName: 'מהפך' },
@@ -68,9 +77,8 @@ export const TROP_MARKS: TropMark[] = [
   { unicode: '\u05AB', name: 'Ole', hebrewName: 'עולה' },
   { unicode: '\u05AC', name: 'Iluy', hebrewName: 'אילוי' },
   { unicode: '\u05AD', name: 'Dehi', hebrewName: 'דחי' },
-  { unicode: '\u05AE', name: 'Zinor', hebrewName: 'זינור' },
   // Special
-  { unicode: '\u0591', name: 'Etnachta', hebrewName: 'אתנחתא' },
+  { unicode: '\u0591', name: 'Etnachta', hebrewName: 'אתנחתא', rank: 1 },
   { unicode: '\u05A2', name: 'Atnah Hafukh', hebrewName: 'אתנח הפוך' },
   { unicode: '\u05AF', name: 'Masora Circle', hebrewName: 'עיגול מסורה' },
 ];
