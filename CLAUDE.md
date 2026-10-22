@@ -53,6 +53,10 @@ npm run test:watch    # Watch mode for development
 npm run test:coverage # Coverage report
 ```
 
+The two browser suites below, layout and loading, take turns across the
+machine, whichever checkout starts them: a run waits, saying for whom, until
+the one before it ends. `SUITE_LOCK=off` skips the wait.
+
 ### The pre-commit hook
 
 `.githooks/pre-commit` checks formatting, typechecks and runs the test suite
@@ -104,10 +108,6 @@ npm run test:loading
 
 It starts its own dev server on port 5198 (`LOADING_PORT` to change it). Run it
 before opening any pull request that changes startup or what loads when.
-
-The two suites take turns across the machine, whichever checkout starts them:
-a run waits, saying for whom, until the one before it ends. `SUITE_LOCK=off`
-skips the wait.
 
 ### Test Harness
 
