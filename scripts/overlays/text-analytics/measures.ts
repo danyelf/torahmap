@@ -148,8 +148,9 @@ function windowed(
   count: number,
   scored: (i: number) => boolean,
   ratio: (from: number, to: number) => number,
+  window = WINDOW_VERSES,
 ): BookScores {
-  const half = (WINDOW_VERSES - 1) / 2;
+  const half = (window - 1) / 2;
   return Array.from({ length: count }, (_, i) =>
     scored(i) ? ratio(Math.max(0, i - half), Math.min(count - 1, i + half)) : null,
   );
@@ -191,6 +192,7 @@ export function repetitionScores(
   books: ParsedBook[],
   reach = REACH_VERSES,
   words = RUN_WORDS,
+  window = WINDOW_VERSES,
 ): BookScores[] {
   const stock = formulas(books, words);
   return wordsOf(books).map((verses) => {
@@ -222,6 +224,7 @@ export function repetitionScores(
       verses.length,
       (i) => verses[i].length >= MIN_WORDS,
       (from, to) => marked(from, to) / total(from, to),
+      window,
     );
   });
 }
