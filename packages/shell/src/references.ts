@@ -65,6 +65,18 @@ export interface Named<K> {
   spellings?: readonly string[];
 }
 
+/** `key` named by each group of names in order; the groups marked `spelled` are its spellings. */
+export function namedBy<K>(
+  key: K,
+  groups: readonly { names: readonly string[] | undefined; spelled?: boolean }[],
+): Named<K> {
+  return {
+    key,
+    names: groups.flatMap((g) => g.names ?? []),
+    spellings: groups.flatMap((g) => (g.spelled ? (g.names ?? []) : [])),
+  };
+}
+
 /**
  * Every name of `entries`, written once by each of `folds`, to read and to
  * complete from.

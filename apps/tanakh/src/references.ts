@@ -10,7 +10,13 @@ import {
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { passageRef, verseId, type ChapterPlace } from '@torahmap/link/tanakh';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
-import { type Fold, RANGE, referenceReader, type Token } from '@torahmap/shell/references.ts';
+import {
+  namedBy,
+  type Fold,
+  RANGE,
+  referenceReader,
+  type Token,
+} from '@torahmap/shell/references.ts';
 
 export const EXAMPLES = ['II Samuel 17', 'Genesis 2:2', 'Shemot 4:1', 'שמות כב'];
 
@@ -152,16 +158,14 @@ function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
 /** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */
 export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examples'> {
   const { read, completeNames } = referenceReader({
-    named: books.map((book) => ({
-      key: book,
-      names: [
-        book.name,
-        book.hebrewName,
-        ...(ENGLISH_NAMES[book.name] ?? []),
-        ...(HEBREW_NAMES[book.name] ?? []),
-      ],
-      spellings: [book.hebrewName, ...(HEBREW_NAMES[book.name] ?? [])],
-    })),
+    named: books.map((book) =>
+      namedBy(book, [
+        { names: [book.name] },
+        { names: [book.hebrewName], spelled: true },
+        { names: ENGLISH_NAMES[book.name] },
+        { names: HEBREW_NAMES[book.name], spelled: true },
+      ]),
+    ),
     folds: FOLDS,
     clean: withoutPointsOrGeresh,
     filler: FILLER,

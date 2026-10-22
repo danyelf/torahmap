@@ -9,7 +9,7 @@ import {
 } from '@torahmap/hebrew';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
-import { eachWord, referenceReader, type Token } from '@torahmap/shell/references.ts';
+import { eachWord, namedBy, referenceReader, type Token } from '@torahmap/shell/references.ts';
 import type { TalmudAmud } from './data.ts';
 import { dafRef, talmudId, talmudRef } from './layout.ts';
 import type { TalmudIdentity } from './types.ts';
@@ -102,17 +102,14 @@ function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
 export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<GoTo, 'examples'> {
   const { read, completeNames } = referenceReader({
-    named: tractates.map((tractate) => ({
-      key: tractate,
-      names: [
-        tractate.name,
-        tractate.hebrewName,
-        ...(ABBREVIATIONS[tractate.name] ?? []),
-        ...(ASHKENAZI_NAMES[tractate.name] ?? []),
-      ],
-      // A tractate's English name is its Hebrew name in English letters.
-      spellings: [tractate.name, tractate.hebrewName, ...(ASHKENAZI_NAMES[tractate.name] ?? [])],
-    })),
+    named: tractates.map((tractate) =>
+      namedBy(tractate, [
+        // A tractate's English name is its Hebrew name in English letters.
+        { names: [tractate.name, tractate.hebrewName], spelled: true },
+        { names: ABBREVIATIONS[tractate.name] },
+        { names: ASHKENAZI_NAMES[tractate.name], spelled: true },
+      ]),
+    ),
     folds: FOLDS,
     clean: withoutPointsOrGeresh,
     filler: FILLER,

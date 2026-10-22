@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   eachWord,
+  namedBy,
   nameTable,
   placeCompleter,
   referenceReader,
@@ -207,5 +208,22 @@ describe('placeCompleter', () => {
     expect(complete(' ')).toEqual([]);
     expect(complete('wall')).toEqual([]);
     expect(complete('gate 1 2')).toEqual([]);
+  });
+});
+
+describe('namedBy', () => {
+  it('names a key by each group in order, marking the groups that are spellings', () => {
+    expect(
+      namedBy('south', [
+        { names: ['South'] },
+        { names: ['Sooth', 'Suth'], spelled: true },
+        { names: undefined },
+        { names: ['S.'] },
+      ]),
+    ).toEqual({
+      key: 'south',
+      names: ['South', 'Sooth', 'Suth', 'S.'],
+      spellings: ['Sooth', 'Suth'],
+    });
   });
 });
