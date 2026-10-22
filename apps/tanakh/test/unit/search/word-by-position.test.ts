@@ -14,6 +14,7 @@ import { parseVerseId } from '@torahmap/link/tanakh';
 import { meaningsInVerse, wordMatches, wordsOfVerse } from '../../../src/search/dictionary';
 import { splitIntoWords, stripNikkud } from '@torahmap/hebrew';
 import { textWords } from '@torahmap/shell/textWords.ts';
+import type { TextRange } from '@torahmap/utils';
 import { realSearchData } from '../../helpers/searchData';
 
 const { files, dictionary, parse } = realSearchData();
@@ -46,7 +47,7 @@ const markedWords = (verseKey: string, keys: string[]): string[] => {
 };
 
 /** A word as the verse prints it, with any bracket beside it, without points. */
-const withBrackets = (hebrew: string, { start, end }: { start: number; end: number }): string => {
+const withBrackets = (hebrew: string, { start, end }: TextRange): string => {
   while ('(['.includes(hebrew[start - 1] ?? 'x')) start--;
   while (')]'.includes(hebrew[end] ?? 'x')) end++;
   return stripNikkud(hebrew.slice(start, end));
