@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import type { Box, Shown } from './geometry.ts';
 import { VISITED_KEY } from '../../packages/shell/src/visits.ts';
 
@@ -47,6 +47,15 @@ export function collectErrors(page: Page, { console = true } = {}): string[] {
     });
   }
   return errors;
+}
+
+/**
+ * Skips the laptop and the tablet, for a check whose result the screen's size
+ * does not change: the desktop and the phone are one of each layout.
+ */
+export function desktopAndPhoneOnly(): void {
+  const screen = test.info().project.name;
+  test.skip(screen !== 'desktop' && screen !== 'phone', 'one screen of each layout is enough');
 }
 
 /** Makes the next load a return visit, so an empty link skips the story. */

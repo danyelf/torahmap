@@ -7,6 +7,7 @@ import {
   boxes,
   canvasShot,
   closeFromLegend,
+  desktopAndPhoneOnly,
   DRAWN_FLOOR,
   drawnPixels,
   faintShare,
@@ -30,6 +31,7 @@ test('the render check sees a map that drew nothing', async ({ page }) => {
 });
 
 test('measuring finds the panel and its controls', async ({ page }) => {
+  desktopAndPhoneOnly();
   // The story has a panel on every screen; a phone exploring with nothing open has none.
   await openMap(page, 'story=tour&stop=intro');
   expect(await boxes(page, CHROME.panel)).not.toEqual([]);
@@ -81,6 +83,7 @@ test("a returning reader's Search button opens search, ready to type", async ({ 
 test('choosing None offers the places to start, and an overlay takes them away', async ({
   page,
 }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'overlay=commentary');
   await viaMenu(page, 'overlay');
   const start = page.locator('[data-start="search"]');
@@ -104,6 +107,7 @@ test("the haftarah legend's key shows only in the desktop layout", async ({ page
 });
 
 test('each language choice hides the other language in the popup', async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'overlay=commentary&verse=Genesis.12.1');
   await viaMenu(page, 'about');
   const hebrew = page.locator('#popup .popup-hebrew');
@@ -122,6 +126,7 @@ test('each language choice hides the other language in the popup', async ({ page
 });
 
 test('the title face loads', async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'story=tour&stop=intro');
   // document.fonts.check() is true for a face that was never declared; load() is not.
   const faces = await page.evaluate(
@@ -154,6 +159,7 @@ test('zoomed far out, a search hit glows, fading out from a solid core', async (
 });
 
 test("the search card's × clears the search, and Back brings it back", async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, `search=${ABRAHAM}&overlay=haftarah`);
   await closeFromLegend(page, 'search');
   await expect(page.locator('.map-legend-row[data-panel="overlay"]')).toBeVisible();
@@ -162,6 +168,7 @@ test("the search card's × clears the search, and Back brings it back", async ({
 test("a card's × during a story hands the map to the reader, the story still open", async ({
   page,
 }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'story=tour&stop=liturgy_verse');
   const row = page.locator('.map-legend-row[data-panel="overlay"]');
   await row.locator('.map-legend-close').click();
@@ -172,6 +179,7 @@ test("a card's × during a story hands the map to the reader, the story still op
 });
 
 test("the overlay card's × turns the overlay off, and Back brings it back", async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, `search=${ABRAHAM}&overlay=haftarah`);
   await closeFromLegend(page, 'overlay');
   await expect(page.locator('.map-legend-row[data-panel="search"]')).toBeVisible();

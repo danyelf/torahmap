@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ACT_STATES, CHROME, viaMenu } from './app.ts';
 import { checkLayout } from './check.ts';
 import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
-import { boxes, canvasShot, closeFromLegend, openMap, shown } from './page.ts';
+import { boxes, canvasShot, closeFromLegend, desktopAndPhoneOnly, openMap, shown } from './page.ts';
 import {
   ARTICLE_NUMBER_ZOOM,
   CHAPTER_TAB,
@@ -35,11 +35,13 @@ test('the dev server fills the Act’s page with its own copy', async ({ request
 });
 
 test('/euaiact, without the slash, opens the same page and keeps the link', async ({ page }) => {
+  desktopAndPhoneOnly();
   await page.goto('/euaiact?at=6(2)');
   await expect(page).toHaveURL(/\/euaiact\/\?at=6\(2\)$/);
 });
 
 test("a pinned square's popup shows its text, in English, linked to EUR-Lex", async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'at=6(2)', ACT);
   await expect(page.locator('#popup.visible .ref-text')).toHaveText('Article 6(2)');
   await expect(page.locator('#popup .popup-english')).not.toBeEmpty();
@@ -48,6 +50,7 @@ test("a pinned square's popup shows its text, in English, linked to EUR-Lex", as
 });
 
 test('a recital is pinned by a click on its right half', async ({ page }) => {
+  desktopAndPhoneOnly();
   // Recital 1 spans x 0 to 12 at y 40 to 46; x 9 is right of where a square of its height ends.
   await openMap(page, 'zoom=6&x=9&y=43', ACT);
   const [canvas] = await boxes(page, '#canvas');
@@ -99,6 +102,7 @@ test.describe('on a dense screen', () => {
 });
 
 test('a link to a square that does not exist pins nothing', async ({ page }) => {
+  desktopAndPhoneOnly();
   const errors = await openMap(page, 'at=999(9)', ACT);
   await expect(page.locator('#popup.visible')).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -107,6 +111,7 @@ test('a link to a square that does not exist pins nothing', async ({ page }) => 
 test('names every chapter and annex, in English, once its tabs are big enough', async ({
   page,
 }) => {
+  desktopAndPhoneOnly();
   // The tabs fade out below zoom 0.58; a phone's opening view sits under it.
   await openMap(page, 'zoom=0.6', ACT);
   // A small screen holds only part of the map, so one name on it is enough.
@@ -123,6 +128,7 @@ test('names every chapter and annex, in English, once its tabs are big enough', 
 });
 
 test('offers no language choice, and never writes one', async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'zoom=0.6', ACT);
   await viaMenu(page, 'about');
   await expect(page.locator('#about-panel')).toBeVisible();
@@ -162,6 +168,7 @@ async function squaresOnScreen(page: Page, zoom: number): Promise<Box[]> {
 const chapterThree = (zoom: number) => `zoom=${zoom}&x=215&y=200`;
 
 test('articles are numbered only from their zoom', async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, chapterThree(ARTICLE_NUMBER_ZOOM - 0.1), ACT);
   expect(await boxes(page, NUMBERS)).toEqual([]);
   await openMap(page, chapterThree(ARTICLE_NUMBER_ZOOM), ACT);
@@ -171,6 +178,7 @@ test('articles are numbered only from their zoom', async ({ page }) => {
 test('every article number stops short of the next column and is clear of every other', async ({
   page,
 }) => {
+  desktopAndPhoneOnly();
   await openMap(page, chapterThree(ARTICLE_NUMBER_ZOOM), ACT);
   // Off screen too: every number shows from the same zoom.
   const numbers = (await shown(page, NUMBERS)).map((s) => s.full);
@@ -185,6 +193,7 @@ for (const zoom of [ARTICLE_NUMBER_ZOOM, 2, 4]) {
   test(`at zoom ${zoom}, no article number touches a square or a chapter's name`, async ({
     page,
   }) => {
+    desktopAndPhoneOnly();
     await openMap(page, chapterThree(zoom), ACT);
     const numbers = await boxes(page, NUMBERS);
     expect(numbers).not.toEqual([]);
@@ -194,6 +203,7 @@ for (const zoom of [ARTICLE_NUMBER_ZOOM, 2, 4]) {
 }
 
 test("the Act's search card's × clears the search, and Back brings it back", async ({ page }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'search=deployer&zoom=0.6', ACT);
   await closeFromLegend(page, 'search');
 });
@@ -201,6 +211,7 @@ test("the Act's search card's × clears the search, and Back brings it back", as
 test("the Act's overlay card's × turns the overlay off, and Back brings it back", async ({
   page,
 }) => {
+  desktopAndPhoneOnly();
   await openMap(page, 'overlay=amendment&zoom=0.6', ACT);
   await closeFromLegend(page, 'overlay');
 });
