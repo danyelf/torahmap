@@ -1,6 +1,7 @@
 // The shapes of the Talmud data files in public/data/talmud/, and how to read them.
 
 import type { Loaded } from '@torahmap/shell/dataFiles.ts';
+import type { TextRange } from '@torahmap/shell/sidebar.ts';
 
 /** The Talmud's folder in public/data/. */
 export const TALMUD_DATA_DIR = 'talmud';
@@ -17,7 +18,7 @@ export const englishFile = (tractate: string): string =>
 /** What search reads, a different edition from the popup's: each tractate's amudim of plain-letter segments. */
 export const SEARCH_FILE = `${TALMUD_DATA_DIR}/search.json`;
 
-/** What English search reads: each segment's bold, laid out as `SEARCH_FILE`. */
+/** What English search reads, laid out as `SEARCH_FILE`. */
 export const SEARCH_ENGLISH_FILE = `${TALMUD_DATA_DIR}/search-english.json`;
 
 export interface TalmudAmud {
@@ -64,9 +65,7 @@ export type TalmudTractateEnglish = string[][];
 export type TalmudSearchText = Record<string, string[][]>;
 
 /** Where a segment cites a Tanakh verse: the cited words, by place in its text, and the verse's id. */
-export interface Citation {
-  start: number;
-  end: number;
+export interface Citation extends TextRange {
   verse: string;
 }
 

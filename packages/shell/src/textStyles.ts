@@ -1,9 +1,13 @@
 import { wrapRuns } from './textRuns.ts';
 
-/** Characters `start` to `end` of a text, in bold or italic. A bold and an italic stretch may overlap. */
-export interface TextStyle {
+/** Characters `start` to `end` of a text. */
+export interface TextRange {
   start: number;
   end: number;
+}
+
+/** A stretch of a text in bold or italic. A bold and an italic stretch may overlap. */
+export interface TextStyle extends TextRange {
   style: 'bold' | 'italic';
 }
 

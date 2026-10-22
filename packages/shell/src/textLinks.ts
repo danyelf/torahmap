@@ -1,9 +1,8 @@
 import { wrapRuns } from './textRuns.ts';
+import type { TextRange } from './textStyles.ts';
 
-/** Characters `start` to `end` of a text, as a link to `href`. */
-export interface TextLink {
-  start: number;
-  end: number;
+/** A stretch of a text, as a link to `href`. */
+export interface TextLink extends TextRange {
   href: string;
 }
 

@@ -4,7 +4,7 @@ import { dataFor, optionalFiles, requiredFiles, type Loaded } from './dataFiles.
 import type { Overlay } from './overlays/types.ts';
 import type { ColorSource } from './scrollytelling/driver.ts';
 
-/** What the first view shows: the tools it names, the files its pinned square's popup needs, if it pins one, and the files its search asks for at once. */
+/** What the first view shows: its tools, and the files its pinned square and its search need first. */
 export interface OpeningView<T> {
   tools: readonly Overlay<T>[];
   popup: readonly string[];

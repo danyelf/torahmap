@@ -1,7 +1,7 @@
 // A segment's English as the popup files store it: plain text with a marker on each side of a
 // bold or italic stretch.
 
-import type { TextStyle } from '@torahmap/shell/sidebar.ts';
+import type { TextRange, TextStyle } from '@torahmap/shell/sidebar.ts';
 
 export const BOLD = '*';
 export const ITALIC = '_';
@@ -27,13 +27,13 @@ export function englishText(marked: string): { text: string; styles: TextStyle[]
   return { text, styles };
 }
 
-/** Where search reads the English: its bold, the literal translation, joined where only space parts it. */
-export function searchedStretches(
-  text: string,
-  styles: readonly TextStyle[],
-): { start: number; end: number }[] {
+/**
+ * Where search reads the English: its bold, the literal translation, joined where only space parts it.
+ * Changing it means re-running scripts/talmud/bundle.ts.
+ */
+export function searchedStretches(text: string, styles: readonly TextStyle[]): TextRange[] {
   const bold = styles.filter((s) => s.style === 'bold').sort((a, b) => a.start - b.start);
-  const stretches: { start: number; end: number }[] = [];
+  const stretches: TextRange[] = [];
   for (const { start, end } of bold) {
     const last = stretches[stretches.length - 1];
     if (last && text.slice(last.end, start).trim() === '') last.end = Math.max(last.end, end);

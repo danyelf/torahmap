@@ -73,8 +73,8 @@ export interface TermSearchSpec<D, X> {
   extra?: ExtraMode<X, D>;
   /** How a term is matched while the reader has not said and the extra mode does not claim it: substring unless given. */
   defaultMode?: MatchMode;
-  /** Files these settings search, to download at once rather than in their turn, as SearchTool's `filesFor`. */
-  filesFor?(settings: TermSettings): readonly string[];
+  /** Files these settings search, to download at once rather than in their turn, as SearchTool's `filesNow`. */
+  filesNow?(settings: TermSettings): readonly string[];
   /** Whether going from `before` to `after` changes only what result rows quote, so they are quoted again in place. */
   onlyQuotesChange?(before: D, after: D): boolean;
   /** What records the search, built from what it counts. */
@@ -378,7 +378,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     data: spec.data,
 
     isSearching,
-    ...(spec.filesFor ? { filesFor: spec.filesFor } : {}),
+    ...(spec.filesNow ? { filesNow: spec.filesNow } : {}),
     telemetry: spec.telemetry?.({ hitCount, modeOf }) ?? NO_TELEMETRY,
 
     prebuild(data) {

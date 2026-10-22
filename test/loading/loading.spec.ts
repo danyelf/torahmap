@@ -33,6 +33,15 @@ const WORD = 'אלהים';
 const overlayRow = '.map-legend-row[data-panel="overlay"]';
 const searchRow = '.map-legend-row[data-panel="search"]';
 
+/** The requests for one data file, as they are made. */
+function requestsFor(page: Page, path: string): string[] {
+  const urls: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith(`/data/${path}`)) urls.push(r.url());
+  });
+  return urls;
+}
+
 test('the bare address draws the map and opens the story before any data', async ({ page }) => {
   const { release, errors } = await open(page, '', EVERYTHING);
   await expectPlainMap(page);
@@ -164,10 +173,7 @@ test('a pinned verse is centred at once, and its popup fills in when the texts l
 test('the texts download once, however often the popup asks for them before they land', async ({
   page,
 }) => {
-  let requests = 0;
-  page.on('request', (r) => {
-    if (r.url().endsWith(`/data/${TEXTS_FILE}`)) requests++;
-  });
+  const requests = requestsFor(page, TEXTS_FILE);
   const { release, errors } = await open(page, 'overlay=commentary', [TEXTS_FILE]);
   const map = (await page.locator('#canvas').boundingBox())!;
   for (let i = 1; i < 10; i++) {
@@ -175,7 +181,7 @@ test('the texts download once, however often the popup asks for them before they
   }
   release();
   await allLoaded(page);
-  expect(requests).toBe(1);
+  expect(requests).toHaveLength(1);
   expect(errors).toEqual([]);
 });
 
@@ -395,10 +401,7 @@ test('the capture shortcut keeps an overlay whose file has not landed', async ({
 test("the Talmud's English downloads only once English is shown, and its Hebrew does not wait for it", async ({
   page,
 }) => {
-  const english: string[] = [];
-  page.on('request', (r) => {
-    if (r.url().endsWith(englishFile('Berakhot'))) english.push(r.url());
-  });
+  const english = requestsFor(page, englishFile('Berakhot'));
   await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'he'));
   const release = await hold(page, [englishFile('Berakhot')]);
   await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
@@ -422,10 +425,7 @@ test("the Talmud's English downloads only once English is shown, and its Hebrew 
 test("the Talmud's English alone downloads no Hebrew, and a failed English says so in its place", async ({
   page,
 }) => {
-  const hebrew: string[] = [];
-  page.on('request', (r) => {
-    if (r.url().endsWith(textsFile('Berakhot'))) hebrew.push(r.url());
-  });
+  const hebrew = requestsFor(page, textsFile('Berakhot'));
   await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'en'));
   await fail(page, [englishFile('Berakhot')]);
   await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
@@ -494,12 +494,3 @@ test('a failed English search file says so for an English term, and Hebrew searc
   await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
   await expect(page.locator('#search-hit-caption .load-notice')).toHaveCount(0);
 });
-
-/** The requests for one data file, as they are made. */
-function requestsFor(page: Page, path: string): string[] {
-  const urls: string[] = [];
-  page.on('request', (r) => {
-    if (r.url().endsWith(`/data/${path}`)) urls.push(r.url());
-  });
-  return urls;
-}

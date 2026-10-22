@@ -190,6 +190,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // Filled from the download stages once the opening view is known, before the first frame.
   const downloads = {
     pending: new Set<string>(),
+    /** The files whose download has begun: a stage's once it starts, and any fetched at once. */
+    started: new Set<string>(),
     failed: new Set<string>(),
     closed: new Set<string>(),
   };
@@ -201,8 +203,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let searchPrebuilt = false;
   let downloadsSettled = false;
   let downloadsStarted = false;
-  /** The files whose download has begun: a stage's once it starts, and any fetched at once. */
-  const requested = new Set<string>();
   let timingSent = false;
 
   const squares = indexItems(items);
@@ -919,15 +919,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    */
   function fetchNow(path: string): void {
     if (!downloadsStarted) return;
-    if (loaded.has(path) || requested.has(path) || downloads.failed.has(path)) return;
-    requested.add(path);
+    if (loaded.has(path) || downloads.started.has(path) || downloads.failed.has(path)) return;
+    downloads.started.add(path);
     downloads.pending.add(path);
     void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
   }
 
   /** The files the search's settings ask for at once. */
   function searchFilesNow(): readonly string[] {
-    return searchTool.filesFor?.(overlaySettings.get(searchTool)) ?? [];
+    return searchTool.filesNow?.(overlaySettings.get(searchTool)) ?? [];
   }
 
   /**
@@ -1726,8 +1726,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   showLoadState();
 
   for (const stage of stages) {
-    const fresh = stage.filter((path) => !requested.has(path));
-    for (const path of fresh) requested.add(path);
+    const fresh = stage.filter((path) => !downloads.started.has(path));
+    for (const path of fresh) downloads.started.add(path);
     await downloadFiles(fresh, { landed: fileLanded, failed: fileFailed });
   }
   // The layout tests, the video harness and the loading tests wait on this;

@@ -7,9 +7,9 @@ import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
 import { linkStretches, type TextLink } from './textLinks.ts';
-import { styleStretches, type TextStyle } from './textStyles.ts';
+import { styleStretches, type TextRange, type TextStyle } from './textStyles.ts';
 
-export type { TextStyle };
+export type { TextRange, TextStyle };
 
 /** A click on a word in the popup's Hebrew text. */
 export interface WordClick<I extends MapItem = MapItem> {
@@ -120,7 +120,7 @@ export interface PopupText {
   /** Stretches of the English in bold or italic. */
   englishStyles?: readonly TextStyle[];
   /** The stretches of the English that search reads, and so marks; all of it when absent. */
-  englishSearched?: readonly { start: number; end: number }[];
+  englishSearched?: readonly TextRange[];
 }
 
 /** What the popup shows beside the square's text, and whether the square is pinned. */
@@ -179,7 +179,7 @@ export function updateSidebar<I extends MapItem>(
   const marked = (
     words: string,
     language: TextLanguage,
-    searched?: readonly { start: number; end: number }[],
+    searched?: readonly TextRange[],
   ): DocumentFragment | null => {
     const overlayMarks = currentOverlay?.highlightItemText?.(
       item,
