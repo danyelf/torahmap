@@ -65,6 +65,9 @@ export interface Named<K> {
   spellings?: readonly string[];
 }
 
+// A single letter is never a name.
+const NAME_LETTERS = 2;
+
 // A later fold drops vowels, so two letters would shrink to the start of names they do not resemble.
 const LATER_FOLD_LETTERS = 3;
 
@@ -83,11 +86,11 @@ export function namedBy<K>(
 /**
  * Every name of `entries`, written once by each of `folds`.
  *
- * Reading takes the longest run of tokens, two letters or more, that is a whole
- * name or the start of only one, trying the folds in turn, the later ones only
- * from three letters. Completing, from one
- * letter, offers the names that what was typed starts, or starts a later word
- * of, by the first fold alone, leaving out an entry already named in full.
+ * Reading takes the longest run of tokens, of NAME_LETTERS or more, that is a
+ * whole name or the start of only one, trying the folds in turn, the later ones
+ * only from LATER_FOLD_LETTERS. Completing, from one letter, offers the names
+ * that what was typed starts, or starts a later word of, by the first fold
+ * alone, leaving out an entry already named in full.
  */
 export function nameTable<K>(
   entries: readonly Named<K>[],
@@ -140,7 +143,7 @@ export function nameTable<K>(
     read(tokens) {
       for (let k = tokens.length; k > 0; k--) {
         const words = texts(tokens.slice(0, k));
-        if (words.includes(RANGE) || letterCount(words) < 2) continue;
+        if (words.includes(RANGE) || letterCount(words) < NAME_LETTERS) continue;
         const key = named(words);
         if (key !== null) return { key, rest: tokens.slice(k) };
       }
