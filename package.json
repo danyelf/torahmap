@@ -31,7 +31,9 @@
     "generate:text-dating": "npx tsx scripts/generate-text-dating.ts",
     "report:click-resolution": "npx tsx scripts/search/click-resolution-report.ts",
     "report:english-letters": "npx tsx scripts/search/english-letters-report.ts",
-    "print": "node scripts/print/print.ts"
+    "print": "node scripts/print/print.ts",
+    "generate:text-analytics": "npx tsx scripts/overlays/text-analytics/generate.ts",
+    "report:text-analytics": "npx tsx scripts/overlays/text-analytics/report.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.58.2",
