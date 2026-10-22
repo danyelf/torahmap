@@ -257,6 +257,28 @@ export const SAMPLE_TEXT_ANALYTICS_SCORES: TextAnalyticsData['scores'] = {
   },
   repetition: { Genesis: { '1': [0.1, 0.4, null] } },
   division: { Genesis: { '1': [-0.1, 0.2, null] } },
+  divisionExamples: [
+    {
+      ref: 'Genesis 1:1',
+      common: true,
+      share: 0.27,
+      words: [
+        { text: 'א', mark: 'Tipcha' },
+        { text: 'ב' },
+        { text: 'ג', mark: 'Etnachta' },
+        { text: 'ד', secondHalf: true },
+      ],
+    },
+    {
+      ref: 'Genesis 21:6',
+      common: false,
+      share: 0.02,
+      words: [
+        { text: 'ה', mark: 'Segol' },
+        { text: 'ו', mark: 'Etnachta' },
+      ],
+    },
+  ],
 };
 
 /** The sample files, under the paths the overlays name. */

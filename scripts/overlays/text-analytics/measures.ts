@@ -15,7 +15,10 @@
 
 import { withoutKetiv, wordsBhsaParsed } from '@torahmap/tanakh/search/dictionary.ts';
 import { TROP_MARKS } from '@torahmap/tanakh/overlays/trop/marks.ts';
-import type { ScoreParameters } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
+import type {
+  DivisionExample,
+  ScoreParameters,
+} from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 import { isHebrew } from '@torahmap/hebrew';
 
 /** The verses a score is averaged over, centred on the verse: a passage rather than a single verse. */
@@ -312,4 +315,45 @@ export function divisionScores(books: ParsedBook[]): {
     );
   });
   return { scores, counts };
+}
+
+// Vowel points, dagesh, meteg and the shin and sin dots: what is left is the
+// letters, the trop, maqaf and sof pasuq.
+const POINTS = /[ְ-ׇֽֿׁׂׅׄ]/g;
+
+/**
+ * A verse showing how its first half is divided: its words unvowelled with
+ * their trop, the etnachta and the first half's strongest pauses named, and
+ * the share of first halves divided the same way.
+ */
+export function divisionExample(
+  ref: string,
+  he: string,
+  counts: PieceCounts,
+  common: boolean,
+): DivisionExample {
+  const verse = units(he);
+  const words = withoutKetiv(he)
+    .replace(/<[^>]*>|\{[פס]\}|[[\]]/g, '')
+    .split(/\s+/)
+    .filter((w) => isHebrew(w) && w !== PASEQ);
+  if (words.length !== verse.length) throw new Error(`${ref}: words and units do not line up`);
+  const etnachta = verse.findIndex((u) => u.pause === 'Etnachta');
+  const first = pieces(verse).find((p) => p.kind === 'Etnachta');
+  if (etnachta < 0 || !first) throw new Error(`${ref} has no etnachta`);
+  const ways = counts.get('Etnachta')!;
+  const total = [...ways.values()].reduce((sum, n) => sum + n, 0);
+  const dividers = new Set(first.way.split(', '));
+  return {
+    ref,
+    common,
+    share: (ways.get(first.way) ?? 0) / total,
+    words: words.map((w, i) => {
+      const text = w.replace(POINTS, '');
+      const pause = verse[i].pause;
+      if (i === etnachta) return { text, mark: 'Etnachta' };
+      if (i > etnachta) return { text, secondHalf: true };
+      return pause && dividers.has(pause) ? { text, mark: pause } : { text };
+    }),
+  };
 }

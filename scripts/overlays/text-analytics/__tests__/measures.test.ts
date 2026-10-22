@@ -6,6 +6,7 @@ import {
   WINDOW_VERSES,
   pieces,
   repetitionScores,
+  divisionExample,
   divisionScores,
   parse,
   units,
@@ -213,5 +214,26 @@ describe('divisionScores', () => {
     expect(prose[5]).toBeNull();
     expect(prose[0]).not.toBeNull();
     expect(psalms).toEqual([null, null, null, null, null]);
+  });
+});
+
+describe('divisionExample', () => {
+  it("names the etnachta and the first half's dividers, and gives the share divided that way", () => {
+    const shape = [CONJ, ZAQEF, 'גָּ' + TIPCHA, CONJ, ETNACHTA, REVIA, 'אב'];
+    const other = [CONJ, TIPCHA, CONJ, CONJ, ETNACHTA, TIPCHA, 'אב'];
+    const { counts } = divisionScores([book('A', [shape, other, other, other])]);
+    const example = divisionExample('A 1:1', shape.join(' '), counts, false);
+    expect(example.share).toBe(0.25);
+    expect(example.words.map((w) => w.mark ?? (w.secondHalf ? 'second half' : null))).toEqual([
+      null,
+      'Zaqef Qatan',
+      'Tipcha',
+      null,
+      'Etnachta',
+      'second half',
+      'second half',
+    ]);
+    // Points dropped, trop kept.
+    expect(example.words[2].text).toBe('ג' + TIPCHA);
   });
 });
