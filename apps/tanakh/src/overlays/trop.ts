@@ -72,6 +72,7 @@ function tierOf(entry: TropIndexEntry): RarityTier {
 }
 
 export const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
+export const RARE_NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
 
 interface RareTier {
   label: string;
@@ -88,7 +89,7 @@ interface CountedTier {
 
 /** How each tier is drawn: a rare mark as present or absent, any other as a count, on a scale. */
 const TIERS = {
-  rare: { label: 'Rare', match: RARE_MATCH_COLOR, noMatch: [0.25, 0.25, 0.25] },
+  rare: { label: 'Rare', match: RARE_MATCH_COLOR, noMatch: RARE_NO_MATCH_COLOR },
   uncommon: {
     label: 'Uncommon',
     noMatch: [0.25, 0.25, 0.28],

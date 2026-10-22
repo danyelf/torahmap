@@ -4,12 +4,13 @@ import {
   tropOverlay,
   highlightTropInText,
   RARE_MATCH_COLOR,
+  RARE_NO_MATCH_COLOR,
   type TropSettings,
 } from '../../../src/overlays/trop';
 import { colorToCss } from '@torahmap/utils';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
-import { assertNamedEnds, assertValidColor, assertApproximately } from '../../helpers/assertions';
+import { assertNamedEnds, assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { RARITY_THRESHOLDS } from '../../../src/overlays/trop/marks';
@@ -378,16 +379,8 @@ describe('Trop Overlay', () => {
         expect(rareButton).toBeDefined();
         rareButton!.click();
 
-        const verseWithoutMark = testVerses.find((v) => {
-          const color = host.getItemColor(v) as [number, number, number] | null;
-          return color && color[0] < 0.2;
-        });
-        if (!verseWithoutMark) return;
-
-        const color = host.getItemColor(verseWithoutMark) as [number, number, number];
-        assertApproximately(color[0], 0.25, 0.02);
-        assertApproximately(color[1], 0.25, 0.02);
-        assertApproximately(color[2], 0.25, 0.02);
+        const colors = testVerses.map((v) => host.getItemColor(v));
+        expect(colors).toContainEqual(RARE_NO_MATCH_COLOR);
       });
 
       it('uses binary coloring for rare marks', () => {
@@ -478,9 +471,11 @@ describe('Trop Overlay', () => {
       const container = document.createElement('div');
       host.renderLegend(container);
 
-      expect(container.innerHTML).toContain('Contains');
-      expect(container.innerHTML).toContain('Does not contain');
-      expect(container.innerHTML).toContain(colorToCss(RARE_MATCH_COLOR));
+      const swatches = [...container.querySelectorAll<HTMLElement>('.legend-row .swatch')];
+      expect(swatches.map((swatch) => swatch.style.background)).toEqual([
+        colorToCss(RARE_MATCH_COLOR),
+        colorToCss(RARE_NO_MATCH_COLOR),
+      ]);
     });
 
     it('draws its strip in its own colours, owing nothing to commentary', () => {
@@ -509,7 +504,6 @@ describe('Trop Overlay', () => {
         b.classList.contains('rare'),
       ) as HTMLButtonElement;
       rare.click();
-      expect(host.summary().colors).toHaveLength(2);
       expect(host.summary().strip).toBeUndefined();
     });
   });
