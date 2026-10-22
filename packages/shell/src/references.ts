@@ -78,13 +78,12 @@ export function namedBy<K>(
 }
 
 /**
- * Every name of `entries`, written once by each of `folds`, to read and to
- * complete from.
+ * Every name of `entries`, written once by each of `folds`.
  *
- * Reading takes the longest run of tokens that names something, so a name of
- * several words is not cut short by a shorter name inside it. It tries the
- * folds in turn; at each, a whole name beats the start of one, and the start
- * of several names is no name. Completing goes by the first fold.
+ * Reading takes the longest run of tokens, two letters or more, that is a whole
+ * name or the start of only one, trying the folds in turn. Completing, from one
+ * letter, offers the names that what was typed starts, or starts a later word
+ * of, by the first fold alone, leaving out an entry already named in full.
  */
 export function nameTable<K>(
   entries: readonly Named<K>[],
@@ -93,7 +92,7 @@ export function nameTable<K>(
 ): {
   /** The entry `tokens` begin by naming, and the tokens after its name. */
   read(tokens: readonly Token[]): { key: K; rest: Token[] } | null;
-  /** The names `typed` is the start of, or of a later word of, one per entry, in order. */
+  /** The names to offer for `typed`, one per entry, in order. */
   complete(typed: string): string[];
 } {
   const table = entries.map(({ key, names, spellings = [] }) => ({
@@ -142,7 +141,6 @@ export function nameTable<K>(
       }
       return null;
     },
-    // An entry already named in full is offered no longer.
     complete(typed) {
       const words = texts(referenceTokens(clean(typed)));
       if (words.length === 0) return [];

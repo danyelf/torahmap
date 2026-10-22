@@ -66,7 +66,6 @@ export function bindGoTo(
       )
       .join('');
     box.setAttribute('aria-expanded', String(completions.length > 0));
-    // The examples give way to the names offered.
     examples.hidden = completions.length > 0;
     if (chosen >= 0) box.setAttribute('aria-activedescendant', optionId(chosen));
     else box.removeAttribute('aria-activedescendant');
