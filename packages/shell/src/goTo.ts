@@ -44,6 +44,8 @@ export interface GoToHooks {
   /** The text of the place's first square, or null while its file is not in. */
   quote(found: Reference, typed: string): string | null;
   take(found: Reference, typed: string): void;
+  /** Enter on `typed`, which names no place. */
+  miss(typed: string): void;
 }
 
 /** Wires the panel `goToPanelHtml` drew in `panel`. */
@@ -118,10 +120,14 @@ export function bindGoTo(
   }
 
   function take(): void {
-    if (!found) return;
+    const typed = box.value.trim();
+    if (!found) {
+      if (typed) hooks.miss(typed);
+      return;
+    }
     // The map takes the keys again, and a phone's keyboard goes down.
     box.blur();
-    hooks.take(found, box.value.trim());
+    hooks.take(found, typed);
   }
 
   box.addEventListener('input', () => typed(box.value));

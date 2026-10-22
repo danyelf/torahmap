@@ -27,7 +27,8 @@ function open() {
   document.body.replaceChildren(panel);
   const take = vi.fn();
   const quote = vi.fn((found: Reference) => `the text of ${found.ids[0]}`);
-  const { redraw } = bindGoTo(panel, goTo, { take, quote });
+  const miss = vi.fn();
+  const { redraw } = bindGoTo(panel, goTo, { take, quote, miss });
   const box = panel.querySelector<HTMLInputElement>(`#${GO_TO_BOX_ID}`)!;
   const type = (value: string) => {
     box.value = value;
@@ -41,7 +42,7 @@ function open() {
   const completions = () =>
     [...panel.querySelectorAll<HTMLElement>('[role="option"]')].map((o) => o.textContent);
   const selected = () => panel.querySelector('[aria-selected="true"]')?.textContent ?? null;
-  return { panel, box, take, quote, redraw, type, press, completions, selected };
+  return { panel, box, take, miss, quote, redraw, type, press, completions, selected };
 }
 
 describe('the Go to panel', () => {
@@ -60,13 +61,20 @@ describe('the Go to panel', () => {
     expect(take).toHaveBeenCalledWith(PLACES['genesis 1'], 'Genesis 1');
   });
 
-  it('says when what is typed names nothing, and goes nowhere', () => {
-    const { panel, take, type, press } = open();
+  it('says when what is typed names nothing, goes nowhere, and reports the miss on Enter', () => {
+    const { panel, take, miss, type, press } = open();
     type('Genesis 99');
     expect(panel.querySelector('.goto-none')).not.toBeNull();
     expect(panel.querySelector('.goto-offer')).toBeNull();
     press('Enter');
     expect(take).not.toHaveBeenCalled();
+    expect(miss).toHaveBeenCalledWith('Genesis 99');
+  });
+
+  it('reports no miss for Enter on an empty box', () => {
+    const { miss, press } = open();
+    press('Enter');
+    expect(miss).not.toHaveBeenCalled();
   });
 
   it('answers nothing while empty', () => {
@@ -180,7 +188,7 @@ describe('the Go to panel, taking an offer', () => {
     const panel = document.createElement('div');
     panel.innerHTML = goToPanelHtml(goTo.examples);
     const take = vi.fn();
-    bindGoTo(panel, { ...goTo, read }, { take, quote: () => null });
+    bindGoTo(panel, { ...goTo, read }, { take, quote: () => null, miss: vi.fn() });
     const box = panel.querySelector<HTMLInputElement>(`#${GO_TO_BOX_ID}`)!;
     box.value = 'Genesis 1';
     box.dispatchEvent(new Event('input'));
@@ -196,7 +204,11 @@ describe('the Go to panel, offering completions', () => {
     const offered = Array.from({ length: 30 }, (_, i) => `Gate ${i + 1}`);
     const panel = document.createElement('div');
     panel.innerHTML = goToPanelHtml(goTo.examples);
-    bindGoTo(panel, { ...goTo, complete: () => offered }, { take: vi.fn(), quote: () => null });
+    bindGoTo(
+      panel,
+      { ...goTo, complete: () => offered },
+      { take: vi.fn(), quote: () => null, miss: vi.fn() },
+    );
     const box = panel.querySelector<HTMLInputElement>(`#${GO_TO_BOX_ID}`)!;
     box.value = 'g';
     box.dispatchEvent(new Event('input'));

@@ -54,3 +54,13 @@ test('going to a place records what was typed and where it led', async ({ page }
     .toEqual([{ typed: 'gen 2:2', ref: 'Genesis 2:2', area: 'Genesis' }]);
   expect(errors).toEqual([]);
 });
+
+test('Enter on a reference that names no place records what was typed', async ({ page }) => {
+  const errors = await openMap(page, '');
+  await recordEvents(page);
+  await goTo(page, 'Genesis 99', true);
+  await expect
+    .poll(() => sentFields(page, 'go_to'))
+    .toEqual([{ typed: 'Genesis 99', ref: '', area: '' }]);
+  expect(errors).toEqual([]);
+});

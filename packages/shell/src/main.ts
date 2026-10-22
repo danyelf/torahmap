@@ -773,6 +773,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       if (place.length === 1) glideToItem(place[0]);
       else glideToFit(place);
     },
+    miss: (typed) => trackGoTo(typed, '', ''),
   });
 
   // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
