@@ -70,7 +70,7 @@ const MEASURES: Record<
       `How much of the passage around each verse repeats itself: the share of the words in its ` +
         `${p.windowVerses} verses that belong to a ${p.runWords}-word phrase the book uses again ` +
         `within ${p.reachVerses} verses`,
-      `Common idioms such as "thus says the LORD" (found in ${p.formulaBooks} or more books) don't count`,
+      `Common idioms such as "thus says the LORD, God of Israel" (found in ${p.formulaBooks} or more books) don't count`,
       `Blue = ${low} wording · Yellow = ${high} wording`,
     ],
   },
