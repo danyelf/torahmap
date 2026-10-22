@@ -155,12 +155,24 @@ test('zoomed far out, a search hit glows, fading out from a solid core', async (
 
 test("the search card's × clears the search, and Back brings it back", async ({ page }) => {
   await openMap(page, `search=${ABRAHAM}&overlay=haftarah`);
-  await closeFromLegend(page, 'search', 'search');
+  await closeFromLegend(page, 'search');
   await expect(page.locator('.map-legend-row[data-panel="overlay"]')).toBeVisible();
+});
+
+test("a card's × during a story hands the map to the reader, the story still open", async ({
+  page,
+}) => {
+  await openMap(page, 'story=tour&stop=liturgy_verse');
+  const row = page.locator('.map-legend-row[data-panel="overlay"]');
+  await row.locator('.map-legend-close').click();
+  await expect(row).toBeHidden();
+  // The link names the reader's own view rather than the stop.
+  await expect.poll(() => new URL(page.url()).searchParams.get('story')).toBeNull();
+  await expect(page.locator('body')).toHaveAttribute('data-mode', 'story');
 });
 
 test("the overlay card's × turns the overlay off, and Back brings it back", async ({ page }) => {
   await openMap(page, `search=${ABRAHAM}&overlay=haftarah`);
-  await closeFromLegend(page, 'overlay', 'overlay');
+  await closeFromLegend(page, 'overlay');
   await expect(page.locator('.map-legend-row[data-panel="search"]')).toBeVisible();
 });

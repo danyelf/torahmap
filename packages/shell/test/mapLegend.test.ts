@@ -5,12 +5,7 @@ function legend(): HTMLElement {
   const div = document.createElement('div');
   div.innerHTML =
     ['search', 'overlay']
-      .map(
-        (panel) =>
-          `<div class="map-legend-row" data-panel="${panel}" hidden>` +
-          `<button class="map-legend-open"><span class="map-legend-summary"></span></button>` +
-          `<button class="map-legend-close"></button></div>`,
-      )
+      .map((panel) => `<div class="map-legend-row" data-panel="${panel}" hidden></div>`)
       .join('') + '<div class="map-legend-warning" hidden></div>';
   return div;
 }
@@ -48,10 +43,21 @@ describe('showLegend', () => {
     expect(shownRows(el)).toEqual(['overlay']);
   });
 
+  it('gives each shown row one button that opens its panel and one ×, however often it is shown', () => {
+    const el = legend();
+    showLegend(el, [SEARCH, OVERLAY], []);
+    showLegend(el, [OVERLAY], []);
+    showLegend(el, [SEARCH, OVERLAY], []);
+    for (const row of el.querySelectorAll('.map-legend-row')) {
+      expect(row.querySelectorAll('button.map-legend-open').length).toBe(1);
+      expect(row.querySelectorAll('button.map-legend-close').length).toBe(1);
+    }
+  });
+
   it("names the overlay's × after the overlay it turns off", () => {
     const el = legend();
-    const close = el.querySelector('[data-panel="overlay"] .map-legend-close')!;
     showLegend(el, [OVERLAY], []);
+    const close = el.querySelector('[data-panel="overlay"] .map-legend-close')!;
     expect(close.getAttribute('aria-label')).toContain('Commentary');
     showLegend(el, [{ ...OVERLAY, name: 'Haftarah' }], []);
     expect(close.getAttribute('aria-label')).toContain('Haftarah');

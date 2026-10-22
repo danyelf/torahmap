@@ -576,13 +576,10 @@ body[data-open='about'] #about-panel {
   cursor: pointer;
 }
 
-/* As tall as its row. Over .control-icon, whichever stylesheet loads last. */
 .map-legend-row .map-legend-close {
   flex-shrink: 0;
   width: 36px;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
-  color: #999;
-  font-size: 18px;
 }
 
 .map-legend-row[hidden] {
@@ -608,8 +605,7 @@ body[data-open='about'] #about-panel {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.map-legend-open:hover,
-.map-legend-row .map-legend-close:hover {
+.map-legend-open:hover {
   background: rgba(255, 255, 255, 0.06);
 }
 

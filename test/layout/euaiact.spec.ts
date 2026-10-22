@@ -195,12 +195,12 @@ for (const zoom of [ARTICLE_NUMBER_ZOOM, 2, 4]) {
 
 test("the Act's search card's × clears the search, and Back brings it back", async ({ page }) => {
   await openMap(page, 'search=deployer&zoom=0.6', ACT);
-  await closeFromLegend(page, 'search', 'search');
+  await closeFromLegend(page, 'search');
 });
 
 test("the Act's overlay card's × turns the overlay off, and Back brings it back", async ({
   page,
 }) => {
   await openMap(page, 'overlay=amendment&zoom=0.6', ACT);
-  await closeFromLegend(page, 'overlay', 'overlay');
+  await closeFromLegend(page, 'overlay');
 });

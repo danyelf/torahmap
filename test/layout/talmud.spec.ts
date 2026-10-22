@@ -240,5 +240,5 @@ test("the Talmud's search card's × clears the search, and Back brings it back",
   page,
 }) => {
   await openMap(page, `search=${encodeURIComponent('משנה')}`, TALMUD);
-  await closeFromLegend(page, 'search', 'search');
+  await closeFromLegend(page, 'search');
 });

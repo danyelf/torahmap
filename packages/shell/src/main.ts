@@ -82,7 +82,7 @@ import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
-import { createOverlaySettings } from './overlays/settings.ts';
+import { createOverlaySettings, settingsFromLink } from './overlays/settings.ts';
 import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
 import { prebuildCompleted } from './overlays/prebuild.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
@@ -1311,8 +1311,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
       return;
     }
-    const close = target.closest('.map-legend-close')?.closest<HTMLElement>('.map-legend-row');
-    if (close) return turnOff(close.dataset.panel);
+    const closing = target.closest('.map-legend-close')?.closest<HTMLElement>('.map-legend-row')
+      ?.dataset.panel;
+    if (closing === 'search' || closing === 'overlay') return turnOff(closing);
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
     const chooser = target.closest('.map-legend-open')?.closest<HTMLElement>('.map-legend-row');
@@ -1321,11 +1322,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /** A legend card's ×: what the search panel's Clear, or the overlay's None, does. */
-  function turnOff(panel: string | undefined): void {
+  function turnOff(tool: FrontTool): void {
     takeOver('takeover');
-    if (panel === 'search') changeSearch(() => searchTool.cleared());
+    if (tool === 'search') changeSearch(() => settingsFromLink(searchTool, {}));
     else setOverlay(NO_OVERLAY);
-    // The × went with its row.
+    // The × went with its row, so focus moves to the row left, or else to the menu.
     (
       mapLegend.querySelector<HTMLElement>('.map-legend-row:not([hidden]) button') ?? menuToggle
     ).focus();

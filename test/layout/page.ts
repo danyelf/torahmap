@@ -276,19 +276,15 @@ export async function longestDrawnRun(page: Page, png: Buffer): Promise<number> 
 }
 
 /**
- * Presses the × on `panel`'s legend card: the card and the link's `key` go,
- * and Back brings both back.
+ * Presses the × on `panel`'s legend card: the card and the link's `panel`
+ * parameter go, and Back brings both back.
  */
-export async function closeFromLegend(
-  page: Page,
-  panel: 'search' | 'overlay',
-  key: string,
-): Promise<void> {
+export async function closeFromLegend(page: Page, panel: 'search' | 'overlay'): Promise<void> {
   const row = page.locator(`.map-legend-row[data-panel="${panel}"]`);
   const close = row.locator('.map-legend-close');
-  const inLink = () => new URL(page.url()).searchParams.get(key);
+  const inLink = () => new URL(page.url()).searchParams.get(panel);
   const before = inLink();
-  expect(before, `the link holds ${key}`).not.toBeNull();
+  expect(before, `the link holds ${panel}`).not.toBeNull();
   await expect(close).toHaveAccessibleName(/\S/);
   await close.click();
   await expect(row).toBeHidden();

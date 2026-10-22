@@ -15,6 +15,11 @@ export interface LegendRow {
 const closeLabel = (row: LegendRow): string =>
   row.panel === 'search' ? 'Clear the search' : `Turn off ${row.name}`;
 
+const ROW_BUTTONS =
+  '<button class="map-legend-open" type="button">' +
+  '<span class="map-legend-summary"></span><span class="chevron" aria-hidden="true"></span>' +
+  '</button><button class="map-legend-close control-icon" type="button">×</button>';
+
 /**
  * Show `rows` in the legend's own order, search above overlay, and
  * `warnings` under them; with neither, hide the card.
@@ -29,6 +34,7 @@ export function showLegend(
     element.hidden = !row;
     element.toggleAttribute('data-loading', !!row?.loading);
     if (row) {
+      if (!element.firstChild) element.innerHTML = ROW_BUTTONS;
       element.querySelector('.map-legend-summary')!.innerHTML = summaryHtml(row.name, row.summary);
       element.querySelector('.map-legend-close')!.setAttribute('aria-label', closeLabel(row));
     }
