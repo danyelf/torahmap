@@ -3,6 +3,7 @@ import {
   eachWord,
   nameTable,
   numberIn,
+  placeCompleter,
   referenceReader,
   referenceTokens,
   type Token,
@@ -150,14 +151,6 @@ describe('nameTable.complete', () => {
     ]);
     expect(spoken.complete('Su')).toEqual([]);
   });
-
-  it('offers at most a handful', () => {
-    const many = nameTable(
-      Array.from({ length: 20 }, (_, i) => ({ key: i, names: [`Book${i}`] })),
-    ).complete;
-    expect(many('bo').length).toBeLessThan(20);
-    expect(many('bo').length).toBeGreaterThan(1);
-  });
 });
 
 describe('numberIn', () => {
@@ -173,18 +166,6 @@ describe('numberIn', () => {
 });
 
 describe('referenceReader', () => {
-  it('offers what may follow a name once the name is typed in full, a handful at most', () => {
-    const following = Array.from({ length: 30 }, (_, i) => `NG ${i + 1}`);
-    const gate = referenceReader({ named: PLACES, place: () => null, following: () => following });
-    for (const typed of ['North Gate', 'North Gate ', 'ng']) {
-      const offered = gate.complete(typed);
-      expect(offered.length, typed).toBeGreaterThan(1);
-      expect(offered.length, typed).toBeLessThan(following.length);
-      expect(following).toEqual(expect.arrayContaining(offered));
-    }
-    expect(gate.complete('North Gate 3')).toEqual([]);
-  });
-
   const where = vi.fn((key: string, rest: Token[]) =>
     rest.length > 1 ? null : { ref: `${key} ${texts(rest).join('')}`.trim(), ids: [key] },
   );
@@ -206,6 +187,27 @@ describe('referenceReader', () => {
   });
 
   it('completes from the same names it reads', () => {
-    expect(reader.complete('sou')).toEqual(['South', 'Southampton']);
+    expect(reader.completeNames('sou')).toEqual(['South', 'Southampton']);
+  });
+});
+
+describe('placeCompleter', () => {
+  const PLACE_LIST = ['Gate 1', 'Gate 2', 'Gate 12', 'Tower 1', 'Tower 4a'];
+  const complete = placeCompleter(PLACE_LIST);
+
+  it('offers the places each of whose words starts as the typed word in its place does, in order', () => {
+    expect(complete('g')).toEqual(['Gate 1', 'Gate 2', 'Gate 12']);
+    expect(complete('GATE 1')).toEqual(['Gate 12']);
+    expect(complete('tow 4')).toEqual(['Tower 4a']);
+  });
+
+  it('offers no place already typed in full', () => {
+    expect(complete('Gate 2')).toEqual([]);
+  });
+
+  it('offers nothing for nothing, or for what starts no place', () => {
+    expect(complete(' ')).toEqual([]);
+    expect(complete('wall')).toEqual([]);
+    expect(complete('gate 1 2')).toEqual([]);
   });
 });

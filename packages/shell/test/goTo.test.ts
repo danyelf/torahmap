@@ -158,3 +158,18 @@ describe('the Go to panel, taking an offer', () => {
     expect(read.mock.calls.length).toBe(reads);
   });
 });
+
+describe('the Go to panel, offering completions', () => {
+  it('shows a handful of what the text offers, at most', () => {
+    const offered = Array.from({ length: 30 }, (_, i) => `Gate ${i + 1}`);
+    const panel = document.createElement('div');
+    panel.innerHTML = goToPanelHtml(goTo.examples);
+    bindGoTo(panel, { ...goTo, complete: () => offered }, { take: vi.fn(), quote: () => null });
+    const box = panel.querySelector<HTMLInputElement>(`#${GO_TO_BOX_ID}`)!;
+    box.value = 'g';
+    box.dispatchEvent(new Event('input'));
+    const shown = panel.querySelectorAll('[role="option"]').length;
+    expect(shown).toBeGreaterThan(1);
+    expect(shown).toBeLessThan(offered.length);
+  });
+});

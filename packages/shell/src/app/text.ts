@@ -106,7 +106,7 @@ export interface GoTo {
   examples: readonly string[];
   /** The place `typed` names, or null when it names none. */
   read(typed: string): Reference | null;
-  /** The names, of what a reference may begin by naming, that `typed` is the start of. */
+  /** What `typed` may be completed to, in the order to offer them. */
   complete(typed: string): string[];
 }
 

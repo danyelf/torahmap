@@ -143,7 +143,7 @@ function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
 
 /** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */
 export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examples'> {
-  return referenceReader({
+  const { read, completeNames } = referenceReader({
     named: books.map((book) => ({
       key: book,
       names: [book.name, book.hebrewName, ...(OTHER_NAMES[book.name] ?? [])],
@@ -152,4 +152,5 @@ export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examp
     filler: FILLER,
     place: placeIn,
   });
+  return { read, complete: completeNames };
 }

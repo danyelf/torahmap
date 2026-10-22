@@ -1,7 +1,12 @@
 // Reads a reference to the Act, such as "Article 5(1)(h)", "Recital 12" or "Annex 3".
 
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
-import { referenceReader, type Named, type Token } from '@torahmap/shell/references.ts';
+import {
+  placeCompleter,
+  referenceReader,
+  type Named,
+  type Token,
+} from '@torahmap/shell/references.ts';
 import { actRef, layerOf, ownerOf, type Layer } from './ids.ts';
 
 export const EXAMPLES = ['Article 7', 'Annex III'];
@@ -73,18 +78,19 @@ export function provisionReader(ids: readonly string[]): Omit<GoTo, 'examples'> 
     }
   }
 
-  return referenceReader({
+  const { read } = referenceReader({
     named: LAYERS,
     place: placeIn,
     // A bare number is an article's.
     unnamed: (tokens) => placeIn('article', tokens),
-    // Each article, recital or annex in order, as readers cite it.
-    following: (layer) => [
-      ...new Set(
-        ids
-          .filter((id) => layerOf(id) === layer)
-          .map((id) => actRef(layer === 'article' ? ownerOf(id) : id)),
-      ),
-    ],
   });
+  // Every article, then annex, then recital, as readers cite it.
+  const places = (['article', 'annex', 'recital'] as const).flatMap((layer) => [
+    ...new Set(
+      ids
+        .filter((id) => layerOf(id) === layer)
+        .map((id) => actRef(layer === 'article' ? ownerOf(id) : id)),
+    ),
+  ]);
+  return { read, complete: placeCompleter(places) };
 }

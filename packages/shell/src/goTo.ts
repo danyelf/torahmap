@@ -1,5 +1,5 @@
-// The Go to panel: a box for a reference, the names it may be the start of,
-// the place it names, quoting its first square, and examples to try.
+// The Go to panel: a box for a reference, what the text completes it to, the
+// place it names, quoting its first square, and examples to try.
 
 import { escapeHtml } from '@torahmap/utils';
 import type { GoTo, Reference } from './app/text.ts';
@@ -9,6 +9,9 @@ import './styles/go-to.css';
 export const GO_TO_BOX_ID = 'goto-input';
 const LIST_ID = 'goto-completions';
 const optionId = (i: number) => `goto-completion-${i}`;
+
+// The most completions the panel shows at once.
+const COMPLETIONS = 10;
 
 export function goToPanelHtml(examples: readonly string[]): string {
   return panelHtml(
@@ -94,7 +97,7 @@ export function bindGoTo(
 
   function typed(value: string): void {
     box.value = value;
-    completions = goTo.complete(value);
+    completions = goTo.complete(value).slice(0, COMPLETIONS);
     chosen = -1;
     drawList();
     drawAnswer();

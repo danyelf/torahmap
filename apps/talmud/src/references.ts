@@ -89,7 +89,7 @@ function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null 
 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
 export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<GoTo, 'examples'> {
-  return referenceReader({
+  const { read, completeNames } = referenceReader({
     named: tractates.map((tractate) => ({
       key: tractate,
       names: [tractate.name, tractate.hebrewName, ...(OTHER_NAMES[tractate.name] ?? [])],
@@ -98,4 +98,5 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<Go
     filler: FILLER,
     place: placeIn,
   });
+  return { read, complete: completeNames };
 }

@@ -95,16 +95,21 @@ describe('provisionReader', () => {
 });
 
 describe('provisionReader completion', () => {
-  it('offers the parts of the Act that start as typed', () => {
-    expect(complete('a')).toEqual(['Article', 'Annex']);
-    expect(complete('reci')).toEqual(['Recital']);
-  });
-
-  it('offers, once a part is named in full, places in it that each read', () => {
-    for (const typed of ['Article', 'Article ', 'art', 'Annex', 'Recital']) {
+  it('offers, in one step, places of the part that starts as typed, each of which reads', () => {
+    for (const typed of ['a', 'art', 'Article', 'Article ', 'ann', 'Annex', 'reci']) {
       const offered = complete(typed);
       expect(offered.length, typed).toBeGreaterThan(0);
       for (const place of offered) expect(read(place), place).not.toBeNull();
     }
+  });
+
+  it('offers only places that the typed number starts', () => {
+    const offered = complete('art 5');
+    expect(offered.length).toBeGreaterThan(0);
+    for (const place of offered) expect(read(place)?.ids[0].startsWith('5')).toBe(true);
+  });
+
+  it('offers the article an article number with a letter names', () => {
+    expect(complete('art 4').map((place) => read(place)?.ids[0])).toContain('4a(1)');
   });
 });

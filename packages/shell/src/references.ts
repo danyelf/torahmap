@@ -67,9 +67,6 @@ export interface Named<K> {
   names: readonly string[];
 }
 
-// The most names, or places, completion offers at once.
-const COMPLETIONS = 10;
-
 /**
  * Every name of `entries`, written once by each of `folds`, to read and to
  * complete from.
@@ -85,7 +82,7 @@ export function nameTable<K>(
 ): {
   /** The entry `tokens` begin by naming, and the tokens after its name. */
   read(tokens: readonly Token[]): { key: K; rest: Token[] } | null;
-  /** The names `typed` is the start of, or of a later word of, one per entry and at most a handful. */
+  /** The names `typed` is the start of, or of a later word of, one per entry, in order. */
   complete(typed: string): string[];
 } {
   const table = entries.map(({ key, names }) => ({
@@ -139,7 +136,7 @@ export function nameTable<K>(
         const hit = names.find((n) => n.starts.some((from) => from.startsWith(start)));
         if (hit) offered.push(hit.name);
       }
-      return offered.slice(0, COMPLETIONS);
+      return offered;
     },
   };
 }
@@ -152,13 +149,15 @@ export interface Reading<K> {
   filler?: ReadonlySet<string>;
   /** The place the tokens after `key`'s name give, its filler gone. */
   place(key: K, rest: Token[]): Reference | null;
-  /** The places to offer, in order, once `key`'s name is typed in full with nothing after it. */
-  following?(key: K): readonly string[];
   /** The place tokens that begin with no name give. */
   unnamed?(tokens: Token[]): Reference | null;
 }
 
-export function referenceReader<K>(how: Reading<K>): Omit<GoTo, 'examples'> {
+/** Reads a reference as `how` says, and completes the names it reads from. */
+export function referenceReader<K>(how: Reading<K>): {
+  read: GoTo['read'];
+  completeNames: GoTo['complete'];
+} {
   const names = nameTable(how.named, how.folds);
   return {
     read(typed) {
@@ -170,12 +169,27 @@ export function referenceReader<K>(how: Reading<K>): Omit<GoTo, 'examples'> {
         found.rest.filter((t) => !how.filler?.has(t.text)),
       );
     },
-    complete(typed) {
-      const offered = names.complete(typed);
-      if (offered.length > 0 || !how.following) return offered;
-      const found = names.read(referenceTokens(typed));
-      return found && found.rest.length === 0 ? how.following(found.key).slice(0, COMPLETIONS) : [];
-    },
+    completeNames: names.complete,
+  };
+}
+
+/**
+ * Completes from `places`: those each of whose words starts as the typed
+ * word in its place does, in the order given, leaving out one typed in full.
+ */
+export function placeCompleter(places: readonly string[]): GoTo['complete'] {
+  const worded = places.map((place) => ({ place, words: texts(referenceTokens(place)) }));
+  return (typed) => {
+    const typedWords = texts(referenceTokens(typed));
+    if (typedWords.length === 0) return [];
+    return worded
+      .filter(
+        ({ words }) =>
+          typedWords.length <= words.length &&
+          typedWords.every((word, i) => words[i].startsWith(word)) &&
+          words.join(' ') !== typedWords.join(' '),
+      )
+      .map(({ place }) => place);
   };
 }
 
