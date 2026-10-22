@@ -15,6 +15,8 @@ import {
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 import {
   PARAMETERS,
+  REACH_VERSES,
+  RUN_WORDS,
   divisionExample,
   divisionScores,
   parse,
@@ -95,7 +97,7 @@ if (import.meta.main) {
       ),
     ),
     divisionPiecesPerVerse: Math.round(division.piecesPerVerse * 100) / 100,
-    repetition: nest(books, refs, repetitionScores(books)),
+    repetition: nest(books, refs, repetitionScores(books, REACH_VERSES, RUN_WORDS, 1)),
     division: nest(books, refs, division.scores),
   };
   const out = join(DATA, SCORES_FILE);
