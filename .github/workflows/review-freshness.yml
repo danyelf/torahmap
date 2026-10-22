@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   record:
+    name: Record review freshness
     if: github.event_name == 'pull_request' || github.event.issue.pull_request
     runs-on: ubuntu-latest
     env:
