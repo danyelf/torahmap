@@ -84,6 +84,20 @@ describe('Trop Overlay', () => {
     return hostOverlay(tropOverlay, { texts: testVerseTexts });
   }
 
+  /**
+   * A host showing a mark common enough to be drawn as a strip; the shared
+   * fixture's marks are all rare, which is the two-swatch legend.
+   */
+  function hostShowingCommonMark() {
+    const chapter: Record<string, { he: string; en: string }> = {};
+    for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
+      chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
+    }
+    const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
+    selectFirstMark(host);
+    return host;
+  }
+
   /** Click the first button in a freshly drawn set of controls; returns the host and button. */
   function selectFirstMark(host: ReturnType<typeof makeHost>) {
     const container = host.renderControls();
@@ -470,15 +484,7 @@ describe('Trop Overlay', () => {
     });
 
     it('draws its strip in its own colours, owing nothing to commentary', () => {
-      // The shared fixture's marks are all rare, which is the two-swatch
-      // legend. A mark has to clear RARITY_THRESHOLDS.UNCOMMON to get a strip.
-      const chapter: Record<string, { he: string; en: string }> = {};
-      for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
-        chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
-      }
-      const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
-      const controls = host.renderControls();
-      (controls.querySelector('button') as HTMLButtonElement).click();
+      const host = hostShowingCommonMark();
 
       const container = document.createElement('div');
       host.renderLegend(container);
@@ -494,13 +500,7 @@ describe('Trop Overlay', () => {
 
   describe('Legend card', () => {
     it('names the ends of the strip of a common mark', () => {
-      const chapter: Record<string, { he: string; en: string }> = {};
-      for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
-        chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
-      }
-      const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
-      (host.renderControls().querySelector('button') as HTMLButtonElement).click();
-      assertNamedEnds(host.summary());
+      assertNamedEnds(hostShowingCommonMark().summary());
     });
 
     it('names no ends for a rare mark, which is present or absent', () => {
