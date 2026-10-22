@@ -49,8 +49,8 @@ off to prove that wait can't pass on a blank canvas.
 - `check.ts`: the six rules, and how a result is compared with `known.ts`.
 - `geometry.ts`: the box arithmetic behind the rules, with unit tests in `geometry.test.ts`.
 - `page.ts`: what reads the layout from the browser: measuring the visible part of each element
-  and finding clipped text. It passes on `test/browser/page.ts`, which the loading suite shares:
-  waiting for the map, counting drawn pixels and recording what the app sends.
+  and finding clipped text. What the loading suite shares (waiting for the map, counting drawn
+  pixels, recording what the app sends) is in `test/browser/page.ts`.
 - `known.ts`: failures accepted for now. Each records why, and exactly what it measures, so a fix
   or a new failure in the same place still fails the run. `known.test.ts` checks that every entry
   names a real state, screen and rule. Both run with `npm test`, not in this suite.

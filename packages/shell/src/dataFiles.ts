@@ -1,5 +1,4 @@
-// The loader for the overlays' and search's data files, and main's own two
-// (structure and texts).
+// Downloading data files and reading them as each overlay and the search name them.
 // Paths are under public/data/.
 import { reportError } from './analytics.ts';
 import type { Overlay, OptionalFile } from './overlays/types.ts';

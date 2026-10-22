@@ -3,21 +3,23 @@ import { ABRAHAM, CHROME, STATES } from './app.ts';
 import { checkLayout, measureLayout } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
 import {
-  asReturningReader,
-  boxes,
   canvasShot,
-  closeFromLegend,
-  desktopAndPhoneOnly,
   desktopOnly,
-  desktopTabletAndPhoneOnly,
   DRAWN_FLOOR,
   drawnPixels,
-  faintShare,
   allLoaded,
-  longestDrawnRun,
   openMap,
-  stepShare,
   viaMenu,
+} from '../browser/page.ts';
+import {
+  asReturningReader,
+  boxes,
+  closeFromLegend,
+  desktopAndPhoneOnly,
+  desktopTabletAndPhoneOnly,
+  faintShare,
+  longestDrawnRun,
+  stepShare,
 } from './page.ts';
 
 test('the render check sees a map that drew nothing', async ({ page }) => {

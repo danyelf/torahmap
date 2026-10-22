@@ -34,7 +34,10 @@ export interface ViewFiles<I> {
    * What the legend shows for a picked tool without its data: a card saying its
    * files are on their way, a warning that one failed, or nothing.
    */
-  waitingTool(panel: FrontTool, tool: Overlay<I>): LegendRow | HTMLElement | null;
+  waitingTool(
+    panel: FrontTool,
+    tool: Overlay<I>,
+  ): { row: LegendRow } | { warning: HTMLElement } | null;
   /** Says in the search caption that search's files are loading or failed; search fills it once they are in. */
   showSearchNotice(): void;
 }
@@ -96,9 +99,10 @@ export function createViewFiles<I>(options: {
     },
     waitingTool(panel, tool) {
       const required = requiredFiles(tool);
-      return loader.waitingOn(required) === 'loading'
-        ? { panel, name: tool.name, summary: { detail: LOADING }, loading: true }
-        : noticeFor(required);
+      if (loader.waitingOn(required) === 'loading')
+        return { row: { panel, name: tool.name, summary: { detail: LOADING }, loading: true } };
+      const warning = noticeFor(required);
+      return warning && { warning };
     },
     showSearchNotice() {
       const caption = searchControls.querySelector('#search-hit-caption');

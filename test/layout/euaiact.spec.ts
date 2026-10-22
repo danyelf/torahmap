@@ -4,16 +4,13 @@ import { expect, test, type Page } from '@playwright/test';
 import { ACT_STATES, CHROME } from './app.ts';
 import { checkLayout } from './check.ts';
 import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
+import { canvasShot, desktopOnly, openMap, viaMenu } from '../browser/page.ts';
 import {
   boxes,
-  canvasShot,
   closeFromLegend,
   desktopAndPhoneOnly,
-  desktopOnly,
   desktopTabletAndPhoneOnly,
-  openMap,
   shown,
-  viaMenu,
 } from './page.ts';
 import {
   ARTICLE_NUMBER_ZOOM,

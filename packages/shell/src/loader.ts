@@ -29,16 +29,17 @@ export interface Loader {
 }
 
 export function createLoader<I>(options: {
-  first: Loaded;
+  /** What has landed before the loader starts: the text's first files. */
+  loaded: Loaded;
   overlays: readonly Overlay<I>[];
   search: SearchTool<I>;
   /** The file load timing's texts_in marks. */
-  timedFile?: string;
+  timed?: string;
   landed(before: Loaded, after: Loaded): void;
   failed(): void;
 }): Loader {
-  const { overlays, search, timedFile } = options;
-  let loaded = options.first;
+  const { overlays, search, timed } = options;
+  let loaded = options.loaded;
   /** Every file not yet in: each stage's, from before the first frame, and any fetched at once. */
   const pending = new Set<string>();
   /** The files whose download has begun: a stage's once it starts, and any fetched at once. */
@@ -56,7 +57,7 @@ export function createLoader<I>(options: {
   let timingSent = false;
 
   function fileLanded(path: string, content: unknown): void {
-    if (path === timedFile) timedIn = performance.now();
+    if (path === timed) timedIn = performance.now();
     pending.delete(path);
     const before = loaded;
     loaded = new Map(before).set(path, content);
@@ -88,9 +89,7 @@ export function createLoader<I>(options: {
     if (dataFor(search, loaded) && !searchPrebuilt) return;
     timingSent = true;
     const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-    const timedEntry = timedFile
-      ? resources.find((e) => e.name.endsWith(`/${timedFile}`))
-      : undefined;
+    const timedEntry = timed ? resources.find((e) => e.name.endsWith(`/${timed}`)) : undefined;
     const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
     trackLoadTiming({
       first_frame: Math.round(firstFrame),

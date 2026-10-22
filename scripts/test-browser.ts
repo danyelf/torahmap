@@ -21,14 +21,16 @@ const RULES: [RegExp, Suite[]][] = [
   // Stories are Markdown the map shows; the rest is documents.
   [/^packages\/stories\/markdown\//, LAYOUT],
   [/\.md$/, NEITHER],
-  // What downloads when, and what the page says while it waits. main.ts's
-  // calls into the loader and viewFiles are loading's too, but its file is the
-  // interface's; a comment there asks for the loading suite.
+  // What downloads when, and what the page says while it waits. What main.ts
+  // asks of these is loading's too: see the comment above createLoader.
   [
     /^packages\/shell\/src\/(loader|viewFiles|downloads|dataFiles|loadNotice|overlays\/prebuild)\.ts$/,
     LOADING,
   ],
   [/^apps\/[^/]+\/src\/files\.ts$/, LOADING],
+  // Each text's data files, by name and how they are read: the map is drawn
+  // from them, and search waits on them.
+  [/^apps\/[^/]+\/src\/(data|verseTexts|search\/data)\.ts$/, BOTH],
   // Both suites draw the map from the data and record what the app sends.
   [/^public\/data\/|^packages\/shell\/src\/analytics\.ts$/, BOTH],
   [/^test\/loading\//, LOADING],
@@ -42,7 +44,7 @@ const RULES: [RegExp, Suite[]][] = [
   [/(^|\/)test\//, NEITHER],
   [/^apps\/worker\//, NEITHER],
   [/^(docs|experiments|scripts|video|data|test-harness|\.github|\.githooks|\.claude)\//, NEITHER],
-  [/^[^/]+\.(json|jsonc)$|^\.[^/]+$|^LICENSE$/, NEITHER],
+  [/^[^/]+\.(json|jsonc)$|^\.[^/]+$|^LICENSE$|^vitest\.config\.ts$/, NEITHER],
   [/^(apps|packages|public)\//, LAYOUT],
 ];
 
@@ -70,19 +72,28 @@ function git(...args: string[]): string[] {
   return result.stdout.split('\n').filter(Boolean);
 }
 
-/** The files changed since this branch left origin/main, committed or not. */
+/**
+ * The files changed since this branch left origin/main, committed or not. A
+ * renamed file counts under its old path as well as its new one.
+ */
 function changedFiles(): string[] {
   const [base] = git('merge-base', 'HEAD', 'origin/main');
   return [
     ...new Set([
-      ...git('diff', '--name-only', base),
-      ...git('ls-files', '--others', '--exclude-standard'),
+      ...git('diff', '--name-only', '--no-renames', base),
+      ...git('ls-files', '--others', '--exclude-standard', '--full-name'),
     ]),
   ];
 }
 
 function main(args: string[]): void {
-  const paths = changedFiles();
+  let paths: string[];
+  try {
+    paths = changedFiles();
+  } catch (error) {
+    console.error(`Cannot tell what changed since origin/main. ${(error as Error).message}`);
+    process.exit(1);
+  }
   const suites = plan(paths);
   const unnamed = paths.filter((path) => !suitesFor(path).named);
   const shown = (files: string[]) =>

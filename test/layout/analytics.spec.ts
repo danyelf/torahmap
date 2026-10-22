@@ -11,7 +11,7 @@ import {
   sentFields,
   sentSearches,
   viaMenu,
-} from './page.ts';
+} from '../browser/page.ts';
 import { SEARCH_REQUIRED } from '../browser/files.ts';
 
 test.beforeEach(() => desktopOnly('what is recorded does not depend on the screen'));

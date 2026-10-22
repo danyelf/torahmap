@@ -1,14 +1,13 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
 import { expect, test, type Page } from '@playwright/test';
+import { openMap, viaMenu } from '../browser/page.ts';
 import {
   boxes,
   closeFromLegend,
   desktopAndPhoneOnly,
   desktopTabletAndPhoneOnly,
-  openMap,
   shown,
-  viaMenu,
 } from './page.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';

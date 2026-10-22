@@ -45,9 +45,10 @@ Not covered: what `main.ts` asks of the loader and `viewFiles`, which a comment 
   tour's stop ids. Renaming one breaks it while the script runs layout; that is the ordinary
   coupling of a test to a selector.
 - Not covered, besides what `main.ts` asks of the loader and `viewFiles` (listed above
-  `createLoader`): an overlay's or search's `data`, which names the
-  files it needs, lives in its own module and counts as layout's. Changing which files a tool
-  needs is rare; a change there should run the loading suite by hand.
+  `createLoader`): which files an overlay or the search asks for (its `data`, or the search's
+  `filesNow`). Each text's `data.ts`, `verseTexts.ts` and `search/data.ts`, which name the files,
+  run both suites; the tool's own module counts as layout's. A change there should run the
+  loading suite by hand.
 - The serving tests run in vitest against Vite's dev server started in the test (about 0.2 s),
   so a change to `vite.config.ts` or `pages.ts` is checked on every commit.
 - Replayed through the rules, the merged pull requests since the suites moved under `test/`

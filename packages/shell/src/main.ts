@@ -183,10 +183,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // npm run test:browser sees a change to this file as the interface's, so run
   // npm run test:loading after changing one of them.
   const loader = createLoader({
-    first,
+    loaded: first,
     overlays: allOverlays,
     search: searchTool,
-    timedFile: source.files.timed,
+    timed: source.files.timed,
     landed: fileLanded,
     failed: fileFailed,
   });
@@ -328,8 +328,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         });
       } else if (tool) {
         const waiting = viewFiles.waitingTool(panel, tool);
-        if (waiting instanceof HTMLElement) warnings.push(waiting);
-        else if (waiting) rows.push(waiting);
+        if (waiting && 'row' in waiting) rows.push(waiting.row);
+        else if (waiting) warnings.push(waiting.warning);
       }
     }
     showLegend(mapLegend, rows, warnings);
@@ -1519,7 +1519,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  // Loading's, like every call into the loader and viewFiles: see createLoader.
   function fileLanded(before: Loaded, after: Loaded): void {
     const stale = staleAfterLanding(before, after, landingView());
     if (stale.map) redrawMap(stale.map);

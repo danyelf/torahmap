@@ -45,7 +45,7 @@ Run `npm run test:browser` before opening or updating a PR: it reads the files c
 (`test:loading`) or both, by the rules in `scripts/test-browser.ts`. While working, run only the
 layout states a change touches (`npm run test:layout -- -g <name>`). Run the loading suite by hand
 after changing what `main.ts` asks of the loader and `viewFiles.ts` (the comment above
-`createLoader` lists it), or the files a tool names in its `data`.
+`createLoader` lists it), or which files an overlay or the search asks for.
 The two browser suites take turns across the machine, whichever checkout starts them: a run waits,
 saying for whom, until the one before it ends. `SUITE_LOCK=off` skips the wait.
 

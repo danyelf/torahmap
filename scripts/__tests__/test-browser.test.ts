@@ -11,6 +11,8 @@ describe('suitesFor', () => {
       'packages/shell/src/viewFiles.ts',
       'packages/shell/src/downloads.ts',
       'packages/shell/src/overlays/prebuild.ts',
+      'packages/shell/src/dataFiles.ts',
+      'packages/shell/src/loadNotice.ts',
       'apps/talmud/src/files.ts',
       'test/loading/loading.spec.ts',
     ])
@@ -27,6 +29,7 @@ describe('suitesFor', () => {
       'test/layout/talmud.spec.ts',
       'test/layout/page.ts',
       'index.html',
+      'public/favicon.png',
     ])
       expect(suites(path), path).toEqual(['layout']);
   });
@@ -38,6 +41,9 @@ describe('suitesFor', () => {
       'test/browser/page.ts',
       'public/data/talmud/structure.json',
       'packages/shell/src/analytics.ts',
+      'apps/talmud/src/data.ts',
+      'apps/tanakh/src/verseTexts.ts',
+      'apps/tanakh/src/search/data.ts',
     ])
       expect(suites(path), path).toEqual(['layout', 'loading']);
   });
@@ -54,6 +60,8 @@ describe('suitesFor', () => {
       '.github/workflows/review-freshness.yml',
       'tsconfig.json',
       'package.json',
+      'vitest.config.ts',
+      '.prettierrc.json',
     ])
       expect(suites(path), path).toEqual([]);
   });

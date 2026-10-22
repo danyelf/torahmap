@@ -4,8 +4,6 @@ import { DESKTOP_AND_PHONE, DESKTOP_TABLET_AND_PHONE } from '../browser/screens.
 import { VISITED_KEY } from '../../packages/shell/src/visits.ts';
 import { COLOURED_SPREAD, onlyOn, readPixels } from '../browser/page.ts';
 
-export * from '../browser/page.ts';
-
 export const desktopAndPhoneOnly = () =>
   onlyOn(DESKTOP_AND_PHONE, 'one screen of each layout is enough');
 
