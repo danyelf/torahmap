@@ -99,7 +99,7 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> 
   },
 
   summary(_settings, data) {
-    return { colors: [axisGradient(wordCountsOf(data).scale)] };
+    return { colors: [axisGradient(wordCountsOf(data).scale)], ends: ['short', 'long'] };
   },
 
   getHoverInfo(verse, _settings, data) {

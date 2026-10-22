@@ -20,7 +20,13 @@ export function summaryHtml(overlayName: string, summary: OverlaySummary): strin
   if (summary.detail) {
     detail += `<span class="summary-detail">${escapeHtml(summary.detail)}</span>`;
   }
-  const swatches = (summary.colors ?? []).slice(0, MAX_SWATCHES).map(swatch).join('');
+  let swatches = (summary.colors ?? []).slice(0, MAX_SWATCHES).map(swatch).join('');
+  if (summary.ends) {
+    const [low, high] = summary.ends.map(
+      (end) => `<span class="summary-end">${escapeHtml(end)}</span>`,
+    );
+    swatches = low + swatches + high;
+  }
   if (swatches) detail += `<span class="summary-swatches">${swatches}</span>`;
 
   return (

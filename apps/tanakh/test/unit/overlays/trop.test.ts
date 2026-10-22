@@ -9,7 +9,7 @@ import {
 import { colorToCss } from '@torahmap/utils';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
-import { assertValidColor, assertApproximately } from '../../helpers/assertions';
+import { assertNamedEnds, assertValidColor, assertApproximately } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { RARITY_THRESHOLDS } from '../../../src/overlays/trop/marks';
@@ -489,6 +489,28 @@ describe('Trop Overlay', () => {
       // The ends of trop's own gradient, not a hand-written approximation.
       expect(strip?.style.background).toContain('rgb(51, 26, 77) 0%');
       expect(strip?.style.background).toContain('rgb(242, 153, 230) 100%');
+    });
+  });
+
+  describe('Legend card', () => {
+    it('names the ends of the strip of a common mark', () => {
+      const chapter: Record<string, { he: string; en: string }> = {};
+      for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
+        chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
+      }
+      const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
+      (host.renderControls().querySelector('button') as HTMLButtonElement).click();
+      assertNamedEnds(host.summary());
+    });
+
+    it('names no ends for a rare mark, which is present or absent', () => {
+      const host = makeHost();
+      const rare = Array.from(host.renderControls().querySelectorAll('button')).find((b) =>
+        b.classList.contains('rare'),
+      ) as HTMLButtonElement;
+      rare.click();
+      expect(host.summary().colors).toHaveLength(2);
+      expect(host.summary().ends).toBeUndefined();
     });
   });
 

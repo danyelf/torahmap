@@ -176,6 +176,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
     return {
       detail: settings.category === 'total' ? undefined : settings.category,
       colors: [axisGradient(scaleFor(data, settings.category).scale)],
+      ends: ['few', 'many'],
     };
   },
 

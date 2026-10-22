@@ -8,7 +8,7 @@ import {
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
 import { createVerse } from '../../helpers/fixtures';
-import { assertValidColor } from '../../helpers/assertions';
+import { assertNamedEnds, assertValidColor } from '../../helpers/assertions';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
 
@@ -153,6 +153,10 @@ describe('Verse Length Overlay', () => {
       const info = verseLengthOverlay.getHoverInfo(verse);
       expect(info).toBe('2 words');
     });
+  });
+
+  it('names the ends of its strip in the legend card', () => {
+    assertNamedEnds(verseLengthOverlay.summary());
   });
 
   describe('Legend layout', () => {

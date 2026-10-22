@@ -312,9 +312,9 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
 
   summary(settings, data) {
     const derived = derivationOf(data, settings.mark);
-    return derived
-      ? { detail: settings.mark ?? undefined, colors: legendColors(derived.legend) }
-      : {};
+    if (!derived) return {};
+    const summary = { detail: settings.mark ?? undefined, colors: legendColors(derived.legend) };
+    return derived.legend.kind === 'swatches' ? summary : { ...summary, ends: ['few', 'many'] };
   },
 
   getHoverInfo(verse, settings, data) {

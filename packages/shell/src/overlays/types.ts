@@ -182,6 +182,8 @@ export interface OverlaySummary {
   terms?: { text: string; color: string }[];
   detail?: string;
   colors?: string[];
+  /** Words for the low and high ends of a gradient in `colors`. */
+  ends?: [low: string, high: string];
 }
 
 /** A tool on the map, with the settings the app holds for it and its data. */

@@ -43,13 +43,30 @@ describe('summaryHtml', () => {
     expect(swatches(html).map((el) => el.classList.contains('strip'))).toEqual([true, false]);
   });
 
+  it('puts the low end before the strip and the high end after it', () => {
+    const html = summaryHtml('Verse Length', {
+      colors: ['linear-gradient(red, blue)'],
+      ends: ['low', 'high'],
+    });
+    const order = [...parse(html).querySelectorAll('.summary-end, .summary-swatch')].map((el) =>
+      el.classList.contains('summary-swatch') ? 'strip' : el.textContent,
+    );
+    expect(order).toEqual(['low', 'strip', 'high']);
+  });
+
   it('keeps the line short when there are many colours', () => {
     const many = Array.from({ length: 10 }, (_, i) => `rgb(${i}, 0, 0)`);
     expect(swatches(summaryHtml('Text Dating', { colors: many }))).toHaveLength(6);
   });
 
   it('escapes what it shows', () => {
-    const html = summaryHtml('<b>', { terms: [{ text: '<i>', color: 'red' }], detail: '<u>' });
+    const html = summaryHtml('<b>', {
+      terms: [{ text: '<i>', color: 'red' }],
+      detail: '<u>',
+      ends: ['<s>', '<q>'],
+    });
+    expect(html).not.toContain('<s>');
+    expect(html).not.toContain('<q>');
     expect(html).not.toContain('<b>');
     expect(html).not.toContain('<i>');
     expect(html).not.toContain('<u>');
