@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Box, Shown } from './geometry.ts';
+import { DESKTOP_AND_PHONE, DESKTOP_TABLET_AND_PHONE } from './screens.ts';
 import { VISITED_KEY } from '../../packages/shell/src/visits.ts';
 
 /** The canvas's clear colour and the page's background: #1a1a1a. */
@@ -49,14 +50,18 @@ export function collectErrors(page: Page, { console = true } = {}): string[] {
   return errors;
 }
 
-/**
- * Skips the laptop and the tablet, for a check whose result the screen's size
- * does not change: the desktop and the phone are one of each layout.
- */
-export function desktopAndPhoneOnly(): void {
-  const screen = test.info().project.name;
-  test.skip(screen !== 'desktop' && screen !== 'phone', 'one screen of each layout is enough');
+/** Skips every screen but `screens`, saying why. */
+function onlyOn(screens: readonly string[], reason: string): void {
+  test.skip(!screens.includes(test.info().project.name), reason);
 }
+
+export const desktopOnly = (reason: string) => onlyOn(['desktop'], reason);
+
+export const desktopAndPhoneOnly = () =>
+  onlyOn(DESKTOP_AND_PHONE, 'one screen of each layout is enough');
+
+export const desktopTabletAndPhoneOnly = () =>
+  onlyOn(DESKTOP_TABLET_AND_PHONE, 'one screen of each layout, and the desktop layout by touch');
 
 /** Makes the next load a return visit, so an empty link skips the story. */
 export async function asReturningReader(page: Page): Promise<void> {

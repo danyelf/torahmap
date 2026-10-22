@@ -1,7 +1,16 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
 import { expect, test, type Page } from '@playwright/test';
-import { allLoaded, boxes, closeFromLegend, desktopAndPhoneOnly, openMap, shown } from './page.ts';
+import {
+  allLoaded,
+  boxes,
+  closeFromLegend,
+  desktopAndPhoneOnly,
+  desktopOnly,
+  desktopTabletAndPhoneOnly,
+  openMap,
+  shown,
+} from './page.ts';
 import { viaMenu } from './app.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
@@ -18,18 +27,23 @@ async function outsideOneCover(page: Page, labels: Box[]): Promise<string[]> {
     .map((l) => `${l.name} at ${l.x},${l.y}`);
 }
 
-/**
- * Berakhot's top-right corner, in map units, from the page's own layout. Any of the dev server's
- * addresses will do to run it, and the structure loads fastest.
- */
-async function berakhotCorner(page: Page): Promise<{ x: number; y: number }> {
-  await page.goto('/data/talmud/structure.json');
-  return page.evaluate(async () => {
+/** Berakhot's top-right corner, in map units, from the page's own layout. */
+const berakhotCorner = (page: Page) =>
+  page.evaluate(async () => {
     const load = (path: string) => import(/* @vite-ignore */ path);
     const { computeTalmudLayout } = await load('/apps/talmud/src/layout.ts');
-    const laid = computeTalmudLayout(await (await fetch(location.href)).json());
+    const laid = computeTalmudLayout(await (await fetch('/data/talmud/structure.json')).json());
     return { x: laid.tractateBlocks[0].maxX as number, y: laid.tractateBlocks[0].minY as number };
   });
+
+/** Moves the map to `link` as Back to it does, without loading the page again. */
+async function backTo(page: Page, link: string): Promise<void> {
+  await page.evaluate((link) => {
+    history.pushState(null, '', `?${link}`);
+    dispatchEvent(new PopStateEvent('popstate'));
+  }, link);
+  // The labels fade in or out as the zoom changes.
+  await page.waitForFunction(() => document.getAnimations().length === 0);
 }
 
 /**
@@ -70,9 +84,13 @@ for (const zoom of [0.4, 1, 2]) {
     page,
   }) => {
     desktopAndPhoneOnly();
-    // Berakhot's top-right corner at the canvas's centre, the map below and left of it.
+    await openMap(page, '', TALMUD);
+    // Berakhot's top-right corner, near the canvas's top-right.
     const corner = await berakhotCorner(page);
-    await openMap(page, `zoom=${zoom}&x=${corner.x}&y=${corner.y}`, TALMUD);
+    const [view] = await boxes(page, '#canvas');
+    const x = Math.round(corner.x - (view.width / 2 - 100) / zoom);
+    const y = Math.round(corner.y + (view.height / 2 - 100) / zoom);
+    await backTo(page, `zoom=${zoom}&x=${x}&y=${y}`);
 
     const names = await full(page, '#book-labels .book-label');
     expect(names).not.toEqual([]);
@@ -129,8 +147,8 @@ test('the Talmud opens with every seder’s label on the map', async ({ page }) 
   ).toEqual([]);
 });
 
-test('the dev server fills the Talmud’s page with its own copy', async ({ request }, info) => {
-  test.skip(info.project.name !== 'desktop', 'what the server sends does not depend on the screen');
+test('the dev server fills the Talmud’s page with its own copy', async ({ request }) => {
+  desktopOnly('what the server sends does not depend on the screen');
   for (const address of [TALMUD, `${TALMUD}index.html`, `${TALMUD}?at=Berakhot.2a.1`]) {
     const html = await (await request.get(address)).text();
     expect(html).toContain(`<title>${TALMUD_PAGE.name}</title>`);
@@ -211,7 +229,7 @@ test('a Talmud search lists the segments it finds, each quoted with its match ma
 });
 
 test('a Talmud search result, clicked, pins its segment', async ({ page }) => {
-  desktopAndPhoneOnly();
+  desktopTabletAndPhoneOnly();
   await openMap(page, `search=${encodeURIComponent('קל וחומר')}`, TALMUD);
   await viaMenu(page, 'search');
   const first = page.locator('.search-result').first();
@@ -253,7 +271,7 @@ test('an English Talmud search lists what it finds, and marks the popup’s Engl
 test("the Talmud's search card's × clears the search, and Back brings it back", async ({
   page,
 }) => {
-  desktopAndPhoneOnly();
+  desktopTabletAndPhoneOnly();
   await openMap(page, `search=${encodeURIComponent('משנה')}`, TALMUD);
   await closeFromLegend(page, 'search');
 });

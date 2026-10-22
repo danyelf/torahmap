@@ -8,6 +8,8 @@ import {
   canvasShot,
   closeFromLegend,
   desktopAndPhoneOnly,
+  desktopOnly,
+  desktopTabletAndPhoneOnly,
   DRAWN_FLOOR,
   drawnPixels,
   faintShare,
@@ -38,8 +40,8 @@ test('measuring finds the panel and its controls', async ({ page }) => {
   expect(await boxes(page, CHROME.interactive)).not.toEqual([]);
 });
 
-test('the rules report a layout broken on purpose', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'one screen proves the rules can fail');
+test('the rules report a layout broken on purpose', async ({ page }) => {
+  desktopOnly('one screen proves the rules can fail');
   const state = STATES.find((s) => s.name === 'explore-verse-pinned')!;
   await openMap(page, state.link);
   await page.addStyleTag({
@@ -137,29 +139,29 @@ test('the title face loads', async ({ page }) => {
   );
 });
 
-test('zoomed far out, a line of verses draws as one unbroken bar', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'one screen, at one pixel to the pixel');
+test('zoomed far out, a line of verses draws as one unbroken bar', async ({ page }) => {
+  desktopOnly('one screen, at one pixel to the pixel');
   // Squares 1.2 pixels wide, with 0.6 between them unless they are widened.
   await openMap(page, 'zoom=0.3');
   expect(await longestDrawnRun(page, await canvasShot(page))).toBeGreaterThan(40);
 });
 
-test('zoomed far out, bars keep their vertical jitter', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'one screen, at one pixel to the pixel');
+test('zoomed far out, bars keep their vertical jitter', async ({ page }) => {
+  desktopOnly('one screen, at one pixel to the pixel');
   // Measured 0.087 with the jitter and 0 without it.
   await openMap(page, 'zoom=0.3');
   expect(await stepShare(page, await canvasShot(page))).toBeGreaterThan(0.04);
 });
 
-test('zoomed far out, a search hit glows, fading out from a solid core', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'one screen, at one pixel to the pixel');
+test('zoomed far out, a search hit glows, fading out from a solid core', async ({ page }) => {
+  desktopOnly('one screen, at one pixel to the pixel');
   // Measured 0.44 with the glow and 0.08 with solid squares.
   await openMap(page, `search=${encodeURIComponent('אליהו')}&zoom=0.1`);
   expect(await faintShare(page, await canvasShot(page))).toBeGreaterThan(0.25);
 });
 
 test("the search card's × clears the search, and Back brings it back", async ({ page }) => {
-  desktopAndPhoneOnly();
+  desktopTabletAndPhoneOnly();
   await openMap(page, `search=${ABRAHAM}&overlay=haftarah`);
   await closeFromLegend(page, 'search');
   await expect(page.locator('.map-legend-row[data-panel="overlay"]')).toBeVisible();
@@ -168,7 +170,7 @@ test("the search card's × clears the search, and Back brings it back", async ({
 test("a card's × during a story hands the map to the reader, the story still open", async ({
   page,
 }) => {
-  desktopAndPhoneOnly();
+  desktopTabletAndPhoneOnly();
   await openMap(page, 'story=tour&stop=liturgy_verse');
   const row = page.locator('.map-legend-row[data-panel="overlay"]');
   await row.locator('.map-legend-close').click();
@@ -179,7 +181,7 @@ test("a card's × during a story hands the map to the reader, the story still op
 });
 
 test("the overlay card's × turns the overlay off, and Back brings it back", async ({ page }) => {
-  desktopAndPhoneOnly();
+  desktopTabletAndPhoneOnly();
   await openMap(page, `search=${ABRAHAM}&overlay=haftarah`);
   await closeFromLegend(page, 'overlay');
   await expect(page.locator('.map-legend-row[data-panel="search"]')).toBeVisible();
