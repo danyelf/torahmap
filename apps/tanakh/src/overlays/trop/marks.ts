@@ -75,11 +75,11 @@ export const TROP_MARKS: TropMark[] = [
   { unicode: '\u05AF', name: 'Masora Circle', hebrewName: 'עיגול מסורה' },
 ];
 
-// Rarity thresholds
+// By occurrences across the Tanakh. The rare marks run to Yerah Ben Yomo at 55
+// and the next is Iluy at 184, so any RARE between them leaves the same four rare.
 export const RARITY_THRESHOLDS = {
-  RARE: 50, // < 50 occurrences = rare
-  UNCOMMON: 500, // 50-500 = uncommon
-  // > 500 = common
+  RARE: 100,
+  UNCOMMON: 500,
 };
 
 export type RarityTier = 'rare' | 'uncommon' | 'common';

@@ -329,7 +329,7 @@ describe('Trop Overlay', () => {
   });
 
   describe('Rarity-Based Coloring', () => {
-    describe('Rare Marks (<50 occurrences)', () => {
+    describe('Rare Marks', () => {
       it('returns gold for a verse holding a rare mark', () => {
         const host = makeHost();
         const container = host.renderControls();
@@ -801,6 +801,15 @@ describe('Trop Overlay', () => {
 
     it('makes nothing stand out with no mark chosen', () => {
       expect(standouts(null, textsWith(1))).toEqual([false, false]);
+    });
+
+    it('counts a mark that occurs 55 times, as Yerah Ben Yomo does, as rare', () => {
+      const texts: VerseTexts = {
+        'Genesis': { '1': { '1': { he: 'ב֪'.repeat(55), en: '' }, '2': { he: 'ב', en: '' } } },
+      };
+      const chart = hostOverlay(tropOverlay, { texts }).renderControls();
+      expect(chart.querySelector('button')!.classList.contains('rare')).toBe(true);
+      expect(standouts('yerah-ben-yomo', texts)).toEqual([true, false]);
     });
 
     it('makes a mark’s verses stand out exactly when its chart button is marked rare', () => {
