@@ -25,10 +25,10 @@ jq -r '
   | [(.comments[] | {at: .createdAt, body}), (.reviews[] | {at: .submittedAt, body})]
   | map(select(.body // "" | test("^Reviewed up to `[0-9a-f]{40}`")) | .sha = .body[16:56])
   | (sort_by(.at) | last | .sha) as $sha
-  | if $sha == null then "Not reviewed yet."
-    elif $sha == $head then "Reviewed at the head, \($sha | short)."
-    elif ($commits | index($sha)) == null then "Reviewed \($sha | short), which is no longer on the branch: rebased since."
+  | if $sha == null then "No comment starts with `Reviewed up to <sha>`."
+    elif $sha == $head then "Reviewed at the head commit, \($sha | short)."
+    elif ($commits | index($sha)) == null then "Reviewed \($sha | short), which is not on the branch, so the review may not cover the current commits."
     else ($commits | length - index($sha) - 1) as $n
-      | "\($n) commit\(if $n == 1 then "" else "s" end) since the review at \($sha | short)."
+      | "\($n) commit\(if $n == 1 then "" else "s" end) since the review of \($sha | short)."
     end
 ' <<<"$json"
