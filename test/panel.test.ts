@@ -40,7 +40,7 @@ describe('every panel is built by panelHtml, with shared controls', () => {
         },
       ]),
     ],
-    ['about', aboutHtml(tanakhSite, [], true, ['Genesis 1'])],
+    ['about', aboutHtml(tanakhSite, [], true, 'Genesis 1')],
   ];
 
   it('search opens with its title', () => {
