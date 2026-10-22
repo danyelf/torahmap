@@ -4,13 +4,13 @@
 
 An interactive spatial visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position, enabling analytical overlays to reveal patterns across the 39 books and 23,000+ verses.
 
-## Philosophy: Forest Over Trees
+The core design principle is **position stability**: each verse keeps its place whatever analysis
+is shown, so patterns read through colour and density, analyses compare on the same ground, and
+the ragged edge of each chapter shows its length.
 
-The core design principle is **position stability** - each verse occupies a permanent location regardless of which analysis is displayed. This allows:
-
-- Pattern recognition through color and density
-- Comparison across different analyses on the same substrate
-- The "ragged edge" of chapters naturally encodes chapter length
+Detail most tasks don't need — the packages one by one, the browser test suites, formatting
+settings, telemetry and deployment, data sources — is in
+[docs/working-in-the-repo.md](docs/working-in-the-repo.md).
 
 ## Features
 
@@ -28,224 +28,48 @@ What the map does is in [README.md](README.md). What an agent also needs:
   into the page; each one's header sets its title, description, `order` and
   `draft`. The dev server hot-reloads them.
 
-## Quick Start
+## Commands
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-
-# Build for production
+npm run dev            # dev server at http://localhost:5173
 npm run build
+npm test               # vitest; test:watch, test:coverage
+npm run typecheck
+npm run format         # Prettier owns formatting; format:check reports only
+npm run test:layout    # see UI Changes in AGENTS.md
+npm run test:loading   # before any PR that changes startup or what loads when
 ```
 
-The dev server runs at `http://localhost:5173`
+The layout suite takes about four minutes: while working, run only the states a change touches
+(`npm run test:layout -- -g <name>`), and the whole suite once before opening or updating the PR.
+The two browser suites take turns across the machine, whichever checkout starts them: a run waits,
+saying for whom, until the one before it ends. `SUITE_LOCK=off` skips the wait.
 
-## Testing
-
-The project has comprehensive test coverage; `npx vitest run` prints the current count:
-
-```bash
-npm test              # Run all tests
-npm run test:watch    # Watch mode for development
-npm run test:coverage # Coverage report
-```
-
-The two browser suites below, layout and loading, take turns across the
-machine, whichever checkout starts them: a run waits, saying for whom, until
-the one before it ends. `SUITE_LOCK=off` skips the wait.
-
-### The pre-commit hook
-
-`.githooks/pre-commit` checks formatting, typechecks and runs the test suite
-before every commit; read the file for what it does and how to bypass it
-deliberately. **After cloning, run this once** to point git at it:
-
-```bash
-./scripts/install-hooks.sh
-```
-
-`npm install` usually does this for you via the `prepare` script, but not if
-your npm config sets `ignore-scripts=true` (a reasonable supply-chain
-precaution, and the setting on Danyel's machine) — then `prepare` is skipped
-silently and you must run the script by hand. See it for what else it checks
-and when it refuses to run.
-
-### Layout tests
-
-The interface is tested for layout in a real browser, at four screen sizes, from
-a phone to a desktop:
-
-```bash
-npm run test:layout
-```
-
-It starts its own dev server on port 5199 (`LAYOUT_PORT` to change it), renders
-the map with software WebGL, and checks every state in `test/layout/app.ts`: no
-control off screen; the panel, the zoom buttons and the verse popup clear of
-each other, and the panel clear of the map; no clipped text; on the touch
-screens (tablet and phone), touch targets at least 24×24 (WCAG 2.2 AA); the
-elements each state must show, shown in full; and a map that actually drew.
-Text ending in a deliberate ellipsis counts as fitting. `test/layout/known.ts` lists
-the failures accepted for now, what each measures and why. It ends by writing
-`layout-report/index.html`, every state at every size side by side.
-
-It takes about four minutes on four workers, too long for the pre-commit hook.
-While working, run only the states a change touches
-(`npm run test:layout -- -g <name>`); run the whole suite once before opening or
-updating any pull request that changes the interface.
-
-### Loading tests
-
-The map draws before its data and fills in as each file lands, which is tested
-in a real browser at one desktop and one phone size:
-
-```bash
-npm run test:loading
-```
-
-It starts its own dev server on port 5198 (`LOADING_PORT` to change it). Run it
-before opening any pull request that changes startup or what loads when.
-
-### Test Harness
-
-A standalone test harness at `http://localhost:5173/test-harness/` provides the search input flow on its own, without the map. Source lives in `test-harness/`.
-
-## Formatting
-
-Prettier owns the formatting of the TypeScript, CSS, HTML and JSON in this
-repository. The version is pinned exactly in `devDependencies`, because a minor
-Prettier release can legitimately change its output, and a formatter that
-drifts between contributors is the problem it was brought in to solve.
-
-```bash
-npm run format         # rewrite every file
-npm run format:check   # report, change nothing
-```
-
-Two settings in `.prettierrc.json` were measured against the codebase rather
-than chosen by taste, so the reformat moved as few lines as it could:
-`singleQuote` because committed source held 6995 single-quoted strings to 1112
-double, and `printWidth: 100` because line lengths ran to a p99 of 100.
-`quoteProps: preserve` keeps the quotes on Hebrew object keys such as
-`'ך': 'כ'` in `packages/hebrew/src/spelling.ts`, which Prettier would otherwise strip — they are
-valid JavaScript identifiers, so nothing forces the quotes, but the letters are
-much easier to pick out with them.
-
-The bulk reformat is listed in `.git-blame-ignore-revs` so that blame keeps
-naming whoever last wrote a line, instead of stopping at the commit that
-rewrapped everything at once; `install-hooks.sh` applies that setting along
-with the hooks path, and explains the one sharp edge it has on an old branch.
-
-Markdown and `data/`/`public/data/` are excluded from formatting; see
-`.prettierignore` for why.
+`.githooks/pre-commit` checks formatting, typechecks and runs the tests before every commit. After
+cloning, run `./scripts/install-hooks.sh` once if your npm config sets `ignore-scripts=true`
+(Danyel's does), since `npm install` then skips it.
 
 ## Project Structure
 
-- `apps/` — what runs, as npm workspace packages, each with its own `test/`:
-  `tanakh` (the Tanakh's map: its layout, labels, title, verse texts, search
-  and `overlays/`), `talmud` (the Talmud's) and `worker` (the Worker that
-  serves the deployed site). Each text's `src/main.ts` is its page's entry,
-  and each text exports every module at its own path, as
-  `@torahmap/tanakh/layout.ts`, for the tools that use them.
-- `index.html` — every text's page, filled from its copy by `vite.config.ts`
-  at the address `pages.ts` gives it; the Talmud's, at `/talmud/`, is
-  on the dev server and every branch's preview but not the live site.
-- `test/` — checks of the whole repository: that each package and app keeps to
-  its imports and each page runs only its own text's code, the saved telemetry
-  queries, the shell's tests that need a text's data, and the browser suites
-  in `test/layout/` and `test/loading/` (see Layout tests and Loading tests,
-  above).
-- `packages/` — shared code, as npm workspace packages: `link` (reading and
-  writing links, under each text's keys), `utils` (small helpers that depend
-  on nothing else here), `engine` (drawing the squares, the camera, hit
-  testing and the cross-fade, knowing nothing of either text; it touches the
-  page only inside its functions and says `"sideEffects": false`, so the
-  Worker, which reaches it through links and stories, bundles none of its
-  drawing), `shell` (the app shell, `createApp(text)`: what every text's page
-  runs; the modules a text may use are the ones its `package.json` exports,
-  each at its own path, as `@torahmap/shell/main.ts`),
-  `search` (a text's term search, `createTermSearch`: terms, matching through
-  the languages a text gives it, results, marks and link; it knows no
-  language but English, and the Tanakh's meanings mode plugs into it as one
-  extra mode), `hebrew` (Hebrew's letters, points and word breaks, and Hebrew
-  as search reads it), `telemetry` (which column of an event holds what, for the page that sends it
-  and the Worker that writes it, and who can have the map, which its mode
-  column records), `overlay-catalog` (each Tanakh overlay's name and link
-  keys, and with the search's, `LINK_KEYS`: a Tanakh link's), `stories` (how a
-  story is written, and which are listed and opened by default; the Tanakh's
-  own, compiled from Markdown by `generate.mjs`, at
-  `@torahmap/stories/tanakh`), and `site` (the address and view titles every
-  text's site shares; at `@torahmap/site/tanakh`, what the Tanakh's site calls
-  things: the site's name and tagline, and how a link is described; each
-  text's own copy is its `site` slot, `packages/shell/src/app/text.ts`). A
-  package's Tanakh-only code sits behind its `/tanakh` entry, so the app shell
-  can import the rest. A package or app imports nothing outside its own folder
-  but the packages its `package.json` lists, and only the Tanakh's app and the
-  Worker import the Tanakh's own code (`test/package-imports.test.ts`).
-- `public/data/` — shipped data: bundled verse texts, structure, and
-  a directory for what only one part of the app reads — `overlays/commentary`,
-  `overlays/haftarah`, `search/` for the lexeme index, `talmud/` for Talmud
-  text.
-- `data/` — sources and downloads behind that shipped data, not itself
-  shipped. Largely gitignored; see DATA_REGENERATION.md.
-- `scripts/` — tooling to regenerate the data above, laid out to match
-  `public/data/`, plus `demo/`, `talmud/` and the `telemetry/` queries.
-- `docs/plans/` — design docs, one per feature, each dated and headed with
-  its status.
-- `experiments/` — prototypes that never shipped.
-- `test-harness/` — the search-UI test harness (see Testing, below).
-- `video/` — scripted video of the map: `npm run rehearse` to time a script
-  against your narration, `npm run video -- <script.md>` to render it to MP4,
-  `npm run mix` to lay a recorded voiceover under it.
-  `npm run capture` turns views of the map into `story.md` stops or script
-  scenes as you explore.
-  See `docs/plans/2026-09-27-video-harness-design.md`.
-- `scripts/print/` — wall prints of the map: `npm run print` writes
-  print-ready PDFs. See its README.
-
-## Tech Stack
-
-- **TypeScript** - Type-safe source code
-- **Vite** - Build tool and dev server
-- **WebGL 2** - GPU-accelerated rendering
-- **Cloudflare Workers** - Serves the deployed site and receives its telemetry
-- **No runtime dependencies** - Everything from scratch
-
-## Deployment
-
-The map is live at [torahmap.org](https://torahmap.org), served by a Cloudflare
-Worker configured in `wrangler.jsonc`. Cloudflare builds and deploys on every
-push to main, which takes about a minute; there is no deploy command to run by
-hand. Every pull request also gets its own public `workers.dev` link, so a UI
-change can be looked at without checking the branch out —
-`scripts/prpreview.sh <pr>` serves one locally instead.
-
-What the Worker serves is in `apps/worker/src/index.ts`; telemetry's client half is
-`packages/shell/src/analytics.ts`. No cookies; browser storage holds only two settings, which
-languages to show and whether this is a return visit. The dev server sends nothing.
-`scripts/telemetry/report.sh` prints every saved query, `report-html.sh` beside
-it writes the same to `telemetry-report/report.html`, and `usage.sh` writes a
-chart of page views per day to `telemetry-report/usage.html`; all three need a Cloudflare account id and an API token. Cloudflare Access keeps chat apps'
-fetchers off PR preview links, so a preview is checked on torahmap.org after
-merge.
+- `apps/` — what runs: `tanakh`, `talmud`, `euaiact` (each text's map) and `worker` (the
+  Cloudflare Worker that serves the site).
+- `packages/` — shared code: `engine`, `shell`, `search`, `hebrew`, `link`, `site`, `stories`,
+  `overlay-catalog`, `telemetry`, `utils`. A package or app imports only the packages its
+  `package.json` lists, and only the Tanakh's app and the Worker import the Tanakh's own code
+  (`test/package-imports.test.ts`).
+- `index.html` — every text's page, filled by `vite.config.ts` at the address `pages.ts` gives it.
+- `test/` — whole-repository checks and the browser suites `test/layout/` and `test/loading/`.
+- `public/data/` — shipped data. `data/` — the sources behind it, largely gitignored.
+- `scripts/` — tooling to regenerate the data, laid out to match `public/data/`.
+- `docs/plans/` — design docs, one per feature, each dated and headed with its status.
+- `experiments/`, `test-harness/`, `video/`, `scripts/print/` — prototypes, the search-UI
+  harness, scripted video, wall prints.
 
 ## Architecture
 
-The codebase follows a **functional, modular design** with clear separation of concerns:
-
-### Design Principles
-
-1. **Separation of concerns** - Each module has a single responsibility
-2. **Functional core** - Prefer pure functions over classes and mutation
-3. **Immutable vs mutable** - Clear distinction (RenderContext vs RenderState)
-4. **Two-pass rendering** - Separate "compute state" from "apply effects"
-5. **Minimal state** - State lives at the right level of abstraction
-6. **No circular dependencies** - Clean dependency graph from main.ts down
-
-### Key Concepts
+A functional, modular design: pure functions over classes and mutation, one responsibility per
+module, state kept at the level it belongs to, no circular dependencies.
 
 - **main.ts** (`packages/shell`) is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `test/package-imports.test.ts` holds that line
 - **layout.ts** (`apps/tanakh`) computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
@@ -260,16 +84,6 @@ The codebase follows a **functional, modular design** with clear separation of c
   that mention it mark each piece. Before changing one, look at the map at zoom
   0.25 and 0.22 on screens of density 1.5 and 2, at rest and while panning.
 
-## Data
-
-Verse texts, structure and commentary counts come from
-[Sefaria](https://www.sefaria.org/). The Hebrew lexeme index behind
-meanings-mode search comes from the [ETCBC BHSA](https://github.com/ETCBC/bhsa)
-database, read through Text-Fabric. The haftarah readings come from
-[hebcal's leyning tables](https://github.com/hebcal/hebcal-leyning). See
-[DATA_REGENERATION.md](DATA_REGENERATION.md) for instructions on updating data
-files.
-
 ## Interactions
 
 The controls are listed once, in the About panel (`packages/shell/src/aboutPanel.ts`); keep
@@ -281,6 +95,7 @@ browser half in `packages/shell/src/urlState.ts`), so any view can be linked to.
 copies that link, or opens the share sheet on a touch screen; the tab's title
 names the view (`describeLink`).
 
-## License
+## Deployment
 
-MIT
+The map is live at [torahmap.org](https://torahmap.org). Cloudflare deploys every push to main;
+there is no deploy command to run by hand.

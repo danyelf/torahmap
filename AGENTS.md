@@ -1,15 +1,15 @@
 # Agent Instructions
 
+**Say each thing once.** Before you write a value, a list, a rule or a function, look for where it
+already exists and read it from there. The test is whether the two must change together: things
+that only happen to look alike can stay apart, and a test states its own expected values.
+
 This project tracks issues on **GitHub Issues**: https://github.com/danyelf/torahmap/issues
 
 ## How to Code
 
-**Always work in a worktree.** Issue work never happens in the primary checkout — branching there
-leaves Danyel's main directory sitting on a branch he didn't put it on. Create the worktree before
-your first edit: the `EnterWorktree` tool is the easy path, because it also installs dependencies,
-and `git worktree add <path> -b <branch>` works when the path matters. A `PreToolUse` hook enforces
-this, so a `git checkout -b` in the primary checkout will simply be refused. Once you are in a
-worktree, work there as autonomously as you can on the corresponding issue.
+**Always work in a worktree**, made before your first edit; a hook refuses new branches in the
+primary checkout. Once there, work as autonomously as you can on the issue.
 
 **Mark the issue you take.** Once the worktree exists, label the issue and say where the work lives,
 so Danyel can see what is being worked on and find it:
@@ -69,7 +69,8 @@ of this codebase was written by an agent, so its habits are not a convention
 and carry no authority; judge each comment on whether a reader needs it.
 
 **Start from the simplest design.** When proposing one, lead with the simplest
-version that works, and say what each addition beyond it buys.
+version that works, and say what each addition beyond it buys. When a plan in
+`docs/plans/` is superseded, delete it; git history is the record.
 
 **Tests check behaviour.** A test fails when the code is wrong, not when the
 wording, the data or the machine changes: no assertions on text readers see, on
