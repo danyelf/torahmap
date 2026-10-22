@@ -926,7 +926,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
   }
 
-  /** The files the search's settings ask for at once. */
   function searchFilesNow(): readonly string[] {
     return searchTool.filesNow?.(overlaySettings.get(searchTool)) ?? [];
   }
