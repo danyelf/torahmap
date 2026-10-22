@@ -12,7 +12,7 @@ prs=$(gh pr list --state open --limit 100 --json number,title,isDraft,mergeable,
 echo "Open pull requests"
 jq -r '.[] | [.number, .title + (if .isDraft then " (draft)" else "" end), ({MERGEABLE: "none", CONFLICTING: "yes"}[.mergeable] // "not yet known"),
     ([.comments[] | select(.author.login == "cloudflare-workers-and-pages")
-      | .body | capture("(?<u>https://[^ ]+?).>Branch Preview URL").u] | last // "no Cloudflare comment yet")] | @tsv' <<<"$prs" |
+      | .body | capture("(?<u>https://[^ ]+?).>Branch Preview URL").u] | last // "no link posted yet")] | @tsv' <<<"$prs" |
   while IFS=$'\t' read -r n title conflicts preview; do
     echo "#$n $title"
     echo "    $(./review-freshness.sh "$n")"
