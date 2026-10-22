@@ -41,6 +41,9 @@ export const EVENTS = {
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
   square_click: { blobs: ['id', 'area'], doubles: [] },
+  // What was typed in Go to, the place it read to and that place's area; its pin is a
+  // square_click too.
+  go_to: { blobs: ['typed', 'ref', 'area'], doubles: [] },
   word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
   sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },

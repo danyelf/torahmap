@@ -43,7 +43,7 @@ export function goToPanelHtml(examples: readonly string[]): string {
 export interface GoToHooks {
   /** The text of the place's first square, or null while its file is not in. */
   quote(found: Reference, typed: string): string | null;
-  take(found: Reference): void;
+  take(found: Reference, typed: string): void;
 }
 
 /** Wires the panel `goToPanelHtml` drew in `panel`. */
@@ -121,7 +121,7 @@ export function bindGoTo(
     if (!found) return;
     // The map takes the keys again, and a phone's keyboard goes down.
     box.blur();
-    hooks.take(found);
+    hooks.take(found, box.value.trim());
   }
 
   box.addEventListener('input', () => typed(box.value));

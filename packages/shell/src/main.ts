@@ -70,6 +70,7 @@ import {
   trackStoryExit,
   trackStoryReturn,
   trackStoryStop,
+  trackGoTo,
   trackSquareClick,
   trackViewSettled,
   trackWebGLMissing,
@@ -762,9 +763,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       return first ? quoteOf(first, typed) : null;
     },
     // Pin the place's first square, and show all of it.
-    take(found) {
+    take(found, typed) {
       const place = squaresOf(found);
       if (place.length === 0) return;
+      trackGoTo(typed, found.ref, text.area(place[0]).area);
       // A full-height sheet would hide the glide.
       if (frame.full) setFrame({ ...frame, full: false });
       pinItem(place[0]);

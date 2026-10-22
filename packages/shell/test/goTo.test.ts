@@ -50,14 +50,14 @@ describe('the Go to panel', () => {
     type('Genesis 1');
     expect(panel.querySelector('.goto-offer')?.textContent).toContain('the text of Genesis.1.1');
     press('Enter');
-    expect(take).toHaveBeenCalledWith(PLACES['genesis 1']);
+    expect(take).toHaveBeenCalledWith(PLACES['genesis 1'], 'Genesis 1');
   });
 
   it('goes to the place when its offer is clicked', () => {
     const { panel, take, type } = open();
     type('Genesis 1');
     panel.querySelector<HTMLElement>('.goto-offer')!.click();
-    expect(take).toHaveBeenCalledWith(PLACES['genesis 1']);
+    expect(take).toHaveBeenCalledWith(PLACES['genesis 1'], 'Genesis 1');
   });
 
   it('says when what is typed names nothing, and goes nowhere', () => {
@@ -186,7 +186,7 @@ describe('the Go to panel, taking an offer', () => {
     box.dispatchEvent(new Event('input'));
     const reads = read.mock.calls.length;
     box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-    expect(take).toHaveBeenCalledWith(PLACES['genesis 1']);
+    expect(take).toHaveBeenCalledWith(PLACES['genesis 1'], 'Genesis 1');
     expect(read.mock.calls.length).toBe(reads);
   });
 });

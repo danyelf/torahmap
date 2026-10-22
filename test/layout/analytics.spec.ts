@@ -13,6 +13,7 @@ import {
   viaMenu,
 } from '../browser/page.ts';
 import { SEARCH_REQUIRED } from '../browser/files.ts';
+import { goTo } from './app.ts';
 
 test.beforeEach(() => desktopOnly('what is recorded does not depend on the screen'));
 
@@ -41,5 +42,15 @@ test('a linked search is never recorded; a word the reader adds is', async ({ pa
   await expect.poll(() => sentSearches(page)).toEqual(['dark']);
   await allLoaded(page);
   expect(await sentSearches(page)).toEqual(['dark']);
+  expect(errors).toEqual([]);
+});
+
+test('going to a place records what was typed and where it led', async ({ page }) => {
+  const errors = await openMap(page, '');
+  await recordEvents(page);
+  await goTo(page, 'gen 2:2', true);
+  await expect
+    .poll(() => sentFields(page, 'go_to'))
+    .toEqual([{ typed: 'gen 2:2', ref: 'Genesis 2:2', area: 'Genesis' }]);
   expect(errors).toEqual([]);
 });
