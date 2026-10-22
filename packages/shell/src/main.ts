@@ -187,9 +187,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     text.overlays.find((overlay) => overlay.id === id);
   // What a story stop may name.
   const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
-  // Pending and started fill from the download stages once the opening view is
-  // known, before the first frame, and as a file is fetched at once.
   const downloads = {
+    /** Every file not yet in: each stage's, from before the first frame, and any fetched at once. */
     pending: new Set<string>(),
     /** The files whose download has begun: a stage's once it starts, and any fetched at once. */
     started: new Set<string>(),
