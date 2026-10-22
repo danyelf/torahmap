@@ -5,7 +5,7 @@ const PORT = Number(process.env.LOADING_PORT ?? 5198);
 
 export default defineConfig({
   testDir: '.',
-  outputDir: '../test-results/loading',
+  outputDir: '../../test-results/loading',
   fullyParallel: true,
   workers: 4,
   // Every file crosses a throttled connection once a case lets it through.
@@ -23,7 +23,7 @@ export default defineConfig({
   })),
   webServer: {
     command: `npx vite --port ${PORT} --strictPort`,
-    cwd: '..',
+    cwd: '../..',
     url: `http://localhost:${PORT}/`,
     reuseExistingServer: false,
     timeout: 60_000,

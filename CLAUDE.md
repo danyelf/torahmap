@@ -79,12 +79,12 @@ npm run test:layout
 ```
 
 It starts its own dev server on port 5199 (`LAYOUT_PORT` to change it), renders
-the map with software WebGL, and checks every state in `layout/app.ts`: no
+the map with software WebGL, and checks every state in `test/layout/app.ts`: no
 control off screen; the panel, the zoom buttons and the verse popup clear of
 each other, and the panel clear of the map; no clipped text; on the touch
 screens (tablet and phone), touch targets at least 24×24 (WCAG 2.2 AA); the
 elements each state must show, shown in full; and a map that actually drew.
-Text ending in a deliberate ellipsis counts as fitting. `layout/known.ts` lists
+Text ending in a deliberate ellipsis counts as fitting. `test/layout/known.ts` lists
 the failures accepted for now, what each measures and why. It ends by writing
 `layout-report/index.html`, every state at every size side by side.
 
@@ -149,7 +149,9 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   on the dev server and every branch's preview but not the live site.
 - `test/` — checks of the whole repository: that each package and app keeps to
   its imports and each page runs only its own text's code, the saved telemetry
-  queries, and the shell's tests that need a text's data.
+  queries, the shell's tests that need a text's data, and the browser suites
+  in `test/layout/` and `test/loading/` (see Layout tests and Loading tests,
+  above).
 - `packages/` — shared code, as npm workspace packages: `link` (reading and
   writing links, under each text's keys), `utils` (small helpers that depend
   on nothing else here), `engine` (drawing the squares, the camera, hit
@@ -189,7 +191,6 @@ Markdown and `data/`/`public/data/` are excluded from formatting; see
   its status.
 - `experiments/` — prototypes that never shipped.
 - `test-harness/` — the search-UI test harness (see Testing, below).
-- `layout/` — the layout tests (see Layout tests, above).
 - `video/` — scripted video of the map: `npm run rehearse` to time a script
   against your narration, `npm run video -- <script.md>` to render it to MP4,
   `npm run mix` to lay a recorded voiceover under it.
