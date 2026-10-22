@@ -498,13 +498,16 @@ describe('Trop Overlay', () => {
       assertNamedEnds(hostShowingCommonMark().summary());
     });
 
-    it('names no ends for a rare mark, which is present or absent', () => {
+    it('shows a rare mark by the colour of the verses that carry it, with no ends', () => {
       const host = makeHost();
       const rare = Array.from(host.renderControls().querySelectorAll('button')).find((b) =>
         b.classList.contains('rare'),
       ) as HTMLButtonElement;
       rare.click();
-      expect(host.summary().strip).toBeUndefined();
+      const { colors, strip } = host.summary();
+      expect(colors).toContain(colorToCss(RARE_MATCH_COLOR));
+      expect(colors).not.toContain(colorToCss(RARE_NO_MATCH_COLOR));
+      expect(strip).toBeUndefined();
     });
   });
 

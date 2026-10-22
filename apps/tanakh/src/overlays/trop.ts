@@ -313,7 +313,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     const detail = settings.mark ?? undefined;
     const { legend } = derived;
     return legend.kind === 'swatches'
-      ? { detail, colors: [legend.contains, legend.without] }
+      ? { detail, colors: [legend.contains] }
       : { detail, strip: { gradient: legend.gradient, ends: ['few', 'many'] } };
   },
 
