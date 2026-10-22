@@ -3,10 +3,10 @@
 
 import { escapeHtml } from '@torahmap/utils';
 import type { GoTo, Reference } from './app/text.ts';
+import { GO_TO_BOX_ID } from './goToBox.ts';
 import { CONTROL, panelHtml } from './panel.ts';
 import './styles/go-to.css';
 
-import { GO_TO_BOX_ID } from './goToBox.ts';
 const LIST_ID = 'goto-completions';
 const optionId = (i: number) => `goto-completion-${i}`;
 

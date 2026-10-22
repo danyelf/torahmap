@@ -714,9 +714,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Fit `list` into the map above and below the focus. A story stop fits its
-   * places to the whole map instead; here the first square is pinned, and on a
-   * phone its popup covers the map below the focus. No closer than a single
+   * Fit `list` into the map above and below the focus, since its first square is
+   * pinned and on a phone the popup covers the map below. No closer than a single
    * square is gone to, or a short chapter would be a few squares filling the map.
    */
   function glideToFit(list: readonly I[]): void {

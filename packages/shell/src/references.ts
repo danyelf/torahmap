@@ -41,7 +41,7 @@ export function referenceTokens(typed: string): Token[] {
 
 const isDigit = (char: string) => char >= '0' && char <= '9';
 
-/** A text written as it is to be read. */
+/** Rewrites a reference, or a name, as reading compares it: dropping marks it ignores, say. */
 export type Clean = (text: string) => string;
 
 /** How a name's words are written for matching, so that spellings of one name come out alike. */

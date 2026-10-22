@@ -1,4 +1,4 @@
-// Roman numerals, as numbered books and the Act's annexes are written.
+// Roman numerals: 1 to 399, written and read.
 
 const NUMERALS: [number, string][] = [
   [100, 'C'],
