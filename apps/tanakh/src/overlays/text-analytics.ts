@@ -58,7 +58,8 @@ const MEASURES: Record<
     hover: (v: number) => string;
     // The scale's low and high ends, in the panel's legend and on the legend card.
     ends: [low: string, high: string];
-    legend: (p: ScoreParameters, ends: [low: string, high: string]) => string[];
+    // `top` is the score at the top of the colour scale.
+    legend: (p: ScoreParameters, ends: [low: string, high: string], top: number) => string[];
   }
 > = {
   repetition: {
@@ -80,11 +81,11 @@ const MEASURES: Record<
         ? 'Divisions usual for verses this long'
         : `Divisions ${timesRarer(v)} than usual for verses this long`,
     ends: ['common', 'unusual'],
-    legend: (p, [low, high]) => [
+    legend: (p, [low, high], top) => [
       `How unusually the trop divides the ${p.windowVerses} verses around each verse, ` +
         'compared with verses of the same length',
-      '1.2× rarer: on average, each split the trop makes here is 1.2 times less common ' +
-        'than in a typical verse',
+      `At ${timesRarer(top)}, the top of the scale, each split the trop makes is on average ` +
+        `${(2 ** top).toFixed(2)} times less common than in a typical verse`,
       `Blue = ${low} divisions · Yellow = ${high} ones`,
       `${listed(p.poeticBooks)} use other marks and are not coloured`,
     ],
@@ -135,8 +136,31 @@ function exampleHtml({ ref, share, words }: DivisionExample): string {
     </div>`;
 }
 
+/**
+ * The top of the scale in terms of the examples: how many of a passage's verses
+ * dividing like the first uncommon example instead of the first common one
+ * would put it there.
+ */
+function calibration(scores: ScoresFile, top: number): string {
+  const examples = scores.divisionExamples;
+  const common = examples.find((e) => e.common)!;
+  const rare = examples.find((e) => !e.common)!;
+  const window = scores.parameters.windowVerses;
+  const swap = Math.log2(common.share / rare.share);
+  const verses = Math.round((top * scores.divisionPiecesPerVerse * window) / swap);
+  const howMany =
+    verses >= window
+      ? `every one of its ${window} verses`
+      : `about ${verses} of its ${window} verses`;
+  return (
+    `At the top of the map's scale, ${timesRarer(top)}, a passage is as unusual as if ${howMany} ` +
+    `divided its first half like ${escapeHtml(rare.ref)} instead of ${escapeHtml(common.ref)}.`
+  );
+}
+
 /** A link to, and a popup of, verses showing common and uncommon ways a first half is divided. */
-function examplesHtml(examples: DivisionExample[], top: number): string {
+function examplesHtml(scores: ScoresFile, top: number): string {
+  const examples = scores.divisionExamples;
   const marks = [...new Set(examples.flatMap((e) => e.words.flatMap((w) => w.mark ?? [])))];
   const group = (common: boolean, title: string) =>
     `<h3 class="ta-examples-group">${title}</h3>` +
@@ -157,7 +181,7 @@ function examplesHtml(examples: DivisionExample[], top: number): string {
         .join('')}</div>
       ${group(true, 'Common')}
       ${group(false, 'Uncommon')}
-      <p>At the top of the map's scale, ${timesRarer(top)}, most verses in a passage divide in uncommon ways like these.</p>
+      <p>${calibration(scores, top)}</p>
       </div>
     </dialog>`;
 }
@@ -234,12 +258,12 @@ export const textAnalyticsOverlay: Overlay<
     container.innerHTML =
       renderAxis(scale, low < 0 && high > 0 ? [low, 0, high] : [low, high], measure.format) +
       [
-        ...measure.legend(parameters, measure.ends),
+        ...measure.legend(parameters, measure.ends, high),
         `Verses under ${parameters.minWords} words are not coloured; words joined by a maqaf count as one`,
       ]
         .map(legendCaption)
         .join('') +
-      (settings.measure === 'division' ? examplesHtml(data.scores.divisionExamples, high) : '');
+      (settings.measure === 'division' ? examplesHtml(data.scores, high) : '');
     wireExamples(container);
   },
 
