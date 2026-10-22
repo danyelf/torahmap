@@ -1,0 +1,428 @@
+<!doctype html>
+<!-- The page report-html.sh fills with data; open what it writes, not this. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Torah Map telemetry</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --page: #f9f9f7;
+        --surface: #fcfcfb;
+        --ink: #0b0b0b;
+        --ink-2: #52514e;
+        --muted: #898781;
+        --grid: #e1e0d9;
+        --ring: rgba(11, 11, 11, 0.1);
+        --bar: #2a78d6;
+        --axis: #c3c2b7;
+        --s1: #2a78d6;
+        --s2: #eb6834;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          --page: #0d0d0d;
+          --surface: #1a1a19;
+          --ink: #ffffff;
+          --ink-2: #c3c2b7;
+          --grid: #2c2c2a;
+          --ring: rgba(255, 255, 255, 0.1);
+          --bar: #3987e5;
+          --axis: #383835;
+          --s1: #3987e5;
+          --s2: #d95926;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--page);
+        color: var(--ink);
+        font:
+          15px/1.45 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+      }
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px 16px 48px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 4px;
+        font-weight: 600;
+      }
+      h2 {
+        font-size: 17px;
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+      .sub {
+        color: var(--ink-2);
+        margin: 0 0 20px;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        margin-bottom: 20px;
+        font-size: 14px;
+      }
+      nav a {
+        color: var(--ink-2);
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--ring);
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+      }
+      .empty {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      table {
+        border-collapse: collapse;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        padding: 3px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--grid);
+        vertical-align: top;
+      }
+      th {
+        color: var(--ink-2);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .num {
+        text-align: right;
+        white-space: nowrap;
+      }
+      td.blank {
+        color: var(--muted);
+      }
+      td.bar {
+        width: 160px;
+        min-width: 80px;
+        vertical-align: middle;
+      }
+      td.bar i {
+        display: block;
+        height: 10px;
+        border-radius: 2px;
+        background: var(--bar);
+      }
+      details {
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--ink-2);
+      }
+      pre {
+        white-space: pre-wrap;
+        font-size: 12px;
+      }
+      :not(.open) > table tr.more {
+        display: none;
+      }
+      button.toggle {
+        margin-top: 8px;
+        font: inherit;
+        font-size: 13px;
+        color: var(--ink-2);
+        background: none;
+        border: 1px solid var(--ring);
+        border-radius: 6px;
+        padding: 3px 10px;
+        cursor: pointer;
+      }
+      h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 12px 0 0;
+      }
+      .blank {
+        color: var(--muted);
+      }
+      svg {
+        display: block;
+        width: 100%;
+        min-width: 600px;
+        height: auto;
+        overflow: visible;
+      }
+      svg text {
+        fill: var(--muted);
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      svg text.ann {
+        fill: var(--ink-2);
+      }
+      .legend {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        color: var(--ink-2);
+        margin-bottom: 4px;
+      }
+      .legend i {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        margin-right: 6px;
+        vertical-align: -1px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Torah Map telemetry</h1>
+      <p class="sub" id="range"></p>
+      <nav id="contents"></nav>
+      <div id="queries"></div>
+    </main>
+
+    <script>
+      const data = /*DATA*/ null;
+
+      const NUMERIC = /Int|Float/;
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"]/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c],
+        );
+      // Rows past this many start folded away, so the page can be scanned.
+      const SHOWN = 15;
+
+      document.getElementById('range').textContent =
+        `torahmap.org, last ${data.days} days · fetched ${data.fetched.replace('T', ' ')} · ` +
+        'counts are weighted by the sample interval, so they are estimates';
+      document.getElementById('contents').innerHTML = data.queries
+        .map((q) => `<a href="#${q.name}">${q.name}</a>`)
+        .join('');
+
+      // What each query counts is its last column.
+      const count = (q) => q.meta.at(-1).name;
+
+      function table(q) {
+        const cols = q.meta.map((c) => ({ name: c.name, num: NUMERIC.test(c.type) }));
+        const last = cols.at(-1);
+        const max = last.num ? Math.max(...q.data.map((r) => Number(r[last.name]))) : 0;
+        const head = cols.map((c) => `<th class="${c.num ? 'num' : ''}">${esc(c.name)}</th>`);
+        if (max) head.push('<th></th>');
+        const body = q.data.map((r, i) => {
+          const cells = cols.map((c) => {
+            const v = r[c.name];
+            if (v === '') return '<td class="blank">–</td>';
+            return `<td class="${c.num ? 'num' : ''}">${esc(c.num ? Number(v).toLocaleString() : v)}</td>`;
+          });
+          if (max)
+            cells.push(
+              `<td class="bar"><i style="width:${(100 * Number(r[last.name])) / max}%"></i></td>`,
+            );
+          return `<tr class="${i >= SHOWN ? 'more' : ''}">${cells.join('')}</tr>`;
+        });
+        const more = q.data.length - SHOWN;
+        return (
+          `<table><tr>${head.join('')}</tr>${body.join('')}</table>` +
+          (more > 0
+            ? `<button class="toggle" data-more="Show ${more} more rows">Show ${more} more rows</button>`
+            : '')
+        );
+      }
+
+      const SVG = 'http://www.w3.org/2000/svg';
+      function svgEl(parent, name, attrs, text) {
+        const e = document.createElementNS(SVG, name);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+        if (text != null) e.textContent = text;
+        parent.appendChild(e);
+        return e;
+      }
+      // A column with a rounded top, standing on y0.
+      const column = (x, w, y0, y1) => {
+        const h = y0 - y1;
+        const r = Math.min(4, h, w / 2);
+        return `M${x},${y0}V${y1 + r}q0,-${r} ${r},-${r}h${w - 2 * r}q${r},0 ${r},${r}V${y0}Z`;
+      };
+      const niceTop = (max) => {
+        const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 500, 1000, 2000, 5000].find(
+          (s) => max / s <= 4,
+        );
+        return { step, top: Math.ceil(max / step) * step };
+      };
+      function gridlines(svg, { step, top }, y, x0, x1) {
+        for (let v = 0; v <= top; v += step) {
+          svgEl(svg, 'line', {
+            x1: x0,
+            x2: x1,
+            y1: y(v),
+            y2: y(v),
+            stroke: v ? 'var(--grid)' : 'var(--axis)',
+          });
+          svgEl(svg, 'text', { x: x0 - 6, y: y(v) + 4, 'text-anchor': 'end' }, v.toLocaleString());
+        }
+      }
+
+      const DEVICES = [
+        { key: 'desktop', color: 'var(--s1)' },
+        { key: 'mobile', color: 'var(--s2)' },
+      ];
+      const fmtDay = (iso) =>
+        new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', {
+          timeZone: 'UTC',
+          month: 'short',
+          day: 'numeric',
+        });
+
+      // Per day, desktop and mobile stacked; every day in the range is present so gaps show.
+      function overTime(q) {
+        const n = count(q);
+        const byDay = new Map();
+        for (const r of q.data) {
+          const day = r.day.slice(0, 10);
+          const d = byDay.get(day) ?? { desktop: 0, mobile: 0 };
+          d[r.device] = (d[r.device] ?? 0) + Number(r[n]);
+          byDay.set(day, d);
+        }
+        const days = [];
+        const end = Date.parse(data.fetched.slice(0, 10) + 'T00:00:00Z');
+        for (let t = end - (data.days - 1) * 864e5; t <= end; t += 864e5) {
+          const day = new Date(t).toISOString().slice(0, 10);
+          days.push({ day, ...(byDay.get(day) ?? { desktop: 0, mobile: 0 }) });
+        }
+        const W = 1000;
+        const H = 220;
+        const m = { t: 12, r: 4, b: 24, l: 40 };
+        const svg = document.createElementNS(SVG, 'svg');
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', `${q.name} per day, desktop and mobile stacked`);
+        const scale = niceTop(Math.max(1, ...days.map((d) => d.desktop + d.mobile)));
+        const y = (v) => m.t + (H - m.t - m.b) * (1 - v / scale.top);
+        gridlines(svg, scale, y, m.l, W - m.r);
+        const band = (W - m.l - m.r) / days.length;
+        const bw = Math.max(2, Math.min(22, band - 4));
+        days.forEach((d, i) => {
+          const x = m.l + band * i + (band - bw) / 2;
+          let base = 0;
+          const g = svgEl(svg, 'g', {});
+          svgEl(
+            g,
+            'title',
+            {},
+            `${fmtDay(d.day)}: ${d.desktop} desktop, ${d.mobile} mobile` +
+              (i === days.length - 1 ? ' (so far)' : ''),
+          );
+          DEVICES.forEach(({ key, color }) => {
+            if (!d[key]) return;
+            const gap = base ? 2 : 0;
+            svgEl(g, 'path', { d: column(x, bw, y(base) - gap, y(base + d[key])), fill: color });
+            base += d[key];
+          });
+          // A transparent target the height of the plot, so a short column is easy to hover.
+          svgEl(g, 'rect', {
+            x: m.l + band * i,
+            y: m.t,
+            width: band,
+            height: H - m.t - m.b,
+            fill: 'transparent',
+          });
+          if (i % Math.ceil(days.length / 10) === 0)
+            svgEl(svg, 'text', { x: x + bw / 2, y: H - 6, 'text-anchor': 'middle' }, fmtDay(d.day));
+        });
+        const legend = DEVICES.map(
+          ({ key, color }) => `<span><i style="background:${color}"></i>${key}</span>`,
+        ).join('');
+        return `<div class="legend">${legend}</div>${svg.outerHTML}`;
+      }
+
+      // Each story as a row of its stops in order, so where readers drop off shows.
+      function storyStops(q) {
+        const n = count(q);
+        const stories = new Map();
+        for (const r of q.data) {
+          if (!stories.has(r.story)) stories.set(r.story, []);
+          stories.get(r.story).push(r);
+        }
+        // Each story has its own scale: one shared with the busiest flattens the rest.
+        return [...stories]
+          .map(([story, stops]) => {
+            stops.sort((a, b) => a.stop_number - b.stop_number);
+            const scale = niceTop(Math.max(1, ...stops.map((s) => Number(s[n]))));
+            const W = 1000;
+            const H = 230;
+            const m = { t: 18, r: 4, b: 110, l: 40 };
+            const svg = document.createElementNS(SVG, 'svg');
+            svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+            svg.setAttribute('role', 'img');
+            svg.setAttribute('aria-label', `Readers at each stop of ${story}`);
+            const y = (v) => m.t + (H - m.t - m.b) * (1 - v / scale.top);
+            gridlines(svg, scale, y, m.l, W - m.r);
+            const slots = Math.max(stops.length, 12);
+            const band = (W - m.l - m.r) / slots;
+            const bw = Math.min(28, band - 6);
+            stops.forEach((s, i) => {
+              const v = Number(s[n]);
+              const cx = m.l + band * (i + 0.5);
+              const g = svgEl(svg, 'g', {});
+              svgEl(g, 'title', {}, `${s.stop_number}. ${s.stop_id}: ${v}`);
+              if (v)
+                svgEl(g, 'path', { d: column(cx - bw / 2, bw, y(0), y(v)), fill: 'var(--s1)' });
+              svgEl(g, 'text', { x: cx, y: y(v) - 5, 'text-anchor': 'middle', class: 'ann' }, v);
+              svgEl(
+                g,
+                'text',
+                {
+                  x: cx,
+                  y: y(0) + 12,
+                  'text-anchor': 'end',
+                  transform: `rotate(-40 ${cx} ${y(0) + 12})`,
+                },
+                s.stop_id.length > 22 ? s.stop_id.slice(0, 21) + '…' : s.stop_id,
+              );
+            });
+            return `<h3>${esc(story)}</h3>${svg.outerHTML}`;
+          })
+          .join('');
+      }
+
+      const CHARTS = { visits: overTime, 'webgl-missing': overTime, 'story-reach': storyStops };
+
+      document.getElementById('queries').innerHTML = data.queries
+        .map((q) => {
+          const chart = CHARTS[q.name];
+          let content;
+          if (!q.data.length) content = '<p class="empty">No rows in this range.</p>';
+          else if (chart)
+            content = `${chart(q)}<details><summary>Table</summary>${table(q)}</details>`;
+          else content = table(q);
+          return (
+            `<section class="card" id="${q.name}"><h2>${esc(q.name)}</h2>${content}` +
+            `<details><summary>Query</summary><pre>${esc(q.sql)}</pre></details></section>`
+          );
+        })
+        .join('');
+
+      document.addEventListener('click', (ev) => {
+        const button = ev.target.closest('button.toggle');
+        if (!button) return;
+        const open = button.parentElement.classList.toggle('open');
+        button.textContent = open ? 'Show fewer rows' : button.dataset.more;
+      });
+    </script>
+  </body>
+</html>
