@@ -9,6 +9,7 @@ import { timesRarer } from '../../../src/overlays/text-analytics/scores';
 const data: TextAnalyticsData = {
   scores: {
     parameters: { ...SAMPLE_TEXT_ANALYTICS_SCORES.parameters },
+    divisionExamples: SAMPLE_TEXT_ANALYTICS_SCORES.divisionExamples,
     repetition: { Genesis: { '1': [0, 0.5, null, 0.25] } },
     division: { Genesis: { '1': [0.2, -0.2, null, 0] } },
   },
@@ -68,5 +69,25 @@ describe('Text analytics overlay', () => {
     expect(timesRarer(1)).toBe('2.00× rarer');
     expect(timesRarer(-1)).toBe('2.00× more common');
     expect(timesRarer(0.001)).toBe('usual');
+  });
+
+  it('offers example verses of common and uncommon divisions with verse division only', () => {
+    const h = host();
+    const legend = document.createElement('div');
+    h.renderLegend(legend);
+    expect(legend.querySelector('dialog')).toBeNull();
+
+    h.change((s) => ({ ...s, measure: 'division' }));
+    h.renderLegend(legend);
+    const dialog = legend.querySelector('dialog')!;
+    expect(dialog.open).toBe(false);
+    legend.querySelector<HTMLButtonElement>('.ta-examples-open')!.click();
+    expect(dialog.open).toBe(true);
+    expect([...dialog.querySelectorAll('.ta-example-verse')].map((v) => v.textContent)).toEqual([
+      'א ב ג ד',
+      'ה ו',
+    ]);
+    dialog.querySelector<HTMLButtonElement>('.ta-examples-close')!.click();
+    expect(dialog.open).toBe(false);
   });
 });

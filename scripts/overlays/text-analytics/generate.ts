@@ -15,6 +15,7 @@ import {
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 import {
   PARAMETERS,
+  divisionExample,
   divisionScores,
   parse,
   repetitionScores,
@@ -27,7 +28,11 @@ const DATA = join(import.meta.dirname, '../../../public/data');
 const byNumber = (a: string, b: string): number => Number(a) - Number(b);
 
 /** Every book, parsed, its verses in reading order; and where each verse sits. */
-export function readBooks(): { books: ParsedBook[]; refs: [string, string][][] } {
+export function readBooks(): {
+  texts: VerseTexts;
+  books: ParsedBook[];
+  refs: [string, string][][];
+} {
   const texts: VerseTexts = JSON.parse(readFileSync(join(DATA, TEXTS_FILE), 'utf8'));
   const books: ParsedBook[] = [];
   const refs: [string, string][][] = [];
@@ -43,7 +48,7 @@ export function readBooks(): { books: ParsedBook[]; refs: [string, string][][] }
     books.push(parse({ name, verses }));
     refs.push(where);
   }
-  return { books, refs };
+  return { texts, books, refs };
 }
 
 /** Book → chapter → scores by verse, from the first verse of the chapter. */
@@ -65,12 +70,32 @@ function nest(
   return result;
 }
 
+// Short, well-known verses for each of the three commonest ways a first half is
+// divided, and three uncommon ones.
+const DIVISION_EXAMPLES: [book: string, chapter: string, verse: string, common: boolean][] = [
+  ['Genesis', '2', '25', true],
+  ['Genesis', '1', '1', true],
+  ['Genesis', '12', '2', true],
+  ['Exodus', '14', '4', false],
+  ['Genesis', '21', '6', false],
+  ['Genesis', '30', '41', false],
+];
+
 if (import.meta.main) {
-  const { books, refs } = readBooks();
+  const { texts, books, refs } = readBooks();
+  const division = divisionScores(books);
   const file: ScoresFile = {
     parameters: PARAMETERS,
+    divisionExamples: DIVISION_EXAMPLES.map(([book, chapter, verse, common]) =>
+      divisionExample(
+        `${book} ${chapter}:${verse}`,
+        texts[book][chapter][verse].he,
+        division.counts,
+        common,
+      ),
+    ),
     repetition: nest(books, refs, repetitionScores(books)),
-    division: nest(books, refs, divisionScores(books).scores),
+    division: nest(books, refs, division.scores),
   };
   const out = join(DATA, SCORES_FILE);
   mkdirSync(dirname(out), { recursive: true });
