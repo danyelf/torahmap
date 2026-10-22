@@ -134,6 +134,21 @@ several readings by name, so if hebcal has changed its mind about one of them
 the test fails and tells you which. That is the intended way to find out;
 decide whether to follow the change before editing the test to match.
 
+## Text Analytics Scores
+
+```bash
+npm run generate:text-analytics   # writes public/data/overlays/text-analytics/scores.json
+npm run report:text-analytics     # what the scores show across the whole Tanakh
+```
+
+Both measures are computed from the bundled verse texts, so rerun the generator
+whenever `all-texts.json` changes; it fetches nothing and has no `collected`
+date. How each measure works, and every value it depends on, is in
+`scripts/overlays/text-analytics/measures.ts`. The report prints the most and
+least repetitive and rare-trop chapters, each score's correlation with verse
+length, the number of stock phrases set aside, and how often a verse's first
+half is split each way; read it after changing a measure.
+
 ## Text Dating Data
 
 ```bash
