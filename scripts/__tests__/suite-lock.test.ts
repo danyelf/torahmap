@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { release, tryAcquire, type Owner } from '../suite-lock.ts';
+import { clearStale, release, tryAcquire, type Owner } from '../suite-lock.ts';
 
 const SCRIPT = fileURLToPath(new URL('../suite-lock.ts', import.meta.url));
 
@@ -36,6 +36,15 @@ describe('tryAcquire', () => {
     tryAcquire(lock, owner(exitedPid()));
     const me = owner(process.pid);
     expect(tryAcquire(lock, me)).toEqual(me);
+    expect(heldBy()).toBe(process.pid);
+  });
+});
+
+describe('clearStale', () => {
+  it('leaves a lock taken since its dead owner was seen', () => {
+    const dead = owner(exitedPid());
+    tryAcquire(lock, owner(process.pid));
+    clearStale(lock, dead, owner(exitedPid()));
     expect(heldBy()).toBe(process.pid);
   });
 });

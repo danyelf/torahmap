@@ -19,9 +19,9 @@ export interface Owner {
 
 const POLL_MS = 2000;
 
-export const lockPath = () => join(tmpdir(), 'torahmap-browser-suite.lock');
+const lockPath = () => join(tmpdir(), 'torahmap-browser-suite.lock');
 
-export function alive(pid: number): boolean {
+function alive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;
@@ -58,15 +58,31 @@ export function tryAcquire(lock: string, me: Owner): Owner {
     }
     const owner = ownerOf(lock);
     if (owner && alive(owner.pid)) return owner;
-    // Its owner has exited. Moved aside before it is deleted, so of two
-    // processes that find it, only one clears it.
-    const aside = `${lock}.stale.${me.pid}`;
-    try {
-      renameSync(lock, aside);
-      rmSync(aside, { recursive: true, force: true });
-    } catch {
-      // Someone else moved it first.
-    }
+    clearStale(lock, owner, me);
+  }
+}
+
+/**
+ * Deletes the lock `seen` held, its owner having exited. Moved aside before it
+ * is deleted, so of two processes that find it, only one clears it; the other
+ * may move aside the lock the first has since taken, and puts it back.
+ */
+export function clearStale(lock: string, seen: Owner | undefined, me: Owner): void {
+  const aside = `${lock}.stale.${me.pid}`;
+  try {
+    renameSync(lock, aside);
+  } catch {
+    return; // Someone else moved it first.
+  }
+  if (ownerOf(aside)?.pid === seen?.pid) {
+    rmSync(aside, { recursive: true, force: true });
+    return;
+  }
+  try {
+    renameSync(aside, lock);
+  } catch {
+    // A third process took the lock meanwhile; it holds it now.
+    rmSync(aside, { recursive: true, force: true });
   }
 }
 
