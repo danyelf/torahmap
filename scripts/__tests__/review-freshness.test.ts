@@ -9,8 +9,9 @@ const commits = ['a', 'b', 'c', 'd'].map((c) => ({ oid: sha(c) }));
 function freshness(
   comments: { body: string; createdAt: string }[],
   reviews: { body: string; submittedAt: string }[] = [],
+  oids = commits,
 ) {
-  const pr = { headRefOid: sha('d'), commits, comments, reviews };
+  const pr = { commits: oids, comments, reviews };
   return execFileSync('bash', [script], { input: JSON.stringify(pr) })
     .toString()
     .trim();
@@ -34,6 +35,17 @@ describe('review-freshness', () => {
   it('counts the commits after the reviewed one', () => {
     expect(behind).toMatch(/\b2\b/);
     expect(behind).toContain('bbbbbbb');
+  });
+
+  it('reads a short sha as a prefix of a commit', () => {
+    expect(freshness([review('bbbbbbb', '2026-10-01')])).toBe(behind);
+    expect(freshness([review('ddddddd', '2026-10-01')])).toBe(atHead);
+  });
+
+  it('names a short sha that fits more than one commit, rather than pick one', () => {
+    const twins = [{ oid: 'a'.repeat(7) + 'b'.repeat(33) }, { oid: sha('a') }];
+    const out = freshness([review('aaaaaaa', '2026-10-01')], [], twins);
+    expect(new Set([out, none, atHead, rebased, behind]).size).toBe(5);
   });
 
   it('takes the latest review, from a comment or a review', () => {
