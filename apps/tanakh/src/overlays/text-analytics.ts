@@ -256,7 +256,10 @@ export const textAnalyticsOverlay: Overlay<
     const { scale, low, high } = scalesOf(data)[settings.measure];
     const parameters = data.scores.parameters;
     container.innerHTML =
-      renderAxis(scale, low < 0 && high > 0 ? [low, 0, high] : [low, high], measure.format) +
+      // Scores above the top of the scale are drawn in its colour too.
+      renderAxis(scale, low < 0 && high > 0 ? [low, 0, high] : [low, high], (v) =>
+        v === high ? `${measure.format(v)} or more` : measure.format(v),
+      ) +
       [
         ...measure.legend(parameters, measure.ends, high),
         `Verses under ${parameters.minWords} words are not coloured; words joined by a maqaf count as one`,

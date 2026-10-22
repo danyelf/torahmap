@@ -163,17 +163,17 @@ const wordsOf = (books: ParsedBook[]): string[][][] =>
   books.map((b) => b.verses.map((v) => v.map((u) => u.consonants)));
 
 /** The runs a verse holds, in order. */
-const runsIn = (verse: string[]): string[] =>
-  Array.from({ length: Math.max(0, verse.length - RUN_WORDS + 1) }, (_, p) =>
-    verse.slice(p, p + RUN_WORDS).join(' '),
+const runsIn = (verse: string[], words = RUN_WORDS): string[] =>
+  Array.from({ length: Math.max(0, verse.length - words + 1) }, (_, p) =>
+    verse.slice(p, p + words).join(' '),
   );
 
 /** The runs found in enough books to be stock phrases. */
-export function formulas(books: ParsedBook[]): Set<string> {
+export function formulas(books: ParsedBook[], words = RUN_WORDS): Set<string> {
   const booksWith = new Map<string, Set<number>>();
   wordsOf(books).forEach((verses, b) =>
     verses.forEach((verse) =>
-      runsIn(verse).forEach((run) => {
+      runsIn(verse, words).forEach((run) => {
         if (!booksWith.has(run)) booksWith.set(run, new Set());
         booksWith.get(run)!.add(b);
       }),
@@ -183,13 +183,17 @@ export function formulas(books: ParsedBook[]): Set<string> {
 }
 
 /** Each book's repetitive-wording scores, parallel to `books`. */
-export function repetitionScores(books: ParsedBook[], reach = REACH_VERSES): BookScores[] {
-  const stock = formulas(books);
+export function repetitionScores(
+  books: ParsedBook[],
+  reach = REACH_VERSES,
+  words = RUN_WORDS,
+): BookScores[] {
+  const stock = formulas(books, words);
   return wordsOf(books).map((verses) => {
     // Where each run is found in the book.
     const at = new Map<string, { verse: number; position: number }[]>();
     verses.forEach((verse, v) =>
-      runsIn(verse).forEach((run, position) => {
+      runsIn(verse, words).forEach((run, position) => {
         if (stock.has(run)) return;
         if (!at.has(run)) at.set(run, []);
         at.get(run)!.push({ verse: v, position });
@@ -204,7 +208,7 @@ export function repetitionScores(books: ParsedBook[], reach = REACH_VERSES): Boo
           (other) => other !== place && Math.abs(other.verse - place.verse) <= reach,
         );
         if (!recurs) continue;
-        for (let k = 0; k < RUN_WORDS; k++) repeated[place.verse][place.position + k] = true;
+        for (let k = 0; k < words; k++) repeated[place.verse][place.position + k] = true;
       }
     }
 
