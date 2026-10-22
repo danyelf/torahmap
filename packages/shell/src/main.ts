@@ -702,35 +702,27 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * has said what they want to see, and being pulled back would undo it.
    */
   function glideToItem(item: I): void {
-    cancelCameraGlide();
-
-    const target = viewFocusedOn(
-      item,
-      camera.zoom,
-      RESULT_CLICK_ZOOM,
-      mapFocus(),
-      mapViewport(),
-      zoomRange,
+    glideTo(
+      viewFocusedOn(item, camera.zoom, RESULT_CLICK_ZOOM, mapFocus(), mapViewport(), zoomRange),
     );
-
-    stopCameraGlide = animateCameraTo(camera, target, () => {
-      render();
-      debouncedCameraSettled();
-    });
   }
 
-  // Fitted to the screen, a short chapter would be a few squares filling it.
-  const FIT_ZOOM_MAX = 4;
-
-  /** Fit `list` into the map above and below the focus. */
+  /**
+   * Fit `list` into the map above and below the focus. A story stop fits its
+   * places to the whole map instead; here the first square is pinned, and on a
+   * phone its popup covers the map below the focus. No closer than a single
+   * square is gone to, or a short chapter would be a few squares filling the map.
+   */
   function glideToFit(list: readonly I[]): void {
-    cancelCameraGlide();
     const view = mapViewport();
     const focus = mapFocus();
-    const range = { ...zoomRange, max: Math.min(zoomRange.max, FIT_ZOOM_MAX) };
+    const range = { ...zoomRange, max: Math.min(zoomRange.max, RESULT_CLICK_ZOOM) };
     const { zoom, x, y } = cameraToFit(boxAround(list), view.width, 2 * focus.y, range);
-    // The fitted centre, put at the focus.
-    const target = { zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) };
+    glideTo({ zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) });
+  }
+
+  function glideTo(target: Camera): void {
+    cancelCameraGlide();
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
       debouncedCameraSettled();
