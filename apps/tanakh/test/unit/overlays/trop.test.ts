@@ -4,12 +4,13 @@ import {
   tropOverlay,
   highlightTropInText,
   RARE_MATCH_COLOR,
+  NO_MATCH_COLOR,
   type TropSettings,
 } from '../../../src/overlays/trop';
 import { colorToCss } from '@torahmap/utils';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
-import { assertValidColor, assertApproximately } from '../../helpers/assertions';
+import { assertNamedEnds, assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { RARITY_THRESHOLDS } from '../../../src/overlays/trop/marks';
@@ -82,6 +83,20 @@ describe('Trop Overlay', () => {
 
   function makeHost() {
     return hostOverlay(tropOverlay, { texts: testVerseTexts });
+  }
+
+  /**
+   * A host showing a mark common enough to be drawn as a strip; the shared
+   * fixture's marks are all rare, which is the two-swatch legend.
+   */
+  function hostShowingCommonMark() {
+    const chapter: Record<string, { he: string; en: string }> = {};
+    for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
+      chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
+    }
+    const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
+    selectFirstMark(host);
+    return host;
   }
 
   /** Click the first button in a freshly drawn set of controls; returns the host and button. */
@@ -364,16 +379,8 @@ describe('Trop Overlay', () => {
         expect(rareButton).toBeDefined();
         rareButton!.click();
 
-        const verseWithoutMark = testVerses.find((v) => {
-          const color = host.getItemColor(v) as [number, number, number] | null;
-          return color && color[0] < 0.2;
-        });
-        if (!verseWithoutMark) return;
-
-        const color = host.getItemColor(verseWithoutMark) as [number, number, number];
-        assertApproximately(color[0], 0.25, 0.02);
-        assertApproximately(color[1], 0.25, 0.02);
-        assertApproximately(color[2], 0.25, 0.02);
+        const colors = testVerses.map((v) => host.getItemColor(v));
+        expect(colors).toContainEqual(NO_MATCH_COLOR);
       });
 
       it('uses binary coloring for rare marks', () => {
@@ -464,21 +471,15 @@ describe('Trop Overlay', () => {
       const container = document.createElement('div');
       host.renderLegend(container);
 
-      expect(container.innerHTML).toContain('Contains');
-      expect(container.innerHTML).toContain('Does not contain');
-      expect(container.innerHTML).toContain(colorToCss(RARE_MATCH_COLOR));
+      const swatches = [...container.querySelectorAll<HTMLElement>('.legend-row .swatch')];
+      expect(swatches.map((swatch) => swatch.style.background)).toEqual([
+        colorToCss(RARE_MATCH_COLOR),
+        colorToCss(NO_MATCH_COLOR),
+      ]);
     });
 
     it('draws its strip in its own colours, owing nothing to commentary', () => {
-      // The shared fixture's marks are all rare, which is the two-swatch
-      // legend. A mark has to clear RARITY_THRESHOLDS.UNCOMMON to get a strip.
-      const chapter: Record<string, { he: string; en: string }> = {};
-      for (let verse = 1; verse <= RARITY_THRESHOLDS.UNCOMMON + 1; verse++) {
-        chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
-      }
-      const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
-      const controls = host.renderControls();
-      (controls.querySelector('button') as HTMLButtonElement).click();
+      const host = hostShowingCommonMark();
 
       const container = document.createElement('div');
       host.renderLegend(container);
@@ -489,6 +490,24 @@ describe('Trop Overlay', () => {
       // The ends of trop's own gradient, not a hand-written approximation.
       expect(strip?.style.background).toContain('rgb(51, 26, 77) 0%');
       expect(strip?.style.background).toContain('rgb(242, 153, 230) 100%');
+    });
+  });
+
+  describe('Legend card', () => {
+    it('names the ends of the strip of a common mark', () => {
+      assertNamedEnds(hostShowingCommonMark().summary());
+    });
+
+    it('shows a rare mark by the colour of the verses that carry it, with no ends', () => {
+      const host = makeHost();
+      const rare = Array.from(host.renderControls().querySelectorAll('button')).find((b) =>
+        b.classList.contains('rare'),
+      ) as HTMLButtonElement;
+      rare.click();
+      const { colors, strip } = host.summary();
+      expect(colors).toContain(colorToCss(RARE_MATCH_COLOR));
+      expect(colors).not.toContain(colorToCss(NO_MATCH_COLOR));
+      expect(strip).toBeUndefined();
     });
   });
 

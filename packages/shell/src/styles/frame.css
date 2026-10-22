@@ -634,7 +634,8 @@ body[data-open='about'] #about-panel {
 }
 
 .summary-sep,
-.summary-detail {
+.summary-detail,
+.summary-end {
   color: #999;
 }
 

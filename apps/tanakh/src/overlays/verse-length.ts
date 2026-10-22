@@ -18,6 +18,9 @@ const PLASMA_STOPS: ColorStop[] = [
   { t: 1.0, color: [240 / 255, 249 / 255, 33 / 255] }, // yellow
 ];
 
+// The words for the low and high ends, on the legend card and in the legend.
+const ENDS: [low: string, high: string] = ['short', 'long'];
+
 export interface VerseLengthData {
   texts: VerseTexts;
 }
@@ -92,14 +95,14 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> 
 
     container.innerHTML = `
       ${renderAxis(counts.scale, [counts.min, counts.max], (n) => `${n} words`)}
-      ${legendCaption(`${lowColor} = shorter verses`)}
-      ${legendCaption(`${highColor} = longer verses`)}
+      ${legendCaption(`${lowColor} = ${ENDS[0]} verses`)}
+      ${legendCaption(`${highColor} = ${ENDS[1]} verses`)}
       ${legendCaption(`Square root scale · ${paletteName} palette`)}
     `;
   },
 
   summary(_settings, data) {
-    return { colors: [axisGradient(wordCountsOf(data).scale)] };
+    return { strip: { gradient: axisGradient(wordCountsOf(data).scale), ends: ENDS } };
   },
 
   getHoverInfo(verse, _settings, data) {

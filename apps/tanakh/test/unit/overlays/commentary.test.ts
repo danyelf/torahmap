@@ -8,7 +8,7 @@ import {
 } from '../../../src/overlays/commentary';
 
 import { createVerse } from '../../helpers/fixtures';
-import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
+import { assertNamedEnds, assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
 
@@ -349,6 +349,12 @@ describe('Commentary Overlay', () => {
 
       expect(listener).toHaveBeenCalled();
     });
+  });
+
+  it('names the ends of its strip in the legend card', () => {
+    assertNamedEnds(commentaryOverlay.summary());
+    commentaryOverlay.change((s) => ({ ...s, category: 'Midrash' }));
+    assertNamedEnds(commentaryOverlay.summary());
   });
 
   describe('Render Legend', () => {
