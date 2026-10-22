@@ -1,26 +1,31 @@
 /**
- * What the Text analytics scores show across the whole Tanakh: the most and
- * least repetitive and rare-trop chapters, whether either score follows verse
- * length, how many stock phrases are set aside, and how often the first half
- * of a verse is split each way.
+ * What the Text analytics scores show across the whole Tanakh: the highest and
+ * lowest chapters on each measure, whether either score follows verse length,
+ * how many stock phrases are set aside, and how often the first half of a
+ * verse is split each way.
  *
  * Run with: npx tsx scripts/overlays/text-analytics/report.ts
  */
 
 import { readBooks } from './generate.ts';
 import {
-  MIN_WORDS,
-  POETIC_BOOKS,
+  HIGH_PERCENTILE,
+  LOW_PERCENTILE,
+  MEASURE_LABELS,
+  bits,
+  listed,
+  percent,
+  percentile,
+} from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
+import {
+  PARAMETERS,
+  divisionScores,
   formulas,
-  pieces,
   repetitionScores,
-  tropScores,
-  units,
   type BookScores,
 } from './measures.ts';
 
 const { books, refs } = readBooks();
-const lengths = books.map((b) => b.verses.map((v) => units(v).length));
 
 function correlation(xs: number[], ys: number[]): number {
   const mean = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;
@@ -49,7 +54,7 @@ function describe(title: string, scores: BookScores[], format: (v: number) => st
       if (score === null) return;
       if (!byChapter.has(chapter)) byChapter.set(chapter, []);
       byChapter.get(chapter)!.push(score);
-      xs.push(lengths[b][i]);
+      xs.push(book.verses[i].length);
       ys.push(score);
     });
     for (const [chapter, values] of byChapter) {
@@ -62,43 +67,43 @@ function describe(title: string, scores: BookScores[], format: (v: number) => st
   chapters.sort((a, b) => b.mean - a.mean);
   const list = (cs: typeof chapters) => cs.map((c) => `${c.name} (${format(c.mean)})`).join(', ');
   const sorted = [...ys].sort((a, b) => a - b);
-  const at = (q: number) => format(sorted[Math.floor(q * (sorted.length - 1))]);
+  const at = (q: number) => format(percentile(sorted, q));
   console.log(`Verses scored: ${ys.length}`);
-  console.log(`Percentiles 2/50/98: ${at(0.02)} / ${at(0.5)} / ${at(0.98)}`);
+  console.log(
+    `Colour scale from ${at(LOW_PERCENTILE)} to ${at(HIGH_PERCENTILE)}; median ${at(0.5)}`,
+  );
   console.log(`Correlation with verse length: ${correlation(xs, ys).toFixed(2)}`);
   console.log(`Highest chapters: ${list(chapters.slice(0, 20))}`);
   console.log(`Lowest chapters: ${list(chapters.slice(-12).reverse())}`);
 }
 
-const percent = (v: number) => `${Math.round(v * 100)}%`;
-const bits = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
+const poetic = listed(PARAMETERS.poeticBooks);
 
-console.log(`Stock phrases set aside: ${formulas(books).size}`);
+console.log(
+  `Stock phrases (found in ${PARAMETERS.formulaBooks} or more books) set aside: ${formulas(books).size}`,
+);
 
 const repetition = repetitionScores(books);
-describe('Repetitive wording', repetition, percent);
-const poetic = books.flatMap((b, i) => (POETIC_BOOKS.has(b.name) ? [i] : []));
+describe(MEASURE_LABELS.repetition, repetition, percent);
 describe(
-  'Repetitive wording, Psalms, Proverbs and Job',
-  repetition.map((s, i) => (poetic.includes(i) ? s : s.map(() => null))),
+  `${MEASURE_LABELS.repetition}, ${poetic}`,
+  repetition.map((s, i) =>
+    PARAMETERS.poeticBooks.includes(books[i].name) ? s : s.map(() => null),
+  ),
   percent,
 );
 
-describe('Common and rare trop (bits against verses of the same length)', tropScores(books), bits);
+const division = divisionScores(books);
+describe(
+  `${MEASURE_LABELS.division} (against verses of the same length; ${poetic} left out)`,
+  division.scores,
+  bits,
+);
 
-const ways = new Map<string, number>();
-books.forEach((book) => {
-  if (POETIC_BOOKS.has(book.name)) return;
-  for (const verse of book.verses) {
-    const us = units(verse);
-    if (us.length < MIN_WORDS) continue;
-    for (const p of pieces(us))
-      if (p.kind === 'etnachta') ways.set(p.way, (ways.get(p.way) ?? 0) + 1);
-  }
-});
-const halves = [...ways.values()].reduce((s, n) => s + n, 0);
+const halves = division.counts.get('Etnachta')!;
+const total = [...halves.values()].reduce((s, n) => s + n, 0);
 console.log('\n## How a first half (ending on etnachta) is split\n');
-[...ways]
+[...halves]
   .sort((a, b) => b[1] - a[1])
   .slice(0, 6)
-  .forEach(([way, n]) => console.log(`${way || '(not split)'}: ${percent(n / halves)}`));
+  .forEach(([way, n]) => console.log(`${way || '(not split)'}: ${percent(n / total)}`));

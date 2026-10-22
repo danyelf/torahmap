@@ -6,9 +6,10 @@ import {
   WINDOW_VERSES,
   pieces,
   repetitionScores,
-  tropScores,
+  divisionScores,
+  parse,
   units,
-  type Book,
+  type ParsedBook,
 } from '../measures.ts';
 
 const LETTERS = 'אבגדהוזחטיכלמנסעפצקרשת';
@@ -26,8 +27,8 @@ function word(n: number): string {
 let next = 1000;
 const fresh = (count: number): string[] => Array.from({ length: count }, () => word(next++));
 
-function book(name: string, verses: string[][]): Book {
-  return { name, verses: verses.map((words) => words.join(' ')) };
+function book(name: string, verses: string[][]): ParsedBook {
+  return parse({ name, verses: verses.map((words) => words.join(' ')) });
 }
 
 describe('units', () => {
@@ -129,34 +130,45 @@ const ZAQEF = 'אב\u0594';
 const TIPCHA = 'אב\u0596';
 const REVIA = 'אב\u0597';
 const CONJ = 'אב\u05a5'; // merkha
+const SEGOL = 'אב\u0592';
+// Prose zarqa, written twice on its word.
+const ZARQA = 'א\u0598ב\u05ae';
 const LEGARMEH = 'אב\u05a3 ׀';
 
 describe('pieces', () => {
   it('splits a verse at its strongest pause, then each piece at its own', () => {
     const verse = [CONJ, ZAQEF, CONJ, TIPCHA, CONJ, ETNACHTA, CONJ, TIPCHA, CONJ, 'אב'].join(' ');
     expect(pieces(units(verse))).toEqual([
-      { kind: 'verse', way: 'etnachta' },
-      { kind: 'etnachta', way: 'zaqef-qatan tipcha' },
-      { kind: 'zaqef-qatan', way: '' },
-      { kind: 'tipcha', way: '' },
-      { kind: 'etnachta:2', way: '' },
-      { kind: 'silluq:1', way: 'tipcha' },
-      { kind: 'tipcha', way: '' },
-      { kind: 'silluq:2', way: '' },
+      { kind: 'Verse', way: 'Etnachta' },
+      { kind: 'Etnachta', way: 'Zaqef Qatan, Tipcha' },
+      { kind: 'Zaqef Qatan', way: '' },
+      { kind: 'Tipcha', way: '' },
+      { kind: 'Etnachta:2', way: '' },
+      { kind: 'Silluq:1', way: 'Tipcha' },
+      { kind: 'Tipcha', way: '' },
+      { kind: 'Silluq:2', way: '' },
+    ]);
+  });
+
+  it('reads prose zarqa as the pause before a segol', () => {
+    const verse = [CONJ, ZARQA, CONJ, SEGOL, CONJ, ZAQEF, CONJ, ETNACHTA, CONJ, 'אב'].join(' ');
+    expect(pieces(units(verse)).slice(1, 3)).toEqual([
+      { kind: 'Etnachta', way: 'Segol, Zaqef Qatan' },
+      { kind: 'Segol', way: 'Zinor' },
     ]);
   });
 
   it('reads munach before a paseq as a pause of its own', () => {
     const verse = [LEGARMEH, CONJ, REVIA, CONJ, ETNACHTA, CONJ, 'אב'].join(' ');
     expect(pieces(units(verse)).slice(0, 3)).toEqual([
-      { kind: 'verse', way: 'etnachta' },
-      { kind: 'etnachta', way: 'revia' },
-      { kind: 'revia', way: 'legarmeh' },
+      { kind: 'Verse', way: 'Etnachta' },
+      { kind: 'Etnachta', way: 'Revia' },
+      { kind: 'Revia', way: 'Legarmeh' },
     ]);
   });
 });
 
-describe('tropScores', () => {
+describe('divisionScores', () => {
   // Seven words each: a common shape, and a rarer one of the same length.
   const common = [CONJ, TIPCHA, CONJ, ETNACHTA, CONJ, TIPCHA, 'אב'];
   const rare = [CONJ, REVIA, CONJ, ETNACHTA, CONJ, TIPCHA, 'אב'];
@@ -164,30 +176,40 @@ describe('tropScores', () => {
     Array.from({ length: count }, () => shape);
 
   it('scores a passage of rare splits above zero and one of common splits below', () => {
-    const [commonBook, rareBook] = tropScores([
+    const [commonBook, rareBook] = divisionScores([
       book('A', passage(common, 30)),
       book('B', passage(rare, WINDOW_VERSES)),
-    ]);
+    ]).scores;
     expect(commonBook[15]).toBeLessThan(0);
     expect(rareBook[(WINDOW_VERSES - 1) / 2]).toBeGreaterThan(0);
+  });
+
+  it('counts how often each kind of piece is split each way', () => {
+    const { counts } = divisionScores([book('A', [...passage(common, 3), ...passage(rare, 1)])]);
+    expect(counts.get('Etnachta')).toEqual(
+      new Map([
+        ['Tipcha', 3],
+        ['Revia', 1],
+      ]),
+    );
   });
 
   it('compares a verse only with verses of about its length', () => {
     // Long verses split one way and short ones another: each is common for its length.
     const long = [CONJ, ZAQEF, CONJ, TIPCHA, CONJ, ETNACHTA, CONJ, ZAQEF, CONJ, TIPCHA, 'אב'];
-    const [shortBook, longBook] = tropScores([
+    const [shortBook, longBook] = divisionScores([
       book('A', passage(common, 20)),
       book('B', passage(long, 20)),
-    ]);
+    ]).scores;
     expect(shortBook[10]).toBeCloseTo(0);
     expect(longBook[10]).toBeCloseTo(0);
   });
 
   it('gives no score to a short verse, nor to the books with their own marks', () => {
-    const [prose, psalms] = tropScores([
+    const [prose, psalms] = divisionScores([
       book('A', [...passage(common, 5), [CONJ, ETNACHTA, 'אב']]),
       book('Psalms', passage(common, 5)),
-    ]);
+    ]).scores;
     expect(prose[5]).toBeNull();
     expect(prose[0]).not.toBeNull();
     expect(psalms).toEqual([null, null, null, null, null]);

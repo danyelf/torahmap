@@ -145,7 +145,7 @@ Both measures are computed from the bundled verse texts, so rerun the generator
 whenever `all-texts.json` changes; it fetches nothing and has no `collected`
 date. How each measure works, and every value it depends on, is in
 `scripts/overlays/text-analytics/measures.ts`. The report prints the most and
-least repetitive and rare-trop chapters, each score's correlation with verse
+least repetitive chapters, the most and least unusual verse division, each score's correlation with verse
 length, the number of stock phrases set aside, and how often a verse's first
 half is split each way; read it after changing a measure.
 

@@ -3,12 +3,20 @@
  *
  * - Repetitive wording: the share of the words around a verse that sit in a
  *   three-word run its own book repeats nearby.
- * - Common and rare trop: how unusual the way the verses around it are divided
- *   by their pauses is, against verses of the same length.
+ * - Unusual verse division: how unusual the way the verses around it are
+ *   divided by their pauses is, against verses of the same length.
  *
  * Both are averaged over a window of verses within the book, and neither
  * scores a short verse.
+ *
+ * Both count a maqaf-joined group as one word: it carries one accent, so it is
+ * the unit a verse is divided into, and the unit a repeated run is made of.
  */
+
+import { withoutKetiv, wordsBhsaParsed } from '@torahmap/tanakh/search/dictionary.ts';
+import { TROP_MARKS } from '@torahmap/tanakh/overlays/trop/marks.ts';
+import type { ScoreParameters } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
+import { isHebrew } from '@torahmap/hebrew';
 
 /** The verses a score is averaged over, centred on the verse: a passage rather than a single verse. */
 export const WINDOW_VERSES = 11;
@@ -32,13 +40,29 @@ export const FORMULA_BOOKS = 5;
 /** A verse is compared with verses whose length is within this share of its own. */
 export const LENGTH_MATCH = 0.1;
 
-/** These three books use a different set of marks, which the pause ranks below do not describe. */
-export const POETIC_BOOKS: ReadonlySet<string> = new Set(['Psalms', 'Proverbs', 'Job']);
+/** These three books use a different set of marks, which the ranks in TROP_MARKS do not describe. */
+export const POETIC_BOOKS: readonly string[] = ['Psalms', 'Proverbs', 'Job'];
+
+/** Every value above that a reader is told, as the scores file records them. */
+export const PARAMETERS: ScoreParameters = {
+  windowVerses: WINDOW_VERSES,
+  minWords: MIN_WORDS,
+  runWords: RUN_WORDS,
+  reachVerses: REACH_VERSES,
+  formulaBooks: FORMULA_BOOKS,
+  poeticBooks: [...POETIC_BOOKS],
+};
 
 /** A book's verses in reading order, each its Hebrew text. */
 export interface Book {
   name: string;
   verses: string[];
+}
+
+/** A book's verses, each as its words. */
+export interface ParsedBook {
+  name: string;
+  verses: Unit[][];
 }
 
 /** A verse's scores, parallel to its book's verses; null where a verse has none. */
@@ -55,60 +79,52 @@ export interface Unit {
 const MAQAF = '\u05be';
 const PASEQ = '\u05c0';
 const MUNACH = '\u05a3';
-const HEBREW_LETTER = /[\u05d0-\u05ea]/;
-// Sefaria writes a word read differently from its spelling as (written) [read].
-const WRITTEN_FORM = /\([^)]*\)/g;
 
-// The disjunctive accents of the prose books by rank, strongest first. A verse
-// divides first at its rank-1 pause, each piece then at its strongest rank, and
-// so on; the end of the verse (silluq) outranks them all.
-const PAUSES: Record<string, { name: string; rank: number }> = {
-  '\u0591': { name: 'etnachta', rank: 1 },
-  '\u0592': { name: 'segol', rank: 2 },
-  '\u0593': { name: 'shalshelet', rank: 2 },
-  '\u0594': { name: 'zaqef-qatan', rank: 2 },
-  '\u0595': { name: 'zaqef-gadol', rank: 2 },
-  '\u0596': { name: 'tipcha', rank: 2 },
-  '\u0597': { name: 'revia', rank: 3 },
-  // Zarqa is written with either code point.
-  '\u0598': { name: 'zarqa', rank: 3 },
-  '\u05ae': { name: 'zarqa', rank: 3 },
-  '\u0599': { name: 'pashta', rank: 3 },
-  '\u059a': { name: 'yetiv', rank: 3 },
-  '\u059b': { name: 'tevir', rank: 3 },
-  '\u059c': { name: 'geresh', rank: 4 },
-  '\u059d': { name: 'geresh', rank: 4 },
-  '\u059e': { name: 'gershayim', rank: 4 },
-  '\u059f': { name: 'karnei-parah', rank: 4 },
-  '\u05a0': { name: 'telisha-gedola', rank: 4 },
-  '\u05a1': { name: 'pazer', rank: 4 },
-};
-const LEGARMEH = { name: 'legarmeh', rank: 4 };
-const RANK = new Map(Object.values(PAUSES).map((p) => [p.name, p.rank]));
-RANK.set(LEGARMEH.name, LEGARMEH.rank);
+interface Pause {
+  name: string;
+  rank: number;
+}
+
+const PAUSES = new Map<string, Pause>(
+  TROP_MARKS.flatMap((m) => (m.rank ? [[m.unicode, { name: m.name, rank: m.rank }] as const] : [])),
+);
+// Not a mark of its own: a munach followed by a paseq.
+const LEGARMEH: Pause = { name: 'Legarmeh', rank: 4 };
+const RANK = new Map([...PAUSES.values(), LEGARMEH].map((p) => [p.name, p.rank]));
 
 /** The words of a verse, each with its consonants and strongest pause. */
 export function units(he: string): Unit[] {
-  const tokens = he
-    .replace(WRITTEN_FORM, ' ')
-    .split(PASEQ)
-    .join(` ${PASEQ} `)
-    .split(/[\s\u05c3]+/);
+  const words = wordsBhsaParsed(he);
+  // A maqaf joins the word read aloud, so it is looked for with the ketiv
+  // blanked and the brackets around the qere set aside.
+  const read = withoutKetiv(he);
+  const joinedByMaqaf = (from: number, to: number): boolean =>
+    read.slice(from, to).replace(/[\s[\]]/g, '') === MAQAF;
   const result: Unit[] = [];
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (!HEBREW_LETTER.test(token) || token.startsWith('{')) continue;
-    let consonants = '';
-    let best: { name: string; rank: number } | null = null;
-    for (const ch of token) {
-      if (HEBREW_LETTER.test(ch) || ch === MAQAF) consonants += ch;
-      const pause = PAUSES[ch];
-      if (pause && (!best || pause.rank < best.rank)) best = pause;
+  words.forEach(({ word, start, end }, i) => {
+    let pause: Pause | null = null;
+    for (const ch of word) {
+      const p = PAUSES.get(ch);
+      if (p && (!pause || p.rank < pause.rank)) pause = p;
     }
-    if (!best && token.includes(MUNACH) && tokens[i + 1] === PASEQ) best = LEGARMEH;
-    result.push({ consonants, pause: best?.name ?? null });
-  }
+    const after = he.slice(end, words[i + 1]?.start ?? he.length);
+    if (!pause && word.includes(MUNACH) && after.includes(PASEQ)) pause = LEGARMEH;
+    const consonants = [...word].filter(isHebrew).join('');
+
+    const joined = i > 0 && joinedByMaqaf(words[i - 1].end, start);
+    const last = result[result.length - 1];
+    if (joined && last) {
+      last.consonants += MAQAF + consonants;
+      if (pause && (!last.pause || pause.rank < RANK.get(last.pause)!)) last.pause = pause.name;
+    } else {
+      result.push({ consonants, pause: pause?.name ?? null });
+    }
+  });
   return result;
+}
+
+export function parse(book: Book): ParsedBook {
+  return { name: book.name, verses: book.verses.map(units) };
 }
 
 /** `ratio` over the window around each verse that `scored` keeps; null for the rest. */
@@ -131,8 +147,8 @@ function prefixSums(values: number[]): (from: number, to: number) => number {
 }
 
 /** Each verse's words, by consonants. */
-const wordsOf = (books: Book[]): string[][][] =>
-  books.map((b) => b.verses.map((v) => units(v).map((u) => u.consonants)));
+const wordsOf = (books: ParsedBook[]): string[][][] =>
+  books.map((b) => b.verses.map((v) => v.map((u) => u.consonants)));
 
 /** The runs a verse holds, in order. */
 const runsIn = (verse: string[]): string[] =>
@@ -141,7 +157,7 @@ const runsIn = (verse: string[]): string[] =>
   );
 
 /** The runs found in enough books to be stock phrases. */
-export function formulas(books: Book[]): Set<string> {
+export function formulas(books: ParsedBook[]): Set<string> {
   const booksWith = new Map<string, Set<number>>();
   wordsOf(books).forEach((verses, b) =>
     verses.forEach((verse) =>
@@ -155,7 +171,7 @@ export function formulas(books: Book[]): Set<string> {
 }
 
 /** Each book's repetitive-wording scores, parallel to `books`. */
-export function repetitionScores(books: Book[]): BookScores[] {
+export function repetitionScores(books: ParsedBook[]): BookScores[] {
   const stock = formulas(books);
   return wordsOf(books).map((verses) => {
     // Where each run is found in the book.
@@ -193,9 +209,9 @@ export function repetitionScores(books: Book[]): BookScores[] {
 /** A piece of a verse: named by the pause it ends on, and how it is split. */
 export interface Piece {
   /**
-   * The pause the piece ends on; `verse` for the whole verse. The last piece
+   * The pause the piece ends on; `Verse` for the whole verse. The last piece
    * of a split ends where the piece it came from ends, so it is named by that
-   * pause and the rank it was split at, as `silluq:1` for the second half of a
+   * pause and the rank it was split at, as `Silluq:1` for the second half of a
    * verse: what follows a verse's last pause is not the whole verse.
    */
   kind: string;
@@ -217,7 +233,7 @@ export function pieces(verse: Unit[]): Piece[] {
       const pause = verse[i].pause;
       if (pause && RANK.get(pause) === strongest) at.push(i);
     }
-    result.push({ kind, way: at.map((i) => verse[i].pause).join(' ') });
+    result.push({ kind, way: at.map((i) => verse[i].pause).join(', ') });
     let start = from;
     for (const i of at) {
       split(start, i, verse[i].pause!, verse[i].pause!);
@@ -225,24 +241,31 @@ export function pieces(verse: Unit[]): Piece[] {
     }
     if (at.length) split(start, to, `${end}:${strongest}`, end);
   };
-  if (verse.length) split(0, verse.length - 1, 'verse', 'silluq');
+  if (verse.length) split(0, verse.length - 1, 'Verse', 'Silluq');
   return result;
 }
 
-/** Each book's common-and-rare-trop scores, in bits, parallel to `books`. */
-export function tropScores(books: Book[]): BookScores[] {
+/** How often each kind of piece is split each way: kind → way → count. */
+export type PieceCounts = Map<string, Map<string, number>>;
+
+/**
+ * Each book's unusual-verse-division scores, in bits, parallel to `books`; and
+ * the counts the bits come from.
+ */
+export function divisionScores(books: ParsedBook[]): {
+  scores: BookScores[];
+  counts: PieceCounts;
+} {
   const parsed = books.map((b) =>
-    POETIC_BOOKS.has(b.name)
+    POETIC_BOOKS.includes(b.name)
       ? b.verses.map(() => null)
-      : b.verses.map((v) => {
-          const verse = units(v);
-          return verse.length >= MIN_WORDS ? { length: verse.length, pieces: pieces(verse) } : null;
-        }),
+      : b.verses.map((verse) =>
+          verse.length >= MIN_WORDS ? { length: verse.length, pieces: pieces(verse) } : null,
+        ),
   );
   const all = parsed.flat().filter((v) => v !== null);
 
-  // How often each kind of piece is split each way, across every scored verse.
-  const counts = new Map<string, Map<string, number>>();
+  const counts: PieceCounts = new Map();
   for (const { pieces } of all) {
     for (const { kind, way } of pieces) {
       if (!counts.has(kind)) counts.set(kind, new Map());
@@ -274,7 +297,7 @@ export function tropScores(books: Book[]): BookScores[] {
     return found;
   };
 
-  return parsed.map((verses) => {
+  const scores = parsed.map((verses) => {
     const sum = (f: (v: NonNullable<(typeof verses)[number]>) => number) =>
       prefixSums(verses.map((v) => (v ? f(v) : 0)));
     const actualCost = sum((v) => cost.get(v)!);
@@ -288,4 +311,5 @@ export function tropScores(books: Book[]): BookScores[] {
         actualCost(from, to) / actualPieces(from, to) - baseCost(from, to) / basePieces(from, to),
     );
   });
+  return { scores, counts };
 }

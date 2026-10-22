@@ -2,6 +2,7 @@
 import { STRUCTURE_FILE, TEXTS_FILE } from '@torahmap/tanakh/verseTexts.ts';
 import { DICTIONARY_FILES, SEARCH_FILES } from '@torahmap/tanakh/search/data.ts';
 import { HAFTARAH_FILES } from '@torahmap/tanakh/overlays/haftarah/readings.ts';
+import { SCORES_FILE } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 
 export { TEXTS_FILE };
 export const DICTIONARY = Object.values(DICTIONARY_FILES);
@@ -15,7 +16,6 @@ export const PARSE = SEARCH_FILES.parse.optional;
 // Playwright cannot load.
 export const COMMENTARY = 'overlays/commentary/counts.json';
 export const HAFTARAH = HAFTARAH_FILES.mappings;
-// As apps/tanakh/src/overlays/text-analytics.ts names it, for the same reason.
-export const TEXT_ANALYTICS = 'overlays/text-analytics/scores.json';
+export const TEXT_ANALYTICS = SCORES_FILE;
 /** Every file but the structure. */
 export const EVERYTHING = [TEXTS_FILE, ...DICTIONARY, PARSE, COMMENTARY, HAFTARAH, TEXT_ANALYTICS];
