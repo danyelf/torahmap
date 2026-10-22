@@ -1,4 +1,4 @@
-// What the loading cases share beyond layout/page.ts: opening the map on a slow
+// What the loading cases share beyond test/browser/page.ts: opening the map on a slow
 // connection with files held back, and reading the map.
 import { expect, type Page } from '@playwright/test';
 import {

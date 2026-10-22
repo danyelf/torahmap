@@ -23,9 +23,13 @@ const RULES: [RegExp, Suite[]][] = [
   [/\.md$/, NEITHER],
   // What downloads when. main.ts's landing callback is loading's too, but its
   // file is the interface's; a comment there asks for the loading suite.
-  [/^packages\/shell\/src\/(loader|downloads|dataFiles|loadNotice)\.ts$/, LOADING],
+  [
+    /^packages\/shell\/src\/(loader|downloads|dataFiles|loadNotice|overlays\/prebuild)\.ts$/,
+    LOADING,
+  ],
   [/^apps\/[^/]+\/src\/files\.ts$/, LOADING],
-  [/^public\/data\//, LOADING],
+  // The map is laid out from the data, and the layout suite records what a reader does.
+  [/^public\/data\/|^packages\/shell\/src\/analytics\.ts$/, BOTH],
   [/^test\/loading\//, LOADING],
   [/^test\/browser\//, BOTH],
   [/^test\/layout\//, LAYOUT],

@@ -9,8 +9,8 @@ describe('suitesFor', () => {
     for (const path of [
       'packages/shell/src/loader.ts',
       'packages/shell/src/downloads.ts',
+      'packages/shell/src/overlays/prebuild.ts',
       'apps/talmud/src/files.ts',
-      'public/data/talmud/structure.json',
       'test/loading/loading.spec.ts',
     ])
       expect(suites(path), path).toEqual(['loading']);
