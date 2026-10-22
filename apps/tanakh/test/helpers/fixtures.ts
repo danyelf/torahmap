@@ -247,9 +247,16 @@ export const EMPTY_DICTIONARY_FILES: DictionaryFiles = {
 };
 
 export const SAMPLE_TEXT_ANALYTICS_SCORES: TextAnalyticsData['scores'] = {
-  parameters: { windowVerses: 11, minWords: 7, runWords: 3, reachVerses: 50 },
+  parameters: {
+    windowVerses: 11,
+    minWords: 7,
+    runWords: 3,
+    reachVerses: 50,
+    formulaBooks: 5,
+    poeticBooks: ['Psalms', 'Proverbs', 'Job'],
+  },
   repetition: { Genesis: { '1': [0.1, 0.4, null] } },
-  trop: { Genesis: { '1': [-0.1, 0.2, null] } },
+  division: { Genesis: { '1': [-0.1, 0.2, null] } },
 };
 
 /** The sample files, under the paths the overlays name. */

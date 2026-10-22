@@ -1,34 +1,35 @@
 /**
  * Writes the Text analytics overlay's scores, every verse's repetitive-wording
- * and common-and-rare-trop score, from the bundled verse texts.
+ * and unusual-verse-division score, from the bundled verse texts.
  *
  * Run with: npx tsx scripts/overlays/text-analytics/generate.ts
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { TEXTS_FILE, type VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
 import {
-  MIN_WORDS,
-  REACH_VERSES,
-  RUN_WORDS,
-  WINDOW_VERSES,
+  SCORES_FILE,
+  type MeasureScores,
+  type ScoresFile,
+} from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
+import {
+  PARAMETERS,
+  divisionScores,
+  parse,
   repetitionScores,
-  tropScores,
-  type Book,
   type BookScores,
+  type ParsedBook,
 } from './measures.ts';
 
 const DATA = join(import.meta.dirname, '../../../public/data');
-const OUT = join(DATA, 'overlays/text-analytics/scores.json');
-
-type Texts = Record<string, Record<string, Record<string, { he: string }>>>;
 
 const byNumber = (a: string, b: string): number => Number(a) - Number(b);
 
-/** Every book, its verses in reading order, and where each verse sits. */
-export function readBooks(): { books: Book[]; refs: [string, string][][] } {
-  const texts: Texts = JSON.parse(readFileSync(join(DATA, 'all-texts.json'), 'utf8'));
-  const books: Book[] = [];
+/** Every book, parsed, its verses in reading order; and where each verse sits. */
+export function readBooks(): { books: ParsedBook[]; refs: [string, string][][] } {
+  const texts: VerseTexts = JSON.parse(readFileSync(join(DATA, TEXTS_FILE), 'utf8'));
+  const books: ParsedBook[] = [];
   const refs: [string, string][][] = [];
   for (const [name, chapters] of Object.entries(texts)) {
     const verses: string[] = [];
@@ -39,7 +40,7 @@ export function readBooks(): { books: Book[]; refs: [string, string][][] } {
         where.push([chapter, verse]);
       }
     }
-    books.push({ name, verses });
+    books.push(parse({ name, verses }));
     refs.push(where);
   }
   return { books, refs };
@@ -47,13 +48,13 @@ export function readBooks(): { books: Book[]; refs: [string, string][][] } {
 
 /** Book → chapter → scores by verse, from the first verse of the chapter. */
 function nest(
-  books: Book[],
+  books: ParsedBook[],
   refs: [string, string][][],
   scores: BookScores[],
-): Record<string, Record<string, (number | null)[]>> {
-  const result: Record<string, Record<string, (number | null)[]>> = {};
+): MeasureScores {
+  const result: MeasureScores = {};
   books.forEach((book, b) => {
-    const chapters: Record<string, (number | null)[]> = {};
+    const chapters: MeasureScores[string] = {};
     refs[b].forEach(([chapter, verse], i) => {
       const score = scores[b][i];
       (chapters[chapter] ??= [])[Number(verse) - 1] =
@@ -66,17 +67,13 @@ function nest(
 
 if (import.meta.main) {
   const { books, refs } = readBooks();
-  const file = {
-    parameters: {
-      windowVerses: WINDOW_VERSES,
-      minWords: MIN_WORDS,
-      runWords: RUN_WORDS,
-      reachVerses: REACH_VERSES,
-    },
+  const file: ScoresFile = {
+    parameters: PARAMETERS,
     repetition: nest(books, refs, repetitionScores(books)),
-    trop: nest(books, refs, tropScores(books)),
+    division: nest(books, refs, divisionScores(books).scores),
   };
-  mkdirSync(dirname(OUT), { recursive: true });
-  writeFileSync(OUT, JSON.stringify(file) + '\n');
-  console.log(`Wrote ${OUT}`);
+  const out = join(DATA, SCORES_FILE);
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, JSON.stringify(file) + '\n');
+  console.log(`Wrote ${out}`);
 }
