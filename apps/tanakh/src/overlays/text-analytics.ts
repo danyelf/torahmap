@@ -8,6 +8,7 @@ import {
   LINEAR,
   type Scale,
   memoByValue,
+  escapeHtml,
 } from '@torahmap/utils';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
@@ -22,12 +23,14 @@ import {
   listed,
   percent,
   percentile,
+  type DivisionExample,
   type Measure,
   type ScoreParameters,
   timesRarer,
   type ScoresFile,
 } from './text-analytics/scores.ts';
 import { NO_DATA } from './colors.ts';
+import './text-analytics.css';
 
 // Cividis, slate blue through grey to yellow, for both measures: even in
 // lightness, made to read the same with red-green colour blindness, and unlike
@@ -113,6 +116,62 @@ function colorAt(data: TextAnalyticsData, measure: Measure, verse: TanakhLayout)
   return score === null ? NO_DATA : scalesOf(data)[measure].scale.colorOf(score);
 }
 
+// Under 10%, a whole percent rounds 0.7% and 1.4% alike.
+const shareOf = (share: number): string =>
+  share < 0.1 ? `${(share * 100).toFixed(1)}%` : percent(share);
+
+const markClass = (mark: string): string => `ta-mark-${mark.toLowerCase().replace(/ /g, '-')}`;
+
+function exampleHtml({ ref, share, words }: DivisionExample): string {
+  const verse = words
+    .map(({ text, mark, secondHalf }) => {
+      const cls = mark ? `ta-mark ${markClass(mark)}` : secondHalf ? 'ta-second-half' : '';
+      return `<span class="${cls}">${escapeHtml(text)}</span>`;
+    })
+    .join(' ');
+  return `<div class="ta-example">
+      <div class="ta-example-meta"><span>${shareOf(share)} of verses</span><span>${escapeHtml(ref)}</span></div>
+      <div class="ta-example-verse" lang="he" dir="rtl">${verse}</div>
+    </div>`;
+}
+
+/** A link to, and a popup of, verses showing common and uncommon ways a first half is divided. */
+function examplesHtml(examples: DivisionExample[]): string {
+  const marks = [...new Set(examples.flatMap((e) => e.words.flatMap((w) => w.mark ?? [])))];
+  const group = (common: boolean, title: string) =>
+    `<h3 class="ta-examples-group">${title}</h3>` +
+    examples
+      .filter((e) => e.common === common)
+      .map(exampleHtml)
+      .join('');
+  return `<button type="button" class="ta-examples-open">See common and uncommon divisions</button>
+    <dialog class="ta-examples" aria-labelledby="ta-examples-title">
+      <div class="ta-examples-body">
+      <div class="ta-examples-head">
+        <h2 id="ta-examples-title">How a verse's first half is divided</h2>
+        <button type="button" class="${CONTROL.icon} ta-examples-close" aria-label="Close">&times;</button>
+      </div>
+      <p>The trop divides each verse at its strongest pause, etnachta, then each half at its own strongest pauses. These are ways the first half is divided, with how often each happens across the prose books.</p>
+      <div class="ta-examples-key">${marks
+        .map((m) => `<span><i class="${markClass(m)}"></i>${escapeHtml(m)}</span>`)
+        .join('')}</div>
+      ${group(true, 'Common')}
+      ${group(false, 'Uncommon')}
+      </div>
+    </dialog>`;
+}
+
+function wireExamples(container: HTMLElement): void {
+  const dialog = container.querySelector<HTMLDialogElement>('.ta-examples');
+  if (!dialog) return;
+  container.querySelector('.ta-examples-open')!.addEventListener('click', () => dialog.showModal());
+  dialog.querySelector('.ta-examples-close')!.addEventListener('click', () => dialog.close());
+  // A click on the backdrop lands on the dialog itself.
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+}
+
 export const textAnalyticsOverlay: Overlay<
   TanakhIdentity,
   TextAnalyticsSettings,
@@ -178,7 +237,9 @@ export const textAnalyticsOverlay: Overlay<
         `Verses under ${parameters.minWords} words are not coloured; words joined by a maqaf count as one`,
       ]
         .map(legendCaption)
-        .join('');
+        .join('') +
+      (settings.measure === 'division' ? examplesHtml(data.scores.divisionExamples) : '');
+    wireExamples(container);
   },
 
   summary(settings, data) {

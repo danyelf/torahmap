@@ -219,6 +219,15 @@ export const STATES: State[] = [
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select', '[data-measure="repetition"]'],
   },
+  {
+    name: 'explore-text-analytics-examples',
+    link: 'overlay=text-analytics&measure=division',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.ta-examples-open:visible').click();
+    },
+    shown: ['.ta-examples-close', '.ta-examples-key'],
+  },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.
   {
     name: 'explore-trop-rare',

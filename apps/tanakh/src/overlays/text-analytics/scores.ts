@@ -27,7 +27,21 @@ export interface ScoreParameters {
   poeticBooks: string[];
 }
 
-export type ScoresFile = { parameters: ScoreParameters } & Record<Measure, MeasureScores>;
+/** A verse showing one way the first half of a verse is divided. */
+export interface DivisionExample {
+  ref: string;
+  /** Whether it shows a common way or an uncommon one. */
+  common: boolean;
+  /** The share of first halves divided this way. */
+  share: number;
+  /** Unvowelled, with their trop; `mark` names the pause a word carries when it divides the first half. */
+  words: { text: string; mark?: string; secondHalf?: true }[];
+}
+
+export type ScoresFile = {
+  parameters: ScoreParameters;
+  divisionExamples: DivisionExample[];
+} & Record<Measure, MeasureScores>;
 
 // The colours span the middle of the scores, so a handful of extreme passages
 // do not push every other verse into one end of the scale.
