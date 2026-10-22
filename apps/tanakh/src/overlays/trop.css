@@ -53,7 +53,7 @@
   right: 2px;
   width: 6px;
   height: 6px;
-  background: #ffd700;
+  background: var(--rare-marker);
   border-radius: 50%;
 }
 

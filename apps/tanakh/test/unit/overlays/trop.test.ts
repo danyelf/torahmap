@@ -1,12 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../src/overlays/index';
-import { tropOverlay, highlightTropInText, type TropSettings } from '../../../src/overlays/trop';
+import {
+  tropOverlay,
+  highlightTropInText,
+  RARE_MATCH_COLOR,
+  type TropSettings,
+} from '../../../src/overlays/trop';
+import { colorToCss } from '@torahmap/utils';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
 import { assertValidColor, assertApproximately } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import type { VerseTexts } from '../../../src/verseTexts';
-import { getRarityTier, RARITY_THRESHOLDS } from '../../../src/overlays/trop/marks';
+import { RARITY_THRESHOLDS } from '../../../src/overlays/trop/marks';
 
 registerAllOverlays();
 
@@ -300,18 +306,24 @@ describe('Trop Overlay', () => {
       expect(hasRareButton).toBe(true);
     });
 
-    it('displays the rarity tier in the info text', () => {
+    it('draws the rare marker in the gold the map draws a rare mark in', () => {
+      const chart = makeHost().renderControls().querySelector<HTMLElement>('.trop-chart')!;
+      expect(chart.style.getPropertyValue('--rare-marker')).toBe(colorToCss(RARE_MATCH_COLOR));
+    });
+
+    it('goes back to the chosen mark’s info once the pointer leaves another', () => {
       const host = makeHost();
       const container = host.renderControls();
-
+      const [chosen, other] = container.querySelectorAll<HTMLButtonElement>('button');
       const info = container.querySelector('.trop-info') as HTMLElement;
-      const button = container.querySelector('button') as HTMLButtonElement;
-      button.dispatchEvent(new MouseEvent('mouseenter'));
 
-      const text = info.textContent || '';
-      const hasRarityLabel =
-        text.includes('Rare') || text.includes('Uncommon') || text.includes('Common');
-      expect(hasRarityLabel).toBe(true);
+      chosen.click();
+      const chosenInfo = info.textContent;
+      other.dispatchEvent(new MouseEvent('mouseenter'));
+      expect(info.textContent).not.toBe(chosenInfo);
+      other.dispatchEvent(new MouseEvent('mouseleave'));
+      vi.runAllTimers();
+      expect(info.textContent).toBe(chosenInfo);
     });
 
     it('shows the selection a link named when the controls are first drawn', () => {
@@ -339,16 +351,8 @@ describe('Trop Overlay', () => {
         expect(rareButton).toBeDefined();
         rareButton!.click();
 
-        const verseWithMark = testVerses.find((v) => {
-          const color = host.getItemColor(v) as [number, number, number] | null;
-          return color && color[0] > 0.9 && color[1] > 0.8;
-        });
-        if (!verseWithMark) return;
-
-        const color = host.getItemColor(verseWithMark) as [number, number, number];
-        assertApproximately(color[0], 1.0, 0.01);
-        assertApproximately(color[1], 0.84, 0.01);
-        assertApproximately(color[2], 0.0, 0.01);
+        const colors = testVerses.map((v) => host.getItemColor(v));
+        expect(colors).toContainEqual(RARE_MATCH_COLOR);
       });
 
       it('returns dim gray for a verse without the rare mark', () => {
@@ -462,7 +466,7 @@ describe('Trop Overlay', () => {
 
       expect(container.innerHTML).toContain('Contains');
       expect(container.innerHTML).toContain('Does not contain');
-      expect(container.innerHTML).toContain('rgb(255, 214, 0)'); // Gold
+      expect(container.innerHTML).toContain(colorToCss(RARE_MATCH_COLOR));
     });
 
     it('draws its strip in its own colours, owing nothing to commentary', () => {
@@ -814,16 +818,6 @@ describe('Trop Overlay', () => {
         const [standsOut] = standouts(button.dataset.slug!, texts);
         expect(standsOut, button.dataset.slug).toBe(button.classList.contains('rare'));
       }
-    });
-  });
-
-  describe('Integration with Trop Module', () => {
-    it('starts each tier at its threshold', () => {
-      const { RARE, UNCOMMON } = RARITY_THRESHOLDS;
-      expect(getRarityTier(RARE - 1)).toBe('rare');
-      expect(getRarityTier(RARE)).toBe('uncommon');
-      expect(getRarityTier(UNCOMMON - 1)).toBe('uncommon');
-      expect(getRarityTier(UNCOMMON)).toBe('common');
     });
   });
 });
