@@ -789,7 +789,7 @@ describe('Trop Overlay', () => {
       },
     });
     const standouts = (mark: string | null, texts: VerseTexts) =>
-      tropOverlay.standoutsFor!(verses, { mark, preview: null }, { texts });
+      tropOverlay.standoutsFor!(verses, { mark, preview: null }, null, { texts });
 
     it('makes the verses holding a rare mark stand out, and no others', () => {
       expect(standouts('shalshelet', textsWith(1))).toEqual([true, false]);
@@ -801,6 +801,20 @@ describe('Trop Overlay', () => {
 
     it('makes nothing stand out with no mark chosen', () => {
       expect(standouts(null, textsWith(1))).toEqual([false, false]);
+    });
+
+    it('makes a mark’s verses stand out exactly when its chart button is marked rare', () => {
+      // One mark in each tier: a rare one, an uncommon one and a common one.
+      const he =
+        'ב֓' + 'ב֖'.repeat(RARITY_THRESHOLDS.RARE) + 'ב֑'.repeat(RARITY_THRESHOLDS.UNCOMMON);
+      const texts: VerseTexts = { 'Genesis': { '1': { '1': { he, en: '' } } } };
+      const chart = hostOverlay(tropOverlay, { texts }).renderControls();
+      const buttons = [...chart.querySelectorAll<HTMLButtonElement>('button')];
+      expect(buttons).toHaveLength(3);
+      for (const button of buttons) {
+        const [standsOut] = standouts(button.dataset.slug!, texts);
+        expect(standsOut, button.dataset.slug).toBe(button.classList.contains('rare'));
+      }
     });
   });
 

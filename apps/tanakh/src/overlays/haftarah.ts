@@ -127,6 +127,11 @@ function litFor(
   );
 }
 
+function readingsAt(verse: TanakhLayout, derived: HaftarahDerivation): HaftarahItem[] {
+  const parsha = derived.torahVerseToParsha.get(verse.id);
+  return parsha ? [parsha] : (derived.haftarahVerseToItem.get(verse.id) ?? []);
+}
+
 /**
  * A verse's colour, one band per reading it belongs to. While readings are
  * lit, a verse in one is brightened, a verse in another reading keeps a dark
@@ -137,9 +142,7 @@ function colorAt(
   derived: HaftarahDerivation,
   lit: Set<HaftarahItem> | null,
 ): Color | Color[] | null {
-  const key = verse.id;
-  const parsha = derived.torahVerseToParsha.get(key);
-  const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
+  const items = readingsAt(verse, derived);
   if (items.length === 0) return lit ? DIMMED_GREY : null;
 
   const colors = items
@@ -250,6 +253,24 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     const derived = deriveHaftarah(data, settings.custom);
     const lit = litFor(data, settings, hovered);
     return items.map((item) => colorAt(item, derived, lit));
+  },
+
+  // A lit portion and its haftarah, so the half far from the other shows zoomed out.
+  // While the pointer lights them, only the half it is not on: the pointer finds
+  // a standout before the square under it, so standouts around it hold the hover
+  // as it moves off. Zoomed far out, sweeping up Genesis then skipped Lech Lecha.
+  standoutsFor(items, settings, hovered, data) {
+    const derived = deriveHaftarah(data, settings.custom);
+    const lit = litFor(data, settings, hovered);
+    const byPointer =
+      settings.preview === null && hovered !== null && litByHover(derived, hovered) !== null;
+    const inTorah = (verse: TanakhLayout) => derived.torahVerseToParsha.has(verse.id);
+    return items.map(
+      (item) =>
+        !!lit &&
+        readingsAt(item, derived).some((r) => lit.has(r)) &&
+        !(byPointer && inTorah(item) === inTorah(hovered)),
+    );
   },
 
   renderControls(container: HTMLElement, settings: HaftarahSettings, onChange, data) {

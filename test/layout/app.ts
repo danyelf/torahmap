@@ -134,6 +134,11 @@ export const STATES: State[] = [
   },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.
   {
+    name: 'explore-haftarah-reading-far',
+    link: 'overlay=haftarah&reading=Miketz&zoom=0.1',
+    shown: ['#map-legend'],
+  },
+  {
     name: 'explore-trop-rare',
     link: 'overlay=trop&trop=shalshelet&zoom=0.1',
     shown: ['#map-legend'],

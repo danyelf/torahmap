@@ -65,6 +65,14 @@ function entryFor(data: TropData, mark: string | null): TropIndexEntry | null {
   return marksOf(data).get(mark) ?? null;
 }
 
+/**
+ * A rare mark is drawn as present or absent, with its verses as gold spots that
+ * stand out zoomed far out, and its button in the chart is marked.
+ */
+function isRare(entry: TropIndexEntry): boolean {
+  return getRarityTier(entry.totalCount) === 'rare';
+}
+
 /** A rare mark's legend is two swatches, "contains" and "does not"; any other's a gradient. */
 function markColors(entry: TropIndexEntry): string[] {
   const counts = countScale(entry);
@@ -88,10 +96,9 @@ const RARE_NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
  * wide range of counts, so their scale is logarithmic. Null for a rare mark.
  */
 function countScale(entry: TropIndexEntry): Scale | null {
-  const tier = getRarityTier(entry.totalCount);
-  if (tier === 'rare') return null;
+  if (isRare(entry)) return null;
   const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
-  return tier === 'uncommon'
+  return getRarityTier(entry.totalCount) === 'uncommon'
     ? scale(0, maxCount, LINEAR, UNCOMMON_TROP_GRADIENT)
     : scale(0, maxCount, LOG, COMMON_TROP_GRADIENT);
 }
@@ -106,13 +113,11 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
     verseLookup.set(verseId(loc.book, loc.chapter, loc.verse), loc.count);
   }
 
-  const tier = getRarityTier(entry.totalCount);
-  const noMatch: Color =
-    tier === 'rare'
-      ? RARE_NO_MATCH_COLOR
-      : tier === 'uncommon'
-        ? [0.25, 0.25, 0.28]
-        : [0.25, 0.23, 0.28];
+  const noMatch: Color = isRare(entry)
+    ? RARE_NO_MATCH_COLOR
+    : getRarityTier(entry.totalCount) === 'uncommon'
+      ? [0.25, 0.25, 0.28]
+      : [0.25, 0.23, 0.28];
   return { entry, verseLookup, counts: countScale(entry), noMatch };
 }
 
@@ -195,7 +200,7 @@ function renderTropChart(
       button.dataset.unicode = entry.unicode;
       button.dataset.slug = slug;
 
-      if (getRarityTier(entry.totalCount) === 'rare') {
+      if (isRare(entry)) {
         button.classList.add('rare');
       }
 
@@ -241,10 +246,9 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     return items.map((item) => tropColorAt(item, derived));
   },
 
-  // A rare mark is in a few dozen verses at most, which zoomed out would vanish into the bars.
-  standoutsFor(items, settings, data) {
+  standoutsFor(items, settings, _hovered, data) {
     const derived = derivationFor(data, settings);
-    if (!derived || derived.counts) return items.map(() => false);
+    if (!derived || !isRare(derived.entry)) return items.map(() => false);
     return items.map((item) => countAt(item, derived) > 0);
   },
 

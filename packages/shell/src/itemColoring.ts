@@ -120,7 +120,7 @@ export function toolsPicture<T>(
     base,
     nonMatchDim,
     keepsBase,
-    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data),
+    overlay?.tool.standoutsFor?.(items, overlay.settings, hovered, overlay.data),
   );
 }
 
