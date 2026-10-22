@@ -149,3 +149,12 @@ describe('segmentReader completion', () => {
     expect(complete('Berakhot')).toEqual([]);
   });
 });
+
+describe('segmentReader references', () => {
+  it('names each place by a reference that reads back to it', () => {
+    for (const typed of ['Berakhot', 'Berakhot 3', 'Berakhot 3b', 'Berakhot 3b:4', 'ברכות ג:']) {
+      const found = read(typed)!;
+      expect(read(found.ref)?.ids, typed).toEqual(found.ids);
+    }
+  });
+});

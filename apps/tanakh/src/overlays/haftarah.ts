@@ -10,7 +10,7 @@ import {
 } from '@torahmap/utils';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
-import { verseId } from '@torahmap/link/tanakh';
+import { passageRef, verseId } from '@torahmap/link/tanakh';
 import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import {
   deriveHaftarah,
@@ -313,14 +313,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     const parshaFromTorah = derived.torahVerseToParsha.get(key);
     if (parshaFromTorah) {
       const haftarahRanges = parshaFromTorah.haftarah[settings.custom];
-      const haftarahStr = haftarahRanges
-        .map((r) => {
-          if (r.start.chapter === r.end.chapter) {
-            return `${r.book} ${r.start.chapter}:${r.start.verse}-${r.end.verse}`;
-          }
-          return `${r.book} ${r.start.chapter}:${r.start.verse}-${r.end.chapter}:${r.end.verse}`;
-        })
-        .join(', ');
+      const haftarahStr = haftarahRanges.map((r) => passageRef(r.book, r.start, r.end)).join(', ');
       return `${parshaFromTorah.name} (${parshaFromTorah.hebrewName}) → ${haftarahStr}`;
     }
 

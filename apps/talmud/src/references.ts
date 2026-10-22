@@ -11,7 +11,7 @@ import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import { eachWord, referenceReader, type Token } from '@torahmap/shell/references.ts';
 import type { TalmudAmud } from './data.ts';
-import { talmudId, talmudRef } from './layout.ts';
+import { dafRef, talmudId, talmudRef } from './layout.ts';
 import type { TalmudIdentity } from './types.ts';
 
 type Side = TalmudAmud['amud'];
@@ -93,8 +93,10 @@ function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null 
 
   const ids = found.map(talmudId);
   if (place?.segment !== undefined) return { ref: talmudRef(found[0]), ids };
-  const page = place ? ` ${place.daf}${place.side ?? ''}` : '';
-  return { ref: `${tractate.name}${page}`, ids };
+  const ref = place
+    ? dafRef({ tractate: tractate.name, daf: place.daf, amud: place.side })
+    : tractate.name;
+  return { ref, ids };
 }
 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */

@@ -53,7 +53,12 @@ export function parseTalmudId(id: string): TalmudIdentity | null {
 
 /** A segment as readers write it: "Bava Kamma 2a:1". */
 export function talmudRef(s: TalmudIdentity): string {
-  return `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
+  return `${dafRef(s)}:${s.segment}`;
+}
+
+/** A daf, or one side of it, as readers write it: "Bava Kamma 2" or "Bava Kamma 2a". */
+export function dafRef(s: { tractate: string; daf: number; amud?: string }): string {
+  return `${s.tractate} ${s.daf}${s.amud ?? ''}`;
 }
 
 /** The box round a tractate's squares; its section is its seder. */

@@ -61,18 +61,9 @@ describe('verseReader', () => {
   });
 
   it('reads a range of verses within a chapter or across chapters', () => {
-    expect(read('Genesis 1:2-3')).toEqual({
-      ref: 'Genesis 1:2–3',
-      ids: ['Genesis.1.2', 'Genesis.1.3'],
-    });
-    expect(read('Gen 1:3–2:1')).toEqual({
-      ref: 'Genesis 1:3–2:1',
-      ids: ['Genesis.1.3', 'Genesis.2.1'],
-    });
-    expect(read('Psalms 1-2')).toEqual({
-      ref: 'Psalms 1–2',
-      ids: ['Psalms.1.1', 'Psalms.1.2', 'Psalms.2.1', 'Psalms.2.2'],
-    });
+    expect(idsOf('Genesis 1:2-3')).toEqual(['Genesis.1.2', 'Genesis.1.3']);
+    expect(idsOf('Gen 1:3–2:1')).toEqual(['Genesis.1.3', 'Genesis.2.1']);
+    expect(idsOf('Psalms 1-2')).toEqual(['Psalms.1.1', 'Psalms.1.2', 'Psalms.2.1', 'Psalms.2.2']);
   });
 
   it('reads a Hebrew chapter whose letters are also a word', () => {
@@ -177,5 +168,21 @@ describe('verseReader writing', () => {
   it('says a reference typed in Hebrew is in Hebrew', () => {
     expect(verseReader([]).languageOf('שמות כב')).toBe(HEBREW);
     expect(verseReader([]).languageOf('Exodus 22')).toBe(ENGLISH);
+  });
+});
+
+describe('verseReader references', () => {
+  it('names each place by a reference that reads back to it', () => {
+    for (const typed of [
+      'Genesis',
+      'Genesis 1',
+      'Genesis 1:2',
+      'Genesis 1:1-3',
+      'Genesis 1:2-2:1',
+      'Isaiah 1-3',
+    ]) {
+      const found = read(typed)!;
+      expect(read(found.ref)?.ids, typed).toEqual(found.ids);
+    }
   });
 });

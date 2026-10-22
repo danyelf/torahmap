@@ -8,7 +8,7 @@ import {
   writtenNumber,
 } from '@torahmap/hebrew';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
-import { verseId } from '@torahmap/link/tanakh';
+import { passageRef, verseId, type ChapterPlace } from '@torahmap/link/tanakh';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import { type Fold, RANGE, referenceReader, type Token } from '@torahmap/shell/references.ts';
 
@@ -90,15 +90,17 @@ const FILLER = new Set([
   'פסוקים',
 ]);
 
-type Place = { chapter: number; verse?: number };
-
 /**
  * The verses from `from` to `to`, or null when either end is missing or they
  * run backwards. A place without a verse starts at its first and ends at its last.
  */
-function versesBetween(book: ReferencedBook, from: Place, to: Place): string[] | null {
+function versesBetween(
+  book: ReferencedBook,
+  from: ChapterPlace,
+  to: ChapterPlace,
+): string[] | null {
   const counts = book.chapters;
-  const has = (p: Place) =>
+  const has = (p: ChapterPlace) =>
     p.chapter >= 1 &&
     p.chapter <= counts.length &&
     (p.verse === undefined || (p.verse >= 1 && p.verse <= counts[p.chapter - 1]));
@@ -117,8 +119,6 @@ function versesBetween(book: ReferencedBook, from: Place, to: Place): string[] |
   return ids;
 }
 
-const written = (p: Place) => (p.verse === undefined ? `${p.chapter}` : `${p.chapter}:${p.verse}`);
-
 /** The place `rest`, after the book's name, gives in `book`: all of it, a chapter, a verse or a range. */
 function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
   if (rest.length === 0) {
@@ -134,9 +134,9 @@ function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
   if ([...before, ...(after ?? [])].some((n) => n === null)) return null;
   if (before.length > 2 || (after && (after.length === 0 || after.length > 2))) return null;
 
-  const from: Place = { chapter: before[0]!, verse: before[1] ?? undefined };
+  const from: ChapterPlace = { chapter: before[0]!, verse: before[1] ?? undefined };
   // "1:2-3" ends at verse 3 of chapter 1; "1-2" at chapter 2.
-  const to: Place = !after
+  const to: ChapterPlace = !after
     ? from
     : after.length === 2
       ? { chapter: after[0]!, verse: after[1]! }
@@ -146,12 +146,7 @@ function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
 
   const ids = versesBetween(book, from, to);
   if (!ids) return null;
-  const end = !after
-    ? ''
-    : to.chapter === from.chapter
-      ? `–${to.verse ?? to.chapter}`
-      : `–${written(to)}`;
-  return { ref: `${book.name} ${written(from)}${end}`, ids };
+  return { ref: passageRef(book.name, from, to), ids };
 }
 
 /** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */

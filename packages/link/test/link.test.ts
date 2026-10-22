@@ -9,7 +9,7 @@ import {
   type UrlState,
   type UrlParamSpec,
 } from '../src/index.ts';
-import { verseId, parseVerseId } from '../src/tanakh.ts';
+import { verseId, parseVerseId, passageRef, verseRef } from '../src/tanakh.ts';
 import { keys, lookup } from './sampleOverlays.ts';
 
 describe('readLink', () => {
@@ -971,5 +971,22 @@ describe('whole links that search', () => {
       expect(state.searchParams).toEqual(expected);
       expect(state.overlayParams).toEqual({});
     });
+  });
+});
+
+describe('passageRef', () => {
+  it('writes a single verse as verseRef does', () => {
+    const verse = { book: 'I Samuel', chapter: 3, verse: 17 };
+    expect(passageRef(verse.book, verse)).toBe(verseRef(verse));
+  });
+
+  it('writes a chapter, a range within one, and a range across chapters differently', () => {
+    const written = [
+      passageRef('Genesis', { chapter: 1 }),
+      passageRef('Genesis', { chapter: 1, verse: 1 }, { chapter: 1, verse: 3 }),
+      passageRef('Genesis', { chapter: 1, verse: 1 }, { chapter: 2, verse: 3 }),
+      passageRef('Genesis', { chapter: 1 }, { chapter: 2 }),
+    ];
+    expect(new Set(written).size).toBe(written.length);
   });
 });
