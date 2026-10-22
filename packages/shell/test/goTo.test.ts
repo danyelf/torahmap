@@ -27,17 +27,21 @@ function open() {
   document.body.replaceChildren(panel);
   const take = vi.fn();
   const quote = vi.fn((found: Reference) => `the text of ${found.ids[0]}`);
-  bindGoTo(panel, goTo, { take, quote });
+  const { redraw } = bindGoTo(panel, goTo, { take, quote });
   const box = panel.querySelector<HTMLInputElement>(`#${GO_TO_BOX_ID}`)!;
   const type = (value: string) => {
     box.value = value;
     box.dispatchEvent(new Event('input'));
   };
-  const press = (key: string) => box.dispatchEvent(new KeyboardEvent('keydown', { key }));
+  const press = (key: string) => {
+    const event = new KeyboardEvent('keydown', { key, cancelable: true });
+    box.dispatchEvent(event);
+    return event;
+  };
   const completions = () =>
     [...panel.querySelectorAll<HTMLElement>('[role="option"]')].map((o) => o.textContent);
   const selected = () => panel.querySelector('[aria-selected="true"]')?.textContent ?? null;
-  return { panel, box, take, type, press, completions, selected };
+  return { panel, box, take, quote, redraw, type, press, completions, selected };
 }
 
 describe('the Go to panel', () => {
@@ -139,9 +143,34 @@ describe('the Go to panel', () => {
   it('closes the names with Escape, keeping what was typed', () => {
     const { box, type, press, completions } = open();
     type('E');
-    press('Escape');
+    // A search box clears itself on Escape unless the key is held back.
+    expect(press('Escape').defaultPrevented).toBe(true);
     expect(completions()).toEqual([]);
     expect(box.value).toBe('E');
+  });
+
+  it('gives the keys back to the map when it goes', () => {
+    const { box, type, press } = open();
+    box.focus();
+    type('Genesis 1');
+    press('Enter');
+    expect(document.activeElement).not.toBe(box);
+  });
+
+  it('leaves its offer in place when a redraw changes nothing, and redraws a new quote', () => {
+    const { panel, quote, redraw, type } = open();
+    type('Genesis 1');
+    const offer = panel.querySelector('.goto-offer');
+    redraw();
+    expect(panel.querySelector('.goto-offer')).toBe(offer);
+    quote.mockReturnValue('a new quote');
+    redraw();
+    expect(panel.querySelector('.goto-offer')?.textContent).toContain('a new quote');
+  });
+
+  it('has room for the longest reference', () => {
+    const { box } = open();
+    expect(box.maxLength).toBeGreaterThan('Divrei Hayamim II 36:23'.length);
   });
 });
 

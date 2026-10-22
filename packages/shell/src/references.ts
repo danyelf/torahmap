@@ -7,6 +7,8 @@ import type { GoTo, Reference } from './app/text.ts';
 export interface Token {
   text: string;
   mark: '' | '.' | ':';
+  /** Typed against the token before, split from it only where digits meet letters, as "1a". */
+  glued?: true;
 }
 
 /** The token a dash becomes, between the two ends of a range. */
@@ -20,9 +22,11 @@ export function referenceTokens(typed: string): Token[] {
   const clean = typed.normalize('NFC').toLowerCase();
   const tokens: Token[] = [];
   let run = '';
+  let glued = false;
   const end = (mark: Token['mark'] = '') => {
-    if (run) tokens.push({ text: run, mark });
+    if (run) tokens.push(glued ? { text: run, mark, glued: true } : { text: run, mark });
     run = '';
+    glued = false;
   };
   for (const char of clean) {
     if (char === '.' || char === ':') end(char);
@@ -31,7 +35,10 @@ export function referenceTokens(typed: string): Token[] {
       end();
       tokens.push({ text: RANGE, mark: '' });
     } else {
-      if (run && isDigit(run[run.length - 1]) !== isDigit(char)) end();
+      if (run && isDigit(run[run.length - 1]) !== isDigit(char)) {
+        end();
+        glued = true;
+      }
       run += char;
     }
   }
@@ -189,7 +196,7 @@ export interface Reading<K> {
 /** Reads a reference as `how` says, and completes the names it reads from. */
 export function referenceReader<K>(how: Reading<K>): {
   read: GoTo['read'];
-  completeNames: GoTo['complete'];
+  complete: GoTo['complete'];
 } {
   const clean = how.clean ?? AS_TYPED;
   const names = nameTable(how.named, how.folds, clean);
@@ -203,7 +210,7 @@ export function referenceReader<K>(how: Reading<K>): {
         found.rest.filter((t) => !how.filler?.has(t.text)),
       );
     },
-    completeNames: names.complete,
+    complete: names.complete,
   };
 }
 

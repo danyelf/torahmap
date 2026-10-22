@@ -24,8 +24,6 @@ export interface ViewFiles<I> {
     panel: Overlay<I> | null,
     shown: I | null,
   ): LandingView<I>;
-  /** Each shown language of `item`'s popup, and the file its words are in. */
-  popupFiles(item: I): { language: TextLanguage; file: string }[];
   /** Fetches `item`'s popup files for the languages shown. */
   fetchPopup(item: I | null): void;
   /** Fetches the files the search's settings ask for at once. */
@@ -55,13 +53,9 @@ export function createViewFiles<I>(options: {
 }): ViewFiles<I> {
   const { loader, files, search, searchControls } = options;
 
-  /** Each shown language of `item`'s popup, and the file its words are in. */
-  const languageFiles = (item: I): { language: TextLanguage; file: string }[] =>
-    shownLanguages().map((language) => ({ language, file: files.popup(item, language) }));
-
   /** The files `item`'s popup needs for the languages shown; none without an item. */
   const popupFiles = (item: I | null): string[] =>
-    item ? [...new Set(languageFiles(item).map(({ file }) => file))] : [];
+    item ? [...new Set(shownLanguages().map((language) => files.popup(item, language)))] : [];
 
   const searchFiles = (): readonly string[] => search.filesNow?.(options.searchSettings()) ?? [];
 
@@ -86,7 +80,6 @@ export function createViewFiles<I>(options: {
       search,
       popup: popupFiles(shown),
     }),
-    popupFiles: languageFiles,
     fetchPopup(item) {
       for (const file of popupFiles(item)) loader.fetchNow(file);
     },
@@ -96,7 +89,8 @@ export function createViewFiles<I>(options: {
     waitingLanguages(item) {
       const waiting: Partial<Record<TextLanguage, Node | null>> = {};
       const told = new Set<string>();
-      for (const { language, file } of languageFiles(item)) {
+      for (const language of shownLanguages()) {
+        const file = files.popup(item, language);
         if (loader.waitingOn([file]) === null) continue;
         waiting[language] = told.has(file) ? null : noticeFor([file]);
         told.add(file);

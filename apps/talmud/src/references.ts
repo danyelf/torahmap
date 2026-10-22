@@ -9,7 +9,7 @@ import {
 } from '@torahmap/hebrew';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import { eachWord, namedBy, referenceReader, type Token } from '@torahmap/shell/references.ts';
-import type { TalmudAmud } from './data.ts';
+import type { TalmudAmud, TalmudTractate } from './data.ts';
 import { dafRef, talmudId, talmudRef } from './layout.ts';
 import type { TalmudIdentity } from './types.ts';
 
@@ -18,14 +18,12 @@ type Side = TalmudAmud['amud'];
 export const EXAMPLES = ['Berakhot 17a'];
 
 /** A tractate as the reader needs it: its names and how many segments each amud has. */
-export interface ReferencedTractate {
-  name: string;
-  hebrewName: string;
+export type ReferencedTractate = Pick<TalmudTractate, 'name' | 'hebrewName'> & {
   amudim: readonly Pick<TalmudAmud, 'daf' | 'amud' | 'segmentCount'>[];
-}
+};
 
 // The abbreviations readers write tractates as, matched only as written.
-const ABBREVIATIONS: Record<string, readonly string[]> = {
+export const ABBREVIATIONS: Record<string, readonly string[]> = {
   'Bava Kamma': ['BK', 'ב״ק'],
   'Bava Metzia': ['BM', 'ב״מ'],
   'Bava Batra': ['BB', 'ב״ב'],
@@ -34,8 +32,12 @@ const ABBREVIATIONS: Record<string, readonly string[]> = {
   'Avodah Zarah': ['AZ', 'ע״ז'],
 };
 
-// Ashkenazi spellings with s for t inside the name, which the sound of a name does not reach.
-const ASHKENAZI_NAMES: Record<string, readonly string[]> = {
+// Common spellings the sound of a name does not reach: s for t inside a name, or a sound two
+// tractates share, as Shabbat and Shevuot do.
+export const ASHKENAZI_NAMES: Record<string, readonly string[]> = {
+  Shabbat: ['Shabbos', 'Shabat'],
+  Shevuot: ['Shevuos', 'Shvuot', 'Shvuos'],
+  'Bava Batra': ['Bava Basra'],
   Ketubot: ['Kesubos'],
   Keritot: ['Kerisos'],
   Arakhin: ['Erchin'],
@@ -100,7 +102,7 @@ function placeIn(tractate: ReferencedTractate, rest: Token[]): Reference | null 
 
 /** Reads a reference to one of `tractates`: a tractate, a daf, an amud or a segment. */
 export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<GoTo, 'examples'> {
-  const { read, completeNames } = referenceReader({
+  const { read, complete } = referenceReader({
     named: tractates.map((tractate) =>
       namedBy(tractate, [
         // A tractate's English name is its Hebrew name in English letters.
@@ -116,7 +118,7 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<Go
   });
   return {
     read,
-    complete: completeNames,
+    complete,
     languageOf: hebrewOrEnglish,
   };
 }

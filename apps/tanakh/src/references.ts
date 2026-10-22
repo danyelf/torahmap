@@ -10,6 +10,7 @@ import {
 import { fromRoman } from '@torahmap/utils';
 import { passageRef, verseId, type ChapterPlace } from '@torahmap/link/tanakh';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
+import type { Book } from './types.ts';
 import {
   namedBy,
   type Fold,
@@ -21,14 +22,10 @@ import {
 export const EXAMPLES = ['II Samuel 17', 'Genesis 2:2', 'Shemot 4:1', 'שמות כב'];
 
 /** A book as the reader needs it: its names and how many verses each chapter has. */
-export interface ReferencedBook {
-  name: string;
-  hebrewName: string;
-  chapters: readonly number[];
-}
+export type ReferencedBook = Pick<Book, 'name' | 'hebrewName' | 'chapters'>;
 
 // English names that are not the start of a book's name: the usual abbreviations and other titles.
-const ENGLISH_NAMES: Record<string, readonly string[]> = {
+export const ENGLISH_NAMES: Record<string, readonly string[]> = {
   Judges: ['Jdg'],
   'I Kings': ['I Kgs'],
   'II Kings': ['II Kgs'],
@@ -41,7 +38,7 @@ const ENGLISH_NAMES: Record<string, readonly string[]> = {
 };
 
 // The books' Hebrew names in English letters, matched however they are spelled.
-const HEBREW_NAMES: Record<string, readonly string[]> = {
+export const HEBREW_NAMES: Record<string, readonly string[]> = {
   Genesis: ['Bereshit', 'Bereishit'],
   Exodus: ['Shemot'],
   Leviticus: ['Vayikra'],
@@ -160,7 +157,7 @@ function placeIn(book: ReferencedBook, rest: Token[]): Reference | null {
 
 /** Reads a reference to one of `books`: a book, a chapter, a verse, or a range of them. */
 export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examples'> {
-  const { read, completeNames } = referenceReader({
+  const { read, complete } = referenceReader({
     named: books.map((book) =>
       namedBy(book, [
         { names: [book.name] },
@@ -176,7 +173,7 @@ export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examp
   });
   return {
     read,
-    complete: completeNames,
+    complete,
     languageOf: hebrewOrEnglish,
   };
 }

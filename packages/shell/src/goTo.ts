@@ -13,12 +13,17 @@ const optionId = (i: number) => `goto-completion-${i}`;
 // The most completions the panel shows at once.
 const COMPLETIONS = 10;
 
+// Longer than any reference. Reading takes time that grows with the square of what is typed, so a
+// pasted page would hang the tab.
+const MOST_TYPED = 60;
+
 export function goToPanelHtml(examples: readonly string[]): string {
   return panelHtml(
     'goto',
     `<input id="${GO_TO_BOX_ID}" class="goto-input ${CONTROL.input}" type="search" ` +
-      `enterkeyhint="go" autocomplete="off" spellcheck="false" dir="auto" aria-label="Reference" ` +
-      `role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${LIST_ID}">` +
+      `maxlength="${MOST_TYPED}" enterkeyhint="go" autocomplete="off" spellcheck="false" ` +
+      `dir="auto" aria-label="Reference" role="combobox" aria-autocomplete="list" ` +
+      `aria-expanded="false" aria-controls="${LIST_ID}">` +
       `<div id="${LIST_ID}" class="goto-completions" role="listbox"></div>` +
       `<div class="goto-answer" aria-live="polite"></div>` +
       `<div class="goto-examples">` +
@@ -74,24 +79,29 @@ export function bindGoTo(
   /** The place the answer offers, if any. */
   let found: Reference | null = null;
 
+  /** What the answer shows, kept so a redraw that changes nothing leaves its button alone. */
+  let shown = '';
+
   function drawAnswer(): void {
     const typed = box.value;
     found = typed.trim() ? goTo.read(typed) : null;
-    if (!typed.trim()) {
-      answer.replaceChildren();
-      return;
-    }
-    if (!found) {
-      // A name still being typed is not yet a miss.
-      answer.innerHTML = completions.length ? '' : `<p class="goto-none">Not found</p>`;
-      return;
-    }
-    answer.innerHTML =
+    const html = answerHtml(typed);
+    if (html === shown) return;
+    shown = html;
+    answer.innerHTML = html;
+  }
+
+  function answerHtml(typed: string): string {
+    if (!typed.trim()) return '';
+    // A name still being typed is not yet a miss.
+    if (!found) return completions.length ? '' : `<p class="goto-none">Not found</p>`;
+    return (
       `<button type="button" class="${CONTROL.button} goto-offer" data-take>` +
       `<span class="goto-ref">${escapeHtml(found.ref)}</span>` +
       `<span class="goto-quote" dir="auto">${escapeHtml(hooks.quote(found, typed) ?? '')}</span>` +
       `<kbd class="goto-key">Enter ↵</kbd>` +
-      `</button>`;
+      `</button>`
+    );
   }
 
   function typed(value: string): void {
@@ -108,7 +118,10 @@ export function bindGoTo(
   }
 
   function take(): void {
-    if (found) hooks.take(found);
+    if (!found) return;
+    // The map takes the keys again, and a phone's keyboard goes down.
+    box.blur();
+    hooks.take(found);
   }
 
   box.addEventListener('input', () => typed(box.value));
@@ -127,7 +140,9 @@ export function bindGoTo(
       if (chosen >= 0) complete(chosen);
       else take();
     } else if (showing && e.key === 'Escape') {
-      // Only the list closes; the next Escape goes on to the map.
+      // Only the list closes, keeping what was typed, which a search box would clear; the next
+      // Escape goes on to the map.
+      e.preventDefault();
       e.stopPropagation();
       completions = [];
       chosen = -1;

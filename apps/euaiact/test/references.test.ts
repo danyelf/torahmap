@@ -11,7 +11,11 @@ const { read, complete } = provisionReader([
   '5(1)(a)',
   '5(1)(h)',
   '5(1)(h)(i)',
+  '5(1a)',
+  '5(1a)(a)',
   '5(2)',
+  '3(14)',
+  '3(14a)',
   '6',
   'Annex.I.1.1',
   'Annex.III.1.1',
@@ -22,6 +26,13 @@ const { read, complete } = provisionReader([
 const idsOf = (typed: string) => read(typed)?.ids ?? null;
 
 describe('provisionReader', () => {
+  it('reads a lettered paragraph as its own, and a letter after a parenthesis as a point', () => {
+    expect(idsOf('Article 5(1a)')).toEqual(['5(1a)', '5(1a)(a)']);
+    expect(idsOf('Article 5(1a)(a)')).toEqual(['5(1a)(a)']);
+    expect(idsOf('Article 5(1)(a)')).toEqual(['5(1)(a)']);
+    expect(idsOf('Article 3(14a)')).toEqual(['3(14a)']);
+  });
+
   it('reads an article, paragraph and point as that square', () => {
     expect(read('Article 5(1)(h)')).toEqual({
       ref: 'Article 5(1)(h)',
@@ -45,7 +56,7 @@ describe('provisionReader', () => {
   it('reads an article or paragraph alone as all its squares', () => {
     expect(read('Article 5')).toEqual({
       ref: 'Article 5',
-      ids: ['5(1)', '5(1)(a)', '5(1)(h)', '5(1)(h)(i)', '5(2)'],
+      ids: ['5(1)', '5(1)(a)', '5(1)(h)', '5(1)(h)(i)', '5(1a)', '5(1a)(a)', '5(2)'],
     });
     expect(idsOf('Art 5(1)')).toEqual(['5(1)', '5(1)(a)', '5(1)(h)', '5(1)(h)(i)']);
     expect(idsOf('Article 6')).toEqual(['6']);

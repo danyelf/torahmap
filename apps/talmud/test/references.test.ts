@@ -12,10 +12,13 @@ const dapim = (from: number, to: number, count: number): Amud[] =>
 const { read, complete } = segmentReader([
   { name: 'Berakhot', hebrewName: 'ברכות', amudim: dapim(2, 30, 5) },
   { name: 'Shabbat', hebrewName: 'שבת', amudim: dapim(2, 3, 2) },
+  // Shevuot sounds like Shabbat.
+  { name: 'Shevuot', hebrewName: 'שבועות', amudim: dapim(2, 3, 2) },
   { name: 'Chullin', hebrewName: 'חולין', amudim: dapim(2, 3, 2) },
   { name: 'Ketubot', hebrewName: 'כתובות', amudim: dapim(2, 3, 2) },
   { name: 'Bava Kamma', hebrewName: 'בבא קמא', amudim: dapim(2, 3, 2) },
   { name: 'Bava Metzia', hebrewName: 'בבא מציעא', amudim: dapim(2, 3, 2) },
+  { name: 'Bava Batra', hebrewName: 'בבא בתרא', amudim: dapim(2, 3, 2) },
   { name: 'Rosh Hashanah', hebrewName: 'ראש השנה', amudim: dapim(2, 3, 2) },
   { name: 'Avodah Zarah', hebrewName: 'עבודה זרה', amudim: dapim(2, 3, 2) },
   // Tamid begins partway through, and Horayot ends on an a side.
@@ -95,6 +98,8 @@ describe('segmentReader', () => {
     expect(idsOf('Shab 2a')).toEqual(idsOf('Shabbat 2a'));
     expect(idsOf('Shabbos 2a')).toEqual(idsOf('Shabbat 2a'));
     expect(idsOf('Kesubos 2a')).toEqual(idsOf('Ketubot 2a'));
+    expect(idsOf('Shevuos 2a')).toEqual(idsOf('Shevuot 2a'));
+    expect(idsOf('Bava Basra 2a')).toEqual(idsOf('Bava Batra 2a'));
   });
 
   it('reads nothing for a page or segment the tractate does not have', () => {
@@ -141,7 +146,7 @@ describe('segmentReader names', () => {
 
 describe('segmentReader completion', () => {
   it('offers the tractates that start as typed', () => {
-    expect(complete('Bava')).toEqual(['Bava Kamma', 'Bava Metzia']);
+    expect(complete('Bava')).toEqual(['Bava Kamma', 'Bava Metzia', 'Bava Batra']);
     expect(complete('בר')).toEqual(['ברכות']);
   });
 

@@ -3,10 +3,20 @@ import { describe, it, expect } from 'vitest';
 import type { GoTo } from '@torahmap/shell/app/text.ts';
 import { STRUCTURE_FILE } from '@torahmap/tanakh/verseTexts.ts';
 import { computeLayout } from '@torahmap/tanakh/layout.ts';
-import { EXAMPLES as TANAKH_EXAMPLES, verseReader } from '@torahmap/tanakh/references.ts';
+import {
+  ENGLISH_NAMES,
+  EXAMPLES as TANAKH_EXAMPLES,
+  HEBREW_NAMES,
+  verseReader,
+} from '@torahmap/tanakh/references.ts';
 import { STRUCTURE_FILE as TALMUD_STRUCTURE } from '@torahmap/talmud/data.ts';
 import { computeTalmudLayout } from '@torahmap/talmud/layout.ts';
-import { EXAMPLES as TALMUD_EXAMPLES, segmentReader } from '@torahmap/talmud/references.ts';
+import {
+  ABBREVIATIONS,
+  ASHKENAZI_NAMES,
+  EXAMPLES as TALMUD_EXAMPLES,
+  segmentReader,
+} from '@torahmap/talmud/references.ts';
 import { STRUCTURE_FILE as ACT_STRUCTURE } from '@torahmap/euaiact/data.ts';
 import { computeActLayout } from '@torahmap/euaiact/layout.ts';
 import { EXAMPLES as ACT_EXAMPLES, provisionReader } from '@torahmap/euaiact/references.ts';
@@ -54,5 +64,19 @@ describe('the places Go to offers after a part of the Act', () => {
       expect(offered.length, part).toBeGreaterThan(1);
       expect(unread(offered, reader, ids), part).toEqual([]);
     }
+  });
+});
+
+describe("Go to's tables of other names", () => {
+  it('name only books and tractates the map has', () => {
+    const names = (list: { name: string }[]) => new Set(list.map((entry) => entry.name));
+    const books = names(shipped(STRUCTURE_FILE).books);
+    const tractates = names(shipped(TALMUD_STRUCTURE).tractates);
+    const strays = (table: object, known: Set<string>) =>
+      Object.keys(table).filter((name) => !known.has(name));
+    expect([...strays(ENGLISH_NAMES, books), ...strays(HEBREW_NAMES, books)]).toEqual([]);
+    expect([...strays(ABBREVIATIONS, tractates), ...strays(ASHKENAZI_NAMES, tractates)]).toEqual(
+      [],
+    );
   });
 });

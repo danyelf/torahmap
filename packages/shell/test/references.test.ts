@@ -175,7 +175,7 @@ describe('referenceReader', () => {
     });
     expect(cleaned.read('South')?.ids).toEqual(['south']);
     expect(cleaned.read("So'uth")?.ids).toEqual(['south']);
-    expect(cleaned.completeNames('so')).toEqual(["Sou'th"]);
+    expect(cleaned.complete('so')).toEqual(["Sou'th"]);
     const uncleaned = referenceReader({
       named: PLACES,
       place: (key) => ({ ref: key, ids: [key] }),
@@ -194,7 +194,7 @@ describe('referenceReader', () => {
   });
 
   it('completes from the same names it reads', () => {
-    expect(reader.completeNames('sou')).toEqual(['South', 'Southampton']);
+    expect(reader.complete('sou')).toEqual(['South', 'Southampton']);
   });
 });
 

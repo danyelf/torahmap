@@ -9,7 +9,7 @@ import {
 } from '@torahmap/shell/references.ts';
 import { fromRoman, toRoman } from '@torahmap/utils';
 import { ENGLISH } from '@torahmap/shell/language.ts';
-import { actRef, layerOf, ownerOf, type Layer } from './ids.ts';
+import { actRef, annexId, layerOf, ownerOf, recitalId, type Layer } from './ids.ts';
 
 export const EXAMPLES = ['Article 7', 'Annex III'];
 
@@ -38,22 +38,31 @@ export function provisionReader(ids: readonly string[]): Omit<GoTo, 'examples'> 
     if (!first) return null;
     switch (layer) {
       case 'recital': {
-        const id = `Recital.${first}`;
+        const id = recitalId(first);
         return rest.length === 0 && ids.includes(id) ? { ref: actRef(id), ids: [id] } : null;
       }
       case 'annex': {
         const number = annexNumber(first);
         if (!number) return null;
-        const found = within(['Annex', number, ...rest].join('.'), '.');
-        const ref = [actRef(`Annex.${number}`), rest.join('.')].filter(Boolean).join(' ');
+        const found = within(annexId(number, ...rest), '.');
+        const ref = [actRef(annexId(number)), rest.join('.')].filter(Boolean).join(' ');
         return found.length ? { ref, ids: found } : null;
       }
       case 'article': {
         if (!/^\d+$/.test(first)) return null;
+        const parts = tokens.slice(1);
         // "4a" is an article of its own, written as two tokens.
-        const lettered = rest[0] && /^[a-z]$/.test(rest[0]) && articles.has(first + rest[0]);
-        const article = lettered ? first + rest.shift() : first;
-        const key = article + rest.map((p) => `(${p})`).join('');
+        const lettered = parts[0] && /^[a-z]$/.test(parts[0].text) && articles.has(first + rest[0]);
+        let key = lettered ? first + parts.shift()!.text : first;
+        // "1a" typed as one is a paragraph of its own where the Act has one: 5(1a), not 5(1)(a).
+        for (let i = 0; i < parts.length; i++) {
+          const next = parts[i + 1];
+          const joined = next?.glued ? `${key}(${parts[i].text}${next.text})` : null;
+          if (joined && within(joined, '(').length) {
+            key = joined;
+            i++;
+          } else key += `(${parts[i].text})`;
+        }
         const found = within(key, '(');
         return found.length ? { ref: actRef(key), ids: found } : null;
       }
