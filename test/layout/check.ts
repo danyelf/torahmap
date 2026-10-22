@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { CHROME, type State } from './app.ts';
 import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
 import { KNOWN } from './known.ts';
-import { asReturningReader, boxes, clippedText, openMap, shown } from './page.ts';
+import { openMap } from '../browser/page.ts';
+import { asReturningReader, boxes, clippedText, shown } from './page.ts';
 
 /** The selectors the rules measure, which belong to the interface being tested. */
 export interface Chrome {
