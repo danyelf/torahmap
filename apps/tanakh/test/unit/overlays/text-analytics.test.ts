@@ -4,6 +4,7 @@ import { NO_DATA } from '../../../src/overlays/colors';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { assertNamedEnds } from '../../helpers/assertions';
+import { timesRarer } from '../../../src/overlays/text-analytics/scores';
 
 const data: TextAnalyticsData = {
   scores: {
@@ -61,5 +62,11 @@ describe('Text analytics overlay', () => {
     assertNamedEnds(h.summary());
     h.change((s) => ({ ...s, measure: 'division' }));
     assertNamedEnds(h.summary());
+  });
+
+  it('reads a division score as how many times rarer or more common than usual', () => {
+    expect(timesRarer(1)).toBe('2.00× rarer');
+    expect(timesRarer(-1)).toBe('2.00× more common');
+    expect(timesRarer(0.001)).toBe('usual');
   });
 });
