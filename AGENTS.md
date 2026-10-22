@@ -31,10 +31,10 @@ a comment from `cloudflare-workers-and-pages` (`gh pr view <n> --json comments`)
 where a failed build shows up.
 
 **Mark each review on the PR.** When a review of the whole branch is done, by a fresh reviewer or
-your own, comment on the PR with the commit it read up to and what it found, one line per finding
-and what became of it. The commits after that one are then plain to see as unreviewed. While a
-review is running or its fixes are unpushed, the PR carries the `review pending` label, so it is
-not merged early; take it off once the review comment is posted and the agreed fixes are pushed.
+your own, comment on the PR with what it found, one line per finding and what became of it. The
+comment's first line is exactly ``Reviewed up to `<full 40-character sha>` ``, naming the commit
+it read. The PR's "Review freshness" check counts the commits after it, and `scripts/status.sh`
+lists every open PR's state.
 
 **Shorter is better than longer.** Every word earns its place or goes. This
 applies to comments, docstrings, commit messages and documents alike.
