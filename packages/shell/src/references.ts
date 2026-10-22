@@ -56,6 +56,13 @@ export const eachWord =
 /** Words joined as written, lower-cased as every token is. */
 const AS_WRITTEN = eachWord((word) => word);
 
+/** No cleaning: a reference read as typed. */
+const AS_TYPED: Clean = (text) => text;
+
+/** Whether `typed` names `name` in full, as `fold` writes them both. */
+const namedInFull = (typed: readonly string[], name: readonly string[], fold: Fold) =>
+  fold(typed) === fold(name);
+
 /** Something a reference can begin by naming, and every name it goes by. */
 export interface Named<K> {
   key: K;
@@ -95,7 +102,7 @@ export function namedBy<K>(
 export function nameTable<K>(
   entries: readonly Named<K>[],
   folds: readonly Fold[] = [AS_WRITTEN],
-  clean: Clean = (text) => text,
+  clean: Clean = AS_TYPED,
 ): {
   /** The entry `tokens` begin by naming, and the tokens after its name. */
   read(tokens: readonly Token[]): { key: K; rest: Token[] } | null;
@@ -109,6 +116,7 @@ export function nameTable<K>(
       const spelled = spellings.includes(name);
       return {
         name,
+        words,
         // A later fold writes nothing for a name matched only as written.
         folds: folds.map((fold, i) => (i === 0 || spelled ? fold(words) : null)),
         // Where completion may start: the name, and the rest of it from each later word.
@@ -155,7 +163,7 @@ export function nameTable<K>(
       const start = folds[0](words);
       const offered: string[] = [];
       for (const { names } of table) {
-        if (names.some((n) => n.folds[0] === start)) continue;
+        if (names.some((n) => namedInFull(words, n.words, folds[0]))) continue;
         const hit = names.find((n) => n.starts.some((from) => from.startsWith(start)));
         if (hit) offered.push(hit.name);
       }
@@ -183,10 +191,11 @@ export function referenceReader<K>(how: Reading<K>): {
   read: GoTo['read'];
   completeNames: GoTo['complete'];
 } {
-  const names = nameTable(how.named, how.folds, how.clean);
+  const clean = how.clean ?? AS_TYPED;
+  const names = nameTable(how.named, how.folds, clean);
   return {
     read(typed) {
-      const tokens = referenceTokens(how.clean?.(typed) ?? typed);
+      const tokens = referenceTokens(clean(typed));
       const found = names.read(tokens);
       if (!found) return how.unnamed?.(tokens) ?? null;
       return how.place(
@@ -202,17 +211,20 @@ export function referenceReader<K>(how: Reading<K>): {
  * Completes from `places`: those each of whose words starts as the typed
  * word in its place does, in the order given, leaving out one typed in full.
  */
-export function placeCompleter(places: readonly string[]): GoTo['complete'] {
-  const worded = places.map((place) => ({ place, words: texts(referenceTokens(place)) }));
+export function placeCompleter(
+  places: readonly string[],
+  clean: Clean = AS_TYPED,
+): GoTo['complete'] {
+  const worded = places.map((place) => ({ place, words: texts(referenceTokens(clean(place))) }));
   return (typed) => {
-    const typedWords = texts(referenceTokens(typed));
+    const typedWords = texts(referenceTokens(clean(typed)));
     if (typedWords.length === 0) return [];
     return worded
       .filter(
         ({ words }) =>
           typedWords.length <= words.length &&
           typedWords.every((word, i) => words[i].startsWith(word)) &&
-          words.join(' ') !== typedWords.join(' '),
+          !namedInFull(typedWords, words, AS_WRITTEN),
       )
       .map(({ place }) => place);
   };

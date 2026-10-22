@@ -212,6 +212,12 @@ describe('placeCompleter', () => {
     expect(complete('Gate 2')).toEqual([]);
   });
 
+  it('cleans the places and what is typed as the text says', () => {
+    const cleaned = placeCompleter(["Ga'te 1", 'Gate 2'], (text) => text.replace(/'/g, ''));
+    expect(cleaned("g'a")).toEqual(["Ga'te 1", 'Gate 2']);
+    expect(cleaned('gate 1')).toEqual([]);
+  });
+
   it('offers nothing for nothing, or for what starts no place', () => {
     expect(complete(' ')).toEqual([]);
     expect(complete('wall')).toEqual([]);
