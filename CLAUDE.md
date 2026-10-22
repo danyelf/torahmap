@@ -53,6 +53,10 @@ npm run test:watch    # Watch mode for development
 npm run test:coverage # Coverage report
 ```
 
+The two browser suites below, layout and loading, take turns across the
+machine, whichever checkout starts them: a run waits, saying for whom, until
+the one before it ends. `SUITE_LOCK=off` skips the wait.
+
 ### The pre-commit hook
 
 `.githooks/pre-commit` checks formatting, typechecks and runs the test suite
@@ -88,8 +92,10 @@ Text ending in a deliberate ellipsis counts as fitting. `test/layout/known.ts` l
 the failures accepted for now, what each measures and why. It ends by writing
 `layout-report/index.html`, every state at every size side by side.
 
-It takes about 20 seconds on four workers, too long for the pre-commit hook.
-Run it before opening any pull request that changes the interface.
+It takes about four minutes on four workers, too long for the pre-commit hook.
+While working, run only the states a change touches
+(`npm run test:layout -- -g <name>`); run the whole suite once before opening or
+updating any pull request that changes the interface.
 
 ### Loading tests
 

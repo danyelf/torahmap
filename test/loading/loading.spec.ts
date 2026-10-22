@@ -3,7 +3,7 @@
 // the case sets rather than a race it hopes to win.
 import { expect, test, type Page } from '@playwright/test';
 import { viaMenu } from '../layout/app.ts';
-import { allLoaded, firstFrame } from '../layout/page.ts';
+import { allLoaded, desktopOnly, firstFrame } from '../layout/page.ts';
 import {
   COMMENTARY,
   DICTIONARY,
@@ -306,8 +306,8 @@ test('a failed download leaves its overlay plain and says so where it would show
   expect(errors).toEqual([]);
 });
 
-test('a search typed before its files land is recorded once they do', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'what is recorded does not depend on the screen');
+test('a search typed before its files land is recorded once they do', async ({ page }) => {
+  desktopOnly('what is recorded does not depend on the screen');
   const { release, errors } = await open(page, 'overlay=haftarah', SEARCH_REQUIRED);
   await recordEvents(page);
   await viaMenu(page, 'search');
@@ -319,8 +319,8 @@ test('a search typed before its files land is recorded once they do', async ({ p
   expect(errors).toEqual([]);
 });
 
-test('a linked search is never recorded; a word the reader adds is', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'what is recorded does not depend on the screen');
+test('a linked search is never recorded; a word the reader adds is', async ({ page }) => {
+  desktopOnly('what is recorded does not depend on the screen');
   const { release, errors } = await open(page, 'search=light', SEARCH_REQUIRED);
   await recordEvents(page);
   release();
@@ -336,8 +336,8 @@ test('a linked search is never recorded; a word the reader adds is', async ({ pa
 
 test('a lexicon search cannot build from fails its prebuild alone, and the rest still load', async ({
   page,
-}, info) => {
-  test.skip(info.project.name !== 'desktop', 'what loads does not depend on the screen');
+}) => {
+  desktopOnly('what loads does not depend on the screen');
   const parseLanded = page.waitForResponse(`**/data/${PARSE}`, { timeout: 120_000 });
   // A lexicon with no lexemes: building the dictionary from it throws.
   const { release, errors } = await open(page, 'overlay=haftarah', [LEXICON], { body: '{}' });
@@ -355,8 +355,8 @@ test('a lexicon search cannot build from fails its prebuild alone, and the rest 
   expect(errors[0]).toContain('buildDictionary');
 });
 
-test('load timing says when the texts landed, after the first frame', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'what loads does not depend on the screen');
+test('load timing says when the texts landed, after the first frame', async ({ page }) => {
+  desktopOnly('what loads does not depend on the screen');
   const { release, errors } = await open(page, '', [TEXTS_FILE]);
   await recordEvents(page);
   release();
@@ -367,8 +367,8 @@ test('load timing says when the texts landed, after the first frame', async ({ p
   expect(errors).toEqual([]);
 });
 
-test('stepping to a verse records it by its id and book', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'the arrow keys are the same on every screen');
+test('stepping to a verse records it by its id and book', async ({ page }) => {
+  desktopOnly('the arrow keys are the same on every screen');
   const { errors } = await open(page, 'verse=Genesis.12.1', [], { until: 'loaded' });
   await recordEvents(page);
   await page.keyboard.press('ArrowRight');
@@ -379,8 +379,8 @@ test('stepping to a verse records it by its id and book', async ({ page }, info)
   expect(errors).toEqual([]);
 });
 
-test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'a keyboard shortcut for authors');
+test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }) => {
+  desktopOnly('a keyboard shortcut for authors');
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', {
       value: {

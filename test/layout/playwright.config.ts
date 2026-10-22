@@ -1,5 +1,5 @@
 import { defineConfig } from '@playwright/test';
-import { LAUNCH_ARGS, SCREENS } from './screens.ts';
+import { LAUNCH_ARGS, SCREENS, webServer } from './screens.ts';
 
 const PORT = Number(process.env.LAYOUT_PORT ?? 5199);
 
@@ -20,11 +20,5 @@ export default defineConfig({
     use: s.use,
     testMatch: ['app.spec.ts', 'talmud.spec.ts', 'euaiact.spec.ts'],
   })),
-  webServer: {
-    command: `npx vite --port ${PORT} --strictPort`,
-    cwd: '../..',
-    url: `http://localhost:${PORT}/`,
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  webServer: webServer(PORT),
 });
