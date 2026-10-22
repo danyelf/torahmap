@@ -3,7 +3,8 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import type { SearchLanguage, TextRange } from './language.ts';
+import type { TextRange } from '@torahmap/utils';
+import type { SearchLanguage } from './language.ts';
 import { matchRanges, type MatchMode } from './matching.ts';
 import { colorIndexAt, type SearchTerm } from './terms.ts';
 import { quoteText, type Snippet } from './textIndex.ts';

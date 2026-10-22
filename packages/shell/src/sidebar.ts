@@ -7,9 +7,10 @@ import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
 import { linkStretches, type TextLink } from './textLinks.ts';
-import { styleStretches, type TextRange, type TextStyle } from './textStyles.ts';
+import type { TextRange } from '@torahmap/utils';
+import { styleStretches, type TextStyle } from './textStyles.ts';
 
-export type { TextRange, TextStyle };
+export type { TextStyle };
 
 /** A click on a word in the popup's Hebrew text. */
 export interface WordClick<I extends MapItem = MapItem> {

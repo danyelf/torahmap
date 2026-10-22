@@ -2,7 +2,8 @@
 // among them.
 
 import { SEARCH_SNIPPET_CONTEXT_BEFORE, SEARCH_SNIPPET_MAX_LENGTH } from './constants.ts';
-import type { SearchLanguage, TextRange } from './language.ts';
+import type { TextRange } from '@torahmap/utils';
+import type { SearchLanguage } from './language.ts';
 import { matchRanges, type MatchMode } from './matching.ts';
 
 /** One item as search reads it: its id, the reference a result is listed by, and its text by language id. */

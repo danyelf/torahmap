@@ -1,7 +1,8 @@
 // A segment's English as the popup files store it: plain text with a marker on each side of a
 // bold or italic stretch.
 
-import type { TextRange, TextStyle } from '@torahmap/shell/sidebar.ts';
+import type { TextRange } from '@torahmap/utils';
+import type { TextStyle } from '@torahmap/shell/sidebar.ts';
 
 export const BOLD = '*';
 export const ITALIC = '_';

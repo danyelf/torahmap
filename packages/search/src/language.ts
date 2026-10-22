@@ -1,7 +1,4 @@
-export interface TextRange {
-  start: number;
-  end: number;
-}
+import type { TextRange } from '@torahmap/utils';
 
 /** How text in one language is compared with what a reader types. */
 export interface SearchLanguage {

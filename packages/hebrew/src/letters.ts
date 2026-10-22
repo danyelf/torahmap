@@ -5,6 +5,8 @@
 // the clickable words in the popup and the highlighter agree about where a
 // word ends.
 
+import type { TextRange } from '@torahmap/utils';
+
 // Points and accents share a Unicode range with four characters that are not
 // decoration at all.
 const NIKKUD_START = 0x0591;
@@ -76,10 +78,8 @@ export function stripNikkud(text: string): string {
   return result;
 }
 
-export interface TextWord {
+export interface TextWord extends TextRange {
   word: string;
-  start: number;
-  end: number;
 }
 
 /** The words of a piece of text, with where each one sits in that same text. */

@@ -1,6 +1,7 @@
 // What counts as a match, for both the search that finds items and the
 // highlighter that marks them.
-import type { SearchLanguage, TextRange } from './language.ts';
+import type { TextRange } from '@torahmap/utils';
+import type { SearchLanguage } from './language.ts';
 
 export type MatchMode = 'substring' | 'word';
 

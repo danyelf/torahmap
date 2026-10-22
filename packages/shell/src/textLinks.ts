@@ -1,5 +1,5 @@
 import { wrapRuns } from './textRuns.ts';
-import type { TextRange } from './textStyles.ts';
+import type { TextRange } from '@torahmap/utils';
 
 /** A stretch of a text, as a link to `href`. */
 export interface TextLink extends TextRange {

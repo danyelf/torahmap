@@ -3,7 +3,8 @@
 // for the panel and the map; a text's tests run the same functions.
 import type { ExtraMode } from './extraMode.ts';
 import { quoteTerm, type TermMatcher } from './highlight.ts';
-import type { SearchLanguage, TextRange } from './language.ts';
+import type { TextRange } from '@torahmap/utils';
+import type { SearchLanguage } from './language.ts';
 import type { MatchMode } from './matching.ts';
 import { effectiveMode, languageOf, type SearchTerm } from './terms.ts';
 import {

@@ -3,7 +3,7 @@ import type { Color } from '@torahmap/utils';
 import type { TextLanguage } from '../language.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
-import type { TextRange } from '../textStyles.ts';
+import type { TextRange } from '@torahmap/utils';
 
 export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '@torahmap/link';
 export type { Credit } from '../credits.ts';
