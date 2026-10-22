@@ -1,7 +1,7 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
 import { expect, test, type Page } from '@playwright/test';
-import { allLoaded, boxes, openMap, shown } from './page.ts';
+import { allLoaded, boxes, closeFromLegend, openMap, shown } from './page.ts';
 import { viaMenu } from './app.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PAGE, TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
@@ -234,4 +234,11 @@ test('an English Talmud search lists what it finds, and marks the popup’s Engl
   await page.screenshot({ path: shot });
   await info.attach('layout', { path: shot, contentType: 'image/png' });
   expect(errors).toEqual([]);
+});
+
+test("the Talmud's search card's × clears the search, and Back brings it back", async ({
+  page,
+}) => {
+  await openMap(page, `search=${encodeURIComponent('משנה')}`, TALMUD);
+  await closeFromLegend(page, 'search');
 });

@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ACT_STATES, CHROME, viaMenu } from './app.ts';
 import { checkLayout } from './check.ts';
 import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
-import { boxes, canvasShot, openMap, shown } from './page.ts';
+import { boxes, canvasShot, closeFromLegend, openMap, shown } from './page.ts';
 import {
   ARTICLE_NUMBER_ZOOM,
   CHAPTER_TAB,
@@ -192,3 +192,15 @@ for (const zoom of [ARTICLE_NUMBER_ZOOM, 2, 4]) {
     expect(apart(numbers, await boxes(page, '#book-labels .book-label'))).toEqual([]);
   });
 }
+
+test("the Act's search card's × clears the search, and Back brings it back", async ({ page }) => {
+  await openMap(page, 'search=deployer&zoom=0.6', ACT);
+  await closeFromLegend(page, 'search');
+});
+
+test("the Act's overlay card's × turns the overlay off, and Back brings it back", async ({
+  page,
+}) => {
+  await openMap(page, 'overlay=amendment&zoom=0.6', ACT);
+  await closeFromLegend(page, 'overlay');
+});

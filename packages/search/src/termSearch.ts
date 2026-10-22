@@ -120,6 +120,9 @@ export function canAddTerm(settings: TermSettings): boolean {
   return typedTerms(settings).length < MAX_TERMS;
 }
 
+/** Terms that search on nothing: one empty box to type in. */
+const noTerms = (): SearchTerm[] => addTerm([], '');
+
 /** Whether the search has a term it searches on. */
 export function isSearching(settings: TermSettings): boolean {
   return activeTerms(settings).length > 0;
@@ -362,7 +365,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   /** The term list a link describes, with its modes and the extra mode's choices laid over it. */
   function settingsFromUrl(params: UrlParamValues): TermSettings {
     let terms = parseSearchTerms(params.search ?? '').reduce(addTerm, [] as SearchTerm[]);
-    if (terms.length === 0) terms = addTerm([], '');
+    if (terms.length === 0) terms = noTerms();
     if (params.mode) terms = applyModes(terms, params.mode, extra);
     const chosen = extra?.param && params[extra.param.key];
     if (extra?.param && chosen) terms = extra.param.read(terms, chosen);
@@ -444,9 +447,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         searchHitCaption = container.querySelector('#search-hit-caption');
         searchResults = container.querySelector('#search-results');
         searchClear = container.querySelector('#search-clear-all');
-        searchClear?.addEventListener('click', () =>
-          requestChange?.(() => ({ terms: addTerm([], '') })),
-        );
+        searchClear?.addEventListener('click', () => requestChange?.(() => ({ terms: noTerms() })));
 
         rows?.unmount();
         // Nothing is built while no word is typed.
