@@ -18,15 +18,18 @@ export interface ReferencedTractate {
   amudim: readonly Pick<TalmudAmud, 'daf' | 'amud' | 'segmentCount'>[];
 }
 
-// The abbreviations readers write tractates as, which are not the start of their names, and
-// Ashkenazi spellings with s for t inside the name.
-const OTHER_NAMES: Record<string, readonly string[]> = {
+// The abbreviations readers write tractates as, matched only as written.
+const ABBREVIATIONS: Record<string, readonly string[]> = {
   'Bava Kamma': ['BK', 'ב״ק'],
   'Bava Metzia': ['BM', 'ב״מ'],
   'Bava Batra': ['BB', 'ב״ב'],
   'Rosh Hashanah': ['RH', 'ר״ה'],
   'Moed Katan': ['MK', 'מו״ק'],
   'Avodah Zarah': ['AZ', 'ע״ז'],
+};
+
+// Ashkenazi spellings with s for t inside the name, which the sound of a name does not reach.
+const ASHKENAZI_NAMES: Record<string, readonly string[]> = {
   Ketubot: ['Kesubos'],
   Keritot: ['Kerisos'],
   Arakhin: ['Erchin'],
@@ -92,7 +95,14 @@ export function segmentReader(tractates: readonly ReferencedTractate[]): Omit<Go
   const { read, completeNames } = referenceReader({
     named: tractates.map((tractate) => ({
       key: tractate,
-      names: [tractate.name, tractate.hebrewName, ...(OTHER_NAMES[tractate.name] ?? [])],
+      names: [
+        tractate.name,
+        tractate.hebrewName,
+        ...(ABBREVIATIONS[tractate.name] ?? []),
+        ...(ASHKENAZI_NAMES[tractate.name] ?? []),
+      ],
+      // A tractate's English name is its Hebrew name in English letters.
+      spellings: [tractate.name, tractate.hebrewName, ...(ASHKENAZI_NAMES[tractate.name] ?? [])],
     })),
     folds: FOLDS,
     filler: FILLER,

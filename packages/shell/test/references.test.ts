@@ -107,12 +107,13 @@ describe('nameTable.read', () => {
     expect(read('')).toBeNull();
   });
 
-  it('tries each fold in turn', () => {
-    const spoken = nameTable(PLACES, [
-      eachWord((word) => word),
-      eachWord((word) => word.replace(/ou/g, 'u')),
-    ]);
-    expect(spoken.read(referenceTokens('Suth 1'))?.key).toBe('south');
+  it('tries the later folds only on the names given as spellings', () => {
+    const folds = [eachWord((word) => word), eachWord((word) => word.replace(/ou/g, 'u'))];
+    const asWritten = nameTable([{ key: 'south', names: ['South'] }], folds);
+    expect(asWritten.read(referenceTokens('Suth 1'))).toBeNull();
+    const spelled = nameTable([{ key: 'south', names: ['South'], spellings: ['South'] }], folds);
+    expect(spelled.read(referenceTokens('Suth 1'))?.key).toBe('south');
+    expect(spelled.complete('sou')).toEqual(['South']);
   });
 });
 

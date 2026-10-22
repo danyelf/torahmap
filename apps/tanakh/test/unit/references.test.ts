@@ -152,3 +152,18 @@ describe('verseReader completion', () => {
     expect(complete('שמות כ')).toEqual([]);
   });
 });
+
+describe('verseReader spellings', () => {
+  const songs = idsOf('Song of Songs 1:1');
+
+  it('reads a Hebrew name in English letters however it is spelled', () => {
+    expect(idsOf('Shir Hashirim 1:1')).toEqual(songs);
+    expect(idsOf('Shir Hashireem 1:1')).toEqual(songs);
+  });
+
+  it('reads an English name only as it is written', () => {
+    expect(idsOf('Canticles 1:1')).toEqual(songs);
+    expect(read('Kantikles 1:1')).toBeNull();
+    expect(read('kin 1')).toBeNull();
+  });
+});

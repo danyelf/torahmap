@@ -20,36 +20,48 @@ export interface ReferencedBook {
   chapters: readonly number[];
 }
 
-// Names that are neither the start of a book's English or Hebrew name nor a
-// spelling of one: the usual abbreviations, and the books' Hebrew names in English letters.
-const OTHER_NAMES: Record<string, readonly string[]> = {
+// English names that are not the start of a book's name: the usual abbreviations and other titles.
+const ENGLISH_NAMES: Record<string, readonly string[]> = {
+  Judges: ['Jdg'],
+  'I Kings': ['I Kgs'],
+  'II Kings': ['II Kgs'],
+  Ezekiel: ['Ezk'],
+  Psalms: ['Pss'],
+  'Song of Songs': ['Song of Solomon', 'Canticles'],
+  Ecclesiastes: ['Qoh'],
+  'I Chronicles': ['I Chr'],
+  'II Chronicles': ['II Chr'],
+};
+
+// The books' Hebrew names in English letters, matched however they are spelled.
+const HEBREW_NAMES: Record<string, readonly string[]> = {
   Genesis: ['Bereshit', 'Bereishit'],
   Exodus: ['Shemot'],
   Leviticus: ['Vayikra'],
   Numbers: ['Bamidbar', 'Bemidbar'],
   Deuteronomy: ['Devarim'],
   Joshua: ['Yehoshua'],
-  Judges: ['Jdg', 'Shoftim'],
+  Judges: ['Shoftim'],
   'I Samuel': ['I Shmuel'],
   'II Samuel': ['II Shmuel'],
-  'I Kings': ['I Kgs', 'I Melakhim'],
-  'II Kings': ['II Kgs', 'II Melakhim'],
+  'I Kings': ['I Melakhim'],
+  'II Kings': ['II Melakhim'],
   Isaiah: ['Yeshayahu'],
   Jeremiah: ['Yirmiyahu'],
-  Ezekiel: ['Ezk', 'Yechezkel'],
+  Ezekiel: ['Yechezkel'],
   Hosea: ['Hoshea'],
   Joel: ['Yoel'],
   Obadiah: ['Ovadiah'],
   Jonah: ['Yonah'],
   Zephaniah: ['Tzefaniah'],
-  Psalms: ['Pss', 'Tehillim'],
+  Psalms: ['Tehillim'],
   Proverbs: ['Mishlei'],
   Job: ['Iyov'],
-  'Song of Songs': ['Song of Solomon', 'Canticles', 'Shir HaShirim'],
+  'Song of Songs': ['Shir HaShirim'],
   Lamentations: ['Eikhah'],
-  Ecclesiastes: ['Qoh', 'Qohelet', 'Kohelet'],
-  'I Chronicles': ['I Chr', 'I Divrei HaYamim'],
-  'II Chronicles': ['II Chr', 'II Divrei HaYamim'],
+  Ecclesiastes: ['Qohelet', 'Kohelet'],
+  'I Chronicles': ['I Divrei HaYamim'],
+  'II Chronicles': ['II Divrei HaYamim'],
 };
 
 // A numbered book's I, II or III, read as its number so that "I Sam" and "1 Sam" are one.
@@ -146,7 +158,13 @@ export function verseReader(books: readonly ReferencedBook[]): Omit<GoTo, 'examp
   const { read, completeNames } = referenceReader({
     named: books.map((book) => ({
       key: book,
-      names: [book.name, book.hebrewName, ...(OTHER_NAMES[book.name] ?? [])],
+      names: [
+        book.name,
+        book.hebrewName,
+        ...(ENGLISH_NAMES[book.name] ?? []),
+        ...(HEBREW_NAMES[book.name] ?? []),
+      ],
+      spellings: [book.hebrewName, ...(HEBREW_NAMES[book.name] ?? [])],
     })),
     folds: FOLDS,
     filler: FILLER,

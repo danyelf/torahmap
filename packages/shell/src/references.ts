@@ -64,7 +64,10 @@ const AS_WRITTEN = eachWord((word) => word);
 /** Something a reference can begin by naming, and every name it goes by. */
 export interface Named<K> {
   key: K;
+  /** Every name, in the order to offer them; the first fold matches each as written. */
   names: readonly string[];
+  /** Those of `names` readers spell in more than one way, which the later folds match too. */
+  spellings?: readonly string[];
 }
 
 /**
@@ -85,13 +88,15 @@ export function nameTable<K>(
   /** The names `typed` is the start of, or of a later word of, one per entry, in order. */
   complete(typed: string): string[];
 } {
-  const table = entries.map(({ key, names }) => ({
+  const table = entries.map(({ key, names, spellings = [] }) => ({
     key,
     names: names.map((name) => {
       const words = texts(referenceTokens(name));
+      const spelled = spellings.includes(name);
       return {
         name,
-        folds: folds.map((fold) => fold(words)),
+        // A later fold writes nothing for a name matched only as written.
+        folds: folds.map((fold, i) => (i === 0 || spelled ? fold(words) : null)),
         // Where completion may start: the name, and the rest of it from each later word.
         starts: words.map((_, i) => folds[0](words.slice(i))),
       };
@@ -100,7 +105,11 @@ export function nameTable<K>(
 
   /** The keys with a name that, as fold `i` writes it, passes `test`. */
   const keysWhere = (i: number, test: (name: string) => boolean): K[] => [
-    ...new Set(table.filter((e) => e.names.some((n) => test(n.folds[i]))).map((e) => e.key)),
+    ...new Set(
+      table
+        .filter((e) => e.names.some((n) => n.folds[i] !== null && test(n.folds[i])))
+        .map((e) => e.key),
+    ),
   ];
 
   function named(words: readonly string[]): K | null {
