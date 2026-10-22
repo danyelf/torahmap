@@ -22,7 +22,8 @@ export default defineConfig({
     use: s.use,
   })),
   webServer: {
-    command: `npx vite --port ${PORT} --strictPort`,
+    // The stories are generated before Vite loads its config, which imports them.
+    command: `node packages/stories/generate.mjs && npx vite --port ${PORT} --strictPort`,
     cwd: '../..',
     url: `http://localhost:${PORT}/`,
     reuseExistingServer: false,
