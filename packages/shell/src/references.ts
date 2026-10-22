@@ -65,6 +65,9 @@ export interface Named<K> {
   spellings?: readonly string[];
 }
 
+// A later fold drops vowels, so two letters would shrink to the start of names they do not resemble.
+const LATER_FOLD_LETTERS = 3;
+
 /** `key` named by each group of names in order; the groups marked `spelled` are its spellings. */
 export function namedBy<K>(
   key: K,
@@ -81,7 +84,8 @@ export function namedBy<K>(
  * Every name of `entries`, written once by each of `folds`.
  *
  * Reading takes the longest run of tokens, two letters or more, that is a whole
- * name or the start of only one, trying the folds in turn. Completing, from one
+ * name or the start of only one, trying the folds in turn, the later ones only
+ * from three letters. Completing, from one
  * letter, offers the names that what was typed starts, or starts a later word
  * of, by the first fold alone, leaving out an entry already named in full.
  */
@@ -120,7 +124,8 @@ export function nameTable<K>(
   ];
 
   function named(words: readonly string[]): K | null {
-    for (const [i, fold] of folds.entries()) {
+    const usable = letterCount(words) >= LATER_FOLD_LETTERS ? folds.length : 1;
+    for (const [i, fold] of folds.slice(0, usable).entries()) {
       const typed = fold(words);
       const whole = keysWhere(i, (name) => name === typed);
       if (whole.length === 1) return whole[0];

@@ -10,6 +10,7 @@ const { read, complete } = verseReader([
   { name: 'Joshua', hebrewName: 'יהושע', chapters: [2] },
   { name: 'I Samuel', hebrewName: 'שמואל א', chapters: [2, 2, 20] },
   { name: 'II Samuel', hebrewName: 'שמואל ב', chapters: [2] },
+  { name: 'I Kings', hebrewName: 'מלכים א', chapters: [2] },
   { name: 'II Kings', hebrewName: 'מלכים ב', chapters: chapters(17, 3) },
   { name: 'Isaiah', hebrewName: 'ישעיהו', chapters: chapters(40, 2) },
   { name: 'Psalms', hebrewName: 'תהלים', chapters: chapters(3, 2) },
@@ -129,7 +130,7 @@ describe('verseReader completion', () => {
   it('reads a book number as a digit or a Roman numeral', () => {
     expect(complete('1 sa')).toEqual(['I Samuel']);
     expect(complete('II S')).toEqual(['II Samuel']);
-    expect(complete('I')).toEqual(['I Samuel']);
+    expect(complete('I')).toEqual(['I Samuel', 'I Kings']);
   });
 
   it('offers every book a later word of whose name starts as typed', () => {
@@ -184,5 +185,16 @@ describe('verseReader references', () => {
       const found = read(typed)!;
       expect(read(found.ref)?.ids, typed).toEqual(found.ids);
     }
+  });
+});
+
+describe('verseReader short starts', () => {
+  it('reads two letters only as written, never by sound', () => {
+    expect(read('ka 1')).toBeNull();
+    expect(read('kah 1')?.ids).toEqual(idsOf('Ecclesiastes 1'));
+  });
+
+  it('offers both books of Kings for kin', () => {
+    expect(complete('kin')).toEqual(expect.arrayContaining(['I Kings', 'II Kings']));
   });
 });

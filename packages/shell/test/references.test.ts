@@ -109,6 +109,14 @@ describe('nameTable.read', () => {
     expect(spelled.read(referenceTokens('Suth 1'))?.key).toBe('south');
     expect(spelled.complete('sou')).toEqual(['South']);
   });
+
+  it('tries the later folds only on three letters or more', () => {
+    const folds = [eachWord((word) => word), eachWord((word) => word.replace(/ou/g, 'u'))];
+    const spelled = nameTable([{ key: 'south', names: ['South'], spellings: ['South'] }], folds);
+    expect(spelled.read(referenceTokens('Su 1'))).toBeNull();
+    expect(spelled.read(referenceTokens('Sut 1'))?.key).toBe('south');
+    expect(spelled.read(referenceTokens('So 1'))?.key).toBe('south');
+  });
 });
 
 describe('nameTable.complete', () => {
