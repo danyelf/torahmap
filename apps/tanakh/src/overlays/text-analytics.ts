@@ -53,26 +53,30 @@ const MEASURES: Record<
   {
     format: (v: number) => string;
     hover: (v: number) => string;
-    legend: (p: ScoreParameters) => string[];
+    // The scale's low and high ends, in the panel's legend and on the legend card.
+    ends: [low: string, high: string];
+    legend: (p: ScoreParameters, ends: [low: string, high: string]) => string[];
   }
 > = {
   repetition: {
     format: percent,
     hover: (v) => `${percent(v)} of nearby words repeated`,
-    legend: (p) => [
+    ends: ['varied', 'repetitive'],
+    legend: (p, [low, high]) => [
       `Share of the words in the ${p.windowVerses} verses around each verse that sit in a ` +
         `${p.runWords}-word phrase its book repeats within ${p.reachVerses} verses`,
-      'Blue = little repetition · Yellow = a lot',
+      `Blue = ${low} wording · Yellow = ${high} wording`,
       `Phrases found in ${p.formulaBooks} or more books are left out as stock phrases`,
     ],
   },
   division: {
     format: bits,
     hover: (v) => `Verse division ${bits(v)} against verses this long`,
-    legend: (p) => [
+    ends: ['common', 'unusual'],
+    legend: (p, [low, high]) => [
       `How unusually the trop divides the ${p.windowVerses} verses around each verse, ` +
         'in bits, against verses of the same length',
-      'Blue = usual divisions · Yellow = unusual ones',
+      `Blue = ${low} divisions · Yellow = ${high} ones`,
       `${listed(p.poeticBooks)} use other marks and are not coloured`,
     ],
   },
@@ -164,7 +168,7 @@ export const textAnalyticsOverlay: Overlay<
     container.innerHTML =
       renderAxis(scale, low < 0 && high > 0 ? [low, 0, high] : [low, high], measure.format) +
       [
-        ...measure.legend(parameters),
+        ...measure.legend(parameters, measure.ends),
         `Verses under ${parameters.minWords} words are not coloured; words joined by a maqaf count as one`,
       ]
         .map(legendCaption)
@@ -173,8 +177,10 @@ export const textAnalyticsOverlay: Overlay<
 
   summary(settings, data) {
     return {
-      detail: MEASURE_LABELS[settings.measure],
-      colors: [axisGradient(scalesOf(data)[settings.measure].scale)],
+      strip: {
+        gradient: axisGradient(scalesOf(data)[settings.measure].scale),
+        ends: MEASURES[settings.measure].ends,
+      },
     };
   },
 
