@@ -43,6 +43,15 @@ export const FORMULA_BOOKS = 5;
 /** A verse is compared with verses whose length is within this share of its own. */
 export const LENGTH_MATCH = 0.1;
 
+/**
+ * A piece whose way of splitting costs less than this has no real choice to make,
+ * such as the stretch after a piece's last pause, and is left out of the
+ * average. No piece costs between this and 0.15 bits, so the cutoff is a gap
+ * in the data rather than a tuned value; leaving them out changes the map
+ * little (rank correlation 0.97) and spreads its numbers.
+ */
+export const CERTAIN_BITS = 0.05;
+
 /** These three books use a different set of marks, which the ranks in TROP_MARKS do not describe. */
 export const POETIC_BOOKS: readonly string[] = ['Psalms', 'Proverbs', 'Job'];
 
@@ -255,9 +264,14 @@ export type PieceCounts = Map<string, Map<string, number>>;
  * Each book's unusual-verse-division scores, in bits, parallel to `books`; and
  * the counts the bits come from.
  */
-export function divisionScores(books: ParsedBook[]): {
+export function divisionScores(
+  books: ParsedBook[],
+  certain = CERTAIN_BITS,
+): {
   scores: BookScores[];
   counts: PieceCounts;
+  /** How many pieces a verse's score counts, on average. */
+  piecesPerVerse: number;
 } {
   const parsed = books.map((b) =>
     POETIC_BOOKS.includes(b.name)
@@ -285,7 +299,9 @@ export function divisionScores(books: ParsedBook[]): {
 
   // A verse's total cost and piece count; and, for each length, the average of
   // both over the verses near that length, which is what a verse is measured against.
-  const cost = new Map(all.map((v) => [v, v.pieces.reduce((sum, p) => sum + bits(p), 0)]));
+  // The pieces that count: those whose way of splitting costs at least `certain` bits.
+  const counted = new Map(all.map((v) => [v, v.pieces.filter((p) => bits(p) >= certain)]));
+  const cost = new Map(all.map((v) => [v, counted.get(v)!.reduce((sum, p) => sum + bits(p), 0)]));
   const expected = new Map<number, { cost: number; pieces: number }>();
   const expectedFor = (length: number): { cost: number; pieces: number } => {
     let found = expected.get(length);
@@ -293,7 +309,7 @@ export function divisionScores(books: ParsedBook[]): {
       const near = all.filter((v) => Math.abs(v.length - length) <= LENGTH_MATCH * length);
       found = {
         cost: near.reduce((sum, v) => sum + cost.get(v)!, 0) / near.length,
-        pieces: near.reduce((sum, v) => sum + v.pieces.length, 0) / near.length,
+        pieces: near.reduce((sum, v) => sum + counted.get(v)!.length, 0) / near.length,
       };
       expected.set(length, found);
     }
@@ -304,7 +320,7 @@ export function divisionScores(books: ParsedBook[]): {
     const sum = (f: (v: NonNullable<(typeof verses)[number]>) => number) =>
       prefixSums(verses.map((v) => (v ? f(v) : 0)));
     const actualCost = sum((v) => cost.get(v)!);
-    const actualPieces = sum((v) => v.pieces.length);
+    const actualPieces = sum((v) => counted.get(v)!.length);
     const baseCost = sum((v) => expectedFor(v.length).cost);
     const basePieces = sum((v) => expectedFor(v.length).pieces);
     return windowed(
@@ -314,12 +330,13 @@ export function divisionScores(books: ParsedBook[]): {
         actualCost(from, to) / actualPieces(from, to) - baseCost(from, to) / basePieces(from, to),
     );
   });
-  return { scores, counts };
+  const piecesPerVerse = all.reduce((sum, v) => sum + counted.get(v)!.length, 0) / all.length;
+  return { scores, counts, piecesPerVerse };
 }
 
 // Vowel points, dagesh, meteg and the shin and sin dots: what is left is the
 // letters, the trop, maqaf and sof pasuq.
-const POINTS = /[ְ-ׇֽֿׁׂׅׄ]/g;
+const POINTS = /[\u05B0-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7]/g;
 
 /**
  * A verse showing how its first half is divided: its words unvowelled with

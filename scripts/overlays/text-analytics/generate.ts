@@ -94,6 +94,7 @@ if (import.meta.main) {
         common,
       ),
     ),
+    divisionPiecesPerVerse: Math.round(division.piecesPerVerse * 100) / 100,
     repetition: nest(books, refs, repetitionScores(books)),
     division: nest(books, refs, division.scores),
   };

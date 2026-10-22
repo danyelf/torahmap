@@ -41,6 +41,8 @@ export interface DivisionExample {
 export type ScoresFile = {
   parameters: ScoreParameters;
   divisionExamples: DivisionExample[];
+  /** How many pieces a verse's verse-division score counts, on average. */
+  divisionPiecesPerVerse: number;
 } & Record<Measure, MeasureScores>;
 
 // The colours span the middle of the scores, so a handful of extreme passages

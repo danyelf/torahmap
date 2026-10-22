@@ -10,6 +10,7 @@ const data: TextAnalyticsData = {
   scores: {
     parameters: { ...SAMPLE_TEXT_ANALYTICS_SCORES.parameters },
     divisionExamples: SAMPLE_TEXT_ANALYTICS_SCORES.divisionExamples,
+    divisionPiecesPerVerse: SAMPLE_TEXT_ANALYTICS_SCORES.divisionPiecesPerVerse,
     repetition: { Genesis: { '1': [0, 0.5, null, 0.25] } },
     division: { Genesis: { '1': [0.2, -0.2, null, 0] } },
   },
