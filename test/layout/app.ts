@@ -135,6 +135,18 @@ export const STATES: State[] = [
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select'],
   },
+  {
+    name: 'explore-text-analytics-repetition',
+    link: 'overlay=text-analytics',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select', '[data-measure="trop"]'],
+  },
+  {
+    name: 'explore-text-analytics-trop',
+    link: 'overlay=text-analytics&measure=trop',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select', '[data-measure="repetition"]'],
+  },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.
   {
     name: 'explore-trop-rare',
