@@ -8,6 +8,7 @@ import {
   writtenNumber,
 } from '@torahmap/hebrew';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
+import { fromRoman } from '@torahmap/utils';
 import { passageRef, verseId, type ChapterPlace } from '@torahmap/link/tanakh';
 import type { GoTo, Reference } from '@torahmap/shell/app/text.ts';
 import {
@@ -72,12 +73,15 @@ const HEBREW_NAMES: Record<string, readonly string[]> = {
 };
 
 // A numbered book's I, II or III, read as its number so that "I Sam" and "1 Sam" are one.
-const ROMAN: Record<string, string> = { i: '1', ii: '2', iii: '3' };
+const bookNumber = (word: string) => {
+  const n = fromRoman(word);
+  return n && n <= 3 ? String(n) : word;
+};
 
 const numbered =
   (fold: (word: string) => string): Fold =>
   ([first, ...rest]) =>
-    [ROMAN[first] ?? first, ...rest].map(fold).join('');
+    [bookNumber(first), ...rest].map(fold).join('');
 
 // Names as written, then as they sound.
 const FOLDS = [numbered(foldFinalLetters), numbered(soundOfName)];

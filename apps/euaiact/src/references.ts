@@ -7,6 +7,7 @@ import {
   type Named,
   type Token,
 } from '@torahmap/shell/references.ts';
+import { fromRoman, toRoman } from '@torahmap/utils';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { actRef, layerOf, ownerOf, type Layer } from './ids.ts';
 
@@ -18,30 +19,10 @@ const LAYERS: Named<Layer>[] = [
   { key: 'annex', names: ['Annex', 'Annexes', 'Anx'] },
 ];
 
-const ROMAN: [number, string][] = [
-  [100, 'C'],
-  [90, 'XC'],
-  [50, 'L'],
-  [40, 'XL'],
-  [10, 'X'],
-  [9, 'IX'],
-  [5, 'V'],
-  [4, 'IV'],
-  [1, 'I'],
-];
-
-function roman(n: number): string {
-  let out = '';
-  for (const [value, letters] of ROMAN) {
-    for (; n >= value; n -= value) out += letters;
-  }
-  return out;
-}
-
 /** An annex's number as its id writes it, from Arabic or Roman numerals; null for anything else. */
 function annexNumber(text: string): string | null {
-  if (/^\d+$/.test(text)) return roman(Number(text));
-  return /^[ivxlc]+$/.test(text) ? text.toUpperCase() : null;
+  const n = /^\d+$/.test(text) ? Number(text) : fromRoman(text);
+  return n ? toRoman(n) : null;
 }
 
 /** Reads a reference to the squares `ids` name: an article, recital or annex, or a part of one. */
