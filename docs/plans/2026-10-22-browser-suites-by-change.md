@@ -29,3 +29,16 @@ comment there marks as loading's.
 - Rejected: choosing suites by file without the refactor. `main.ts` mixes downloads with the
   interface, so it would have to count as loading, and the card's × (#420) would still have run
   the loading suite.
+- The loading suite borrowed helpers from `test/layout/page.ts` and `app.ts`, which nearly every
+  layout change touches, so each would have run both suites. What both suites read now lives in
+  `test/browser/`, which runs both; the layout's own helpers run layout alone.
+- `index.html` counts as layout's: the layout suite checks every element in it. The root
+  `package.json` counts as neither: a dependency changes `package-lock.json`, which runs both.
+- Not covered, besides the landing callback: an overlay's or search's `data`, which names the
+  files it needs, lives in its own module and counts as layout's. Changing which files a tool
+  needs is rare; a change there should run the loading suite by hand.
+- The serving tests run in vitest against Vite's dev server started in the test (about 0.2 s),
+  so a change to `vite.config.ts` or `pages.ts` is checked on every commit.
+- Replayed through the rules, the merged pull requests since the suites moved under `test/`
+  (#418–#434) run the loading suite only where they changed loading code or its tests: #418,
+  #421, #432. The card's × (#420) runs layout alone.

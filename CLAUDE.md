@@ -37,12 +37,15 @@ npm run build
 npm test               # vitest; test:watch, test:coverage
 npm run typecheck
 npm run format         # Prettier owns formatting; format:check reports only
-npm run test:layout    # see UI Changes in AGENTS.md
-npm run test:loading   # before any PR that changes startup or what loads when
+npm run test:browser   # the browser suites the branch's changes can break; -- --list says which
 ```
 
-The layout suite takes about four minutes: while working, run only the states a change touches
-(`npm run test:layout -- -g <name>`), and the whole suite once before opening or updating the PR.
+Run `npm run test:browser` before opening or updating a PR: it reads the files changed since
+`origin/main` and runs the layout suite (`test:layout`, about four minutes), the loading suite
+(`test:loading`) or both, by the rules in `scripts/test-browser.ts`. While working, run only the
+layout states a change touches (`npm run test:layout -- -g <name>`). Run the loading suite by hand
+after changing what `main.ts` asks of the loader and `viewFiles.ts` (the comment above
+`createLoader` lists it), or the files a tool names in its `data`.
 The two browser suites take turns across the machine, whichever checkout starts them: a run waits,
 saying for whom, until the one before it ends. `SUITE_LOCK=off` skips the wait.
 
@@ -59,7 +62,8 @@ cloning, run `./scripts/install-hooks.sh` once if your npm config sets `ignore-s
   `package.json` lists, and only the Tanakh's app and the Worker import the Tanakh's own code
   (`test/package-imports.test.ts`).
 - `index.html` — every text's page, filled by `vite.config.ts` at the address `pages.ts` gives it.
-- `test/` — whole-repository checks and the browser suites `test/layout/` and `test/loading/`.
+- `test/` — whole-repository checks, what the dev server sends, and the browser suites
+  `test/layout/` and `test/loading/`, with what they share in `test/browser/`.
 - `public/data/` — shipped data. `data/` — the sources behind it, largely gitignored.
 - `scripts/` — tooling to regenerate the data, laid out to match `public/data/`.
 - `docs/plans/` — design docs, one per feature, each dated and headed with its status.
