@@ -1,7 +1,6 @@
-// The Act's search: @torahmap/search's term search over every paragraph's English.
+// Every paragraph's English.
 import { memoByValue } from '@torahmap/utils';
 import { TERM_SEARCH_PARAMS } from '@torahmap/link';
-import { ENGLISH } from '@torahmap/shell/language.ts';
 import { buildTextIndex, createTermSearch, english, type SearchEntry } from '@torahmap/search';
 import { TEXTS_FILE, type ActTexts } from './data.ts';
 import { actRef } from './ids.ts';
@@ -15,7 +14,7 @@ const LANGUAGES = [english];
 
 function* entries(texts: ActTexts): Iterable<SearchEntry> {
   for (const [id, text] of Object.entries(texts)) {
-    yield { id, ref: actRef(id), text: { [ENGLISH]: text } };
+    yield { id, ref: actRef(id), text: { [english.id]: text } };
   }
 }
 
