@@ -10,7 +10,6 @@ export type Measure = (typeof TEXT_ANALYTICS_MEASURES)[number];
 /** What each measure is called wherever a reader sees it. */
 export const MEASURE_LABELS: Record<Measure, string> = {
   repetition: 'Repetitive wording',
-  division: 'Unusual verse division',
 };
 
 /** Book → chapter → each verse's score, from verse 1; null for a verse with none. */
@@ -18,32 +17,13 @@ export type MeasureScores = Record<string, Record<string, (number | null)[]>>;
 
 /** The values the measures were computed with, for the legend to name. */
 export interface ScoreParameters {
-  windowVerses: number;
   minWords: number;
   runWords: number;
   reachVerses: number;
   formulaBooks: number;
-  /** The books the verse-division measure leaves without a score. */
-  poeticBooks: string[];
 }
 
-/** A verse showing one way the first half of a verse is divided. */
-export interface DivisionExample {
-  ref: string;
-  /** Whether it shows a common way or an uncommon one. */
-  common: boolean;
-  /** The share of first halves divided this way. */
-  share: number;
-  /** Unvowelled, with their trop; `mark` names the pause a word carries when it divides the first half. */
-  words: { text: string; mark?: string; secondHalf?: true }[];
-}
-
-export type ScoresFile = {
-  parameters: ScoreParameters;
-  divisionExamples: DivisionExample[];
-  /** How many pieces a verse's verse-division score counts, on average. */
-  divisionPiecesPerVerse: number;
-} & Record<Measure, MeasureScores>;
+export type ScoresFile = { parameters: ScoreParameters } & Record<Measure, MeasureScores>;
 
 // The colours span the middle of the scores, so a handful of extreme passages
 // do not push every other verse into one end of the scale.
@@ -56,25 +36,3 @@ export function percentile(sorted: readonly number[], q: number): number {
 }
 
 export const percent = (v: number): string => `${Math.round(v * 100)}%`;
-
-/** Signed by the value as shown, with a true minus sign. */
-export function bits(v: number): string {
-  const shown = Number(v.toFixed(2));
-  return `${shown > 0 ? '+' : shown < 0 ? '−' : ''}${Math.abs(shown).toFixed(2)} bits`;
-}
-
-/**
- * A division score as a factor: the score is a difference in bits per split,
- * so 2 to its power is how many times rarer, on average, the passage's splits are.
- */
-export function timesRarer(v: number): string {
-  const factor = Number((2 ** Math.abs(v)).toFixed(2));
-  if (factor === 1) return 'usual';
-  return `${factor.toFixed(2)}× ${v > 0 ? 'rarer' : 'more common'}`;
-}
-
-/** A list of names as prose: "A, B and C". */
-export const listed = (names: readonly string[]): string =>
-  names.length < 2
-    ? (names[0] ?? '')
-    : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;

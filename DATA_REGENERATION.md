@@ -141,13 +141,12 @@ npm run generate:text-analytics   # writes public/data/overlays/text-analytics/s
 npm run report:text-analytics     # what the scores show across the whole Tanakh
 ```
 
-Both measures are computed from the bundled verse texts, so rerun the generator
+The scores are computed from the bundled verse texts, so rerun the generator
 whenever `all-texts.json` changes; it fetches nothing and has no `collected`
-date. How each measure works, and every value it depends on, is in
+date. How the measure works, and every value it depends on, is in
 `scripts/overlays/text-analytics/measures.ts`. The report prints the most and
-least repetitive chapters, the most and least unusual verse division, each score's correlation with verse
-length, the number of stock phrases set aside, and how often a verse's first
-half is split each way; read it after changing a measure.
+least repetitive chapters, the score's correlation with verse length and the
+number of stock phrases set aside; read it after changing the measure.
 
 ## Text Dating Data
 
