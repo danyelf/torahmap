@@ -306,6 +306,12 @@ export const ACT_STATES: State[] = [
   { name: 'act-recital-pinned', link: 'at=Recital.12', shown: ['#popup.visible'] },
   { name: 'act-search', link: 'search=deployer&zoom=0.6', shown: ['#map-legend'] },
   {
+    name: 'act-search-panel',
+    link: `search=${encodeURIComponent('deployer,biometric,risk')}&mode=w,w,s&zoom=0.6`,
+    then: (page) => viaMenu(page, 'search'),
+    shown: ['#search-input', '#search-clear-all'],
+  },
+  {
     name: 'act-goto-panel',
     link: 'zoom=0.6',
     then: (page) => goTo(page),

@@ -1,7 +1,8 @@
 // The EU AI Act as a text for the app shell.
 
 import { cameraToFit } from '@torahmap/engine';
-import type { LinkKeys } from '@torahmap/link';
+import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
+import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { EXAMPLES, provisionReader } from './references.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
@@ -19,7 +20,7 @@ import {
 import { TEXTS_FILE, structureFrom, type ActTexts } from './data.ts';
 import { actRef, sourceUrl } from './ids.ts';
 import { computeActLayout, type ActItem } from './layout.ts';
-import { ACT_SEARCH_PARAMS, actSearch, type ActSearchSettings } from './search.ts';
+import { actSearch, configureSearch } from './search.ts';
 import { ACT_OVERLAYS, actOverlayParams } from './overlays/index.ts';
 import { euaiactSite } from './site.ts';
 import { euaiactFiles } from './files.ts';
@@ -45,13 +46,13 @@ const WHOLE_MAP: Story = {
 
 const ACT_LINK_KEYS: LinkKeys = {
   square: 'at',
-  search: ACT_SEARCH_PARAMS,
+  search: TERM_SEARCH_PARAMS,
   overlayParams: actOverlayParams,
   // Low enough for the whole Act to fit across a phone.
   zoom: { min: 0.1, max: 12, start: 1 },
 };
 
-export const euaiactText: MapText<ActItem, ActSearchSettings> = {
+export const euaiactText: MapText<ActItem, TermSettings> = {
   site: euaiactSite,
   link: ACT_LINK_KEYS,
   languages: [ENGLISH],
@@ -109,6 +110,10 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
       overlays: ACT_OVERLAYS,
 
       search: actSearch,
+
+      start(shell) {
+        configureSearch(laid.items, shell.pinAndGlide);
+      },
 
       stories: {
         list: [WHOLE_MAP],
