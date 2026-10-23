@@ -6,7 +6,7 @@ import { ENGLISH, HEBREW, type TextLanguage } from './language.ts';
 import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
-import { linkStretches, type TextLink } from './textLinks.ts';
+import { insertReferences, linkStretches, type TextLink, type TextReference } from './textLinks.ts';
 import type { TextRange } from '@torahmap/utils';
 import { styleStretches, type TextStyle } from './textStyles.ts';
 
@@ -118,6 +118,10 @@ export interface PopupText {
   link: string;
   /** Stretches of the Hebrew that link elsewhere, opened in a new window. */
   hebrewLinks?: readonly TextLink[];
+  /** Links shown as labels at points in the Hebrew, outside its words. */
+  hebrewReferences?: readonly TextReference[];
+  /** Stretches of the English that link elsewhere, opened in a new window. */
+  englishLinks?: readonly TextLink[];
   /** Stretches of the English in bold or italic. */
   englishStyles?: readonly TextStyle[];
   /** The stretches of the English that search reads, and so marks; all of it when absent. */
@@ -219,20 +223,19 @@ export function updateSidebar<I extends MapItem>(
       } else {
         container.replaceChildren(fragment);
       }
+      insertReferences(container, text.hebrewReferences ?? []);
     }
   }
   if (english) {
-    english.replaceChildren(
-      ...(text.english
-        ? [
-            styleStretches(
-              marked(text.english, ENGLISH, text.englishSearched) ?? textFragment(text.english),
-              text.english,
-              text.englishStyles ?? [],
-            ),
-          ]
-        : []),
-    );
+    english.replaceChildren();
+    if (text.english) {
+      const styled = styleStretches(
+        marked(text.english, ENGLISH, text.englishSearched) ?? textFragment(text.english),
+        text.english,
+        text.englishStyles ?? [],
+      );
+      english.append(linkStretches(styled, text.english, text.englishLinks ?? []));
+    }
   }
   for (const [language, row, notice] of [
     [HEBREW, hebrew, hebrewNotice],
