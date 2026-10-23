@@ -32,10 +32,10 @@ describe('searching the Act', () => {
     expect(found({ search: 'records' })).toEqual(['Recital.1', '9(2)']);
   });
 
-  it('matches a whole word, in any case, until told otherwise', () => {
-    expect(found({ search: 'RECORD' })).toEqual([]);
+  it('matches a substring, in any case, until told otherwise', () => {
+    expect(found({ search: 'RECORD' })).toEqual(['Recital.1', '9(2)']);
     expect(found({ search: 'Provider' })).toEqual(['9(2)']);
-    expect(found({ search: 'deploy', mode: 's' })).toEqual(['Recital.1']);
+    expect(found({ search: 'deploy' })).toEqual(['Recital.1']);
     expect(found({ search: 'deploy', mode: 'w' })).toEqual([]);
   });
 
@@ -65,13 +65,14 @@ describe('searching the Act', () => {
     }
   });
 
-  it('marks each whole-word match in a paragraph’s text, in any case', () => {
+  it('marks each match in a paragraph’s text, in any case', () => {
     const text = 'Records, recordsets and RECORDS.';
     const div = document.createElement('div');
     const settings = actSearch.settingsFromUrl!({ search: 'records' });
     div.append(actSearch.highlightItemText!(item('9(2)'), text, ENGLISH, settings, data));
     expect([...div.querySelectorAll('mark')].map((m) => m.textContent)).toEqual([
       'Records',
+      'records',
       'RECORDS',
     ]);
     expect(div.textContent).toBe(text);
@@ -89,9 +90,9 @@ describe('searching the Act', () => {
 
   it('keeps its terms and their modes in the link', () => {
     const link = actSearch.settingsToUrl!(
-      actSearch.settingsFromUrl!({ search: 'provider,deploy', mode: 'w,s' }),
+      actSearch.settingsFromUrl!({ search: 'provider,deploy', mode: 'w,w' }),
     );
-    expect(found(link)).toEqual(['Recital.1', '9(2)']);
-    expect(found({ search: link.search })).toEqual(['9(2)']);
+    expect(found(link)).toEqual(['9(2)']);
+    expect(found({ search: link.search })).toEqual(['Recital.1', '9(2)']);
   });
 });

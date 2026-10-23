@@ -26,8 +26,6 @@ const search = createTermSearch<ActItem, ActSearchData>({
   data: { texts: TEXTS_FILE },
   index: ({ texts }) => indexes(texts),
   noun: { one: 'paragraph', many: 'paragraphs' },
-  // A short word as a substring lights much of the Act: "act" is inside "fact", "impact" and "action".
-  defaultMode: 'word',
   placeholder: 'Search the Act…',
   description: 'Finds a word or phrase in any recital, article or annex.',
   urlParams: TERM_SEARCH_PARAMS,
