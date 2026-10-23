@@ -2,11 +2,11 @@
 // computed ahead of time by scripts/overlays/text-analytics/generate.ts.
 
 import { type Color, type ColorStop, scale, LINEAR, memoByValue } from '@torahmap/utils';
-import type { Overlay } from '@torahmap/shell/overlays/types.ts';
+import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
-import { TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
+import { TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
   HIGH_PERCENTILE,
   LOW_PERCENTILE,
@@ -32,6 +32,10 @@ const CIVIDIS_STOPS: ColorStop[] = [
 
 // The scale's two ends, in the panel's legend and on the legend card.
 const ENDS: [low: string, high: string] = ['varied', 'repetitive'];
+
+export interface TextAnalyticsSettings {
+  analysis: (typeof TEXT_ANALYSES)[number];
+}
 
 export interface TextAnalyticsData {
   scores: ScoresFile;
@@ -59,9 +63,21 @@ function colorAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
   return score === null ? NO_DATA : scaleOf(data).scale.colorOf(score);
 }
 
-export const textAnalyticsOverlay: Overlay<TanakhIdentity, void, TextAnalyticsData> = {
+export const textAnalyticsOverlay: Overlay<
+  TanakhIdentity,
+  TextAnalyticsSettings,
+  TextAnalyticsData
+> = {
   ...TEXT_ANALYTICS,
   data: { scores: SCORES_FILE, texts: optional(TEXTS_FILE) },
+
+  settingsFromUrl(params: UrlParamValues<typeof TEXT_ANALYTICS.urlParams>): TextAnalyticsSettings {
+    return { analysis: params.analysis ?? TEXT_ANALYSES[0] };
+  },
+
+  settingsToUrl(settings: TextAnalyticsSettings): Record<string, string> {
+    return { analysis: settings.analysis };
+  },
 
   prebuild(data) {
     scaleOf(data);

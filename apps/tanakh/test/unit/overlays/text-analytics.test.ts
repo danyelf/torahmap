@@ -54,4 +54,10 @@ describe('Text Analytics overlay', () => {
   it('names the ends of its strip in the legend card', () => {
     assertNamedEnds(host().summary());
   });
+
+  it('always names its analysis in the link, and opens on it from a link that names none', () => {
+    const h = host();
+    expect(h.toUrl()).toEqual({ analysis: 'repetitive-wording' });
+    expect(h.fromUrl({})).toEqual(h.fromUrl({ analysis: 'repetitive-wording' }));
+  });
 });

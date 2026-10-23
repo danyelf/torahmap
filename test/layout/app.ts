@@ -209,7 +209,7 @@ export const STATES: State[] = [
   },
   {
     name: 'explore-text-analytics',
-    link: 'overlay=text-analytics',
+    link: 'overlay=text-analytics&analysis=repetitive-wording',
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select'],
   },

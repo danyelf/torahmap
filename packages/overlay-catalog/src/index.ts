@@ -69,10 +69,19 @@ export const VERSE_LENGTH = {
   description: "Each verse's length in Hebrew words. The brighter the verse, the longer it is.",
 } as const satisfies OverlayEntry;
 
+/** The analyses the Text Analytics overlay offers; the first is the one it starts with. */
+export const TEXT_ANALYSES = ['repetitive-wording'] as const;
+
+// No default, so the link always names the analysis.
+const TEXT_ANALYTICS_PARAMS = [
+  { key: 'analysis', kind: 'token', allowed: TEXT_ANALYSES },
+] as const satisfies readonly UrlParamSpec[];
+
 export const TEXT_ANALYTICS = {
   id: 'text-analytics',
   name: 'Text Analytics',
   description: 'How much of each verse repeats wording from nearby.',
+  urlParams: TEXT_ANALYTICS_PARAMS,
 } as const satisfies OverlayEntry;
 
 /** Every overlay the menu offers, in the order it offers them. */
