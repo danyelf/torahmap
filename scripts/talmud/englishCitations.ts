@@ -33,9 +33,10 @@ export function englishCitationFinder(
     if (book) byName.set(spelling, book);
   }
   const names = [...byName.keys()].sort((a, b) => b.length - a.length);
-  // Letters, not "I Samuel" alone: the name must end where the chapter begins.
+  // The English may write the space in "I Kings" as a non-breaking one.
+  const spaced = names.map((name) => name.replace(/ /g, String.raw`\s+`));
   const reference = new RegExp(
-    String.raw`\(\s*${LEAD}(${names.join('|')})[\s:]+(\d+):(\d+)[^()]*\)`,
+    String.raw`\(\s*${LEAD}(${spaced.join('|')})[\s:]*(\d+):(\d+)[^()]*\)`,
     'gi',
   );
 
@@ -44,7 +45,7 @@ export function englishCitationFinder(
     const citations: Citation[] = [];
     const unlinked: Unlinked[] = [];
     for (const match of text.matchAll(reference)) {
-      const book = byName.get(match[1].toLowerCase())!;
+      const book = byName.get(match[1].replace(/\s+/g, ' ').toLowerCase())!;
       const [chapter, verse] = [Number(match[2]), Number(match[3])];
       if (verse < 1 || verse > (book.chapters[chapter - 1] ?? 0)) {
         unlinked.push({
