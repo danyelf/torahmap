@@ -19,7 +19,7 @@ export const PARAMETERS = {
    * as Leviticus 13's "the priest shall look at the plague", as repetition;
    * four keeps passages that repeat themselves (Numbers 7, Job 1) and halves those.
    */
-  runWords: 4,
+  runWords: 5,
   /**
    * How far apart, in verses of the same book, a run may recur and still count:
    * near enough to catch a passage repeating itself (Numbers 7's cycle of six
