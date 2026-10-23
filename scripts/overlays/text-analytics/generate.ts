@@ -1,5 +1,5 @@
 /**
- * Writes the Text analytics overlay's scores, every verse's repetitive-wording
+ * Writes the Text Analytics overlay's scores, every verse's repetitive-wording
  * score, from the bundled verse texts.
  *
  * Run with: npx tsx scripts/overlays/text-analytics/generate.ts

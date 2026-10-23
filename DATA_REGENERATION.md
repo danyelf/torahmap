@@ -144,9 +144,8 @@ npm run report:text-analytics     # what the scores show across the whole Tanakh
 The scores are computed from the bundled verse texts, so rerun the generator
 whenever `all-texts.json` changes; it fetches nothing and has no `collected`
 date. How the measure works, and every value it depends on, is in
-`scripts/overlays/text-analytics/measures.ts`. The report prints the most and
-least repetitive chapters, the score's correlation with verse length and the
-number of stock phrases set aside; read it after changing the measure.
+`scripts/overlays/text-analytics/measures.ts`. Read the report after changing
+the measure.
 
 ## Text Dating Data
 
