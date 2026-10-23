@@ -24,7 +24,7 @@ export function englishCitationFinder(
   // Book names are plain words. The English may write the space in "I Kings" as a non-breaking one.
   const spaced = names.map((name) => name.replace(/ /g, String.raw`\s+`));
   const reference = new RegExp(
-    String.raw`\(\s*${LEAD}(${spaced.join('|')})[\s:]*(\d+):(\d+)[^()]*\)`,
+    String.raw`\(\s*${LEAD}(${spaced.join('|')})[\s:]*(\d+):\s*(\d+)[^()]*\)`,
     'gi',
   );
 

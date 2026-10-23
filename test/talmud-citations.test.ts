@@ -67,7 +67,13 @@ describe("the Talmud's citations of the Tanakh", () => {
             expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
             const reference = plain.slice(start, end);
             expect(reference, verse).toMatch(/^\(.*\)$/s);
-            expect(reference, verse).toContain(`${chapter}:${v}`);
+            expect(
+              reference
+                .match(/(\d+):\s*(\d+)/)
+                ?.slice(1)
+                .map(Number),
+              verse,
+            ).toEqual([chapter, v]);
           }
         }
       }

@@ -40,12 +40,15 @@ describe('the references in the English', () => {
   });
 
   it('reads the slips in how a book is written', () => {
-    expect(linked('(i Samuel 2:3) (Number 5:22) (Hoshea 5:6) (Genesis:1:3) (Genesis1:4)')).toEqual([
+    expect(
+      linked('(i Samuel 2:3) (Number 5:22) (Hoshea 5:6) (Genesis:1:3) (Genesis1:4) (Genesis 1: 5)'),
+    ).toEqual([
       ['I.Samuel.2.3', '(i Samuel 2:3)'],
       ['Numbers.5.22', '(Number 5:22)'],
       ['Hosea.5.6', '(Hoshea 5:6)'],
       ['Genesis.1.3', '(Genesis:1:3)'],
       ['Genesis.1.4', '(Genesis1:4)'],
+      ['Genesis.1.5', '(Genesis 1: 5)'],
     ]);
   });
 
