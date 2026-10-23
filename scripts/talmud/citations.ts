@@ -211,7 +211,9 @@ interface Candidate {
   run: number;
 }
 
-// How near the words after a reference must be to a quote to point at it: אדם ״כי יהיה בעור בשרו״.
+// How near the words after a reference must be to a quote to point at it, אדם ״כי יהיה בעור בשרו״;
+// the same distance sets how early in a quote the previous verse's carried quote may open, and how
+// far ahead of an aligned word a quote is looked for.
 const NEAR = 2;
 
 /**
