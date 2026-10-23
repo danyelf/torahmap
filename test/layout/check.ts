@@ -48,7 +48,7 @@ export async function measureLayout(
     boxes(page, chrome.map),
     boxes(page, chrome.panel),
     clippedText(page, chrome.text),
-    touch ? boxes(page, chrome.interactive) : null,
+    touch ? shown(page, chrome.interactive) : null,
     Promise.all(expected.map((selector) => shown(page, selector))),
   ]);
   const out: Partial<Record<Rule, string[]>> = {
@@ -58,7 +58,12 @@ export async function measureLayout(
     'text-not-clipped': text,
     'expected-shown': expected.flatMap((selector, i) => notShownInFull(selector, found[i], screen)),
   };
-  if (interactive) out['touch-targets'] = tooSmallToTouch(interactive, TOUCH_MIN);
+  // A control that shows at all is measured whole: one cut off by the edge of a
+  // scrolling panel is as big as it is once scrolled to.
+  if (interactive) {
+    const touchable = interactive.flatMap(({ full, visible }) => (visible ? [full] : []));
+    out['touch-targets'] = tooSmallToTouch(touchable, TOUCH_MIN);
+  }
   return out;
 }
 
