@@ -15,6 +15,8 @@ import {
   type ScoresFile,
 } from './text-analytics/scores.ts';
 import { NO_DATA } from './colors.ts';
+import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
+import { wordsBhsaParsed } from '../search/dictionary.ts';
 
 // Cividis, slate blue through grey to yellow: even in lightness, made to read
 // the same with red-green colour blindness, and unlike any other overlay's
@@ -32,6 +34,7 @@ const ENDS: [low: string, high: string] = ['varied', 'repetitive'];
 
 export interface TextAnalyticsData {
   scores: ScoresFile;
+  texts: VerseTexts;
 }
 
 function scoreAt(data: TextAnalyticsData, verse: TanakhLayout): number | null {
@@ -56,7 +59,7 @@ function colorAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
 
 export const textAnalyticsOverlay: Overlay<TanakhIdentity, void, TextAnalyticsData> = {
   ...TEXT_ANALYTICS,
-  data: { scores: SCORES_FILE },
+  data: { scores: SCORES_FILE, texts: TEXTS_FILE },
 
   prebuild(data) {
     scaleOf(data);
@@ -98,6 +101,9 @@ export const textAnalyticsOverlay: Overlay<TanakhIdentity, void, TextAnalyticsDa
 
   getHoverInfo(verse, _settings, data) {
     const score = scoreAt(data, verse);
-    return score === null ? null : `${percent(score)} of its words repeated nearby`;
+    if (score === null) return null;
+    // Words as the measure counts them, so the two numbers agree with the score.
+    const words = wordsBhsaParsed(data.texts[verse.book][verse.chapter][verse.verse].he).length;
+    return `${Math.round(score * words)} of its ${words} words repeat nearby`;
   },
 };

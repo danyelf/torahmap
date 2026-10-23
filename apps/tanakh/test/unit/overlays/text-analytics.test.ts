@@ -10,6 +10,13 @@ const data: TextAnalyticsData = {
     parameters: SAMPLE_TEXT_ANALYTICS_SCORES.parameters,
     repetition: { Genesis: { '1': [0, 0.5, null, 0.25] } },
   },
+  texts: {
+    Genesis: {
+      '1': Object.fromEntries(
+        [1, 2, 3, 4].map((v) => [v, { he: 'אבג דהו זחט יכל מנס עפצ קרש תאב', en: '' }]),
+      ),
+    },
+  },
 };
 
 const verse = (n: number) => createVerse({ book: 'Genesis', chapter: 1, verse: n });
@@ -29,6 +36,11 @@ describe('Text Analytics overlay', () => {
     expect(h.getItemColor(verse(3))).toEqual(NO_DATA);
     expect(h.getItemColor(createVerse({ book: 'Exodus', chapter: 1, verse: 1 }))).toEqual(NO_DATA);
     expect(h.getHoverInfo(verse(3))).toBeNull();
+  });
+
+  it('gives the hover as a count of words that agrees with the score', () => {
+    const [repeated, words] = host().getHoverInfo(verse(2))!.match(/\d+/g)!.map(Number);
+    expect(repeated / words).toBe(0.5);
   });
 
   it('names the ends of its strip in the legend card', () => {

@@ -15,11 +15,12 @@ export const PARAMETERS = {
   /** Verses shorter than this get no score: short list items (Ezra 2) otherwise dominate the map. */
   minWords: 7,
   /**
-   * Words in a repeated run. Three counts a chapter's technical formulas, such
-   * as Leviticus 13's "the priest shall look at the plague", as repetition;
-   * four keeps passages that repeat themselves (Numbers 7, Job 1) and halves those.
+   * Words in a repeated run. Four counts a chapter's technical formulas, such as
+   * Leviticus 13's "the priest shall look at the plague", as repetition; five
+   * nearly halves those, and passages that repeat themselves (Numbers 7, Job 1)
+   * keep most of their score.
    */
-  runWords: 4,
+  runWords: 5,
   /**
    * How far apart, in verses of the same book, a run may recur and still count:
    * near enough to catch a passage repeating itself (Numbers 7's cycle of six
