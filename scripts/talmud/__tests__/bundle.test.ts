@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { stripHtml, parseWholeRef, processTractate } from '../bundle.ts';
-import { stripNikkudAndSeparators, walkMarkers } from '../markers.ts';
+import { markersOf, mishnahFrom, stripNikkudAndSeparators } from '../markers.ts';
 
-describe('walkMarkers', () => {
+const walkMarkers = (text: string[][]) => mishnahFrom(markersOf(text));
+
+describe('which segments are Mishnah', () => {
   it('tags every segment from a מתני׳ to the next גמ׳ as Mishnah', () => {
     const text = [
       ['<big><strong>מַתְנִי׳</strong></big> מִשְׁנָה', 'עוֹד'],
@@ -178,6 +180,7 @@ describe('processTractate', () => {
       davidson,
       fakeSchema(),
       englishOf(davidson),
+      davidson,
     );
     expect(english.map((amud) => amud.length)).toEqual([5, 4, 3]);
     expect(english[1][0]).toBe('*3*:0');
@@ -186,7 +189,7 @@ describe('processTractate', () => {
   });
 
   const withEnglish = (davidson: { text: string[][] }, english: { text: string[][] }) => () =>
-    processTractate('Zeraim', 'Test', davidson, fakeSchema(), english);
+    processTractate('Zeraim', 'Test', davidson, fakeSchema(), english, davidson);
 
   it('allows the English to leave off a closing line that ends an amud', () => {
     const davidson = fakeDavidson();
@@ -217,6 +220,7 @@ describe('processTractate', () => {
       davidson,
       fakeSchema(),
       englishOf(davidson),
+      davidson,
     );
     const amud2b = structure.amudim.find((a) => a.daf === 2 && a.amud === 'b')!;
     expect(amud2b.perekIdx).toBe(0); // boundary amud belongs to prev perek
@@ -239,6 +243,7 @@ describe('processTractate', () => {
       davidson,
       schema,
       englishOf(davidson),
+      davidson,
     );
     expect(structure.amudim.map((a) => `${a.daf}${a.amud}:${a.segmentCount}`)).toEqual([
       '2b:5',
@@ -259,7 +264,14 @@ describe('processTractate', () => {
       'a4',
       'a5',
     ];
-    const { text } = processTractate('Zeraim', 'Test', davidson, fakeSchema(), englishOf(davidson));
+    const { text } = processTractate(
+      'Zeraim',
+      'Test',
+      davidson,
+      fakeSchema(),
+      englishOf(davidson),
+      davidson,
+    );
     expect(text.amudim[0].slice(0, 3)).toEqual([
       'הַכֹּל כְּשֵׁרִים',
       'אָמַר רַב: מתני׳ דלא כרבי',
@@ -276,7 +288,14 @@ describe('processTractate', () => {
       'a4',
       '<br><br><big><strong>הַדְרָן עֲלָךְ כׇּל כִּתְבֵי</strong></big><br><br>',
     ];
-    const { text } = processTractate('Zeraim', 'Test', davidson, fakeSchema(), englishOf(davidson));
+    const { text } = processTractate(
+      'Zeraim',
+      'Test',
+      davidson,
+      fakeSchema(),
+      englishOf(davidson),
+      davidson,
+    );
     expect(text.amudim[0][1]).toBe('וְהַדְרָן אָמְרוּ');
     expect(text.amudim[0][4]).toBe('הַדְרָן עֲלָךְ כׇּל כִּתְבֵי');
   });
@@ -290,10 +309,31 @@ describe('processTractate', () => {
       davidson,
       fakeSchema(),
       englishOf(davidson),
+      davidson,
     );
     expect(search.map((amud) => amud.length)).toEqual([5, 4, 3]);
     expect(text.amudim[0][0]).toBe('אָמַר רַבִּי יוֹחָנָן');
     expect(search[0][0]).toBe('אמר רבי יוחנן');
+  });
+
+  it("gives Wikisource's text as the popup's is laid out, and refuses one divided otherwise", () => {
+    const davidson = fakeDavidson();
+    const wikisource = fakeDavidson();
+    wikisource.text[2][0] = '<b>(שמות כ, ז)</b> זכור';
+    const { naming } = processTractate(
+      'Zeraim',
+      'Test',
+      davidson,
+      fakeSchema(),
+      englishOf(davidson),
+      wikisource,
+    );
+    expect(naming.map((amud) => amud.length)).toEqual([5, 4, 3]);
+    expect(naming[0][0]).toBe('(שמות כ, ז) זכור');
+    wikisource.text[3].pop();
+    expect(() =>
+      processTractate('Zeraim', 'Test', davidson, fakeSchema(), englishOf(davidson), wikisource),
+    ).toThrow();
   });
 
   it('gives English search the bold of each segment, as the English is laid out', () => {
@@ -304,6 +344,7 @@ describe('processTractate', () => {
       davidson,
       fakeSchema(),
       englishOf(davidson),
+      davidson,
     );
     expect(searchEnglish.map((amud) => amud.length)).toEqual(english.map((amud) => amud.length));
     expect(searchEnglish[1][0]).toBe('3');

@@ -1,13 +1,16 @@
 import { wrapRuns } from './textRuns.ts';
 import type { TextRange } from '@torahmap/utils';
 
-/**
- * A stretch of a text, as a link to `href`. A link with a `label` covers no text: the label is shown
- * at `start`, beside the text rather than in it.
- */
+/** A stretch of a text, as a link to `href`. */
 export interface TextLink extends TextRange {
   href: string;
-  label?: string;
+}
+
+/** A link shown as its own `label` at offset `at` of a text, beside the text rather than in it. */
+export interface TextReference {
+  at: number;
+  href: string;
+  label: string;
 }
 
 /** The class of the anchor a link's stretch becomes. */
@@ -32,26 +35,24 @@ export function linkStretches(
   text: string,
   links: readonly TextLink[],
 ): DocumentFragment {
-  const stretches = links.filter((l) => l.label === undefined);
-  if (stretches.length === 0) return fragment;
+  if (links.length === 0) return fragment;
   return wrapRuns(
     fragment,
     text,
-    (offset) => stretches.find((l) => l.start <= offset && offset < l.end) ?? null,
+    (offset) => links.find((l) => l.start <= offset && offset < l.end) ?? null,
     (link, run) => anchor(link.href, run),
   );
 }
 
 /**
- * `container`, which shows a text, with each labelled link's label inserted where it belongs. The
+ * `container`, which shows a text, with each reference's label inserted where it belongs. The
  * labels are not the text: anything that reads the text by offset should do so before this.
  */
-export function insertLabels(container: Element, links: readonly TextLink[]): void {
-  const labelled = links.filter((l) => l.label !== undefined).sort((a, b) => b.start - a.start);
-  for (const link of labelled) {
-    const label = anchor(link.href, link.label!);
+export function insertReferences(container: Element, references: readonly TextReference[]): void {
+  for (const reference of [...references].sort((a, b) => b.at - a.at)) {
+    const label = anchor(reference.href, reference.label);
     label.classList.add(TEXT_LINK_LABEL);
-    const at = textPosition(container, link.start);
+    const at = textPosition(container, reference.at);
     if (!at) {
       container.append(label);
       continue;

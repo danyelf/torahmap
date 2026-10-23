@@ -122,6 +122,9 @@ export function parseWholeRef(ref: string): {
   return null;
 }
 
+/** A few pointed letters Davidson writes as one character, וּ as U+FB35, as letter and point, which search reads. */
+const decomposed = (s: string): string => s.replace(/[\uFB1D-\uFB4F]/g, (c) => c.normalize('NFD'));
+
 export interface EditionJson {
   text: string[][];
   heTitle?: string;
@@ -148,6 +151,8 @@ export function processTractate(
   schema: SchemaJson,
   /** The William Davidson English, shaped as `davidson`. */
   english: EditionJson,
+  /** The Wikisource edition, shaped as `davidson`, read for the Tanakh verses it names. */
+  wikisource: EditionJson,
 ): {
   structure: TalmudTractate;
   text: Omit<TalmudTractateText, 'citations'>;
@@ -156,7 +161,11 @@ export function processTractate(
   search: string[][];
   /** What English search reads, shaped as `english`. */
   searchEnglish: string[][];
+  /** Wikisource's text without tags, laid out as `text`. Davidson names no verse it quotes. */
+  naming: string[][];
 } {
+  const shape = shapeMatches(davidson, wikisource);
+  if (!shape.match) throw new Error(`${tractateName}: the editions differ: ${shape.reason}`);
   const schemaNodes = schema.alts?.Chapters?.nodes ?? [];
   if (schemaNodes.length === 0) {
     throw new Error(`${tractateName}: schema has no perek nodes`);
@@ -169,7 +178,7 @@ export function processTractate(
     daf: 1 + Math.floor((skip + ai) / 2),
     amud: (skip + ai) % 2 === 0 ? 'a' : 'b',
   });
-  const text = davidson.text.slice(skip);
+  const text = davidson.text.slice(skip).map((amud) => amud.map(decomposed));
   const translation = english.text.slice(skip);
   const differs = englishShapeDiffers(text, translation);
   if (differs !== null) {
@@ -265,6 +274,7 @@ export function processTractate(
     english: englishMarked,
     search: cleanText.map((amud) => amud.map(stripNikkud)),
     searchEnglish: englishMarked.map((amud) => amud.map(englishSearchText)),
+    naming: wikisource.text.slice(skip).map((amud) => amud.map(stripHtml)),
   };
 }
 
@@ -307,37 +317,27 @@ async function main(): Promise<void> {
     process.stdout.write(`  ${ref.tractate.padEnd(20)} ... `);
     try {
       const paths = cachePathsFor(ref);
-      const davidson = await readJson<EditionJson>(paths.davidson);
-      const wikisource = await readJson<EditionJson>(paths.wikisource);
-      const shape = shapeMatches(davidson, wikisource);
-      if (!shape.match) throw new Error(`the editions differ: ${shape.reason}`);
       const {
         structure: tractateStructure,
         text: tractateText,
         english: tractateEnglish,
         search: searchText,
         searchEnglish: searchEnglishText,
+        naming,
       } = processTractate(
         ref.seder,
         ref.tractate,
-        davidson,
+        await readJson<EditionJson>(paths.davidson),
         await readJson<SchemaJson>(paths.schema),
         await readJson<EditionJson>(paths.english),
+        await readJson<EditionJson>(paths.wikisource),
       );
 
       structure.tractates.push(tractateStructure);
       search[ref.tractate] = searchText;
       searchEnglish[ref.tractate] = searchEnglishText;
 
-      // Davidson names no verse it quotes, so the verses come from Wikisource, segment for segment.
-      // Both editions start at 1a, and the text without the empty amudim before it starts.
-      const naming = wikisource.text
-        .slice(wikisource.text.length - tractateText.amudim.length)
-        .map((amud) => amud.map(stripHtml));
-      const cited = citationsByPlace(tractateText.amudim, naming, find, place);
-      for (const [way, n] of Object.entries(cited.placings) as [Placing, number][]) {
-        placings[way] = (placings[way] ?? 0) + n;
-      }
+      const cited = citationsByPlace(tractateText.amudim, naming, find, place, placings);
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
       const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
       await writeData(textsFile(ref.tractate), shipped);

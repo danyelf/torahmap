@@ -67,7 +67,7 @@ export type TalmudSearchText = Record<string, string[][]>;
 /** Where a segment cites a Tanakh verse: the cited words, by place in its text, and the verse's id. */
 export interface Citation extends TextRange {
   verse: string;
-  /** Where no words of the segment quote the verse, the reference shown at `start`, which `end` equals. */
+  /** Where no words of the segment quote the verse: the reference, shown at `start`, and `end` is `start`. */
   reference?: string;
 }
 

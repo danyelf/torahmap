@@ -130,7 +130,7 @@ function urlsFor(ref: TractateRef): TractateFiles {
   const edition = (name: string) =>
     `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/${name}`;
   return {
-    // Sefaria merges a tractate's Hebrew versions; Davidson's is the only one there is.
+    // merged.json holds the Davidson text.
     davidson: edition('Hebrew/merged.json'),
     schema: `${SEFARIA_EXPORT}/schemas/${schemaName}.json`,
     english: edition(`English/${encodeURIComponent('William Davidson Edition - English.json')}`),
@@ -159,7 +159,6 @@ async function fetchTractate(
       fetchToCache(urls[key], paths[key], force),
     ),
   );
-  // Only the bundle reads the English.
   const read = async (path: string) => JSON.parse(await readFile(path, 'utf-8')) as unknown;
   return {
     davidson: await read(paths.davidson),

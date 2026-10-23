@@ -6,7 +6,7 @@ import { ENGLISH, HEBREW, type TextLanguage } from './language.ts';
 import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
-import { insertLabels, linkStretches, type TextLink } from './textLinks.ts';
+import { insertReferences, linkStretches, type TextLink, type TextReference } from './textLinks.ts';
 import type { TextRange } from '@torahmap/utils';
 import { styleStretches, type TextStyle } from './textStyles.ts';
 
@@ -118,6 +118,8 @@ export interface PopupText {
   link: string;
   /** Stretches of the Hebrew that link elsewhere, opened in a new window. */
   hebrewLinks?: readonly TextLink[];
+  /** Links shown as labels at points in the Hebrew, outside its words. */
+  hebrewReferences?: readonly TextReference[];
   /** Stretches of the English in bold or italic. */
   englishStyles?: readonly TextStyle[];
   /** The stretches of the English that search reads, and so marks; all of it when absent. */
@@ -219,7 +221,7 @@ export function updateSidebar<I extends MapItem>(
       } else {
         container.replaceChildren(fragment);
       }
-      insertLabels(container, text.hebrewLinks ?? []);
+      insertReferences(container, text.hebrewReferences ?? []);
     }
   }
   if (english) {

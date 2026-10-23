@@ -37,29 +37,26 @@ export function stripNikkudAndSeparators(s: string): string {
   return stripNikkud(s).replace(HEBREW_SEPARATORS, '');
 }
 
-/** The part a segment opens, if any; `previous` is the segment before it. */
-export function detectMarker(seg: string, previous = ''): Marker {
-  const s = stripNikkudAndSeparators(seg);
-  if (isHadran(s)) return null;
-  const word = s.match(MARKER_RE)?.[2];
-  if (word) return word === 'מתני' ? 'M' : 'G';
-  // A Mishnah opens every chapter, at times on bold words further in (Bava Batra 102b:9).
-  if (BOLD_OPENING_RE.test(s) || NUMBERED_RE.test(s) || isHadran(previous)) {
-    return 'M';
-  }
-  return null;
-}
-
 /** The part each segment opens, reading the tractate in order. */
 export function markersOf(text: string[][]): Marker[][] {
-  let previous = '';
+  let afterHadran = false;
   return text.map((amud) =>
     amud.map((seg) => {
-      const marker = detectMarker(seg, previous);
-      previous = seg;
+      const s = stripNikkudAndSeparators(seg);
+      const hadran = HADRAN.test(s);
+      const marker = hadran ? null : markerOf(s, afterHadran);
+      afterHadran = hadran;
       return marker;
     }),
   );
+}
+
+/** The part a segment opens, if any, from its text without points. */
+function markerOf(s: string, afterHadran: boolean): Marker {
+  const word = s.match(MARKER_RE)?.[2];
+  if (word) return word === 'מתני' ? 'M' : 'G';
+  // A Mishnah opens every chapter, at times on bold words further in (Bava Batra 102b:9).
+  return BOLD_OPENING_RE.test(s) || NUMBERED_RE.test(s) || afterHadran ? 'M' : null;
 }
 
 /** Whether each segment is Mishnah. A tractate starts in Gemara; each marker sets the state until the next. */
@@ -71,10 +68,6 @@ export function mishnahFrom(markers: Marker[][]): boolean[][] {
       return isMishnah;
     }),
   );
-}
-
-export function walkMarkers(text: string[][]): boolean[][] {
-  return mishnahFrom(markersOf(text));
 }
 
 const MARKER_WORD_RE = new RegExp(`${MARKER_RE.source}(?:\\s*[:,])?`);

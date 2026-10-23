@@ -178,87 +178,140 @@ describe('quoteFinder', () => {
     before: before.split(' ').filter(Boolean).map(compared),
   });
 
-  /** What each citation in `text` is placed on, the verse, and how it was placed. */
-  function placed(text: string, cited: Cited[]): [string, string, string][] {
-    return findQuotes(text, cited).map(({ citation: c, placing }) => [
-      c.reference ? `${text.slice(0, c.start)}|${c.reference}|` : text.slice(c.start, c.end),
-      c.verse,
+  /**
+   * What each citation in `text` is placed on, the verse, and how; a reference shows where it is,
+   * and a citation shown nowhere is empty.
+   */
+  function placed(text: string, cited: Cited[], find = findQuotes): [string, string, string][] {
+    return find(text, cited).map(({ citation: c, cited: { verse }, placing }) => [
+      !c
+        ? ''
+        : c.reference
+          ? `${text.slice(0, c.start)}|${c.reference}|`
+          : text.slice(c.start, c.end),
+      verse,
       placing,
     ]);
   }
 
-  it('links the quote that holds the words following the reference', () => {
+  it('links the quote that holds two of the verse’s words in a row', () => {
     const text = 'אמר: ״אמר להם״, שנאמר: ״וְסָמַךְ יָדוֹ עַל רֹאשׁ״.';
-    expect(placed(text, [cite('Exodus.20.14', 'וסמך ידו')])).toEqual([
-      ['וְסָמַךְ יָדוֹ עַל רֹאשׁ', 'Exodus.20.14', 'aligned'],
+    expect(placed(text, [cite('Exodus.20.14')])).toEqual([
+      ['וְסָמַךְ יָדוֹ עַל רֹאשׁ', 'Exodus.20.14', 'quote'],
     ]);
   });
 
-  it('links a quote that opens a word after them, when it holds the verse', () => {
-    expect(placed('אָדָם ״וְסָמַךְ יָדוֹ״, מכל מקום', [cite('Exodus.20.14', 'אדם וסמך')])).toEqual([
-      ['וְסָמַךְ יָדוֹ', 'Exodus.20.14', 'aligned'],
+  it('of two quotes that hold the verse, takes the one the words after the reference begin', () => {
+    const text = '״וְסָמַךְ יָדוֹ״ ודרשו: ״יָדוֹ עַל רֹאשׁ״';
+    expect(placed(text, [cite('Exodus.20.14', 'ידו על ראש')])).toEqual([
+      ['יָדוֹ עַל רֹאשׁ', 'Exodus.20.14', 'quote'],
     ]);
   });
 
-  it('links the words themselves where they are not in a quote, as far as the verse has them', () => {
-    expect(placed('אתיא זה לי עשרים, דאמר', [cite('Exodus.20.18', 'זה לי')])).toEqual([
-      ['זה לי עשרים', 'Exodus.20.18', 'aligned'],
+  it('links nothing that does not hold the verse, though the words after the reference are there', () => {
+    // The reference follows its quote, so the words after it are the next quote's.
+    const text = '״וְסָמַךְ יָדוֹ״ ״זֶה לִּי עֶשְׂרִים״';
+    expect(placed(text, [cite('Exodus.20.14', 'זה לי')])).toEqual([
+      ['וְסָמַךְ יָדוֹ', 'Exodus.20.14', 'quote'],
     ]);
   });
 
-  it('reads past a prefix joined to the quote, a single letter, and what the editors bracketed', () => {
-    expect(placed('ל״וְסָמַךְ יָדוֹ״', [cite('Exodus.20.14', 'לוסמך ידו')])).toEqual([
-      ['וְסָמַךְ יָדוֹ', 'Exodus.20.14', 'aligned'],
-    ]);
-    expect(placed('״זה (לי) עשרים״', [cite('Exodus.20.18', 'זה עשרים')])).toEqual([
-      ['זה (לי) עשרים', 'Exodus.20.18', 'aligned'],
-    ]);
-    expect(placed('״וַיֹּאמֶר ה׳ אֶל מֹשֶׁה״', [cite('Exodus.20.16', 'ויאמר י"י')])).toEqual([
-      ['וַיֹּאמֶר ה׳ אֶל מֹשֶׁה', 'Exodus.20.16', 'aligned'],
+  it('does not follow the words after the reference where only common words hold the verse', () => {
+    // אמר and להם are in every verse of this Tanakh.
+    const common: Tanakh = {
+      books: [book('Exodus', 'שמות', 1, 200)],
+      text: (_, __, verse) => (verse === 1 ? 'אמר להם זה הדבר' : 'אמר להם'),
+    };
+    const text = '״אמר להם זה הדבר״ ״אמר להם״';
+    expect(placed(text, [cite('Exodus.1.1', 'אמר להם')], quoteFinder(common))).toEqual([
+      ['אמר להם זה הדבר', 'Exodus.1.1', 'quote'],
     ]);
   });
 
-  it('splits one quote between two verses where the second one’s words begin', () => {
+  it('takes a one-word quote only where no longer one holds the verse', () => {
+    expect(placed('״עֶשְׂרִים״ ו״זֶה לִּי עֶשְׂרִים״', [cite('Exodus.20.18')])).toEqual([
+      ['זֶה לִּי עֶשְׂרִים', 'Exodus.20.18', 'quote'],
+    ]);
+    expect(placed('״עֶשְׂרִים״ ו״אמר להם״', [cite('Exodus.20.18')])).toEqual([
+      ['עֶשְׂרִים', 'Exodus.20.18', 'quote'],
+    ]);
+  });
+
+  it('reads a word with a prefix the verse lacks, ה׳ and י״י as the name, and past וגו׳', () => {
+    expect(placed('״לסמך יָדוֹ״', [cite('Exodus.20.14')])).toEqual([
+      ['לסמך יָדוֹ', 'Exodus.20.14', 'quote'],
+    ]);
+    expect(placed('״וַיֹּאמֶר ה׳ וְגוֹ׳״', [cite('Exodus.20.16')])).toEqual([
+      ['וַיֹּאמֶר ה׳ וְגוֹ׳', 'Exodus.20.16', 'quote'],
+    ]);
+  });
+
+  it('splits one quote between two verses where the second one’s words begin, and shows a verse once', () => {
     const text = '״וְהָיָה לְךָ לְאוֹת וְסָמַךְ יָדוֹ״';
-    expect(
-      placed(text, [cite('Exodus.20.13', 'והיה לך'), cite('Exodus.20.14', 'וסמך ידו')]),
-    ).toEqual([
-      ['וְהָיָה לְךָ לְאוֹת', 'Exodus.20.13', 'aligned'],
+    expect(placed(text, [cite('Exodus.20.13'), cite('Exodus.20.14')])).toEqual([
+      ['וְהָיָה לְךָ לְאוֹת', 'Exodus.20.13', 'quote'],
       ['וְסָמַךְ יָדוֹ', 'Exodus.20.14', 'shared'],
     ]);
+    expect(placed('״וְהָיָה לְךָ לְאוֹת״', [cite('Exodus.20.13'), cite('Exodus.20.13')])).toEqual([
+      ['וְהָיָה לְךָ לְאוֹת', 'Exodus.20.13', 'quote'],
+      ['', 'Exodus.20.13', 'again'],
+    ]);
   });
 
-  it('finds a quote by the verse’s words when the words after the reference are not there', () => {
-    expect(placed('״אמר להם״ ו״זֶה לִּי עֶשְׂרִים״', [cite('Exodus.20.18', 'שונה לגמרי')])).toEqual(
-      [['זֶה לִּי עֶשְׂרִים', 'Exodus.20.18', 'quote']],
-    );
+  it('links three of the verse’s words in a row outside any quote', () => {
+    expect(placed('אתיא זה לי עשרים, דאמר', [cite('Exodus.20.18')])).toEqual([
+      ['זה לי עשרים', 'Exodus.20.18', 'words'],
+    ]);
   });
 
-  it('shows the reference, before the word that follows it, where no words quote the verse', () => {
-    expect(placed('אמר להם: לא כך', [cite('Exodus.20.14', 'לא כך')])).toEqual([
+  it('links less of the verse only where the words after the reference are, and it shares an uncommon word', () => {
+    expect(placed('״מזבח ... וזבחת״', [cite('Exodus.20.21', 'מזבח')])).toEqual([
+      ['מזבח ... וזבחת', 'Exodus.20.21', 'variant'],
+    ]);
+    expect(placed('״מזבח ... וזבחת״', [cite('Exodus.20.21')])).toEqual([
+      ['|(שמות כ)|', 'Exodus.20.21', 'reference'],
+    ]);
+  });
+
+  it('shows the reference before the words after it, or after those before it, outside quote marks, and after any link', () => {
+    expect(placed('אמר להם: ״לא כך״', [cite('Exodus.20.14', 'לא כך')])).toEqual([
       ['אמר להם: |(שמות כ)|', 'Exodus.20.14', 'reference'],
     ]);
-    expect(placed('אמר להם', [cite('Exodus.20.14', '', 'נאמר')])).toEqual([
-      ['אמר להם|(שמות כ)|', 'Exodus.20.14', 'reference'],
+    expect(placed('״אמר להם״ ואמר', [cite('Exodus.20.14', '', 'ואמר להם')])).toEqual([
+      ['״אמר להם״|(שמות כ)|', 'Exodus.20.14', 'reference'],
+    ]);
+    expect(placed('״וְסָמַךְ יָדוֹ״ ואמר', [cite('Exodus.20.14'), cite('Exodus.20.15')])).toEqual([
+      ['וְסָמַךְ יָדוֹ', 'Exodus.20.14', 'quote'],
+      ['״וְסָמַךְ יָדוֹ״ |(שמות כ)|', 'Exodus.20.15', 'reference'],
     ]);
   });
 });
 
 describe('citationsByPlace', () => {
-  it('places the verses one edition names in the other, by amud and segment', () => {
+  it('places the verses one edition names in the other, by amud and segment, and counts how each was placed', () => {
     const naming = [
       ['(שמות כ, יד) וסמך ידו', 'none here'],
       [],
       ['(שמות כ, יג) והיה לך (בן סירא יג, יד)'],
     ];
     const text = [['״וְסָמַךְ יָדוֹ״', 'none here'], [], ['אמר להם']];
-    expect(citationsByPlace(text, naming, findCitations, quoteFinder(TANAKH))).toEqual({
+    const placings = { reference: 2 };
+    expect(citationsByPlace(text, naming, findCitations, quoteFinder(TANAKH), placings)).toEqual({
       citations: {
         0: { 0: [{ start: 1, end: 15, verse: 'Exodus.20.14' }] },
-        2: { 0: [{ start: 7, end: 7, verse: 'Exodus.20.13', reference: '(שמות כ, יג)' }] },
+        2: { 0: [{ start: 0, end: 0, verse: 'Exodus.20.13', reference: '(שמות כ, יג)' }] },
       },
       missed: ['(בן סירא יג, יד)'],
-      placings: { aligned: 1, reference: 1 },
+    });
+    expect(placings).toEqual({ quote: 1, reference: 3 });
+  });
+
+  it('links a reference that ends a segment on the quote that opens the next', () => {
+    const naming = [['כדכתיב (שמות כ, יג)', 'ועוד']];
+    const text = [['כדכתיב', '״וְהָיָה לְךָ לְאוֹת״ ועוד']];
+    expect(citationsByPlace(text, naming, findCitations, quoteFinder(TANAKH), {})).toEqual({
+      citations: { 0: { 1: [{ start: 1, end: 20, verse: 'Exodus.20.13' }] } },
+      missed: [],
     });
   });
 });
