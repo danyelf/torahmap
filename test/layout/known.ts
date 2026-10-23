@@ -15,12 +15,6 @@ const ACT_POPUP_KNOWN: Known = {
   violations: ['a.sefaria-link is 112×15px, under 24', 'button.close-btn is 20×20px, under 24'],
 };
 
-const TROP_FOLD: Known = {
-  reason:
-    "The sheet's fold cuts through the trop chart's second row, and the check measures the sliver above it; the buttons are full size.",
-  violations: Array(6).fill('button is 55×10px, under 24'),
-};
-
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
  * failure whose violations change — fixed, or joined by another — fails the
@@ -49,6 +43,4 @@ export const KNOWN: Record<string, Known> = {
   'act-recital-pinned/tablet/touch-targets': ACT_POPUP_KNOWN,
   'act-goto-taken/phone/touch-targets': ACT_POPUP_KNOWN,
   'act-goto-taken/tablet/touch-targets': ACT_POPUP_KNOWN,
-  'explore-trop/phone/touch-targets': TROP_FOLD,
-  'overlay-none-trop/phone/touch-targets': TROP_FOLD,
 };
