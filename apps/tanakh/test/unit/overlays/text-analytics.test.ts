@@ -7,7 +7,7 @@ import { assertNamedEnds } from '../../helpers/assertions';
 
 const data: TextAnalyticsData = {
   scores: {
-    parameters: { ...SAMPLE_TEXT_ANALYTICS_SCORES.parameters },
+    parameters: SAMPLE_TEXT_ANALYTICS_SCORES.parameters,
     repetition: { Genesis: { '1': [0, 0.5, null, 0.25] } },
   },
 };
@@ -18,7 +18,7 @@ function host() {
   return hostOverlay(textAnalyticsOverlay, data);
 }
 
-describe('Text analytics overlay', () => {
+describe('Text Analytics overlay', () => {
   it('colours each verse by its score', () => {
     const h = host();
     expect(h.getItemColor(verse(1))).not.toEqual(h.getItemColor(verse(2)));
@@ -29,10 +29,6 @@ describe('Text analytics overlay', () => {
     expect(h.getItemColor(verse(3))).toEqual(NO_DATA);
     expect(h.getItemColor(createVerse({ book: 'Exodus', chapter: 1, verse: 1 }))).toEqual(NO_DATA);
     expect(h.getHoverInfo(verse(3))).toBeNull();
-  });
-
-  it('offers no choice of measure while it has only one', () => {
-    expect(host().renderControls().querySelector('[data-measure]')).toBeNull();
   });
 
   it('names the ends of its strip in the legend card', () => {

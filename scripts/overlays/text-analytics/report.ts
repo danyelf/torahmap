@@ -1,5 +1,5 @@
 /**
- * What the Text analytics scores show across the whole Tanakh: the highest and
+ * What the Text Analytics scores show across the whole Tanakh: the highest and
  * lowest chapters, whether the score follows verse length, and how many stock
  * phrases are set aside.
  *
@@ -10,7 +10,6 @@ import { readBooks } from './generate.ts';
 import {
   HIGH_PERCENTILE,
   LOW_PERCENTILE,
-  MEASURE_LABELS,
   percent,
   percentile,
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
@@ -68,8 +67,9 @@ function describe(title: string, scores: BookScores[], format: (v: number) => st
   console.log(`Lowest chapters: ${list(chapters.slice(-12).reverse())}`);
 }
 
+const stock = formulas(books);
 console.log(
-  `Stock phrases (found in ${PARAMETERS.formulaBooks} or more books) set aside: ${formulas(books).size}`,
+  `Stock phrases (found in ${PARAMETERS.formulaBooks} or more books) set aside: ${stock.size}`,
 );
 
-describe(MEASURE_LABELS.repetition, repetitionScores(books), percent);
+describe('Repetitive wording', repetitionScores(books, stock), percent);

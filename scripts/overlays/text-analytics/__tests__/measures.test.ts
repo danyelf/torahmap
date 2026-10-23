@@ -1,14 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import {
-  FORMULA_BOOKS,
-  MIN_WORDS,
-  REACH_VERSES,
-  RUN_WORDS,
-  repetitionScores,
-  parse,
-  units,
-  type ParsedBook,
-} from '../measures.ts';
+import { PARAMETERS, repetitionScores, parse, words, type ParsedBook } from '../measures.ts';
+
+const {
+  minWords: MIN_WORDS,
+  runWords: RUN_WORDS,
+  reachVerses: REACH_VERSES,
+  formulaBooks: FORMULA_BOOKS,
+} = PARAMETERS;
 
 const LETTERS = 'אבגדהוזחטיכלמנסעפצקרשת';
 
@@ -29,21 +27,17 @@ function book(name: string, verses: string[][]): ParsedBook {
   return parse({ name, verses: verses.map((words) => words.join(' ')) });
 }
 
-describe('units', () => {
-  it('counts a maqaf-joined group as one word and drops section markers', () => {
-    expect(units('אֶת־הָאָרֶץ וְאֵת {פ} הַשָּׁמַיִם׃').map((u) => u.consonants)).toEqual([
-      'את־הארץ',
-      'ואת',
-      'השמים',
-    ]);
+describe('words', () => {
+  it('splits at a maqaf and drops section markers', () => {
+    expect(words('אֶת־הָאָרֶץ וְאֵת {פ} הַשָּׁמַיִם׃')).toEqual(['את', 'הארץ', 'ואת', 'השמים']);
   });
 
   it('keeps the word read aloud and drops the one written in its place', () => {
-    expect(units('(הוצא) [הַיְצֵא] אִתָּךְ').map((u) => u.consonants)).toEqual(['היצא', 'אתך']);
+    expect(words('(הוצא) [הַיְצֵא] אִתָּךְ')).toEqual(['היצא', 'אתך']);
   });
 
   it('matches words by consonants, whatever their points and marks', () => {
-    expect(units('הָאָ֖רֶץ')[0].consonants).toBe(units('הָאָרֶץ')[0].consonants);
+    expect(words('הָאָ֖רֶץ')).toEqual(words('הָאָרֶץ'));
   });
 });
 
