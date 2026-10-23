@@ -54,11 +54,14 @@ export interface TalmudStructure {
 export interface TalmudTractateText {
   name: string;
   amudim: string[][];
-  /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
-  citations: Record<number, Record<number, Citation[]>>;
-  /** The same for the English, whose references name their verses: places in the segment's plain English. */
-  englishCitations: Record<number, Record<number, Citation[]>>;
+  /** The Tanakh verses each segment cites. */
+  citations: CitationsByPlace;
+  /** The verses the English cites, in the segment's plain English. Each stretch is the whole reference, brackets included. */
+  englishCitations: CitationsByPlace;
 }
+
+/** Citations by their amud's place in `amudim`, then their segment's. */
+export type CitationsByPlace = Record<number, Record<number, Citation[]>>;
 
 /** The William Davidson English, shaped as a tractate's `amudim`, in the markers `englishText` reads. */
 export type TalmudTractateEnglish = string[][];

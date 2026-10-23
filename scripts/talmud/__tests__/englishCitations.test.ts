@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { englishCitationFinder, englishCitationsByPlace } from '../englishCitations.ts';
 
-const find = englishCitationFinder([
-  { name: 'Genesis', chapters: [31, 25] },
-  { name: 'Numbers', chapters: [54, 34, 51, 49, 89, 73] },
-  { name: 'Hosea', chapters: [11, 25, 5, 19, 15, 11] },
-  { name: 'I Samuel', chapters: [28, 36] },
-  { name: 'II Samuel', chapters: [27, 32] },
-]);
+const find = englishCitationFinder(
+  [
+    { name: 'Genesis', chapters: [31, 25] },
+    { name: 'Numbers', chapters: [54, 34, 51, 49, 89, 73] },
+    { name: 'Hosea', chapters: [11, 25, 5, 19, 15, 11] },
+    { name: 'I Samuel', chapters: [28, 36] },
+    { name: 'II Samuel', chapters: [27, 32] },
+  ].map((book) => ({ ...book, hebrewName: '' })),
+);
 
 const linked = (marked: string) =>
   find(marked).citations.map((c) => [c.verse, englishOf(marked).slice(c.start, c.end)]);
@@ -52,9 +54,9 @@ describe('the references in the English', () => {
   });
 
   it('links a reference that follows “see” or “e.g.”', () => {
-    expect(linked('(see, e.g., Genesis 1:3) (e.g., Numbers 5:22) (see Genesis 2:1)')).toHaveLength(
-      3,
-    );
+    expect(
+      linked('(see, e.g., Genesis 1:3) (e.g., Numbers 5:22) (see Genesis 2:1)').map(([v]) => v),
+    ).toEqual(['Genesis.1.3', 'Numbers.5.22', 'Genesis.2.1']);
   });
 
   it('leaves a book outside the Tanakh, and other parentheses, plain', () => {
@@ -67,7 +69,7 @@ describe('the references in the English', () => {
   it('reports a verse the book does not have, and links nothing for it', () => {
     const found = find('(Genesis 2:99)');
     expect(found.citations).toEqual([]);
-    expect(found.unlinked.map((u) => u.reference)).toEqual(['(Genesis 2:99)']);
+    expect(found.unlinked).toEqual(['(Genesis 2:99): Genesis has no verse 2:99']);
   });
 
   it('collects the references by amud and segment', () => {

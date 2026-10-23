@@ -65,13 +65,28 @@ const CHAPTER_AND_VERSE = new RegExp(
 // known here looks.
 const CITATION_SHAPE = new RegExp(`^\\S.*\\s(${NUMERAL})\\s*[,:]\\s*(${NUMERAL})(?:-${NUMERAL})?$`);
 
-/** What a segment's text cites, read against `tanakh`; the book names are read once. */
-export function citationFinder(tanakh: Tanakh): (text: string) => Found {
-  const byName = new Map<string, TanakhBook>(tanakh.books.map((book) => [book.hebrewName, book]));
-  for (const [spelling, name] of Object.entries(SPELLINGS)) {
+/** The books by each name `nameOf` gives, and by each of `spellings`, a spelling beside the name it stands for. */
+export function booksByName<B>(
+  books: readonly B[],
+  nameOf: (book: B) => string,
+  spellings: Readonly<Record<string, string>>,
+): Map<string, B> {
+  const byName = new Map(books.map((book) => [nameOf(book), book]));
+  for (const [spelling, name] of Object.entries(spellings)) {
     const book = byName.get(name);
     if (book) byName.set(spelling, book);
   }
+  return byName;
+}
+
+/** Whether `book` has that verse. */
+export function hasVerse(book: Pick<TanakhBook, 'chapters'>, chapter: number, verse: number) {
+  return verse >= 1 && verse <= (book.chapters[chapter - 1] ?? 0);
+}
+
+/** What a segment's text cites, read against `tanakh`; the book names are read once. */
+export function citationFinder(tanakh: Tanakh): (text: string) => Found {
+  const byName = booksByName(tanakh.books, (book) => book.hebrewName, SPELLINGS);
   const names = [...byName.keys()].sort((a, b) => b.length - a.length);
 
   const wordsOf = verseWords(tanakh);
@@ -620,8 +635,7 @@ function verseIn(
   const chapter = hebrewNumber(chapterWritten);
   const verse = hebrewNumber(verseWritten);
   if (!chapter || !verse) return null;
-  const length = book.chapters[chapter - 1] ?? 0;
-  const exists = (v: number) => v >= 1 && v <= length;
+  const exists = (v: number) => hasVerse(book, chapter, v);
   if (holds && !(exists(verse) && holds(chapter, verse, RUN))) {
     for (let distance = 1; distance <= NEARBY; distance++) {
       for (const near of [verse - distance, verse + distance]) {

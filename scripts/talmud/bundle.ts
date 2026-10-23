@@ -340,9 +340,7 @@ async function main(): Promise<void> {
       const cited = citationsByPlace(tractateText.amudim, naming, find, place, placings);
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
       const referenced = englishCitationsByPlace(tractateEnglish, findEnglish);
-      unlinked.push(
-        ...referenced.unlinked.map((u) => `${ref.tractate}: ${u.reference}: ${u.reason}`),
-      );
+      unlinked.push(...referenced.unlinked.map((reference) => `${ref.tractate}: ${reference}`));
       const shipped: TalmudTractateText = {
         ...tractateText,
         citations: cited.citations,
@@ -378,7 +376,7 @@ async function main(): Promise<void> {
   console.log(`Tanakh citations, by how each found its place in Davidson's text:`);
   for (const [way, n] of Object.entries(placings)) console.log(`  ${way}: ${n}`);
   console.log(`English references naming a verse the Tanakh lacks: ${unlinked.length}`);
-  for (const reference of unlinked) console.log(`  ${reference}`);
+  for (const reference of unlinked.slice(0, 10)) console.log(`  ${reference}`);
   console.log(`Looked like citations but named no verse: ${missed.length}`);
   for (const stretch of missed.slice(0, 10)) console.log(`  ${stretch}`);
 }

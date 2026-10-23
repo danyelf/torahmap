@@ -227,21 +227,15 @@ export function updateSidebar<I extends MapItem>(
     }
   }
   if (english) {
-    english.replaceChildren(
-      ...(text.english
-        ? [
-            linkStretches(
-              styleStretches(
-                marked(text.english, ENGLISH, text.englishSearched) ?? textFragment(text.english),
-                text.english,
-                text.englishStyles ?? [],
-              ),
-              text.english,
-              text.englishLinks ?? [],
-            ),
-          ]
-        : []),
-    );
+    english.replaceChildren();
+    if (text.english) {
+      const styled = styleStretches(
+        marked(text.english, ENGLISH, text.englishSearched) ?? textFragment(text.english),
+        text.english,
+        text.englishStyles ?? [],
+      );
+      english.append(linkStretches(styled, text.english, text.englishLinks ?? []));
+    }
   }
   for (const [language, row, notice] of [
     [HEBREW, hebrew, hebrewNotice],
