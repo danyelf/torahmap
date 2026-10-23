@@ -1,8 +1,7 @@
 /**
  * What the Text analytics scores show across the whole Tanakh: the highest and
- * lowest chapters on each measure, whether either score follows verse length,
- * how many stock phrases are set aside, and how often the first half of a
- * verse is split each way.
+ * lowest chapters, whether the score follows verse length, and how many stock
+ * phrases are set aside.
  *
  * Run with: npx tsx scripts/overlays/text-analytics/report.ts
  */
@@ -12,18 +11,10 @@ import {
   HIGH_PERCENTILE,
   LOW_PERCENTILE,
   MEASURE_LABELS,
-  bits,
-  listed,
   percent,
   percentile,
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
-import {
-  PARAMETERS,
-  divisionScores,
-  formulas,
-  repetitionScores,
-  type BookScores,
-} from './measures.ts';
+import { PARAMETERS, formulas, repetitionScores, type BookScores } from './measures.ts';
 
 const { books, refs } = readBooks();
 
@@ -77,33 +68,8 @@ function describe(title: string, scores: BookScores[], format: (v: number) => st
   console.log(`Lowest chapters: ${list(chapters.slice(-12).reverse())}`);
 }
 
-const poetic = listed(PARAMETERS.poeticBooks);
-
 console.log(
   `Stock phrases (found in ${PARAMETERS.formulaBooks} or more books) set aside: ${formulas(books).size}`,
 );
 
-const repetition = repetitionScores(books);
-describe(MEASURE_LABELS.repetition, repetition, percent);
-describe(
-  `${MEASURE_LABELS.repetition}, ${poetic}`,
-  repetition.map((s, i) =>
-    PARAMETERS.poeticBooks.includes(books[i].name) ? s : s.map(() => null),
-  ),
-  percent,
-);
-
-const division = divisionScores(books);
-describe(
-  `${MEASURE_LABELS.division} (against verses of the same length; ${poetic} left out)`,
-  division.scores,
-  bits,
-);
-
-const halves = division.counts.get('Etnachta')!;
-const total = [...halves.values()].reduce((s, n) => s + n, 0);
-console.log('\n## How a first half (ending on etnachta) is split\n');
-[...halves]
-  .sort((a, b) => b[1] - a[1])
-  .slice(0, 6)
-  .forEach(([way, n]) => console.log(`${way || '(not split)'}: ${percent(n / total)}`));
+describe(MEASURE_LABELS.repetition, repetitionScores(books), percent);

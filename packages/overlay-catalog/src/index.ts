@@ -70,7 +70,7 @@ export const VERSE_LENGTH = {
 } as const satisfies OverlayEntry;
 
 /** The measures the text analytics overlay offers, in the order it offers them. */
-export const TEXT_ANALYTICS_MEASURES = ['repetition', 'division'] as const;
+export const TEXT_ANALYTICS_MEASURES = ['repetition'] as const;
 
 const TEXT_ANALYTICS_PARAMS = [
   { key: 'measure', kind: 'token', allowed: TEXT_ANALYTICS_MEASURES, default: 'repetition' },
@@ -79,9 +79,7 @@ const TEXT_ANALYTICS_PARAMS = [
 export const TEXT_ANALYTICS = {
   id: 'text-analytics',
   name: 'Text Analytics',
-  description:
-    'Patterns in the wording and the trop. Choose a measure: how much of a verse repeats ' +
-    'wording from nearby, or how unusual the way the trop divides a passage is.',
+  description: 'How much of each verse repeats wording from nearby.',
   urlParams: TEXT_ANALYTICS_PARAMS,
 } as const satisfies OverlayEntry;
 

@@ -208,25 +208,10 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
-    name: 'explore-text-analytics-repetition',
+    name: 'explore-text-analytics',
     link: 'overlay=text-analytics',
     then: (page) => viaMenu(page, 'overlay'),
-    shown: ['#overlay-select', '[data-measure="division"]'],
-  },
-  {
-    name: 'explore-text-analytics-division',
-    link: 'overlay=text-analytics&measure=division',
-    then: (page) => viaMenu(page, 'overlay'),
-    shown: ['#overlay-select', '[data-measure="repetition"]'],
-  },
-  {
-    name: 'explore-text-analytics-examples',
-    link: 'overlay=text-analytics&measure=division',
-    then: async (page) => {
-      await viaMenu(page, 'overlay');
-      await page.locator('.ta-examples-open:visible').click();
-    },
-    shown: ['.ta-examples-close', '.ta-examples-key'],
+    shown: ['#overlay-select'],
   },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.
   {

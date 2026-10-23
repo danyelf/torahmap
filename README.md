@@ -17,4 +17,4 @@ Overlays, in the order the map offers them:
 - **Trop** — the cantillation marks that say how the Hebrew is chanted. Pick one to see which verses carry it, and how often.
 - **Haftarah** — each weekly Torah portion and the passage from the Prophets read after it, in Ashkenazi or Sephardi custom.
 - **Verse Length** — how many Hebrew words each verse has.
-- **Text Analytics** — two measures of the passage around each verse: how much it repeats its own wording, and how unusual the way its trop divides its verses is, against verses of the same length.
+- **Text Analytics** — how much of each verse repeats wording the book uses again within a few dozen verses.

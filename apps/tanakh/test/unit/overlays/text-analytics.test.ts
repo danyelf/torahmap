@@ -4,15 +4,11 @@ import { NO_DATA } from '../../../src/overlays/colors';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { assertNamedEnds } from '../../helpers/assertions';
-import { timesRarer } from '../../../src/overlays/text-analytics/scores';
 
 const data: TextAnalyticsData = {
   scores: {
     parameters: { ...SAMPLE_TEXT_ANALYTICS_SCORES.parameters },
-    divisionExamples: SAMPLE_TEXT_ANALYTICS_SCORES.divisionExamples,
-    divisionPiecesPerVerse: SAMPLE_TEXT_ANALYTICS_SCORES.divisionPiecesPerVerse,
     repetition: { Genesis: { '1': [0, 0.5, null, 0.25] } },
-    division: { Genesis: { '1': [0.2, -0.2, null, 0] } },
   },
 };
 
@@ -23,23 +19,9 @@ function host() {
 }
 
 describe('Text analytics overlay', () => {
-  it('starts on repetitive wording, and a link can choose verse division', () => {
+  it('colours each verse by its score', () => {
     const h = host();
-    expect(h.settings.measure).toBe('repetition');
-    h.restore({ measure: 'division' });
-    expect(h.settings.measure).toBe('division');
-    expect(h.toUrl()).toEqual({ measure: 'division' });
-  });
-
-  it('colours each verse by the chosen measure', () => {
-    const h = host();
-    const repetition = [1, 2].map((n) => h.getItemColor(verse(n)));
-    h.change((s) => ({ ...s, measure: 'division' }));
-    const division = [1, 2].map((n) => h.getItemColor(verse(n)));
-    expect(repetition[0]).not.toEqual(repetition[1]);
-    // The two measures rank these verses in opposite orders.
-    expect(division[0]).toEqual(repetition[1]);
-    expect(division[1]).toEqual(repetition[0]);
+    expect(h.getItemColor(verse(1))).not.toEqual(h.getItemColor(verse(2)));
   });
 
   it('leaves a verse without a score, or outside the file, uncoloured', () => {
@@ -49,46 +31,11 @@ describe('Text analytics overlay', () => {
     expect(h.getHoverInfo(verse(3))).toBeNull();
   });
 
-  it('switches measure from its controls', () => {
-    const h = host();
-    const controls = h.renderControls();
-    controls.querySelector<HTMLButtonElement>('[data-measure="division"]')!.click();
-    expect(h.settings.measure).toBe('division');
-    expect(controls.querySelector('[data-measure="division"]')!.getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+  it('offers no choice of measure while it has only one', () => {
+    expect(host().renderControls().querySelector('[data-measure]')).toBeNull();
   });
 
-  it('names the ends of its strip in the legend card, for each measure', () => {
-    const h = host();
-    assertNamedEnds(h.summary());
-    h.change((s) => ({ ...s, measure: 'division' }));
-    assertNamedEnds(h.summary());
-  });
-
-  it('reads a division score as how many times rarer or more common than usual', () => {
-    expect(timesRarer(1)).toBe('2.00× rarer');
-    expect(timesRarer(-1)).toBe('2.00× more common');
-    expect(timesRarer(0.001)).toBe('usual');
-  });
-
-  it('offers example verses of common and uncommon divisions with verse division only', () => {
-    const h = host();
-    const legend = document.createElement('div');
-    h.renderLegend(legend);
-    expect(legend.querySelector('dialog')).toBeNull();
-
-    h.change((s) => ({ ...s, measure: 'division' }));
-    h.renderLegend(legend);
-    const dialog = legend.querySelector('dialog')!;
-    expect(dialog.open).toBe(false);
-    legend.querySelector<HTMLButtonElement>('.ta-examples-open')!.click();
-    expect(dialog.open).toBe(true);
-    expect([...dialog.querySelectorAll('.ta-example-verse')].map((v) => v.textContent)).toEqual([
-      'א ב ג ד',
-      'ה ו',
-    ]);
-    dialog.querySelector<HTMLButtonElement>('.ta-examples-close')!.click();
-    expect(dialog.open).toBe(false);
+  it('names the ends of its strip in the legend card', () => {
+    assertNamedEnds(host().summary());
   });
 });
