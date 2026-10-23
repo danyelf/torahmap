@@ -101,7 +101,7 @@
 }
 
 /* A reference shown where the text quotes nothing to link: smaller, and apart from the words. */
-#popup .popup-hebrew .text-link-label {
+#popup .popup-hebrew .text-reference {
   font-size: 0.7em;
   white-space: nowrap;
   margin-inline: 0.25em;

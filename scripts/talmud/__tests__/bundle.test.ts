@@ -2,22 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { stripHtml, parseWholeRef, processTractate } from '../bundle.ts';
 import { markersOf, mishnahFrom, stripNikkudAndSeparators } from '../markers.ts';
 
-const walkMarkers = (text: string[][]) => mishnahFrom(markersOf(text));
-
 describe('which segments are Mishnah', () => {
   it('tags every segment from a מתני׳ to the next גמ׳ as Mishnah', () => {
     const text = [
       ['<big><strong>מַתְנִי׳</strong></big> מִשְׁנָה', 'עוֹד'],
       ['<strong><big>גְּמָ׳</big></strong> גְּמָרָא', 'עוֹד'],
     ];
-    expect(walkMarkers(text)).toEqual([
+    expect(mishnahFrom(markersOf(text))).toEqual([
       [true, true],
       [false, false],
     ]);
   });
 
   it('starts in the Gemara', () => {
-    expect(walkMarkers([['no marker', 'here']])).toEqual([[false, false]]);
+    expect(mishnahFrom(markersOf([['no marker', 'here']]))).toEqual([[false, false]]);
   });
 
   it('reads a marker word that opens a segment, bold or bare, after brackets or before bold words', () => {
@@ -29,14 +27,14 @@ describe('which segments are Mishnah', () => {
         "<big><b>גמ'</b></big>, ורבנן",
       ],
     ];
-    expect(walkMarkers(text)).toEqual([[true, false, true, false]]);
+    expect(mishnahFrom(markersOf(text))).toEqual([[true, false, true, false]]);
   });
 
   it('ignores a marker word in running text, or the start of a longer word', () => {
     const text = [
       ['<big><strong>מתני׳</strong></big> משנה', 'אמר רב: מתני׳ מני', 'מַתְנִיתִין מַנִּי'],
     ];
-    expect(walkMarkers(text)).toEqual([[true, true, true]]);
+    expect(mishnahFrom(markersOf(text))).toEqual([[true, true, true]]);
   });
 
   it('starts a Mishnah at bold opening words, after a quote mark too', () => {
@@ -48,7 +46,7 @@ describe('which segments are Mishnah', () => {
         '״<big><strong>קוֹנָם יַיִן</strong></big> שֶׁאֲנִי טוֹעֵם״',
       ],
     ];
-    expect(walkMarkers(text)).toEqual([[false, true, false, true]]);
+    expect(mishnahFrom(markersOf(text))).toEqual([[false, true, false, true]]);
   });
 
   it('starts a Mishnah after a chapter’s closing line, which is no Mishnah itself', () => {
@@ -60,7 +58,7 @@ describe('which segments are Mishnah', () => {
       ],
       ['הָאוֹמֵר לַחֲבֵירוֹ: ״<big><strong>בֵּית כּוֹר</strong></big>״', 'עוד'],
     ];
-    expect(walkMarkers(text)).toEqual([
+    expect(mishnahFrom(markersOf(text))).toEqual([
       [true, false, false],
       [true, true],
     ]);
@@ -75,7 +73,7 @@ describe('which segments are Mishnah', () => {
         'א <big><strong>אָמַר</strong></big>',
       ],
     ];
-    expect(walkMarkers(text)).toEqual([[false, true, false, true]]);
+    expect(mishnahFrom(markersOf(text))).toEqual([[false, true, false, true]]);
   });
 });
 
@@ -171,17 +169,19 @@ describe('processTractate', () => {
     return { text: davidson.text.map((amud, ai) => amud.map((_, si) => `<b>${ai}</b>:${si}`)) };
   }
 
+  type Edition = Parameters<typeof processTractate>[2];
+  /** The tractate built from `davidson`, with Wikisource divided as it is unless given. */
+  const build = (
+    davidson: Edition,
+    schema = fakeSchema(),
+    english = englishOf(davidson),
+    wikisource = davidson,
+  ) => processTractate('Zeraim', 'Test', davidson, schema, english, wikisource);
+
   it('gives each segment its English in markers, apart from the Hebrew, and a chapter’s closing line none', () => {
     const davidson = fakeDavidson();
     davidson.text[4][2] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
-    const { text, english } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      fakeSchema(),
-      englishOf(davidson),
-      davidson,
-    );
+    const { text, english } = build(davidson);
     expect(english.map((amud) => amud.length)).toEqual([5, 4, 3]);
     expect(english[1][0]).toBe('*3*:0');
     expect(english[2][2]).toBe('');
@@ -189,7 +189,7 @@ describe('processTractate', () => {
   });
 
   const withEnglish = (davidson: { text: string[][] }, english: { text: string[][] }) => () =>
-    processTractate('Zeraim', 'Test', davidson, fakeSchema(), english, davidson);
+    build(davidson, fakeSchema(), english);
 
   it('allows the English to leave off a closing line that ends an amud', () => {
     const davidson = fakeDavidson();
@@ -214,14 +214,7 @@ describe('processTractate', () => {
 
   it('keeps mid-amud boundary amud in the previous perek', () => {
     const davidson = fakeDavidson();
-    const { structure } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      fakeSchema(),
-      englishOf(davidson),
-      davidson,
-    );
+    const { structure } = build(davidson);
     const amud2b = structure.amudim.find((a) => a.daf === 2 && a.amud === 'b')!;
     expect(amud2b.perekIdx).toBe(0); // boundary amud belongs to prev perek
     expect(amud2b.perekBoundaryAt).toBe(2); // 0-indexed: segs [0..2)=perek 0, [2..)=perek 1
@@ -237,14 +230,7 @@ describe('processTractate', () => {
     const schema = {
       alts: { Chapters: { nodes: [{ heTitle: 'פרק א', wholeRef: 'Test 2b:1-4a:3' }] } },
     };
-    const { structure, text } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      schema,
-      englishOf(davidson),
-      davidson,
-    );
+    const { structure, text } = build(davidson, schema);
     expect(structure.amudim.map((a) => `${a.daf}${a.amud}:${a.segmentCount}`)).toEqual([
       '2b:5',
       '3a:0',
@@ -264,14 +250,7 @@ describe('processTractate', () => {
       'a4',
       'a5',
     ];
-    const { text } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      fakeSchema(),
-      englishOf(davidson),
-      davidson,
-    );
+    const { text } = build(davidson);
     expect(text.amudim[0].slice(0, 3)).toEqual([
       'הַכֹּל כְּשֵׁרִים',
       'אָמַר רַב: מתני׳ דלא כרבי',
@@ -288,14 +267,7 @@ describe('processTractate', () => {
       'a4',
       '<br><br><big><strong>הַדְרָן עֲלָךְ כׇּל כִּתְבֵי</strong></big><br><br>',
     ];
-    const { text } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      fakeSchema(),
-      englishOf(davidson),
-      davidson,
-    );
+    const { text } = build(davidson);
     expect(text.amudim[0][1]).toBe('וְהַדְרָן אָמְרוּ');
     expect(text.amudim[0][4]).toBe('הַדְרָן עֲלָךְ כׇּל כִּתְבֵי');
   });
@@ -303,14 +275,7 @@ describe('processTractate', () => {
   it('gives the popup the text with its points, and search the same without them', () => {
     const davidson = fakeDavidson();
     davidson.text[2][0] = '<big><strong>מַתְנִי׳</strong></big> אָמַר <b>רַבִּי</b> יוֹחָנָן';
-    const { text, search } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      fakeSchema(),
-      englishOf(davidson),
-      davidson,
-    );
+    const { text, search } = build(davidson);
     expect(search.map((amud) => amud.length)).toEqual([5, 4, 3]);
     expect(text.amudim[0][0]).toBe('אָמַר רַבִּי יוֹחָנָן');
     expect(search[0][0]).toBe('אמר רבי יוחנן');
@@ -320,32 +285,16 @@ describe('processTractate', () => {
     const davidson = fakeDavidson();
     const wikisource = fakeDavidson();
     wikisource.text[2][0] = '<b>(שמות כ, ז)</b> זכור';
-    const { naming } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      fakeSchema(),
-      englishOf(davidson),
-      wikisource,
-    );
+    const { naming } = build(davidson, fakeSchema(), englishOf(davidson), wikisource);
     expect(naming.map((amud) => amud.length)).toEqual([5, 4, 3]);
     expect(naming[0][0]).toBe('(שמות כ, ז) זכור');
     wikisource.text[3].pop();
-    expect(() =>
-      processTractate('Zeraim', 'Test', davidson, fakeSchema(), englishOf(davidson), wikisource),
-    ).toThrow();
+    expect(() => build(davidson, fakeSchema(), englishOf(davidson), wikisource)).toThrow();
   });
 
   it('gives English search the bold of each segment, as the English is laid out', () => {
     const davidson = fakeDavidson();
-    const { english, searchEnglish } = processTractate(
-      'Zeraim',
-      'Test',
-      davidson,
-      fakeSchema(),
-      englishOf(davidson),
-      davidson,
-    );
+    const { english, searchEnglish } = build(davidson);
     expect(searchEnglish.map((amud) => amud.length)).toEqual(english.map((amud) => amud.length));
     expect(searchEnglish[1][0]).toBe('3');
   });

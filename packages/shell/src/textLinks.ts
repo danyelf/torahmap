@@ -16,8 +16,8 @@ export interface TextReference {
 /** The class of the anchor a link's stretch becomes. */
 export const TEXT_LINK = 'text-link';
 
-/** The class added to the anchor a link's label becomes. */
-export const TEXT_LINK_LABEL = 'text-link-label';
+/** The class added to the anchor a reference becomes. */
+export const TEXT_REFERENCE = 'text-reference';
 
 function anchor(href: string, text: string): HTMLAnchorElement {
   const a = document.createElement('a');
@@ -51,7 +51,7 @@ export function linkStretches(
 export function insertReferences(container: Element, references: readonly TextReference[]): void {
   for (const reference of [...references].sort((a, b) => b.at - a.at)) {
     const label = anchor(reference.href, reference.label);
-    label.classList.add(TEXT_LINK_LABEL);
+    label.classList.add(TEXT_REFERENCE);
     const at = textPosition(container, reference.at);
     if (!at) {
       container.append(label);
@@ -71,7 +71,7 @@ function textPosition(container: Element, offset: number): { node: Text; offset:
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let seen = 0;
   for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
-    if (node.parentElement?.closest(`.${TEXT_LINK_LABEL}`)) continue;
+    if (node.parentElement?.closest(`.${TEXT_REFERENCE}`)) continue;
     if (offset < seen + node.length) return { node, offset: offset - seen };
     seen += node.length;
   }

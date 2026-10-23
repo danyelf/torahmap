@@ -47,7 +47,12 @@ const NEARBY = 3;
 const RUN = 2;
 const SURE_RUN = 3;
 
+// The letters Hebrew joins to the front of a word. ו and י are already gone from compared words.
+const PREFIXES = 'בדהכלמש';
+
 // A word in this many verses or more, such as אמר or כל, says nothing of which verse is quoted.
+// Anywhere from 50 to 400 verses, only 63 to 80 citations move between shown on words and shown as
+// references, and the links on quotes change by three.
 const COMMON = 100;
 
 const BRACKETED = /[(\[{]([^()[\]{}]*)[)\]}]/g;
@@ -94,7 +99,8 @@ export function citationFinder(tanakh: Tanakh): (text: string) => Found {
       const quoted = quote(text.slice(match.index + match[0].length));
       const holds: Holds | null =
         quoted &&
-        ((chapter, verse, count) => holdsRun(wordsOf(book.name, chapter, verse), quoted, count));
+        ((chapter, verse, count) =>
+          longestRun(wordsOf(book.name, chapter, verse), quoted) >= count);
       const verse = verseIn(book, numbers[1], numbers[2], holds);
       if (!verse) {
         missed.push(match[0]);
@@ -174,9 +180,6 @@ interface Word {
   quote: number;
 }
 
-/** Which of the places that hold a verse it takes, where the reference does not say. */
-const BY_PREFERENCE: readonly Placing[] = ['quote', 'shared', 'words'];
-
 /** A citation placed in a text, how, and the verse as cited. */
 export interface Placed {
   /** Null where the segment links the same verse already. */
@@ -185,21 +188,23 @@ export interface Placed {
   cited: Cited;
 }
 
-/** A place a verse could be linked on: words `first` to `last`, and how it was found. */
+/** A place a verse could be linked on: words `first` to `last`, how, and how many in a row hold it. */
 interface Candidate {
   first: number;
   last: number;
   placing: Placing;
+  run: number;
 }
+
+// How near the words after a reference must be to a quote to point at it: אדם ״כי יהיה בעור בשרו״.
+const NEAR = 2;
 
 /**
  * Where a text that quotes verses in ״…״ without naming them cites each of `cited`, in order, and
- * how. A verse is linked only on words that hold it: a quote, part of one, or a run of its words
- * outside any quote. Of the places that do, it takes the one where the words that follow the
- * reference in the naming edition are, if an uncommon word of the verse is there, or else the
- * first, a longer quote before a one-word one. Where none do, words where the reference's words
- * are that share an uncommon word of the verse. A verse placed none of these ways is shown as its
- * reference.
+ * how. A verse is linked only on words that hold it, taking the place that holds the most of it in a
+ * row, and of those the one the words after the reference point at. Where no words hold it, words
+ * the reference points at that share an uncommon word of it and hold no other verse of its book
+ * better; else the reference is shown.
  */
 export function quoteFinder(tanakh: Tanakh): (text: string, cited: readonly Cited[]) => Placed[] {
   const wordsOf = verseWords(tanakh);
@@ -221,7 +226,7 @@ export function quoteFinder(tanakh: Tanakh): (text: string, cited: readonly Cite
         .slice(from, to + 1)
         .filter((w) => w.counts)
         .map((w) => w.word);
-    const quoteWords = quotes.map((_, q) => {
+    const spans = quotes.map((_, q) => {
       const inQuote = words.flatMap((w, i) => (w.quote === q ? [i] : []));
       return { first: inQuote[0] ?? -1, last: inQuote.at(-1) ?? -1 };
     });
@@ -231,100 +236,77 @@ export function quoteFinder(tanakh: Tanakh): (text: string, cited: readonly Cite
     let from = 0;
     // Where the last link ends: a reference goes after it, never inside.
     let linkedTo = 0;
-    let last: { quote: number; first: number; verse: string[]; citation: Citation } | null = null;
+    let last = null as { quote: number; first: number; verse: string[]; citation: Citation } | null;
 
-    for (const c of cited) {
+    // Where the words after each reference are, read in order: a citation takes no place past the
+    // next one's, which would leave that one's quote to it.
+    const pointers: number[] = [];
+    cited.forEach((c, i) => pointers.push(alignedWord(words, c, (pointers[i - 1] ?? -1) + 1)));
+
+    for (const [i, c] of cited.entries()) {
       const place = parseVerseId(c.verse);
       if (!place) continue;
       const verse = wordsOf(place.book, place.chapter, place.verse);
       const inVerse = (word: string) => verse.some((v) => same(v, word));
-
-      const candidates: Candidate[] = [];
-      quoteWords.forEach(({ first, last: end }, q) => {
-        if (first < from || q === last?.quote) return;
-        if (holds(verse, counted(first, end)))
-          candidates.push({ first, last: end, placing: 'quote' });
-      });
-      // Two halves of one quote for one verse would be one link cut in two.
-      if (last && last.citation.verse !== c.verse) {
-        const { first: head, verse: before } = last;
-        const end = quoteWords[last.quote].last;
-        for (let w = Math.max(head + 1, from); w <= end; w++) {
-          // Each half two words of its verse in a row: one word is too little to split on.
-          const tail = counted(w, end);
-          const rest = counted(head, w - 1);
-          if (
-            words[w].counts &&
-            tail.length >= RUN &&
-            rest.length >= RUN &&
-            startsRun(verse, tail) &&
-            holds(before, rest)
-          ) {
-            candidates.push({ first: w, last: end, placing: 'shared' });
-            break;
-          }
-        }
-      }
-      for (let i = from; i + SURE_RUN <= words.length; i++) {
-        const run = words.slice(i, i + SURE_RUN);
-        if (run.some((w) => w.quote >= 0 || !w.counts)) continue;
-        if (
-          !startsRun(
-            verse,
-            run.map((w) => w.word),
-            SURE_RUN,
-          )
-        )
-          continue;
-        let to = i + SURE_RUN - 1;
-        while (to + 1 < words.length && words[to + 1].quote < 0 && inVerse(words[to + 1].word))
-          to++;
-        candidates.push({ first: i, last: to, placing: 'words' });
-        break;
-      }
-
-      // Where the words after the reference are, words that hold less of the verse still do if they
-      // share an uncommon word of it: a quote (״בל תכלה״ for לא תכלה), or two of its words outside
-      // any quote (ויצרו וימנו).
-      const uncommon = (word: string) => inVerse(word) && (versesWith.get(word) ?? 0) < COMMON;
-      const nearAligned = (at: number): Candidate | undefined => {
-        if (at < 0) return undefined;
-        const soon = words.slice(at + 1, at + 3).find((w) => w.quote >= 0)?.quote ?? -1;
-        const q = words[at].quote >= 0 ? words[at].quote : soon;
-        if (q >= 0) {
-          const { first, last: end } = quoteWords[q];
-          return first >= from && q !== last?.quote && counted(first, end).some(uncommon)
-            ? { first, last: end, placing: 'variant' }
-            : undefined;
-        }
+      /** The run of the verse's words outside any quote from word `at`, as far as it goes. */
+      const runOn = (at: number) => {
         let to = at;
         while (to + 1 < words.length && words[to + 1].quote < 0 && inVerse(words[to + 1].word)) {
           to++;
         }
-        const run = words.slice(at, to + 1).map((w) => w.word);
-        return inVerse(words[at].word) && to > at && run.some(uncommon)
-          ? { first: at, last: to, placing: 'variant' }
-          : undefined;
+        return to;
       };
       const aligned = alignedWord(words, c, from);
-      const opening = candidates.find((k) => k.placing === 'quote' && k.first <= 2);
+
+      const candidates: Candidate[] = [];
+      spans.forEach(({ first, last: end }, q) => {
+        if (first < from || q === last?.quote) return;
+        const quoted = counted(first, end);
+        const run = longestRun(verse, quoted);
+        if (run > 0 && run >= Math.min(RUN, quoted.length)) {
+          candidates.push({ first, last: end, placing: 'quote', run });
+        }
+      });
+      // Two halves of one quote for one verse would be one link cut in two.
+      if (last && last.citation.verse !== c.verse) {
+        const { first: head, verse: before } = last;
+        const end = spans[last.quote].last;
+        for (let w = Math.max(head + 1, from); w <= end; w++) {
+          // Each half two words of its verse in a row: one word is too little to split on.
+          const run = runFrom(verse, counted(w, end));
+          if (words[w].counts && run >= RUN && longestRun(before, counted(head, w - 1)) >= RUN) {
+            candidates.push({ first: w, last: end, placing: 'shared', run });
+          }
+        }
+      }
+      words.forEach((w, i) => {
+        if (i < from || w.start < linkedTo || w.quote >= 0 || !w.counts) return;
+        const to = runOn(i);
+        const run = runFrom(verse, counted(i, to));
+        // Two words in a row only where the words after the reference are (ויצרו וימנו).
+        if (run >= SURE_RUN || (run >= RUN && i === aligned)) {
+          candidates.push({ first: i, last: to, placing: 'words', run });
+        }
+      });
+
+      // Words common to many verses, בני ישראל, cannot tell the one quoted from its neighbours.
+      const uncommon = (word: string) => inVerse(word) && (versesWith.get(word) ?? 0) < COMMON;
+      const pointedAt = (k: Candidate) =>
+        aligned >= 0 &&
+        k.first <= aligned + NEAR &&
+        aligned <= k.last &&
+        counted(k.first, k.last).some(uncommon);
+      const until = pointers.slice(i + 1).find((p) => p > aligned) ?? words.length;
+      const best = candidates
+        .filter((k) => k.first < until)
+        .sort(
+          (a, b) =>
+            b.run - a.run || Number(pointedAt(b)) - Number(pointedAt(a)) || a.first - b.first,
+        )[0];
+      const opening = candidates.find((k) => k.placing === 'quote' && k.first <= NEAR);
       const chosen = c.carried
         ? opening && { ...opening, placing: 'next' as const }
-        : (candidates.find(
-            (k) =>
-              aligned >= 0 &&
-              k.first <= aligned + 2 &&
-              aligned <= k.last &&
-              // Words common to many verses, בני ישראל, cannot tell the one quoted from its neighbours.
-              counted(k.first, k.last).some(uncommon),
-          ) ??
-          BY_PREFERENCE.flatMap((p) =>
-            // A one-word quote, טוב, only where no longer one, כי טוב לו עמך, holds the verse.
-            candidates
-              .filter((k) => k.placing === p)
-              .sort((a, b) => Number(a.first === a.last) - Number(b.first === b.last)),
-          )[0] ??
-          nearAligned(aligned));
+        : (best ?? variantAt(aligned));
       if (c.carried && !chosen) continue;
       if (
         !chosen &&
@@ -341,6 +323,7 @@ export function quoteFinder(tanakh: Tanakh): (text: string, cited: readonly Cite
           quotes,
           c,
           next < 0 ? words.length : Math.max(from, next),
+          linkedTo,
         );
         placed.push({
           citation: { start: at, end: at, verse: c.verse, reference: c.reference },
@@ -368,20 +351,63 @@ export function quoteFinder(tanakh: Tanakh): (text: string, cited: readonly Cite
       from = chosen.first + 1;
       linkedTo = citation.end;
       last = quote >= 0 ? { quote, first: chosen.first, verse, citation } : null;
+
+      /**
+       * Where the reference points, words that hold less of the verse: a quote, or a run outside
+       * any, sharing a word of it few verses have (״בל תכלה״ for לא תכלה), and holding no other
+       * verse of its book in a longer run.
+       */
+      function variantAt(at: number): Candidate | undefined {
+        if (at < 0) return undefined;
+        const soon = words.slice(at + 1, at + 1 + NEAR).find((w) => w.quote >= 0)?.quote ?? -1;
+        const q = words[at].quote >= 0 ? words[at].quote : soon;
+        const [first, end] =
+          q >= 0 ? [spans[q].first, spans[q].last] : inVerse(words[at].word) ? [at, runOn(at)] : [];
+        if (
+          first === undefined ||
+          end === undefined ||
+          first < from ||
+          words[first].start < linkedTo ||
+          (q >= 0 && q === last?.quote)
+        ) {
+          return undefined;
+        }
+        if (q < 0 && end === first) return undefined;
+        const quoted = counted(first, end);
+        if (!quoted.some(uncommon)) return undefined;
+        const run = longestRun(verse, quoted);
+        const book = tanakh.books.find((b) => b.name === place!.book)!;
+        const another = book.chapters.some((count, ci) =>
+          Array.from({ length: count }, (_, vi) => vi + 1).some(
+            (v) =>
+              !(ci + 1 === place!.chapter && v === place!.verse) &&
+              longestRun(wordsOf(book.name, ci + 1, v), quoted) > run,
+          ),
+        );
+        return another ? undefined : { first, last: end, placing: 'variant', run };
+      }
     }
     return placed;
   };
 }
 
-/** Whether quoted words hold a verse: two of its words in a row, or the one word quoted. */
-function holds(verse: readonly string[], quoted: readonly string[]): boolean {
-  return quoted.length > 0 && holdsRun(verse, quoted, Math.min(RUN, quoted.length), same);
+/** The most of the verse's words that `quoted` holds in a row. */
+function longestRun(verse: readonly string[], quoted: readonly string[]): number {
+  let longest = 0;
+  for (let i = 0; i < quoted.length; i++)
+    longest = Math.max(longest, runFrom(verse, quoted.slice(i)));
+  return longest;
 }
 
-/** Whether `quoted` begins with a run of the verse's words, of `count` or as many as it has. */
-function startsRun(verse: readonly string[], quoted: readonly string[], count = RUN): boolean {
-  const run = quoted.slice(0, count);
-  return run.length > 0 && holdsRun(verse, run, run.length, same);
+/** The most of the verse's words in a row that `quoted` begins with. */
+function runFrom(verse: readonly string[], quoted: readonly string[]): number {
+  let longest = 0;
+  verse.forEach((_, at) => {
+    let n = 0;
+    while (n < quoted.length && at + n < verse.length && same(verse[at + n], quoted[n])) n++;
+    longest = Math.max(longest, n);
+  });
+  return longest;
 }
 
 /**
@@ -394,44 +420,53 @@ function same(a: string, b: string): boolean {
   return a === b || unprefixed(a, b) || unprefixed(b, a);
 }
 
-// The letters Hebrew joins to the front of a word. ו and י are already gone from compared words.
-const PREFIXES = 'בדהכלמש';
-
 /** The word where the words that follow a reference begin, or -1. */
 function alignedWord(words: readonly Word[], cited: Cited, from: number): number {
   // Three words where there are three, as two often recur: ויצחק בן ששים, not the יצחק בן ארבעים
-  // before it. Wikisource joins a prefix to the quote it opens, לותמונת where Davidson has ל״ותמנת.
-  const [first = '', ...rest] = cited.after;
-  const prefixed = PREFIXES.includes(first[0]) ? [first.slice(1), ...rest] : [];
-  const runs = [SURE_RUN, RUN]
-    .flatMap((n) => [cited.after.slice(0, n), prefixed.slice(0, n)])
-    .filter((run) => run.length > 0);
+  // before it.
+  const runs = [SURE_RUN, RUN].map((n) => cited.after.slice(0, n)).filter((run) => run.length > 0);
   // Where the word before the reference comes before the run too: the עור of להלן עור ובשר, not the
   // one of כאן עור ובשר.
   const before = cited.before.slice(-1);
   for (const run of before.length > 0 ? runs : []) {
-    const at = findRun(words, [...before, ...run], from);
-    if (at >= 0) return words.findIndex((w, i) => i > at && w.aligns);
+    const found = findRun(words, [...before, ...run], from);
+    if (found) return found.second;
   }
-  return runs.map((run) => findRun(words, run, from)).find((at) => at >= 0) ?? -1;
+  for (const run of runs) {
+    const found = findRun(words, run, from);
+    if (found) return found.first;
+  }
+  return -1;
 }
 
 /**
- * The index of the first word from `start` that begins a run of `run`, reading only the words that
- * count: a single letter or וגו׳ may stand in one edition and not the other.
+ * The first run of `run` from word `start`, reading only the words that line the editions up, and
+ * the indexes of its first, second and last words.
  */
-function findRun(words: readonly Word[], run: readonly string[], start: number): number {
-  if (run.length === 0) return -1;
-  const counted = words.flatMap((w, i) => (i >= start && w.aligns ? [i] : []));
-  const at = counted.findIndex((_, i) =>
-    run.every((word, k) => words[counted[i + k]]?.word === word),
+function findRun(
+  words: readonly Word[],
+  run: readonly string[],
+  start: number,
+): { first: number; second: number; last: number } | null {
+  if (run.length === 0) return null;
+  const aligning = words.flatMap((w, i) => (i >= start && w.aligns ? [i] : []));
+  const at = aligning.findIndex((_, i) =>
+    run.every(
+      (word, k) => aligning[i + k] !== undefined && same(words[aligning[i + k]].word, word),
+    ),
   );
-  return at < 0 ? -1 : counted[at];
+  if (at < 0) return null;
+  return {
+    first: aligning[at],
+    second: aligning[at + 1] ?? aligning[at],
+    last: aligning[at + run.length - 1],
+  };
 }
 
 /**
  * Where to show a reference: before the words that follow it, or after those before it, two in a
- * row at least; else at word `from`, where what it cited before ends. Never inside a quote's marks.
+ * row at least; else at word `from`, where what it cited before ends. Never inside a quote or a
+ * word, nor before `linkedTo`, where the last link ends.
  */
 function referencePlace(
   text: string,
@@ -439,18 +474,29 @@ function referencePlace(
   quotes: readonly { start: number; end: number }[],
   cited: Cited,
   from: number,
+  linkedTo: number,
 ): number {
   const following = alignedWord(words, cited, from);
   const before = cited.before.slice(-RUN);
-  const preceding = before.length === RUN ? findRun(words, before, from) : -1;
-  if (following < 0 && preceding >= 0) {
-    const { end, quote } = words[preceding + RUN - 1] ?? words[preceding];
-    return quote >= 0 && quotes[quote].end === end && text[end] === '״' ? end + 1 : end;
+  const preceding = before.length === RUN ? findRun(words, before, from) : null;
+  const at =
+    following < 0 && preceding
+      ? words[preceding.last].end
+      : (words[following >= 0 ? following : from]?.start ?? text.length);
+  // Out of a quote: before its opening mark, or after its closing one when it follows the quote's
+  // last word or a link inside it.
+  const quote = quotes.find((q) => q.start <= at && at <= q.end);
+  let place = at;
+  if (quote) {
+    const opening = text[quote.start - 1] === '״' ? quote.start - 1 : quote.start;
+    const closing = text[quote.end] === '״' ? quote.end + 1 : quote.end;
+    place = at < quote.end && opening >= linkedTo ? opening : closing;
   }
-  const word = words[following >= 0 ? following : from];
-  if (!word) return text.length;
-  const opensQuote = word.quote >= 0 && quotes[word.quote].start === word.start;
-  return opensQuote && text[word.start - 1] === '״' ? word.start - 1 : word.start;
+  // Before a prefix joined to the opening mark, מ״לא: not inside the word.
+  if (text[place] === '״') {
+    while (place > linkedTo && /[א-ת\u0591-\u05C7]/.test(text[place - 1] ?? '')) place--;
+  }
+  return place;
 }
 
 // A quote mark before a word or a bracket opens a quote, even after a prefix (לְ״רוֹפֵא״); any other
@@ -520,12 +566,16 @@ function counts(written: string): boolean {
   return isName(written) || (plain.length > 1 && plain !== 'וגו');
 }
 
-const isName = (written: string) =>
-  /^[^א-ת]*(?:[בדכלמש][\u0591-\u05C7]*)?(?:ה[\u0591-\u05C7]*['׳]|י['"׳״]י)[^א-ת]*$/.test(written);
+// ה׳ or י״י, the name, perhaps after a prefix: לה׳ is the verse's ליהוה.
+const NAME = new RegExp(
+  `^[^א-ת]*([${PREFIXES}ו]?)[\\u0591-\\u05C7]*(?:ה[\\u0591-\\u05C7]*['׳]|י['"׳״]י)[^א-ת]*$`,
+);
+const isName = (written: string) => NAME.test(written);
 
 /** A written word as quotes and verses are compared: its letters, ה׳ or י״י read as the name. */
 export function compared(written: string): string {
-  return spelling(isName(written) ? 'יהוה' : letters(written));
+  const name = written.match(NAME);
+  return spelling(name ? `${name[1]}יהוה` : letters(written));
 }
 
 function isNumbered(shape: RegExpMatchArray | null): boolean {
@@ -546,21 +596,6 @@ function quote(after: string): string[] | null {
     if (words.length === SURE_RUN) break;
   }
   return words.length < SURE_RUN ? null : words;
-}
-
-function holdsRun(
-  verseWords: readonly string[],
-  quoted: readonly string[],
-  count: number,
-  same = (a: string, b: string) => a === b,
-): boolean {
-  return verseWords.some((_, at) =>
-    quoted.some(
-      (_, from) =>
-        from + count <= quoted.length &&
-        quoted.slice(from, from + count).every((word, i) => same(verseWords[at + i] ?? '', word)),
-    ),
-  );
 }
 
 function letters(word: string): string {
@@ -629,6 +664,8 @@ export function citationsByPlace(
       const ending = (p: Placed) => p.placing === 'reference' && p.cited.after.length < RUN;
       const carried = previous.filter(ending).map((p) => ({ ...p.cited, carried: true }));
       const placed = place(segment, [...carried, ...cited]);
+      // `previous` is the list `segments` holds for the segment before, so taking the reference out
+      // of it takes it out of what is shipped; the counting waits until every segment is placed.
       for (const { cited: moved } of placed.filter((p) => p.placing === 'next')) {
         previous.splice(
           previous.findIndex((p) => ending(p) && p.cited.verse === moved.verse),

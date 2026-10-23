@@ -43,7 +43,7 @@ export function markersOf(text: string[][]): Marker[][] {
   return text.map((amud) =>
     amud.map((seg) => {
       const s = stripNikkudAndSeparators(seg);
-      const hadran = HADRAN.test(s);
+      const hadran = isHadran(seg);
       const marker = hadran ? null : markerOf(s, afterHadran);
       afterHadran = hadran;
       return marker;

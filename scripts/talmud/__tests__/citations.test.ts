@@ -273,6 +273,28 @@ describe('quoteFinder', () => {
     ]);
   });
 
+  it('takes the quote that holds the most of the verse in a row, over one the reference points at', () => {
+    const text = '״וְסָמַךְ יָדוֹ״ ואמר ״וְסָמַךְ יָדוֹ עַל רֹאשׁ״';
+    expect(placed(text, [cite('Exodus.20.14', 'וסמך ידו')])).toEqual([
+      ['וְסָמַךְ יָדוֹ עַל רֹאשׁ', 'Exodus.20.14', 'quote'],
+    ]);
+  });
+
+  it('takes no place past where the next citation’s words are', () => {
+    const text = '״וְסָמַךְ יָדוֹ״ ״וְהָיָה לְךָ לְאוֹת וְסָמַךְ יָדוֹ עַל רֹאשׁ״';
+    const cited = [cite('Exodus.20.14', 'וסמך ידו'), cite('Exodus.20.13', 'והיה לך')];
+    expect(placed(text, cited)).toEqual([
+      ['וְסָמַךְ יָדוֹ', 'Exodus.20.14', 'quote'],
+      ['וְהָיָה לְךָ לְאוֹת וְסָמַךְ יָדוֹ עַל רֹאשׁ', 'Exodus.20.13', 'quote'],
+    ]);
+  });
+
+  it('links no words another verse of the book holds better than the one cited', () => {
+    expect(placed('״חֲמִשִׁית כֶּסֶף״', [cite('Exodus.20.10', 'חמישית כסף')])).toEqual([
+      ['|(שמות כ)|', 'Exodus.20.10', 'reference'],
+    ]);
+  });
+
   it('shows the reference before the words after it, or after those before it, outside quote marks, and after any link', () => {
     expect(placed('אמר להם: ״לא כך״', [cite('Exodus.20.14', 'לא כך')])).toEqual([
       ['אמר להם: |(שמות כ)|', 'Exodus.20.14', 'reference'],
@@ -280,10 +302,23 @@ describe('quoteFinder', () => {
     expect(placed('״אמר להם״ ואמר', [cite('Exodus.20.14', '', 'ואמר להם')])).toEqual([
       ['״אמר להם״|(שמות כ)|', 'Exodus.20.14', 'reference'],
     ]);
+    expect(placed('ותיפוק ליה מ״לא תענה״', [cite('Exodus.20.14', 'לא תענה')])).toEqual([
+      ['ותיפוק ליה |(שמות כ)|', 'Exodus.20.14', 'reference'],
+    ]);
+    expect(placed('״אמר להם זה הדבר״', [cite('Exodus.20.14', 'להם זה')])).toEqual([
+      ['|(שמות כ)|', 'Exodus.20.14', 'reference'],
+    ]);
     expect(placed('״וְסָמַךְ יָדוֹ״ ואמר', [cite('Exodus.20.14'), cite('Exodus.20.15')])).toEqual([
       ['וְסָמַךְ יָדוֹ', 'Exodus.20.14', 'quote'],
       ['״וְסָמַךְ יָדוֹ״ |(שמות כ)|', 'Exodus.20.15', 'reference'],
     ]);
+  });
+});
+
+describe('compared', () => {
+  it('reads ה׳ after a prefix as the name after it', () => {
+    expect(compared('לַה׳')).toBe(compared('לַיהוָה'));
+    expect(compared('וַה׳')).toBe(compared('וַיהוָה'));
   });
 });
 

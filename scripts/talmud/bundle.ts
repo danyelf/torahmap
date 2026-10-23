@@ -18,7 +18,7 @@ import {
   STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
   type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
-import { stripNikkud } from '@torahmap/hebrew';
+import { decomposePresentationForms, stripNikkud } from '@torahmap/hebrew';
 import { isHadran, markersOf, mishnahFrom, stripMarkerWord } from './markers.ts';
 import {
   REPORT_PATH,
@@ -123,9 +123,6 @@ export function parseWholeRef(ref: string): {
   return null;
 }
 
-/** A few pointed letters Davidson writes as one character, וּ as U+FB35, as letter and point, which search reads. */
-const decomposed = (s: string): string => s.replace(/[\uFB1D-\uFB4F]/g, (c) => c.normalize('NFD'));
-
 export interface EditionJson {
   text: string[][];
   heTitle?: string;
@@ -179,7 +176,7 @@ export function processTractate(
     daf: 1 + Math.floor((skip + ai) / 2),
     amud: (skip + ai) % 2 === 0 ? 'a' : 'b',
   });
-  const text = davidson.text.slice(skip).map((amud) => amud.map(decomposed));
+  const text = davidson.text.slice(skip).map((amud) => amud.map(decomposePresentationForms));
   const translation = english.text.slice(skip);
   const differs = englishShapeDiffers(text, translation);
   if (differs !== null) {

@@ -6,8 +6,8 @@ import { isHebrewSeparator, isNikkud } from './letters.ts';
 // Shin and sin written as one character each, from the Hebrew presentation
 // forms. BHSA uses these where Sefaria writes the plain letter and a dot, and
 // the dot is stripped as a point, so the two sources would otherwise disagree
-// about how to spell the same word. Nothing in the text we display uses them;
-// the generator folds them for the same reason, and both fold both so that
+// about how to spell the same word. The text we display has none
+// (decomposePresentationForms); the generator folds them for the same reason, and both fold both so that
 // neither has to be read to predict the other.
 const PRESENTATION_FORM_MAP: Record<string, string> = {
   'שׁ': 'ש', // shin with shin dot (U+FB2A) → shin (U+05E9)
