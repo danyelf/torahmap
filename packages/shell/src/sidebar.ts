@@ -6,7 +6,7 @@ import { ENGLISH, HEBREW, type TextLanguage } from './language.ts';
 import type { ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
-import { linkStretches, type TextLink } from './textLinks.ts';
+import { insertLabels, linkStretches, type TextLink } from './textLinks.ts';
 import type { TextRange } from '@torahmap/utils';
 import { styleStretches, type TextStyle } from './textStyles.ts';
 
@@ -219,6 +219,7 @@ export function updateSidebar<I extends MapItem>(
       } else {
         container.replaceChildren(fragment);
       }
+      insertLabels(container, text.hebrewLinks ?? []);
     }
   }
   if (english) {

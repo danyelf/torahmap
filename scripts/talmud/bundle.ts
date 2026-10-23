@@ -36,6 +36,7 @@ import {
   citationFinder,
   citationsByPlace,
   quoteFinder,
+  type Placing,
   type Tanakh,
   type TanakhBook,
 } from './citations.ts';
@@ -299,8 +300,7 @@ async function main(): Promise<void> {
   };
   const find = citationFinder(tanakh);
   const place = quoteFinder(tanakh);
-  let linked = 0;
-  let unquoted = 0;
+  const placings: Partial<Record<Placing, number>> = {};
   const missed: string[] = [];
 
   for (const ref of passed) {
@@ -335,9 +335,8 @@ async function main(): Promise<void> {
         .slice(wikisource.text.length - tractateText.amudim.length)
         .map((amud) => amud.map(stripHtml));
       const cited = citationsByPlace(tractateText.amudim, naming, find, place);
-      unquoted += cited.unquoted;
-      for (const amud of Object.values(cited.citations)) {
-        for (const segment of Object.values(amud)) linked += segment.length;
+      for (const [way, n] of Object.entries(cited.placings) as [Placing, number][]) {
+        placings[way] = (placings[way] ?? 0) + n;
       }
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
       const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
@@ -368,8 +367,8 @@ async function main(): Promise<void> {
   );
   console.log(`English: ${join(DATA_DIR, dirname(englishFile('')))}`);
   console.log('');
-  console.log(`Tanakh citations linked: ${linked}`);
-  console.log(`Named in Wikisource but not quoted in Davidson: ${unquoted}`);
+  console.log(`Tanakh citations, by how each found its place in Davidson's text:`);
+  for (const [way, n] of Object.entries(placings)) console.log(`  ${way}: ${n}`);
   console.log(`Looked like citations but named no verse: ${missed.length}`);
   for (const stretch of missed.slice(0, 10)) console.log(`  ${stretch}`);
 }

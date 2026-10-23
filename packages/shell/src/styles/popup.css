@@ -100,6 +100,13 @@
   text-decoration: underline solid rgba(106, 176, 243, 0.9);
 }
 
+/* A reference shown where the text quotes nothing to link: smaller, and apart from the words. */
+#popup .popup-hebrew .text-link-label {
+  font-size: 0.7em;
+  margin-inline: 0.25em;
+  opacity: 0.75;
+}
+
 #popup .popup-english {
   padding: 14px;
   font-size: 14px;

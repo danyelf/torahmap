@@ -143,11 +143,14 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           englishStyles: english.styles,
           englishSearched: searchedStretches(english.text, english.styles),
           link: sefariaUrl(item.tractate, [amudName(item), item.segment]),
-          hebrewLinks: (file?.citations[ai]?.[si] ?? []).map(({ start, end, verse }) => ({
-            start,
-            end,
-            href: commentaryLink(verse, TALMUD_CATEGORY),
-          })),
+          hebrewLinks: (file?.citations[ai]?.[si] ?? []).map(
+            ({ start, end, verse, reference }) => ({
+              start,
+              end,
+              href: commentaryLink(verse, TALMUD_CATEGORY),
+              label: reference,
+            }),
+          ),
         };
       },
 

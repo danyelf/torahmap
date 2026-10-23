@@ -18,22 +18,35 @@ const chapters = new Map<string, number[]>(
 const tractates = readdirSync(join(DATA, 'talmud/texts'));
 
 describe("the Talmud's citations of the Tanakh", () => {
-  it.each(tractates)('in %s name real verses, at quoted words of their segment', (file) => {
-    const text: TalmudTractateText = read(`talmud/texts/${file}`);
-    for (const [ai, segments] of Object.entries(text.citations)) {
-      for (const [si, citations] of Object.entries(segments)) {
-        const segment = text.amudim[Number(ai)][Number(si)];
-        for (const { start, end, verse } of citations) {
-          const place = parseVerseId(verse);
-          expect(place, verse).not.toBeNull();
-          const { book, chapter, verse: v } = place!;
-          expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
-          expect(segment.slice(0, start).trimEnd().at(-1) ?? '״', verse).toMatch(/״/);
-          expect(segment.slice(start, end).trim()).toBe(segment.slice(start, end));
+  it.each(tractates)(
+    'in %s name real verses, each on words of its segment or shown as its reference',
+    (file) => {
+      const text: TalmudTractateText = read(`talmud/texts/${file}`);
+      for (const [ai, segments] of Object.entries(text.citations)) {
+        for (const [si, citations] of Object.entries(segments)) {
+          const segment = text.amudim[Number(ai)][Number(si)];
+          let previous = 0;
+          for (const { start, end, verse, reference } of citations) {
+            // In order, and no two links over the same words.
+            expect(start, verse).toBeGreaterThanOrEqual(previous);
+            previous = end;
+            const place = parseVerseId(verse);
+            expect(place, verse).not.toBeNull();
+            const { book, chapter, verse: v } = place!;
+            expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
+            expect(end, verse).toBeLessThanOrEqual(segment.length);
+            if (reference === undefined) {
+              expect(segment.slice(start, end).trim(), verse).toBe(segment.slice(start, end));
+              expect(end, verse).toBeGreaterThan(start);
+            } else {
+              expect(end, verse).toBe(start);
+              expect(reference, verse).toMatch(/^\(.+\)$/);
+            }
+          }
         }
       }
-    }
-  });
+    },
+  );
 
   it('link to a category the commentary data counts', () => {
     const counts = read('overlays/commentary/counts.json');

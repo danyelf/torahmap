@@ -266,10 +266,20 @@ One thing still comes from the Wikisource edition of the Bavli: which Tanakh
 verse a quotation is from. Davidson quotes a verse in ״…״ but never names it;
 Wikisource names it in brackets, (תהלים לו, ז), and divides the text segment
 for segment as Davidson does. The bundle reads the verses each Wikisource
-segment names and links each to the next quote in the same Davidson segment
-that holds two of its words in a row (`quoteFinder`,
-`scripts/talmud/citations.ts`). A verse no quote holds gets no link; the bundle
-prints how many.
+segment names and places each in the same Davidson segment (`quoteFinder`,
+`scripts/talmud/citations.ts`), trying in turn:
+
+- where the words that follow the reference in Wikisource are: the quote
+  they are in or that opens just after them, or else the run of them the verse
+  holds;
+- the next quote that holds two of the verse's words in a row;
+- the rest of the quote the verse before it was linked on, from where this
+  verse's words begin;
+- three of the verse's words in a row outside any quote.
+
+A verse placed none of these ways is shown as Wikisource's reference, small,
+where the words around it put it. The bundle prints how many were placed each
+way.
 
 The popup's English is the William Davidson English (`english.json`), segment
 for segment with the Hebrew; the bundle fails if its shape differs. It ships
