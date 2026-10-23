@@ -23,11 +23,11 @@ describe('menuHtml', () => {
     expect(div.querySelector('img')).toBeNull();
   });
 
-  it('then share, the search, the overlays, the stories, and about', () => {
+  it('then share, go to, the search, the overlays, the stories, and about', () => {
     const actions = items(menuHtml(tanakhSite, { number: 1, total: 21, title: 'x' })).map(
       (b) => b.dataset.action,
     );
-    expect(actions).toEqual(['story', 'share', 'search', 'overlay', 'stories', 'about']);
+    expect(actions).toEqual(['story', 'share', 'goto', 'search', 'overlay', 'stories', 'about']);
   });
 
   it('makes every item a real button', () => {

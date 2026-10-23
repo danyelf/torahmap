@@ -1,7 +1,7 @@
 // The Talmud map's own marks: each tractate's cover, tinted by its seder, and the perek and daf
 // labels, which show by zoom level.
 
-import type { TractateBlock, PerekAnchor, DafRowAnchor } from './layout.ts';
+import { amudName, type TractateBlock, type PerekAnchor, type DafRowAnchor } from './layout.ts';
 import {
   COVER_OPACITY,
   DAF_LABEL,
@@ -79,7 +79,7 @@ export function createTalmudLabels(
   const moveDapim = createRowNumbers(
     'talmud-daf-labels',
     dafRows.map((row) => ({
-      text: `${row.daf}${row.amud}`,
+      text: amudName(row),
       x: row.rightX,
       y: row.topY,
       zoom: numberedFirst(row) ? PEREK_LABEL_ZOOM : DAF_LABEL_ZOOM_ALL,

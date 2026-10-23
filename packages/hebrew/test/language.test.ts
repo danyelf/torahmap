@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hebrew } from '../src/index.ts';
+import { hebrew, hebrewOrEnglish } from '../src/index.ts';
 
 const PREFIXES = 'דולבכשמה';
 
@@ -39,5 +39,12 @@ describe('Hebrew whole words', () => {
   it('claims a term holding a Hebrew letter', () => {
     expect(hebrew().claims('abc')).toBe(false);
     expect(hebrew().claims('רבי')).toBe(true);
+  });
+});
+
+describe('hebrewOrEnglish', () => {
+  it('names text with Hebrew letters as Hebrew, as a text names its languages, and other text as English', () => {
+    expect(hebrewOrEnglish('שמות כב')).toBe('he');
+    expect(hebrewOrEnglish('Exodus 22')).toBe('en');
   });
 });

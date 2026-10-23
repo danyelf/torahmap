@@ -396,6 +396,7 @@ body[data-menu] #story-cue {
   flex-shrink: 0;
 }
 
+body[data-open='goto'] #goto-panel,
 body[data-open='search'] #search-panel,
 body[data-open='overlay'] #overlay-panel,
 body[data-open='stories'] #stories-panel,

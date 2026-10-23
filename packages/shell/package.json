@@ -20,7 +20,8 @@
     "./rowNumbers.ts": "./src/rowNumbers.ts",
     "./scrollytelling/types.ts": "./src/scrollytelling/types.ts",
     "./sidebar.ts": "./src/sidebar.ts",
-    "./textWords.ts": "./src/textWords.ts"
+    "./textWords.ts": "./src/textWords.ts",
+    "./references.ts": "./src/references.ts"
   },
   "dependencies": {
     "@torahmap/engine": "*",

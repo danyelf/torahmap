@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { State } from './app.ts';
+import { CHROME, type State } from './app.ts';
 import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
 import { KNOWN } from './known.ts';
-import { boxes, clippedText, shown } from './page.ts';
+import { openMap } from '../browser/page.ts';
+import { asReturningReader, boxes, clippedText, shown } from './page.ts';
 
 /** The selectors the rules measure, which belong to the interface being tested. */
 export interface Chrome {
@@ -62,9 +63,9 @@ export async function measureLayout(
 }
 
 /** Measures the page and fails on every violation that `KNOWN` does not record exactly. */
-export async function checkLayout(page: Page, state: State, chrome: Chrome): Promise<void> {
+export async function checkLayout(page: Page, state: State): Promise<void> {
   const info = test.info();
-  const measured = await measureLayout(page, chrome, state.shown);
+  const measured = await measureLayout(page, CHROME, state.shown);
   for (const rule of RULES) {
     const violations = measured[rule];
     if (!violations) continue;
@@ -82,5 +83,22 @@ export async function checkLayout(page: Page, state: State, chrome: Chrome): Pro
         .soft(violations, `${key} no longer measures what known.ts records: update or remove it`)
         .toEqual(known.violations);
     }
+  }
+}
+
+/** A test for each of `states` on the page at `path`: open it, screenshot it, and check its layout. */
+export function testStates(states: readonly State[], path = '/'): void {
+  for (const state of states) {
+    test(state.name, async ({ page }, info) => {
+      if (state.returning) await asReturningReader(page);
+      const errors = await openMap(page, state.link, path);
+      await state.then?.(page);
+      expect(errors, `page errors after opening ${state.name}`).toEqual([]);
+      const shot = info.outputPath('screen.png');
+      await page.screenshot({ path: shot });
+      await info.attach('layout', { path: shot, contentType: 'image/png' });
+      await checkLayout(page, state);
+      expect(errors, 'page errors while measuring').toEqual([]);
+    });
   }
 }

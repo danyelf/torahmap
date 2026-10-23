@@ -9,6 +9,8 @@ import {
   desktopTabletAndPhoneOnly,
   shown,
 } from './page.ts';
+import { TALMUD_STATES } from './app.ts';
+import { testStates } from './check.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
 
@@ -67,6 +69,8 @@ async function squaresOnScreen(page: Page): Promise<Box[]> {
   }, cover);
   return squares.filter((b) => outsideOf([b], view).length === 0);
 }
+
+testStates(TALMUD_STATES, TALMUD);
 
 test('the Talmud map draws, and names its tractates only once they are big enough to read', async ({
   page,

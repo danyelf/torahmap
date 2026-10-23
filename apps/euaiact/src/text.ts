@@ -3,6 +3,7 @@
 import { cameraToFit } from '@torahmap/engine';
 import type { LinkKeys } from '@torahmap/link';
 import type { MapText } from '@torahmap/shell/app/text.ts';
+import { EXAMPLES, provisionReader } from './references.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
@@ -113,6 +114,8 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
         list: [WHOLE_MAP],
         resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
       },
+
+      goTo: { examples: EXAMPLES, ...provisionReader(laid.items.map((item) => item.id)) },
 
       area: (item) => ({
         area: item.layer === 'article' ? `Chapter ${item.chapter}` : actRef(item.id),

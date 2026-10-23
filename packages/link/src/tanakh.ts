@@ -15,7 +15,23 @@ export function verseId(book: string, chapter: number, verse: number): string {
 
 /** A verse as readers write it: "I Samuel 1:5". */
 export function verseRef(v: { book: string; chapter: number; verse: number }): string {
-  return `${v.book} ${v.chapter}:${v.verse}`;
+  return passageRef(v.book, v);
+}
+
+/** A chapter, or a verse of one. */
+export interface ChapterPlace {
+  chapter: number;
+  verse?: number;
+}
+
+const at = (p: ChapterPlace) =>
+  p.verse === undefined ? `${p.chapter}` : `${p.chapter}:${p.verse}`;
+
+/** A passage of `book` as readers write it: "Genesis 1", "Genesis 1:3", "Genesis 1:3-5", "Genesis 1:3-2:4". */
+export function passageRef(book: string, from: ChapterPlace, to: ChapterPlace = from): string {
+  if (to.chapter === from.chapter && to.verse === from.verse) return `${book} ${at(from)}`;
+  const end = to.chapter === from.chapter && from.verse !== undefined ? `${to.verse}` : at(to);
+  return `${book} ${at(from)}-${end}`;
 }
 
 /**

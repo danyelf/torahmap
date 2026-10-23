@@ -1,10 +1,10 @@
 // The Tanakh verses the Talmud's text cites, written in brackets: (תהלים לו, ז).
 
+import { hebrewNumber } from '@torahmap/hebrew';
 import { verseId } from '@torahmap/link/tanakh';
 import { textWords } from '@torahmap/shell/textWords.ts';
 import type { Book } from '@torahmap/tanakh/types.ts';
 import type { Citation, TalmudTractateText } from '@torahmap/talmud/data.ts';
-import { hebrewNumeral } from './hebrewNumeral.ts';
 
 export type TanakhBook = Pick<Book, 'name' | 'hebrewName' | 'chapters'>;
 
@@ -111,7 +111,7 @@ export function citationFinder(tanakh: Tanakh): (text: string) => Found {
 }
 
 function isNumbered(shape: RegExpMatchArray | null): boolean {
-  return !!shape && hebrewNumeral(shape[1]) !== null && hebrewNumeral(shape[2]) !== null;
+  return !!shape && hebrewNumber(shape[1]) !== null && hebrewNumber(shape[2]) !== null;
 }
 
 /** Whether a verse holds `count` of the words quoted, one after another. */
@@ -166,8 +166,8 @@ function verseIn(
   verseWritten: string,
   holds: Holds | null,
 ): string | null {
-  const chapter = hebrewNumeral(chapterWritten);
-  const verse = hebrewNumeral(verseWritten);
+  const chapter = hebrewNumber(chapterWritten);
+  const verse = hebrewNumber(verseWritten);
   if (!chapter || !verse) return null;
   const length = book.chapters[chapter - 1] ?? 0;
   const exists = (v: number) => v >= 1 && v <= length;

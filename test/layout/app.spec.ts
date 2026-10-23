@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { ABRAHAM, CHROME, STATES } from './app.ts';
-import { checkLayout, measureLayout } from './check.ts';
+import { measureLayout, testStates } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
 import {
   canvasShot,
@@ -64,19 +64,7 @@ test('the rules report a layout broken on purpose', async ({ page }) => {
   expect(measured['expected-shown']).toEqual(['#map-legend matches nothing']);
 });
 
-for (const state of STATES) {
-  test(state.name, async ({ page }, info) => {
-    if (state.returning) await asReturningReader(page);
-    const errors = await openMap(page, state.link);
-    await state.then?.(page);
-    expect(errors, `page errors after opening ${state.name}`).toEqual([]);
-    const shot = info.outputPath('screen.png');
-    await page.screenshot({ path: shot });
-    await info.attach('layout', { path: shot, contentType: 'image/png' });
-    await checkLayout(page, state, CHROME);
-    expect(errors, 'page errors while measuring').toEqual([]);
-  });
-}
+testStates(STATES);
 
 test("a returning reader's Search button opens search, ready to type", async ({ page }) => {
   await asReturningReader(page);

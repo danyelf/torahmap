@@ -79,3 +79,8 @@ export function hebrew(options: { prefixes?: string } = {}) {
       wholeWords(haystack, needle, limit, prefixes),
   } as const;
 }
+
+/** The language `text` is written in, named as a text's languages are: 'he' with Hebrew letters, 'en' without. */
+export function hebrewOrEnglish(text: string): 'he' | 'en' {
+  return isHebrew(text) ? 'he' : 'en';
+}

@@ -1,6 +1,9 @@
 import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
 import { viaMenu } from '../browser/page.ts';
+import { GO_TO_BOX_ID } from '../../packages/shell/src/goToBox.ts';
+
+const GO_TO_BOX = `#${GO_TO_BOX_ID}`;
 
 export interface State {
   name: string;
@@ -27,8 +30,33 @@ export const CHROME: Chrome = {
     '#popup button, #popup a, #zoom-controls button',
   text:
     '.map-legend-summary, .menu-title, .menu-item, .column-title, .panel-title, #panel label, ' +
-    '.story-card-place, #popup .ref-text',
+    '.story-card-place, #popup .ref-text, .goto-ref, .goto-none, .goto-completion, .goto-example',
 };
+
+/** Opens Go to through the ☰, types `typed` there, and takes the offer with Enter if `take`. */
+export async function goTo(page: Page, typed = '', take = false): Promise<void> {
+  await viaMenu(page, 'goto');
+  if (!typed) return;
+  await page.locator(GO_TO_BOX).fill(typed);
+  // An offer grows when the text it quotes arrives.
+  await page.locator('.goto-quote:not(:empty), .goto-none, .goto-completion').first().waitFor();
+  await sheetMeasured(page);
+  if (take) await page.locator(GO_TO_BOX).press('Enter');
+}
+
+/** Waits for a phone's map to make room for the sheet, which main.ts measures after it changes height. */
+async function sheetMeasured(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const style = getComputedStyle(document.documentElement);
+        if (style.getPropertyValue('--layout').trim() !== 'phone') return true;
+        const sheet = document.getElementById('panel')!;
+        return style.getPropertyValue('--sheet-shown') === `${sheet.offsetHeight}px`;
+      }),
+    )
+    .toBe(true);
+}
 
 const stop = (id: string): string => `.story-stop[data-stop-id="${id}"] .story-text`;
 
@@ -45,6 +73,55 @@ export const STATES: State[] = [
     name: 'story-stop-with-verse',
     link: 'story=tour&stop=abraham_call',
     shown: ['#map-legend', stop('abraham_call')],
+  },
+  {
+    name: 'goto-panel',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page),
+    shown: [GO_TO_BOX, '.goto-example'],
+  },
+  {
+    name: 'goto-completing',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'שמ'),
+    shown: [GO_TO_BOX, '.goto-completion'],
+  },
+  {
+    name: 'goto-completing-word',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'Sam'),
+    shown: [GO_TO_BOX, '.goto-completion'],
+  },
+  {
+    name: 'goto-offer',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, '1 Sam 3:17'),
+    shown: [GO_TO_BOX, '.goto-offer'],
+  },
+  {
+    name: 'goto-hebrew-offer',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'שמואל א ג:יז'),
+    shown: [GO_TO_BOX, '.goto-offer'],
+  },
+  {
+    name: 'goto-not-found',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'Genesis 51'),
+    shown: [GO_TO_BOX, '.goto-none'],
+  },
+  {
+    name: 'goto-chapter-taken',
+    link: '',
+    returning: true,
+    then: (page) => goTo(page, 'Isaiah 40', true),
+    shown: ['#popup.visible'],
   },
   {
     name: 'story-menu-down',
@@ -229,9 +306,67 @@ export const ACT_STATES: State[] = [
   { name: 'act-recital-pinned', link: 'at=Recital.12', shown: ['#popup.visible'] },
   { name: 'act-search', link: 'search=deployer&zoom=0.6', shown: ['#map-legend'] },
   {
+    name: 'act-goto-panel',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page),
+    shown: [GO_TO_BOX, '.goto-example'],
+  },
+  {
+    name: 'act-goto-completing',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'a'),
+    shown: [GO_TO_BOX, '.goto-completion'],
+  },
+  {
+    name: 'act-goto-article',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'Article'),
+    shown: [GO_TO_BOX, '.goto-completion'],
+  },
+  {
+    name: 'act-goto-offer',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'Annex III'),
+    shown: [GO_TO_BOX, '.goto-offer'],
+  },
+  {
+    name: 'act-goto-taken',
+    link: 'zoom=0.6',
+    then: (page) => goTo(page, 'Annex III', true),
+    shown: ['#popup.visible'],
+  },
+  {
     name: 'act-about',
     link: 'zoom=0.6',
     then: (page) => viaMenu(page, 'about'),
     shown: ['#about-panel .about-section:first-of-type .panel-section-heading'],
+  },
+];
+
+/** The Talmud's page, at /talmud/ (talmud.spec.ts). */
+export const TALMUD_STATES: State[] = [
+  {
+    name: 'talmud-goto-panel',
+    link: '',
+    then: (page) => goTo(page),
+    shown: [GO_TO_BOX, '.goto-example'],
+  },
+  {
+    name: 'talmud-goto-completing',
+    link: '',
+    then: (page) => goTo(page, 'Ba'),
+    shown: [GO_TO_BOX, '.goto-completion'],
+  },
+  {
+    name: 'talmud-goto-offer',
+    link: '',
+    then: (page) => goTo(page, 'Berakhot 17a'),
+    shown: [GO_TO_BOX, '.goto-offer'],
+  },
+  {
+    name: 'talmud-goto-not-found',
+    link: '',
+    then: (page) => goTo(page, 'Berakhot 99a'),
+    shown: [GO_TO_BOX, '.goto-none'],
   },
 ];

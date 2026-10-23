@@ -86,10 +86,30 @@ export interface OpenText<I extends MapItem, S = unknown> {
       viewport: Viewport,
     ): ResolvedStoryStop[];
   };
+  /** Reads a reference typed in the Go to panel. */
+  goTo: GoTo;
   /** For telemetry: a square's book or tractate, and its section. */
   area(item: I): { area: string; section: string };
   /** Wires the text's own parts to the running shell. */
   start?(shell: Shell<I, S>): void;
+}
+
+/** A place a reference names: what readers call it, and its squares' ids in reading order. */
+export interface Reference {
+  ref: string;
+  ids: readonly string[];
+}
+
+/** Reads what is typed in the Go to box. */
+export interface GoTo {
+  /** Examples offered under the box, to try. */
+  examples: readonly string[];
+  /** The place `typed` names, or null when it names none. */
+  read(typed: string): Reference | null;
+  /** What `typed` may be completed to, in the order to offer them. */
+  complete(typed: string): string[];
+  /** The language `typed` is written in, which the offer quotes first. */
+  languageOf(typed: string): TextLanguage;
 }
 
 /** What a text's own code may ask of the shell. */

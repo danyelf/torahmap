@@ -147,6 +147,10 @@ export function trackSearchExecute(
   });
 }
 
+export function trackGoTo(typed: string, ref: string, area: string): void {
+  track('go_to', { typed, ref, area });
+}
+
 export function trackSquareClick(id: string, area: string): void {
   track('square_click', { id, area });
 }

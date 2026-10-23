@@ -100,6 +100,16 @@ export interface WorldBox {
   maxY: number;
 }
 
+/** The smallest box around all of `items`. */
+export function boxAround(items: readonly ItemBox[]): WorldBox {
+  return {
+    minX: Math.min(...items.map((i) => i.x)),
+    minY: Math.min(...items.map((i) => i.y)),
+    maxX: Math.max(...items.map((i) => i.x + (i.width ?? i.size))),
+    maxY: Math.max(...items.map((i) => i.y + i.size)),
+  };
+}
+
 // Screen pixels kept clear around a fitted box, and LABEL_MARGIN above it.
 export const FIT_MARGIN = 16;
 

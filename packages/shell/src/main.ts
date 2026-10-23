@@ -7,6 +7,8 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
+  boxAround,
+  cameraToFit,
   type Camera,
   type ScreenPoint,
   type Viewport,
@@ -31,7 +33,7 @@ import {
   lerpCamera,
 } from '@torahmap/engine';
 import { debounce } from '@torahmap/utils';
-import type { MapText, Site } from './app/text.ts';
+import type { MapText, Reference, Site } from './app/text.ts';
 import { SEARCH_BOX_ID } from './app/search.ts';
 import {
   DRAG_PX,
@@ -46,13 +48,16 @@ import {
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, SHARE, menuHtml } from './menu.ts';
+import { bindGoTo, goToPanelHtml } from './goTo.ts';
+import { GO_TO_BOX_ID } from './goToBox.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
 import { startingPointsHtml, startChosen, type StartChoice } from './startingPoints.ts';
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
-import { applyLanguageChoice, bindLanguageChoice } from './languageChoice.ts';
+import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
+import { ENGLISH, type TextLanguage } from './language.ts';
 import {
   arrivedWith,
   configureAnalytics,
@@ -65,6 +70,7 @@ import {
   trackStoryExit,
   trackStoryReturn,
   trackStoryStop,
+  trackGoTo,
   trackSquareClick,
   trackViewSettled,
   trackWebGLMissing,
@@ -504,6 +510,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
+  document.getElementById('goto-panel')!.innerHTML = goToPanelHtml(text.goTo.examples);
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
@@ -555,8 +562,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
+    if (opened && frame.open === 'goto') goToPanel.redraw();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages);
+      aboutPanel.innerHTML = aboutHtml(
+        source.site,
+        allOverlays,
+        twoLanguages,
+        text.goTo.examples[0],
+      );
       bindLanguageChoice(aboutPanel, refreshPopup);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
@@ -572,7 +585,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (!phone || frame.full) return;
     document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
   }
-  new ResizeObserver(measureSheet).observe(panel);
+  // Watching the sheet alone misses a change: when a panel opens shorter than
+  // the one before and grows back to its height within a frame, the observer
+  // sees no change, though measureSheet has already recorded the shorter one.
+  const sheetWatch = new ResizeObserver(measureSheet);
+  for (const watched of [panel, ...panelBody.children]) sheetWatch.observe(watched);
 
   // On a phone the popup stacks above the legend, which grows a row for
   // each thing on the map.
@@ -606,6 +623,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (event.type === 'menu' && frame.menu) {
       droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
     }
+    // On a phone it would raise the keyboard over the examples before they are read.
+    if (event.type === 'choose' && frame.open === 'goto' && !phone) goToPanel.focus();
   }
 
   // Off until the page view is sent: who drives when the page opens is part of it.
@@ -690,22 +709,72 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * has said what they want to see, and being pulled back would undo it.
    */
   function glideToItem(item: I): void {
-    cancelCameraGlide();
-
-    const target = viewFocusedOn(
-      item,
-      camera.zoom,
-      RESULT_CLICK_ZOOM,
-      mapFocus(),
-      mapViewport(),
-      zoomRange,
+    glideTo(
+      viewFocusedOn(item, camera.zoom, RESULT_CLICK_ZOOM, mapFocus(), mapViewport(), zoomRange),
     );
+  }
 
+  /**
+   * Fit `list` into the map above and below the focus, since its first square is
+   * pinned and on a phone the popup covers the map below. No closer than a single
+   * square is gone to, or a short chapter would be a few squares filling the map.
+   */
+  function glideToFit(list: readonly I[]): void {
+    const view = mapViewport();
+    const focus = mapFocus();
+    const range = { ...zoomRange, max: Math.min(zoomRange.max, RESULT_CLICK_ZOOM) };
+    const { zoom, x, y } = cameraToFit(boxAround(list), view.width, 2 * focus.y, range);
+    glideTo({ zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) });
+  }
+
+  function glideTo(target: Camera): void {
+    cancelCameraGlide();
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
       debouncedCameraSettled();
     });
   }
+
+  /** The squares of a place, in reading order. */
+  const squaresOf = (found: Reference): I[] =>
+    found.ids.map((id) => squares.find(id)).filter((item) => item !== null);
+
+  /**
+   * A square's text in the first shown language whose file is in, fetching its files, or
+   * null while none is in; the language the reference was typed in comes first.
+   */
+  function quoteOf(item: I, typed: string): string | null {
+    viewFiles.fetchPopup(item);
+    const said = text.popupText(item, loader.loaded(), null);
+    const typedIn = text.goTo.languageOf(typed);
+    const first = (language: TextLanguage) => Number(language === typedIn);
+    // A language whose file is not in has no words yet.
+    const languages = [...shownLanguages()].sort((a, b) => first(b) - first(a));
+    for (const language of languages) {
+      const words = language === ENGLISH ? said.english : said.hebrew;
+      if (words) return words;
+    }
+    return null;
+  }
+
+  const goToPanel = bindGoTo(document.getElementById('goto-panel')!, text.goTo, {
+    quote(found, typed) {
+      const [first] = squaresOf(found);
+      return first ? quoteOf(first, typed) : null;
+    },
+    // Pin the place's first square, and show all of it.
+    take(found, typed) {
+      const place = squaresOf(found);
+      if (place.length === 0) return;
+      trackGoTo(typed, found.ref, text.area(place[0]).area);
+      // A full-height sheet would hide the glide.
+      if (frame.full) setFrame({ ...frame, full: false });
+      pinItem(place[0]);
+      if (place.length === 1) glideToItem(place[0]);
+      else glideToFit(place);
+    },
+    miss: (typed) => trackGoTo(typed, '', ''),
+  });
 
   // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
@@ -1341,10 +1410,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     dispatch({ type: 'drag', dy: frame.full ? DRAG_PX : -DRAG_PX });
   });
 
-  // Typing wants room for the words and their results.
+  // Typing wants room for the words and their results. Go to's answer is one line, and
+  // the map above it shows where it leads.
   panel.addEventListener('focusin', (e) => {
     const t = e.target;
     if (t instanceof HTMLInputElement && (t.type === 'text' || t.type === 'search')) {
+      if (t.id === GO_TO_BOX_ID) return;
       dispatch({ type: 'typing' });
     }
   });
@@ -1526,6 +1597,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stale.searchPanel) drawSearchPanel(false);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
     if (stale.popup) refreshPopupAfterDownload();
+    if (frame.open === 'goto') goToPanel.redraw();
   }
 
   function fileFailed(): void {
