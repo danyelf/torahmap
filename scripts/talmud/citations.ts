@@ -1,7 +1,8 @@
-// The Tanakh verses the Talmud's text cites, written in brackets: (תהלים לו, ז).
+// The Tanakh verses the Talmud cites. The Wikisource edition names each in brackets, (תהלים לו, ז);
+// the Davidson edition, which the popup shows, quotes its words in ״…״ but names none.
 
 import { hebrewNumber } from '@torahmap/hebrew';
-import { verseId } from '@torahmap/link/tanakh';
+import { parseVerseId, verseId } from '@torahmap/link/tanakh';
 import { textWords } from '@torahmap/shell/textWords.ts';
 import type { Book } from '@torahmap/tanakh/types.ts';
 import type { Citation, TalmudTractateText } from '@torahmap/talmud/data.ts';
@@ -60,19 +61,7 @@ export function citationFinder(tanakh: Tanakh): (text: string) => Found {
   }
   const names = [...byName.keys()].sort((a, b) => b.length - a.length);
 
-  // Each verse's words, spelled as quotes are compared, read once.
-  const read = new Map<string, string[]>();
-  const wordsOf = (book: TanakhBook, chapter: number, verse: number): string[] => {
-    const key = `${book.name} ${chapter}:${verse}`;
-    let words = read.get(key);
-    if (!words) {
-      words = textWords(tanakh.text(book.name, chapter, verse) ?? '')
-        .map(({ word }) => spelling(letters(word)))
-        .filter(Boolean);
-      read.set(key, words);
-    }
-    return words;
-  };
+  const wordsOf = verseWords(tanakh);
 
   return (text) => {
     const citations: Citation[] = [];
@@ -97,7 +86,7 @@ export function citationFinder(tanakh: Tanakh): (text: string) => Found {
       const quoted = quote(text.slice(match.index + match[0].length));
       const holds: Holds | null =
         quoted &&
-        ((chapter, verse, count) => holdsRun(wordsOf(book, chapter, verse), quoted, count));
+        ((chapter, verse, count) => holdsRun(wordsOf(book.name, chapter, verse), quoted, count));
       const verse = verseIn(book, numbers[1], numbers[2], holds);
       if (!verse) {
         missed.push(match[0]);
@@ -108,6 +97,85 @@ export function citationFinder(tanakh: Tanakh): (text: string) => Found {
     }
     return { citations, missed };
   };
+}
+
+/** Each verse's words, spelled as quotes are compared, read once. */
+function verseWords(tanakh: Tanakh): (book: string, chapter: number, verse: number) => string[] {
+  const read = new Map<string, string[]>();
+  return (book, chapter, verse) => {
+    const key = `${book} ${chapter}:${verse}`;
+    let words = read.get(key);
+    if (!words) {
+      words = textWords(tanakh.text(book, chapter, verse) ?? '')
+        .map(({ word }) => spelling(letters(word)))
+        .filter(Boolean);
+      read.set(key, words);
+    }
+    return words;
+  };
+}
+
+/**
+ * Where a text that quotes verses in ״…״ without naming them quotes each of `verses`, in order:
+ * the next quote holding two of the verse's words in a row, or its one word. A verse no quote
+ * holds is left out.
+ */
+export function quoteFinder(
+  tanakh: Tanakh,
+): (text: string, verses: readonly string[]) => Citation[] {
+  const wordsOf = verseWords(tanakh);
+  return (text, verses) => {
+    const quotes = quotesIn(text);
+    const citations: Citation[] = [];
+    let next = 0;
+    for (const verse of verses) {
+      const place = parseVerseId(verse);
+      if (!place) continue;
+      const words = wordsOf(place.book, place.chapter, place.verse);
+      const at = quotes.findIndex(
+        (q, i) => i >= next && holdsRun(words, q.words, Math.min(2, q.words.length)),
+      );
+      if (at < 0) continue;
+      citations.push({ start: quotes[at].start, end: quotes[at].end, verse });
+      next = at + 1;
+    }
+    return citations;
+  };
+}
+
+// A quote mark before a word opens a quote, even after a prefix (לְ״רוֹפֵא״); any other closes one.
+const OPENS = /[א-ת֑-ׇ]/;
+
+/**
+ * The stretches of `text` inside ״…״, trimmed, and their words as quotes are compared. A quote can
+ * run on from the segment before, or into the next.
+ */
+function quotesIn(text: string): { start: number; end: number; words: string[] }[] {
+  const quotes: { start: number; end: number; words: string[] }[] = [];
+  const add = (from: number, to: number) => {
+    const stretch = text.slice(from, to);
+    const start = from + (stretch.length - stretch.trimStart().length);
+    const end = from + stretch.trimEnd().length;
+    const words = stretch
+      .split(/\s+/)
+      .map((written) => (/^ה[֑-ׇ]*['׳]$/.test(written) ? 'יהוה' : letters(written)))
+      .filter((word) => word.length > 1 && word !== 'וגו')
+      .map(spelling);
+    if (end > start && words.length > 0) quotes.push({ start, end, words });
+  };
+  let from: number | null = null;
+  let first = true;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== '״') continue;
+    if (OPENS.test(text[i + 1] ?? '')) from = i + 1;
+    else if (from !== null || first) {
+      add(from ?? 0, i);
+      from = null;
+    }
+    first = false;
+  }
+  if (from !== null) add(from, text.length);
+  return quotes;
 }
 
 function isNumbered(shape: RegExpMatchArray | null): boolean {
@@ -181,19 +249,30 @@ function verseIn(
   return exists(verse) ? verseId(book.name, chapter, verse) : null;
 }
 
-/** The citations in a tractate's text, by amud and segment, and every stretch that was missed. */
+/**
+ * The citations in a tractate's text, by amud and segment: the verses `find` reads in each segment
+ * of `naming`, an edition that names them, linked where the same segment of `text` quotes them.
+ * Also every stretch that looked like a citation but named no verse, and the verses named but not
+ * quoted.
+ */
 export function citationsByPlace(
-  amudim: readonly (readonly string[])[],
+  text: readonly (readonly string[])[],
+  naming: readonly (readonly string[])[],
   find: (text: string) => Found,
-): { citations: TalmudTractateText['citations']; missed: string[] } {
+  place: ReturnType<typeof quoteFinder>,
+): { citations: TalmudTractateText['citations']; missed: string[]; unquoted: number } {
   const citations: TalmudTractateText['citations'] = {};
   const missed: string[] = [];
-  amudim.forEach((amud, ai) =>
+  let unquoted = 0;
+  text.forEach((amud, ai) =>
     amud.forEach((segment, si) => {
-      const found = find(segment);
+      const found = find(naming[ai]?.[si] ?? '');
       missed.push(...found.missed);
-      if (found.citations.length > 0) (citations[ai] ??= {})[si] = found.citations;
+      const verses = found.citations.map(({ verse }) => verse);
+      const placed = place(segment, verses);
+      unquoted += verses.length - placed.length;
+      if (placed.length > 0) (citations[ai] ??= {})[si] = placed;
     }),
   );
-  return { citations, missed };
+  return { citations, missed, unquoted };
 }

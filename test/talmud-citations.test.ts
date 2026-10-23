@@ -18,7 +18,7 @@ const chapters = new Map<string, number[]>(
 const tractates = readdirSync(join(DATA, 'talmud/texts'));
 
 describe("the Talmud's citations of the Tanakh", () => {
-  it.each(tractates)('in %s name real verses, at bracketed words of their segment', (file) => {
+  it.each(tractates)('in %s name real verses, at quoted words of their segment', (file) => {
     const text: TalmudTractateText = read(`talmud/texts/${file}`);
     for (const [ai, segments] of Object.entries(text.citations)) {
       for (const [si, citations] of Object.entries(segments)) {
@@ -28,7 +28,7 @@ describe("the Talmud's citations of the Tanakh", () => {
           expect(place, verse).not.toBeNull();
           const { book, chapter, verse: v } = place!;
           expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
-          expect(segment.slice(0, start).trimEnd().at(-1), verse).toMatch(/[([{]/);
+          expect(segment.slice(0, start).trimEnd().at(-1) ?? '״', verse).toMatch(/״/);
           expect(segment.slice(start, end).trim()).toBe(segment.slice(start, end));
         }
       }

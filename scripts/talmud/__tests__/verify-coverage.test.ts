@@ -19,7 +19,7 @@ describe('countMarkers', () => {
   });
 
   it('does not count the word in running text', () => {
-    expect(countMarkers([['אמר מתני׳ מני ר״ש היא']])).toEqual({ matnitin: 0, gemara: 0 });
+    expect(countMarkers([['אמר מתני׳ מני רבי שמעון היא']])).toEqual({ matnitin: 0, gemara: 0 });
   });
 });
 
@@ -59,28 +59,25 @@ describe('shapeMatches', () => {
 
 describe('verifyTractate', () => {
   it('hard-fails on empty text', () => {
-    const ws = { text: [] };
-    const md = { text: [] };
     const sc = { alts: { Chapters: { nodes: [{}] } } };
-    const r = verifyTractate(ws, md, sc);
+    const r = verifyTractate({ text: [] }, { text: [] }, sc);
     expect(r.status).toBe('hard-fail');
-    expect(r.failures.some((f) => f.includes('text.length === 0'))).toBe(true);
+    expect(r.failures).toContain('no text');
   });
 
-  it('hard-fails on shape mismatch', () => {
-    const ws = loadFixture('fake-tractate-clean.json');
-    const md = loadFixture('fake-tractate-shape-mismatch-merged.json');
+  it('hard-fails when Wikisource, read for the verses it names, is divided differently', () => {
+    const md = loadFixture('fake-tractate-clean.json');
+    const ws = loadFixture('fake-tractate-shape-mismatch-wikisource.json');
     const sc = loadFixture('fake-tractate-schema.json');
-    const r = verifyTractate(ws, md, sc);
+    const r = verifyTractate(md, ws, sc);
     expect(r.status).toBe('hard-fail');
     expect(r.failures.some((f) => f.includes('shape mismatch'))).toBe(true);
   });
 
   it('hard-fails on missing schema nodes', () => {
-    const ws = loadFixture('fake-tractate-clean.json');
-    const md = ws; // identical shape
+    const md = loadFixture('fake-tractate-clean.json');
     const sc = { alts: { Chapters: { nodes: [] } } };
-    const r = verifyTractate(ws, md, sc);
+    const r = verifyTractate(md, md, sc);
     expect(r.status).toBe('hard-fail');
     expect(r.failures.some((f) => f.includes('no perek nodes'))).toBe(true);
   });
@@ -88,10 +85,9 @@ describe('verifyTractate', () => {
   it('passes when marker counts are within the plausibility range', () => {
     // Fixture has 2 matnitin and 2 gemara. MARKER_MIN = 3, so this
     // would soft-fail on mishnah+gemara counts.
-    const ws = loadFixture('fake-tractate-clean.json');
-    const md = ws;
+    const md = loadFixture('fake-tractate-clean.json');
     const sc = loadFixture('fake-tractate-schema.json');
-    const r = verifyTractate(ws, md, sc);
+    const r = verifyTractate(md, md, sc);
     expect(r.status).toBe('soft-fail');
     expect(r.markers.matnitin).toBe(2);
     expect(r.markers.gemara).toBe(2);
@@ -107,10 +103,8 @@ describe('verifyTractate', () => {
       ]);
     }
 
-    const ws = { text: amudim };
-    const md = { text: amudim.map((a) => a.map((s) => s)) };
     const sc = loadFixture('fake-tractate-schema.json');
-    const r = verifyTractate(ws, md, sc);
+    const r = verifyTractate({ text: amudim }, { text: amudim }, sc);
     expect(r.status).toBe('pass');
     expect(r.failures).toEqual([]);
     expect(r.markers.matnitin).toBe(15);

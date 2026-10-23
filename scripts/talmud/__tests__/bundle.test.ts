@@ -3,98 +3,77 @@ import { stripHtml, parseWholeRef, processTractate } from '../bundle.ts';
 import { stripNikkudAndSeparators, walkMarkers } from '../markers.ts';
 
 describe('walkMarkers', () => {
-  // Real markers always carry a <big> wrap on either the marker word
-  // itself or the first content word — that's the strong cue we rely on
-  // to distinguish structural markers from inline Hebrew abbreviations.
-  it('tags all segments after a wrapped מתני׳ marker as mishnah', () => {
-    const text = [['<big><strong>מתני׳</strong></big> start', 'continuation'], ['more']];
-    expect(walkMarkers(text)).toEqual([[true, true], [true]]);
-  });
-
-  it('flips to gemara on a wrapped גמ׳ marker', () => {
+  it('tags every segment from a מתני׳ to the next גמ׳ as Mishnah', () => {
     const text = [
-      ['<big><strong>מתני׳</strong></big> m1', '<big><strong>גמ׳</strong></big> g1'],
-      ['more g'],
-    ];
-    expect(walkMarkers(text)).toEqual([[true, false], [false]]);
-  });
-
-  it('handles multi-perek alternation with wrapped markers', () => {
-    const text = [
-      ['<big><strong>מתני׳</strong></big> m1', '<big><strong>גמ׳</strong></big> g1', 'more g1'],
-      ['הדרן end', '<big><strong>מתני׳</strong></big> m2', '<big><strong>גמ׳</strong></big> g2'],
+      ['<big><strong>מַתְנִי׳</strong></big> מִשְׁנָה', 'עוֹד'],
+      ['<strong><big>גְּמָ׳</big></strong> גְּמָרָא', 'עוֹד'],
     ];
     expect(walkMarkers(text)).toEqual([
-      [true, false, false],
-      [false, true, false],
+      [true, true],
+      [false, false],
     ]);
   });
 
-  it('starts in gemara state (conservative default)', () => {
+  it('starts in the Gemara', () => {
     expect(walkMarkers([['no marker', 'here']])).toEqual([[false, false]]);
   });
 
-  it("requires a <big> wrap — bare unwrapped 'מתני׳' alone is NOT a marker", () => {
-    // Some segments mention the abbreviation as natural Hebrew without
-    // any presentational wrap. Those must NOT flip state.
-    expect(walkMarkers([['מתני׳ alone with no big wrap', 'next']])).toEqual([[false, false]]);
+  it('reads a marker word that opens a segment, bold or bare, after brackets or before bold words', () => {
+    const text = [
+      [
+        'מַתְנִי׳ <strong><big>הַכֹּל</big></strong> מַעֲרִיכִין',
+        'גְּמָ׳: מַתְנִיתִין דְּלָא כְּרַבִּי יְהוּדָה',
+        '[<big><strong>מתני׳</strong></big>] משנה',
+        "<big><b>גמ'</b></big>, ורבנן",
+      ],
+    ];
+    expect(walkMarkers(text)).toEqual([[true, false, true, false]]);
   });
 
-  it('ignores inline (mid-segment) marker words — they are natural Hebrew abbreviations, not structural markers', () => {
-    // Real Wikisource case: Bava Metzia 6b:2 contains "מתני׳" inside a quote
-    // ("Rav Hamnuna said: it's a mishnah ..."). Treating that as a marker
-    // flips the state for several dapim after it.
-    expect(walkMarkers([['a real gemara segment that mentions מתני׳ in passing', 'next']])).toEqual(
-      [[false, false]],
-    );
+  it('ignores a marker word in running text, or the start of a longer word', () => {
+    const text = [
+      ['<big><strong>מתני׳</strong></big> משנה', 'אמר רב: מתני׳ מני', 'מַתְנִיתִין מַנִּי'],
+    ];
+    expect(walkMarkers(text)).toEqual([[true, true, true]]);
   });
 
-  it('recognizes wrapped markers like <big><strong>מתני׳</strong></big>', () => {
-    expect(
-      walkMarkers([
-        [
-          '<big><strong>מתני׳</strong></big> first mishnah segment',
-          'second mishnah segment',
-          '<big><strong>גמ׳</strong></big> first gemara segment',
-        ],
-      ]),
-    ).toEqual([[true, true, false]]);
+  it('starts a Mishnah at bold opening words, after a quote mark too', () => {
+    const text = [
+      [
+        'גמרא',
+        '<big><strong>מֵאֵימָתַי</strong></big> קוֹרִין',
+        '<big><strong>גמ׳</strong></big> גמרא',
+        '״<big><strong>קוֹנָם יַיִן</strong></big> שֶׁאֲנִי טוֹעֵם״',
+      ],
+    ];
+    expect(walkMarkers(text)).toEqual([[false, true, false, true]]);
   });
 
-  it("recognizes a marker preceded by editorial '[' (Sotah 49a:17 form)", () => {
-    expect(
-      walkMarkers([
-        [
-          '<big><strong>מתני׳</strong></big> mishnah text',
-          'more mishnah',
-          '[<big><strong>גמ׳</strong></big> ת״ר] starts here',
-        ],
-      ]),
-    ).toEqual([[true, true, false]]);
+  it('starts a Mishnah after a chapter’s closing line, which is no Mishnah itself', () => {
+    const text = [
+      [
+        '<big><strong>מתני׳</strong></big> משנה',
+        '<big><strong>גמ׳</strong></big> גמרא',
+        '<br><br><big><strong>הַדְרָן עֲלָךְ</strong></big><br><br>',
+      ],
+      ['הָאוֹמֵר לַחֲבֵירוֹ: ״<big><strong>בֵּית כּוֹר</strong></big>״', 'עוד'],
+    ];
+    expect(walkMarkers(text)).toEqual([
+      [true, false, false],
+      [true, true],
+    ]);
   });
 
-  it('recognizes a marker wrapped in parens inside strong (Sotah 49b:4 form)', () => {
-    expect(
-      walkMarkers([
-        [
-          '<big><strong>מתני׳</strong></big> m1',
-          'm1 cont',
-          '<big><strong>(גמ׳)</strong></big> first gemara',
-        ],
-      ]),
-    ).toEqual([[true, true, false]]);
-  });
-
-  it('recognizes the bare leading-marker form when the first word is wrapped', () => {
-    expect(
-      walkMarkers([
-        [
-          'מתני׳ <big><strong>הכל</strong></big> מעריכין',
-          'continuation',
-          'גמ׳ <big><strong>ת״ר</strong></big>',
-        ],
-      ]),
-    ).toEqual([[true, true, false]]);
+  it('starts a Mishnah at a numbered one', () => {
+    const text = [
+      [
+        'גמרא',
+        '<b>ב</b> אָמַר לָהֶם',
+        '<big><strong>גמ׳</strong></big>',
+        'א <big><strong>אָמַר</strong></big>',
+      ],
+    ];
+    expect(walkMarkers(text)).toEqual([[false, true, false, true]]);
   });
 });
 
@@ -153,77 +132,6 @@ describe('stripNikkudAndSeparators', () => {
   });
 });
 
-describe('walkMarkers across two editions', () => {
-  // The Davidson edition drops a bare מתני׳ before a bold first word,
-  // so a chapter's opening Mishnah carries a marker only in Wikisource.
-  it('takes a Mishnah marker that only the first edition has', () => {
-    const wikisource = [
-      ['מתני׳ <big><strong>בא</strong></big> לו', 'עוד', 'גמ׳ <big><strong>ת״ר</strong></big>'],
-    ];
-    const steinsaltz = [
-      ['<big><strong>בָּא</strong></big> לוֹ', 'עוד', '<big><strong>גְּמָ׳</strong></big> ת״ר'],
-    ];
-    expect(walkMarkers(wikisource, steinsaltz)).toEqual([[true, true, false]]);
-  });
-
-  it('takes a Gemara marker that only the second edition has', () => {
-    const wikisource = [['<big><strong>מתני׳</strong></big> משנה', 'ורמינהי']];
-    const steinsaltz = [
-      ['<big><strong>מַתְנִי׳</strong></big> משנה', '<strong><big>גְּמָ׳</big></strong> ורמינהי'],
-    ];
-    expect(walkMarkers(wikisource, steinsaltz)).toEqual([[true, false]]);
-  });
-});
-
-describe('walkMarkers marker variants', () => {
-  it('reads a marker written with an ASCII apostrophe', () => {
-    const text = [
-      ["<big><strong>מתני'</strong></big> משנה", 'עוד', "<big><strong>גמ'</strong></big> גמרא"],
-    ];
-    expect(walkMarkers(text)).toEqual([[true, true, false]]);
-  });
-
-  it('reads a marker in <b> rather than <strong>', () => {
-    const text = [["<big><b>מתני'</b></big> משנה", "<big><b>גמ'</b></big> גמרא"]];
-    expect(walkMarkers(text)).toEqual([[true, false]]);
-  });
-
-  it('starts the Gemara at the next segment when a bold גמ׳ ends a segment', () => {
-    const text = [
-      ['<big><strong>מתני׳</strong></big> משנה', 'סוף המשנה: <big><strong>גמ׳</strong></big> '],
-      ['במאי עסקינן', 'עוד'],
-    ];
-    expect(walkMarkers(text)).toEqual([
-      [true, true],
-      [false, false],
-    ]);
-  });
-
-  it('starts a Mishnah at a bold Hebrew numeral', () => {
-    const text = [
-      [
-        'גמרא',
-        '<big><strong>א אמר</strong></big> להם הממונה',
-        'עוד',
-        '<big><strong>ב</strong></big> אמר',
-      ],
-    ];
-    expect(walkMarkers(text)).toEqual([[false, true, true, true]]);
-  });
-
-  it('keeps a Mishnah running until the next Gemara marker, however long', () => {
-    const mishnah = Array.from({ length: 40 }, () => 'משנה ארוכה מאוד');
-    const text = [
-      [
-        '<big><strong>מתני׳</strong></big> פתיחה',
-        ...mishnah,
-        '<big><strong>גמ׳</strong></big> גמרא',
-      ],
-    ];
-    expect(walkMarkers(text)[0]).toEqual([true, ...mishnah.map(() => true), false]);
-  });
-});
-
 describe('processTractate', () => {
   // Build a synthetic 4-amud tractate where perek 2 starts mid-amud.
   // amudIdx 0 (1a) → empty padding (matches Sefaria-Export convention)
@@ -231,7 +139,7 @@ describe('processTractate', () => {
   // amudIdx 2 (2a) → 5 segs in perek 0
   // amudIdx 3 (2b) → 4 segs total: segs 1-2 still in perek 0, segs 3-4 in perek 1
   // amudIdx 4 (3a) → 3 segs in perek 1
-  function fakeWikisource() {
+  function fakeDavidson() {
     return {
       heTitle: 'מסכת בדיקה',
       text: [
@@ -256,21 +164,20 @@ describe('processTractate', () => {
     };
   }
 
-  /** English for every segment of `wikisource`, each saying where it is. */
-  function englishOf(wikisource: { text: string[][] }) {
-    return { text: wikisource.text.map((amud, ai) => amud.map((_, si) => `<b>${ai}</b>:${si}`)) };
+  /** English for every segment of `davidson`, each saying where it is. */
+  function englishOf(davidson: { text: string[][] }) {
+    return { text: davidson.text.map((amud, ai) => amud.map((_, si) => `<b>${ai}</b>:${si}`)) };
   }
 
   it('gives each segment its English in markers, apart from the Hebrew, and a chapter’s closing line none', () => {
-    const wikisource = fakeWikisource();
-    wikisource.text[4][2] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
+    const davidson = fakeDavidson();
+    davidson.text[4][2] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
     const { text, english } = processTractate(
       'Zeraim',
       'Test',
-      wikisource,
+      davidson,
       fakeSchema(),
-      wikisource,
-      englishOf(wikisource),
+      englishOf(davidson),
     );
     expect(english.map((amud) => amud.length)).toEqual([5, 4, 3]);
     expect(english[1][0]).toBe('*3*:0');
@@ -278,39 +185,38 @@ describe('processTractate', () => {
     expect(text).not.toHaveProperty('english');
   });
 
-  const withEnglish = (wikisource: { text: string[][] }, english: { text: string[][] }) => () =>
-    processTractate('Zeraim', 'Test', wikisource, fakeSchema(), wikisource, english);
+  const withEnglish = (davidson: { text: string[][] }, english: { text: string[][] }) => () =>
+    processTractate('Zeraim', 'Test', davidson, fakeSchema(), english);
 
   it('allows the English to leave off a closing line that ends an amud', () => {
-    const wikisource = fakeWikisource();
-    wikisource.text[3][3] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
-    const english = englishOf(wikisource);
+    const davidson = fakeDavidson();
+    davidson.text[3][3] = '<big><strong>הדרן עלך כל כתבי</strong></big>';
+    const english = englishOf(davidson);
     english.text[3].pop();
-    expect(withEnglish(wikisource, english)().english[1][3]).toBe('');
+    expect(withEnglish(davidson, english)().english[1][3]).toBe('');
   });
 
   it('refuses English shaped differently from the Hebrew', () => {
-    const wikisource = fakeWikisource();
-    const missing = englishOf(wikisource);
+    const davidson = fakeDavidson();
+    const missing = englishOf(davidson);
     missing.text[3].pop();
-    const extra = englishOf(wikisource);
+    const extra = englishOf(davidson);
     extra.text[3].push('<b>more</b>');
-    const extraAmud = englishOf(wikisource);
+    const extraAmud = englishOf(davidson);
     extraAmud.text.push(['<b>more</b>']);
     for (const english of [missing, extra, extraAmud]) {
-      expect(withEnglish(wikisource, english)).toThrow();
+      expect(withEnglish(davidson, english)).toThrow();
     }
   });
 
   it('keeps mid-amud boundary amud in the previous perek', () => {
-    const wikisource = fakeWikisource();
+    const davidson = fakeDavidson();
     const { structure } = processTractate(
       'Zeraim',
       'Test',
-      wikisource,
+      davidson,
       fakeSchema(),
-      wikisource,
-      englishOf(wikisource),
+      englishOf(davidson),
     );
     const amud2b = structure.amudim.find((a) => a.daf === 2 && a.amud === 'b')!;
     expect(amud2b.perekIdx).toBe(0); // boundary amud belongs to prev perek
@@ -321,19 +227,18 @@ describe('processTractate', () => {
   });
 
   it('drops the empty amudim before the text starts, and keeps an empty one inside it', () => {
-    const wikisource = fakeWikisource();
-    wikisource.text.splice(2, 0, []); // 2a, empty: the text opens on 2b
-    wikisource.text.splice(4, 0, []); // 3a, empty, inside the text
+    const davidson = fakeDavidson();
+    davidson.text.splice(2, 0, []); // 2a, empty: the text opens on 2b
+    davidson.text.splice(4, 0, []); // 3a, empty, inside the text
     const schema = {
       alts: { Chapters: { nodes: [{ heTitle: 'פרק א', wholeRef: 'Test 2b:1-4a:3' }] } },
     };
     const { structure, text } = processTractate(
       'Zeraim',
       'Test',
-      wikisource,
+      davidson,
       schema,
-      wikisource,
-      englishOf(wikisource),
+      englishOf(davidson),
     );
     expect(structure.amudim.map((a) => `${a.daf}${a.amud}:${a.segmentCount}`)).toEqual([
       '2b:5',
@@ -345,93 +250,63 @@ describe('processTractate', () => {
     expect(structure.perakim[0]).toMatchObject({ startAmudIdx: 0, endAmudIdx: 3 });
   });
 
-  it('removes a marker word only where it is a marker', () => {
-    const wikisource = fakeWikisource();
-    wikisource.text[2] = [
-      'מתני׳ <big><strong>הכל</strong></big> כשרים',
-      "<big><strong>גמ'</strong></big> מתני׳ דלא כרבי",
-      'סוף <big><strong>גמ׳</strong></big>',
+  it('removes a marker word only where it is a marker, with the colon after a bare one', () => {
+    const davidson = fakeDavidson();
+    davidson.text[2] = [
+      'מַתְנִי׳ <big><strong>הַכֹּל</strong></big> כְּשֵׁרִים',
+      '<strong><big>גְּמָ׳</big></strong> אָמַר רַב: מתני׳ דלא כרבי',
+      'גְּמָ׳: מַתְנִיתִין',
       'a4',
       'a5',
     ];
-    const { text } = processTractate(
-      'Zeraim',
-      'Test',
-      wikisource,
-      fakeSchema(),
-      wikisource,
-      englishOf(wikisource),
-    );
-    expect(text.amudim[0].slice(0, 3)).toEqual(['הכל כשרים', 'מתני׳ דלא כרבי', 'סוף']);
+    const { text } = processTractate('Zeraim', 'Test', davidson, fakeSchema(), englishOf(davidson));
+    expect(text.amudim[0].slice(0, 3)).toEqual([
+      'הַכֹּל כְּשֵׁרִים',
+      'אָמַר רַב: מתני׳ דלא כרבי',
+      'מַתְנִיתִין',
+    ]);
   });
 
   it('keeps the word הדרן, in a chapter’s closing line and in running text', () => {
-    const wikisource = fakeWikisource();
-    wikisource.text[2] = [
+    const davidson = fakeDavidson();
+    davidson.text[2] = [
       'a1',
-      'והדרן אמרו',
+      'וְהַדְרָן אָמְרוּ',
       'a3',
       'a4',
-      '<big><strong>הדרן עלך כל כתבי</strong></big>',
+      '<br><br><big><strong>הַדְרָן עֲלָךְ כׇּל כִּתְבֵי</strong></big><br><br>',
     ];
-    const { text } = processTractate(
-      'Zeraim',
-      'Test',
-      wikisource,
-      fakeSchema(),
-      wikisource,
-      englishOf(wikisource),
-    );
-    expect(text.amudim[0][1]).toBe('והדרן אמרו');
-    expect(text.amudim[0][4]).toBe('הדרן עלך כל כתבי');
+    const { text } = processTractate('Zeraim', 'Test', davidson, fakeSchema(), englishOf(davidson));
+    expect(text.amudim[0][1]).toBe('וְהַדְרָן אָמְרוּ');
+    expect(text.amudim[0][4]).toBe('הַדְרָן עֲלָךְ כׇּל כִּתְבֵי');
   });
 
-  it('gives search the other edition, without its points or tags, segment for segment', () => {
-    const wikisource = fakeWikisource();
-    const merged = fakeWikisource();
-    merged.text[2] = ['<b>אָמַר</b> רַבִּי יוֹחָנָן', 'a2', 'a3', 'a4', 'a5'];
-    const { search } = processTractate(
+  it('gives the popup the text with its points, and search the same without them', () => {
+    const davidson = fakeDavidson();
+    davidson.text[2][0] = '<big><strong>מַתְנִי׳</strong></big> אָמַר <b>רַבִּי</b> יוֹחָנָן';
+    const { text, search } = processTractate(
       'Zeraim',
       'Test',
-      wikisource,
+      davidson,
       fakeSchema(),
-      merged,
-      englishOf(wikisource),
+      englishOf(davidson),
     );
     expect(search.map((amud) => amud.length)).toEqual([5, 4, 3]);
+    expect(text.amudim[0][0]).toBe('אָמַר רַבִּי יוֹחָנָן');
     expect(search[0][0]).toBe('אמר רבי יוחנן');
   });
 
   it('gives English search the bold of each segment, as the English is laid out', () => {
-    const wikisource = fakeWikisource();
+    const davidson = fakeDavidson();
     const { english, searchEnglish } = processTractate(
       'Zeraim',
       'Test',
-      wikisource,
+      davidson,
       fakeSchema(),
-      wikisource,
-      englishOf(wikisource),
+      englishOf(davidson),
     );
     expect(searchEnglish.map((amud) => amud.length)).toEqual(english.map((amud) => amud.length));
     expect(searchEnglish[1][0]).toBe('3');
-  });
-
-  it('removes the marker word where only the other edition marks the segment', () => {
-    const wikisource = fakeWikisource();
-    wikisource.text[2] = ["מתני' סתם נזירות", "גמ' מנהני מילי", 'a3', 'a4', 'a5'];
-    const merged = { text: wikisource.text.map((amud) => [...amud]) };
-    merged.text[2][0] = '<big><strong>מַתְנִי׳</strong></big> סְתָם נְזִירוּת';
-    merged.text[2][1] = '<big><strong>גְּמָ׳</strong></big> מְנָהָנֵי מִילֵּי';
-    const { structure, text } = processTractate(
-      'Zeraim',
-      'Test',
-      wikisource,
-      fakeSchema(),
-      merged,
-      englishOf(wikisource),
-    );
-    expect(text.amudim[0].slice(0, 2)).toEqual(['סתם נזירות', 'מנהני מילי']);
-    expect(structure.amudim[0].mishnahMask.slice(0, 2)).toEqual([true, false]);
   });
 });
 

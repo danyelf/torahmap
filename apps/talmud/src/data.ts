@@ -15,7 +15,7 @@ export const textsFile = (tractate: string): string => `${TALMUD_DATA_DIR}/texts
 export const englishFile = (tractate: string): string =>
   `${TALMUD_DATA_DIR}/english/${tractate}.json`;
 
-/** What search reads, a different edition from the popup's: each tractate's amudim of plain-letter segments. */
+/** What search reads: the popup's text without points, each tractate's amudim of segments. */
 export const SEARCH_FILE = `${TALMUD_DATA_DIR}/search.json`;
 
 /** What English search reads, laid out as `SEARCH_FILE`. */

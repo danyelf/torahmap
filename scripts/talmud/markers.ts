@@ -1,114 +1,85 @@
-// The bold words that tell a tractate's Mishnah from its Gemara: מתני׳ (a Mishnah begins) and גמ׳
-// (the Gemara begins).
+// What tells a tractate's Mishnah from its Gemara in the William Davidson edition: a Mishnah opens
+// on מתני׳ or on bold words, the Gemara on גמ׳.
 
 import { stripNikkud } from '@torahmap/hebrew';
 
 export type Marker = 'M' | 'G' | null;
 
-/** What a segment's own words mark: the part it opens, and whether it ends on a גמ׳. */
-export interface SegmentMarkers {
-  opens: Marker;
-  endsWithGemara: boolean;
-}
-
-// The geresh after a marker word is sometimes an ASCII apostrophe, and at Shabbat 82a:13 missing.
-const MARKER_WORD = '(מתני|גמ)';
+// The geresh after a marker word is sometimes an ASCII apostrophe.
 const GERESH = `['׳]`;
+// Any points between the letters of a word.
+const POINTS = '[\\u0591-\\u05C7]*';
+const pointed = (word: string) => [...word].join(POINTS) + POINTS;
 
-// A marker is a marker word in bold at the start of a segment. The same words occur in running
-// text ("מתני׳ מני ר״ש היא", Sanhedrin 67a:8), so without the bold they are not markers.
-// The forms that occur:
-//   "<big><strong>מתני׳</strong></big> ..."     (also <b>, or <strong><big>)
-//   "[<big><strong>גמ׳</strong></big> ת״ר] ..." (Sotah 49a:17)
-//   "<big><strong>(גמ׳)</strong></big> ..."     (Sotah 49b:4)
-//   "מתני׳ <big><strong>הכל</strong></big> ..." (bare word, bold first word)
-const WRAPPED_MARKER_RE = new RegExp(
-  `^[\\s\\[\\(]*(?:<[^>]+>[\\s\\[\\(]*)*<big[^>]*>(?:[\\s\\(]*<(?:strong|b)\\b[^>]*>)?[\\s\\(]*${MARKER_WORD}${GERESH}`,
+// A marker word opens a segment, after any brackets or tags: "<big><strong>מַתְנִי׳</strong></big>",
+// "מַתְנִי׳ <strong><big>הַכֹּל</big></strong>", or a bare "גְּמָ׳:" (Arakhin 10a:5). The same
+// words occur in running text, so elsewhere they are not markers.
+const MARKER_RE = new RegExp(
+  `^((?:[\\s\\[\\(]|<[^>]+>)*)(${pointed('מתני')}|${pointed('גמ')})${GERESH}`,
 );
-const BARE_LEADING_MARKER_RE = new RegExp(`^[\\s\\[\\(]*${MARKER_WORD}${GERESH}(?:\\s|$)`);
-// Tamid's last three chapters have no Gemara; Wikisource numbers their
-// mishnayot with a bold letter instead ("<big><strong>ב</strong></big> אמר").
-const NUMBERED_MISHNAH_RE = /^\s*(?:<[^>]+>\s*)*<big[^>]*>\s*<(?:strong|b)\b[^>]*>\s*[א-י](?:\s|<)/;
-// Where an amud break falls between a Mishnah and its Gemara, Wikisource
-// leaves the גמ׳ at the end of the Mishnah's last segment (Pesachim 71b:14,
-// Niddah 56b:25); the Davidson edition puts it on the next segment.
-const TRAILING_GEMARA_RE = new RegExp(
-  `<big[^>]*>\\s*(?:<(?:strong|b)\\b[^>]*>\\s*)?גמ${GERESH}\\s*(?:<\\/[^>]+>\\s*)*$`,
-);
-const LEADING_WORD_RE = new RegExp(
-  `^((?:[\\s\\[\\(]|<[^>]+>)*)${MARKER_WORD}${GERESH}?(?=[\\s<\\]\\)]|$)`,
-);
-const TRAILING_WORD_RE = new RegExp(`גמ${GERESH}((?:\\s|<\\/[^>]+>)*)$`);
+// Most chapters open their first Mishnah on bold words without מתני׳: "<big><strong>מֵאֵימָתַי
+// </strong></big>" (Berakhot 2a:1), "״<big><strong>קוֹנָם יַיִן</strong></big>" (Nedarim 60a:4).
+const BOLD_OPENING_RE = /^[\s״"]*<(?:big|strong)><(?:big|strong)>/;
+// Tamid's last chapters have no Gemara and number their mishnayot: "<b>ב</b> אָמַר", "א <big>".
+const NUMBERED_RE = /^\s*(?:<b>[א-י]<\/b>|[א-י] <big>)/;
+
+const HADRAN = /^\s*(?:<[^>]+>\s*)*הדרן/;
+
+/** Whether a segment is a chapter's closing line, הדרן עלך, which has no English. */
+export const isHadran = (seg: string): boolean => HADRAN.test(stripNikkud(seg));
 
 // Maqaf, paseq, sof pasuq and nun hafukha: stripNikkud keeps them, as word
 // separators, but marker matching ignores them.
 const HEBREW_SEPARATORS = /[־׀׃׆]/g;
 
-/** A chapter's closing line, הדרן עלך, which has no English. */
-export const HADRAN = /^\s*(?:<[^>]+>\s*)*הדרן/;
-
-/**
- * Hebrew without points, accents or its four separator marks. The Davidson
- * edition is fully pointed, marker words included (מַתְנִי׳); Wikisource is not.
- */
+/** Hebrew without points, accents or its four separator marks. */
 export function stripNikkudAndSeparators(s: string): string {
   return stripNikkud(s).replace(HEBREW_SEPARATORS, '');
 }
 
-export function detectMarker(seg: string): Marker {
+/** The part a segment opens, if any; `previous` is the segment before it. */
+export function detectMarker(seg: string, previous = ''): Marker {
   const s = stripNikkudAndSeparators(seg);
-  const word =
-    s.match(WRAPPED_MARKER_RE)?.[1] ??
-    (/<big[^>]*>/.test(s.slice(0, 80)) ? s.match(BARE_LEADING_MARKER_RE)?.[1] : undefined);
+  if (isHadran(s)) return null;
+  const word = s.match(MARKER_RE)?.[2];
   if (word) return word === 'מתני' ? 'M' : 'G';
-  if (NUMBERED_MISHNAH_RE.test(s)) return 'M';
+  // A Mishnah opens every chapter, at times on bold words further in (Bava Batra 102b:9).
+  if (BOLD_OPENING_RE.test(s) || NUMBERED_RE.test(s) || isHadran(previous)) {
+    return 'M';
+  }
   return null;
 }
 
-/**
- * Each segment's markers, read from both editions.
- *
- * `other` is a second edition of the same text, segment for segment. Each
- * edition misses markers the other has: the Davidson edition drops the
- * bare מתני׳ that opens most chapters, and Wikisource lacks some גמ׳ at the
- * top of an amud (Avodah Zarah 22b:1), so a segment is a marker if either
- * edition marks it. The two never disagree on which marker it is.
- */
-export function markersOf(text: string[][], other: string[][] = []): SegmentMarkers[][] {
-  return text.map((amud, ai) =>
-    amud.map((seg, si) => {
-      const otherSeg = other[ai]?.[si] ?? '';
-      return {
-        opens: detectMarker(seg) ?? detectMarker(otherSeg),
-        endsWithGemara: [seg, otherSeg].some((s) =>
-          TRAILING_GEMARA_RE.test(stripNikkudAndSeparators(s)),
-        ),
-      };
+/** The part each segment opens, reading the tractate in order. */
+export function markersOf(text: string[][]): Marker[][] {
+  let previous = '';
+  return text.map((amud) =>
+    amud.map((seg) => {
+      const marker = detectMarker(seg, previous);
+      previous = seg;
+      return marker;
     }),
   );
 }
 
 /** Whether each segment is Mishnah. A tractate starts in Gemara; each marker sets the state until the next. */
-export function mishnahFrom(markers: SegmentMarkers[][]): boolean[][] {
-  let gemaraNext = false;
+export function mishnahFrom(markers: Marker[][]): boolean[][] {
   let isMishnah = false;
   return markers.map((amud) =>
-    amud.map(({ opens, endsWithGemara }) => {
-      const m = opens ?? (gemaraNext ? 'G' : null);
+    amud.map((m) => {
       if (m) isMishnah = m === 'M';
-      gemaraNext = endsWithGemara;
       return isMishnah;
     }),
   );
 }
 
-export function walkMarkers(text: string[][], other: string[][] = []): boolean[][] {
-  return mishnahFrom(markersOf(text, other));
+export function walkMarkers(text: string[][]): boolean[][] {
+  return mishnahFrom(markersOf(text));
 }
 
-/** A segment without the marker word that opens or closes it. */
-export function stripMarkerWords(seg: string, markers: SegmentMarkers): string {
-  if (markers.endsWithGemara) seg = seg.replace(TRAILING_WORD_RE, '$1');
-  if (markers.opens) seg = seg.replace(LEADING_WORD_RE, '$1');
-  return seg;
+const MARKER_WORD_RE = new RegExp(`${MARKER_RE.source}(?:\\s*[:,])?`);
+
+/** A segment without the marker word that opens it, and the colon or comma after a bare one. */
+export function stripMarkerWord(seg: string, marker: Marker): string {
+  return marker ? seg.replace(MARKER_WORD_RE, '$1') : seg;
 }

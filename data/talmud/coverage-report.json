@@ -8,15 +8,8 @@
       "tractate": "Berakhot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 127,
-        "segmentCount": 2749
-      },
-      "merged": {
-        "amudCount": 127,
-        "segmentCount": 2749
-      },
-      "shapeMatch": true,
+      "amudCount": 127,
+      "segmentCount": 2749,
       "markers": {
         "matnitin": 34,
         "gemara": 34
@@ -27,18 +20,11 @@
       "tractate": "Shabbat",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 314,
-        "segmentCount": 3778
-      },
-      "merged": {
-        "amudCount": 314,
-        "segmentCount": 3778
-      },
-      "shapeMatch": true,
+      "amudCount": 314,
+      "segmentCount": 3778,
       "markers": {
-        "matnitin": 137,
-        "gemara": 137
+        "matnitin": 138,
+        "gemara": 138
       }
     },
     {
@@ -46,15 +32,8 @@
       "tractate": "Eruvin",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 209,
-        "segmentCount": 3646
-      },
-      "merged": {
-        "amudCount": 209,
-        "segmentCount": 3646
-      },
-      "shapeMatch": true,
+      "amudCount": 209,
+      "segmentCount": 3646,
       "markers": {
         "matnitin": 85,
         "gemara": 85
@@ -65,18 +44,11 @@
       "tractate": "Pesachim",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 242,
-        "segmentCount": 3519
-      },
-      "merged": {
-        "amudCount": 242,
-        "segmentCount": 3519
-      },
-      "shapeMatch": true,
+      "amudCount": 242,
+      "segmentCount": 3519,
       "markers": {
         "matnitin": 78,
-        "gemara": 75
+        "gemara": 78
       }
     },
     {
@@ -84,15 +56,8 @@
       "tractate": "Yoma",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 175,
-        "segmentCount": 2271
-      },
-      "merged": {
-        "amudCount": 175,
-        "segmentCount": 2271
-      },
-      "shapeMatch": true,
+      "amudCount": 175,
+      "segmentCount": 2271,
       "markers": {
         "matnitin": 41,
         "gemara": 41
@@ -103,15 +68,8 @@
       "tractate": "Sukkah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 112,
-        "segmentCount": 1361
-      },
-      "merged": {
-        "amudCount": 112,
-        "segmentCount": 1361
-      },
-      "shapeMatch": true,
+      "amudCount": 112,
+      "segmentCount": 1361,
       "markers": {
         "matnitin": 47,
         "gemara": 47
@@ -122,18 +80,11 @@
       "tractate": "Beitzah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 80,
-        "segmentCount": 1151
-      },
-      "merged": {
-        "amudCount": 80,
-        "segmentCount": 1151
-      },
-      "shapeMatch": true,
+      "amudCount": 80,
+      "segmentCount": 1151,
       "markers": {
         "matnitin": 48,
-        "gemara": 47
+        "gemara": 48
       }
     },
     {
@@ -141,15 +92,8 @@
       "tractate": "Rosh Hashanah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 69,
-        "segmentCount": 1025
-      },
-      "merged": {
-        "amudCount": 69,
-        "segmentCount": 1025
-      },
-      "shapeMatch": true,
+      "amudCount": 69,
+      "segmentCount": 1025,
       "markers": {
         "matnitin": 30,
         "gemara": 29
@@ -160,15 +104,8 @@
       "tractate": "Taanit",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 61,
-        "segmentCount": 895
-      },
-      "merged": {
-        "amudCount": 61,
-        "segmentCount": 895
-      },
-      "shapeMatch": true,
+      "amudCount": 61,
+      "segmentCount": 895,
       "markers": {
         "matnitin": 8,
         "gemara": 8
@@ -179,15 +116,8 @@
       "tractate": "Megillah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 63,
-        "segmentCount": 1213
-      },
-      "merged": {
-        "amudCount": 63,
-        "segmentCount": 1213
-      },
-      "shapeMatch": true,
+      "amudCount": 63,
+      "segmentCount": 1213,
       "markers": {
         "matnitin": 32,
         "gemara": 32
@@ -198,15 +128,8 @@
       "tractate": "Moed Katan",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 57,
-        "segmentCount": 1026
-      },
-      "merged": {
-        "amudCount": 57,
-        "segmentCount": 1026
-      },
-      "shapeMatch": true,
+      "amudCount": 57,
+      "segmentCount": 1026,
       "markers": {
         "matnitin": 22,
         "gemara": 22
@@ -217,15 +140,8 @@
       "tractate": "Chagigah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 53,
-        "segmentCount": 735
-      },
-      "merged": {
-        "amudCount": 53,
-        "segmentCount": 735
-      },
-      "shapeMatch": true,
+      "amudCount": 53,
+      "segmentCount": 735,
       "markers": {
         "matnitin": 16,
         "gemara": 16
@@ -236,15 +152,8 @@
       "tractate": "Yevamot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 244,
-        "segmentCount": 3869
-      },
-      "merged": {
-        "amudCount": 244,
-        "segmentCount": 3869
-      },
-      "shapeMatch": true,
+      "amudCount": 244,
+      "segmentCount": 3869,
       "markers": {
         "matnitin": 97,
         "gemara": 97
@@ -255,15 +164,8 @@
       "tractate": "Ketubot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 224,
-        "segmentCount": 3038
-      },
-      "merged": {
-        "amudCount": 224,
-        "segmentCount": 3038
-      },
-      "shapeMatch": true,
+      "amudCount": 224,
+      "segmentCount": 3038,
       "markers": {
         "matnitin": 94,
         "gemara": 94
@@ -274,18 +176,11 @@
       "tractate": "Nedarim",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 182,
-        "segmentCount": 1509
-      },
-      "merged": {
-        "amudCount": 182,
-        "segmentCount": 1509
-      },
-      "shapeMatch": true,
+      "amudCount": 182,
+      "segmentCount": 1509,
       "markers": {
-        "matnitin": 89,
-        "gemara": 88
+        "matnitin": 90,
+        "gemara": 89
       }
     },
     {
@@ -293,18 +188,11 @@
       "tractate": "Nazir",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 132,
-        "segmentCount": 1299
-      },
-      "merged": {
-        "amudCount": 132,
-        "segmentCount": 1299
-      },
-      "shapeMatch": true,
+      "amudCount": 132,
+      "segmentCount": 1299,
       "markers": {
-        "matnitin": 57,
-        "gemara": 57
+        "matnitin": 61,
+        "gemara": 61
       }
     },
     {
@@ -312,15 +200,8 @@
       "tractate": "Sotah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 98,
-        "segmentCount": 1635
-      },
-      "merged": {
-        "amudCount": 98,
-        "segmentCount": 1635
-      },
-      "shapeMatch": true,
+      "amudCount": 98,
+      "segmentCount": 1635,
       "markers": {
         "matnitin": 30,
         "gemara": 31
@@ -331,15 +212,8 @@
       "tractate": "Gittin",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 180,
-        "segmentCount": 2992
-      },
-      "merged": {
-        "amudCount": 180,
-        "segmentCount": 2992
-      },
-      "shapeMatch": true,
+      "amudCount": 180,
+      "segmentCount": 2992,
       "markers": {
         "matnitin": 81,
         "gemara": 81
@@ -350,15 +224,8 @@
       "tractate": "Kiddushin",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 164,
-        "segmentCount": 2406
-      },
-      "merged": {
-        "amudCount": 164,
-        "segmentCount": 2406
-      },
-      "shapeMatch": true,
+      "amudCount": 164,
+      "segmentCount": 2406,
       "markers": {
         "matnitin": 47,
         "gemara": 47
@@ -369,15 +236,8 @@
       "tractate": "Bava Kamma",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 238,
-        "segmentCount": 4314
-      },
-      "merged": {
-        "amudCount": 238,
-        "segmentCount": 4314
-      },
-      "shapeMatch": true,
+      "amudCount": 238,
+      "segmentCount": 4314,
       "markers": {
         "matnitin": 80,
         "gemara": 80
@@ -388,18 +248,11 @@
       "tractate": "Bava Metzia",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 237,
-        "segmentCount": 3660
-      },
-      "merged": {
-        "amudCount": 237,
-        "segmentCount": 3660
-      },
-      "shapeMatch": true,
+      "amudCount": 237,
+      "segmentCount": 3660,
       "markers": {
         "matnitin": 97,
-        "gemara": 96
+        "gemara": 97
       }
     },
     {
@@ -407,15 +260,8 @@
       "tractate": "Bava Batra",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 352,
-        "segmentCount": 3804
-      },
-      "merged": {
-        "amudCount": 352,
-        "segmentCount": 3804
-      },
-      "shapeMatch": true,
+      "amudCount": 352,
+      "segmentCount": 3804,
       "markers": {
         "matnitin": 98,
         "gemara": 98
@@ -426,15 +272,8 @@
       "tractate": "Sanhedrin",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 226,
-        "segmentCount": 4171
-      },
-      "merged": {
-        "amudCount": 226,
-        "segmentCount": 4171
-      },
-      "shapeMatch": true,
+      "amudCount": 226,
+      "segmentCount": 4171,
       "markers": {
         "matnitin": 68,
         "gemara": 68
@@ -445,18 +284,11 @@
       "tractate": "Makkot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 48,
-        "segmentCount": 709
-      },
-      "merged": {
-        "amudCount": 48,
-        "segmentCount": 709
-      },
-      "shapeMatch": true,
+      "amudCount": 48,
+      "segmentCount": 709,
       "markers": {
         "matnitin": 30,
-        "gemara": 29
+        "gemara": 30
       }
     },
     {
@@ -464,15 +296,8 @@
       "tractate": "Shevuot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 98,
-        "segmentCount": 1555
-      },
-      "merged": {
-        "amudCount": 98,
-        "segmentCount": 1555
-      },
-      "shapeMatch": true,
+      "amudCount": 98,
+      "segmentCount": 1555,
       "markers": {
         "matnitin": 21,
         "gemara": 21
@@ -483,18 +308,11 @@
       "tractate": "Avodah Zarah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 152,
-        "segmentCount": 2131
-      },
-      "merged": {
-        "amudCount": 152,
-        "segmentCount": 2131
-      },
-      "shapeMatch": true,
+      "amudCount": 152,
+      "segmentCount": 2131,
       "markers": {
         "matnitin": 53,
-        "gemara": 51
+        "gemara": 53
       }
     },
     {
@@ -502,15 +320,8 @@
       "tractate": "Horayot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 27,
-        "segmentCount": 451
-      },
-      "merged": {
-        "amudCount": 27,
-        "segmentCount": 451
-      },
-      "shapeMatch": true,
+      "amudCount": 27,
+      "segmentCount": 451,
       "markers": {
         "matnitin": 19,
         "gemara": 19
@@ -521,15 +332,8 @@
       "tractate": "Zevachim",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 240,
-        "segmentCount": 3817
-      },
-      "merged": {
-        "amudCount": 240,
-        "segmentCount": 3817
-      },
-      "shapeMatch": true,
+      "amudCount": 240,
+      "segmentCount": 3817,
       "markers": {
         "matnitin": 70,
         "gemara": 70
@@ -540,15 +344,8 @@
       "tractate": "Menachot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 219,
-        "segmentCount": 3783
-      },
-      "merged": {
-        "amudCount": 219,
-        "segmentCount": 3783
-      },
-      "shapeMatch": true,
+      "amudCount": 219,
+      "segmentCount": 3783,
       "markers": {
         "matnitin": 98,
         "gemara": 98
@@ -559,18 +356,11 @@
       "tractate": "Chullin",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 283,
-        "segmentCount": 4393
-      },
-      "merged": {
-        "amudCount": 283,
-        "segmentCount": 4393
-      },
-      "shapeMatch": true,
+      "amudCount": 283,
+      "segmentCount": 4393,
       "markers": {
         "matnitin": 88,
-        "gemara": 87
+        "gemara": 88
       }
     },
     {
@@ -578,15 +368,8 @@
       "tractate": "Bekhorot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 121,
-        "segmentCount": 1957
-      },
-      "merged": {
-        "amudCount": 121,
-        "segmentCount": 1957
-      },
-      "shapeMatch": true,
+      "amudCount": 121,
+      "segmentCount": 1957,
       "markers": {
         "matnitin": 82,
         "gemara": 81
@@ -597,15 +380,8 @@
       "tractate": "Arakhin",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 67,
-        "segmentCount": 1183
-      },
-      "merged": {
-        "amudCount": 67,
-        "segmentCount": 1183
-      },
-      "shapeMatch": true,
+      "amudCount": 67,
+      "segmentCount": 1183,
       "markers": {
         "matnitin": 52,
         "gemara": 52
@@ -616,15 +392,8 @@
       "tractate": "Temurah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 67,
-        "segmentCount": 1150
-      },
-      "merged": {
-        "amudCount": 67,
-        "segmentCount": 1150
-      },
-      "shapeMatch": true,
+      "amudCount": 67,
+      "segmentCount": 1150,
       "markers": {
         "matnitin": 31,
         "gemara": 31
@@ -635,18 +404,11 @@
       "tractate": "Keritot",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 56,
-        "segmentCount": 1211
-      },
-      "merged": {
-        "amudCount": 56,
-        "segmentCount": 1211
-      },
-      "shapeMatch": true,
+      "amudCount": 56,
+      "segmentCount": 1211,
       "markers": {
         "matnitin": 32,
-        "gemara": 31
+        "gemara": 32
       }
     },
     {
@@ -654,18 +416,11 @@
       "tractate": "Meilah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 43,
-        "segmentCount": 515
-      },
-      "merged": {
-        "amudCount": 43,
-        "segmentCount": 515
-      },
-      "shapeMatch": true,
+      "amudCount": 43,
+      "segmentCount": 515,
       "markers": {
         "matnitin": 32,
-        "gemara": 31
+        "gemara": 32
       }
     },
     {
@@ -673,17 +428,10 @@
       "tractate": "Tamid",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 66,
-        "segmentCount": 207
-      },
-      "merged": {
-        "amudCount": 66,
-        "segmentCount": 207
-      },
-      "shapeMatch": true,
+      "amudCount": 66,
+      "segmentCount": 207,
       "markers": {
-        "matnitin": 18,
+        "matnitin": 15,
         "gemara": 4
       }
     },
@@ -692,18 +440,11 @@
       "tractate": "Niddah",
       "status": "pass",
       "failures": [],
-      "wikisource": {
-        "amudCount": 145,
-        "segmentCount": 2665
-      },
-      "merged": {
-        "amudCount": 145,
-        "segmentCount": 2665
-      },
-      "shapeMatch": true,
+      "amudCount": 145,
+      "segmentCount": 2665,
       "markers": {
         "matnitin": 65,
-        "gemara": 64
+        "gemara": 65
       }
     }
   ]
