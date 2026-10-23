@@ -6,7 +6,7 @@
  * disappear.
  */
 
-import { wordsBhsaParsed } from '@torahmap/tanakh/search/dictionary.ts';
+import { wordsRead } from '@torahmap/tanakh/search/dictionary.ts';
 import type { ScoreParameters } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 import { stripNikkud } from '@torahmap/hebrew';
 
@@ -48,7 +48,7 @@ export type BookScores = (number | null)[];
 
 /** A verse's words without points or accents, so that two spellings with different points match. */
 export function words(he: string): string[] {
-  return wordsBhsaParsed(he).map(({ word }) => stripNikkud(word));
+  return wordsRead(he).map(({ word }) => stripNikkud(word));
 }
 
 export function parse(book: Book): ParsedBook {

@@ -17,7 +17,7 @@ import {
 } from './text-analytics/scores.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
-import { wordsBhsaParsed } from '../search/dictionary.ts';
+import { wordsRead } from '../search/dictionary.ts';
 
 // Cividis, slate blue through grey to yellow: even in lightness, made to read
 // the same with red-green colour blindness, and unlike any other overlay's
@@ -106,8 +106,7 @@ export const textAnalyticsOverlay: Overlay<TanakhIdentity, void, TextAnalyticsDa
     if (score === null) return null;
     const text = data.texts?.[verse.book][verse.chapter][verse.verse].he;
     if (!text) return `${percent(score)} of its words repeat nearby`;
-    // Words as the measure counts them, so the two numbers agree with the score.
-    const words = wordsBhsaParsed(text).length;
+    const words = wordsRead(text).length;
     const repeated = Math.round(score * words);
     return `${repeated} of its ${words} words ${repeated === 1 ? 'repeats' : 'repeat'} nearby`;
   },

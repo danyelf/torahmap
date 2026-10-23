@@ -4,7 +4,7 @@ import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { verseId } from '@torahmap/link/tanakh';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
-import { textWords } from '@torahmap/shell/textWords.ts';
+import { wordsRead } from '../search/dictionary.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
 import { NO_DATA } from './colors.ts';
@@ -44,7 +44,7 @@ const wordCountsOf = memoByValue(({ texts }: VerseLengthData): WordCounts => {
   for (const book in texts) {
     for (const chapter in texts[book]) {
       for (const verse in texts[book][chapter]) {
-        const wordCount = textWords(texts[book][chapter][verse].he).length;
+        const wordCount = wordsRead(texts[book][chapter][verse].he).length;
         byVerse.set(verseId(book, parseInt(chapter), parseInt(verse)), wordCount);
         if (wordCount > 0) {
           min = Math.min(min, wordCount);
