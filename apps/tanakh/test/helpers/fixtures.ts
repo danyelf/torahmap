@@ -249,7 +249,7 @@ export const EMPTY_DICTIONARY_FILES: DictionaryFiles = {
 export const SAMPLE_TEXT_ANALYTICS_SCORES: TextAnalyticsData['scores'] = {
   parameters: {
     minWords: 7,
-    runWords: 4,
+    runWords: 5,
     reachVerses: 50,
     formulaBooks: 5,
   },

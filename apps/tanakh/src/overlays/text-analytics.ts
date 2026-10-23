@@ -3,6 +3,7 @@
 
 import { type Color, type ColorStop, scale, LINEAR, memoByValue } from '@torahmap/utils';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
+import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
@@ -34,7 +35,8 @@ const ENDS: [low: string, high: string] = ['varied', 'repetitive'];
 
 export interface TextAnalyticsData {
   scores: ScoresFile;
-  texts: VerseTexts;
+  // Only the hover's word count needs the texts; the colours come before them.
+  texts: VerseTexts | null;
 }
 
 function scoreAt(data: TextAnalyticsData, verse: TanakhLayout): number | null {
@@ -59,7 +61,7 @@ function colorAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
 
 export const textAnalyticsOverlay: Overlay<TanakhIdentity, void, TextAnalyticsData> = {
   ...TEXT_ANALYTICS,
-  data: { scores: SCORES_FILE, texts: TEXTS_FILE },
+  data: { scores: SCORES_FILE, texts: optional(TEXTS_FILE) },
 
   prebuild(data) {
     scaleOf(data);
@@ -102,8 +104,11 @@ export const textAnalyticsOverlay: Overlay<TanakhIdentity, void, TextAnalyticsDa
   getHoverInfo(verse, _settings, data) {
     const score = scoreAt(data, verse);
     if (score === null) return null;
+    const text = data.texts?.[verse.book][verse.chapter][verse.verse].he;
+    if (!text) return `${percent(score)} of its words repeat nearby`;
     // Words as the measure counts them, so the two numbers agree with the score.
-    const words = wordsBhsaParsed(data.texts[verse.book][verse.chapter][verse.verse].he).length;
-    return `${Math.round(score * words)} of its ${words} words repeat nearby`;
+    const words = wordsBhsaParsed(text).length;
+    const repeated = Math.round(score * words);
+    return `${repeated} of its ${words} words ${repeated === 1 ? 'repeats' : 'repeat'} nearby`;
   },
 };

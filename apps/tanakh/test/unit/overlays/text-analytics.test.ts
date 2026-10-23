@@ -13,7 +13,10 @@ const data: TextAnalyticsData = {
   texts: {
     Genesis: {
       '1': Object.fromEntries(
-        [1, 2, 3, 4].map((v) => [v, { he: 'אבג דהו זחט יכל מנס עפצ קרש תאב', en: '' }]),
+        // Eight words as the measure counts them: each maqaf pair as two, the written-and-read
+        // pair as one. Counting by spaces (7), by maqaf groups (6) or with both spellings (9)
+        // cannot give back a score of 25%.
+        [1, 2, 3, 4].map((v) => [v, { he: 'אבג־דהו (זחט) [יכל] מנס־עפצ קרש תאב שין', en: '' }]),
       ),
     },
   },
@@ -39,8 +42,13 @@ describe('Text Analytics overlay', () => {
   });
 
   it('gives the hover as a count of words that agrees with the score', () => {
-    const [repeated, words] = host().getHoverInfo(verse(2))!.match(/\d+/g)!.map(Number);
-    expect(repeated / words).toBe(0.5);
+    const [repeated, words] = host().getHoverInfo(verse(4))!.match(/\d+/g)!.map(Number);
+    expect(repeated / words).toBe(0.25);
+  });
+
+  it('gives the hover as a share while the verse texts are still loading', () => {
+    const h = hostOverlay(textAnalyticsOverlay, { ...data, texts: null });
+    expect(h.getHoverInfo(verse(2))).toContain('50%');
   });
 
   it('names the ends of its strip in the legend card', () => {
