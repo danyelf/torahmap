@@ -41,6 +41,7 @@ import {
   type TanakhBook,
 } from './citations.ts';
 import { englishMarkers } from './english.ts';
+import { englishCitationFinder, englishCitationsByPlace } from './englishCitations.ts';
 import { englishSearchText } from '@torahmap/talmud/english.ts';
 
 /**
@@ -155,7 +156,7 @@ export function processTractate(
   wikisource: EditionJson,
 ): {
   structure: TalmudTractate;
-  text: Omit<TalmudTractateText, 'citations'>;
+  text: Omit<TalmudTractateText, 'citations' | 'englishCitations'>;
   english: TalmudTractateEnglish;
   /** What search reads: the popup's text without points. */
   search: string[][];
@@ -310,6 +311,8 @@ async function main(): Promise<void> {
   };
   const find = citationFinder(tanakh);
   const place = quoteFinder(tanakh);
+  const findEnglish = englishCitationFinder(books);
+  const unlinked: string[] = [];
   const placings: Partial<Record<Placing, number>> = {};
   const missed: string[] = [];
 
@@ -339,7 +342,15 @@ async function main(): Promise<void> {
 
       const cited = citationsByPlace(tractateText.amudim, naming, find, place, placings);
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
-      const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
+      const referenced = englishCitationsByPlace(tractateEnglish, findEnglish);
+      unlinked.push(
+        ...referenced.unlinked.map((u) => `${ref.tractate}: ${u.reference}: ${u.reason}`),
+      );
+      const shipped: TalmudTractateText = {
+        ...tractateText,
+        citations: cited.citations,
+        englishCitations: referenced.citations,
+      };
       await writeData(textsFile(ref.tractate), shipped);
       await writeData(englishFile(ref.tractate), tractateEnglish);
 
@@ -369,6 +380,8 @@ async function main(): Promise<void> {
   console.log('');
   console.log(`Tanakh citations, by how each found its place in Davidson's text:`);
   for (const [way, n] of Object.entries(placings)) console.log(`  ${way}: ${n}`);
+  console.log(`English references naming a verse the Tanakh lacks: ${unlinked.length}`);
+  for (const reference of unlinked) console.log(`  ${reference}`);
   console.log(`Looked like citations but named no verse: ${missed.length}`);
   for (const stretch of missed.slice(0, 10)) console.log(`  ${stretch}`);
 }

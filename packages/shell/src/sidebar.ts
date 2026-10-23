@@ -120,6 +120,8 @@ export interface PopupText {
   hebrewLinks?: readonly TextLink[];
   /** Links shown as labels at points in the Hebrew, outside its words. */
   hebrewReferences?: readonly TextReference[];
+  /** Stretches of the English that link elsewhere, opened in a new window. */
+  englishLinks?: readonly TextLink[];
   /** Stretches of the English in bold or italic. */
   englishStyles?: readonly TextStyle[];
   /** The stretches of the English that search reads, and so marks; all of it when absent. */
@@ -228,10 +230,14 @@ export function updateSidebar<I extends MapItem>(
     english.replaceChildren(
       ...(text.english
         ? [
-            styleStretches(
-              marked(text.english, ENGLISH, text.englishSearched) ?? textFragment(text.english),
+            linkStretches(
+              styleStretches(
+                marked(text.english, ENGLISH, text.englishSearched) ?? textFragment(text.english),
+                text.english,
+                text.englishStyles ?? [],
+              ),
               text.english,
-              text.englishStyles ?? [],
+              text.englishLinks ?? [],
             ),
           ]
         : []),

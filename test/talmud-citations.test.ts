@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseVerseId } from '@torahmap/link/tanakh';
 import type { TalmudTractateText } from '@torahmap/talmud/data.ts';
+import { englishText } from '@torahmap/talmud/english.ts';
 import { TALMUD_CATEGORY } from '@torahmap/talmud/text.ts';
 import { STRUCTURE_FILE } from '@torahmap/tanakh/verseTexts.ts';
 
@@ -42,6 +43,31 @@ describe("the Talmud's citations of the Tanakh", () => {
               expect(end, verse).toBe(start);
               expect(reference, verse).toMatch(/^\(.+\)$/);
             }
+          }
+        }
+      }
+    },
+  );
+
+  it.each(tractates)(
+    "in %s's English name real verses, each on a parenthesised reference of its segment",
+    (file) => {
+      const text: TalmudTractateText = read(`talmud/texts/${file}`);
+      const english: string[][] = read(`talmud/english/${file}`);
+      for (const [ai, segments] of Object.entries(text.englishCitations)) {
+        for (const [si, citations] of Object.entries(segments)) {
+          const { text: plain } = englishText(english[Number(ai)][Number(si)]);
+          let previous = 0;
+          for (const { start, end, verse } of citations) {
+            expect(start, verse).toBeGreaterThanOrEqual(previous);
+            previous = end;
+            const place = parseVerseId(verse);
+            expect(place, verse).not.toBeNull();
+            const { book, chapter, verse: v } = place!;
+            expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
+            const reference = plain.slice(start, end);
+            expect(reference, verse).toMatch(/^\(.*\)$/s);
+            expect(reference, verse).toContain(`${chapter}:${v}`);
           }
         }
       }

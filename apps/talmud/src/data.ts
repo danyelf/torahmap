@@ -56,6 +56,8 @@ export interface TalmudTractateText {
   amudim: string[][];
   /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
   citations: Record<number, Record<number, Citation[]>>;
+  /** The same for the English, whose references name their verses: places in the segment's plain English. */
+  englishCitations: Record<number, Record<number, Citation[]>>;
 }
 
 /** The William Davidson English, shaped as a tractate's `amudim`, in the markers `englishText` reads. */
