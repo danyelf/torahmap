@@ -14,20 +14,21 @@ export interface DatingData {
   dating: TalmudDating;
 }
 
-// Each era has colours of its own, so an era shows at a glance, in two or three bands from early to
-// late, dark to bright: the Zugot violet then magenta, the Tannaim orange, amber then yellow, the generation
-// between the Tannaim and Amoraim a plain green, the Amoraim indigo, blue then cyan. The exact
+// Each era is one hue, so an era shows at a glance: the Zugot purple, the Tannaim orange, the
+// Amoraim blue. Within an era the bands run from dark (earliest) to light (latest) in lightness
+// alone; the transitional generation is one step lighter than the Tannaim's lightest. The exact
 // generation is in words, in the key and the caption.
+const HUES = { zugot: 285, tannaim: 28, amoraim: 212 };
 const BANDS: { codes: string[]; h: number; l: number }[] = [
-  { codes: ['Z1', 'Z2', 'Z3'], h: 275, l: 0.45 },
-  { codes: ['Z4', 'Z5'], h: 315, l: 0.6 },
-  { codes: ['T1', 'T2', 'T3'], h: 18, l: 0.5 },
-  { codes: ['T4', 'T5'], h: 38, l: 0.55 },
-  { codes: ['T6'], h: 56, l: 0.58 },
-  { codes: ['TA'], h: 105, l: 0.5 },
-  { codes: ['A1', 'A2'], h: 245, l: 0.45 },
-  { codes: ['A3', 'A4', 'A5'], h: 215, l: 0.55 },
-  { codes: ['A6', 'A7', 'A8'], h: 190, l: 0.64 },
+  { codes: ['Z1', 'Z2', 'Z3'], h: HUES.zugot, l: 0.4 },
+  { codes: ['Z4', 'Z5'], h: HUES.zugot, l: 0.65 },
+  { codes: ['T1', 'T2', 'T3'], h: HUES.tannaim, l: 0.38 },
+  { codes: ['T4', 'T5'], h: HUES.tannaim, l: 0.52 },
+  { codes: ['T6'], h: HUES.tannaim, l: 0.66 },
+  { codes: ['TA'], h: HUES.tannaim, l: 0.8 },
+  { codes: ['A1', 'A2'], h: HUES.amoraim, l: 0.4 },
+  { codes: ['A3', 'A4', 'A5'], h: HUES.amoraim, l: 0.54 },
+  { codes: ['A6', 'A7', 'A8'], h: HUES.amoraim, l: 0.68 },
 ];
 
 const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(
@@ -35,8 +36,8 @@ const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(
 );
 
 /** How far an uncertain segment's colour is washed out toward grey. */
-export const WASHED_OUT = 0.78;
-const GREY = [0.62, 0.62, 0.64];
+export const WASHED_OUT = 0.9;
+const GREY = [0.62, 0.62, 0.62];
 /** How much of its usual colour a segment that names no rabbi keeps. */
 export const FAINT = 0.3;
 
@@ -115,10 +116,10 @@ export function datingOverlay(
     id: 'dating',
     name: 'Dating',
     description:
-      'Colours each segment by the generation of the latest rabbi it names. Each era has its ' +
-      'own colours, in two or three bands from early to late: Zugot violet, Tannaim orange to ' +
-      'yellow, Amoraim blue, and green between them. A grey segment names only a rabbi who ' +
-      'could be one of several; a dim one names no rabbi whose generation Sefaria gives.',
+      'Colours each segment by the generation of the latest rabbi it names. Each era has one ' +
+      'colour, dark for its earliest generations and light for its latest: Zugot purple, Tannaim ' +
+      'orange, Amoraim blue. A grey segment names only a rabbi who could be one of several; a ' +
+      'dim one names no rabbi whose generation Sefaria gives.',
     credits: [
       {
         source: 'Sefaria, people tagged in the Talmud',
@@ -163,18 +164,17 @@ export function datingOverlay(
       ].join('');
     },
 
-    // Six of the bands that occur, spread from early to late.
+    // One square for each colour band that occurs, in a group for each era; the transitional
+    // generation sits with the Tannaim, whose colour it shares.
     summary: (_settings, { dating }) => {
-      const colors = [
-        ...new Set(dating.generations.map((g) => colorToCss(generationColor(g.code)))),
-      ];
-      const picks = Math.min(6, colors.length);
-      return {
-        colors: Array.from(
-          { length: picks },
-          (_, i) => colors[Math.round((i * (colors.length - 1)) / Math.max(1, picks - 1))],
+      const groups = ['Zugot', 'Tannaim', 'Amoraim'].map((era) => [
+        ...new Set(
+          dating.generations
+            .filter((g) => (g.code === 'TA' ? 'Tannaim' : eraOf(g.code)) === era)
+            .map((g) => colorToCss(generationColor(g.code))),
         ),
-      };
+      ]);
+      return { groups: groups.filter((group) => group.length > 0) };
     },
 
     getHoverInfo(item, _settings, { dating }) {
@@ -197,11 +197,12 @@ export function datingOverlay(
         const entry = document.createElement(
           person.gen === generation && (!person.ambiguous || uncertain) ? 'strong' : 'span',
         );
-        entry.append(
-          `${person.en} · `,
-          he,
-          ` (${generationLabel(era.code, true)}${person.ambiguous ? '?' : ''}, ${yearsShort(era)})`,
-        );
+        // An ambiguous name gives its latest candidate only where it dates the passage.
+        const where =
+          person.ambiguous && !uncertain
+            ? ' ?'
+            : ` (${generationLabel(era.code, true)}${person.ambiguous ? '?' : ''}, ${yearsShort(era)})`;
+        entry.append(`${person.en} · `, he, where);
         box.append(...(i ? ['; '] : []), entry);
       });
       return box;

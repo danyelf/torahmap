@@ -159,17 +159,18 @@ export function datingFrom(
   >();
   for (const [id, mentions] of byId) {
     const dated = mentions.filter((m) => !isAmbiguous(m.topic) && generationOf(m.topic));
+    const ambiguous = mentions.filter((m) => isAmbiguous(m.topic) && generationOf(m.topic));
     const uncertain = dated.length === 0;
-    const pool = uncertain
-      ? mentions.filter((m) => isAmbiguous(m.topic) && generationOf(m.topic))
-      : dated;
+    // Only resolved names date a passage that has any; its ambiguous names are listed, not counted.
+    const pool = uncertain ? ambiguous : dated;
     if (pool.length === 0) continue;
     const code = pool
       .map((m) => generationOf(m.topic)!)
       .sort((a, b) => periods[b].from - periods[a].from)[0];
+    const listed = [...dated, ...ambiguous];
     // A title tagged as its own person inside a fuller name stays out of the list.
     const inside = (m: Mention) =>
-      pool.some(
+      listed.some(
         (o) =>
           o !== m &&
           o.topic !== m.topic &&
@@ -177,7 +178,7 @@ export function datingFrom(
           m.end! <= o.end! &&
           o.end! - o.start! > m.end! - m.start!,
       );
-    const shown = pool.filter((m) => !inside(m)).sort((a, b) => a.start! - b.start!);
+    const shown = listed.filter((m) => !inside(m)).sort((a, b) => a.start! - b.start!);
     const slugs = [...new Set(shown.map((m) => m.topic))];
     found.set(id, { code, uncertain, slugs, shown });
   }

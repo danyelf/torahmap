@@ -29,16 +29,18 @@ These are Danyel's, from #25 and from conversation.
 
 ## Also agreed (proposed by Claude, approved with the design)
 
-- **Colours.** Each era has colours of its own, in two or three bands from early to late: the Zugot
-  violet then magenta, the Tannaim orange, amber then yellow, the transitional generation a plain
-  green, the Amoraim indigo, blue then cyan, dark to bright within each era. The exact generation is in words, not colour.
+- **Colours.** Each era is one hue: the Zugot purple, the Tannaim orange, the Amoraim blue. Within an
+  era the bands (two or three) run from dark (earliest) to light (latest) in lightness alone; the
+  transitional generation is one step lighter than the Tannaim's lightest. The exact generation is
+  in words, not colour.
 - **Uncertain passages** take their era's colour washed out toward grey, so they read as "not sure"
   rather than as another generation.
 - **The key**, in the side panel, lists only the generations that occur, each with rough years from
   Sefaria ("5th generation · c. 135–170 CE", under a heading for its era), plus "uncertain" and "names no rabbi".
 - **The pinned passage's panel** is one line of the rabbis found, `Rava · רבא (4th-gen Amora,
   320–350); Abaye · אביי (4th-gen Amora, 320–350)`, so a colour can always be checked; the rabbi who
-  sets the date is in bold, and an ambiguous name shows its latest candidate with a `?`. Each name is
+  sets the date is in bold, and an ambiguous name is listed too, as `Hillel · הלל ?`, without setting
+  the date (only in a passage dated through it does it show its latest candidate). Each name is
   also marked in the passage's Hebrew in its generation's colour (grey if ambiguous), where the
   generator can find it in the map's own text. No generation codes appear on screen.
 - **The link** carries the overlay as on the Tanakh map (`?overlay=…`), with no settings yet.
@@ -47,7 +49,7 @@ These are Danyel's, from #25 and from conversation.
   the last Tannaim and the first Amoraim.
 - **An uncertain passage is dated by its latest candidate**, matching the two-generation rule.
 - **A passage with any resolved name is never uncertain.** Its date comes from the resolved names,
-  and ambiguous names in it are ignored. 2,615 passages (6% of those dated) are dated only through
+  and ambiguous names in it do not count toward the date, though the panel lists them. 2,615 passages (6% of those dated) are dated only through
   an ambiguous name.
 
 ## What the data holds

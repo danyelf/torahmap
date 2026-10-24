@@ -32,6 +32,7 @@ const dating: TalmudDating = {
     'A.2a.2': [2, 0, [1], [4, 7, 1]],
     'A.2a.3': [1, 1, [2], [4, 7, 2]],
     'A.2a.4': [2, 0, [0, 1], []],
+    'A.2a.5': [2, 0, [1, 2], []],
   },
 };
 
@@ -48,35 +49,26 @@ describe('the dating overlay', () => {
     expect(colours[0]).toEqual(generationColor('T5'));
   });
 
-  it('grows brighter within each era, from earliest to latest', () => {
-    const brightness = (codes: string[]) =>
-      codes.map((c) => {
-        const [r, g, b] = generationColor(c);
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-      });
-    const eras = [
-      ['Z1', 'Z3', 'Z4'],
-      ['T1', 'T4', 'T6'],
-      ['A1', 'A3', 'A6'],
-    ];
+  const eras = [
+    ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'],
+    ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'TA'],
+    ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'],
+  ];
+
+  it('grows lighter within each era, from earliest to latest', () => {
     for (const codes of eras) {
-      const levels = brightness(codes);
+      const levels = codes.map((c) => rgbToHsl(generationColor(c)).l);
       expect(levels).toEqual([...levels].sort((a, b) => a - b));
+      expect(levels[0]).toBeLessThan(levels[levels.length - 1]);
     }
   });
 
-  it('keeps each era in a range of hues of its own', () => {
-    const hues = (codes: string[]) => codes.map((c) => rgbToHsl(generationColor(c)).h);
-    const eras = [
-      hues(['Z1', 'Z2', 'Z3', 'Z4', 'Z5']),
-      hues(['T1', 'T2', 'T3', 'T4', 'T5', 'T6']),
-      hues(['TA']),
-      hues(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8']),
-    ].map((h) => [Math.min(...h), Math.max(...h)]);
-    for (const [i, [lo, hi]] of eras.entries()) {
-      for (const [otherLo, otherHi] of eras.slice(i + 1)) {
-        expect(hi < otherLo || otherHi < lo).toBe(true);
-      }
+  it('keeps one hue within an era and the eras’ hues well apart', () => {
+    const hues = eras.map((codes) => codes.map((c) => rgbToHsl(generationColor(c)).h));
+    for (const h of hues) expect(Math.max(...h) - Math.min(...h)).toBeLessThan(1);
+    const apart = (a: number, b: number) => Math.min(Math.abs(a - b), 360 - Math.abs(a - b));
+    for (const [i, [a]] of hues.entries()) {
+      for (const [b] of hues.slice(i + 1)) expect(apart(a, b)).toBeGreaterThan(40);
     }
   });
 
@@ -110,16 +102,24 @@ describe('the dating overlay', () => {
     expect(new Set(swatches).size).toBe(swatches.length);
   });
 
-  it('shows in its chip colours from the late bands as well as the early', () => {
+  it('shows in its chip a group of colours for each era, the transition with the Tannaim', () => {
     const generations = ['Z1', 'Z4', 'T1', 'T4', 'T6', 'TA', 'A1', 'A3', 'A6'].map((code) => ({
       code,
       name: '',
       from: 0,
       to: 1,
     }));
-    const { colors } = overlay.summary!(undefined as never, { dating: { ...dating, generations } });
-    expect(colors).toContain(colorToCss(generationColor('A6')));
-    expect(colors?.length).toBeLessThanOrEqual(6);
+    const { groups } = overlay.summary!(undefined as never, { dating: { ...dating, generations } });
+    expect(groups?.map((g) => g.length)).toEqual([2, 4, 3]);
+    expect(groups?.[1]).toContain(colorToCss(generationColor('TA')));
+  });
+
+  it('leaves out of its chip an era with no generations', () => {
+    const only = dating.generations.filter((g) => g.code !== 'T5');
+    const { groups } = overlay.summary!(undefined as never, {
+      dating: { ...dating, generations: only },
+    });
+    expect(groups).toHaveLength(1);
   });
 
   it('groups its key by era, with no generation codes', () => {
@@ -163,6 +163,14 @@ describe('the dating overlay', () => {
   it('marks an ambiguous name’s generation as a guess', () => {
     const box = overlay.renderSidebarInfo?.(item('A.2a.3'), true, undefined as never, { dating });
     expect(box?.textContent).toContain(`(${generationLabel('A2', true)}?,`);
+  });
+
+  it('lists an ambiguous name in a settled passage with a ?, not bold and without a generation', () => {
+    const box = overlay.renderSidebarInfo?.(item('A.2a.5'), true, undefined as never, { dating });
+    expect(box?.textContent).toContain(`${dating.people[2].en} · ${dating.people[2].he} ?`);
+    expect([...(box?.querySelectorAll('strong') ?? [])].map((e) => e.textContent)).toEqual([
+      expect.stringContaining(dating.people[1].en),
+    ]);
   });
 
   it('marks each rabbi’s name in the Hebrew, washed out where the name is ambiguous', () => {

@@ -109,12 +109,16 @@ describe('datingFrom', () => {
     });
   });
 
-  it('lets a resolved name settle a segment that also has an ambiguous one', () => {
+  it('lists an ambiguous name beside a resolved one without letting it date the segment', () => {
     const dating = build([
       mention('TractA 2a:1', 'meir'),
       mention('TractA 2a:1', 'elazar-(ambiguous)', { start: 10, end: 14 }),
     ]);
-    expect(at(dating, 'TractA.2a.1')).toEqual({ code: 'T5', uncertain: 0, names: ['Rabbi Meir'] });
+    expect(at(dating, 'TractA.2a.1')).toEqual({
+      code: 'T5',
+      uncertain: 0,
+      names: ['Rabbi Meir', 'Rabbi Elazar'],
+    });
   });
 
   it('drops from the names a tag inside a fuller name, keeping the date', () => {

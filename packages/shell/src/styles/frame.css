@@ -647,6 +647,10 @@ body[data-open='about'] #about-panel {
   gap: 4px;
 }
 
+.summary-group {
+  display: inline-flex;
+}
+
 .summary-swatch {
   display: block;
   width: 10px;
