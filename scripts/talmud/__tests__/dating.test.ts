@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { talmudFixture } from '../../../apps/talmud/test/helpers/talmudFixture.ts';
-import { datingFrom, type Facts, type Mention } from '../dating.ts';
+import { datingFrom, type Facts, type Mention, type Placement } from '../dating.ts';
 
 const ARAMAIC = 'William Davidson Edition - Aramaic';
 
@@ -35,11 +35,19 @@ const mention = (ref: string, topic: string, over: Partial<Mention> = {}): Menti
   version: ARAMAIC,
   start: 0,
   end: 4,
+  text: 'רבא',
   ...over,
 });
 
-const build = (mentions: Mention[]) =>
-  datingFrom({ mentions, candidates, topics, periods }, talmudFixture);
+// TractA's amudim have 5, 4, 6 and 3 segments, TractB's 2.
+const lines = (counts: number[], line: string) => counts.map((n) => Array(n).fill(line));
+const texts = new Map([
+  ['TractA', lines([5, 4, 6, 3], 'אמר רבא')],
+  ['TractB', lines([2, 2], 'אמר רבא')],
+]);
+
+const build = (mentions: Mention[], placement?: Placement, withTexts = texts) =>
+  datingFrom({ mentions, candidates, topics, periods }, talmudFixture, withTexts, placement);
 
 const at = (dating: ReturnType<typeof build>, id: string) => {
   const segment = dating.segments[id];
@@ -47,7 +55,7 @@ const at = (dating: ReturnType<typeof build>, id: string) => {
     segment && {
       code: dating.generations[segment[0]].code,
       uncertain: segment[1],
-      names: segment.slice(2).map((p) => dating.people[p as number].en),
+      names: segment[2].map((p) => dating.people[p].en),
     }
   );
 };
@@ -131,9 +139,47 @@ describe('datingFrom', () => {
       mention('TractA 2a:1', 'rava', { start: 10, end: 14 }),
     ]);
     const [segment] = Object.values(dating.segments);
-    for (const place of segment.slice(2) as number[]) {
+    for (const place of segment[2]) {
       expect(dating.generations[dating.people[place].gen]).toBeDefined();
     }
+  });
+
+  it('marks a name where the dump tagged it when the map’s text agrees', () => {
+    const placement = { exact: 0, nearby: 0, dropped: 0 };
+    const dating = build([mention('TractA 2a:1', 'rava', { start: 4, end: 7 })], placement);
+    expect(dating.segments['TractA.2a.1'][3]).toEqual([4, 7, 0]);
+    expect(placement).toEqual({ exact: 1, nearby: 0, dropped: 0 });
+  });
+
+  it('finds a name near where it was tagged when the map spells it differently', () => {
+    const placement = { exact: 0, nearby: 0, dropped: 0 };
+    const abbreviated = new Map([['TractA', lines([5, 4, 6, 3], "אמר ר' אבא")]]);
+    const dating = build(
+      [mention('TractA 2a:1', 'meir', { start: 6, end: 14, text: 'רבי אבא' })],
+      placement,
+      abbreviated,
+    );
+    expect(dating.segments['TractA.2a.1'][3]).toEqual([4, 10, 0]);
+    expect(placement).toEqual({ exact: 0, nearby: 1, dropped: 0 });
+  });
+
+  it('drops a name it cannot find in the map’s text, keeping the date', () => {
+    const placement = { exact: 0, nearby: 0, dropped: 0 };
+    const dating = build(
+      [mention('TractA 2a:1', 'rava', { start: 4, end: 9, text: 'רבינא' })],
+      placement,
+    );
+    expect(dating.segments['TractA.2a.1'][3]).toEqual([]);
+    expect(at(dating, 'TractA.2a.1')?.code).toBe('A4');
+    expect(placement.dropped).toBe(1);
+  });
+
+  it('marks only the outer name of overlapping tags', () => {
+    const dating = build([
+      mention('TractA 2a:1', 'rav', { start: 4, end: 7, text: 'רבא' }),
+      mention('TractA 2a:1', 'rav-shmuel', { start: 0, end: 7, text: 'אמר רבא' }),
+    ]);
+    expect(dating.segments['TractA.2a.1'][3]).toEqual([0, 7, 0]);
   });
 
   it('numbers amudim and segments as the map does', () => {

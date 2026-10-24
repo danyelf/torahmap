@@ -7,28 +7,37 @@ import { colorToCss, escapeHtml, hslToRgb, type Color } from '@torahmap/utils';
 import { DATING_FILE, type Generation, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR } from '../constants.ts';
+import { HEBREW } from '@torahmap/shell/language.ts';
+import { wrapRuns } from '@torahmap/shell/textRuns.ts';
 
 export interface DatingData {
   dating: TalmudDating;
 }
 
-/** Every generation Sefaria codes, earliest first. */
-const CODES = [
-  ...['Z1', 'Z2', 'Z3', 'Z4', 'Z5'],
-  ...['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
-  'TA',
-  ...['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'],
-];
+// Each era has a family of its own, so an era shows at a glance and its generations step within
+// it, early to late: the Zugot violet to magenta, the Tannaim orange to yellow, the generation
+// between the Tannaim and Amoraim a plain green, the Amoraim cyan to deep blue.
+const FAMILIES: Record<
+  string,
+  { codes: string[]; hue: [number, number]; light: [number, number] }
+> = {
+  zugot: { codes: ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'], hue: [270, 320], light: [0.45, 0.65] },
+  tannaim: { codes: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'], hue: [15, 55], light: [0.48, 0.6] },
+  between: { codes: ['TA'], hue: [105, 105], light: [0.5, 0.5] },
+  amoraim: {
+    codes: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'],
+    hue: [190, 240],
+    light: [0.66, 0.46],
+  },
+};
 
-// Warm for the Zugot and Tannaim, running from crimson through orange to yellow and growing
-// lighter as they get later, so that the many early steps stay apart; a cool green for the
-// generation between them; and cool for the Amoraim, one step of hue per generation.
 const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(
-  CODES.map((code, i) => {
-    if (i < 11) return [code, { h: (345 + i * 7.5) % 360, l: 0.4 + i * 0.022 }];
-    if (code === 'TA') return [code, { h: 110, l: 0.55 }];
-    return [code, { h: 160 + ((i - 12) / 7) * 95, l: 0.55 }];
-  }),
+  Object.values(FAMILIES).flatMap(({ codes, hue, light }) =>
+    codes.map((code, i) => {
+      const t = codes.length > 1 ? i / (codes.length - 1) : 0;
+      return [code, { h: hue[0] + (hue[1] - hue[0]) * t, l: light[0] + (light[1] - light[0]) * t }];
+    }),
+  ),
 );
 
 /** How far an uncertain segment's colour moves toward white. */
@@ -78,8 +87,8 @@ export function datingOverlay(
     id: 'dating',
     name: 'Dating',
     description:
-      'Colours each segment by the generation of the latest rabbi it names, warm for the ' +
-      'Tannaim and cool for the Amoraim. A pale segment names only a rabbi who could be ' +
+      'Colours each segment by the generation of the latest rabbi it names. Each era has its ' +
+      'own colours: Zugot violet, Tannaim orange to yellow, Amoraim blue. A pale segment names only a rabbi who could be ' +
       'one of several; a dim one names no rabbi whose generation Sefaria gives.',
     credits: [
       {
@@ -98,16 +107,11 @@ export function datingOverlay(
       if (!data) return;
       const { dating } = data;
       const rows = dating.generations.map((g) =>
-        row(generationColor(g.code), `${g.name} · ${yearsOf(g)}`),
+        row(generationColor(g.code), `${g.code} · ${g.name} · ${yearsOf(g)}`),
       );
       container.innerHTML = [
         ...rows,
-        row(
-          paleColor(
-            generationColor(dating.generations[dating.generations.length - 1]?.code ?? 'A4'),
-          ),
-          'Uncertain: the name could be several rabbis',
-        ),
+        row(paleColor(generationColor('A4')), 'Uncertain: the name could be several rabbis'),
         row(
           mix(MAP_BACKGROUND, GEMARA_BASE_COLOR, FAINT),
           'Names no rabbi with a known generation',
@@ -138,30 +142,46 @@ export function datingOverlay(
     renderSidebarInfo(item, isPinned, _settings, { dating }) {
       const segment = dating.segments[item.id];
       if (!isPinned || !segment) return null;
-      const [generation, uncertain, ...people] = segment;
-      const g = dating.generations[generation];
+      const [generation, , people] = segment;
       const box = document.createElement('div');
-      const head = document.createElement('div');
-      const strong = document.createElement('strong');
-      strong.textContent = g.name;
-      head.append(strong, ` (${yearsOf(g)})${uncertain ? ', uncertain' : ''}`);
-      box.append(head);
-      for (const place of people) {
+      people.forEach((place, i) => {
         const person = dating.people[place];
-        const line = document.createElement('div');
         const he = document.createElement('span');
         he.lang = 'he';
         he.dir = 'rtl';
         he.textContent = person.he;
-        const gen = dating.generations[person.gen].name;
-        line.append(
-          `${person.en} · `,
-          he,
-          ` · ${person.ambiguous ? `could be several; the latest, ${gen}` : gen}`,
-        );
-        box.append(line);
-      }
+        const code = dating.generations[person.gen].code;
+        const entry = document.createElement(person.gen === generation ? 'strong' : 'span');
+        entry.append(`${person.en} · `, he, ` (${code}${person.ambiguous ? '?' : ''})`);
+        box.append(...(i ? ['; '] : []), entry);
+      });
       return box;
+    },
+
+    highlightItemText(item, text, language, _settings, { dating }) {
+      const fragment = document.createDocumentFragment();
+      fragment.append(text);
+      const segment = dating.segments[item.id];
+      if (language !== HEBREW || !segment) return fragment;
+      const spans = segment[3];
+      const spanAt = (offset: number) => {
+        for (let i = 0; i < spans.length; i += 3) {
+          if (spans[i] <= offset && offset < spans[i + 1]) return i;
+        }
+        return null;
+      };
+      return wrapRuns(fragment, text, spanAt, (i, run) => {
+        const person = dating.people[spans[i + 2]];
+        const color = generationColor(dating.generations[person.gen].code);
+        const [r, g, b] = (person.ambiguous ? paleColor(color) : color).map((c) =>
+          Math.round(c * 255),
+        );
+        const mark = document.createElement('mark');
+        mark.className = 'rabbi-name';
+        mark.style.cssText = `background: rgba(${r}, ${g}, ${b}, 0.5); color: inherit; border-radius: 2px`;
+        mark.textContent = run;
+        return mark;
+      });
     },
   };
 }

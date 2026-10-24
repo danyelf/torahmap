@@ -9,7 +9,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { DatedSegment, Generation, Person, TalmudDating } from '@torahmap/talmud/dating.ts';
 import { DATING_FILE } from '@torahmap/talmud/dating.ts';
-import { STRUCTURE_FILE, type TalmudStructure } from '@torahmap/talmud/data.ts';
+import {
+  STRUCTURE_FILE,
+  textsFile,
+  type TalmudStructure,
+  type TalmudTractateText,
+} from '@torahmap/talmud/data.ts';
 import { talmudId } from '@torahmap/talmud/layout.ts';
 
 /** The edition the map shows, whose character positions the tags use. */
@@ -25,6 +30,8 @@ export interface Mention {
   version: string | null;
   start: number | null;
   end: number | null;
+  /** The tagged words as the dump's edition spells them. */
+  text: string | null;
 }
 
 export interface Facts {
@@ -54,7 +61,53 @@ function generationName(sefariaName: string): string {
   return `${group}, ${words.replace('Generation', 'generation')}`;
 }
 
-export function datingFrom(facts: Facts, structure: TalmudStructure): TalmudDating {
+/** How far from its tagged position a name may be found in the map's own text. */
+const NEARBY = 150;
+
+/** How the tagged names were found in the map's text. */
+export interface Placement {
+  exact: number;
+  nearby: number;
+  dropped: number;
+}
+
+const escapeWord = (word: string) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** A word as the map's text may spell it: the dump writes "רבי" and "רב" where the map abbreviates. */
+function spellings(word: string): string {
+  const title = /^([בכלמשוהד]{0,3})(רבי|רב)$/.exec(word);
+  if (!title) return escapeWord(word);
+  const [, prefix, full] = title;
+  const abbreviations = full === 'רבי' ? `|ר['׳]` : '';
+  return `${prefix}(?:${full}${abbreviations}|(?<=")ר(?![א-ת]))`;
+}
+
+/** Where `mention`'s words stand in `line`: at its tagged position, else the nearest spelling of them within NEARBY. */
+export function placeIn(
+  line: string,
+  { start, end, text }: Mention,
+): { start: number; end: number; exact: boolean } | null {
+  if (start === null || end === null || !text) return null;
+  if (line.slice(start, end) === text) return { start, end, exact: true };
+  const pattern = new RegExp(text.split(/\s+/).map(spellings).join('\\s+'), 'g');
+  return (
+    [...line.matchAll(pattern)]
+      .map((m) => ({ start: m.index, end: m.index + m[0].length, exact: false }))
+      .filter((m) => Math.abs(m.start - start) <= NEARBY)
+      .sort((a, b) => Math.abs(a.start - start) - Math.abs(b.start - start))[0] ?? null
+  );
+}
+
+/**
+ * `texts` is each tractate's lines as the map shows them, laid out as its files' `amudim`.
+ * `placement` counts what became of each tag that dates a segment.
+ */
+export function datingFrom(
+  facts: Facts,
+  structure: TalmudStructure,
+  texts: ReadonlyMap<string, readonly (readonly string[])[]>,
+  placement: Placement = { exact: 0, nearby: 0, dropped: 0 },
+): TalmudDating {
   const { periods, topics, candidates } = facts;
 
   /** The latest generation a code names, "A2/A3" being A3; null for a code that is none. */
@@ -97,7 +150,10 @@ export function datingFrom(facts: Facts, structure: TalmudStructure): TalmudDati
   }
 
   /** Each segment: its latest generation code, whether that is uncertain, and the topics to list. */
-  const found = new Map<string, { code: string; uncertain: boolean; slugs: string[] }>();
+  const found = new Map<
+    string,
+    { code: string; uncertain: boolean; slugs: string[]; shown: Mention[] }
+  >();
   for (const [id, mentions] of byId) {
     const dated = mentions.filter((m) => !isAmbiguous(m.topic) && generationOf(m.topic));
     const uncertain = dated.length === 0;
@@ -118,15 +174,9 @@ export function datingFrom(facts: Facts, structure: TalmudStructure): TalmudDati
           m.end! <= o.end! &&
           o.end! - o.start! > m.end! - m.start!,
       );
-    const slugs = [
-      ...new Set(
-        pool
-          .filter((m) => !inside(m))
-          .sort((a, b) => a.start! - b.start!)
-          .map((m) => m.topic),
-      ),
-    ];
-    found.set(id, { code, uncertain, slugs });
+    const shown = pool.filter((m) => !inside(m)).sort((a, b) => a.start! - b.start!);
+    const slugs = [...new Set(shown.map((m) => m.topic))];
+    found.set(id, { code, uncertain, slugs, shown });
   }
 
   const slugs = [...new Set([...found.values()].flatMap((f) => f.slugs))].sort();
@@ -160,10 +210,26 @@ export function datingFrom(facts: Facts, structure: TalmudStructure): TalmudDati
         const id = talmudId({ tractate: tractate.name, daf: amud.daf, amud: amud.amud, segment });
         const f = found.get(id);
         if (f) {
+          const amudPlace = tractate.amudim.indexOf(amud);
+          const line = texts.get(tractate.name)?.[amudPlace]?.[segment - 1] ?? '';
+          const spans: number[] = [];
+          for (const m of f.shown) {
+            const at = placeIn(line, m);
+            // Two tags cannot mark one stretch of the line.
+            const taken =
+              at && spans.some((s, i) => i % 3 === 0 && s < at.end && at.start < spans[i + 1]);
+            if (!at || taken) {
+              placement.dropped++;
+            } else {
+              placement[at.exact ? 'exact' : 'nearby']++;
+              spans.push(at.start, at.end, placeOfSlug.get(m.topic)!);
+            }
+          }
           segments[id] = [
             placeOfCode.get(f.code)!,
             f.uncertain ? 1 : 0,
-            ...f.slugs.map((s) => placeOfSlug.get(s)!),
+            f.slugs.map((s) => placeOfSlug.get(s)!),
+            spans,
           ];
         }
       }
@@ -180,11 +246,23 @@ async function main() {
   const structure = JSON.parse(
     await readFile(join(dataDir, STRUCTURE_FILE), 'utf-8'),
   ) as TalmudStructure;
-  const dating = datingFrom(facts, structure);
+  const texts = new Map(
+    await Promise.all(
+      structure.tractates.map(async (t) => {
+        const file = JSON.parse(await readFile(join(dataDir, textsFile(t.name)), 'utf-8'));
+        return [t.name, (file as TalmudTractateText).amudim] as const;
+      }),
+    ),
+  );
+  const placement = { exact: 0, nearby: 0, dropped: 0 };
+  const dating = datingFrom(facts, structure, texts, placement);
   await writeFile(join(dataDir, DATING_FILE), JSON.stringify(dating), 'utf-8');
 
   const uncertain = Object.values(dating.segments).filter((s) => s[1] === 1).length;
   console.log(`${Object.keys(dating.segments).length} segments dated, ${uncertain} uncertain`);
+  console.log(
+    `names marked in the text: ${placement.exact} exactly, ${placement.nearby} nearby, ${placement.dropped} not found`,
+  );
   for (const g of dating.generations) console.log(`  ${g.code} ${g.name} ${g.from} to ${g.to}`);
 }
 

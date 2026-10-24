@@ -50,6 +50,7 @@ def main(dump, out):
                         'version': data.get('versionTitle'),
                         'start': data.get('startChar'),
                         'end': data.get('endChar'),
+                        'text': data.get('text'),
                     }
                 )
 

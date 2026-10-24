@@ -21,8 +21,17 @@ export interface Person {
   ambiguous?: true;
 }
 
-/** A segment's latest generation, whether only an ambiguous name gives it, and the people (places in `people`) behind it. */
-export type DatedSegment = [generation: number, uncertain: 0 | 1, ...people: number[]];
+/**
+ * A segment's latest generation, whether only an ambiguous name gives it, the people (places in
+ * `people`) behind it in the order they are named, and where its Hebrew names them: a start, an end
+ * and a person, again and again.
+ */
+export type DatedSegment = [
+  generation: number,
+  uncertain: 0 | 1,
+  people: number[],
+  spans: number[],
+];
 
 export interface TalmudDating {
   /** Those that occur, earliest first. */

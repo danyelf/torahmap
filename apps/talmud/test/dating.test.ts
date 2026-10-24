@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { MAP_BACKGROUND } from '@torahmap/engine';
+import { rgbToHsl } from '@torahmap/utils';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import type { TalmudStructure } from '../src/data.ts';
 import { DATING_FILE, type TalmudDating } from '../src/dating.ts';
 import { talmudId } from '../src/layout.ts';
@@ -18,9 +20,10 @@ const dating: TalmudDating = {
     { en: 'Rabbi Elazar', he: 'ר"א', gen: 1, ambiguous: true },
   ],
   segments: {
-    'A.2a.1': [0, 0, 0],
-    'A.2a.2': [2, 0, 1],
-    'A.2a.3': [1, 1, 2],
+    'A.2a.1': [0, 0, [0], [0, 3, 0]],
+    'A.2a.2': [2, 0, [1], [4, 7, 1]],
+    'A.2a.3': [1, 1, [2], [4, 7, 2]],
+    'A.2a.4': [2, 0, [0, 1], []],
   },
 };
 
@@ -35,6 +38,21 @@ describe('the dating overlay', () => {
     const colours = ['A.2a.1', 'A.2a.2'].map(colour);
     expect(colours[0]).not.toEqual(colours[1]);
     expect(colours[0]).toEqual(generationColor('T5'));
+  });
+
+  it('keeps each era in a range of hues of its own', () => {
+    const hues = (codes: string[]) => codes.map((c) => rgbToHsl(generationColor(c)).h);
+    const eras = [
+      hues(['Z1', 'Z2', 'Z3', 'Z4', 'Z5']),
+      hues(['T1', 'T2', 'T3', 'T4', 'T5', 'T6']),
+      hues(['TA']),
+      hues(['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8']),
+    ].map((h) => [Math.min(...h), Math.max(...h)]);
+    for (const [i, [lo, hi]] of eras.entries()) {
+      for (const [otherLo, otherHi] of eras.slice(i + 1)) {
+        expect(hi < otherLo || otherHi < lo).toBe(true);
+      }
+    }
   });
 
   it('makes an uncertain segment a paler version of its generation’s colour', () => {
@@ -67,27 +85,37 @@ describe('the dating overlay', () => {
     expect(new Set(swatches).size).toBe(swatches.length);
   });
 
-  it('lists each rabbi in the pinned panel with its names in both languages', () => {
-    const box = overlay.renderSidebarInfo?.(item('A.2a.2'), true, undefined as never, { dating });
+  it('lists the rabbis in one line, in both languages, with the one that dates the passage in bold', () => {
+    const box = overlay.renderSidebarInfo?.(item('A.2a.4'), true, undefined as never, { dating });
     expect(box?.children).toHaveLength(2);
-    const hebrew = box?.querySelector<HTMLElement>('[lang="he"]');
-    expect(hebrew?.textContent).toBe(dating.people[1].he);
-    expect(box?.children[1].textContent).toContain(dating.people[1].en);
+    expect([...(box?.querySelectorAll('[lang="he"]') ?? [])].map((e) => e.textContent)).toEqual([
+      dating.people[0].he,
+      dating.people[1].he,
+    ]);
+    expect(box?.querySelector('strong')?.textContent).toContain(dating.people[1].en);
+    expect(box?.textContent).toContain(`(${dating.generations[2].code})`);
+    expect(box?.querySelector('div')).toBeNull();
   });
 
-  it('words an ambiguous name’s line differently from a settled one', () => {
-    const line = (id: string) =>
-      overlay.renderSidebarInfo?.(item(id), true, undefined as never, { dating })?.children[1]
-        .textContent;
-    const settled = line('A.2a.2')!
-      .replace(dating.people[1].en, '')
-      .replace(dating.people[1].he, '');
-    const ambiguous = line('A.2a.3')!
-      .replace(dating.people[2].en, '')
-      .replace(dating.people[2].he, '');
-    expect(ambiguous).not.toEqual(
-      settled.replace(dating.generations[2].name, dating.generations[1].name),
-    );
+  it('marks an ambiguous name’s generation as a guess', () => {
+    const box = overlay.renderSidebarInfo?.(item('A.2a.3'), true, undefined as never, { dating });
+    expect(box?.textContent).toContain(`(${dating.generations[1].code}?)`);
+  });
+
+  it('marks each rabbi’s name in the Hebrew, paler where the name is ambiguous', () => {
+    const marked = (id: string) =>
+      overlay.highlightItemText?.(item(id), 'אמר רבא', HEBREW, undefined as never, { dating });
+    const mark = (id: string) => marked(id)?.querySelector<HTMLElement>('mark');
+    expect(mark('A.2a.2')?.textContent).toBe('רבא');
+    expect(marked('A.2a.2')?.textContent).toBe('אמר רבא');
+    expect(mark('A.2a.2')?.style.background).not.toBe(mark('A.2a.3')?.style.background);
+  });
+
+  it('marks nothing in the English or in a segment that names no rabbi', () => {
+    const text = (id: string, language: typeof HEBREW | typeof ENGLISH) =>
+      overlay.highlightItemText?.(item(id), 'אמר רבא', language, undefined as never, { dating });
+    expect(text('A.2a.2', ENGLISH)?.querySelector('mark')).toBeNull();
+    expect(text('A.2a.9', HEBREW)?.querySelector('mark')).toBeNull();
   });
 
   it('adds nothing to the panel of a segment that is not pinned or names no rabbi', () => {
@@ -126,9 +154,13 @@ describe('the shipped dating file', () => {
   });
 
   it('points every segment at a generation and every rabbi it lists', () => {
-    for (const [generation, , ...people] of Object.values(shipped.segments)) {
+    for (const [generation, , people, spans] of Object.values(shipped.segments)) {
       expect(shipped.generations[generation]).toBeDefined();
       for (const p of people) expect(shipped.people[p]).toBeDefined();
+      for (let i = 0; i < spans.length; i += 3) {
+        expect(spans[i]).toBeLessThan(spans[i + 1]);
+        expect(people).toContain(spans[i + 2]);
+      }
     }
     for (const person of shipped.people) expect(shipped.generations[person.gen]).toBeDefined();
   });
