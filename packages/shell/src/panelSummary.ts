@@ -25,7 +25,10 @@ export function summaryHtml(overlayName: string, summary: OverlaySummary): strin
     detail += `<span class="summary-detail">${escapeHtml(summary.detail)}</span>`;
   }
   const squares = (summary.colors ?? []).slice(0, MAX_SWATCHES).map((color) => swatch(color));
-  const swatches = (summary.strip ? strip(summary.strip) : '') + squares.join('');
+  const groups = (summary.groups ?? []).map(
+    (group) => `<span class="summary-group">${group.map((color) => swatch(color)).join('')}</span>`,
+  );
+  const swatches = (summary.strip ? strip(summary.strip) : '') + squares.join('') + groups.join('');
   if (swatches) detail += `<span class="summary-swatches">${swatches}</span>`;
 
   return (
