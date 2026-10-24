@@ -129,6 +129,14 @@
   cursor: pointer;
 }
 
+@media (pointer: coarse) {
+  .rabbi-name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+  }
+}
+
 .rabbi-name:hover {
   color: #6ab0f3;
 }

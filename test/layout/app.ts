@@ -391,7 +391,7 @@ export const TALMUD_STATES: State[] = [
   {
     name: 'talmud-rabbis',
     link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
-    shown: ['#map-legend', '.rabbi-picked-row'],
+    shown: ['#map-legend'],
   },
   {
     name: 'talmud-rabbis-pinned',
@@ -399,10 +399,10 @@ export const TALMUD_STATES: State[] = [
     shown: ['#map-legend', '#popup.visible', '.rabbi-name'],
   },
   {
-    name: 'talmud-rabbis-typing',
-    link: 'overlay=rabbis',
-    then: (page) => page.locator('.rabbi-input').fill('Gamliel'),
-    shown: ['.rabbi-input', '.rabbi-row'],
+    name: 'talmud-rabbis-panel',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['.rabbi-input'],
   },
   {
     name: 'talmud-goto-not-found',

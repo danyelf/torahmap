@@ -21,7 +21,7 @@ export const MAX_PICKS = 6;
 /** What the renderer can split one square into. */
 export const MAX_COLORS = 4;
 const QUICK_PICKS = 28;
-const SUGGESTIONS = 12;
+const SUGGESTIONS = 6;
 
 /** Whether a passage names a rabbi without doubt, or only as one of the people a name can mean. */
 export type Certainty = 'sure' | 'maybe';

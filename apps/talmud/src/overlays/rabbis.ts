@@ -337,14 +337,13 @@ export function rabbisOverlay(
     summary(settings, data) {
       const places = pickedPlaces(settings, data);
       const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
-      return places.length
-        ? {
-            terms: places.map((place, i) => ({
-              text: data.rabbis.rabbis[place].en,
-              color: colorToCss(colors[i]),
-            })),
-          }
-        : { detail: 'pick a rabbi' };
+      if (!places.length) return { detail: 'pick a rabbi' };
+      // Names would not fit beside the overlay's own on a phone.
+      return {
+        detail:
+          places.length === 1 ? data.rabbis.rabbis[places[0]].en : count(places.length, 'rabbi'),
+        colors: colors.map(colorToCss),
+      };
     },
 
     getHoverInfo(item, settings, data) {
