@@ -1,10 +1,10 @@
 // Which passages name the picked rabbis, how to find a rabbi by any of his names, and the colour
 // each pick gets. No page in here.
 
-import { hslToRgb, memoByValueAndKey, type Color } from '@torahmap/utils';
+import { hslToRgb, memoByValueAndKey, rgbToHsl, type Color } from '@torahmap/utils';
 import type { TalmudDating } from '../dating.ts';
 import type { Rabbi, TalmudRabbis } from '../rabbis.ts';
-import { ERAS, eraOf, generationColor } from './dating.ts';
+import { ERAS, eraOf, generationColor, TRANSITION } from './dating.ts';
 
 export interface RabbiData {
   dating: TalmudDating;
@@ -32,6 +32,8 @@ export interface Entry {
   rabbis: number[];
   en: string;
   he: string;
+  /** A generation's code: the rabbi's, or the latest of those the name can mean. */
+  gen: string;
   named: number;
   /** Whether choosing it is choosing one rabbi. */
   single: boolean;
@@ -60,7 +62,10 @@ const build = (rabbis: TalmudRabbis, dating: TalmudDating): Index => {
       const key = one ? `r${who[0]}` : `p${person}`;
       if (!naming.has(key)) {
         const { en, he } = one ? rabbis.rabbis[who[0]] : dating.people[person];
-        naming.set(key, { entry: { rabbis: who, en, he, single: one }, ids: new Set() });
+        const gen = one
+          ? rabbis.rabbis[who[0]].gen
+          : dating.generations[dating.people[person].gen].code;
+        naming.set(key, { entry: { rabbis: who, en, he, gen, single: one }, ids: new Set() });
       }
       naming.get(key)!.ids.add(id);
     }
@@ -110,9 +115,31 @@ export const passagesOf = (data: RabbiData, place: number) => {
   return { sure: sure[place], maybe: maybe[place] };
 };
 
-/** The most-named choices. A name that can mean several people is one, and asks which. */
-export const quickPicks = (data: RabbiData): Entry[] =>
-  indexFor(data).entries.slice(0, QUICK_PICKS);
+/** The generations in order, from the table Dating's colours come from. */
+const GENERATION_ORDER = ERAS.flatMap((era) =>
+  era.bands.flatMap((band) => band.codes as readonly string[]),
+);
+
+const TRANSITION_NAME = 'Tanna/Amora transition';
+
+/** The headings of a key: each era, with the transition generation between the Tannaim and Amoraim. */
+const GROUPS = ERAS.flatMap(({ name }) => (name === 'Tannaim' ? [name, TRANSITION_NAME] : [name]));
+
+/**
+ * The most-named choices, in groups by era and within each by generation, a group only if it has
+ * a choice. A name that can mean several people is one choice, and asks which.
+ */
+export function quickPicks(data: RabbiData): { heading: string; entries: Entry[] }[] {
+  const chosen = indexFor(data).entries.slice(0, QUICK_PICKS);
+  const groupOf = (entry: Entry) => (entry.gen === TRANSITION ? TRANSITION_NAME : eraOf(entry.gen));
+  const rank = (entry: Entry) => GENERATION_ORDER.indexOf(entry.gen);
+  return GROUPS.map((heading) => ({
+    heading,
+    entries: chosen
+      .filter((entry) => groupOf(entry) === heading)
+      .sort((a, b) => rank(a) - rank(b) || b.named - a.named),
+  })).filter(({ entries }) => entries.length > 0);
+}
 
 /** Lower case, without vowel points, accents or punctuation. */
 export const plain = (text: string): string =>
@@ -164,31 +191,33 @@ export function suggest(
     .slice(0, SUGGESTIONS);
 }
 
-const SHADE_LIGHTEST = 0.78;
-const SHADE_DARKEST = 0.3;
-/** Degrees of hue between neighbouring shades of one era. */
-const HUE_STEP = 10;
+/**
+ * Degrees of hue from an era's own, for its second pick onward. They lean away from the
+ * neighbouring eras: the Amoraim toward cyan and indigo, never toward the Zugot's purple; the
+ * Tannaim toward amber and red-orange; the Zugot toward magenta and violet.
+ */
+const HUE_OFFSETS: Record<string, readonly number[]> = {
+  Amoraim: [0, -38, 26, -62, 46, -84],
+  Tannaim: [0, 24, -22, 40, -36, 54],
+  Zugot: [0, 38, -28, 58, -44, 74],
+};
 
 /**
- * A colour for each rabbi, in order. A rabbi alone in his era has his generation's colour in
- * Dating. Rabbis of one era share its hue, spread from dark to light and leaning a little in hue
- * so that they stay apart.
+ * A colour for each rabbi, in order. The first rabbi of an era has his generation's colour in
+ * Dating. Each later one has the same lightness and saturation and a hue further from the era's
+ * own, so the picks of an era are told apart by hue and are as bright as one another.
  */
 export function pickColors(picked: readonly Rabbi[]): Color[] {
   const eras = picked.map((rabbi) => eraOf(rabbi.gen));
   const colors: Color[] = [];
   for (const era of new Set(eras)) {
-    const hue = ERAS.find((e) => e.name === era)!.hue;
-    const group = picked.flatMap((rabbi, i) => (eras[i] === era ? [{ rabbi, i }] : []));
-    group.forEach(({ rabbi, i }, k) => {
+    const group = picked.flatMap((_, i) => (eras[i] === era ? [i] : []));
+    const first = rgbToHsl(generationColor(picked[group[0]].gen));
+    group.forEach((i, k) => {
       colors[i] =
-        group.length === 1
-          ? generationColor(rabbi.gen)
-          : hslToRgb({
-              h: hue + (k - (group.length - 1) / 2) * HUE_STEP,
-              s: 0.75,
-              l: SHADE_DARKEST + ((SHADE_LIGHTEST - SHADE_DARKEST) * k) / (group.length - 1),
-            });
+        k === 0
+          ? generationColor(picked[i].gen)
+          : hslToRgb({ ...first, h: (first.h + HUE_OFFSETS[era][k] + 360) % 360 });
     });
   }
   return colors;

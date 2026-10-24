@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rgbToHsl } from '@torahmap/utils';
+import { generationColor } from '../src/overlays/dating.ts';
 import type { TalmudDating } from '../src/dating.ts';
 import type { TalmudRabbis } from '../src/rabbis.ts';
 import {
@@ -51,7 +52,7 @@ const rabbis: TalmudRabbis = {
 };
 
 const dating: TalmudDating = {
-  generations: [],
+  generations: [{ code: 'TA', from: 200, to: 220 }],
   people: [
     { id: 'gamliel-(ambiguous)', en: 'Rabban Gamliel', he: 'רבן גמליאל', gen: 0, ambiguous: true },
     { id: 'lakish', en: 'Rabbi Shimon b. Lakish', he: '', gen: 0 },
@@ -134,35 +135,60 @@ describe('finding a rabbi', () => {
 });
 
 describe('the quick picks', () => {
-  it('lead with the most-named, a name that can mean several people counting as one', () => {
-    const picks = quickPicks(data);
-    expect(picks.map((p) => p.en)).toEqual([
-      'Rabban Gamliel',
-      'Rabbi Shimon b. Lakish',
-      'Rabbi Yochanan',
-      'Abaye',
+  it('are grouped by era, each group in generation order', () => {
+    const groups = quickPicks(data);
+    expect(groups.map((g) => g.heading)).toEqual(['Tanna/Amora transition', 'Amoraim']);
+    expect(groups.map((g) => g.entries.map((e) => e.en))).toEqual([
+      ['Rabban Gamliel'],
+      ['Rabbi Shimon b. Lakish', 'Rabbi Yochanan', 'Abaye'],
     ]);
-    expect(picks.map((p) => p.single)).toEqual([false, true, true, true]);
+  });
+
+  it('count a name that can mean several people as one choice that asks which', () => {
+    const entries = quickPicks(data).flatMap((g) => g.entries);
+    expect(entries.map((e) => e.single)).toEqual([false, true, true, true]);
   });
 });
 
 describe('colours for the picks', () => {
   const pick = (...ids: string[]) => pickColors(ids.map((id) => rabbis.rabbis[place(id)]));
+  const hue = (a: number, b: number) => {
+    const d = Math.abs(a - b) % 360;
+    return Math.min(d, 360 - d);
+  };
 
   it('keeps a lone rabbi in his generation’s Dating colour', () => {
-    expect(pick('lakish')).toEqual(pick('lakish'));
+    expect(pick('lakish')[0]).toEqual(generationColor('A2'));
     expect(pick('lakish')[0]).toEqual(pick('yochanan')[0]);
   });
 
-  it('tells two rabbis of one era apart by lightness, within the era’s hue', () => {
+  it('keeps the first of an era in his Dating colour when others join him', () => {
+    expect(pick('lakish', 'yochanan', 'abaye')[0]).toEqual(generationColor('A2'));
+  });
+
+  it('tells rabbis of one era apart by hue, at the same lightness and saturation', () => {
+    const [a, b, c] = pick('lakish', 'yochanan', 'abaye').map(rgbToHsl);
+    for (const other of [b, c]) {
+      expect(Math.abs(other.l - a.l)).toBeLessThan(0.02);
+      expect(Math.abs(other.s - a.s)).toBeLessThan(0.02);
+    }
+    expect(hue(a.h, b.h)).toBeGreaterThan(25);
+    expect(hue(a.h, c.h)).toBeGreaterThan(20);
+    expect(hue(b.h, c.h)).toBeGreaterThan(40);
+  });
+
+  it('keeps the Amoraim blue, leaning toward cyan and never toward purple', () => {
+    for (const { h } of pick('lakish', 'yochanan', 'abaye').map(rgbToHsl)) {
+      expect(h).toBeGreaterThan(150);
+      expect(h).toBeLessThan(250);
+    }
     const [a, b] = pick('lakish', 'yochanan').map(rgbToHsl);
-    expect(Math.abs(a.l - b.l)).toBeGreaterThan(0.3);
-    expect(Math.abs(a.h - b.h)).toBeLessThan(30);
+    expect(b.h).toBeLessThan(a.h);
   });
 
   it('gives rabbis of different eras different hues', () => {
     const [a, b] = pick('lakish', 'gamliel-a').map(rgbToHsl);
-    expect(Math.abs(a.h - b.h)).toBeGreaterThan(60);
+    expect(hue(a.h, b.h)).toBeGreaterThan(60);
   });
 });
 

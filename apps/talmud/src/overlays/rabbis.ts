@@ -231,30 +231,36 @@ export function rabbisOverlay(
     heading.className = 'panel-section-heading';
     heading.textContent = 'Most named';
     quick.append(heading);
-    const chips = document.createElement('div');
-    chips.className = 'rabbi-chips';
-    for (const entry of quickPicks(data)) {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'rabbi-chip';
-      chip.textContent = entry.single ? entry.en : `${entry.en}…`;
-      chip.title = entry.single
-        ? count(entry.named, 'passage')
-        : `${count(entry.named, 'passage')} name this, and it can mean several people`;
-      const already = entry.single && places.includes(entry.rabbis[0]);
-      chip.classList.toggle('on', already);
-      const unpicked = entry.rabbis.filter((p) => !places.includes(p));
-      chip.disabled = full || unpicked.length === 0;
-      chip.addEventListener('click', () => {
-        if (entry.single) pick(entry.rabbis[0]);
-        else {
-          finder.asking = entry;
-          finder.draw();
-        }
-      });
-      chips.append(chip);
+    for (const { heading: era, entries } of quickPicks(data)) {
+      const group = document.createElement('div');
+      group.className = 'rabbi-era';
+      group.append(span('rabbi-era-name', era));
+      const chips = document.createElement('div');
+      chips.className = 'rabbi-chips';
+      for (const entry of entries) {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'rabbi-chip';
+        chip.textContent = entry.single ? entry.en : `${entry.en}…`;
+        chip.title = entry.single
+          ? count(entry.named, 'passage')
+          : `${count(entry.named, 'passage')} name this, and it can mean several people`;
+        const already = entry.single && places.includes(entry.rabbis[0]);
+        chip.classList.toggle('on', already);
+        const unpicked = entry.rabbis.filter((p) => !places.includes(p));
+        chip.disabled = full || unpicked.length === 0;
+        chip.addEventListener('click', () => {
+          if (entry.single) pick(entry.rabbis[0]);
+          else {
+            finder.asking = entry;
+            finder.draw();
+          }
+        });
+        chips.append(chip);
+      }
+      group.append(chips);
+      quick.append(group);
     }
-    quick.append(chips);
     lists.append(quick);
   }
 

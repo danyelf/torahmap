@@ -14,7 +14,7 @@ export interface DatingData {
   dating: TalmudDating;
 }
 
-const TRANSITION = 'TA';
+export const TRANSITION = 'TA';
 
 // An era is one hue; its bands run dark (earliest) to light (latest) in lightness alone. The
 // transitional generation, TRANSITION, is the lightest step of the Tannaim.

@@ -80,6 +80,15 @@
   min-width: 0;
 }
 
+.rabbi-era {
+  margin-top: 6px;
+}
+
+.rabbi-era-name {
+  color: #999;
+  font-size: 11px;
+}
+
 .rabbi-chips {
   display: flex;
   flex-wrap: wrap;
