@@ -57,23 +57,37 @@ describe('the dating overlay', () => {
     );
   });
 
-  it('lists in its key the generations that occur, with years', () => {
+  it('gives its key one row for each generation that occurs, and two more', () => {
     const box = document.createElement('div');
     overlay.renderLegend?.(box, undefined as never, { dating });
-    const text = box.textContent ?? '';
-    expect(text).toContain('Tannaim, 5th generation · c. 135–170 CE');
-    expect(text).not.toContain('3rd generation');
+    const swatches = [...box.querySelectorAll<HTMLElement>('.swatch')].map(
+      (e) => e.style.background,
+    );
+    expect(swatches).toHaveLength(dating.generations.length + 2);
+    expect(new Set(swatches).size).toBe(swatches.length);
   });
 
-  it('lists the rabbis in the pinned panel with Hebrew and English names', () => {
+  it('lists each rabbi in the pinned panel with its names in both languages', () => {
     const box = overlay.renderSidebarInfo?.(item('A.2a.2'), true, undefined as never, { dating });
-    expect(box?.textContent).toContain('Rava · רבא · Amoraim, 4th generation');
+    expect(box?.children).toHaveLength(2);
+    const hebrew = box?.querySelector<HTMLElement>('[lang="he"]');
+    expect(hebrew?.textContent).toBe(dating.people[1].he);
+    expect(box?.children[1].textContent).toContain(dating.people[1].en);
   });
 
-  it('says in the pinned panel when a name could be several rabbis', () => {
-    const box = overlay.renderSidebarInfo?.(item('A.2a.3'), true, undefined as never, { dating });
-    expect(box?.textContent).toContain('uncertain');
-    expect(box?.textContent).toContain('could be several');
+  it('words an ambiguous name’s line differently from a settled one', () => {
+    const line = (id: string) =>
+      overlay.renderSidebarInfo?.(item(id), true, undefined as never, { dating })?.children[1]
+        .textContent;
+    const settled = line('A.2a.2')!
+      .replace(dating.people[1].en, '')
+      .replace(dating.people[1].he, '');
+    const ambiguous = line('A.2a.3')!
+      .replace(dating.people[2].en, '')
+      .replace(dating.people[2].he, '');
+    expect(ambiguous).not.toEqual(
+      settled.replace(dating.generations[2].name, dating.generations[1].name),
+    );
   });
 
   it('adds nothing to the panel of a segment that is not pinned or names no rabbi', () => {

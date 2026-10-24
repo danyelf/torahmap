@@ -76,6 +76,7 @@ export function datingFrom(facts: Facts, structure: TalmudStructure): TalmudDati
   const byId = new Map<string, Mention[]>();
   for (const m of facts.mentions) {
     if (m.language !== 'he' || m.version !== EDITION) continue;
+    if (m.start === null || m.end === null) throw new Error(`${m.ref} has a tag with no position`);
     const match = REF.exec(m.ref);
     if (!match) continue;
     const [, name, daf, amud, segment, rest] = match;
@@ -128,9 +129,14 @@ export function datingFrom(facts: Facts, structure: TalmudStructure): TalmudDati
     found.set(id, { code, uncertain, slugs });
   }
 
-  const codes = [...new Set([...found.values()].map((f) => f.code))].sort(
-    (a, b) => periods[a].from - periods[b].from,
-  );
+  const slugs = [...new Set([...found.values()].flatMap((f) => f.slugs))].sort();
+
+  // A listed rabbi's generation is in the list even when no segment's latest is that one.
+  const codes = [
+    ...new Set(
+      [...found.values()].map((f) => f.code).concat(slugs.map((slug) => generationOf(slug)!)),
+    ),
+  ].sort((a, b) => periods[a].from - periods[b].from);
   const generations: Generation[] = codes.map((code) => ({
     code,
     name: generationName(periods[code].en ?? code),
@@ -139,7 +145,6 @@ export function datingFrom(facts: Facts, structure: TalmudStructure): TalmudDati
   }));
   const placeOfCode = new Map(codes.map((c, i) => [c, i]));
 
-  const slugs = [...new Set([...found.values()].flatMap((f) => f.slugs))].sort();
   const people: Person[] = slugs.map((slug) => ({
     en: topics[slug].en ?? slug,
     he: topics[slug].he ?? '',

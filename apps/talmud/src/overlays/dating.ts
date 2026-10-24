@@ -20,13 +20,14 @@ const CODES = [
   ...['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8'],
 ];
 
-// Warm for the Zugot and Tannaim, a cool green for the generation between them, and cool for the
-// Amoraim, one step of hue per generation.
-const HUES: Record<string, number> = Object.fromEntries(
+// Warm for the Zugot and Tannaim, running from crimson through orange to yellow and growing
+// lighter as they get later, so that the many early steps stay apart; a cool green for the
+// generation between them; and cool for the Amoraim, one step of hue per generation.
+const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(
   CODES.map((code, i) => {
-    if (i < 11) return [code, (i / 10) * 50];
-    if (code === 'TA') return [code, 110];
-    return [code, 160 + ((i - 12) / 7) * 95];
+    if (i < 11) return [code, { h: (345 + i * 7.5) % 360, l: 0.4 + i * 0.022 }];
+    if (code === 'TA') return [code, { h: 110, l: 0.55 }];
+    return [code, { h: 160 + ((i - 12) / 7) * 95, l: 0.55 }];
   }),
 );
 
@@ -41,8 +42,11 @@ const mix = (a: readonly number[], b: readonly number[], toward: number): Color 
   a[2] + (b[2] - a[2]) * toward,
 ];
 
-export const generationColor = (code: string): Color =>
-  hslToRgb({ h: HUES[code] ?? 0, s: 0.75, l: 0.55 });
+export const generationColor = (code: string): Color => {
+  const step = HSL[code];
+  if (!step) throw new Error(`No colour for generation ${code}`);
+  return hslToRgb({ ...step, s: 0.75 });
+};
 
 export const paleColor = (color: Color): Color => mix(color, [1, 1, 1], PALE);
 
@@ -98,7 +102,12 @@ export function datingOverlay(
       );
       container.innerHTML = [
         ...rows,
-        row(paleColor(generationColor('A4')), 'Uncertain: the name could be several rabbis'),
+        row(
+          paleColor(
+            generationColor(dating.generations[dating.generations.length - 1]?.code ?? 'A4'),
+          ),
+          'Uncertain: the name could be several rabbis',
+        ),
         row(
           mix(MAP_BACKGROUND, GEMARA_BASE_COLOR, FAINT),
           'Names no rabbi with a known generation',

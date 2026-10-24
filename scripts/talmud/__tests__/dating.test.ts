@@ -125,6 +125,17 @@ describe('datingFrom', () => {
     expect(at(dating, 'TractA.2a.1')?.names).toEqual(['Rav']);
   });
 
+  it('lists the generation of a rabbi named only in segments dated later', () => {
+    const dating = build([
+      mention('TractA 2a:1', 'yohanan'),
+      mention('TractA 2a:1', 'rava', { start: 10, end: 14 }),
+    ]);
+    const [segment] = Object.values(dating.segments);
+    for (const place of segment.slice(2) as number[]) {
+      expect(dating.generations[dating.people[place].gen]).toBeDefined();
+    }
+  });
+
   it('numbers amudim and segments as the map does', () => {
     const dating = build([mention('TractB 2b:2', 'rava')]);
     expect(Object.keys(dating.segments)).toEqual(['TractB.2b.2']);

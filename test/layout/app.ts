@@ -378,7 +378,7 @@ export const TALMUD_STATES: State[] = [
   { name: 'talmud-dating', link: 'overlay=dating', shown: ['#map-legend'] },
   {
     name: 'talmud-dating-pinned',
-    link: 'overlay=dating&at=Berakhot.2b.5&zoom=3',
+    link: 'overlay=dating&at=Berakhot.2b.8&zoom=3',
     shown: ['#map-legend', '#popup.visible'],
   },
   {
