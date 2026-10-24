@@ -88,8 +88,9 @@ export function datingOverlay(
     name: 'Dating',
     description:
       'Colours each segment by the generation of the latest rabbi it names. Each era has its ' +
-      'own colours: Zugot violet, Tannaim orange to yellow, Amoraim blue. A pale segment names only a rabbi who could be ' +
-      'one of several; a dim one names no rabbi whose generation Sefaria gives.',
+      'own colours: Zugot violet, Tannaim orange to yellow, Amoraim blue, and green between ' +
+      'them. A pale segment names only a rabbi who could be one of several; a dim one names ' +
+      'no rabbi whose generation Sefaria gives.',
     credits: [
       {
         source: 'Sefaria, people tagged in the Talmud',
@@ -142,7 +143,7 @@ export function datingOverlay(
     renderSidebarInfo(item, isPinned, _settings, { dating }) {
       const segment = dating.segments[item.id];
       if (!isPinned || !segment) return null;
-      const [generation, , people] = segment;
+      const [generation, uncertain, people] = segment;
       const box = document.createElement('div');
       people.forEach((place, i) => {
         const person = dating.people[place];
@@ -151,7 +152,9 @@ export function datingOverlay(
         he.dir = 'rtl';
         he.textContent = person.he;
         const code = dating.generations[person.gen].code;
-        const entry = document.createElement(person.gen === generation ? 'strong' : 'span');
+        const entry = document.createElement(
+          person.gen === generation && (!person.ambiguous || uncertain) ? 'strong' : 'span',
+        );
         entry.append(`${person.en} · `, he, ` (${code}${person.ambiguous ? '?' : ''})`);
         box.append(...(i ? ['; '] : []), entry);
       });
@@ -177,7 +180,6 @@ export function datingOverlay(
           Math.round(c * 255),
         );
         const mark = document.createElement('mark');
-        mark.className = 'rabbi-name';
         mark.style.cssText = `background: rgba(${r}, ${g}, ${b}, 0.5); color: inherit; border-radius: 2px`;
         mark.textContent = run;
         return mark;

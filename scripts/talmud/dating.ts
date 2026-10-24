@@ -77,9 +77,9 @@ const escapeWord = (word: string) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 function spellings(word: string): string {
   const title = /^([בכלמשוהד]{0,3})(רבי|רב)$/.exec(word);
   if (!title) return escapeWord(word);
-  const [, prefix, full] = title;
+  const [, , full] = title;
   const abbreviations = full === 'רבי' ? `|ר['׳]` : '';
-  return `${prefix}(?:${full}${abbreviations}|(?<=")ר(?![א-ת]))`;
+  return `[בכלמשוהד]{0,3}(?:${full}${abbreviations}|(?<=א")ר)`;
 }
 
 /** Where `mention`'s words stand in `line`: at its tagged position, else the nearest spelling of them within NEARBY. */
@@ -89,7 +89,10 @@ export function placeIn(
 ): { start: number; end: number; exact: boolean } | null {
   if (start === null || end === null || !text) return null;
   if (line.slice(start, end) === text) return { start, end, exact: true };
-  const pattern = new RegExp(text.split(/\s+/).map(spellings).join('\\s+'), 'g');
+  const pattern = new RegExp(
+    `(?<![א-ת])${text.split(/\s+/).map(spellings).join('\\s+')}(?![א-ת])`,
+    'g',
+  );
   return (
     [...line.matchAll(pattern)]
       .map((m) => ({ start: m.index, end: m.index + m[0].length, exact: false }))
@@ -261,7 +264,7 @@ async function main() {
   const uncertain = Object.values(dating.segments).filter((s) => s[1] === 1).length;
   console.log(`${Object.keys(dating.segments).length} segments dated, ${uncertain} uncertain`);
   console.log(
-    `names marked in the text: ${placement.exact} exactly, ${placement.nearby} nearby, ${placement.dropped} not found`,
+    `names marked in the text: ${placement.exact} exactly, ${placement.nearby} nearby, ${placement.dropped} not found or overlapping`,
   );
   for (const g of dating.generations) console.log(`  ${g.code} ${g.name} ${g.from} to ${g.to}`);
 }

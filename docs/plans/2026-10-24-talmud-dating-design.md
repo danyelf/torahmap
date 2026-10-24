@@ -29,16 +29,18 @@ These are Danyel's, from #25 and from conversation.
 
 ## Also agreed (proposed by Claude, approved with the design)
 
-- **Colours.** One step per generation, early to late: the Tannaitic generations warm, the
-  transitional generation between, the Amoraic generations cool. A discussion then reads warm to
-  cool as the voices get later.
+- **Colours.** Each era has a colour family of its own, so an era shows at a glance, and its
+  generations step within it, early to late: the Zugot violet to magenta, the Tannaim orange to
+  yellow, the transitional generation a plain green between them, the Amoraim cyan to deep blue.
 - **Uncertain passages** take their generation's colour, paler. On the map's tiny squares a lighter
   colour stays readable where a pattern would not.
 - **The key**, in the side panel, lists only the generations that occur, each with rough years from
   Sefaria ("Tannaim, 5th generation · c. 135–170 CE"), plus "uncertain" and "names no rabbi".
-- **The pinned passage's panel** lists the rabbis found and their generations ("Rava · רבא ·
-  Amoraim, 4th generation"), so a colour can always be checked. Generation labels are English, like
-  the rest of the interface.
+- **The pinned passage's panel** is one line of the rabbis found, `Rava · רבא (A4); Abaye · אביי
+  (A4)`, so a colour can always be checked; the rabbi who sets the date is in bold, and an ambiguous
+  name shows its latest candidate as `(A3?)`. The key explains the generation codes. Each name is
+  also marked in the passage's Hebrew in its generation's colour (pale if ambiguous), where the
+  generator can find it in the map's own text.
 - **The link** carries the overlay as on the Tanakh map (`?overlay=…`), with no settings yet.
 - **The Zugot and the transitional generation are generations** like any other. The Zugot (Z3, the
   pairs before the Tannaim) are the earliest step; the transitional generation (TA) sits between
@@ -72,7 +74,7 @@ Worked out while checking accuracy for #25; those scripts are scratch, so the bu
   `fromTopic`. The mention's `unambiguousToTopic` is the tagger's guess; don't use it.
 - **Overlapping tags.** A title can be tagged as its own person inside a fuller name, such as "Rav"
   inside "Rav Shmuel bar Rav Yitzhak" in Niddah 47b. The date is unaffected, but the pinned panel
-  should drop a tag whose span lies inside another's.
+  should drop a tag whose span lies inside another's, and so should the marks in the Hebrew.
 
 The generations that tagged people carry, with the number of Hebrew-text tags:
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { talmudFixture } from '../../../apps/talmud/test/helpers/talmudFixture.ts';
-import { datingFrom, type Facts, type Mention, type Placement } from '../dating.ts';
+import { datingFrom, placeIn, type Facts, type Mention, type Placement } from '../dating.ts';
 
 const ARAMAIC = 'William Davidson Edition - Aramaic';
 
@@ -172,6 +172,17 @@ describe('datingFrom', () => {
     expect(dating.segments['TractA.2a.1'][3]).toEqual([]);
     expect(at(dating, 'TractA.2a.1')?.code).toBe('A4');
     expect(placement.dropped).toBe(1);
+  });
+
+  it('does not find a short name inside a longer word', () => {
+    const rav = mention('TractA 2a:1', 'rav', { start: 40, end: 42, text: 'רב' });
+    expect(placeIn('אמר רבא', rav)).toBeNull();
+    expect(placeIn('אמר רב', rav)).toMatchObject({ start: 4, end: 6 });
+  });
+
+  it('finds a name whose prefix the map spells differently', () => {
+    const named = mention('TractA 2a:1', 'meir', { start: 2, end: 12, text: 'לרבי יוסי' });
+    expect(placeIn('אמר רבי יוסי', named)).toMatchObject({ start: 4 });
   });
 
   it('marks only the outer name of overlapping tags', () => {
