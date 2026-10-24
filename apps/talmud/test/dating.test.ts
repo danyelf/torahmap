@@ -48,6 +48,23 @@ describe('the dating overlay', () => {
     expect(colours[0]).toEqual(generationColor('T5'));
   });
 
+  it('grows brighter within each era, from earliest to latest', () => {
+    const brightness = (codes: string[]) =>
+      codes.map((c) => {
+        const [r, g, b] = generationColor(c);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      });
+    const eras = [
+      ['Z1', 'Z3', 'Z4'],
+      ['T1', 'T4', 'T6'],
+      ['A1', 'A3', 'A6'],
+    ];
+    for (const codes of eras) {
+      const levels = brightness(codes);
+      expect(levels).toEqual([...levels].sort((a, b) => a - b));
+    }
+  });
+
   it('keeps each era in a range of hues of its own', () => {
     const hues = (codes: string[]) => codes.map((c) => rgbToHsl(generationColor(c)).h);
     const eras = [

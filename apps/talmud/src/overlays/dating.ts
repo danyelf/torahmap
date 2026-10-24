@@ -15,8 +15,8 @@ export interface DatingData {
 }
 
 // Each era has colours of its own, so an era shows at a glance, in two or three bands from early to
-// late: the Zugot violet then magenta, the Tannaim orange, amber then yellow, the generation
-// between the Tannaim and Amoraim a plain green, the Amoraim cyan, blue then indigo. The exact
+// late, dark to bright: the Zugot violet then magenta, the Tannaim orange, amber then yellow, the generation
+// between the Tannaim and Amoraim a plain green, the Amoraim indigo, blue then cyan. The exact
 // generation is in words, in the key and the caption.
 const BANDS: { codes: string[]; h: number; l: number }[] = [
   { codes: ['Z1', 'Z2', 'Z3'], h: 275, l: 0.45 },
@@ -25,9 +25,9 @@ const BANDS: { codes: string[]; h: number; l: number }[] = [
   { codes: ['T4', 'T5'], h: 38, l: 0.55 },
   { codes: ['T6'], h: 56, l: 0.58 },
   { codes: ['TA'], h: 105, l: 0.5 },
-  { codes: ['A1', 'A2'], h: 190, l: 0.64 },
+  { codes: ['A1', 'A2'], h: 245, l: 0.45 },
   { codes: ['A3', 'A4', 'A5'], h: 215, l: 0.55 },
-  { codes: ['A6', 'A7', 'A8'], h: 245, l: 0.45 },
+  { codes: ['A6', 'A7', 'A8'], h: 190, l: 0.64 },
 ];
 
 const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(

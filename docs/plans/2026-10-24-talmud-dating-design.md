@@ -31,7 +31,7 @@ These are Danyel's, from #25 and from conversation.
 
 - **Colours.** Each era has colours of its own, in two or three bands from early to late: the Zugot
   violet then magenta, the Tannaim orange, amber then yellow, the transitional generation a plain
-  green, the Amoraim cyan, blue then indigo. The exact generation is in words, not colour.
+  green, the Amoraim indigo, blue then cyan, dark to bright within each era. The exact generation is in words, not colour.
 - **Uncertain passages** take their era's colour washed out toward grey, so they read as "not sure"
   rather than as another generation.
 - **The key**, in the side panel, lists only the generations that occur, each with rough years from
