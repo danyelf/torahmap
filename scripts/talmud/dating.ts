@@ -66,15 +66,13 @@ export function placeIn(
 
 /**
  * `texts` is each tractate's lines as the map shows them, laid out as its files' `amudim`.
- * `placement` counts what became of each tag that dates a segment; `slugsOut` is given each person's
- * Sefaria slug, in the order of `people`.
+ * `placement` counts what became of each tag that dates a segment.
  */
 export function datingFrom(
   facts: Facts,
   structure: TalmudStructure,
   texts: ReadonlyMap<string, readonly (readonly string[])[]>,
   placement: Placement = { exact: 0, nearby: 0, dropped: 0 },
-  slugsOut: string[] = [],
 ): TalmudDating {
   const { periods, topics, candidates } = facts;
 
@@ -159,12 +157,12 @@ export function datingFrom(
   const placeOfCode = new Map(codes.map((c, i) => [c, i]));
 
   const people: Person[] = slugs.map((slug) => ({
+    id: slug,
     en: topics[slug].en ?? slug,
     he: topics[slug].he ?? '',
     gen: placeOfCode.get(generationOf(slug)!)!,
     ...(isAmbiguous(slug) ? { ambiguous: true as const } : {}),
   }));
-  slugsOut.push(...slugs);
   const placeOfSlug = new Map(slugs.map((s, i) => [s, i]));
 
   const segments: Record<string, DatedSegment> = {};
@@ -219,10 +217,9 @@ async function main() {
     ),
   );
   const placement = { exact: 0, nearby: 0, dropped: 0 };
-  const slugs: string[] = [];
-  const dating = datingFrom(facts, structure, texts, placement, slugs);
+  const dating = datingFrom(facts, structure, texts, placement);
   await writeFile(join(dataDir, DATING_FILE), JSON.stringify(dating), 'utf-8');
-  const rabbis = rabbisFrom(facts, slugs);
+  const rabbis = rabbisFrom(facts, dating);
   await writeFile(join(dataDir, RABBIS_FILE), JSON.stringify(rabbis), 'utf-8');
 
   const uncertain = Object.values(dating.segments).filter((s) => s[1] === 1).length;

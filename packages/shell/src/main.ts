@@ -1151,6 +1151,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       pinItem(item);
       glideToItem(item);
     },
+    openOverlay: (overlay, update) => {
+      takeOver('takeover');
+      if (currentOverlay?.id !== overlay.id) {
+        overlaySettings.restore(overlay, {});
+        setOverlay(overlay.id);
+      }
+      changeSettings(overlay, update);
+      if (frame.mode === 'explore' && frame.open !== 'overlay') {
+        dispatch({ type: 'choose', panel: 'overlay' });
+      }
+    },
     searchSettings: () => overlaySettings.get(searchTool),
     changeSearch: (update) => {
       takeOver('takeover');

@@ -1,14 +1,16 @@
 // The rabbis a reader can pick on the Talmud map, and who each name dating.json lists can be.
 // Written by dating.ts beside dating.json.
 
+import type { TalmudDating } from '@torahmap/talmud/dating.ts';
 import type { Rabbi, Reading, TalmudRabbis } from '@torahmap/talmud/rabbis.ts';
 import { isAmbiguous, latestGeneration, type Facts } from './facts.ts';
 
 /**
- * `slugs` is the Sefaria slug of each person in dating.json, in order. A rabbi is anyone with a
+ * A rabbi is anyone with a
  * generation whom a listed name can mean, the candidates of a shared name included.
  */
-export function rabbisFrom(facts: Facts, slugs: readonly string[]): TalmudRabbis {
+export function rabbisFrom(facts: Facts, { people }: TalmudDating): TalmudRabbis {
+  const slugs = people.map((p) => p.id);
   const { topics, candidates, periods } = facts;
   const dated = (slug: string) => latestGeneration(topics[slug]?.generation, periods) !== null;
   const meant = (slug: string) => (isAmbiguous(slug) ? (candidates[slug] ?? []) : [slug]);

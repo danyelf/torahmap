@@ -122,6 +122,23 @@ const swatch = (color: Color) =>
 const row = (color: Color, label: string, apart = false) =>
   `<div class="legend-row${apart ? ' apart' : ''}">${swatch(color)}<span>${escapeHtml(label)}</span></div>`;
 
+/** Opens the Rabbis overlay at a rabbi. Set once the shell is running; names are plain text until then. */
+export interface RabbiLink {
+  open?(id: string): void;
+}
+
+/** A rabbi's name in a pinned passage: a button that opens him in Rabbis, once there is a way to. */
+export function nameFor(label: string, id: string | null, link: RabbiLink): Node {
+  if (!id || !link.open) return document.createTextNode(label);
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'rabbi-name';
+  button.title = 'Show this rabbi on the Rabbis map';
+  button.textContent = label;
+  button.addEventListener('click', () => link.open?.(id));
+  return button;
+}
+
 /**
  * `fragment` with each name in `spans` (a segment's, as dating.json gives them) marked in the
  * colour `colorOf` gives its person, or left plain where that is null.
@@ -150,6 +167,7 @@ export function markNames(
 /** The overlay for a Talmud whose segments `base` colours when no tool does. */
 export function datingOverlay(
   base: (item: TalmudLayoutItem) => Color,
+  link: RabbiLink = {},
 ): Overlay<TalmudLayoutItem, void, DatingData> {
   const colorOf = (item: TalmudLayoutItem, { dating }: DatingData): Color => {
     const segment = dating.segments[item.id];
@@ -235,7 +253,12 @@ export function datingOverlay(
           person.ambiguous && !uncertain
             ? ' ?'
             : ` (${generationLabel(era.code, true)}${person.ambiguous ? '?' : ''}, ${yearsShort(era)})`;
-        entry.append(`${person.en} · `, he, where);
+        entry.append(
+          nameFor(person.en, person.ambiguous ? null : person.id, link),
+          ' · ',
+          he,
+          where,
+        );
         box.append(...(i ? ['; '] : []), entry);
       });
       return box;

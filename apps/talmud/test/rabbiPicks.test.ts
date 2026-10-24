@@ -53,11 +53,11 @@ const rabbis: TalmudRabbis = {
 const dating: TalmudDating = {
   generations: [],
   people: [
-    { en: 'Rabban Gamliel', he: 'רבן גמליאל', gen: 0, ambiguous: true },
-    { en: 'Rabbi Shimon b. Lakish', he: '', gen: 0 },
-    { en: 'Rabbi Yochanan', he: '', gen: 0 },
-    { en: 'Abaye', he: '', gen: 0 },
-    { en: 'Abaye?', he: '', gen: 0, ambiguous: true },
+    { id: 'gamliel-(ambiguous)', en: 'Rabban Gamliel', he: 'רבן גמליאל', gen: 0, ambiguous: true },
+    { id: 'lakish', en: 'Rabbi Shimon b. Lakish', he: '', gen: 0 },
+    { id: 'yochanan', en: 'Rabbi Yochanan', he: '', gen: 0 },
+    { id: 'abaye', en: 'Abaye', he: '', gen: 0 },
+    { id: 'abaye-(ambiguous)', en: 'Abaye?', he: '', gen: 0, ambiguous: true },
   ],
   segments: {
     'A.2a.1': [0, 0, [1, 2, 0], []],

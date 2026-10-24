@@ -34,8 +34,17 @@ const facts: Facts = {
   },
 };
 
-const slugs = ['gamliel-(ambiguous)', 'lakish', 'yosef-(ambiguous)'];
-const { rabbis, readings } = rabbisFrom(facts, slugs);
+const dating = {
+  generations: [],
+  segments: {},
+  people: ['gamliel-(ambiguous)', 'lakish', 'yosef-(ambiguous)'].map((id) => ({
+    id,
+    en: '',
+    he: '',
+    gen: 0,
+  })),
+};
+const { rabbis, readings } = rabbisFrom(facts, dating);
 const ids = rabbis.map((r) => r.id);
 
 describe('rabbisFrom', () => {

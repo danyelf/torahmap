@@ -13,6 +13,8 @@ export interface Generation {
 
 /** `gen` is a place in `generations`: the latest candidate's, for an ambiguous name. */
 export interface Person {
+  /** Its Sefaria slug. */
+  id: string;
   en: string;
   he: string;
   gen: number;

@@ -23,9 +23,9 @@ const dating: TalmudDating = {
     { code: 'A4', from: 320, to: 350 },
   ],
   people: [
-    { en: 'Rabbi Meir', he: 'רבי מאיר', gen: 0 },
-    { en: 'Rava', he: 'רבא', gen: 2 },
-    { en: 'Rabbi Elazar', he: 'ר"א', gen: 1, ambiguous: true },
+    { id: 'meir', en: 'Rabbi Meir', he: 'רבי מאיר', gen: 0 },
+    { id: 'rava', en: 'Rava', he: 'רבא', gen: 2 },
+    { id: 'elazar-(ambiguous)', en: 'Rabbi Elazar', he: 'ר"א', gen: 1, ambiguous: true },
   ],
   segments: {
     'A.2a.1': [0, 0, [0], [0, 3, 0]],
