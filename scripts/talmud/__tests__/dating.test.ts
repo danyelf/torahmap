@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { talmudFixture } from '../../../apps/talmud/test/helpers/talmudFixture.ts';
-import { datingFrom, placeIn, type Facts, type Mention, type Placement } from '../dating.ts';
+import { datingFrom, placeIn, type Placement } from '../dating.ts';
+import type { Facts, Mention } from '../facts.ts';
 
 const ARAMAIC = 'William Davidson Edition - Aramaic';
 
@@ -12,7 +13,7 @@ const periods: Facts['periods'] = {
   'A2/A3': { from: 250, to: 320 },
 };
 
-const topics: Facts['topics'] = {
+const named: Record<string, Omit<Facts['topics'][string], 'names'>> = {
   meir: { en: 'Rabbi Meir', he: 'רבי מאיר', generation: 'T5' },
   rava: { en: 'Rava', he: 'רבא', generation: 'A4' },
   abaye: { en: 'Abaye', he: 'אביי', generation: 'A4' },
@@ -25,6 +26,10 @@ const topics: Facts['topics'] = {
   'elazar-a': { en: 'Elazar b. Shammua', he: 'אלעזר בן שמוע', generation: 'T5' },
   'elazar-b': { en: 'Elazar b. Pedat', he: 'אלעזר בן פדת', generation: 'A3' },
 };
+
+const topics: Facts['topics'] = Object.fromEntries(
+  Object.entries(named).map(([slug, topic]) => [slug, { ...topic, names: [] }]),
+);
 
 const candidates = { 'elazar-(ambiguous)': ['elazar-a', 'elazar-b'] };
 

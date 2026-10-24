@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
-// Build public/data/talmud/dating.json from the facts sefaria-dating-facts.py reads out of
-// Sefaria's database dump:
+// Build public/data/talmud/dating.json and rabbis.json from the facts sefaria-dating-facts.py
+// reads out of Sefaria's database dump:
 //
 //   uv run scripts/talmud/sefaria-dating-facts.py <dump dir> <facts.json>
 //   node scripts/talmud/dating.ts <facts.json>
@@ -16,31 +16,12 @@ import {
   type TalmudTractateText,
 } from '@torahmap/talmud/data.ts';
 import { talmudId } from '@torahmap/talmud/layout.ts';
+import { RABBIS_FILE } from '@torahmap/talmud/rabbis.ts';
+import { rabbisFrom } from './rabbis.ts';
+import { isAmbiguous, latestGeneration, type Facts, type Mention } from './facts.ts';
 
 /** The edition the map shows, whose character positions the tags use. */
 const EDITION = 'William Davidson Edition - Aramaic';
-
-/** A generation, as opposed to the other kinds of period Sefaria codes. */
-const GENERATION_CODE = /^(?:[ZTA]\d|TA)$/;
-
-export interface Mention {
-  ref: string;
-  topic: string;
-  language: string | null;
-  version: string | null;
-  start: number | null;
-  end: number | null;
-  /** The tagged words as the dump's edition spells them. */
-  text: string | null;
-}
-
-export interface Facts {
-  mentions: Mention[];
-  /** An ambiguous topic's possible people. */
-  candidates: Record<string, string[]>;
-  topics: Record<string, { en: string | null; he: string | null; generation: string | null }>;
-  periods: Record<string, { from: number; to: number }>;
-}
 
 const REF = /^(.+) (\d+)([ab]):(\d+)(.*)$/;
 /** How far from its tagged position a name may be found in the map's own text. */
@@ -85,23 +66,20 @@ export function placeIn(
 
 /**
  * `texts` is each tractate's lines as the map shows them, laid out as its files' `amudim`.
- * `placement` counts what became of each tag that dates a segment.
+ * `placement` counts what became of each tag that dates a segment; `slugsOut` is given each person's
+ * Sefaria slug, in the order of `people`.
  */
 export function datingFrom(
   facts: Facts,
   structure: TalmudStructure,
   texts: ReadonlyMap<string, readonly (readonly string[])[]>,
   placement: Placement = { exact: 0, nearby: 0, dropped: 0 },
+  slugsOut: string[] = [],
 ): TalmudDating {
   const { periods, topics, candidates } = facts;
 
-  /** The latest generation a code names, "A2/A3" being A3; null for a code that is none. */
-  const latestOf = (code: string | null | undefined): string | null => {
-    const parts = (code ?? '').split('/').filter((c) => GENERATION_CODE.test(c) && periods[c]);
-    return parts.sort((a, b) => periods[b].from - periods[a].from)[0] ?? null;
-  };
+  const latestOf = (code: string | null | undefined) => latestGeneration(code, periods);
 
-  const isAmbiguous = (slug: string) => slug.endsWith('(ambiguous)');
   const generationOf = (slug: string): string | null =>
     isAmbiguous(slug)
       ? ((candidates[slug] ?? [])
@@ -186,6 +164,7 @@ export function datingFrom(
     gen: placeOfCode.get(generationOf(slug)!)!,
     ...(isAmbiguous(slug) ? { ambiguous: true as const } : {}),
   }));
+  slugsOut.push(...slugs);
   const placeOfSlug = new Map(slugs.map((s, i) => [s, i]));
 
   const segments: Record<string, DatedSegment> = {};
@@ -240,14 +219,18 @@ async function main() {
     ),
   );
   const placement = { exact: 0, nearby: 0, dropped: 0 };
-  const dating = datingFrom(facts, structure, texts, placement);
+  const slugs: string[] = [];
+  const dating = datingFrom(facts, structure, texts, placement, slugs);
   await writeFile(join(dataDir, DATING_FILE), JSON.stringify(dating), 'utf-8');
+  const rabbis = rabbisFrom(facts, slugs);
+  await writeFile(join(dataDir, RABBIS_FILE), JSON.stringify(rabbis), 'utf-8');
 
   const uncertain = Object.values(dating.segments).filter((s) => s[1] === 1).length;
   console.log(`${Object.keys(dating.segments).length} segments dated, ${uncertain} uncertain`);
   console.log(
     `names marked in the text: ${placement.exact} exactly, ${placement.nearby} nearby, ${placement.dropped} not found or overlapping`,
   );
+  console.log(`${rabbis.rabbis.length} rabbis to pick`);
   for (const g of dating.generations) console.log(`  ${g.code} ${g.from} to ${g.to}`);
 }
 

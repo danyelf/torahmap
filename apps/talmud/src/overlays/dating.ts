@@ -18,7 +18,7 @@ const TRANSITION = 'TA';
 
 // An era is one hue; its bands run dark (earliest) to light (latest) in lightness alone. The
 // transitional generation, TRANSITION, is the lightest step of the Tannaim.
-const ERAS = [
+export const ERAS = [
   {
     name: 'Zugot',
     hue: 285,
@@ -55,7 +55,7 @@ const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(
 );
 
 /** The era a generation's colour belongs to; the transitional generation is counted with the Tannaim. */
-const eraOf = (code: string): string =>
+export const eraOf = (code: string): string =>
   ERAS.find((e) => e.bands.some((b) => (b.codes as readonly string[]).includes(code)))!.name;
 
 /** How far an uncertain segment's colour is washed out toward grey. */
@@ -65,7 +65,7 @@ const GREY: Color = [0.62, 0.62, 0.62];
 /** How much of its usual colour a segment that names no rabbi keeps. */
 const FAINT = 0.3;
 
-const mix = (a: readonly number[], b: readonly number[], toward: number): Color => [
+export const mix = (a: readonly number[], b: readonly number[], toward: number): Color => [
   a[0] + (b[0] - a[0]) * toward,
   a[1] + (b[1] - a[1]) * toward,
   a[2] + (b[2] - a[2]) * toward,
@@ -105,7 +105,7 @@ export function generationLabel(code: string, short = false): string {
   return `${ordinal}${short ? '-gen' : '-generation'} ${era}`;
 }
 
-const faint = (color: readonly number[]): Color => mix(MAP_BACKGROUND, color, FAINT);
+export const faint = (color: readonly number[]): Color => mix(MAP_BACKGROUND, color, FAINT);
 
 /** A generation's colour, washed out where only an ambiguous name gives it. */
 const shade = (code: string, uncertain: boolean): Color =>
@@ -121,6 +121,31 @@ const swatch = (color: Color) =>
   `<span class="swatch" style="background: ${colorToCss(color)}"></span>`;
 const row = (color: Color, label: string, apart = false) =>
   `<div class="legend-row${apart ? ' apart' : ''}">${swatch(color)}<span>${escapeHtml(label)}</span></div>`;
+
+/**
+ * `fragment` with each name in `spans` (a segment's, as dating.json gives them) marked in the
+ * colour `colorOf` gives its person, or left plain where that is null.
+ */
+export function markNames(
+  fragment: DocumentFragment,
+  text: string,
+  spans: readonly number[],
+  colorOf: (person: number) => Color | null,
+): DocumentFragment {
+  const spanAt = (offset: number) => {
+    for (let i = 0; i < spans.length; i += 3) {
+      if (spans[i] <= offset && offset < spans[i + 1] && colorOf(spans[i + 2])) return i;
+    }
+    return null;
+  };
+  return wrapRuns(fragment, text, spanAt, (i, run) => {
+    const [r, g, b] = colorOf(spans[i + 2])!.map((c) => Math.round(c * 255));
+    const mark = document.createElement('mark');
+    mark.style.cssText = `background: rgba(${r}, ${g}, ${b}, 0.5); color: inherit; border-radius: 2px`;
+    mark.textContent = run;
+    return mark;
+  });
+}
 
 /** The overlay for a Talmud whose segments `base` colours when no tool does. */
 export function datingOverlay(
@@ -221,22 +246,9 @@ export function datingOverlay(
       fragment.append(text);
       const segment = dating.segments[item.id];
       if (language !== HEBREW || !segment) return fragment;
-      const spans = segment[3];
-      const spanAt = (offset: number) => {
-        for (let i = 0; i < spans.length; i += 3) {
-          if (spans[i] <= offset && offset < spans[i + 1]) return i;
-        }
-        return null;
-      };
-      return wrapRuns(fragment, text, spanAt, (i, run) => {
-        const person = dating.people[spans[i + 2]];
-        const [r, g, b] = shade(dating.generations[person.gen].code, !!person.ambiguous).map((c) =>
-          Math.round(c * 255),
-        );
-        const mark = document.createElement('mark');
-        mark.style.cssText = `background: rgba(${r}, ${g}, ${b}, 0.5); color: inherit; border-radius: 2px`;
-        mark.textContent = run;
-        return mark;
+      return markNames(fragment, text, segment[3], (place) => {
+        const person = dating.people[place];
+        return shade(dating.generations[person.gen].code, !!person.ambiguous);
       });
     },
   };

@@ -7,7 +7,8 @@
 
 <dump dir> holds topic_links.bson, topics.bson and time_period.bson, extracted from
 dump_small.tar.gz (./dump/sefaria/). The rules that turn these facts into
-public/data/talmud/dating.json are in dating.ts, which is tested; this script only reads.
+public/data/talmud/dating.json and rabbis.json are in dating.ts and rabbis.ts, which are tested;
+this script only reads.
 """
 
 import json
@@ -60,7 +61,12 @@ def main(dump, out):
     for topic in rows(dump / 'topics.bson'):
         if topic['slug'] in wanted:
             gen = ((topic.get('properties') or {}).get('generation') or {}).get('value')
-            topics[topic['slug']] = {'en': title(topic, 'en'), 'he': title(topic, 'he'), 'generation': gen}
+            topics[topic['slug']] = {
+                'en': title(topic, 'en'),
+                'he': title(topic, 'he'),
+                'generation': gen,
+                'names': sorted({t['text'] for t in topic.get('titles', []) if t.get('text')}),
+            }
 
     periods = {}
     for p in rows(dump / 'time_period.bson'):
