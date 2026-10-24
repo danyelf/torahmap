@@ -80,7 +80,7 @@ The text already takes its overlays per text (`MapText.overlays`) and the link a
 **Interfaces:** `datingOverlay(structure): Overlay<TalmudLayoutItem, void, {dating: TalmudDating}>`
 
 - [ ] Failing tests: dated segments take their generation's colour, earlier generations warmer than
-  later; uncertain is paler than the same generation certain; an undated segment is a faint tint of
+  later; uncertain is washed out toward grey compared with the same generation certain; an undated segment is a faint tint of
   `mishnahOrGemaraColor`; key lists only generations present with years; pinned lines show name,
   Hebrew name and generation, and say when a name is uncertain.
 - [ ] Implement `renderLegend`, `renderSidebarInfo`, `summary`, `getItemColor`, `colorsFor`.

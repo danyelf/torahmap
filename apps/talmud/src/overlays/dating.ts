@@ -163,12 +163,18 @@ export function datingOverlay(
       ].join('');
     },
 
-    // The bands that occur, early to late, at most six.
+    // Six of the bands that occur, spread from early to late.
     summary: (_settings, { dating }) => {
       const colors = [
         ...new Set(dating.generations.map((g) => colorToCss(generationColor(g.code)))),
       ];
-      return { colors: colors.slice(0, 6) };
+      const picks = Math.min(6, colors.length);
+      return {
+        colors: Array.from(
+          { length: picks },
+          (_, i) => colors[Math.round((i * (colors.length - 1)) / Math.max(1, picks - 1))],
+        ),
+      };
     },
 
     getHoverInfo(item, _settings, { dating }) {

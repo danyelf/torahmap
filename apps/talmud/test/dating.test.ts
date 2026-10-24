@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { MAP_BACKGROUND } from '@torahmap/engine';
+import { colorToCss } from '@torahmap/utils';
 import { rgbToHsl } from '@torahmap/utils';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import type { TalmudStructure } from '../src/data.ts';
@@ -62,7 +63,7 @@ describe('the dating overlay', () => {
     }
   });
 
-  it('makes an uncertain segment a paler version of its generation’s colour', () => {
+  it('makes an uncertain segment its era’s colour washed out', () => {
     expect(colour('A.2a.3')).toEqual(uncertainColor(generationColor('A2')));
     expect(colour('A.2a.3')).not.toEqual(generationColor('A2'));
   });
@@ -90,6 +91,18 @@ describe('the dating overlay', () => {
     );
     expect(swatches).toHaveLength(dating.generations.length + 2);
     expect(new Set(swatches).size).toBe(swatches.length);
+  });
+
+  it('shows in its chip colours from the late bands as well as the early', () => {
+    const generations = ['Z1', 'Z4', 'T1', 'T4', 'T6', 'TA', 'A1', 'A3', 'A6'].map((code) => ({
+      code,
+      name: '',
+      from: 0,
+      to: 1,
+    }));
+    const { colors } = overlay.summary!(undefined as never, { dating: { ...dating, generations } });
+    expect(colors).toContain(colorToCss(generationColor('A6')));
+    expect(colors?.length).toBeLessThanOrEqual(6);
   });
 
   it('groups its key by era, with no generation codes', () => {
@@ -135,7 +148,7 @@ describe('the dating overlay', () => {
     expect(box?.textContent).toContain(`(${generationLabel('A2', true)}?,`);
   });
 
-  it('marks each rabbi’s name in the Hebrew, paler where the name is ambiguous', () => {
+  it('marks each rabbi’s name in the Hebrew, washed out where the name is ambiguous', () => {
     const marked = (id: string) =>
       overlay.highlightItemText?.(item(id), 'אמר רבא', HEBREW, undefined as never, { dating });
     const mark = (id: string) => marked(id)?.querySelector<HTMLElement>('mark');

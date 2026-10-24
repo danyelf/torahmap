@@ -29,18 +29,18 @@ These are Danyel's, from #25 and from conversation.
 
 ## Also agreed (proposed by Claude, approved with the design)
 
-- **Colours.** Each era has a colour family of its own, so an era shows at a glance, and its
-  generations step within it, early to late: the Zugot violet to magenta, the Tannaim orange to
-  yellow, the transitional generation a plain green between them, the Amoraim cyan to deep blue.
-- **Uncertain passages** take their generation's colour, paler. On the map's tiny squares a lighter
-  colour stays readable where a pattern would not.
+- **Colours.** Each era has colours of its own, in two or three bands from early to late: the Zugot
+  violet then magenta, the Tannaim orange, amber then yellow, the transitional generation a plain
+  green, the Amoraim cyan, blue then indigo. The exact generation is in words, not colour.
+- **Uncertain passages** take their era's colour washed out toward grey, so they read as "not sure"
+  rather than as another generation.
 - **The key**, in the side panel, lists only the generations that occur, each with rough years from
-  Sefaria ("Tannaim, 5th generation · c. 135–170 CE"), plus "uncertain" and "names no rabbi".
-- **The pinned passage's panel** is one line of the rabbis found, `Rava · רבא (A4); Abaye · אביי
-  (A4)`, so a colour can always be checked; the rabbi who sets the date is in bold, and an ambiguous
-  name shows its latest candidate as `(A3?)`. The key explains the generation codes. Each name is
-  also marked in the passage's Hebrew in its generation's colour (pale if ambiguous), where the
-  generator can find it in the map's own text.
+  Sefaria ("5th generation · c. 135–170 CE", under a heading for its era), plus "uncertain" and "names no rabbi".
+- **The pinned passage's panel** is one line of the rabbis found, `Rava · רבא (4th-gen Amora,
+  320–350); Abaye · אביי (4th-gen Amora, 320–350)`, so a colour can always be checked; the rabbi who
+  sets the date is in bold, and an ambiguous name shows its latest candidate with a `?`. Each name is
+  also marked in the passage's Hebrew in its generation's colour (grey if ambiguous), where the
+  generator can find it in the map's own text. No generation codes appear on screen.
 - **The link** carries the overlay as on the Tanakh map (`?overlay=…`), with no settings yet.
 - **The Zugot and the transitional generation are generations** like any other. The Zugot (Z3, the
   pairs before the Tannaim) are the earliest step; the transitional generation (TA) sits between
