@@ -389,6 +389,22 @@ export const TALMUD_STATES: State[] = [
     shown: ['#map-legend', '#popup.visible'],
   },
   {
+    name: 'talmud-rabbis',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
+    shown: ['#map-legend', '.rabbi-picked-row'],
+  },
+  {
+    name: 'talmud-rabbis-pinned',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish&at=Shabbat.71b.3&zoom=3',
+    shown: ['#map-legend', '#popup.visible', '.rabbi-name'],
+  },
+  {
+    name: 'talmud-rabbis-typing',
+    link: 'overlay=rabbis',
+    then: (page) => page.locator('.rabbi-input').fill('Gamliel'),
+    shown: ['.rabbi-input', '.rabbi-row'],
+  },
+  {
     name: 'talmud-goto-not-found',
     link: '',
     then: (page) => goTo(page, 'Berakhot 99a'),

@@ -29,7 +29,7 @@ import {
 } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { datingOverlay, type RabbiLink } from './overlays/dating.ts';
-import { addPick, rabbisOverlay } from './overlays/rabbis.ts';
+import { addPick, RABBIS_ID, RABBIS_URL_PARAMS, rabbisOverlay } from './overlays/rabbis.ts';
 import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
@@ -65,7 +65,7 @@ const WHOLE_MAP: Story = {
 const TALMUD_LINK_KEYS: LinkKeys = {
   square: 'at',
   search: TERM_SEARCH_PARAMS,
-  overlayParams: () => undefined,
+  overlayParams: (id) => (id === RABBIS_ID ? RABBIS_URL_PARAMS : undefined),
   // Low enough for the whole Talmud to fit across a phone.
   zoom: { min: 0.05, max: 10, start: 1 },
 };

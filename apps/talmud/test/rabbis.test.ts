@@ -4,6 +4,7 @@ import { HEBREW } from '@torahmap/shell/language.ts';
 import type { TalmudDating } from '../src/dating.ts';
 import { DATING_FILE } from '../src/dating.ts';
 import { RABBIS_FILE, type TalmudRabbis } from '../src/rabbis.ts';
+import { talmudText } from '../src/text.ts';
 import { addPick, rabbisOverlay } from '../src/overlays/rabbis.ts';
 import { pickColors, type RabbiData, type RabbiSettings } from '../src/overlays/rabbiPicks.ts';
 
@@ -128,6 +129,10 @@ describe('the rabbis overlay colours', () => {
 });
 
 describe('the rabbis link', () => {
+  it('is read from the Talmud’s links', () => {
+    expect(talmudText.link.overlayParams('rabbis')).toBe(overlay.urlParams);
+  });
+
   it('carries the picks and comes back as the same picks', () => {
     const settings = picking('lakish', 'gamliel-a');
     const written = overlay.settingsToUrl!(settings);

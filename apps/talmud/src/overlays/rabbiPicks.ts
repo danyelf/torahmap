@@ -123,6 +123,10 @@ export const plain = (text: string): string =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
+/** A name without the title in front: "rabban gamliel" is found under G. */
+const untitled = (name: string): string =>
+  name.replace(/^(?:(?:rabban|rabbi|rebbi|rav|rabi|r|רבן|רבי|רב|ר) )+/u, '');
+
 /**
  * Rabbis any of whose names holds every word typed, most-named first; names that start with the
  * typing come before the rest. `matched` is the name that matched, when it is not his main one.
@@ -145,7 +149,7 @@ export function suggest(
         found.push({
           place,
           matched: own.includes(name) ? null : name,
-          starts: text.startsWith(words[0]),
+          starts: untitled(text).startsWith(words[0]),
         });
         return;
       }

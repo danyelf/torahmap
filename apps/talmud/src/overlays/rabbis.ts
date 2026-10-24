@@ -27,7 +27,10 @@ import {
   type RabbiSettings,
 } from './rabbiPicks.ts';
 
-const URL_PARAMS = [{ key: 'rabbis', kind: 'text' }] as const satisfies readonly UrlParamSpec[];
+export const RABBIS_ID = 'rabbis';
+export const RABBIS_URL_PARAMS = [
+  { key: 'rabbis', kind: 'text' },
+] as const satisfies readonly UrlParamSpec[];
 
 /** How much of a rabbi's colour a passage keeps when a name there only might be him. */
 const MAYBE_KEEPS = 0.45;
@@ -43,6 +46,8 @@ const removePick = (id: string): SettingsUpdate<RabbiSettings> =>
   function (current) {
     return { picked: current.picked.filter((p) => p !== id) };
   };
+
+const faded = (color: Color): Color => mix(MAP_BACKGROUND, color, MAYBE_KEEPS);
 
 const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
@@ -107,7 +112,7 @@ export function rabbisOverlay(
       const drawn = places.flatMap((place, i) => {
         const how = named.get(place);
         if (!how) return [];
-        return [how === 'sure' ? colors[i] : mix(dim, colors[i], MAYBE_KEEPS)];
+        return [how === 'sure' ? colors[i] : faded(colors[i])];
       });
       if (!drawn.length) return dim;
       return drawn.length === 1 ? drawn[0] : drawn.slice(0, MAX_COLORS);
@@ -278,7 +283,7 @@ export function rabbisOverlay(
   }
 
   return {
-    id: 'rabbis',
+    id: RABBIS_ID,
     name: 'Rabbis',
     description:
       'Lights every passage that names the rabbis you pick, each in a colour of his own: a Zug ' +
@@ -294,7 +299,7 @@ export function rabbisOverlay(
     ],
     data: { dating: DATING_FILE, rabbis: RABBIS_FILE },
 
-    urlParams: URL_PARAMS,
+    urlParams: RABBIS_URL_PARAMS,
     settingsFromUrl: (params) => ({ picked: picksFromUrl(params.rabbis) }),
     settingsToUrl: ({ picked }) =>
       Object.fromEntries(picked.length ? [['rabbis', picksToUrl(picked)]] : []),
@@ -324,7 +329,7 @@ export function rabbisOverlay(
         `<div class="legend-row"><span class="swatch" style="background: ${colorToCss(color)}"></span><span>${escapeHtml(label)}</span></div>`;
       container.innerHTML = [
         ...places.map((place, i) => row(colors[i], data.rabbis.rabbis[place].en)),
-        row(mix(MAP_BACKGROUND, colors[0], MAYBE_KEEPS), 'Faded: a name that might be him'),
+        row(faded(colors[0]), 'Faded: a name that might be him'),
         row(mix(MAP_BACKGROUND, [0.5, 0.5, 0.5], SEARCH_KEEPS_BASE), 'Names none of them'),
       ].join('');
     },
@@ -383,7 +388,7 @@ export function rabbisOverlay(
           seen.add(name.id);
           entry.append(`${name.en} · `, span('', name.he, 'he'), ' ?');
         }
-        box.append(...(box.childNodes.length ? ['; '] : []), entry);
+        box.append(entry);
       }
       return box;
     },
@@ -399,7 +404,7 @@ export function rabbisOverlay(
         const [sure, ...who] = data.rabbis.readings[person];
         const at = places.findIndex((p) => who.includes(p));
         if (at < 0) return null;
-        return sure ? colors[at] : mix(MAP_BACKGROUND, colors[at], MAYBE_KEEPS);
+        return sure ? colors[at] : faded(colors[at]);
       });
     },
   };

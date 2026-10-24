@@ -133,6 +133,10 @@
   color: #6ab0f3;
 }
 
+.rabbi-entry {
+  display: block;
+}
+
 .rabbi-entry .swatch {
   display: inline-block;
   width: 10px;
