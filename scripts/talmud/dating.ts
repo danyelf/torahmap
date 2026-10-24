@@ -39,28 +39,10 @@ export interface Facts {
   /** An ambiguous topic's possible people. */
   candidates: Record<string, string[]>;
   topics: Record<string, { en: string | null; he: string | null; generation: string | null }>;
-  periods: Record<string, { en: string | null; from: number; to: number }>;
+  periods: Record<string, { from: number; to: number }>;
 }
 
 const REF = /^(.+) (\d+)([ab]):(\d+)(.*)$/;
-const ORDINALS: Record<string, string> = {
-  First: '1st',
-  Second: '2nd',
-  Third: '3rd',
-  Fourth: '4th',
-  Fifth: '5th',
-  Sixth: '6th',
-  Seventh: '7th',
-  Eighth: '8th',
-};
-
-/** "Amoraim - Fourth Generation" is "Amoraim, 4th generation". */
-function generationName(sefariaName: string): string {
-  const [group, rest = ''] = sefariaName.split(' - ');
-  const words = rest.replace(/^\w+/, (w) => ORDINALS[w] ?? w.toLowerCase());
-  return `${group}, ${words.replace('Generation', 'generation')}`;
-}
-
 /** How far from its tagged position a name may be found in the map's own text. */
 const NEARBY = 150;
 
@@ -193,7 +175,6 @@ export function datingFrom(
   ].sort((a, b) => periods[a].from - periods[b].from);
   const generations: Generation[] = codes.map((code) => ({
     code,
-    name: generationName(periods[code].en ?? code),
     from: periods[code].from,
     to: periods[code].to,
   }));
@@ -267,7 +248,7 @@ async function main() {
   console.log(
     `names marked in the text: ${placement.exact} exactly, ${placement.nearby} nearby, ${placement.dropped} not found or overlapping`,
   );
-  for (const g of dating.generations) console.log(`  ${g.code} ${g.name} ${g.from} to ${g.to}`);
+  for (const g of dating.generations) console.log(`  ${g.code} ${g.from} to ${g.to}`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

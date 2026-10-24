@@ -17,6 +17,7 @@ from pathlib import Path
 
 import bson
 
+# The start of a Bavli ref, as dating.ts reads it; a range passes, for dating.ts to refuse.
 REF = re.compile(r'^.+ \d+[ab]:\d+')
 
 
@@ -63,8 +64,7 @@ def main(dump, out):
 
     periods = {}
     for p in rows(dump / 'time_period.bson'):
-        names = {n['lang']: n['text'] for n in p.get('names', []) if n.get('primary')}
-        periods[p['symbol']] = {'en': names.get('en'), 'from': p.get('start'), 'to': p.get('end')}
+        periods[p['symbol']] = {'from': p.get('start'), 'to': p.get('end')}
 
     Path(out).write_text(
         json.dumps(

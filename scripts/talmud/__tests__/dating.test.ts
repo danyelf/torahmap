@@ -5,11 +5,11 @@ import { datingFrom, placeIn, type Facts, type Mention, type Placement } from '.
 const ARAMAIC = 'William Davidson Edition - Aramaic';
 
 const periods: Facts['periods'] = {
-  T5: { en: 'Tannaim - Fifth Generation', from: 135, to: 170 },
-  A2: { en: 'Amoraim - Second Generation', from: 250, to: 290 },
-  A3: { en: 'Amoraim - Third Generation', from: 290, to: 320 },
-  A4: { en: 'Amoraim - Fourth Generation', from: 320, to: 350 },
-  'A2/A3': { en: 'Amoraim - Second And Third Generations', from: 250, to: 320 },
+  T5: { from: 135, to: 170 },
+  A2: { from: 250, to: 290 },
+  A3: { from: 290, to: 320 },
+  A4: { from: 320, to: 350 },
+  'A2/A3': { from: 250, to: 320 },
 };
 
 const topics: Facts['topics'] = {
@@ -207,7 +207,7 @@ describe('datingFrom', () => {
     expect(dating.generations.map((g) => g.code)).toEqual(['T5', 'A4']);
     expect(dating.generations[1]).toEqual({
       code: 'A4',
-      name: 'Amoraim, 4th generation',
+
       from: 320,
       to: 350,
     });

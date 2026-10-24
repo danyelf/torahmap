@@ -14,32 +14,56 @@ export interface DatingData {
   dating: TalmudDating;
 }
 
-// Each era is one hue, so an era shows at a glance: the Zugot purple, the Tannaim orange, the
-// Amoraim blue. Within an era the bands run from dark (earliest) to light (latest) in lightness
-// alone; the transitional generation is one step lighter than the Tannaim's lightest. The exact
-// generation is in words, in the key and the caption.
-const HUES = { zugot: 285, tannaim: 28, amoraim: 212 };
-const BANDS: { codes: string[]; h: number; l: number }[] = [
-  { codes: ['Z1', 'Z2', 'Z3'], h: HUES.zugot, l: 0.4 },
-  { codes: ['Z4', 'Z5'], h: HUES.zugot, l: 0.65 },
-  { codes: ['T1', 'T2', 'T3'], h: HUES.tannaim, l: 0.38 },
-  { codes: ['T4', 'T5'], h: HUES.tannaim, l: 0.52 },
-  { codes: ['T6'], h: HUES.tannaim, l: 0.66 },
-  { codes: ['TA'], h: HUES.tannaim, l: 0.8 },
-  { codes: ['A1', 'A2'], h: HUES.amoraim, l: 0.4 },
-  { codes: ['A3', 'A4', 'A5'], h: HUES.amoraim, l: 0.54 },
-  { codes: ['A6', 'A7', 'A8'], h: HUES.amoraim, l: 0.68 },
-];
+const TRANSITION = 'TA';
+
+// An era is one hue; its bands run dark (earliest) to light (latest) in lightness alone. The
+// transitional generation, TRANSITION, is the lightest step of the Tannaim.
+const ERAS = [
+  {
+    name: 'Zugot',
+    hue: 285,
+    bands: [
+      { codes: ['Z1', 'Z2', 'Z3'], l: 0.4 },
+      { codes: ['Z4', 'Z5'], l: 0.65 },
+    ],
+  },
+  {
+    name: 'Tannaim',
+    hue: 28,
+    bands: [
+      { codes: ['T1', 'T2', 'T3'], l: 0.38 },
+      { codes: ['T4', 'T5'], l: 0.52 },
+      { codes: ['T6'], l: 0.66 },
+      { codes: [TRANSITION], l: 0.8 },
+    ],
+  },
+  {
+    name: 'Amoraim',
+    hue: 212,
+    bands: [
+      { codes: ['A1', 'A2'], l: 0.4 },
+      { codes: ['A3', 'A4', 'A5'], l: 0.54 },
+      { codes: ['A6', 'A7', 'A8'], l: 0.68 },
+    ],
+  },
+] as const;
 
 const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(
-  BANDS.flatMap(({ codes, ...step }) => codes.map((code) => [code, step])),
+  ERAS.flatMap(({ hue, bands }) =>
+    bands.flatMap(({ codes, l }) => codes.map((c) => [c, { h: hue, l }])),
+  ),
 );
 
+/** The era a generation's colour belongs to; the transitional generation is counted with the Tannaim. */
+const eraOf = (code: string): string =>
+  ERAS.find((e) => e.bands.some((b) => (b.codes as readonly string[]).includes(code)))!.name;
+
 /** How far an uncertain segment's colour is washed out toward grey. */
-export const WASHED_OUT = 0.9;
-const GREY = [0.62, 0.62, 0.62];
+const WASHED_OUT = 0.9;
+/** What the wash leaves of an uncertain segment's colour is almost this grey, which the key shows. */
+const GREY: Color = [0.62, 0.62, 0.62];
 /** How much of its usual colour a segment that names no rabbi keeps. */
-export const FAINT = 0.3;
+const FAINT = 0.3;
 
 const mix = (a: readonly number[], b: readonly number[], toward: number): Color => [
   a[0] + (b[0] - a[0]) * toward,
@@ -56,25 +80,16 @@ export const generationColor = (code: string): Color => {
 /** An uncertain segment: its era's colour so washed out that it reads as not sure, not as a generation. */
 export const uncertainColor = (color: Color): Color => mix(color, GREY, WASHED_OUT);
 
-/** "320–350", "100–60 BCE", "30 BCE–20 CE": the years, with an era only where it is not plainly CE. */
-export function yearsShort({ from, to }: Generation): string {
+/** "320–350", "100–60 BCE", "30 BCE–20 CE"; `ce` adds CE where both ends are plainly CE. */
+export function yearsShort({ from, to }: Generation, ce = false): string {
   const [a, b] = [Math.abs(from), Math.abs(to)];
   if (from < 0 && to < 0) return `${a}–${b} BCE`;
-  if (from >= 0 && to >= 0) return `${a}–${b}`;
+  if (from >= 0 && to >= 0) return `${a}–${b}${ce ? ' CE' : ''}`;
   return `${a} BCE–${b} CE`;
 }
 
-/** "c. 320–350 CE", "c. 100–60 BCE", "c. 30 BCE–20 CE" */
-export const yearsOf = (generation: Generation): string => {
-  const years = yearsShort(generation);
-  return `c. ${/^\d+–\d+$/.test(years) ? `${years} CE` : years}`;
-};
-
-/** The era a generation belongs to; the transitional generation is its own. */
-export function eraOf(code: string): 'Zugot' | 'Tannaim' | 'transition' | 'Amoraim' {
-  if (code === 'TA') return 'transition';
-  return { Z: 'Zugot', T: 'Tannaim', A: 'Amoraim' }[code[0] as 'Z' | 'T' | 'A'] as 'Zugot';
-}
+/** "c. 320–350 CE" */
+export const yearsOf = (generation: Generation): string => `c. ${yearsShort(generation, true)}`;
 
 const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
 
@@ -83,23 +98,29 @@ const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
  * "Tanna/Amora transition". `short` is for a line of names: "5th-gen Tanna", "Zugot, 3rd pair".
  */
 export function generationLabel(code: string, short = false): string {
-  if (code === 'TA') return 'Tanna/Amora transition';
+  if (code === TRANSITION) return 'Tanna/Amora transition';
   const ordinal = ORDINALS[Number(code.slice(1))];
   if (code[0] === 'Z') return short ? `Zugot, ${ordinal} pair` : `${ordinal} pair of the Zugot`;
   const era = code[0] === 'T' ? 'Tanna' : 'Amora';
   return `${ordinal}${short ? '-gen' : '-generation'} ${era}`;
 }
 
+const faint = (color: readonly number[]): Color => mix(MAP_BACKGROUND, color, FAINT);
+
+/** A generation's colour, washed out where only an ambiguous name gives it. */
+const shade = (code: string, uncertain: boolean): Color =>
+  uncertain ? uncertainColor(generationColor(code)) : generationColor(code);
+
 /** A generation as a key row gives it, under its era's heading: "4th generation", "3rd pair". */
 export function rowLabel(code: string): string {
-  if (code === 'TA') return 'Tanna/Amora transition';
+  if (code === TRANSITION) return 'Tanna/Amora transition';
   return `${ORDINALS[Number(code.slice(1))]} ${code[0] === 'Z' ? 'pair' : 'generation'}`;
 }
 
 const swatch = (color: Color) =>
   `<span class="swatch" style="background: ${colorToCss(color)}"></span>`;
-const row = (color: Color, label: string) =>
-  `<div class="legend-row">${swatch(color)}<span>${escapeHtml(label)}</span></div>`;
+const row = (color: Color, label: string, apart = false) =>
+  `<div class="legend-row${apart ? ' apart' : ''}">${swatch(color)}<span>${escapeHtml(label)}</span></div>`;
 
 /** The overlay for a Talmud whose segments `base` colours when no tool does. */
 export function datingOverlay(
@@ -107,9 +128,8 @@ export function datingOverlay(
 ): Overlay<TalmudLayoutItem, void, DatingData> {
   const colorOf = (item: TalmudLayoutItem, { dating }: DatingData): Color => {
     const segment = dating.segments[item.id];
-    if (!segment) return mix(MAP_BACKGROUND, base(item), FAINT);
-    const color = generationColor(dating.generations[segment[0]].code);
-    return segment[1] ? uncertainColor(color) : color;
+    if (!segment) return faint(base(item));
+    return shade(dating.generations[segment[0]].code, segment[1] === 1);
   };
 
   return {
@@ -136,46 +156,35 @@ export function datingOverlay(
     renderLegend(container, _settings, data) {
       if (!data) return;
       const { generations } = data.dating;
-      const rowsOf = (era: string) =>
+      const rowsOf = (include: (code: string) => boolean, apart = false) =>
         generations
-          .filter((g) => eraOf(g.code) === era)
-          .map((g) => row(generationColor(g.code), `${rowLabel(g.code)} · ${yearsOf(g)}`));
-      const section = (era: string, heading: string) => {
-        const rows = rowsOf(era);
-        return rows.length
-          ? [
-              `<div class="legend-heading" style="font-weight: 600; margin-top: 8px">${heading}</div>`,
-              ...rows,
-            ]
-          : [];
-      };
+          .filter((g) => include(g.code))
+          .map((g) => row(generationColor(g.code), `${rowLabel(g.code)} · ${yearsOf(g)}`, apart));
+      const sections = ERAS.flatMap(({ name }) => {
+        const rows = rowsOf((code) => eraOf(code) === name && code !== TRANSITION);
+        const heading = rows.length ? [`<div class="legend-heading">${name}</div>`, ...rows] : [];
+        // The transitional generation stands between the Tannaim and the Amoraim, a row of its own.
+        return name === 'Tannaim'
+          ? [...heading, ...rowsOf((code) => code === TRANSITION, true)]
+          : heading;
+      });
       container.innerHTML = [
-        ...section('Zugot', 'Zugot'),
-        ...section('Tannaim', 'Tannaim'),
-        ...rowsOf('transition').map((r) =>
-          r.replace('class="legend-row"', 'class="legend-row" style="margin-top: 8px"'),
-        ),
-        ...section('Amoraim', 'Amoraim'),
-        row(uncertainColor(generationColor('A4')), 'Uncertain: the name could be several rabbis'),
-        row(
-          mix(MAP_BACKGROUND, GEMARA_BASE_COLOR, FAINT),
-          'Names no rabbi with a known generation',
-        ),
+        ...sections,
+        row(GREY, 'Uncertain: the name could be several rabbis'),
+        row(faint(GEMARA_BASE_COLOR), 'Names no rabbi with a known generation'),
       ].join('');
     },
 
-    // One square for each colour band that occurs, in a group for each era; the transitional
-    // generation sits with the Tannaim, whose colour it shares.
-    summary: (_settings, { dating }) => {
-      const groups = ['Zugot', 'Tannaim', 'Amoraim'].map((era) => [
+    // One square for each colour band that occurs, in a group for each era.
+    summary: (_settings, { dating }) => ({
+      groups: ERAS.map(({ name }) => [
         ...new Set(
           dating.generations
-            .filter((g) => (g.code === 'TA' ? 'Tannaim' : eraOf(g.code)) === era)
+            .filter((g) => eraOf(g.code) === name)
             .map((g) => colorToCss(generationColor(g.code))),
         ),
-      ]);
-      return { groups: groups.filter((group) => group.length > 0) };
-    },
+      ]).filter((group) => group.length > 0),
+    }),
 
     getHoverInfo(item, _settings, { dating }) {
       const segment = dating.segments[item.id];
@@ -222,8 +231,7 @@ export function datingOverlay(
       };
       return wrapRuns(fragment, text, spanAt, (i, run) => {
         const person = dating.people[spans[i + 2]];
-        const color = generationColor(dating.generations[person.gen].code);
-        const [r, g, b] = (person.ambiguous ? uncertainColor(color) : color).map((c) =>
+        const [r, g, b] = shade(dating.generations[person.gen].code, !!person.ambiguous).map((c) =>
           Math.round(c * 255),
         );
         const mark = document.createElement('mark');

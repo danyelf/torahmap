@@ -18,9 +18,9 @@ import {
 
 const dating: TalmudDating = {
   generations: [
-    { code: 'T5', name: 'Tannaim, 5th generation', from: 135, to: 170 },
-    { code: 'A2', name: 'Amoraim, 2nd generation', from: 250, to: 290 },
-    { code: 'A4', name: 'Amoraim, 4th generation', from: 320, to: 350 },
+    { code: 'T5', from: 135, to: 170 },
+    { code: 'A2', from: 250, to: 290 },
+    { code: 'A4', from: 320, to: 350 },
   ],
   people: [
     { en: 'Rabbi Meir', he: 'רבי מאיר', gen: 0 },
@@ -105,7 +105,7 @@ describe('the dating overlay', () => {
   it('shows in its chip a group of colours for each era, the transition with the Tannaim', () => {
     const generations = ['Z1', 'Z4', 'T1', 'T4', 'T6', 'TA', 'A1', 'A3', 'A6'].map((code) => ({
       code,
-      name: '',
+
       from: 0,
       to: 1,
     }));
@@ -132,9 +132,9 @@ describe('the dating overlay', () => {
 
   it('gives generations in one band the same swatch in the key', () => {
     const generations = [
-      { code: 'A1', name: '', from: 220, to: 250 },
-      { code: 'A2', name: '', from: 250, to: 290 },
-      { code: 'A6', name: '', from: 375, to: 425 },
+      { code: 'A1', from: 220, to: 250 },
+      { code: 'A2', from: 250, to: 290 },
+      { code: 'A6', from: 375, to: 425 },
     ];
     const box = document.createElement('div');
     overlay.renderLegend?.(box, undefined as never, { dating: { ...dating, generations } });
@@ -239,9 +239,9 @@ describe('generationLabel', () => {
 
 describe('yearsOf', () => {
   it('writes the era once when both ends share it', () => {
-    expect(yearsOf({ code: 'Z3', name: '', from: -100, to: -60 })).toBe('c. 100–60 BCE');
-    expect(yearsOf({ code: 'A4', name: '', from: 320, to: 350 })).toBe('c. 320–350 CE');
-    expect(yearsOf({ code: 'Z5', name: '', from: -30, to: 20 })).toBe('c. 30 BCE–20 CE');
+    expect(yearsOf({ code: 'Z3', from: -100, to: -60 })).toBe('c. 100–60 BCE');
+    expect(yearsOf({ code: 'A4', from: 320, to: 350 })).toBe('c. 320–350 CE');
+    expect(yearsOf({ code: 'Z5', from: -30, to: 20 })).toBe('c. 30 BCE–20 CE');
   });
 });
 
