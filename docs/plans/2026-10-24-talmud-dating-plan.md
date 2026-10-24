@@ -21,7 +21,7 @@ The text already takes its overlays per text (`MapText.overlays`) and the link a
 
 - Latest generation among the rabbis named wins; a two-generation code (A2/A3) counts as the later.
 - Only mentions in the Hebrew/Aramaic text, edition `William Davidson Edition - Aramaic`.
-- A segment with any resolved dated name is never uncertain; ambiguous names then add nothing.
+- A segment with any resolved dated name is never uncertain; ambiguous names do not set the date, though they are listed.
 - An uncertain segment takes its latest candidate's generation, shown paler.
 - No borrowing from neighbouring segments. No-rabbi segments keep a faint tint of the base colour.
 - The generator stops if a tractate's segment count differs from `public/data/talmud/texts/`, or on
