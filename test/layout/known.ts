@@ -32,6 +32,8 @@ export const KNOWN: Record<string, Known> = {
   'story-stop-with-verse/tablet/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-search-and-overlay-pinned/tablet/touch-targets': POPUP_KNOWN,
+  'talmud-dating-pinned/phone/touch-targets': POPUP_KNOWN,
+  'talmud-dating-pinned/tablet/touch-targets': POPUP_KNOWN,
   'goto-chapter-taken/phone/touch-targets': POPUP_KNOWN,
   'goto-chapter-taken/tablet/touch-targets': POPUP_KNOWN,
   ...Object.fromEntries(

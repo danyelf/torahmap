@@ -106,9 +106,20 @@ export function datingOverlay(
       ].join('');
     },
 
-    summary: (_settings, { dating }) => ({
-      colors: dating.generations.map((g) => colorToCss(generationColor(g.code))),
-    }),
+    // Six steps spread across the generations that occur.
+    summary: (_settings, { dating }) => {
+      const { generations } = dating;
+      const picks = Math.min(6, generations.length);
+      return {
+        colors: Array.from({ length: picks }, (_, i) =>
+          colorToCss(
+            generationColor(
+              generations[Math.round((i * (generations.length - 1)) / Math.max(1, picks - 1))].code,
+            ),
+          ),
+        ),
+      };
+    },
 
     getHoverInfo(item, _settings, { dating }) {
       const segment = dating.segments[item.id];
