@@ -5,12 +5,20 @@ import { MAP_BACKGROUND } from '@torahmap/engine';
 import type { Overlay, SettingsUpdate, UrlParamSpec } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
-import { colorToCss, escapeHtml, type Color } from '@torahmap/utils';
+import { colorToCss, type Color } from '@torahmap/utils';
 import { RABBIS_FILE, type Rabbi } from '../rabbis.ts';
 import { DATING_FILE } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
-import { SEARCH_KEEPS_BASE } from '../constants.ts';
-import { generationLabel, markNames, mix, nameFor, yearsShort, type RabbiLink } from './dating.ts';
+import { GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE } from '../constants.ts';
+import {
+  generationLabel,
+  markNames,
+  mix,
+  nameFor,
+  row,
+  yearsShort,
+  type RabbiLink,
+} from './dating.ts';
 import {
   MAX_COLORS,
   MAX_PICKS,
@@ -235,7 +243,8 @@ export function rabbisOverlay(
         : `${count(entry.named, 'passage')} name this, and it can mean several people`;
       const already = entry.single && places.includes(entry.rabbis[0]);
       chip.classList.toggle('on', already);
-      chip.disabled = already || (full && entry.single);
+      const unpicked = entry.rabbis.filter((p) => !places.includes(p));
+      chip.disabled = full || unpicked.length === 0;
       chip.addEventListener('click', () => {
         if (entry.single) pick(entry.rabbis[0]);
         else {
@@ -325,12 +334,10 @@ export function rabbisOverlay(
         return;
       }
       const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
-      const row = (color: Color, label: string) =>
-        `<div class="legend-row"><span class="swatch" style="background: ${colorToCss(color)}"></span><span>${escapeHtml(label)}</span></div>`;
       container.innerHTML = [
         ...places.map((place, i) => row(colors[i], data.rabbis.rabbis[place].en)),
         row(faded(colors[0]), 'Faded: a name that might be him'),
-        row(mix(MAP_BACKGROUND, [0.5, 0.5, 0.5], SEARCH_KEEPS_BASE), 'Names none of them'),
+        row(mix(MAP_BACKGROUND, GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE), 'Names none of them'),
       ].join('');
     },
 

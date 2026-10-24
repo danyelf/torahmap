@@ -105,7 +105,7 @@ export function generationLabel(code: string, short = false): string {
   return `${ordinal}${short ? '-gen' : '-generation'} ${era}`;
 }
 
-export const faint = (color: readonly number[]): Color => mix(MAP_BACKGROUND, color, FAINT);
+const faint = (color: readonly number[]): Color => mix(MAP_BACKGROUND, color, FAINT);
 
 /** A generation's colour, washed out where only an ambiguous name gives it. */
 const shade = (code: string, uncertain: boolean): Color =>
@@ -119,7 +119,7 @@ export function rowLabel(code: string): string {
 
 const swatch = (color: Color) =>
   `<span class="swatch" style="background: ${colorToCss(color)}"></span>`;
-const row = (color: Color, label: string, apart = false) =>
+export const row = (color: Color, label: string, apart = false) =>
   `<div class="legend-row${apart ? ' apart' : ''}">${swatch(color)}<span>${escapeHtml(label)}</span></div>`;
 
 /** Opens the Rabbis overlay at a rabbi. Set once the shell is running; names are plain text until then. */

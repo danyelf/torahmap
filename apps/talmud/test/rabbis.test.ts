@@ -262,6 +262,14 @@ describe('the finder', () => {
     expect(finder.changes).toEqual([picking('gamliel-b')]);
   });
 
+  it('does not offer a shared name once every person it can mean is picked', () => {
+    const finder = open(picking('gamliel-a', 'gamliel-b'));
+    const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.rabbi-chip')].find(
+      (c) => c.textContent?.startsWith('Rabban Gamliel'),
+    )!;
+    expect(chip.disabled).toBe(true);
+  });
+
   it('keeps the box and what was typed when the picks change', () => {
     const finder = open();
     const box = finder.container.querySelector('input')!;
