@@ -185,6 +185,8 @@ export interface OverlaySummary {
   colors?: string[];
   /** Colours shown as squares in groups, a small gap between the groups and none within. */
   groups?: string[][];
+  /** Colours shown as squares, each labeled. */
+  steps?: { color: string; label: string }[];
   /** A continuous scale: its CSS gradient, between words for its low and high ends. */
   strip?: { gradient: string; ends: [low: string, high: string] };
 }

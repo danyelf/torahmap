@@ -2,17 +2,22 @@
   margin-top: 10px;
 }
 
-.trop-gradient {
-  height: 12px;
-  border-radius: 2px;
-  margin-bottom: 2px;
+.trop-steps {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
 }
 
-.trop-gradient-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: #888;
+.trop-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trop-step i {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
 }
 
 .trop-tabs {

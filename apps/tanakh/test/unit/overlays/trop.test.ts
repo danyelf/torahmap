@@ -7,10 +7,10 @@ import {
   NO_MATCH_COLOR,
   type TropSettings,
 } from '../../../src/overlays/trop';
-import { colorToCss } from '@torahmap/utils';
+import { colorToCss, type Color } from '@torahmap/utils';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
-import { assertNamedEnds, assertValidColor } from '../../helpers/assertions';
+import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { RARITY_THRESHOLDS } from '../../../src/overlays/trop/marks';
@@ -97,6 +97,20 @@ describe('Trop Overlay', () => {
     const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
     host.restore({ trop: 'etnachta' });
     return host;
+  }
+
+  /** The colors of verses carrying a common mark once, twice, three, four and nine times. */
+  function countColors(host: ReturnType<typeof makeHost>) {
+    const counts = [1, 2, 3, 4, 9];
+    const he = (count: number) => 'ב\u0591'.repeat(count);
+    const chapter: Record<string, { he: string; en: string }> = {};
+    counts.forEach((count, i) => (chapter[String(i + 1)] = { he: he(count), en: '' }));
+    chapter['10'] = { he: he(RARITY_THRESHOLDS.RARE), en: '' };
+    host.setData({ texts: { 'Genesis': { '1': chapter } } });
+    host.restore({ trop: 'etnachta' });
+    return counts.map((_, i) =>
+      host.getItemColor(createVerse({ chapter: 1, verse: i + 1 })),
+    ) as Color[];
   }
 
   /** Click the first button in a freshly drawn set of controls; returns the host and button. */
@@ -419,24 +433,27 @@ describe('Trop Overlay', () => {
       ]);
     });
 
-    it('draws its strip in its own colours, owing nothing to commentary', () => {
+    it('draws one square for each step of the count, in the colors the map uses', () => {
       const host = hostShowingCommonMark();
 
       const container = document.createElement('div');
       host.renderLegend(container);
 
-      const strip = container.querySelector<HTMLElement>('.trop-gradient');
-      expect(strip).not.toBeNull();
-      expect(container.querySelector('.legend-gradient')).toBeNull();
-      // The ends of trop's own gradient, not a hand-written approximation.
-      expect(strip?.style.background).toContain('rgb(179, 77, 179) 0%');
-      expect(strip?.style.background).toContain('rgb(242, 153, 230) 100%');
+      const steps = [...container.querySelectorAll<HTMLElement>('.trop-step')];
+      expect(steps.map((step) => step.textContent)).toEqual(['1', '2', '3', '4+']);
+      const drawn = steps.map((step) => step.querySelector('i')!.style.background);
+      expect(new Set(drawn).size).toBe(4);
+      const onMap = countColors(host);
+      expect(drawn).toEqual(onMap.slice(0, 4).map(colorToCss));
+      expect(onMap[4]).toEqual(onMap[3]);
     });
   });
 
   describe('Legend card', () => {
-    it('names the ends of the strip of a common mark', () => {
-      assertNamedEnds(hostShowingCommonMark().summary());
+    it('shows the count steps of a common mark, labeled', () => {
+      const { steps, strip } = hostShowingCommonMark().summary();
+      expect(steps?.map((step) => step.label)).toEqual(['1', '2', '3', '4+']);
+      expect(strip).toBeUndefined();
     });
 
     it('shows a rare mark by the colour of the verses that carry it, with no ends', () => {

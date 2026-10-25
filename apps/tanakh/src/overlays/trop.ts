@@ -7,13 +7,9 @@ import {
   type Color,
   lingeringHover,
   colorToCss,
-  type ColorStop,
-  scale,
-  LINEAR,
-  LOG,
   memoByValue,
   memoByValueAndKey,
-  type Transform,
+  oklchToRgb,
 } from '@torahmap/utils';
 import './trop.css';
 import type { Overlay, UrlParamValues, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
@@ -40,7 +36,7 @@ import {
   type TropIndexEntry,
   type TropMark,
 } from './trop/marks.ts';
-import { axisGradient, legendCaption, legendRow } from './legend.ts';
+import { legendCaption, legendRow } from './legend.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
 /**
@@ -71,32 +67,32 @@ function entryFor(data: TropData, mark: string | null): TropIndexEntry | null {
   return (mark && marksOf(data).get(mark)) || null;
 }
 
-// One occurrence, at the dim end of every counted scale. It stays well clear of
-// NO_MATCH_COLOR: a darker start made a verse with one occurrence vanish when zoomed out.
-const ONE_OCCURRENCE: Color = [0.7, 0.3, 0.7]; // Magenta
-// The bright end of every counted scale, and a rare mark's present-or-absent color,
-// so every mark is one color family.
-export const RARE_MATCH_COLOR: Color = [0.95, 0.6, 0.9]; // Pink
 // A verse without the mark, at every tier.
 export const NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
 
-const GRADIENT: ColorStop[] = [
-  { t: 0, color: ONE_OCCURRENCE },
-  { t: 1, color: RARE_MATCH_COLOR },
+// A mark drawn by count has four steps, for 1, 2, 3 and 4 or more occurrences in
+// a verse. They are picked in OKLCH, so each is as far from the next as the eye
+// sees: equal steps in lightness, drifting in hue from violet-magenta through
+// pink to pale peach. The first is well clear of NO_MATCH_COLOR; a darker one
+// vanished when zoomed out.
+const COUNT_STEPS: { label: string; color: Color }[] = [
+  { label: '1', color: oklchToRgb(0.588, 0.181, 328) },
+  { label: '2', color: oklchToRgb(0.7, 0.15, 345) },
+  { label: '3', color: oklchToRgb(0.82, 0.1, 5) },
+  { label: '4+', color: oklchToRgb(0.93, 0.03, 45) },
 ];
 
-/**
- * How a mark that is not rare is counted, on a scale. A rare mark is drawn as
- * present or absent; common marks span a wide range of counts, so theirs is logarithmic.
- */
-const TRANSFORMS = { uncommon: LINEAR, common: LOG } satisfies Record<
-  Exclude<RarityTier, 'rare'>,
-  Transform
->;
+function stepFor(count: number): Color {
+  return COUNT_STEPS[Math.min(count, COUNT_STEPS.length) - 1].color;
+}
 
-/** The key's colours, as CSS: "contains" and "does not" swatches, or one gradient. */
+// A mark drawn as present or absent, and the verse highlight, are the brightest step.
+export const RARE_MATCH_COLOR: Color = COUNT_STEPS[COUNT_STEPS.length - 1].color;
+
+/** The key's colours, as CSS: "contains" and "does not" swatches, or the count steps. */
 type TropLegend =
-  { kind: 'swatches'; contains: string; without: string } | { kind: 'gradient'; gradient: string };
+  | { kind: 'swatches'; contains: string; without: string }
+  | { kind: 'steps'; steps: { color: string; label: string }[] };
 
 interface TropDerivation {
   entry: TropIndexEntry;
@@ -132,14 +128,15 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
       },
     };
   }
-  const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
-  const counts = scale(0, maxCount, TRANSFORMS[tier], GRADIENT);
   return {
     entry,
     tier,
     verseLookup,
-    colorOf: (count) => (count ? counts.colorOf(count) : NO_MATCH_COLOR),
-    legend: { kind: 'gradient', gradient: axisGradient(counts) },
+    colorOf: (count) => (count ? stepFor(count) : NO_MATCH_COLOR),
+    legend: {
+      kind: 'steps',
+      steps: COUNT_STEPS.map(({ label, color }) => ({ label, color: colorToCss(color) })),
+    },
   };
 }
 
@@ -315,12 +312,12 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
         legendRow(legend.without, 'Does not contain');
     } else {
       container.innerHTML = `
-        <div class="trop-gradient" style="background: ${legend.gradient}"></div>
-        <div class="trop-gradient-labels">
-          <span>0</span>
-          <span>Count</span>
-          <span>Max</span>
-        </div>
+        <div class="trop-steps">${legend.steps
+          .map(
+            ({ color, label }) =>
+              `<span class="trop-step"><i style="background: ${color}"></i>${label}</span>`,
+          )
+          .join('')}</div>
       `;
     }
   },
@@ -333,7 +330,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     const { legend } = derived;
     return legend.kind === 'swatches'
       ? { detail, colors: [legend.contains] }
-      : { detail, strip: { gradient: legend.gradient, ends: ['few', 'many'] } };
+      : { detail, steps: legend.steps };
   },
 
   getHoverInfo(verse, settings, data) {

@@ -641,6 +641,7 @@ body[data-open='about'] #about-panel {
 }
 
 .summary-term,
+.summary-step,
 .summary-swatches {
   display: inline-flex;
   align-items: center;
