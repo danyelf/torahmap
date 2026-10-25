@@ -7,7 +7,7 @@
 
 <dump dir> holds topic_links.bson, topics.bson and time_period.bson, extracted from
 dump_small.tar.gz (./dump/sefaria/). The rules that turn these facts into
-public/data/talmud/dating.json and rabbis.json are in dating.ts and rabbis.ts, which are tested;
+public/data/talmud/dating.json are in dating.ts, which is tested;
 this script only reads.
 """
 

@@ -5,8 +5,7 @@ import type { Overlay, SettingsUpdate, UrlParamSpec } from '@torahmap/shell/over
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { colorToCss, type Color } from '@torahmap/utils';
-import { RABBIS_FILE, type Rabbi } from '../rabbis.ts';
-import { DATING_FILE } from '../dating.ts';
+import { DATING_FILE, type Rabbi } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE } from '../constants.ts';
 import {
@@ -112,7 +111,7 @@ export function rabbisOverlay(
   ): (Color | Color[])[] {
     const places = pickedPlaces(settings, data);
     if (!places.length) return items.map(base);
-    const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
+    const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
     return items.map((item) => {
       const dim = unlit(item);
       const named = namedIn(data, item.id, places);
@@ -140,7 +139,7 @@ export function rabbisOverlay(
     onClick: () => void,
     matched: string | null = null,
   ): HTMLButtonElement {
-    const rabbi = data.rabbis.rabbis[place];
+    const rabbi = data.dating.rabbis[place];
     const { sure, maybe } = passagesOf(data, place);
     const row = document.createElement('button');
     row.type = 'button';
@@ -160,12 +159,12 @@ export function rabbisOverlay(
       return;
     }
     const places = pickedPlaces(settings, data);
-    const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
+    const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
     const full = places.length >= MAX_PICKS;
     const pick = (place: number) => {
       finder.input.value = '';
       finder.asking = null;
-      onChange(addPick(data.rabbis.rabbis[place].id));
+      onChange(addPick(data.dating.rabbis[place].id));
     };
 
     const typed = finder.input.value;
@@ -206,7 +205,7 @@ export function rabbisOverlay(
       const chosen = document.createElement('div');
       chosen.className = 'rabbi-picked';
       places.forEach((place, i) => {
-        const rabbi = data.rabbis.rabbis[place];
+        const rabbi = data.dating.rabbis[place];
         const { sure, maybe } = passagesOf(data, place);
         const row = document.createElement('div');
         row.className = 'rabbi-picked-row';
@@ -313,7 +312,7 @@ export function rabbisOverlay(
         collected: 'October 2026',
       },
     ],
-    data: { dating: DATING_FILE, rabbis: RABBIS_FILE },
+    data: { dating: DATING_FILE },
 
     urlParams: RABBIS_URL_PARAMS,
     settingsFromUrl: (params) => ({ picked: picksFromUrl(params.rabbis) }),
@@ -340,9 +339,9 @@ export function rabbisOverlay(
         container.innerHTML = `<div class="legend-row">Pick a rabbi to light the passages that name him.</div>`;
         return;
       }
-      const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
+      const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
       container.innerHTML = [
-        ...places.map((place, i) => row(colors[i], data.rabbis.rabbis[place].en)),
+        ...places.map((place, i) => row(colors[i], data.dating.rabbis[place].en)),
         row(faded(colors[0]), 'Faded: a name that might be him'),
         row(fadeTo(GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE), 'Names none of them'),
       ].join('');
@@ -350,12 +349,12 @@ export function rabbisOverlay(
 
     summary(settings, data) {
       const places = pickedPlaces(settings, data);
-      const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
+      const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
       if (!places.length) return { detail: 'pick a rabbi' };
       // Names would not fit beside the overlay's own on a phone.
       return {
         detail:
-          places.length === 1 ? data.rabbis.rabbis[places[0]].en : count(places.length, 'rabbi'),
+          places.length === 1 ? data.dating.rabbis[places[0]].en : count(places.length, 'rabbi'),
         colors: colors.map(colorToCss),
       };
     },
@@ -365,7 +364,7 @@ export function rabbisOverlay(
       const named = namedIn(data, item.id, places);
       if (!named.size) return null;
       return [...named]
-        .map(([place, how]) => data.rabbis.rabbis[place].en + (how === 'maybe' ? '?' : ''))
+        .map(([place, how]) => data.dating.rabbis[place].en + (how === 'maybe' ? '?' : ''))
         .join(', ');
     },
 
@@ -373,15 +372,15 @@ export function rabbisOverlay(
       const segment = data.dating.segments[item.id];
       if (!isPinned || !segment) return null;
       const places = pickedPlaces(settings, data);
-      const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
+      const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
       const box = document.createElement('div');
       const seen = new Set<string>();
       for (const person of segment[2]) {
-        const { sure, who } = readingOf(data.rabbis, person);
+        const { sure, who } = readingOf(data.dating, person);
         const entry = document.createElement('span');
         entry.className = 'rabbi-entry';
-        if (sure && who.length === 1) {
-          const rabbi = data.rabbis.rabbis[who[0]];
+        if (sure) {
+          const rabbi = data.dating.rabbis[who[0]];
           if (seen.has(rabbi.id)) continue;
           seen.add(rabbi.id);
           const at = places.indexOf(who[0]);
@@ -412,9 +411,9 @@ export function rabbisOverlay(
       const segment = data.dating.segments[item.id];
       const places = pickedPlaces(settings, data);
       if (language !== HEBREW || !segment || !places.length) return fragment;
-      const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
+      const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
       return markNames(fragment, text, segment[3], (person) => {
-        const { sure, who } = readingOf(data.rabbis, person);
+        const { sure, who } = readingOf(data.dating, person);
         const at = places.findIndex((p) => who.includes(p));
         if (at < 0) return null;
         return sure ? colors[at] : faded(colors[at]);

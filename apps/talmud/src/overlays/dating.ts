@@ -4,7 +4,7 @@
 import { MAP_BACKGROUND } from '@torahmap/engine';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { colorToCss, escapeHtml, hslToRgb, type Color } from '@torahmap/utils';
-import { DATING_FILE, type Generation, type TalmudDating } from '../dating.ts';
+import { DATING_FILE, isSure, type Generation, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR } from '../constants.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
@@ -111,7 +111,7 @@ export const fadeTo = (color: readonly number[], keeps: number): Color =>
 
 const faint = (color: readonly number[]): Color => fadeTo(color, FAINT);
 
-/** A generation's colour, washed out where only an ambiguous name gives it. */
+/** A generation's colour, washed out where only a shared name gives it. */
 const shade = (code: string, uncertain: boolean): Color =>
   uncertain ? uncertainColor(generationColor(code)) : generationColor(code);
 
@@ -249,16 +249,17 @@ export function datingOverlay(
         he.dir = 'rtl';
         he.textContent = person.he;
         const era = dating.generations[person.gen];
+        const sure = isSure(person);
         const entry = document.createElement(
-          person.gen === generation && (!person.ambiguous || uncertain) ? 'strong' : 'span',
+          person.gen === generation && (sure || uncertain) ? 'strong' : 'span',
         );
-        // An ambiguous name gives its latest candidate only where it dates the passage.
+        // A shared name gives its latest candidate only where it dates the passage.
         const where =
-          person.ambiguous && !uncertain
+          !sure && !uncertain
             ? ' ?'
-            : ` (${generationLabel(era.code, true)}${person.ambiguous ? '?' : ''}, ${yearsShort(era)})`;
+            : ` (${generationLabel(era.code, true)}${sure ? '' : '?'}, ${yearsShort(era)})`;
         entry.append(
-          nameFor(person.en, person.ambiguous ? null : person.id, link),
+          nameFor(person.en, sure ? dating.rabbis[person.means[0]].id : null, link),
           ' · ',
           he,
           where,
@@ -275,7 +276,7 @@ export function datingOverlay(
       if (language !== HEBREW || !segment) return fragment;
       return markNames(fragment, text, segment[3], (place) => {
         const person = dating.people[place];
-        return shade(dating.generations[person.gen].code, !!person.ambiguous);
+        return shade(dating.generations[person.gen].code, !isSure(person));
       });
     },
   };

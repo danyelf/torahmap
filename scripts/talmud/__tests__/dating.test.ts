@@ -238,3 +238,64 @@ describe('datingFrom', () => {
     expect(() => build([mention('TractA 2a:6', 'rava')])).toThrow(/segment/i);
   });
 });
+
+describe('the rabbis and who each name can mean', () => {
+  const people = (slugs: string[]) =>
+    datingFrom(
+      {
+        mentions: slugs.map((slug, i) =>
+          mention('TractA 2a:1', slug, { start: i * 10, end: i * 10 + 4 }),
+        ),
+        periods,
+        topics: {
+          ...topics,
+          rava: { ...topics.rava, names: ['Rava', 'Raba'] },
+          'elazar-(ambiguous)': { ...topics['elazar-(ambiguous)'], names: ['Elazar'] },
+          'solo-(ambiguous)': { en: 'Solo', he: '', generation: null, names: [] },
+          'elazar-c': { en: 'Elazar the unplaced', he: '', generation: null, names: [] },
+        },
+        candidates: {
+          'elazar-(ambiguous)': ['elazar-a', 'elazar-b', 'elazar-c'],
+          'solo-(ambiguous)': ['meir'],
+        },
+      },
+      talmudFixture,
+      texts,
+    );
+  const dating = people(['rava', 'elazar-(ambiguous)', 'solo-(ambiguous)']);
+  const ids = dating.rabbis.map((r) => r.id);
+  const meaning = (slug: string) =>
+    dating.people.find((p) => p.id === slug)!.means.map((place) => ids[place]);
+
+  it('makes rabbis of the people with a generation whom a listed name can mean', () => {
+    expect(ids).toEqual(['elazar-a', 'elazar-b', 'meir', 'rava']);
+  });
+
+  it('reads a plain name as the person himself', () => {
+    expect(meaning('rava')).toEqual(['rava']);
+  });
+
+  it('reads a shared name as each of its dated candidates', () => {
+    expect(meaning('elazar-(ambiguous)')).toEqual(['elazar-a', 'elazar-b']);
+  });
+
+  it('reads a shared name with one candidate as that person', () => {
+    expect(meaning('solo-(ambiguous)')).toEqual(['meir']);
+  });
+
+  it('dates a segment by a shared name with one candidate as it would the person', () => {
+    expect(people(['solo-(ambiguous)']).segments['TractA.2a.1'][1]).toBe(0);
+  });
+
+  it('gives a rabbi the names of the shared names that can mean him', () => {
+    expect(dating.rabbis[ids.indexOf('elazar-a')].names).toContain('Elazar');
+  });
+
+  it('gives a rabbi every name Sefaria records for him', () => {
+    expect(dating.rabbis[ids.indexOf('rava')].names).toEqual(['Raba', 'Rava']);
+  });
+
+  it('gives each rabbi his generation code', () => {
+    expect(dating.rabbis[ids.indexOf('elazar-b')].gen).toBe('A3');
+  });
+});

@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-// Build public/data/talmud/dating.json and rabbis.json from the facts sefaria-dating-facts.py
+// Build public/data/talmud/dating.json from the facts sefaria-dating-facts.py
 // reads out of Sefaria's database dump:
 //
 //   uv run scripts/talmud/sefaria-dating-facts.py <dump dir> <facts.json>
@@ -7,7 +7,13 @@
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { DatedSegment, Generation, Person, TalmudDating } from '@torahmap/talmud/dating.ts';
+import type {
+  DatedSegment,
+  Generation,
+  Person,
+  Rabbi,
+  TalmudDating,
+} from '@torahmap/talmud/dating.ts';
 import { DATING_FILE } from '@torahmap/talmud/dating.ts';
 import {
   STRUCTURE_FILE,
@@ -16,8 +22,6 @@ import {
   type TalmudTractateText,
 } from '@torahmap/talmud/data.ts';
 import { talmudId } from '@torahmap/talmud/layout.ts';
-import { RABBIS_FILE } from '@torahmap/talmud/rabbis.ts';
-import { rabbisFrom } from './rabbis.ts';
 import { isAmbiguous, latestGeneration, type Facts, type Mention } from './facts.ts';
 
 /** The edition the map shows, whose character positions the tags use. */
@@ -106,6 +110,13 @@ export function datingFrom(
           .sort((a, b) => periods[b].from - periods[a].from)[0] ?? null)
       : latestGeneration(topics[slug]?.generation, periods);
 
+  /** The dated people a name can mean: a shared name, any of its candidates. */
+  const meant = (slug: string): string[] =>
+    (isAmbiguous(slug) ? (candidates[slug] ?? []) : [slug]).filter(
+      (id) => latestGeneration(topics[id]?.generation, periods) !== null,
+    );
+  const sure = (slug: string) => meant(slug).length === 1;
+
   const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
   const byId = new Map<string, Mention[]>();
   for (const m of facts.mentions) {
@@ -136,16 +147,16 @@ export function datingFrom(
     { code: string; uncertain: boolean; slugs: string[]; shown: Mention[] }
   >();
   for (const [id, mentions] of byId) {
-    const dated = mentions.filter((m) => !isAmbiguous(m.topic) && generationOf(m.topic));
-    const ambiguous = mentions.filter((m) => isAmbiguous(m.topic) && generationOf(m.topic));
+    const dated = mentions.filter((m) => sure(m.topic));
+    const shared = mentions.filter((m) => !sure(m.topic) && generationOf(m.topic));
     const uncertain = dated.length === 0;
-    // Only resolved names date a passage that has any; its ambiguous names are listed, not counted.
-    const pool = uncertain ? ambiguous : dated;
+    // Only certain names date a passage that has any; its shared names are listed, not counted.
+    const pool = uncertain ? shared : dated;
     if (pool.length === 0) continue;
     const code = pool
       .map((m) => generationOf(m.topic)!)
       .sort((a, b) => periods[b].from - periods[a].from)[0];
-    const listed = [...dated, ...ambiguous];
+    const listed = [...dated, ...shared];
     // A title tagged as its own person inside a fuller name stays out of the list.
     const inside = (m: Mention) =>
       listed.some(
@@ -176,12 +187,29 @@ export function datingFrom(
   }));
   const placeOfCode = new Map(codes.map((c, i) => [c, i]));
 
+  const ids = [...new Set(slugs.flatMap(meant))].sort();
+  const placeOfRabbi = new Map(ids.map((id, i) => [id, i]));
+  // A shared name can be said of each person it may mean.
+  const sharedNames = new Map<string, string[]>();
+  for (const [name, people] of Object.entries(candidates)) {
+    for (const id of people) {
+      sharedNames.set(id, [...(sharedNames.get(id) ?? []), ...(topics[name]?.names ?? [])]);
+    }
+  }
+  const rabbis: Rabbi[] = ids.map((id) => ({
+    id,
+    en: topics[id].en ?? id,
+    he: topics[id].he ?? '',
+    gen: latestGeneration(topics[id].generation, periods)!,
+    names: [...new Set([...topics[id].names, ...(sharedNames.get(id) ?? [])])].sort(),
+  }));
+
   const people: Person[] = slugs.map((slug) => ({
     id: slug,
     en: topics[slug].en ?? slug,
     he: topics[slug].he ?? '',
     gen: placeOfCode.get(generationOf(slug)!)!,
-    ...(isAmbiguous(slug) ? { ambiguous: true as const } : {}),
+    means: meant(slug).map((id) => placeOfRabbi.get(id)!),
   }));
   const placeOfSlug = new Map(slugs.map((s, i) => [s, i]));
 
@@ -217,7 +245,7 @@ export function datingFrom(
       }
     }
   }
-  return { generations, people, segments };
+  return { generations, people, rabbis, segments };
 }
 
 async function main() {
@@ -239,15 +267,13 @@ async function main() {
   const placement = { exact: 0, nearby: 0, dropped: 0 };
   const dating = datingFrom(facts, structure, texts, placement);
   await writeFile(join(dataDir, DATING_FILE), JSON.stringify(dating), 'utf-8');
-  const rabbis = rabbisFrom(facts, dating);
-  await writeFile(join(dataDir, RABBIS_FILE), JSON.stringify(rabbis), 'utf-8');
 
   const uncertain = Object.values(dating.segments).filter((s) => s[1] === 1).length;
   console.log(`${Object.keys(dating.segments).length} segments dated, ${uncertain} uncertain`);
   console.log(
     `names marked in the text: ${placement.exact} exactly, ${placement.nearby} nearby, ${placement.dropped} not found or overlapping`,
   );
-  console.log(`${rabbis.rabbis.length} rabbis to pick`);
+  console.log(`${dating.rabbis.length} rabbis to pick`);
   for (const g of dating.generations) console.log(`  ${g.code} ${g.from} to ${g.to}`);
 }
 

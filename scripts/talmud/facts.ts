@@ -1,5 +1,5 @@
-// The facts sefaria-dating-facts.py reads out of Sefaria's database dump, which dating.ts and
-// rabbis.ts turn into the map's data files.
+// The facts sefaria-dating-facts.py reads out of Sefaria's database dump, which dating.ts turns
+// into the map's data file.
 
 /** A generation, as opposed to the other kinds of period Sefaria codes. */
 const GENERATION_CODE = /^(?:[ZTA]\d|TA)$/;

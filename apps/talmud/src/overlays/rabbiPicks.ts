@@ -1,14 +1,12 @@
 // Which passages name the picked rabbis, how to find a rabbi by any of his names, and the colour
 // each pick gets. No page in here.
 
-import { maxChroma, memoByValueAndKey, oklchToRgb, rgbToOklch, type Color } from '@torahmap/utils';
-import type { TalmudDating } from '../dating.ts';
-import type { Rabbi, TalmudRabbis } from '../rabbis.ts';
+import { maxChroma, memoByValue, oklchToRgb, rgbToOklch, type Color } from '@torahmap/utils';
+import { isSure, type Rabbi, type TalmudDating } from '../dating.ts';
 import { ERAS, eraOf, generationColor, TRANSITION } from './dating.ts';
 
 export interface RabbiData {
   dating: TalmudDating;
-  rabbis: TalmudRabbis;
 }
 
 export interface RabbiSettings {
@@ -48,29 +46,28 @@ interface Index {
   entries: Entry[];
 }
 
-const build = (rabbis: TalmudRabbis, dating: TalmudDating): Index => {
-  const sure = rabbis.rabbis.map(() => 0);
-  const maybe = rabbis.rabbis.map(() => 0);
+const build = (dating: TalmudDating): Index => {
+  const { rabbis } = dating;
+  const sure = rabbis.map(() => 0);
+  const maybe = rabbis.map(() => 0);
   const naming = new Map<string, { entry: Omit<Entry, 'named'>; ids: Set<string> }>();
   for (const [id, segment] of Object.entries(dating.segments)) {
     for (const person of segment[2]) {
-      const { who } = readingOf(rabbis, person);
+      const { who } = readingOf(dating, person);
       if (!who.length) continue;
       const one = who.length === 1;
       const key = one ? `r${who[0]}` : `p${person}`;
       if (!naming.has(key)) {
-        const { en, he } = one ? rabbis.rabbis[who[0]] : dating.people[person];
-        const gen = one
-          ? rabbis.rabbis[who[0]].gen
-          : dating.generations[dating.people[person].gen].code;
+        const { en, he } = one ? rabbis[who[0]] : dating.people[person];
+        const gen = one ? rabbis[who[0]].gen : dating.generations[dating.people[person].gen].code;
         naming.set(key, { entry: { rabbis: who, en, he, gen, single: one }, ids: new Set() });
       }
       naming.get(key)!.ids.add(id);
     }
-    for (const [r, how] of standingIn({ rabbis, dating }, id)) (how === 'sure' ? sure : maybe)[r]++;
+    for (const [r, how] of standingIn({ dating }, id)) (how === 'sure' ? sure : maybe)[r]++;
   }
   return {
-    placeOf: new Map(rabbis.rabbis.map((r, i) => [r.id, i])),
+    placeOf: new Map(rabbis.map((r, i) => [r.id, i])),
     sure,
     maybe,
     entries: [...naming.values()]
@@ -79,8 +76,8 @@ const build = (rabbis: TalmudRabbis, dating: TalmudDating): Index => {
   };
 };
 
-const indexOf = memoByValueAndKey(build);
-export const indexFor = ({ rabbis, dating }: RabbiData): Index => indexOf(rabbis, dating);
+const indexOf = memoByValue(build);
+export const indexFor = ({ dating }: RabbiData): Index => indexOf(dating);
 
 /** The picked rabbis' places, in the order picked; slugs the data does not hold are dropped. */
 export function pickedPlaces(settings: RabbiSettings, data: RabbiData): number[] {
@@ -89,16 +86,18 @@ export function pickedPlaces(settings: RabbiSettings, data: RabbiData): number[]
 }
 
 /** What a person's name can mean: whether it is certain, and the rabbis it can be. */
-export function readingOf(rabbis: TalmudRabbis, person: number): { sure: boolean; who: number[] } {
-  const [sure, ...who] = rabbis.readings[person];
-  return { sure: sure === 1, who };
+export function readingOf(
+  { people }: TalmudDating,
+  person: number,
+): { sure: boolean; who: number[] } {
+  return { sure: isSure(people[person]), who: people[person].means };
 }
 
 /** How each rabbi a passage may name stands in it: certain where any one name settles him. */
-export function standingIn({ rabbis, dating }: RabbiData, id: string): Map<number, Certainty> {
+export function standingIn({ dating }: RabbiData, id: string): Map<number, Certainty> {
   const found = new Map<number, Certainty>();
   for (const person of dating.segments[id]?.[2] ?? []) {
-    const { sure, who } = readingOf(rabbis, person);
+    const { sure, who } = readingOf(dating, person);
     for (const r of who) if (sure || !found.has(r)) found.set(r, sure ? 'sure' : 'maybe');
   }
   return found;
@@ -166,7 +165,7 @@ export function suggest(
   if (!words.length) return [];
   const { sure, maybe } = indexFor(data);
   const found: { place: number; matched: string | null; starts: boolean }[] = [];
-  data.rabbis.rabbis.forEach((rabbi, place) => {
+  data.dating.rabbis.forEach((rabbi, place) => {
     if (skip.includes(place)) return;
     const own = [rabbi.en, rabbi.he];
     for (const name of [...own, ...rabbi.names]) {

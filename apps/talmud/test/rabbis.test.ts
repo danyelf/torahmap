@@ -1,41 +1,33 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { HEBREW } from '@torahmap/shell/language.ts';
-import type { TalmudDating } from '../src/dating.ts';
+import { DATING_FILE, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import { fadeTo } from '../src/overlays/dating.ts';
-import { DATING_FILE } from '../src/dating.ts';
-import { RABBIS_FILE, type TalmudRabbis } from '../src/rabbis.ts';
 import { talmudText } from '../src/text.ts';
 import { addPick, rabbisOverlay } from '../src/overlays/rabbis.ts';
 import { pickColors, type RabbiData, type RabbiSettings } from '../src/overlays/rabbiPicks.ts';
 
-const rabbis: TalmudRabbis = {
-  rabbis: [
-    { id: 'gamliel-a', en: 'Rabban Gamliel haZaken', he: 'רבן גמליאל', gen: 'T1', names: [] },
-    { id: 'gamliel-b', en: 'Rabban Gamliel b. Rabbi', he: 'רבן גמליאל', gen: 'TA', names: [] },
-    {
-      id: 'lakish',
-      en: 'Rabbi Shimon b. Lakish',
-      he: 'ריש לקיש',
-      gen: 'A2',
-      names: ['Reish Lakish'],
-    },
-    { id: 'yochanan', en: 'Rabbi Yochanan', he: 'רבי יוחנן', gen: 'A2', names: [] },
-  ],
-  readings: [
-    [0, 0, 1],
-    [1, 2],
-    [1, 3],
-  ],
-};
+const rabbis: Rabbi[] = [
+  { id: 'gamliel-a', en: 'Rabban Gamliel haZaken', he: 'רבן גמליאל', gen: 'T1', names: [] },
+  { id: 'gamliel-b', en: 'Rabban Gamliel b. Rabbi', he: 'רבן גמליאל', gen: 'TA', names: [] },
+  {
+    id: 'lakish',
+    en: 'Rabbi Shimon b. Lakish',
+    he: 'ריש לקיש',
+    gen: 'A2',
+    names: ['Reish Lakish'],
+  },
+  { id: 'yochanan', en: 'Rabbi Yochanan', he: 'רבי יוחנן', gen: 'A2', names: [] },
+];
 
 const dating: TalmudDating = {
   generations: [{ code: 'A2', from: 250, to: 290 }],
   people: [
-    { id: 'gamliel-(ambiguous)', en: 'Rabban Gamliel', he: 'רבן גמליאל', gen: 0, ambiguous: true },
-    { id: 'lakish', en: 'Rabbi Shimon b. Lakish', he: 'ריש לקיש', gen: 0 },
-    { id: 'yochanan', en: 'Rabbi Yochanan', he: 'רבי יוחנן', gen: 0 },
+    { id: 'gamliel-(ambiguous)', en: 'Rabban Gamliel', he: 'רבן גמליאל', gen: 0, means: [0, 1] },
+    { id: 'lakish', en: 'Rabbi Shimon b. Lakish', he: 'ריש לקיש', gen: 0, means: [2] },
+    { id: 'yochanan', en: 'Rabbi Yochanan', he: 'רבי יוחנן', gen: 0, means: [3] },
   ],
+  rabbis,
   segments: {
     'A.2a.1': [0, 0, [1, 2], [0, 3, 1, 4, 9, 2]],
     'A.2a.2': [0, 0, [1], []],
@@ -44,7 +36,7 @@ const dating: TalmudDating = {
   },
 };
 
-const data: RabbiData = { dating, rabbis };
+const data: RabbiData = { dating };
 const item = (id: string) => ({ id, x: 0, y: 0, size: 6 }) as never;
 const base = () => [0.6, 0.5, 0.4] as [number, number, number];
 const link: { open?: (id: string) => void } = {};
@@ -61,7 +53,7 @@ describe('the rabbis overlay colours', () => {
 
   it('lights the passages naming a picked rabbi and dims the rest', () => {
     const [lit, other, unlit] = colours(picking('lakish'), 'A.2a.2', 'A.2a.3', 'A.2a.4');
-    expect(lit).toEqual(pickColors([rabbis.rabbis[2]])[0]);
+    expect(lit).toEqual(pickColors([rabbis[2]])[0]);
     expect(other).toEqual(unlitColour);
     expect(unlit).toEqual(unlitColour);
     expect(unlitColour).not.toEqual(base());
@@ -69,7 +61,7 @@ describe('the rabbis overlay colours', () => {
 
   it('splits a passage naming two picked rabbis between their colours', () => {
     const [both] = colours(picking('lakish', 'yochanan'), 'A.2a.1');
-    const expected = pickColors([rabbis.rabbis[2], rabbis.rabbis[3]]);
+    const expected = pickColors([rabbis[2], rabbis[3]]);
     expect(both).toEqual(expected);
     expect(expected[0]).not.toEqual(expected[1]);
   });
@@ -77,39 +69,30 @@ describe('the rabbis overlay colours', () => {
   it('fades a passage where a name only might be the rabbi', () => {
     const [sure] = colours(picking('gamliel-a', 'lakish'), 'A.2a.2');
     const [maybe] = colours(picking('gamliel-a'), 'A.2a.3');
-    const solid = pickColors([rabbis.rabbis[0]])[0];
-    expect(sure).toEqual(pickColors([rabbis.rabbis[0], rabbis.rabbis[2]])[1]);
+    const solid = pickColors([rabbis[0]])[0];
+    expect(sure).toEqual(pickColors([rabbis[0], rabbis[2]])[1]);
     expect(maybe).toEqual(fadeTo(solid, 0.8));
   });
 
   it('never splits a square into more colours than it can show', () => {
-    const many: TalmudRabbis = {
-      rabbis: Array.from({ length: 6 }, (_, i) => ({
-        id: `r${i}`,
-        en: `R${i}`,
-        he: '',
-        gen: 'A2',
-        names: [],
-      })),
-      readings: [
-        [1, 0],
-        [1, 1],
-        [1, 2],
-        [1, 3],
-        [1, 4],
-        [1, 5],
-      ],
-    };
+    const many: Rabbi[] = Array.from({ length: 6 }, (_, i) => ({
+      id: `r${i}`,
+      en: `R${i}`,
+      he: '',
+      gen: 'A2',
+      names: [],
+    }));
     const crowd: TalmudDating = {
       ...dating,
-      people: many.rabbis.map((r) => ({ id: r.id, en: r.en, he: '', gen: 0 })),
+      people: many.map((r, i) => ({ id: r.id, en: r.en, he: '', gen: 0, means: [i] })),
+      rabbis: many,
       segments: { 'A.2a.1': [0, 0, [0, 1, 2, 3, 4, 5], []] },
     };
     const [drawn] = overlay.colorsFor(
       [item('A.2a.1')],
       picking('r0', 'r1', 'r2', 'r3', 'r4', 'r5'),
       null,
-      { dating: crowd, rabbis: many },
+      { dating: crowd },
     );
     expect(drawn).toHaveLength(4);
   });
@@ -278,33 +261,26 @@ describe('the finder', () => {
   });
 });
 
-describe('the shipped rabbis file', () => {
-  const shippedRabbis = JSON.parse(
-    readFileSync(`public/data/${RABBIS_FILE}`, 'utf-8'),
-  ) as TalmudRabbis;
-  const shippedDating = JSON.parse(
-    readFileSync(`public/data/${DATING_FILE}`, 'utf-8'),
-  ) as TalmudDating;
+describe('the shipped rabbis', () => {
+  const shipped = JSON.parse(readFileSync(`public/data/${DATING_FILE}`, 'utf-8')) as TalmudDating;
 
-  it('reads every person the dating file lists', () => {
-    expect(shippedRabbis.readings).toHaveLength(shippedDating.people.length);
-    for (const [, ...who] of shippedRabbis.readings) {
-      for (const place of who) expect(shippedRabbis.rabbis[place]).toBeDefined();
+  it('gives every name someone it can mean', () => {
+    for (const { means } of shipped.people) {
+      expect(means.length).toBeGreaterThan(0);
+      for (const place of means) expect(shipped.rabbis[place]).toBeDefined();
     }
   });
 
   it('gives each rabbi a unique id and a generation', () => {
-    const ids = shippedRabbis.rabbis.map((r) => r.id);
+    const ids = shipped.rabbis.map((r) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const r of shippedRabbis.rabbis) expect(r.gen).toMatch(/^(?:[ZTA]\d|TA)$/);
+    for (const r of shipped.rabbis) expect(r.gen).toMatch(/^(?:[ZTA]\d|TA)$/);
   });
 
-  it('reads a person who is not an ambiguous name as himself, for certain', () => {
-    shippedDating.people.forEach((person, i) => {
-      if (person.ambiguous) return;
-      const [sure, place] = shippedRabbis.readings[i];
-      expect(sure).toBe(1);
-      expect(shippedRabbis.rabbis[place].id).toBe(person.id);
-    });
+  it('reads a name that is not shared as the rabbi himself', () => {
+    for (const person of shipped.people) {
+      if (person.id.endsWith('(ambiguous)')) continue;
+      expect(person.means.map((place) => shipped.rabbis[place].id)).toEqual([person.id]);
+    }
   });
 });

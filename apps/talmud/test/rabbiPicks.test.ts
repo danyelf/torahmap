@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { rgbToOklch } from '@torahmap/utils';
 import { MISHNAH_BASE_COLOR } from '../src/constants.ts';
 import { generationColor } from '../src/overlays/dating.ts';
-import type { TalmudDating } from '../src/dating.ts';
-import type { TalmudRabbis } from '../src/rabbis.ts';
+import type { Rabbi, TalmudDating } from '../src/dating.ts';
 import {
   namedIn,
   passagesOf,
@@ -16,51 +15,42 @@ import {
   type RabbiData,
 } from '../src/overlays/rabbiPicks.ts';
 
-const rabbis: TalmudRabbis = {
-  rabbis: [
-    {
-      id: 'gamliel-a',
-      en: 'Rabban Gamliel haZaken',
-      he: 'רבן גמליאל הזקן',
-      gen: 'T1',
-      names: ['Gamliel'],
-    },
-    {
-      id: 'gamliel-b',
-      en: 'Rabban Gamliel b. Rabbi',
-      he: 'רבן גמליאל',
-      gen: 'TA',
-      names: ['Gamliel'],
-    },
-    {
-      id: 'lakish',
-      en: 'Rabbi Shimon b. Lakish',
-      he: 'רבי שמעון בן לקיש',
-      gen: 'A2',
-      names: ['#Reish Lakish', 'ריש לָקִישׁ'],
-    },
-    { id: 'yochanan', en: 'Rabbi Yochanan', he: 'רבי יוחנן', gen: 'A2', names: [] },
-    { id: 'abaye', en: 'Abaye', he: 'אביי', gen: 'A4', names: [] },
-  ],
-  // Places in dating.people: Gamliel (shared), Lakish, Yochanan, Abaye, and Abaye again by a shared name.
-  readings: [
-    [0, 0, 1],
-    [1, 2],
-    [1, 3],
-    [1, 4],
-    [1, 4],
-  ],
-};
+const rabbis: Rabbi[] = [
+  {
+    id: 'gamliel-a',
+    en: 'Rabban Gamliel haZaken',
+    he: 'רבן גמליאל הזקן',
+    gen: 'T1',
+    names: ['Gamliel'],
+  },
+  {
+    id: 'gamliel-b',
+    en: 'Rabban Gamliel b. Rabbi',
+    he: 'רבן גמליאל',
+    gen: 'TA',
+    names: ['Gamliel'],
+  },
+  {
+    id: 'lakish',
+    en: 'Rabbi Shimon b. Lakish',
+    he: 'רבי שמעון בן לקיש',
+    gen: 'A2',
+    names: ['#Reish Lakish', 'ריש לָקִישׁ'],
+  },
+  { id: 'yochanan', en: 'Rabbi Yochanan', he: 'רבי יוחנן', gen: 'A2', names: [] },
+  { id: 'abaye', en: 'Abaye', he: 'אביי', gen: 'A4', names: [] },
+];
 
 const dating: TalmudDating = {
   generations: [{ code: 'TA', from: 200, to: 220 }],
   people: [
-    { id: 'gamliel-(ambiguous)', en: 'Rabban Gamliel', he: 'רבן גמליאל', gen: 0, ambiguous: true },
-    { id: 'lakish', en: 'Rabbi Shimon b. Lakish', he: '', gen: 0 },
-    { id: 'yochanan', en: 'Rabbi Yochanan', he: '', gen: 0 },
-    { id: 'abaye', en: 'Abaye', he: '', gen: 0 },
-    { id: 'abaye-(ambiguous)', en: 'Abaye?', he: '', gen: 0, ambiguous: true },
+    { id: 'gamliel-(ambiguous)', en: 'Rabban Gamliel', he: 'רבן גמליאל', gen: 0, means: [0, 1] },
+    { id: 'lakish', en: 'Rabbi Shimon b. Lakish', he: '', gen: 0, means: [2] },
+    { id: 'yochanan', en: 'Rabbi Yochanan', he: '', gen: 0, means: [3] },
+    { id: 'abaye', en: 'Abaye', he: '', gen: 0, means: [4] },
+    { id: 'abaye-(ambiguous)', en: 'Abaye?', he: '', gen: 0, means: [4] },
   ],
+  rabbis,
   segments: {
     'A.2a.1': [0, 0, [1, 2, 0], []],
     'A.2a.2': [0, 0, [1, 2], []],
@@ -70,8 +60,8 @@ const dating: TalmudDating = {
   },
 };
 
-const data: RabbiData = { dating, rabbis };
-const place = (id: string) => rabbis.rabbis.findIndex((r) => r.id === id);
+const data: RabbiData = { dating };
+const place = (id: string) => rabbis.findIndex((r) => r.id === id);
 
 describe('which passages name a rabbi', () => {
   it('finds exactly the passages tagged with him', () => {
@@ -108,7 +98,7 @@ describe('which passages name a rabbi', () => {
 });
 
 describe('finding a rabbi', () => {
-  const found = (typed: string) => suggest(data, typed).map(({ place: p }) => rabbis.rabbis[p].id);
+  const found = (typed: string) => suggest(data, typed).map(({ place: p }) => rabbis[p].id);
 
   it('matches another name he is known by', () => {
     expect(found('Resh Lakish')).toEqual([]);
@@ -147,10 +137,12 @@ describe('the quick picks', () => {
 
   it('offer the one rabbi a name can mean, without asking which, when only he has a generation', () => {
     const narrowed = {
-      dating,
-      rabbis: { ...rabbis, readings: [[0, 0], ...rabbis.readings.slice(1)] },
+      dating: {
+        ...dating,
+        people: [{ ...dating.people[0], means: [0] }, ...dating.people.slice(1)],
+      },
     };
-    const entries = quickPicks(narrowed as RabbiData).flatMap((g) => g.entries);
+    const entries = quickPicks(narrowed).flatMap((g) => g.entries);
     expect(entries.find((e) => e.rabbis[0] === place('gamliel-a'))).toMatchObject({ single: true });
   });
 
@@ -161,7 +153,7 @@ describe('the quick picks', () => {
 });
 
 describe('colours for the picks', () => {
-  const pick = (...ids: string[]) => pickColors(ids.map((id) => rabbis.rabbis[place(id)]));
+  const pick = (...ids: string[]) => pickColors(ids.map((id) => rabbis[place(id)]));
   const hue = (a: number, b: number) => {
     const d = Math.abs(a - b) % 360;
     return Math.min(d, 360 - d);
