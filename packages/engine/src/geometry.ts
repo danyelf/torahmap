@@ -46,6 +46,8 @@ export interface Picture<C = ItemColor> {
   rings?: (C | null)[];
   uncoloured?: boolean[];
   standout?: boolean[];
+  /** The standouts that keep a faint halo at every zoom, not only as a dot when small. */
+  halo?: boolean[];
 }
 
 const NO_COLORS: Picture = { colors: [] };
@@ -91,7 +93,7 @@ export function packColor([r, g, b]: Color): number {
 }
 
 /** The bits of a shape's last float. */
-export const SHAPE_FLAGS = { UNCOLOURED: 1, STANDOUT: 2 } as const;
+export const SHAPE_FLAGS = { UNCOLOURED: 1, STANDOUT: 2, HALO: 4 } as const;
 
 const SLOTS = {
   from: { fill: 'a_fill', ring: 'a_ring', shape: 'a_shape' },
@@ -128,7 +130,8 @@ export function buildItemGeometry<T>(
     data[shape + 2] = ring.length;
     data[shape + 3] =
       (picture.uncoloured?.[i] ? SHAPE_FLAGS.UNCOLOURED : 0) |
-      (picture.standout?.[i] ? SHAPE_FLAGS.STANDOUT : 0);
+      (picture.standout?.[i] ? SHAPE_FLAGS.STANDOUT : 0) |
+      (picture.halo?.[i] ? SHAPE_FLAGS.HALO : 0);
   };
 
   for (let i = 0; i < items.length; i++) {

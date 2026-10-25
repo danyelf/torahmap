@@ -297,6 +297,13 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     return items.map((item) => countAt(item, derived) >= derived.glowFrom);
   },
 
+  halosFor(items, settings, data) {
+    const derived = derivationFor(data, settings);
+    return items.map(
+      (item) => !!derived && derived.tier !== 'rare' && countAt(item, derived) >= derived.glowFrom,
+    );
+  },
+
   settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {
     return { tab: params.tab, mark: params.trop ?? null, preview: null };
   },
