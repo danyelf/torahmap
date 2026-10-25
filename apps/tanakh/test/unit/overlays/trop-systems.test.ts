@@ -101,6 +101,12 @@ describe('a mark and the verses it colors', () => {
     expect(lit(revia, 'revia-mugrash', 'poetic')).toEqual(['Psalms 1 1']);
   });
 
+  it('does not count the yored of an ole ve-yored as a merkha', () => {
+    const verses = { 'Psalms 1 1': 'ב֥֫', 'Psalms 1 2': 'ב֥' };
+    expect(lit(verses, 'merkha', 'poetic')).toEqual(['Psalms 1 2']);
+    expect(lit(verses, 'ole-ve-yored', 'poetic')).toEqual(['Psalms 1 1']);
+  });
+
   it('reads sof pasuq from the meteg on the last word only', () => {
     const verse = {
       'Genesis 1 1': 'אֱלֹהִֽים׃',

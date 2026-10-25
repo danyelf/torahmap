@@ -82,6 +82,13 @@ function isTropMark(code: number): boolean {
 const METEG = 'ֽ';
 const GERESH_MUQDAM = '֝';
 const REVIA = '֗';
+const OLE = '֫';
+const MERKHA = '֥';
+// A sign that is half of another mark when its word also carries the other half.
+const HALF_OF: ReadonlyArray<readonly [half: string, whole: string]> = [
+  [REVIA, GERESH_MUQDAM],
+  [MERKHA, OLE],
+];
 
 export interface TropMark {
   /** The English name, in prose where the mark has both. */
@@ -305,8 +312,8 @@ const TRAILING_QERE = /\s*\([^)]*\)\s*$/;
  * Every sign of a verse's cantillation, in order.
  *
  * Two signs are read in their context: the meteg counts only as the silluq of
- * the last word, which makes it sof pasuq; and a revia on a word that also has
- * a geresh muqdam is half of a revia mugrash, not a revia.
+ * the last word, which makes it sof pasuq; and a revia with a geresh muqdam, or
+ * a merkha with an ole, is half of a revia mugrash or an ole ve-yored.
  */
 function occurrences(hebrewText: string): Occurrence[] {
   const found: Occurrence[] = [];
@@ -314,14 +321,14 @@ function occurrences(hebrewText: string): Occurrence[] {
   const body = (end < 0 ? hebrewText : hebrewText.slice(0, end)).replace(TRAILING_QERE, '');
   const lastWordStart = body.search(/\S+$/);
   for (const word of hebrewText.matchAll(/\S+/g)) {
-    const halfOfMugrash = word[0].includes(GERESH_MUQDAM);
+    const halves = HALF_OF.filter(([, whole]) => word[0].includes(whole)).map(([half]) => half);
     let silluq = -1;
     for (let i = 0; i < word[0].length; i++) {
       const sign = word[0][i];
       const index = word.index + i;
       if (sign === METEG) {
         if (word.index === lastWordStart) silluq = index;
-      } else if (isTropMark(sign.charCodeAt(0)) && !(sign === REVIA && halfOfMugrash)) {
+      } else if (isTropMark(sign.charCodeAt(0)) && !halves.includes(sign)) {
         found.push({ sign, index });
       }
     }
