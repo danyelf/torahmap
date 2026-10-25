@@ -175,40 +175,36 @@ describe('colours for the picks', () => {
   const gens = (...codes: string[]) =>
     pickColors(codes.map((gen) => ({ id: gen, en: gen, he: '', gen, names: [] })));
 
-  // Each era's set of three: equally light and equally colourful, told apart by hue alone.
-  const sets: [string, string[], number, number][] = [
-    ['Amoraim', ['A4', 'A4', 'A4'], 150, 285],
-    ['Tannaim', ['T3', 'T3', 'T3'], 20, 100],
-    ['Zugot', ['Z5', 'Z5', 'Z5'], 300, 380],
+  // Each era is a family of hues: the first two picks sit at its two ends.
+  const families: [string, string, number, number][] = [
+    ['Amoraim', 'A4', 190, 275],
+    ['Tannaim', 'T3', 15, 70],
+    ['Zugot', 'Z5', 295, 360],
   ];
-  for (const [era, codes, from, to] of sets) {
-    it(`matches the lightness and chroma of three ${era} and tells them apart by hue`, () => {
-      const [a, b, c] = gens(...codes).map(rgbToOklch);
-      for (const other of [b, c]) {
-        expect(Math.abs(other.l - a.l)).toBeLessThan(0.01);
-        expect(Math.abs(other.c - a.c)).toBeLessThan(0.01);
-      }
-      expect(hue(a.h, b.h)).toBeGreaterThan(12);
-      expect(hue(a.h, c.h)).toBeGreaterThan(12);
-      expect(hue(b.h, c.h)).toBeGreaterThan(12);
-      // Each stays in its era's family of hues, wrapping past 360 for the Zugot.
-      for (const { h } of [a, b, c]) {
-        const shifted = h < 100 && from >= 300 ? h + 360 : h;
-        expect(shifted).toBeGreaterThan(from);
-        expect(shifted).toBeLessThan(to);
+  for (const [era, code, from, to] of families) {
+    it(`gives three ${era} equal lightness and hues far apart, two of them at the ends of the family`, () => {
+      const [a, b, c] = gens(code, code, code).map(rgbToOklch);
+      for (const other of [b, c]) expect(Math.abs(other.l - a.l)).toBeLessThan(0.01);
+      expect(hue(a.h, b.h)).toBeGreaterThan(35);
+      expect(hue(a.h, c.h)).toBeGreaterThan(35);
+      expect(hue(b.h, c.h)).toBeGreaterThan(35);
+      for (const { h } of [a, b]) {
+        expect(h).toBeGreaterThan(from > 290 && h < 100 ? from - 360 : from);
+        expect(h < 100 && from > 290 ? h + 360 : h).toBeLessThan(to + 0.001);
       }
     });
   }
 
-  it('keeps every Amora clear of the Mishnah’s violet', () => {
-    const mishnah = rgbToOklch([...MISHNAH_BASE_COLOR] as [number, number, number]);
-    const colours = gens('A4', 'A4', 'A4', 'A4', 'A4', 'A4').slice(0, 3);
-    for (const colour of colours) expect(hue(rgbToOklch(colour).h, mishnah.h)).toBeGreaterThan(25);
-  });
-
-  it('leans the second Amora toward cyan, not toward purple', () => {
-    const [a, b] = gens('A4', 'A4').map(rgbToOklch);
-    expect(b.h).toBeLessThan(a.h);
+  it('keeps the ends of each family clear of the next, and of the Mishnah’s violet', () => {
+    const ends = (code: string) => gens(code, code).map((c) => rgbToOklch(c).h);
+    const [teal, indigo] = ends('A4');
+    const [orange, crimson] = ends('T3');
+    const [pink, violet] = ends('Z5');
+    expect(hue(indigo, violet)).toBeGreaterThan(30);
+    expect(hue(crimson, pink)).toBeGreaterThan(30);
+    expect(hue(teal, orange)).toBeGreaterThan(60);
+    const mishnah = rgbToOklch([...MISHNAH_BASE_COLOR] as [number, number, number]).h;
+    expect(hue(indigo, mishnah)).toBeGreaterThan(30);
   });
 
   it('gives rabbis of different eras different hues', () => {

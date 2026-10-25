@@ -191,23 +191,27 @@ export function suggest(
 }
 
 /**
- * Degrees of OKLCH hue from an era's own, for the second pick onward. They lean away from the
- * neighbouring eras: the Amoraim toward cyan and back toward blue, never into the Mishnah's violet
- * (hue 302); the Tannaim toward amber and red-orange; the Zugot toward magenta and rose.
+ * OKLCH hues, in the order an era's rabbis are picked. Each era is a broad family: the Amoraim
+ * from teal to indigo, the Tannaim from orange to crimson, the Zugot from violet to pink. A second
+ * pick sits at the far end of the family from the first, and the ends keep clear of the next
+ * family's (indigo from violet, pink from crimson) and of the Mishnah's violet (hue 302). From the
+ * third pick on the hue leaves the family, since the family has no room left to tell them apart.
  */
-const HUE_OFFSETS: Record<string, readonly number[]> = {
-  Amoraim: [0, -40, 14, -66, -20, -90],
-  Tannaim: [0, 22, -22, 36, -36, 50],
-  Zugot: [0, 30, 54, -30, 72, -50],
+const HUES: Record<string, readonly number[]> = {
+  Amoraim: [198, 268, 150, 232, 110, 172],
+  Tannaim: [64, 26, 112, 44, 90, 140],
+  Zugot: [350, 304, 130, 85, 200, 60],
 };
 
-/** How much of the gamut's edge the shared chroma may use, so no colour is clipped. */
+/** Past this, a hue's chroma would be garish beside the others. */
+const CHROMA_CAP = 0.14;
+/** How much of the gamut's edge a chroma may use, so no color is clipped. */
 const CHROMA_ROOM = 0.97;
 
 /**
- * A colour for each rabbi, in order. A rabbi alone in his era has his generation's colour in
- * Dating. Rabbis of one era share the first one's lightness and a chroma every hue can reach, and
- * differ only in hue, so they look equally bright and are told apart by hue.
+ * A color for each rabbi, in order. A rabbi alone in his era has his generation's color in
+ * Dating. Rabbis of one era have the first one's lightness, so they look equally bright, and the
+ * hues of `HUES`, so they are told apart at a glance.
  */
 export function pickColors(picked: readonly Rabbi[]): Color[] {
   const eras = picked.map((rabbi) => eraOf(rabbi.gen));
@@ -218,11 +222,10 @@ export function pickColors(picked: readonly Rabbi[]): Color[] {
       colors[group[0]] = generationColor(picked[group[0]].gen);
       continue;
     }
-    const first = rgbToOklch(generationColor(picked[group[0]].gen));
-    const hues = group.map((_, k) => (first.h + HUE_OFFSETS[era][k] + 360) % 360);
-    const c = Math.min(first.c, ...hues.map((h) => maxChroma(first.l, h) * CHROMA_ROOM));
+    const { l } = rgbToOklch(generationColor(picked[group[0]].gen));
     group.forEach((i, k) => {
-      colors[i] = oklchToRgb(first.l, c, hues[k]);
+      const h = HUES[era][k];
+      colors[i] = oklchToRgb(l, Math.min(CHROMA_CAP, maxChroma(l, h) * CHROMA_ROOM), h);
     });
   }
   return colors;
