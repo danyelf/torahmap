@@ -107,6 +107,11 @@ describe('a mark and the verses it colors', () => {
     expect(lit(verses, 'ole-ve-yored', 'poetic')).toEqual(['Psalms 1 1']);
   });
 
+  it('counts a yored on the word after its ole as part of the ole ve-yored', () => {
+    const verses = { 'Psalms 1 1': 'ב֫ ב֥', 'Psalms 1 2': 'ב ב֥' };
+    expect(lit(verses, 'merkha', 'poetic')).toEqual(['Psalms 1 2']);
+  });
+
   it('reads sof pasuq from the meteg on the last word only', () => {
     const verse = {
       'Genesis 1 1': 'אֱלֹהִֽים׃',

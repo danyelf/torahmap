@@ -325,8 +325,12 @@ function occurrences(hebrewText: string): Occurrence[] {
   const end = hebrewText.lastIndexOf('\u05C3');
   const body = (end < 0 ? hebrewText : hebrewText.slice(0, end)).replace(TRAILING_QERE, '');
   const lastWordStart = body.search(/\S+$/);
+  let yoredOwed = false;
   for (const word of hebrewText.matchAll(/\S+/g)) {
     const halves = HALF_OF.filter(([, whole]) => word[0].includes(whole)).map(([half]) => half);
+    // An ole without a merkha on its word has its yored on the next word.
+    if (yoredOwed) halves.push(MERKHA);
+    yoredOwed = word[0].includes(OLE) && !word[0].includes(MERKHA);
     let silluq = -1;
     for (let i = 0; i < word[0].length; i++) {
       const sign = word[0][i];

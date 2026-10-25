@@ -212,6 +212,7 @@ function renderTropChart(
         onChange((current) => ({
           ...current,
           tab: system,
+          preview: null,
           mark: current.mark && offers(system, current.mark) ? current.mark : null,
         })),
       );
