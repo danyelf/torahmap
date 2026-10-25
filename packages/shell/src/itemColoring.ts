@@ -32,7 +32,8 @@ function brightenBands(color: ItemColor, factor: number): ItemColor {
  * With both on, a square neither colours dims from its `base` colour. With
  * search alone, a square it does not find keeps `keepsBase` of its base
  * colour, or goes grey without it. Every match stands out, so it shows at any
- * zoom, and so does every square `overlayStandout` marks; `overlayHalo` keeps a faint glow on some of those at every zoom.
+ * zoom, and so does every square `overlayStandout` marks; `overlayHalo` keeps a
+ * faint glow on some of those at every zoom.
  */
 export function combineLayers(
   count: number,

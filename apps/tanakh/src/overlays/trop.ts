@@ -31,7 +31,6 @@ import {
   SYSTEM_INFO,
   SYSTEMS,
   systemOf,
-  type RarityTier,
   type System,
   type TropIndexEntry,
   type TropMark,
@@ -106,9 +105,10 @@ function glowLine(counts: number[]): number {
 
 interface TropDerivation {
   entry: TropIndexEntry;
-  tier: RarityTier;
   /** A verse glows, on top of its color, with at least this many occurrences. */
   glowFrom: number;
+  /** A verse keeps a faint halo at every zoom from this many; a rare mark has none. */
+  haloFrom: number;
   verseLookup: Map<string, number>;
   /** A verse's colour, from how many times it carries the mark. */
   colorOf: (count: number) => Color;
@@ -130,8 +130,8 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
     const match = RARE_MATCH_COLOR;
     return {
       entry,
-      tier,
       glowFrom: 1,
+      haloFrom: Infinity,
       verseLookup,
       colorOf: (count) => (count ? match : NO_MATCH_COLOR),
       legend: {
@@ -150,8 +150,8 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
   }
   return {
     entry,
-    tier,
     glowFrom,
+    haloFrom: glowFrom,
     verseLookup,
     colorOf: (count) => (count ? stepFor(count) : NO_MATCH_COLOR),
     legend: { kind: 'steps', steps },
@@ -299,9 +299,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
 
   halosFor(items, settings, data) {
     const derived = derivationFor(data, settings);
-    return items.map(
-      (item) => !!derived && derived.tier !== 'rare' && countAt(item, derived) >= derived.glowFrom,
-    );
+    return items.map((item) => !!derived && countAt(item, derived) >= derived.haloFrom);
   },
 
   settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {
