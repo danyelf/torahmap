@@ -51,6 +51,7 @@
   "dependencies": {
     "@torahmap/engine": "*",
     "@torahmap/euaiact": "*",
+    "@torahmap/ieeevis": "*",
     "@torahmap/link": "*",
     "@torahmap/overlay-catalog": "*",
     "@torahmap/shell": "*",
