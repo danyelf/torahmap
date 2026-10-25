@@ -41,7 +41,7 @@ export const RABBIS_URL_PARAMS = [
 ] as const satisfies readonly UrlParamSpec[];
 
 /** How much of a rabbi's colour a passage keeps when a name there only might be him. */
-const MAYBE_KEEPS = 0.45;
+const MAYBE_KEEPS = 0.8;
 
 export const addPick = (id: string): SettingsUpdate<RabbiSettings> =>
   function (current) {

@@ -1,7 +1,7 @@
 // Which passages name the picked rabbis, how to find a rabbi by any of his names, and the colour
 // each pick gets. No page in here.
 
-import { hslToRgb, memoByValueAndKey, rgbToHsl, type Color } from '@torahmap/utils';
+import { maxChroma, memoByValueAndKey, oklchToRgb, rgbToOklch, type Color } from '@torahmap/utils';
 import type { TalmudDating } from '../dating.ts';
 import type { Rabbi, TalmudRabbis } from '../rabbis.ts';
 import { ERAS, eraOf, generationColor, TRANSITION } from './dating.ts';
@@ -192,32 +192,38 @@ export function suggest(
 }
 
 /**
- * Degrees of hue from an era's own, for its second pick onward. They lean away from the
- * neighbouring eras: the Amoraim toward cyan and indigo, never toward the Zugot's purple; the
- * Tannaim toward amber and red-orange; the Zugot toward magenta and violet.
+ * Degrees of OKLCH hue from an era's own, for the second pick onward. They lean away from the
+ * neighbouring eras: the Amoraim toward cyan and back toward blue, never into the Mishnah's violet
+ * (hue 302); the Tannaim toward amber and red-orange; the Zugot toward magenta and rose.
  */
 const HUE_OFFSETS: Record<string, readonly number[]> = {
-  Amoraim: [0, -38, 26, -62, 46, -84],
-  Tannaim: [0, 24, -22, 40, -36, 54],
-  Zugot: [0, 38, -28, 58, -44, 74],
+  Amoraim: [0, -40, 14, -66, -20, -90],
+  Tannaim: [0, 22, -22, 36, -36, 50],
+  Zugot: [0, 30, 54, -30, 72, -50],
 };
 
+/** How much of the gamut's edge the shared chroma may use, so no colour is clipped. */
+const CHROMA_ROOM = 0.97;
+
 /**
- * A colour for each rabbi, in order. The first rabbi of an era has his generation's colour in
- * Dating. Each later one has the same lightness and saturation and a hue further from the era's
- * own, so the picks of an era are told apart by hue and are as bright as one another.
+ * A colour for each rabbi, in order. A rabbi alone in his era has his generation's colour in
+ * Dating. Rabbis of one era share the first one's lightness and a chroma every hue can reach, and
+ * differ only in hue, so they look equally bright and are told apart by hue.
  */
 export function pickColors(picked: readonly Rabbi[]): Color[] {
   const eras = picked.map((rabbi) => eraOf(rabbi.gen));
   const colors: Color[] = [];
   for (const era of new Set(eras)) {
     const group = picked.flatMap((_, i) => (eras[i] === era ? [i] : []));
-    const first = rgbToHsl(generationColor(picked[group[0]].gen));
+    if (group.length === 1) {
+      colors[group[0]] = generationColor(picked[group[0]].gen);
+      continue;
+    }
+    const first = rgbToOklch(generationColor(picked[group[0]].gen));
+    const hues = group.map((_, k) => (first.h + HUE_OFFSETS[era][k] + 360) % 360);
+    const c = Math.min(first.c, ...hues.map((h) => maxChroma(first.l, h) * CHROMA_ROOM));
     group.forEach((i, k) => {
-      colors[i] =
-        k === 0
-          ? generationColor(picked[i].gen)
-          : hslToRgb({ ...first, h: (first.h + HUE_OFFSETS[era][k] + 360) % 360 });
+      colors[i] = oklchToRgb(first.l, c, hues[k]);
     });
   }
   return colors;

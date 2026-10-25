@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
   rgbToHsl,
   hslToRgb,
+  rgbToOklch,
+  oklchToRgb,
+  maxChroma,
   interpolateGradient,
   type ColorStop,
   type Color,
@@ -371,5 +374,27 @@ describe('rgbToHsl and hslToRgb roundtrip', () => {
       const rgb = hslToRgb(hsl);
       assertColorEquals(rgb, gray, 0.01);
     }
+  });
+});
+
+describe('OKLCH', () => {
+  it('converts a colour there and back', () => {
+    const color: Color = [0.195, 0.517, 0.885];
+    const { l, c, h } = rgbToOklch(color);
+    const back = oklchToRgb(l, c, h);
+    expect(back.map((v) => Math.round(v * 255))).toEqual(color.map((v) => Math.round(v * 255)));
+  });
+
+  it('gives white full lightness and no chroma', () => {
+    const white = rgbToOklch(WHITE);
+    expect(white.l).toBeCloseTo(1, 2);
+    expect(white.c).toBeLessThan(0.001);
+  });
+
+  it('finds the most chroma a hue can have at a lightness inside the gamut', () => {
+    const c = maxChroma(0.6, 250);
+    const edge = oklchToRgb(0.6, c, 250);
+    expect(Math.max(...edge) > 0.99 || Math.min(...edge) < 0.01).toBe(true);
+    expect(rgbToOklch(edge).c).toBeCloseTo(c, 1);
   });
 });

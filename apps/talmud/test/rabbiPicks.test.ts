@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { rgbToHsl } from '@torahmap/utils';
+import { rgbToOklch } from '@torahmap/utils';
+import { MISHNAH_BASE_COLOR } from '../src/constants.ts';
 import { generationColor } from '../src/overlays/dating.ts';
 import type { TalmudDating } from '../src/dating.ts';
 import type { TalmudRabbis } from '../src/rabbis.ts';
@@ -162,32 +163,47 @@ describe('colours for the picks', () => {
     expect(pick('lakish')[0]).toEqual(pick('yochanan')[0]);
   });
 
-  it('keeps the first of an era in his Dating colour when others join him', () => {
-    expect(pick('lakish', 'yochanan', 'abaye')[0]).toEqual(generationColor('A2'));
+  const gens = (...codes: string[]) =>
+    pickColors(codes.map((gen) => ({ id: gen, en: gen, he: '', gen, names: [] })));
+
+  // Each era's set of three: equally light and equally colourful, told apart by hue alone.
+  const sets: [string, string[], number, number][] = [
+    ['Amoraim', ['A4', 'A4', 'A4'], 150, 285],
+    ['Tannaim', ['T3', 'T3', 'T3'], 20, 100],
+    ['Zugot', ['Z5', 'Z5', 'Z5'], 300, 380],
+  ];
+  for (const [era, codes, from, to] of sets) {
+    it(`matches the lightness and chroma of three ${era} and tells them apart by hue`, () => {
+      const [a, b, c] = gens(...codes).map(rgbToOklch);
+      for (const other of [b, c]) {
+        expect(Math.abs(other.l - a.l)).toBeLessThan(0.01);
+        expect(Math.abs(other.c - a.c)).toBeLessThan(0.01);
+      }
+      expect(hue(a.h, b.h)).toBeGreaterThan(12);
+      expect(hue(a.h, c.h)).toBeGreaterThan(12);
+      expect(hue(b.h, c.h)).toBeGreaterThan(12);
+      // Each stays in its era's family of hues, wrapping past 360 for the Zugot.
+      for (const { h } of [a, b, c]) {
+        const shifted = h < 100 && from >= 300 ? h + 360 : h;
+        expect(shifted).toBeGreaterThan(from);
+        expect(shifted).toBeLessThan(to);
+      }
+    });
+  }
+
+  it('keeps every Amora clear of the Mishnah’s violet', () => {
+    const mishnah = rgbToOklch([...MISHNAH_BASE_COLOR] as [number, number, number]);
+    const colours = gens('A4', 'A4', 'A4', 'A4', 'A4', 'A4').slice(0, 3);
+    for (const colour of colours) expect(hue(rgbToOklch(colour).h, mishnah.h)).toBeGreaterThan(25);
   });
 
-  it('tells rabbis of one era apart by hue, at the same lightness and saturation', () => {
-    const [a, b, c] = pick('lakish', 'yochanan', 'abaye').map(rgbToHsl);
-    for (const other of [b, c]) {
-      expect(Math.abs(other.l - a.l)).toBeLessThan(0.02);
-      expect(Math.abs(other.s - a.s)).toBeLessThan(0.02);
-    }
-    expect(hue(a.h, b.h)).toBeGreaterThan(25);
-    expect(hue(a.h, c.h)).toBeGreaterThan(20);
-    expect(hue(b.h, c.h)).toBeGreaterThan(40);
-  });
-
-  it('keeps the Amoraim blue, leaning toward cyan and never toward purple', () => {
-    for (const { h } of pick('lakish', 'yochanan', 'abaye').map(rgbToHsl)) {
-      expect(h).toBeGreaterThan(150);
-      expect(h).toBeLessThan(250);
-    }
-    const [a, b] = pick('lakish', 'yochanan').map(rgbToHsl);
+  it('leans the second Amora toward cyan, not toward purple', () => {
+    const [a, b] = gens('A4', 'A4').map(rgbToOklch);
     expect(b.h).toBeLessThan(a.h);
   });
 
   it('gives rabbis of different eras different hues', () => {
-    const [a, b] = pick('lakish', 'gamliel-a').map(rgbToHsl);
+    const [a, b] = pick('lakish', 'gamliel-a').map(rgbToOklch);
     expect(hue(a.h, b.h)).toBeGreaterThan(60);
   });
 });
