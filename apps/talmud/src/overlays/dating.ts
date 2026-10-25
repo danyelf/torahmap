@@ -105,7 +105,11 @@ export function generationLabel(code: string, short = false): string {
   return `${ordinal}${short ? '-gen' : '-generation'} ${era}`;
 }
 
-const faint = (color: readonly number[]): Color => mix(MAP_BACKGROUND, color, FAINT);
+/** `color` with only `keeps` of it left over the map's background. */
+export const fadeTo = (color: readonly number[], keeps: number): Color =>
+  mix(MAP_BACKGROUND, color, keeps);
+
+const faint = (color: readonly number[]): Color => fadeTo(color, FAINT);
 
 /** A generation's colour, washed out where only an ambiguous name gives it. */
 const shade = (code: string, uncertain: boolean): Color =>

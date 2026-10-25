@@ -1,7 +1,6 @@
 // Lights every passage that names the rabbis a reader picks, each rabbi in a colour of his own.
 
 import './rabbis.css';
-import { MAP_BACKGROUND } from '@torahmap/engine';
 import type { Overlay, SettingsUpdate, UrlParamSpec } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
@@ -11,9 +10,9 @@ import { DATING_FILE } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE } from '../constants.ts';
 import {
+  fadeTo,
   generationLabel,
   markNames,
-  mix,
   nameFor,
   row,
   yearsShort,
@@ -29,6 +28,7 @@ import {
   picksFromUrl,
   picksToUrl,
   quickPicks,
+  readingOf,
   suggest,
   type Entry,
   type RabbiData,
@@ -55,7 +55,7 @@ const removePick = (id: string): SettingsUpdate<RabbiSettings> =>
     return { picked: current.picked.filter((p) => p !== id) };
   };
 
-const faded = (color: Color): Color => mix(MAP_BACKGROUND, color, MAYBE_KEEPS);
+const faded = (color: Color): Color => fadeTo(color, MAYBE_KEEPS);
 
 const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
@@ -102,8 +102,7 @@ export function rabbisOverlay(
   base: (item: TalmudLayoutItem) => Color,
   link: RabbiLink,
 ): Overlay<TalmudLayoutItem, RabbiSettings, RabbiData> {
-  const unlit = (item: TalmudLayoutItem): Color =>
-    mix(MAP_BACKGROUND, base(item), SEARCH_KEEPS_BASE);
+  const unlit = (item: TalmudLayoutItem): Color => fadeTo(base(item), SEARCH_KEEPS_BASE);
 
   /** The colours to draw a passage in: one when one picked rabbi is named there, else a split. */
   function colorsOf(
@@ -343,7 +342,7 @@ export function rabbisOverlay(
       container.innerHTML = [
         ...places.map((place, i) => row(colors[i], data.rabbis.rabbis[place].en)),
         row(faded(colors[0]), 'Faded: a name that might be him'),
-        row(mix(MAP_BACKGROUND, GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE), 'Names none of them'),
+        row(fadeTo(GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE), 'Names none of them'),
       ].join('');
     },
 
@@ -376,7 +375,7 @@ export function rabbisOverlay(
       const box = document.createElement('div');
       const seen = new Set<string>();
       for (const person of segment[2]) {
-        const [sure, ...who] = data.rabbis.readings[person];
+        const { sure, who } = readingOf(data.rabbis, person);
         const entry = document.createElement('span');
         entry.className = 'rabbi-entry';
         if (sure && who.length === 1) {
@@ -413,7 +412,7 @@ export function rabbisOverlay(
       if (language !== HEBREW || !segment || !places.length) return fragment;
       const colors = pickColors(places.map((p) => data.rabbis.rabbis[p]));
       return markNames(fragment, text, segment[3], (person) => {
-        const [sure, ...who] = data.rabbis.readings[person];
+        const { sure, who } = readingOf(data.rabbis, person);
         const at = places.findIndex((p) => who.includes(p));
         if (at < 0) return null;
         return sure ? colors[at] : faded(colors[at]);

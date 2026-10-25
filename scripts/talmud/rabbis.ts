@@ -5,10 +5,7 @@ import type { TalmudDating } from '@torahmap/talmud/dating.ts';
 import type { Rabbi, Reading, TalmudRabbis } from '@torahmap/talmud/rabbis.ts';
 import { isAmbiguous, latestGeneration, type Facts } from './facts.ts';
 
-/**
- * A rabbi is anyone with a
- * generation whom a listed name can mean, the candidates of a shared name included.
- */
+/** A rabbi is anyone with a generation whom a listed name can mean, the candidates of a shared name included. */
 export function rabbisFrom(facts: Facts, { people }: TalmudDating): TalmudRabbis {
   const slugs = people.map((p) => p.id);
   const { topics, candidates, periods } = facts;

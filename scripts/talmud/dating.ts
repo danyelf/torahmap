@@ -98,15 +98,13 @@ export function datingFrom(
 ): TalmudDating {
   const { periods, topics, candidates } = facts;
 
-  const latestOf = (code: string | null | undefined) => latestGeneration(code, periods);
-
   const generationOf = (slug: string): string | null =>
     isAmbiguous(slug)
       ? ((candidates[slug] ?? [])
-          .map((c) => latestOf(topics[c]?.generation))
+          .map((c) => latestGeneration(topics[c]?.generation, periods))
           .filter((c): c is string => c !== null)
           .sort((a, b) => periods[b].from - periods[a].from)[0] ?? null)
-      : latestOf(topics[slug]?.generation);
+      : latestGeneration(topics[slug]?.generation, periods);
 
   const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
   const byId = new Map<string, Mention[]>();

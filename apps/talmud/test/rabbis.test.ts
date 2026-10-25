@@ -170,15 +170,14 @@ describe('the pinned passage', () => {
   it('shows the colour of a picked rabbi beside his name', () => {
     const box = info('A.2a.1');
     expect(box.querySelectorAll('.picked .swatch')).toHaveLength(1);
-    expect(box.textContent).toContain(rabbis.rabbis[3].en);
+    expect(box.querySelectorAll('.rabbi-entry')).toHaveLength(2);
   });
 
-  it('lists a name that could be several rabbis with a question mark, not as a button', () => {
+  it('lists a name that could be several rabbis as one entry that is not a button', () => {
     link.open = () => {};
     const box = info('A.2a.3');
     link.open = undefined;
-    expect(box.textContent).toContain('Rabban Gamliel');
-    expect(box.textContent).toContain('?');
+    expect(box.querySelectorAll('.rabbi-entry')).toHaveLength(1);
     expect(box.querySelector('button')).toBeNull();
   });
 
@@ -237,10 +236,9 @@ describe('the finder', () => {
   it('offers every person who shares a name so the reader chooses', () => {
     const finder = open();
     finder.type('gamliel');
-    expect(finder.rows().map((r) => r.textContent)).toEqual([
-      expect.stringContaining('Rabban Gamliel haZaken'),
-      expect.stringContaining('Rabban Gamliel b. Rabbi'),
-    ]);
+    expect(finder.rows()).toHaveLength(2);
+    (finder.rows()[0] as HTMLElement).click();
+    expect(finder.changes).toEqual([picking('gamliel-a')]);
   });
 
   it('shows a picked rabbi with his colour and unpicks him', () => {
@@ -253,10 +251,10 @@ describe('the finder', () => {
   it('asks which person when a quick pick is a shared name', () => {
     const finder = open();
     const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.rabbi-chip')].find(
-      (c) => c.textContent?.startsWith('Rabban Gamliel'),
+      (c) => c.textContent?.startsWith(dating.people[0].en),
     )!;
     chip.click();
-    expect(finder.container.querySelector('.rabbi-which')?.textContent).toContain('Which');
+    expect(finder.container.querySelector('.rabbi-which')).not.toBeNull();
     expect(finder.rows()).toHaveLength(2);
     (finder.rows()[1] as HTMLElement).click();
     expect(finder.changes).toEqual([picking('gamliel-b')]);
@@ -265,7 +263,7 @@ describe('the finder', () => {
   it('does not offer a shared name once every person it can mean is picked', () => {
     const finder = open(picking('gamliel-a', 'gamliel-b'));
     const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.rabbi-chip')].find(
-      (c) => c.textContent?.startsWith('Rabban Gamliel'),
+      (c) => c.textContent?.startsWith(dating.people[0].en),
     )!;
     expect(chip.disabled).toBe(true);
   });

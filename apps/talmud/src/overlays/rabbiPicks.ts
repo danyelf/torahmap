@@ -53,12 +53,10 @@ const build = (rabbis: TalmudRabbis, dating: TalmudDating): Index => {
   const maybe = rabbis.rabbis.map(() => 0);
   const naming = new Map<string, { entry: Omit<Entry, 'named'>; ids: Set<string> }>();
   for (const [id, segment] of Object.entries(dating.segments)) {
-    const here = new Map<number, Certainty>();
     for (const person of segment[2]) {
-      const [certain, ...who] = rabbis.readings[person];
+      const { who } = readingOf(rabbis, person);
       if (!who.length) continue;
-      for (const r of who) if (certain || !here.has(r)) here.set(r, certain ? 'sure' : 'maybe');
-      const one = certain === 1 && who.length === 1;
+      const one = who.length === 1;
       const key = one ? `r${who[0]}` : `p${person}`;
       if (!naming.has(key)) {
         const { en, he } = one ? rabbis.rabbis[who[0]] : dating.people[person];
@@ -69,7 +67,7 @@ const build = (rabbis: TalmudRabbis, dating: TalmudDating): Index => {
       }
       naming.get(key)!.ids.add(id);
     }
-    for (const [r, how] of here) (how === 'sure' ? sure : maybe)[r]++;
+    for (const [r, how] of standingIn({ rabbis, dating }, id)) (how === 'sure' ? sure : maybe)[r]++;
   }
   return {
     placeOf: new Map(rabbis.rabbis.map((r, i) => [r.id, i])),
@@ -90,24 +88,25 @@ export function pickedPlaces(settings: RabbiSettings, data: RabbiData): number[]
   return settings.picked.flatMap((id) => placeOf.get(id) ?? []);
 }
 
-/** How each of `places` stands in a passage, for those it names. */
-export function namedIn(
-  data: RabbiData,
-  id: string,
-  places: readonly number[],
-): Map<number, Certainty> {
+/** What a person's name can mean: whether it is certain, and the rabbis it can be. */
+export function readingOf(rabbis: TalmudRabbis, person: number): { sure: boolean; who: number[] } {
+  const [sure, ...who] = rabbis.readings[person];
+  return { sure: sure === 1, who };
+}
+
+/** How each rabbi a passage may name stands in it: certain where any one name settles him. */
+export function standingIn({ rabbis, dating }: RabbiData, id: string): Map<number, Certainty> {
   const found = new Map<number, Certainty>();
-  const segment = data.dating.segments[id];
-  if (!segment) return found;
-  for (const person of segment[2]) {
-    const [certain, ...who] = data.rabbis.readings[person];
-    for (const r of who) {
-      if (places.includes(r) && (certain || !found.has(r)))
-        found.set(r, certain ? 'sure' : 'maybe');
-    }
+  for (const person of dating.segments[id]?.[2] ?? []) {
+    const { sure, who } = readingOf(rabbis, person);
+    for (const r of who) if (sure || !found.has(r)) found.set(r, sure ? 'sure' : 'maybe');
   }
   return found;
 }
+
+/** How each of `places` stands in a passage, for those it names. */
+export const namedIn = (data: RabbiData, id: string, places: readonly number[]) =>
+  new Map([...standingIn(data, id)].filter(([place]) => places.includes(place)));
 
 /** The passages a rabbi is named in, for certain and else. */
 export const passagesOf = (data: RabbiData, place: number) => {

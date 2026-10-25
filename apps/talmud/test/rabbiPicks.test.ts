@@ -145,6 +145,15 @@ describe('the quick picks', () => {
     ]);
   });
 
+  it('offer the one rabbi a name can mean, without asking which, when only he has a generation', () => {
+    const narrowed = {
+      dating,
+      rabbis: { ...rabbis, readings: [[0, 0], ...rabbis.readings.slice(1)] },
+    };
+    const entries = quickPicks(narrowed as RabbiData).flatMap((g) => g.entries);
+    expect(entries.find((e) => e.rabbis[0] === place('gamliel-a'))).toMatchObject({ single: true });
+  });
+
   it('count a name that can mean several people as one choice that asks which', () => {
     const entries = quickPicks(data).flatMap((g) => g.entries);
     expect(entries.map((e) => e.single)).toEqual([false, true, true, true]);
