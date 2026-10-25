@@ -27,13 +27,14 @@ import {
   SEDER_LABEL_SIZE,
   TRACTATE_TAB,
 } from './constants.ts';
-import { mishnahOrGemaraColor } from './baseColor.ts';
+import { grayOf, mishnahOrGemaraColor } from './baseColor.ts';
 import { datingOverlay, type RabbiLink } from './overlays/dating.ts';
 import { addPick, RABBIS_ID, RABBIS_URL_PARAMS, rabbisOverlay } from './overlays/rabbis.ts';
 import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
   amudIndex,
+  isSegmentMishnah,
   englishFile,
   hadranLines,
   structureFrom,
@@ -99,7 +100,12 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
     const baseColor = (item: TalmudLayoutItem) =>
       hadrans.has(item.id) ? MAP_BACKGROUND : mishnahOrGemaraColor(structure, item);
     const link: RabbiLink = {};
-    const rabbis = rabbisOverlay(baseColor, link);
+    // Under Rabbis the Mishnah's violet would sit beside the Zugot's and the indigo.
+    const quietBase = (item: TalmudLayoutItem) =>
+      isSegmentMishnah(structure, item.tractate, item.daf, item.amud, item.segment)
+        ? grayOf(baseColor(item))
+        : baseColor(item);
+    const rabbis = rabbisOverlay(quietBase, link);
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
     /** Where a segment is in its tractate's files, which list segments by amud. */

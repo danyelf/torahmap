@@ -994,6 +994,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function activateOverlay(id: string): void {
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
+    document.body.dataset.overlay = currentOverlay?.id ?? NO_OVERLAY;
   }
 
   function renderOverlayLegend(): void {

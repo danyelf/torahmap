@@ -24,3 +24,9 @@ export function mishnahOrGemaraColor(structure: TalmudStructure, id: TalmudIdent
   const mishnah = isSegmentMishnah(structure, id.tractate, id.daf, id.amud, id.segment);
   return jitteredColor(mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR, id);
 }
+
+/** The same brightness with no hue: a Mishnah segment where the Mishnah's violet would crowd a tool's colors. */
+export function grayOf([r, g, b]: Color): Color {
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+  return [gray, gray, gray];
+}

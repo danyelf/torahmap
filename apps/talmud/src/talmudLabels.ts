@@ -11,6 +11,7 @@ import {
   SEDARIM,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
+import './talmudLabels.css';
 import { createRowNumbers, labelGroup, type Placed } from '@torahmap/shell/rowNumbers.ts';
 
 interface Pan {
@@ -23,11 +24,8 @@ function coverOf(block: TractateBlock): HTMLElement | null {
   if (!tint) return null;
   const [r, g, b] = tint.map((c) => Math.round(c * 255));
   const el = document.createElement('div');
-  el.style.cssText = `
-    position:absolute;
-    background:rgba(${r},${g},${b},${COVER_OPACITY});
-    border-radius:4px;
-  `;
+  el.className = 'talmud-cover';
+  el.style.cssText = `--tint:${r},${g},${b}; --cover-opacity:${COVER_OPACITY};`;
   return el;
 }
 
