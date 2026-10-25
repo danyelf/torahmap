@@ -189,6 +189,14 @@ describe('datingFrom', () => {
     expect(placeIn('אמר רב', rav)).toMatchObject({ start: 4, end: 6 });
   });
 
+  it('places a tag, which counts the bare letters, on a vowelled line, marks included', () => {
+    const rava = mention('TractA 2a:1', 'rava', { start: 4, end: 7, text: 'רבא' });
+    const line = 'אָמַר רָבָא, אָמַר';
+    const at = placeIn(line, rava)!;
+    expect(line.slice(at.start, at.end)).toBe('רָבָא');
+    expect(at.exact).toBe(true);
+  });
+
   it('finds a name whose prefix the map spells differently', () => {
     const named = mention('TractA 2a:1', 'meir', { start: 2, end: 12, text: 'לרבי יוסי' });
     expect(placeIn('אמר רבי יוסי', named)).toMatchObject({ start: 4 });

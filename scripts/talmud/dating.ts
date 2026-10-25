@@ -45,8 +45,30 @@ function spellings(word: string): string {
   return `[בכלמשוהד]{0,3}(?:${full}${abbreviations}|(?<=א")ר)`;
 }
 
-/** Where `mention`'s words stand in `line`: at its tagged position, else the nearest spelling of them within NEARBY. */
+/** Vowel points, accents and the like: the tags count the text without them, the map shows it with. */
+const MARKS = /[֑-ׇֽֿׁׂׅׄ]/;
+
+/** Where `mention`'s words stand in `line`, which may be vowelled: at its tagged position, else the nearest spelling of them within NEARBY. */
 export function placeIn(
+  line: string,
+  mention: Mention,
+): { start: number; end: number; exact: boolean } | null {
+  const origin: number[] = [];
+  let bare = '';
+  for (let i = 0; i < line.length; i++) {
+    if (MARKS.test(line[i])) continue;
+    origin.push(i);
+    bare += line[i];
+  }
+  const found = placeInBare(bare, mention);
+  if (!found) return null;
+  // The end takes the marks that follow its last letter.
+  let end = origin[found.end - 1] + 1;
+  while (end < line.length && MARKS.test(line[end])) end++;
+  return { start: origin[found.start], end, exact: found.exact };
+}
+
+function placeInBare(
   line: string,
   { start, end, text }: Mention,
 ): { start: number; end: number; exact: boolean } | null {
