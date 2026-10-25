@@ -378,7 +378,9 @@ export function highlightTropInText(hebrewText: string, signs: readonly string[]
       if (!isNikkud(last.codePointAt(0) || 0)) break;
     }
     highlighted.push(char);
-    result.push(`<mark class="trop-highlight">${highlighted.join('')}</mark>`);
+    result.push(
+      `<mark class="trop-highlight" style="background: ${colorToCss(RARE_MATCH_COLOR)}">${highlighted.join('')}</mark>`,
+    );
   }
 
   return result.join('');
