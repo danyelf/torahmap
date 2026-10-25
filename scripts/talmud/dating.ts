@@ -14,7 +14,7 @@ import type {
   Rabbi,
   TalmudDating,
 } from '@torahmap/talmud/dating.ts';
-import { DATING_FILE } from '@torahmap/talmud/dating.ts';
+import { DATING_FILE, isSure } from '@torahmap/talmud/dating.ts';
 import {
   STRUCTURE_FILE,
   textsFile,
@@ -115,7 +115,7 @@ export function datingFrom(
     (isAmbiguous(slug) ? (candidates[slug] ?? []) : [slug]).filter(
       (id) => latestGeneration(topics[id]?.generation, periods) !== null,
     );
-  const sure = (slug: string) => meant(slug).length === 1;
+  const sure = (slug: string) => isSure({ means: meant(slug) });
 
   const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
   const byId = new Map<string, Mention[]>();

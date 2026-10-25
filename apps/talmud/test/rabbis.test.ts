@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { HEBREW } from '@torahmap/shell/language.ts';
-import { DATING_FILE, type Rabbi, type TalmudDating } from '../src/dating.ts';
+import { DATING_FILE, isSure, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import { fadeTo } from '../src/overlays/dating.ts';
 import { talmudText } from '../src/text.ts';
 import { addPick, rabbisOverlay } from '../src/overlays/rabbis.ts';
@@ -275,6 +275,12 @@ describe('the shipped rabbis', () => {
     const ids = shipped.rabbis.map((r) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
     for (const r of shipped.rabbis) expect(r.gen).toMatch(/^(?:[ZTA]\d|TA)$/);
+  });
+
+  it('marks a passage uncertain exactly when no name it lists is certain', () => {
+    for (const [, uncertain, listed] of Object.values(shipped.segments)) {
+      expect(uncertain === 1).toBe(!listed.some((place) => isSure(shipped.people[place])));
+    }
   });
 
   it('reads a name that is not shared as the rabbi himself', () => {

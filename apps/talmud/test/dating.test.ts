@@ -49,6 +49,22 @@ const colour = (id: string) =>
   overlay.getItemColor(item(id), undefined as never, { dating }) as number[];
 
 describe('the dating overlay', () => {
+  it('links a shared name that can mean one person to that person', () => {
+    const solo: TalmudDating = {
+      ...dating,
+      people: [{ id: 'meir-(ambiguous)', en: 'Meir', he: 'מאיר', gen: 0, means: [0] }],
+      segments: { 'A.2a.1': [0, 0, [0], []] },
+    };
+    const opened: string[] = [];
+    const linked = datingOverlay(base, { open: (id) => opened.push(id) });
+    const box = linked.renderSidebarInfo?.(item('A.2a.1'), true, undefined as never, {
+      dating: solo,
+    }) as HTMLElement;
+    box.querySelector<HTMLButtonElement>('.rabbi-name')!.click();
+    expect(opened).toEqual(['meir']);
+    expect(box.textContent).not.toContain('?');
+  });
+
   it('gives each generation its own colour', () => {
     const colours = ['A.2a.1', 'A.2a.2'].map(colour);
     expect(colours[0]).not.toEqual(colours[1]);

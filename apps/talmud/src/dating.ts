@@ -24,7 +24,7 @@ export interface Person {
 }
 
 /** A name is certain when it can mean only one person. */
-export const isSure = ({ means }: Person) => means.length === 1;
+export const isSure = ({ means }: { means: readonly unknown[] }) => means.length === 1;
 
 /** A person Sefaria gives a generation. `gen` is a generation's code. */
 export interface Rabbi {
