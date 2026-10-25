@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
-import { LAUNCH_ARGS, SCREENS, webServer } from '../browser/screens.ts';
+import { LAUNCH_ARGS, SCREENS, suitePort, webServer } from '../browser/screens.ts';
 
-const PORT = Number(process.env.LAYOUT_PORT ?? 5199);
+const PORT = await suitePort('LAYOUT_PORT');
 
 export default defineConfig({
   testDir: '.',

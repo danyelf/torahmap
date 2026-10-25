@@ -11,7 +11,7 @@ skips silently. See `scripts/install-hooks.sh` for what else it checks and when 
 ## Layout tests
 
 `npm run test:layout` tests the interface for layout in a real browser, at four screen sizes, from
-a phone to a desktop. It starts its own dev server on port 5199 (`LAYOUT_PORT` to change it),
+a phone to a desktop. It starts its own dev server on a free port (`LAYOUT_PORT` to choose one),
 renders the map with software WebGL, and checks every state in `test/layout/app.ts`: no control
 off screen; the panel, the zoom buttons and the verse popup clear of each other, and the panel
 clear of the map; no clipped text; on the touch screens (tablet and phone), touch targets at least
@@ -25,8 +25,8 @@ It runs on four workers, too long for the pre-commit hook.
 ## Loading tests
 
 The map draws before its data and fills in as each file lands. `npm run test:loading` tests that
-in a real browser at one desktop and one phone size, on its own dev server on port 5198
-(`LOADING_PORT` to change it).
+in a real browser at one desktop and one phone size, on its own dev server on a free port
+(`LOADING_PORT` to choose one). A dev server stops itself when the run that started it has gone.
 
 ## Test harness
 

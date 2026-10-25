@@ -7,6 +7,7 @@ import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import { EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
+import { OWNER_PID_ENV } from './test/browser/owner.ts';
 import { builtPages, isLiveBuild, unpublished, type BuiltPage } from './build.ts';
 
 // Get the current git branch name
@@ -105,6 +106,26 @@ function assetsIgnorePlugin(live: boolean): Plugin {
   };
 }
 
+// A browser suite names the process that started it; the server stops when that process is gone,
+// which a run killed outright cannot do for it.
+function exitWithOwnerPlugin(): Plugin {
+  const owner = Number(process.env[OWNER_PID_ENV]);
+  return {
+    name: 'exit-with-owner',
+    apply: 'serve',
+    configureServer() {
+      if (!owner) return;
+      setInterval(() => {
+        try {
+          process.kill(owner, 0);
+        } catch (e) {
+          if ((e as NodeJS.ErrnoException).code === 'ESRCH') process.exit(0);
+        }
+      }, 1000).unref();
+    },
+  };
+}
+
 export default defineConfig(({ command }) => {
   const branch = getGitBranch();
   const live = isLiveBuild(command, branch);
@@ -115,6 +136,7 @@ export default defineConfig(({ command }) => {
       pageAddressPlugin('talmud'),
       pageAddressPlugin('euaiact'),
       assetsIgnorePlugin(live),
+      exitWithOwnerPlugin(),
     ],
     // Declared in packages/shell/src/env.d.ts.
     define: {
