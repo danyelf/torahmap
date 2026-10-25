@@ -20,20 +20,29 @@
   gap: 4px;
 }
 
-.trop-tabs button {
-  flex: 1;
-  padding: 6px 4px;
+.trop-tabs button,
+.trop-grid button {
   border: 1px solid #444;
   border-radius: 4px;
   background: #222;
-  color: #ccc;
-  font-size: 12px;
+  color: #fff;
   cursor: pointer;
 }
 
-.trop-tabs button.selected {
+.trop-tabs button.selected,
+.trop-grid button.selected {
   border-color: #6ab0f3;
   background: #2a3f55;
+}
+
+.trop-tabs button {
+  flex: 1;
+  padding: 6px 4px;
+  color: #ccc;
+  font-size: 12px;
+}
+
+.trop-tabs button.selected {
   color: #fff;
 }
 
@@ -67,12 +76,7 @@
   gap: 6px;
   min-height: 44px;
   padding: 2px 6px;
-  border: 1px solid #444;
-  border-radius: 4px;
-  background: #222;
-  color: #fff;
   text-align: left;
-  cursor: pointer;
   transition: all 0.15s;
 }
 
@@ -82,14 +86,9 @@
   min-width: 0;
 }
 
-.trop-grid button:hover {
+.trop-grid button:hover:not(.selected) {
   border-color: #888;
   background: #333;
-}
-
-.trop-grid button.selected {
-  border-color: #6ab0f3;
-  background: #2a3f55;
 }
 
 .trop-sign {

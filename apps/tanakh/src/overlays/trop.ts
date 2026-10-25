@@ -71,47 +71,28 @@ function entryFor(data: TropData, mark: string | null): TropIndexEntry | null {
   return (mark && marksOf(data).get(mark)) || null;
 }
 
-function tierOf(entry: TropIndexEntry): RarityTier {
-  return getRarityTier(entry.totalCount);
-}
-
-// The bright end of every counted scale: a mark drawn as present or absent is one color family with the rest.
-const BRIGHT: Color = [0.95, 0.6, 0.9]; // Pink
 // One occurrence, at the dim end of every counted scale. It stays well clear of
 // NO_MATCH_COLOR: a darker start made a verse with one occurrence vanish when zoomed out.
 const ONE_OCCURRENCE: Color = [0.7, 0.3, 0.7]; // Magenta
-export const RARE_MATCH_COLOR: Color = BRIGHT;
+// The bright end of every counted scale, and a rare mark's present-or-absent color,
+// so every mark is one color family.
+export const RARE_MATCH_COLOR: Color = [0.95, 0.6, 0.9]; // Pink
 // A verse without the mark, at every tier.
 export const NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
 
-interface RareTier {
-  match: Color;
-}
+const GRADIENT: ColorStop[] = [
+  { t: 0, color: ONE_OCCURRENCE },
+  { t: 1, color: RARE_MATCH_COLOR },
+];
 
-interface CountedTier {
-  transform: Transform;
-  gradient: ColorStop[];
-}
-
-/** How each tier is drawn: a rare mark as present or absent, any other as a count, on a scale. */
-const TIERS = {
-  rare: { match: RARE_MATCH_COLOR },
-  uncommon: {
-    transform: LINEAR,
-    gradient: [
-      { t: 0, color: ONE_OCCURRENCE },
-      { t: 1, color: BRIGHT },
-    ],
-  },
-  // Common marks span a wide range of counts, so their scale is logarithmic.
-  common: {
-    transform: LOG,
-    gradient: [
-      { t: 0, color: ONE_OCCURRENCE },
-      { t: 1, color: BRIGHT },
-    ],
-  },
-} satisfies Record<RarityTier, RareTier | CountedTier>;
+/**
+ * How a mark that is not rare is counted, on a scale. A rare mark is drawn as
+ * present or absent; common marks span a wide range of counts, so theirs is logarithmic.
+ */
+const TRANSFORMS = { uncommon: LINEAR, common: LOG } satisfies Record<
+  Exclude<RarityTier, 'rare'>,
+  Transform
+>;
 
 /** The key's colours, as CSS: "contains" and "does not" swatches, or one gradient. */
 type TropLegend =
@@ -136,9 +117,9 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
     verseLookup.set(verseId(loc.book, loc.chapter, loc.verse), loc.count);
   }
 
-  const tier = tierOf(entry);
+  const tier = getRarityTier(entry.totalCount);
   if (tier === 'rare') {
-    const { match } = TIERS.rare;
+    const match = RARE_MATCH_COLOR;
     return {
       entry,
       tier,
@@ -151,9 +132,8 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
       },
     };
   }
-  const { transform, gradient } = TIERS[tier];
   const maxCount = entry.verses.reduce((max, loc) => Math.max(max, loc.count), 1);
-  const counts = scale(0, maxCount, transform, gradient);
+  const counts = scale(0, maxCount, TRANSFORMS[tier], GRADIENT);
   return {
     entry,
     tier,

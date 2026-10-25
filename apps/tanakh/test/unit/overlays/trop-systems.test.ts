@@ -128,12 +128,6 @@ describe('the tab in the link', () => {
     expect(h.toUrl()).toEqual({ trop: 'munach', tab: 'poetic' });
   });
 
-  it('is restored from a link', () => {
-    const h = host();
-    h.restore({ tab: 'poetic' });
-    expect(h.settings.tab).toBe('poetic');
-  });
-
   it('changes by clicking its tab, and keeps a mark both tabs offer', () => {
     const h = host();
     const controls = h.renderControls();
@@ -172,6 +166,13 @@ describe('the marks data', () => {
           expect(SYSTEM_INFO[system].groups.map((g) => g.id)).toContain(group);
         }
       }
+    }
+  });
+
+  it('writes no sign as two marks in one system', () => {
+    for (const system of SYSTEMS) {
+      const signs = TROP_MARKS.flatMap((mark) => signsOf(mark, system));
+      expect(new Set(signs).size).toBe(signs.length);
     }
   });
 

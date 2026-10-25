@@ -7,8 +7,7 @@
 // poetic books or Sifrei Emet, have a system of their own; every other verse
 // is prose. A mark is one way of chanting, which may be written with
 // different signs, named differently in each system, or shared by both. Some
-// signs are a different mark in each system: the tipcha sign is tarcha in
-// poetry.
+// signs are a different mark in each system.
 
 import { TROP_TABS } from '@torahmap/overlay-catalog';
 import type { VerseTexts } from '../../verseTexts.ts';
@@ -121,7 +120,7 @@ export const TROP_MARKS: readonly TropMark[] = [
   {
     name: 'Ole ve-Yored',
     hebrewName: 'עולה ויורד',
-    signs: ['֫'],
+    signs: [OLE],
     groups: { poetic: 'dividers' },
   },
   {
@@ -189,7 +188,7 @@ export const TROP_MARKS: readonly TropMark[] = [
   {
     name: 'Merkha',
     hebrewName: 'מרכא',
-    signs: ['֥'],
+    signs: [MERKHA],
     groups: { prose: 'servants', poetic: 'servants' },
   },
   {

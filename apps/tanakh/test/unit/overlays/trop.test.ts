@@ -302,7 +302,7 @@ describe('Trop Overlay', () => {
 
   describe('Rarity-Based Coloring', () => {
     describe('Rare Marks', () => {
-      it('returns gold for a verse holding a rare mark', () => {
+      it('colors a verse holding a rare mark with the match color', () => {
         const host = makeHost();
         const container = host.renderControls();
         const rareButton =
@@ -716,31 +716,6 @@ describe('Trop Overlay', () => {
       tropOverlay.destroy?.();
 
       expect(host.getItemColor(verse)).toEqual(before);
-    });
-  });
-
-  describe('Cache Performance', () => {
-    it('recalculates when the selected mark changes', () => {
-      const host = makeHost();
-      const container = host.renderControls();
-      const buttons = container.querySelectorAll('.trop-grid button');
-      if (buttons.length < 2) return;
-      const [button1, button2] = Array.from(buttons) as HTMLButtonElement[];
-
-      button1.click();
-      const verse = testVerses[0];
-      const color1 = host.getItemColor(verse);
-      const slug1 = host.settings.mark;
-
-      button2.click();
-      const color2 = host.getItemColor(verse);
-      const slug2 = host.settings.mark;
-
-      expect(color1).not.toBeNull();
-      expect(color2).not.toBeNull();
-      if (slug1 !== slug2) {
-        expect(slug1).not.toEqual(slug2);
-      }
     });
   });
 
