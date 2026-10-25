@@ -86,4 +86,21 @@ describe('links in the popup', () => {
     expect(anchors()).toEqual([]);
     expect(hebrew().textContent).toBe(HEBREW);
   });
+
+  it('shows a reference as its label, before the word at its place and outside it', () => {
+    const heard = vi.fn();
+    setWordClickHandler(heard);
+    show({ hebrewReferences: [{ at: 17, href: '/?verse=Psalms.36.7', label: '(תהלים לו, ז)' }] });
+    expect(anchors().map((a) => a.textContent)).toEqual(['(תהלים לו, ז)']);
+    expect(hebrew().textContent).toBe('שנאמר תהלים לו ז (תהלים לו, ז)צדקתך');
+    expect(anchors()[0].closest('.popup-word')).toBeNull();
+    anchors()[0].addEventListener('click', (event) => event.preventDefault());
+    anchors()[0].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    expect(heard).not.toHaveBeenCalled();
+  });
+
+  it('shows a label at the end of the text', () => {
+    show({ hebrewReferences: [{ at: 22, href: '/', label: '(א)' }] });
+    expect(hebrew().textContent).toBe(HEBREW + '(א)');
+  });
 });

@@ -36,6 +36,7 @@ import {
   hadranLines,
   structureFrom,
   textsFile,
+  type Citation,
   type TalmudTractateEnglish,
   type TalmudTractateText,
 } from './data.ts';
@@ -69,6 +70,14 @@ const TALMUD_LINK_KEYS: LinkKeys = {
 
 // The commentary overlay's category for the Talmud, as public/data/overlays/commentary/ names it.
 export const TALMUD_CATEGORY = 'Talmud';
+
+const verseLink = (verse: string) => commentaryLink(verse, TALMUD_CATEGORY);
+
+const linkTo = ({ start, end, verse }: Citation) => ({
+  start,
+  end,
+  href: verseLink(verse),
+});
 
 export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
   site: talmudSite,
@@ -136,18 +145,22 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           TalmudTractateEnglish | undefined;
         const { ai, si } = placeOf(item);
         const english = englishText(translation?.[ai]?.[si] ?? '');
+        const citations = file?.citations[ai]?.[si] ?? [];
+        const cited = file?.englishCitations[ai]?.[si] ?? [];
         return {
           ref: talmudRef(item),
           hebrew: file?.amudim[ai]?.[si] ?? '',
           english: english.text,
           englishStyles: english.styles,
           englishSearched: searchedStretches(english.text, english.styles),
+          englishLinks: cited.map(linkTo),
           link: sefariaUrl(item.tractate, [amudName(item), item.segment]),
-          hebrewLinks: (file?.citations[ai]?.[si] ?? []).map(({ start, end, verse }) => ({
-            start,
-            end,
-            href: commentaryLink(verse, TALMUD_CATEGORY),
-          })),
+          hebrewLinks: citations.filter((c) => c.reference === undefined).map(linkTo),
+          hebrewReferences: citations.flatMap(({ start, verse, reference }) =>
+            reference === undefined
+              ? []
+              : [{ at: start, href: verseLink(verse), label: reference }],
+          ),
         };
       },
 

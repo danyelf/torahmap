@@ -7,6 +7,7 @@ import { STORIES } from '@torahmap/stories/tanakh';
 import { namesPlace } from '@torahmap/tanakh/stories.ts';
 import { initBookData } from '@torahmap/tanakh/books.ts';
 import { computeLayout } from '@torahmap/tanakh/layout.ts';
+import { isHadran } from '../scripts/talmud/markers.ts';
 import { computeTalmudLayout } from '@torahmap/talmud/layout.ts';
 import { parseTalmudId, talmudId } from '@torahmap/talmud/layout.ts';
 import {
@@ -88,7 +89,7 @@ describe('the shipped data', () => {
       return t.amudim.flatMap((amud, ai) =>
         text.amudim[ai].flatMap((segment, si) => {
           const at = place(amud.daf, amud.amud, si + 1);
-          return segment.startsWith('הדרן') === hadrans.has(at) ? [] : [`${t.name} ${at}`];
+          return isHadran(segment) === hadrans.has(at) ? [] : [`${t.name} ${at}`];
         }),
       );
     });

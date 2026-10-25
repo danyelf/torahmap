@@ -46,7 +46,9 @@ describe("the Talmud's popup", () => {
   const amudim = [['The first segment of 2a', 'Its second'], ['A segment of 2b']];
   // "Its" in 2a:2 cites a verse.
   const citations = { 0: { 1: [{ start: 0, end: 3, verse: 'Psalms.36.7' }] } };
-  const file = { name: 'TractA', amudim, citations };
+  // "second" in the English of 2a:2 cites another.
+  const englishCitations = { 0: { 1: [{ start: 4, end: 10, verse: 'Genesis.1.1' }] } };
+  const file = { name: 'TractA', amudim, citations, englishCitations };
   const english = [['', '*Its* second'], ['']];
   const both = new Map<string, unknown>([
     [textsFile('TractA'), file],
@@ -71,6 +73,17 @@ describe("the Talmud's popup", () => {
     expect(cited.href.startsWith('/?')).toBe(true);
     expect(readLink(cited.href.slice(1), LINK_KEYS)).toMatchObject({
       square: 'Psalms.36.7',
+      overlay: 'commentary',
+      overlayParams: { category: 'Talmud' },
+    });
+  });
+
+  it('links each verse the English cites the same way', () => {
+    const { englishLinks } = open.popupText(second, both, null);
+    expect(englishLinks).toHaveLength(1);
+    expect(englishLinks![0]).toMatchObject({ start: 4, end: 10 });
+    expect(readLink(englishLinks![0].href.slice(1), LINK_KEYS)).toMatchObject({
+      square: 'Genesis.1.1',
       overlay: 'commentary',
       overlayParams: { category: 'Talmud' },
     });

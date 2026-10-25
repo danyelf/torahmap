@@ -18,8 +18,8 @@ import {
   STRUCTURE_FILE as TALMUD_STRUCTURE_FILE,
   type TalmudSearchText,
 } from '@torahmap/talmud/data.ts';
-import { stripNikkud } from '@torahmap/hebrew';
-import { HADRAN, markersOf, mishnahFrom, stripMarkerWords } from './markers.ts';
+import { decomposePresentationForms, stripNikkud } from '@torahmap/hebrew';
+import { isHadran, markersOf, mishnahFrom, stripMarkerWord } from './markers.ts';
 import {
   REPORT_PATH,
   cachePathsFor,
@@ -32,15 +32,22 @@ import {
   getVerseText,
   type VerseTexts,
 } from '@torahmap/tanakh/verseTexts.ts';
-import { citationFinder, citationsByPlace, type TanakhBook } from './citations.ts';
+import {
+  citationFinder,
+  citationsByPlace,
+  quoteFinder,
+  type Placing,
+  type Tanakh,
+  type TanakhBook,
+} from './citations.ts';
 import { englishMarkers } from './english.ts';
+import { englishCitationFinder, englishCitationsByPlace } from './englishCitations.ts';
 import { englishSearchText } from '@torahmap/talmud/english.ts';
 
 /**
- * A segment as plain Hebrew for the popup. Wikisource mixes raw tags into
- * segments — not just <br>/<big>/<strong> but also <img> blobs (sometimes
- * huge base64 PNGs), <a>/<span> wrappers, and the occasional `[label](url)`
- * markdown link.
+ * A segment without its tags. Davidson's hold only <br>, <big>, <strong> and <b>; Wikisource's,
+ * read for the verses it names, also hold <img> blobs (sometimes huge base64 PNGs), <a>/<span>
+ * wrappers and the occasional `[label](url)` markdown link.
  */
 export function stripHtml(s: string): string {
   return (
@@ -57,11 +64,6 @@ export function stripHtml(s: string): string {
       .replace(/\s+/g, ' ')
       .trim()
   );
-}
-
-interface WikisourceJson {
-  text: string[][];
-  heTitle?: string;
 }
 
 interface SchemaJson {
@@ -121,8 +123,9 @@ export function parseWholeRef(ref: string): {
   return null;
 }
 
-export interface MergedJson {
+export interface EditionJson {
   text: string[][];
+  heTitle?: string;
 }
 
 /**
@@ -133,7 +136,7 @@ function englishShapeDiffers(hebrew: string[][], english: string[][]): number | 
   if (english.length !== hebrew.length) return Math.min(english.length, hebrew.length);
   const at = hebrew.findIndex((amud, ai) => {
     const n = english[ai].length;
-    return !(n === amud.length || (n === amud.length - 1 && HADRAN.test(amud.at(-1)!)));
+    return !(n === amud.length || (n === amud.length - 1 && isHadran(amud.at(-1)!)));
   });
   return at < 0 ? null : at;
 }
@@ -141,21 +144,25 @@ function englishShapeDiffers(hebrew: string[][], english: string[][]): number | 
 export function processTractate(
   seder: string,
   tractateName: string,
-  wikisource: WikisourceJson,
+  /** The William Davidson edition's Hebrew and Aramaic. */
+  davidson: EditionJson,
   schema: SchemaJson,
-  merged: MergedJson,
-  /** The William Davidson English, shaped as `wikisource`. */
-  english: MergedJson,
+  /** The William Davidson English, shaped as `davidson`. */
+  english: EditionJson,
+  /** The Wikisource edition, shaped as `davidson`, read for the Tanakh verses it names. */
+  wikisource: EditionJson,
 ): {
   structure: TalmudTractate;
-  text: Omit<TalmudTractateText, 'citations'>;
+  text: Omit<TalmudTractateText, 'citations' | 'englishCitations'>;
   english: TalmudTractateEnglish;
-  /** What search reads: the other edition, which spells abbreviations out, as plain letters. */
+  /** What search reads: the popup's text without points. */
   search: string[][];
   /** What English search reads, shaped as `english`. */
   searchEnglish: string[][];
+  /** Wikisource's text without tags, laid out as `text`. Davidson names no verse it quotes. */
+  naming: string[][];
 } {
-  const shape = shapeMatches(wikisource, merged);
+  const shape = shapeMatches(davidson, wikisource);
   if (!shape.match) throw new Error(`${tractateName}: the editions differ: ${shape.reason}`);
   const schemaNodes = schema.alts?.Chapters?.nodes ?? [];
   if (schemaNodes.length === 0) {
@@ -163,14 +170,13 @@ export function processTractate(
   }
   // Sefaria's amud arrays start at 1a, though the Talmud has no daf 1, and keep
   // every amud before a tractate's text starts empty: to 25a, in Tamid.
-  const skip = wikisource.text.findIndex((amud) => amud.length > 0);
+  const skip = davidson.text.findIndex((amud) => amud.length > 0);
   if (skip < 0) throw new Error(`${tractateName}: no text`);
   const amudAt = (ai: number): Pick<TalmudAmud, 'daf' | 'amud'> => ({
     daf: 1 + Math.floor((skip + ai) / 2),
     amud: (skip + ai) % 2 === 0 ? 'a' : 'b',
   });
-  const text = wikisource.text.slice(skip);
-  const other = merged.text.slice(skip);
+  const text = davidson.text.slice(skip).map((amud) => amud.map(decomposePresentationForms));
   const translation = english.text.slice(skip);
   const differs = englishShapeDiffers(text, translation);
   if (differs !== null) {
@@ -225,10 +231,10 @@ export function processTractate(
     }
   }
 
-  const markers = markersOf(text, other);
+  const markers = markersOf(text);
   const mishnahMask = mishnahFrom(markers);
   const cleanText = text.map((amud, ai) =>
-    amud.map((seg, si) => stripHtml(stripMarkerWords(seg, markers[ai][si]))),
+    amud.map((seg, si) => stripHtml(stripMarkerWord(seg, markers[ai][si]))),
   );
 
   const amudim: TalmudAmud[] = text.map((amud, ai) => {
@@ -244,7 +250,7 @@ export function processTractate(
 
   const englishMarked = text.map((amud, ai) =>
     amud.map((seg, si) => {
-      if (HADRAN.test(seg)) return '';
+      if (isHadran(seg)) return '';
       try {
         return englishMarkers(translation[ai][si]);
       } catch (err) {
@@ -257,15 +263,16 @@ export function processTractate(
   return {
     structure: {
       name: tractateName,
-      hebrewName: wikisource.heTitle ?? tractateName,
+      hebrewName: davidson.heTitle ?? tractateName,
       seder,
       amudim,
       perakim,
     },
     text: { name: tractateName, amudim: cleanText },
     english: englishMarked,
-    search: other.map((amud) => amud.map((seg) => stripNikkud(stripHtml(seg)))),
+    search: cleanText.map((amud) => amud.map(stripNikkud)),
     searchEnglish: englishMarked.map((amud) => amud.map(englishSearchText)),
+    naming: wikisource.text.slice(skip).map((amud) => amud.map(stripHtml)),
   };
 }
 
@@ -295,11 +302,15 @@ async function main(): Promise<void> {
   const searchEnglish: TalmudSearchText = {};
   const { books } = await readJson<{ books: TanakhBook[] }>(join(DATA_DIR, STRUCTURE_FILE));
   const texts = await readJson<VerseTexts>(join(DATA_DIR, TEXTS_FILE));
-  const find = citationFinder({
+  const tanakh: Tanakh = {
     books,
     text: (book, chapter, verse) => getVerseText(texts, book, chapter, verse)?.he ?? null,
-  });
-  let linked = 0;
+  };
+  const find = citationFinder(tanakh);
+  const place = quoteFinder(tanakh);
+  const findEnglish = englishCitationFinder(books);
+  const unlinked: string[] = [];
+  const placings: Partial<Record<Placing, number>> = {};
   const missed: string[] = [];
 
   for (const ref of passed) {
@@ -312,25 +323,29 @@ async function main(): Promise<void> {
         english: tractateEnglish,
         search: searchText,
         searchEnglish: searchEnglishText,
+        naming,
       } = processTractate(
         ref.seder,
         ref.tractate,
-        await readJson<WikisourceJson>(paths.wikisource),
+        await readJson<EditionJson>(paths.davidson),
         await readJson<SchemaJson>(paths.schema),
-        await readJson<MergedJson>(paths.merged),
-        await readJson<MergedJson>(paths.english),
+        await readJson<EditionJson>(paths.english),
+        await readJson<EditionJson>(paths.wikisource),
       );
 
       structure.tractates.push(tractateStructure);
       search[ref.tractate] = searchText;
       searchEnglish[ref.tractate] = searchEnglishText;
 
-      const cited = citationsByPlace(tractateText.amudim, find);
-      for (const amud of Object.values(cited.citations)) {
-        for (const segment of Object.values(amud)) linked += segment.length;
-      }
+      const cited = citationsByPlace(tractateText.amudim, naming, find, place, placings);
       missed.push(...cited.missed.map((stretch) => `${ref.tractate}: ${stretch}`));
-      const shipped: TalmudTractateText = { ...tractateText, citations: cited.citations };
+      const referenced = englishCitationsByPlace(tractateEnglish, findEnglish);
+      unlinked.push(...referenced.unlinked.map((reference) => `${ref.tractate}: ${reference}`));
+      const shipped: TalmudTractateText = {
+        ...tractateText,
+        citations: cited.citations,
+        englishCitations: referenced.citations,
+      };
       await writeData(textsFile(ref.tractate), shipped);
       await writeData(englishFile(ref.tractate), tractateEnglish);
 
@@ -358,7 +373,10 @@ async function main(): Promise<void> {
   );
   console.log(`English: ${join(DATA_DIR, dirname(englishFile('')))}`);
   console.log('');
-  console.log(`Tanakh citations linked: ${linked}`);
+  console.log(`Tanakh citations, by how each found its place in Davidson's text:`);
+  for (const [way, n] of Object.entries(placings)) console.log(`  ${way}: ${n}`);
+  console.log(`English references naming a verse the Tanakh lacks: ${unlinked.length}`);
+  for (const reference of unlinked.slice(0, 10)) console.log(`  ${reference}`);
   console.log(`Looked like citations but named no verse: ${missed.length}`);
   for (const stretch of missed.slice(0, 10)) console.log(`  ${stretch}`);
 }

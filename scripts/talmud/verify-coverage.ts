@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
 /**
- * Download every Bavli tractate in both editions, Wikisource and Davidson, with
- * its chapter boundaries, and check that each is whole: both editions divided
- * alike, chapters in the schema, and a plausible count of markers. The report
- * says which tractates bundle.ts builds.
+ * Download every Bavli tractate in the William Davidson edition, with its English and chapter
+ * boundaries, and check that each is whole: chapters in the schema and a plausible count of
+ * markers. Wikisource's edition comes too, only for the Tanakh verses it names, and must be
+ * divided as Davidson's is. The report says which tractates bundle.ts builds.
  *
  * Usage:
  *   npx tsx scripts/talmud/verify-coverage.ts            # honor cache
@@ -13,7 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { detectMarker } from './markers.ts';
+import { markersOf } from './markers.ts';
 
 // Tractate list — hand-rolled. Source: standard Vilna Bavli table of contents.
 // 37 tractates total. Shekalim is excluded because its "Bavli" Gemara is
@@ -112,12 +112,13 @@ async function fetchToCache(url: string, cachePath: string, force: boolean): Pro
   return cachePath;
 }
 
-/** What a tractate is downloaded as: its two Hebrew editions, its chapters and its English. */
+/** What a tractate is downloaded as: its text, its chapters, its English and the verses it cites. */
 interface TractateFiles {
-  wikisource: string;
-  merged: string;
+  davidson: string;
   schema: string;
   english: string;
+  /** Read only for the Tanakh verses it names, which Davidson quotes without naming. */
+  wikisource: string;
 }
 
 function urlsFor(ref: TractateRef): TractateFiles {
@@ -126,53 +127,43 @@ function urlsFor(ref: TractateRef): TractateFiles {
   // Schema filenames use underscores for spaces, not URL-encoded spaces.
   // E.g. "Rosh Hashanah" → "Rosh_Hashanah.json".
   const schemaName = ref.tractate.replace(/ /g, '_');
+  const edition = (name: string) =>
+    `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/${name}`;
   return {
-    wikisource: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/${encodeURIComponent('Wikisource Talmud Bavli.json')}`,
-    merged: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`,
+    // merged.json holds the Davidson text.
+    davidson: edition('Hebrew/merged.json'),
     schema: `${SEFARIA_EXPORT}/schemas/${schemaName}.json`,
-    english: `${SEFARIA_EXPORT}/json/Talmud/Bavli/${seder}/${tractate}/English/${encodeURIComponent('William Davidson Edition - English.json')}`,
+    english: edition(`English/${encodeURIComponent('William Davidson Edition - English.json')}`),
+    wikisource: edition(`Hebrew/${encodeURIComponent('Wikisource Talmud Bavli.json')}`),
   };
 }
 
 export function cachePathsFor(ref: TractateRef): TractateFiles {
   const dir = join(CACHE_ROOT, ref.tractate);
   return {
-    wikisource: join(dir, 'wikisource.json'),
-    merged: join(dir, 'merged.json'),
+    davidson: join(dir, 'merged.json'),
     schema: join(dir, 'schema.json'),
     english: join(dir, 'english.json'),
+    wikisource: join(dir, 'wikisource.json'),
   };
 }
 
 async function fetchTractate(
   ref: TractateRef,
   force: boolean,
-): Promise<{
-  wikisource: unknown;
-  merged: unknown;
-  schema: unknown;
-}> {
+): Promise<{ davidson: unknown; wikisource: unknown; schema: unknown }> {
   const urls = urlsFor(ref);
   const paths = cachePathsFor(ref);
-
-  const [ws, md, sc] = await Promise.all([
-    fetchToCache(urls.wikisource, paths.wikisource, force),
-    fetchToCache(urls.merged, paths.merged, force),
-    fetchToCache(urls.schema, paths.schema, force),
-    // Only the bundle reads it.
-    fetchToCache(urls.english, paths.english, force),
-  ]);
-
-  const [wsText, mdText, scText] = await Promise.all([
-    readFile(ws, 'utf-8'),
-    readFile(md, 'utf-8'),
-    readFile(sc, 'utf-8'),
-  ]);
-
+  await Promise.all(
+    (Object.keys(urls) as (keyof TractateFiles)[]).map((key) =>
+      fetchToCache(urls[key], paths[key], force),
+    ),
+  );
+  const read = async (path: string) => JSON.parse(await readFile(path, 'utf-8')) as unknown;
   return {
-    wikisource: JSON.parse(wsText),
-    merged: JSON.parse(mdText),
-    schema: JSON.parse(scText),
+    davidson: await read(paths.davidson),
+    wikisource: await read(paths.wikisource),
+    schema: await read(paths.schema),
   };
 }
 
@@ -183,9 +174,8 @@ export type TractateStatus = 'pass' | 'hard-fail' | 'soft-fail';
 export interface VerificationResult {
   status: TractateStatus;
   failures: string[];
-  wikisource: { amudCount: number; segmentCount: number };
-  merged: { amudCount: number; segmentCount: number };
-  shapeMatch: boolean;
+  amudCount: number;
+  segmentCount: number;
   markers: { matnitin: number; gemara: number };
 }
 
@@ -193,9 +183,9 @@ export interface TalmudJson {
   text: string[][];
 }
 
-/** How many segments open with each marker, read as bundle.ts reads them. */
+/** How many segments open each part, read as bundle.ts reads them. */
 export function countMarkers(text: string[][]): { matnitin: number; gemara: number } {
-  const opens = text.flat().map(detectMarker);
+  const opens = markersOf(text).flat();
   return {
     matnitin: opens.filter((m) => m === 'M').length,
     gemara: opens.filter((m) => m === 'G').length,
@@ -233,42 +223,30 @@ export function shapeMatches(a: TalmudJson, b: TalmudJson): { match: boolean; re
 }
 
 /**
- * Run all verification rules against a fetched tractate bundle.
+ * Run all verification rules against a fetched tractate.
  */
 export function verifyTractate(
+  davidson: unknown,
   wikisource: unknown,
-  merged: unknown,
   schema: unknown,
 ): VerificationResult {
   const failures: string[] = [];
-  const ws = wikisource as TalmudJson;
-  const md = merged as TalmudJson;
+  const text = (davidson as TalmudJson)?.text;
+  const naming = (wikisource as TalmudJson)?.text;
   const sc = schema as {
     alts?: { Chapters?: { nodes?: unknown[] } };
   };
 
   // --- Hard rules ---
 
-  if (!Array.isArray(ws?.text)) {
+  const amudCount = Array.isArray(text) ? text.length : 0;
+  const segmentCount = Array.isArray(text) ? totalSegments(text) : 0;
+  if (segmentCount === 0) failures.push('no text');
+
+  if (!Array.isArray(naming)) {
     failures.push('wikisource.text is not an array');
-  }
-  if (!Array.isArray(md?.text)) {
-    failures.push('merged.text is not an array');
-  }
-  const wsAmud = ws?.text?.length ?? 0;
-  const wsSeg = Array.isArray(ws?.text) ? totalSegments(ws.text) : 0;
-  const mdAmud = md?.text?.length ?? 0;
-  const mdSeg = Array.isArray(md?.text) ? totalSegments(md.text) : 0;
-
-  if (wsAmud === 0) failures.push('wikisource text.length === 0');
-  if (wsSeg === 0) failures.push('wikisource total segment count === 0');
-  if (mdAmud === 0) failures.push('merged text.length === 0');
-  if (mdSeg === 0) failures.push('merged total segment count === 0');
-
-  let shapeOk = false;
-  if (Array.isArray(ws?.text) && Array.isArray(md?.text)) {
-    const sh = shapeMatches(ws, md);
-    shapeOk = sh.match;
+  } else if (Array.isArray(text)) {
+    const sh = shapeMatches({ text }, { text: naming });
     if (!sh.match) failures.push(`shape mismatch: ${sh.reason}`);
   }
 
@@ -283,8 +261,8 @@ export function verifyTractate(
 
   let markers = { matnitin: 0, gemara: 0 };
 
-  if (!hardFail && Array.isArray(ws?.text)) {
-    markers = countMarkers(ws.text);
+  if (!hardFail) {
+    markers = countMarkers(text);
 
     if (markers.matnitin < MARKER_MIN || markers.matnitin > MARKER_MAX) {
       failures.push(`מתני׳ count = ${markers.matnitin} (expected ${MARKER_MIN}–${MARKER_MAX})`);
@@ -300,14 +278,7 @@ export function verifyTractate(
       ? 'soft-fail'
       : 'pass';
 
-  return {
-    status,
-    failures,
-    wikisource: { amudCount: wsAmud, segmentCount: wsSeg },
-    merged: { amudCount: mdAmud, segmentCount: mdSeg },
-    shapeMatch: shapeOk,
-    markers,
-  };
+  return { status, failures, amudCount, segmentCount, markers };
 }
 
 export interface CoverageReport {
@@ -374,12 +345,12 @@ async function main(): Promise<void> {
     process.stdout.write(`  ${ref.tractate.padEnd(20)} `);
     try {
       const bundle = await fetchTractate(ref, force);
-      const result = verifyTractate(bundle.wikisource, bundle.merged, bundle.schema);
+      const result = verifyTractate(bundle.davidson, bundle.wikisource, bundle.schema);
       results.push({ ...ref, ...result });
 
       const tag = result.status === 'pass' ? 'PASS' : result.status.toUpperCase();
       process.stdout.write(
-        `${tag.padEnd(10)} amudim=${result.wikisource.amudCount} seg=${result.wikisource.segmentCount} ` +
+        `${tag.padEnd(10)} amudim=${result.amudCount} seg=${result.segmentCount} ` +
           `markers=${result.markers.matnitin}/${result.markers.gemara}\n`,
       );
       if (result.failures.length > 0) {
@@ -391,9 +362,8 @@ async function main(): Promise<void> {
         ...ref,
         status: 'hard-fail',
         failures: [`fetch error: ${(err as Error).message}`],
-        wikisource: { amudCount: 0, segmentCount: 0 },
-        merged: { amudCount: 0, segmentCount: 0 },
-        shapeMatch: false,
+        amudCount: 0,
+        segmentCount: 0,
         markers: { matnitin: 0, gemara: 0 },
       });
     }

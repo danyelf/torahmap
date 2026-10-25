@@ -112,3 +112,8 @@ export function mapStrippedToOriginal(original: string, strippedPos: number): nu
   }
   return original.length;
 }
+
+/** `text` with each letter written as one character with its point, וּ (U+FB35), as letter and point. */
+export function decomposePresentationForms(text: string): string {
+  return text.replace(/[\uFB1D-\uFB4F]/g, (char) => char.normalize('NFD'));
+}

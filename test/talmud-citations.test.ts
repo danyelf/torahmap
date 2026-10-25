@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseVerseId } from '@torahmap/link/tanakh';
 import type { TalmudTractateText } from '@torahmap/talmud/data.ts';
+import { englishText } from '@torahmap/talmud/english.ts';
 import { TALMUD_CATEGORY } from '@torahmap/talmud/text.ts';
 import { STRUCTURE_FILE } from '@torahmap/tanakh/verseTexts.ts';
 
@@ -18,22 +19,66 @@ const chapters = new Map<string, number[]>(
 const tractates = readdirSync(join(DATA, 'talmud/texts'));
 
 describe("the Talmud's citations of the Tanakh", () => {
-  it.each(tractates)('in %s name real verses, at bracketed words of their segment', (file) => {
-    const text: TalmudTractateText = read(`talmud/texts/${file}`);
-    for (const [ai, segments] of Object.entries(text.citations)) {
-      for (const [si, citations] of Object.entries(segments)) {
-        const segment = text.amudim[Number(ai)][Number(si)];
-        for (const { start, end, verse } of citations) {
-          const place = parseVerseId(verse);
-          expect(place, verse).not.toBeNull();
-          const { book, chapter, verse: v } = place!;
-          expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
-          expect(segment.slice(0, start).trimEnd().at(-1), verse).toMatch(/[([{]/);
-          expect(segment.slice(start, end).trim()).toBe(segment.slice(start, end));
+  it.each(tractates)(
+    'in %s name real verses, each on words of its segment or shown as its reference',
+    (file) => {
+      const text: TalmudTractateText = read(`talmud/texts/${file}`);
+      for (const [ai, segments] of Object.entries(text.citations)) {
+        for (const [si, citations] of Object.entries(segments)) {
+          const segment = text.amudim[Number(ai)][Number(si)];
+          let previous = 0;
+          for (const { start, end, verse, reference } of citations) {
+            // In order, and no two links over the same words.
+            expect(start, verse).toBeGreaterThanOrEqual(previous);
+            previous = end;
+            const place = parseVerseId(verse);
+            expect(place, verse).not.toBeNull();
+            const { book, chapter, verse: v } = place!;
+            expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
+            expect(end, verse).toBeLessThanOrEqual(segment.length);
+            if (reference === undefined) {
+              expect(segment.slice(start, end).trim(), verse).toBe(segment.slice(start, end));
+              expect(end, verse).toBeGreaterThan(start);
+            } else {
+              expect(end, verse).toBe(start);
+              expect(reference, verse).toMatch(/^\(.+\)$/);
+            }
+          }
         }
       }
-    }
-  });
+    },
+  );
+
+  it.each(tractates)(
+    "in %s's English name real verses, each on a parenthesised reference of its segment",
+    (file) => {
+      const text: TalmudTractateText = read(`talmud/texts/${file}`);
+      const english: string[][] = read(`talmud/english/${file}`);
+      for (const [ai, segments] of Object.entries(text.englishCitations)) {
+        for (const [si, citations] of Object.entries(segments)) {
+          const { text: plain } = englishText(english[Number(ai)][Number(si)]);
+          let previous = 0;
+          for (const { start, end, verse } of citations) {
+            expect(start, verse).toBeGreaterThanOrEqual(previous);
+            previous = end;
+            const place = parseVerseId(verse);
+            expect(place, verse).not.toBeNull();
+            const { book, chapter, verse: v } = place!;
+            expect(v, verse).toBeLessThanOrEqual(chapters.get(book)?.[chapter - 1] ?? 0);
+            const reference = plain.slice(start, end);
+            expect(reference, verse).toMatch(/^\(.*\)$/s);
+            expect(
+              reference
+                .match(/(\d+):\s*(\d+)/)
+                ?.slice(1)
+                .map(Number),
+              verse,
+            ).toEqual([chapter, v]);
+          }
+        }
+      }
+    },
+  );
 
   it('link to a category the commentary data counts', () => {
     const counts = read('overlays/commentary/counts.json');
