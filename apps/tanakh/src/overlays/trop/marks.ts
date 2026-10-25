@@ -95,7 +95,12 @@ export interface TropMark {
   name: string;
   hebrewName: string;
   /** What poetry calls the mark, when it is not the same. */
-  inPoetry?: { name: string; hebrewName: string };
+  inPoetry?: {
+    name: string;
+    hebrewName: string;
+    /** False when the two names are close enough that neither chart needs to mention the other. */
+    noteInOtherSystem?: boolean;
+  };
   /** The signs that write the mark in every system it is used in. */
   signs: readonly string[];
   /** Signs that write the mark in prose only; the poetic books use them for another mark. */
@@ -122,7 +127,7 @@ export const TROP_MARKS: readonly TropMark[] = [
   {
     name: 'Etnachta',
     hebrewName: 'אתנחתא',
-    inPoetry: { name: 'Etnach', hebrewName: 'אתנח' },
+    inPoetry: { name: 'Etnach', hebrewName: 'אתנח', noteInOtherSystem: false },
     signs: ['֑'],
     groups: { prose: 'emperors', poetic: 'dividers' },
   },
@@ -257,6 +262,7 @@ export function offers(system: System, slug: string): boolean {
 /** "Azla in poetry": the mark's name in the other system when it differs, for a reader who knows it by that. */
 export function otherName(mark: TropMark, system: System): string | null {
   if (!mark.groups.prose || !mark.groups.poetic) return null;
+  if (mark.inPoetry?.noteInOtherSystem === false) return null;
   const [other, where] =
     system === 'prose' ? (['poetic', 'poetry'] as const) : (['prose', 'prose'] as const);
   const there = nameIn(mark, other).name;

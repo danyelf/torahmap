@@ -429,7 +429,7 @@ describe('Trop Overlay', () => {
       expect(strip).not.toBeNull();
       expect(container.querySelector('.legend-gradient')).toBeNull();
       // The ends of trop's own gradient, not a hand-written approximation.
-      expect(strip?.style.background).toContain('rgb(51, 26, 77) 0%');
+      expect(strip?.style.background).toContain('rgb(179, 77, 179) 0%');
       expect(strip?.style.background).toContain('rgb(242, 153, 230) 100%');
     });
   });

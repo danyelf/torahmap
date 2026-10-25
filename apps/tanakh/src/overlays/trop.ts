@@ -75,7 +75,12 @@ function tierOf(entry: TropIndexEntry): RarityTier {
   return getRarityTier(entry.totalCount);
 }
 
-export const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
+// The bright end of every counted scale: a mark drawn as present or absent is one color family with the rest.
+const BRIGHT: Color = [0.95, 0.6, 0.9]; // Pink
+// One occurrence, at the dim end of every counted scale. It stays well clear of
+// NO_MATCH_COLOR: a darker start made a verse with one occurrence vanish when zoomed out.
+const ONE_OCCURRENCE: Color = [0.7, 0.3, 0.7]; // Magenta
+export const RARE_MATCH_COLOR: Color = BRIGHT;
 // A verse without the mark, at every tier.
 export const NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
 
@@ -94,18 +99,16 @@ const TIERS = {
   uncommon: {
     transform: LINEAR,
     gradient: [
-      { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
-      { t: 1, color: [0.9, 0.4, 0.95] }, // Bright purple
+      { t: 0, color: ONE_OCCURRENCE },
+      { t: 1, color: BRIGHT },
     ],
   },
   // Common marks span a wide range of counts, so their scale is logarithmic.
   common: {
     transform: LOG,
     gradient: [
-      { t: 0, color: [0.2, 0.1, 0.3] }, // Dark purple
-      { t: 0.33, color: [0.4, 0.2, 0.5] }, // Purple
-      { t: 0.66, color: [0.7, 0.3, 0.7] }, // Magenta
-      { t: 1.0, color: [0.95, 0.6, 0.9] }, // Pink
+      { t: 0, color: ONE_OCCURRENCE },
+      { t: 1, color: BRIGHT },
     ],
   },
 } satisfies Record<RarityTier, RareTier | CountedTier>;
@@ -186,10 +189,12 @@ function markButton(mark: TropMark, system: System): HTMLButtonElement {
   button.dataset.slug = slugOf(mark);
   button.innerHTML = `
     <span class="trop-sign">ב${signsOf(mark, system)[0]}</span>
-    <span class="trop-name">${name}</span>
-    <span class="trop-hebrew-name"><span lang="he">${hebrewName}</span>${
-      other ? ` <span class="trop-other-name">[${other}]</span>` : ''
-    }</span>`;
+    <span class="trop-labels">
+      <span class="trop-name">${name}</span>
+      <span class="trop-hebrew-name"><span lang="he">${hebrewName}</span>${
+        other ? ` <span class="trop-other-name">[${other}]</span>` : ''
+      }</span>
+    </span>`;
   return button;
 }
 
