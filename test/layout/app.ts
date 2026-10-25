@@ -375,6 +375,12 @@ export const TALMUD_STATES: State[] = [
     then: (page) => goTo(page, 'Berakhot 17a'),
     shown: [GO_TO_BOX, '.goto-offer'],
   },
+  { name: 'talmud-dating', link: 'overlay=dating', shown: ['#map-legend'] },
+  {
+    name: 'talmud-dating-pinned',
+    link: 'overlay=dating&at=Berakhot.2b.8&zoom=3',
+    shown: ['#map-legend', '#popup.visible'],
+  },
   {
     name: 'talmud-goto-not-found',
     link: '',

@@ -34,6 +34,17 @@ canvas {
   color: #ccc;
 }
 
+/* A heading over a run of rows, and a row set apart from the one above. */
+#overlay-legend .legend-heading {
+  margin-top: 8px;
+  font-weight: 600;
+  color: #ddd;
+}
+
+#overlay-legend .legend-row.apart {
+  margin-top: 8px;
+}
+
 #overlay-legend .swatch {
   width: 16px;
   height: 16px;

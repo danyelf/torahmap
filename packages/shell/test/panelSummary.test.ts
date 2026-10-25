@@ -34,6 +34,12 @@ describe('summaryHtml', () => {
     expect(swatches(html).map((el) => el.style.background)).toEqual(['red', 'blue']);
   });
 
+  it('shows colours in groups, each its own run of squares', () => {
+    const html = summaryHtml('Dating', { groups: [['red'], ['orange', 'yellow'], ['blue']] });
+    const groups = [...parse(html).querySelectorAll('.summary-group')];
+    expect(groups.map((g) => g.querySelectorAll('.summary-swatch').length)).toEqual([1, 2, 1]);
+  });
+
   it('shows the name alone when the overlay has nothing to add', () => {
     expect(text(summaryHtml('Haftarah', {}))).toBe('Haftarah');
   });

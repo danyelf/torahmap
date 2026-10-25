@@ -183,6 +183,8 @@ export interface OverlaySummary {
   detail?: string;
   /** Colours shown as squares. */
   colors?: string[];
+  /** Colours shown as squares in groups, a small gap between the groups and none within. */
+  groups?: string[][];
   /** A continuous scale: its CSS gradient, between words for its low and high ends. */
   strip?: { gradient: string; ends: [low: string, high: string] };
 }

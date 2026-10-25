@@ -28,6 +28,7 @@ import {
   TRACTATE_TAB,
 } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
+import { datingOverlay } from './overlays/dating.ts';
 import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
@@ -94,6 +95,8 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         hadranLines(t).map((line) => talmudId({ tractate: t.name, ...line })),
       ),
     );
+    const baseColor = (item: TalmudLayoutItem) =>
+      hadrans.has(item.id) ? MAP_BACKGROUND : mishnahOrGemaraColor(structure, item);
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
     /** Where a segment is in its tractate's files, which list segments by amud. */
@@ -116,8 +119,7 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         return overhang > 0 ? { ...camera, x: camera.x + overhang } : camera;
       },
 
-      baseColor: (item) =>
-        hadrans.has(item.id) ? MAP_BACKGROUND : mishnahOrGemaraColor(structure, item),
+      baseColor,
       baseRing: (item) => (hadrans.has(item.id) ? HADRAN_RING_COLOR : null),
       searchKeepsBase: SEARCH_KEEPS_BASE,
 
@@ -164,7 +166,7 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         };
       },
 
-      overlays: [],
+      overlays: [datingOverlay(baseColor)],
 
       search: talmudSearch,
 
