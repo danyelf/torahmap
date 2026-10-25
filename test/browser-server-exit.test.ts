@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { spawn } from 'node:child_process';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OWNER_PID_ENV } from './browser/owner.ts';
