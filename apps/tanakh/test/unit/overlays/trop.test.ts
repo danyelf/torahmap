@@ -757,8 +757,27 @@ describe('Trop Overlay', () => {
       expect(standouts('shalshelet', textsWith(1))).toEqual([true, false]);
     });
 
-    it('makes nothing stand out for a mark drawn on a scale', () => {
-      expect(standouts('tipcha', textsWith(RARITY_THRESHOLDS.UNCOMMON))).toEqual([false, false]);
+    // Many verses with a few tipchas, and one with far more.
+    const crowd = (high: number): VerseTexts => {
+      const chapter: Record<string, { he: string; en: string }> = {};
+      for (let verse = 1; verse <= 300; verse++) {
+        chapter[String(verse)] = { he: 'ב֖'.repeat(verse === 300 ? high : 2), en: '' };
+      }
+      return { 'Genesis': { '1': chapter } };
+    };
+    const glowing = (high: number) =>
+      tropOverlay.standoutsFor!(
+        [1, 2, 300].map((verse) => createVerse({ chapter: 1, verse })),
+        { tab: 'prose', mark: 'tipcha', preview: null },
+        { texts: crowd(high) },
+      ).map(Boolean);
+
+    it('makes only a verse with an unusually high count stand out for a mark drawn by count', () => {
+      expect(glowing(20)).toEqual([false, false, true]);
+    });
+
+    it('lets no count below the floor stand out', () => {
+      expect(glowing(4)).toEqual([false, false, false]);
     });
 
     it('makes nothing stand out with no mark chosen', () => {

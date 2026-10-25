@@ -25,7 +25,8 @@ export function summaryHtml(overlayName: string, summary: OverlaySummary): strin
     detail += `<span class="summary-detail">${escapeHtml(summary.detail)}</span>`;
   }
   const steps = (summary.steps ?? []).map(
-    ({ color, label }) => `<span class="summary-step">${swatch(color)}${escapeHtml(label)}</span>`,
+    ({ color, label, glows }) =>
+      `<span class="summary-step">${swatch(color, glows ? ' glows' : '')}${escapeHtml(label)}</span>`,
   );
   const squares = (summary.colors ?? []).slice(0, MAX_SWATCHES).map((color) => swatch(color));
   const groups = (summary.groups ?? []).map(

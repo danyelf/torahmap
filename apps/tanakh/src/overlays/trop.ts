@@ -92,11 +92,23 @@ export const RARE_MATCH_COLOR: Color = COUNT_STEPS[COUNT_STEPS.length - 1].color
 /** The key's colours, as CSS: "contains" and "does not" swatches, or the count steps. */
 type TropLegend =
   | { kind: 'swatches'; contains: string; without: string }
-  | { kind: 'steps'; steps: { color: string; label: string }[] };
+  | { kind: 'steps'; steps: { color: string; label: string; glows?: boolean }[] };
+
+/** The most of a mark's verses that glow for an unusually high count, and the least count that can. */
+const GLOW_SHARE = 0.005;
+const GLOW_FLOOR = 5;
+/** The least count that glows for a mark with these verse counts, or Infinity if none reaches it. */
+function glowLine(counts: number[]): number {
+  const sorted = [...counts].sort((a, b) => b - a);
+  const line = Math.max(GLOW_FLOOR, (sorted[Math.floor(sorted.length * GLOW_SHARE)] ?? 0) + 1);
+  return sorted[0] >= line ? line : Infinity;
+}
 
 interface TropDerivation {
   entry: TropIndexEntry;
   tier: RarityTier;
+  /** A verse glows, on top of its color, with at least this many occurrences. */
+  glowFrom: number;
   verseLookup: Map<string, number>;
   /** A verse's colour, from how many times it carries the mark. */
   colorOf: (count: number) => Color;
@@ -119,6 +131,7 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
     return {
       entry,
       tier,
+      glowFrom: 1,
       verseLookup,
       colorOf: (count) => (count ? match : NO_MATCH_COLOR),
       legend: {
@@ -128,15 +141,20 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
       },
     };
   }
+  const glowFrom = glowLine(entry.verses.map((loc) => loc.count));
+  const steps: { color: string; label: string; glows?: boolean }[] = COUNT_STEPS.map(
+    ({ label, color }) => ({ label, color: colorToCss(color) }),
+  );
+  if (glowFrom < Infinity) {
+    steps.push({ color: steps[steps.length - 1].color, label: `${glowFrom}+`, glows: true });
+  }
   return {
     entry,
     tier,
+    glowFrom,
     verseLookup,
     colorOf: (count) => (count ? stepFor(count) : NO_MATCH_COLOR),
-    legend: {
-      kind: 'steps',
-      steps: COUNT_STEPS.map(({ label, color }) => ({ label, color: colorToCss(color) })),
-    },
+    legend: { kind: 'steps', steps },
   };
 }
 
@@ -275,8 +293,8 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
 
   standoutsFor(items, settings, data) {
     const derived = derivationFor(data, settings);
-    if (derived?.tier !== 'rare') return items.map(() => false);
-    return items.map((item) => countAt(item, derived) > 0);
+    if (!derived) return items.map(() => false);
+    return items.map((item) => countAt(item, derived) >= derived.glowFrom);
   },
 
   settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {
@@ -314,8 +332,8 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
       container.innerHTML = `
         <div class="trop-steps">${legend.steps
           .map(
-            ({ color, label }) =>
-              `<span class="trop-step"><i style="background: ${color}"></i>${label}</span>`,
+            ({ color, label, glows }) =>
+              `<span class="trop-step"><i class="${glows ? 'glows' : ''}" style="background: ${color}"></i>${label}</span>`,
           )
           .join('')}</div>
       `;
