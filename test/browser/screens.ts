@@ -28,9 +28,8 @@ export const DESKTOP_AND_PHONE = ['desktop', 'phone'];
 export const DESKTOP_TABLET_AND_PHONE = ['desktop', 'tablet', 'phone'];
 
 /**
- * The port a suite's dev server listens on: the one in `envName` if set, else a free one.
- * Playwright loads its config again in every worker, so the choice is written to the
- * environment, which the workers inherit.
+ * The port in `envName`, else a free one, written there: Playwright loads its config again
+ * in every worker, which inherits the environment.
  */
 export async function suitePort(envName: string): Promise<number> {
   if (process.env[envName]) return Number(process.env[envName]);
@@ -42,18 +41,12 @@ export async function suitePort(envName: string): Promise<number> {
   return port;
 }
 
-/**
- * A suite's own dev server, from the repository's root. It exits once the process that
- * started the run has gone (`vite.config.ts`), so a run cut short leaves no server behind.
- */
+/** A suite's own dev server, from the repository's root. */
 export const webServer = (port: number) => ({
   command: `npx vite --port ${port} --strictPort`,
   cwd: '../..',
   url: `http://localhost:${port}/`,
   reuseExistingServer: false,
   timeout: 60_000,
-  env: {
-    ...process.env,
-    [OWNER_PID_ENV]: String(process.pid),
-  } as Record<string, string>,
+  env: { [OWNER_PID_ENV]: String(process.pid) },
 });

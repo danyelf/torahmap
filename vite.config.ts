@@ -8,6 +8,7 @@ import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import { EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
 import { OWNER_PID_ENV } from './test/browser/owner.ts';
+import { alive } from './scripts/suite-lock.ts';
 import { builtPages, isLiveBuild, unpublished, type BuiltPage } from './build.ts';
 
 // Get the current git branch name
@@ -116,11 +117,7 @@ function exitWithOwnerPlugin(): Plugin {
     configureServer() {
       if (!owner) return;
       setInterval(() => {
-        try {
-          process.kill(owner, 0);
-        } catch (e) {
-          if ((e as NodeJS.ErrnoException).code === 'ESRCH') process.exit(0);
-        }
+        if (!alive(owner)) process.exit(0);
       }, 1000).unref();
     },
   };

@@ -1,11 +1,15 @@
 import { spawn } from 'node:child_process';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { OWNER_PID_ENV } from './browser/owner.ts';
 import { suitePort } from './browser/screens.ts';
 
 describe('a browser suite port', () => {
-  it('is free, and the same for every process that reads it', async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
     delete process.env.TEST_SUITE_PORT;
+  });
+
+  it('is free, and the same for every process that reads it', async () => {
     const port = await suitePort('TEST_SUITE_PORT');
     expect(port).toBeGreaterThan(0);
     expect(await suitePort('TEST_SUITE_PORT')).toBe(port);
@@ -13,28 +17,28 @@ describe('a browser suite port', () => {
   });
 
   it('is the one the environment names', async () => {
-    process.env.TEST_SUITE_PORT_SET = '5199';
-    expect(await suitePort('TEST_SUITE_PORT_SET')).toBe(5199);
+    vi.stubEnv('TEST_SUITE_PORT_SET', '4321');
+    expect(await suitePort('TEST_SUITE_PORT_SET')).toBe(4321);
   });
 });
 
 describe('a browser suite dev server', () => {
   it('exits once the process that started the run has gone', async () => {
     const owner = spawn('sleep', ['60']);
-    const server = spawn('npx', ['vite', '--port', '0'], {
+    const port = await suitePort('TEST_SERVER_PORT');
+    // Vite itself, not npx, so that killing the server kills the server.
+    const server = spawn('node_modules/.bin/vite', ['--port', String(port), '--strictPort'], {
       env: { ...process.env, [OWNER_PID_ENV]: String(owner.pid) },
-      stdio: ['ignore', 'pipe', 'inherit'],
+      stdio: 'ignore',
     });
-    const exited = new Promise<void>((done) => server.on('exit', () => done()));
-    await new Promise<void>((ready) =>
-      server.stdout!.on('data', (chunk: Buffer) => chunk.includes('Local:') && ready()),
-    );
+    const code = new Promise((done) => server.on('exit', done));
     owner.kill('SIGKILL');
-    const outcome = await Promise.race([
-      exited.then(() => 'exited'),
-      new Promise((done) => setTimeout(() => done('still running'), 10_000)),
-    ]);
-    if (outcome !== 'exited') server.kill('SIGKILL');
-    expect(outcome).toBe('exited');
+    try {
+      expect(await code).toBe(0);
+    } finally {
+      server.kill('SIGKILL');
+      owner.kill('SIGKILL');
+      delete process.env.TEST_SERVER_PORT;
+    }
   }, 60_000);
 });
