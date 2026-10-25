@@ -136,10 +136,9 @@ export function datingOverlay(
     id: 'dating',
     name: 'Dating',
     description:
-      'Colours each segment by the generation of the latest rabbi it names. Each era has one ' +
-      'colour, dark for its earliest generations and light for its latest: Zugot purple, Tannaim ' +
-      'orange, Amoraim blue. A grey segment names only a rabbi who could be one of several; a ' +
-      'dim one names no rabbi whose generation Sefaria gives.',
+      'Colors each segment by the generation of the latest rabbi it names. Each era has one ' +
+      'color, going from darker earlier generations to lighter later ones. A gray segment ' +
+      'names only a rabbi who could be one of several; a dim one names no dated rabbi.',
     credits: [
       {
         source: 'Sefaria, people tagged in the Talmud',

@@ -2,7 +2,7 @@
 
 **Status:** Approved by Danyel, 2026-10-24. Issue #25.
 
-An overlay for the Talmud map that colours each passage by the generation of the latest rabbi it
+An overlay for the Talmud map that colors each passage by the generation of the latest rabbi it
 names, so that reading one discussion shows its layers: who speaks early, who answers late.
 
 ## Decided
@@ -20,28 +20,28 @@ These are Danyel's, from #25 and from conversation.
   "ambiguous" topic listing the candidates. A passage dated only through such a name is shown as
   uncertain, not left out.
 - **A passage that names no rabbi is dimmed but keeps a faint tint** of the map's usual
-  Mishnah/Gemara colouring (`apps/talmud/src/baseColor.ts`), so the shape of the page still shows.
+  Mishnah/Gemara coloring (`apps/talmud/src/baseColor.ts`), so the shape of the page still shows.
   This covers the Mishnah, quoted early teachings ("our rabbis taught") and the anonymous voice of
-  the Gemara alike. The anonymous voice may get a colour of its own later.
+  the Gemara alike. The anonymous voice may get a color of its own later.
 - **No borrowing from neighbours.** An unnamed passage does not take the date of the passages
   around it, which would carry a late date into a Mishnah or early quotation beside a late rabbi.
 - **Names in both Hebrew and English** in the pinned passage's panel.
 
 ## Also agreed (proposed by Claude, approved with the design)
 
-- **Colours.** Each era is one hue: the Zugot purple, the Tannaim orange, the Amoraim blue. Within an
+- **Colors.** Each era is one hue: the Zugot purple, the Tannaim orange, the Amoraim blue. Within an
   era the bands (two or three) run from dark (earliest) to light (latest) in lightness alone; the
   transitional generation is one step lighter than the Tannaim's lightest. The exact generation is
-  in words, not colour.
-- **Uncertain passages** take their era's colour washed out toward grey, so they read as "not sure"
+  in words, not color.
+- **Uncertain passages** take their era's color washed out toward gray, so they read as "not sure"
   rather than as another generation.
 - **The key**, in the side panel, lists only the generations that occur, each with rough years from
   Sefaria ("5th generation · c. 135–170 CE", under a heading for its era), plus "uncertain" and "names no rabbi".
 - **The pinned passage's panel** is one line of the rabbis found, `Rava · רבא (4th-gen Amora,
-  320–350); Abaye · אביי (4th-gen Amora, 320–350)`, so a colour can always be checked; the rabbi who
+  320–350); Abaye · אביי (4th-gen Amora, 320–350)`, so a color can always be checked; the rabbi who
   sets the date is in bold, and an ambiguous name is listed too, as `Hillel · הלל ?`, without setting
   the date (only in a passage dated through it does it show its latest candidate). Each name is
-  also marked in the passage's Hebrew in its generation's colour (grey if ambiguous), where the
+  also marked in the passage's Hebrew in its generation's color (gray if ambiguous), where the
   generator can find it in the map's own text. No generation codes appear on screen.
 - **The link** carries the overlay as on the Tanakh map (`?overlay=…`), with no settings yet.
 - **The Zugot and the transitional generation are generations** like any other. The Zugot (Z3, the
@@ -107,7 +107,7 @@ Two-generation codes (A1/A2 through A6/A7) add 2,115 tags and count as the later
 undefined`). This work wires overlays into the Talmud the way the Tanakh has them, through the
 shared overlay interface in `packages/shell`, the entry in `packages/overlay-catalog`, and the link
 keys. The nearest model is the Tanakh's Text Dating overlay,
-`apps/tanakh/src/overlays/text-dating.ts`: a fixed list of periods, a colour each, and a key.
+`apps/tanakh/src/overlays/text-dating.ts`: a fixed list of periods, a color each, and a key.
 
 **A generated data file.** A script beside the other Talmud scripts in `scripts/talmud/` reads the
 Sefaria dump and writes one file to `public/data/talmud/`: for each passage, its latest
@@ -128,7 +128,7 @@ A reader checked whether this could be built without asking. Its questions, and 
   it, in the shared shell, usable by any text.
 - **Python or Node for the dump?** The builder's choice. Tests and CI never run the generator, so
   the dump is never needed outside it.
-- **Can pale and full colours be told apart?** Judged on the PR. It changes the UI, so the PR shows
+- **Can pale and full colors be told apart?** Judged on the PR. It changes the UI, so the PR shows
   screenshots of full, pale and tinted no-rabbi passages at the zoom levels the moiré guidance in
   `CLAUDE.md` names, and isn't done until Danyel has looked.
 - **Browser suites:** `npm run test:browser` decides which run; if it asks for the loading suite,
@@ -139,7 +139,7 @@ A reader checked whether this could be built without asking. Its questions, and 
 
 Not in this work:
 
-- A colour for the anonymous voice of the Gemara.
+- A color for the anonymous voice of the Gemara.
 - Rabbis with no recorded generation: they name a person but date nothing.
 - Filtering by rabbi, or searching for one.
 - Brown's data.
@@ -147,7 +147,7 @@ Not in this work:
 Left to the builder:
 
 - The data file's exact shape, and how it joins the Talmud's loader.
-- The exact colours, within warm-to-cool by generation.
+- The exact colors, within warm-to-cool by generation.
 - The wording of the key and of the overlay's description.
 - Tests of the script's rules on small examples: latest generation wins, two-generation codes take
   the later, English-only tags are ignored, a passage dated only by an ambiguous name is uncertain,

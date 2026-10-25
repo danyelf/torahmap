@@ -2,7 +2,7 @@
 
 > **For agentic workers:** Use superpowers:executing-plans. Steps use checkbox syntax.
 
-**Goal:** The Talmud map's first overlay, "Dating", colouring each segment by the generation of the
+**Goal:** The Talmud map's first overlay, "Dating", coloring each segment by the generation of the
 latest rabbi it names.
 
 **Architecture:** A Python extractor reads the Sefaria dump's BSON files and writes a plain JSON of
@@ -11,7 +11,7 @@ rules to those facts and writes `public/data/talmud/dating.json`. Only the build
 tested, on small examples; CI never runs the extractor or needs the dump. The overlay is a factory
 built inside the Talmud's `open()` so it can reach the structure for the faint Mishnah/Gemara tint.
 The text already takes its overlays per text (`MapText.overlays`) and the link already carries
-`?overlay=<id>`, so the shell, colouring and fade paths are reused as they are.
+`?overlay=<id>`, so the shell, coloring and fade paths are reused as they are.
 
 **Tech Stack:** TypeScript, vitest, Python 3 with `pymongo` under `uv run`.
 
@@ -23,7 +23,7 @@ The text already takes its overlays per text (`MapText.overlays`) and the link a
 - Only mentions in the Hebrew/Aramaic text, edition `William Davidson Edition - Aramaic`.
 - A segment with any resolved dated name is never uncertain; ambiguous names do not set the date, though they are listed.
 - An uncertain segment takes its latest candidate's generation, shown paler.
-- No borrowing from neighbouring segments. No-rabbi segments keep a faint tint of the base colour.
+- No borrowing from neighboring segments. No-rabbi segments keep a faint tint of the base color.
 - The generator stops if a tractate's segment count differs from `public/data/talmud/texts/`, or on
   a range ref.
 - Names in Hebrew and English in the pinned panel; generation labels in English.
@@ -79,8 +79,8 @@ The text already takes its overlays per text (`MapText.overlays`) and the link a
 
 **Interfaces:** `datingOverlay(structure): Overlay<TalmudLayoutItem, void, {dating: TalmudDating}>`
 
-- [ ] Failing tests: dated segments take their generation's colour, earlier generations warmer than
-  later; uncertain is washed out toward grey compared with the same generation certain; an undated segment is a faint tint of
+- [ ] Failing tests: dated segments take their generation's color, earlier generations warmer than
+  later; uncertain is washed out toward gray compared with the same generation certain; an undated segment is a faint tint of
   `mishnahOrGemaraColor`; key lists only generations present with years; pinned lines show name,
   Hebrew name and generation, and say when a name is uncertain.
 - [ ] Implement `renderLegend`, `renderSidebarInfo`, `summary`, `getItemColor`, `colorsFor`.
@@ -89,6 +89,6 @@ The text already takes its overlays per text (`MapText.overlays`) and the link a
 
 ### Task 4: Browser check and PR
 
-- [ ] `npm run test:browser`; load `?overlay=dating`, check colours, key, pinned panel, zoom
+- [ ] `npm run test:browser`; load `?overlay=dating`, check colors, key, pinned panel, zoom
   0.25 and 0.22 for moire; capture screenshots; read some PNGs.
 - [ ] Push, open the PR, wait for the preview link, comment on the issue, get a review.
