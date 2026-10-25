@@ -2,9 +2,9 @@
 
 > **For agentic workers:** Use superpowers:executing-plans. Steps use checkbox syntax.
 
-**Goal:** A "Rabbis" overlay on the Talmud map that lights every passage naming the rabbis a reader picks, each in his own colour.
+**Goal:** A "Rabbis" overlay on the Talmud map that lights every passage naming the rabbis a reader picks, each in his own color.
 
-**Architecture:** The facts script also writes each topic's titles. A new builder, `scripts/talmud/rabbis.ts`, turns the facts and the dating result into `public/data/talmud/rabbis.json`: the pickable rabbis (with their other names) and, for each person the dating file lists, which rabbis that name can be and whether it is certain. Which passages name a rabbi is read from `dating.json`, so the two files are loaded together and nothing is stored twice. The overlay lives in `apps/talmud/src/overlays/rabbis.ts` and shares era colours, name marking and generation labels with `dating.ts`. The shell gains one small hook, `openOverlay`, so a click on a name in a pinned passage can open the overlay with settings.
+**Architecture:** The facts script also writes each topic's titles. A new builder, `scripts/talmud/rabbis.ts`, turns the facts and the dating result into `public/data/talmud/rabbis.json`: the pickable rabbis (with their other names) and, for each person the dating file lists, which rabbis that name can be and whether it is certain. Which passages name a rabbi is read from `dating.json`, so the two files are loaded together and nothing is stored twice. The overlay lives in `apps/talmud/src/overlays/rabbis.ts` and shares era colors, name marking and generation labels with `dating.ts`. The shell gains one small hook, `openOverlay`, so a click on a name in a pinned passage can open the overlay with settings.
 
 **Tech Stack:** TypeScript, vitest, Python under `uv run`.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - A rabbi's id is his Sefaria slug. The link key is `rabbis`, a comma-separated list of slugs; `?overlay=rabbis&rabbis=...`.
-- A square shows at most four colours.
+- A square shows at most four colors.
 - An ambiguous name with exactly one candidate counts as that candidate, certain. With several it lights each candidate faded.
 - Rabbis without a generation are left out. Candidates of an ambiguous name that have a generation are rabbis even if no passage tags them by name.
 - Quick picks: the 28 most-named entries, an entry being a rabbi or a shared name. A shared name asks which.
@@ -22,10 +22,10 @@
 
 ## Review Focus
 
-- Picking two rabbis of one era gives different colours; picking none gives the plain map.
+- Picking two rabbis of one era gives different colors; picking none gives the plain map.
 - A rabbi tagged only inside an ambiguous name is faded, never solid.
 - A slug in a link that is not in the data is ignored.
-- More than four picked rabbis in one passage still draws four colours.
+- More than four picked rabbis in one passage still draws four colors.
 - Clicking a name that is already picked changes nothing.
 
 ## Tasks
@@ -51,12 +51,12 @@
 
 - [ ] Existing dating tests pass unchanged.
 
-### Task 3: Settings, colours and finding (pure)
+### Task 3: Settings, colors and finding (pure)
 
 **Files:** create `apps/talmud/src/overlays/rabbiPicks.ts`, `apps/talmud/test/rabbis.test.ts`.
 
 **Interfaces:**
-- `pickColors(rabbis: Rabbi[]): Color[]`: a lone rabbi of an era gets his generation's Dating colour; several of one era get that era's dark-to-light shades spread evenly, leaning a little in hue.
+- `pickColors(rabbis: Rabbi[]): Color[]`: a lone rabbi of an era gets his generation's Dating color; several of one era get that era's dark-to-light shades spread evenly, leaning a little in hue.
 - `rabbiPassages(dating, rabbis): Map<slug, {sure: Set<segment id>, maybe: Set<id>}>`.
 - `suggest(query, data): Rabbi[]`: names matched in any case, most-named first; `quickPicks(data): Entry[]`.
 - `parsePicks`/`writePicks` for the link.
@@ -69,8 +69,8 @@
 
 **Interfaces:** `Shell.openOverlay<O>(overlay: Overlay<I, O>, update: SettingsUpdate<O>)`: if another overlay is showing, switch to it with default settings first, then apply `update`, and open its panel.
 
-- [ ] Overlay members: colours (a list of colours for a shared passage, faded for a maybe, dimmed base for unlit, the base for none picked), `standoutsFor`, controls (finder, picked rabbis with a swatch and an unpick, quick picks, the which-one list), legend, summary, hover, pinned info with clickable names, name marking.
-- [ ] Tests on colours, controls and the pinned info; typecheck.
+- [ ] Overlay members: colors (a list of colors for a shared passage, faded for a maybe, dimmed base for unlit, the base for none picked), `standoutsFor`, controls (finder, picked rabbis with a swatch and an unpick, quick picks, the which-one list), legend, summary, hover, pinned info with clickable names, name marking.
+- [ ] Tests on colors, controls and the pinned info; typecheck.
 
 ### Task 5: Look at it, verify, review
 

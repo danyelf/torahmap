@@ -301,9 +301,9 @@ export function rabbisOverlay(
     id: RABBIS_ID,
     name: 'Rabbis',
     description:
-      'Lights every passage that names the rabbis you pick, each in a colour of his own: a Zug ' +
-      'purple, a Tanna orange, an Amora blue. A passage naming two of them is split between their ' +
-      'colours. Where a name could be one of several rabbis, the passage shows faded.',
+      'Lights every passage that names the rabbis you pick, each rabbi in a color of his own. ' +
+      'A passage naming two of them is split between their colors. A faded passage names someone ' +
+      'who could be that rabbi, among others.',
     credits: [
       {
         source: 'Sefaria, people tagged in the Talmud',
