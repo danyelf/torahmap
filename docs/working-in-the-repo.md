@@ -26,7 +26,8 @@ It runs on four workers, too long for the pre-commit hook.
 
 The map draws before its data and fills in as each file lands. `npm run test:loading` tests that
 in a real browser at one desktop and one phone size, on its own dev server on a free port
-(`LOADING_PORT` to choose one). A dev server stops itself when the run that started it has gone.
+(`LOADING_PORT` to choose one). A dev server stops itself when the run that started it has gone;
+`test/loading/serverExit.spec.ts` checks that, so a change to `vite.config.ts` or to Vite runs it.
 
 ## Test harness
 
