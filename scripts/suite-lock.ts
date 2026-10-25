@@ -35,7 +35,7 @@ export const STALE_AFTER_MS = LIMIT_MS + GRACE_MS + 60_000;
 
 const lockPath = () => join(tmpdir(), 'torahmap-browser-suite.lock');
 
-function alive(pid: number): boolean {
+export function alive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;

@@ -1,7 +1,13 @@
 import { defineConfig } from '@playwright/test';
-import { DESKTOP_AND_PHONE, LAUNCH_ARGS, SCREENS, webServer } from '../browser/screens.ts';
+import {
+  DESKTOP_AND_PHONE,
+  LAUNCH_ARGS,
+  SCREENS,
+  suitePort,
+  webServer,
+} from '../browser/screens.ts';
 
-const PORT = Number(process.env.LOADING_PORT ?? 5198);
+const PORT = await suitePort('LOADING_PORT');
 
 export default defineConfig({
   testDir: '.',

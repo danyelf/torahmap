@@ -9,7 +9,7 @@ vitest suite covers those.
 npm run test:layout
 ```
 
-The run starts its own dev server on port 5199 (set `LAYOUT_PORT` to change it) and takes about
+The run starts its own dev server on a free port (set `LAYOUT_PORT` to choose one) and takes about
 20 seconds. It is not part of the pre-commit hook. Run it before opening a pull request that changes
 the interface.
 
