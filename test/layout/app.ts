@@ -208,6 +208,12 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
+    name: 'explore-trop-poetic',
+    link: 'overlay=trop&trop=tarcha&tab=poetic',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
     name: 'explore-text-analytics',
     link: 'overlay=text-analytics&analysis=repetitive-wording',
     then: (page) => viaMenu(page, 'overlay'),

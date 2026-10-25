@@ -24,47 +24,51 @@ import { isNikkud } from '@torahmap/hebrew';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
-  getTropByFrequency,
   getRarityTier,
+  MARK_BY_SLUG,
+  marksByGroup,
+  nameIn,
+  otherName,
+  signPositions,
+  signsOf,
+  slugOf,
+  SYSTEM_INFO,
+  SYSTEMS,
+  systemOf,
   type RarityTier,
+  type System,
   type TropIndexEntry,
+  type TropMark,
 } from './trop/marks.ts';
 import { axisGradient, legendCaption, legendRow } from './legend.ts';
-import { TROP } from '@torahmap/overlay-catalog';
+import { TROP, TROP_TABS } from '@torahmap/overlay-catalog';
 
 /**
- * The mark clicked, and the mark the pointer is over in the chart, each named
- * by its URL slug. The map shows the hovered mark while there is one; only the
- * clicked one goes into a link.
+ * The tab the chart shows; the mark clicked, and the mark the pointer is over
+ * in the chart, each named by its URL slug. The map shows the hovered mark
+ * while there is one; the tab and the clicked mark go into a link.
  */
 export interface TropSettings {
+  readonly tab: System;
   readonly mark: string | null;
   readonly preview: string | null;
 }
 
+/** The mark the map shows, if the tab offers it. */
 function shownMark(settings: TropSettings): string | null {
-  return settings.preview ?? settings.mark;
-}
-
-function slugify(name: string): string {
-  return name.toLowerCase().replace(/\s+/g, '-');
+  const slug = settings.preview ?? settings.mark;
+  return slug && MARK_BY_SLUG.get(slug)?.groups[settings.tab] ? slug : null;
 }
 
 export interface TropData {
   texts: VerseTexts;
 }
 
-/** Every mark the text carries, by URL slug, rarest first; once per data value. */
-const marksOf = memoByValue(
-  (data: TropData): Map<string, TropIndexEntry> =>
-    new Map(
-      getTropByFrequency(buildTropIndex(data.texts)).map((entry) => [slugify(entry.name), entry]),
-    ),
-);
+/** Every mark and the verses that carry it, by URL slug; once per data value. */
+const marksOf = memoByValue((data: TropData) => buildTropIndex(data.texts));
 
 function entryFor(data: TropData, mark: string | null): TropIndexEntry | null {
-  if (!mark) return null;
-  return marksOf(data).get(mark) ?? null;
+  return (mark && marksOf(data).get(mark)) || null;
 }
 
 function tierOf(entry: TropIndexEntry): RarityTier {
@@ -76,21 +80,18 @@ export const RARE_MATCH_COLOR: Color = [1.0, 0.84, 0.0]; // Gold
 export const NO_MATCH_COLOR: Color = [0.25, 0.25, 0.25];
 
 interface RareTier {
-  label: string;
   match: Color;
 }
 
 interface CountedTier {
-  label: string;
   transform: Transform;
   gradient: ColorStop[];
 }
 
 /** How each tier is drawn: a rare mark as present or absent, any other as a count, on a scale. */
 const TIERS = {
-  rare: { label: 'Rare', match: RARE_MATCH_COLOR },
+  rare: { match: RARE_MATCH_COLOR },
   uncommon: {
-    label: 'Uncommon',
     transform: LINEAR,
     gradient: [
       { t: 0, color: [0.4, 0.2, 0.6] }, // Dim purple
@@ -99,7 +100,6 @@ const TIERS = {
   },
   // Common marks span a wide range of counts, so their scale is logarithmic.
   common: {
-    label: 'Common',
     transform: LOG,
     gradient: [
       { t: 0, color: [0.2, 0.1, 0.3] }, // Dark purple
@@ -166,12 +166,9 @@ function derivationFor(data: TropData, settings: TropSettings): TropDerivation |
   return derivationOf(data, shownMark(settings));
 }
 
-/** The "name (hebrew) · count · tier" line shown for a trop mark's info. */
-function tropInfoLine(entry: TropIndexEntry, options?: { withOccurrencesWord?: boolean }): string {
-  const count = options?.withOccurrencesWord
-    ? `${entry.totalCount.toLocaleString()} occurrences`
-    : entry.totalCount.toLocaleString();
-  return `${entry.name} (${entry.hebrewName}) · ${count} · ${TIERS[tierOf(entry)].label}`;
+/** What the tab calls the mark that is shown. */
+function shownName(derived: TropDerivation, settings: TropSettings): string {
+  return nameIn(derived.entry.mark, settings.tab).name;
 }
 
 function countAt(verse: TanakhLayout, derived: TropDerivation): number {
@@ -182,10 +179,26 @@ function tropColorAt(verse: TanakhLayout, derived: TropDerivation | null): Color
   return derived && derived.colorOf(countAt(verse, derived));
 }
 
+function markButton(mark: TropMark, system: System): HTMLButtonElement {
+  const { name, hebrewName } = nameIn(mark, system);
+  const other = otherName(mark, system);
+  const button = document.createElement('button');
+  button.dataset.slug = slugOf(mark);
+  button.innerHTML = `
+    <span class="trop-sign">ב${signsOf(mark, system)[0]}</span>
+    <span class="trop-name">${name}</span>
+    <span class="trop-hebrew-name"><span lang="he">${hebrewName}</span>${
+      other
+        ? ` <span class="trop-other-name">[${other} in ${system === 'prose' ? 'poetry' : 'prose'}]</span>`
+        : ''
+    }</span>`;
+  return button;
+}
+
 /**
  * Draw the mark chart for `settings`, or bring an already-drawn chart's
  * selection up to date. Built once per container; a redraw only toggles which
- * button is marked selected and what the info line says.
+ * tab is shown and which buttons are marked selected.
  */
 function renderTropChart(
   container: HTMLElement,
@@ -194,55 +207,73 @@ function renderTropChart(
   data: TropData | null,
 ): void {
   if (!data) return;
-  let chart = container.querySelector<HTMLElement>('.trop-chart');
-  if (!chart) {
+  if (!container.querySelector('.trop-chart')) {
     container.innerHTML = `
       <div class="trop-controls">
-        <label style="margin-bottom: 8px;">Select Trop Mark</label>
+        <div class="trop-tabs" role="tablist"></div>
         <div class="trop-chart"></div>
-        <div class="trop-info"></div>
       </div>
     `;
-    chart = container.querySelector('.trop-chart') as HTMLElement;
-    chart.style.setProperty('--rare-marker', colorToCss(TIERS.rare.match));
+    const tabs = container.querySelector('.trop-tabs')!;
+    const chart = container.querySelector('.trop-chart')!;
     const preview = lingeringHover<string>((slug) =>
       onChange((current) => ({ ...current, preview: slug })),
     );
 
-    for (const [slug, entry] of marksOf(data)) {
-      const button = document.createElement('button');
-      button.textContent = 'ב' + entry.unicode; // Show on a bet for visibility
-      button.title = `${entry.name} (${entry.hebrewName})`;
-      button.dataset.unicode = entry.unicode;
-      button.dataset.slug = slug;
+    for (const system of SYSTEMS) {
+      const tab = document.createElement('button');
+      tab.setAttribute('role', 'tab');
+      tab.dataset.tab = system;
+      tab.textContent = SYSTEM_INFO[system].label;
+      tab.addEventListener('click', () =>
+        onChange((current) => ({
+          ...current,
+          tab: system,
+          mark:
+            current.mark && MARK_BY_SLUG.get(current.mark)?.groups[system] ? current.mark : null,
+        })),
+      );
+      tabs.appendChild(tab);
 
-      if (tierOf(entry) === 'rare') {
-        button.classList.add('rare');
+      const panel = document.createElement('div');
+      panel.dataset.tab = system;
+      const intro = document.createElement('p');
+      intro.className = 'trop-intro';
+      intro.textContent = SYSTEM_INFO[system].intro;
+      panel.appendChild(intro);
+      for (const { group, marks } of marksByGroup(system)) {
+        const heading = document.createElement('h4');
+        heading.innerHTML = `${group.title} <span>${group.blurb}</span>`;
+        const grid = document.createElement('div');
+        grid.className = 'trop-grid';
+        for (const mark of marks) {
+          const button = markButton(mark, system);
+          const slug = slugOf(mark);
+          button.addEventListener('mouseenter', () => preview.enter(slug));
+          button.addEventListener('mouseleave', () => preview.leave());
+          button.addEventListener('click', () =>
+            onChange((current) => ({ ...current, mark: current.mark === slug ? null : slug })),
+          );
+          grid.appendChild(button);
+        }
+        panel.append(heading, grid);
       }
-
-      button.addEventListener('mouseenter', () => preview.enter(slug));
-      button.addEventListener('mouseleave', () => preview.leave());
-
-      button.addEventListener('click', () => {
-        onChange((current) => ({ ...current, mark: current.mark === slug ? null : slug }));
-      });
-
-      chart.appendChild(button);
+      chart.appendChild(panel);
     }
   }
 
-  chart.querySelectorAll<HTMLButtonElement>('button').forEach((button) => {
+  container.querySelectorAll<HTMLElement>('[data-tab]').forEach((element) => {
+    const shown = element.dataset.tab === settings.tab;
+    if (element.matches('button')) {
+      element.setAttribute('aria-selected', String(shown));
+      element.classList.toggle('selected', shown);
+    } else {
+      element.hidden = !shown;
+    }
+  });
+  container.querySelectorAll<HTMLButtonElement>('.trop-grid button').forEach((button) => {
     button.classList.toggle('selected', button.dataset.slug === settings.mark);
   });
-
-  const info = container.querySelector('.trop-info') as HTMLElement;
-  const previewed = entryFor(data, settings.preview);
-  const selected = entryFor(data, settings.mark);
-  info.textContent = previewed
-    ? tropInfoLine(previewed, { withOccurrencesWord: true })
-    : selected
-      ? tropInfoLine(selected)
-      : '';
 }
 
 export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
@@ -269,11 +300,14 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
   },
 
   settingsFromUrl(params: UrlParamValues<typeof TROP.urlParams>): TropSettings {
-    return { mark: params.trop ?? null, preview: null };
+    return { tab: params.tab, mark: params.trop ?? null, preview: null };
   },
 
   settingsToUrl(settings: TropSettings): Record<string, string> {
-    return settings.mark ? { trop: settings.mark } : {};
+    return {
+      ...(settings.mark ? { trop: settings.mark } : {}),
+      ...(settings.tab === TROP_TABS[0] ? {} : { tab: settings.tab }),
+    };
   },
 
   renderControls(container, settings, onChange, data) {
@@ -294,7 +328,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     const { legend } = derived;
     if (legend.kind === 'swatches') {
       container.innerHTML =
-        legendRow(legend.contains, `Contains ${derived.entry.name}`) +
+        legendRow(legend.contains, `Contains ${shownName(derived, settings)}`) +
         legendRow(legend.without, 'Does not contain');
     } else {
       container.innerHTML = `
@@ -309,9 +343,10 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
   },
 
   summary(settings, data) {
-    const derived = derivationOf(data, settings.mark);
+    const slug = shownMark({ ...settings, preview: null });
+    const derived = derivationOf(data, slug);
     if (!derived) return {};
-    const detail = settings.mark ?? undefined;
+    const detail = slug ?? undefined;
     const { legend } = derived;
     return legend.kind === 'swatches'
       ? { detail, colors: [legend.contains] }
@@ -322,16 +357,10 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     const derived = derivationFor(data, settings);
     if (!derived) return null;
     const count = countAt(verse, derived);
-    return count ? `${derived.entry.name} ×${count}` : null;
+    return count ? `${shownName(derived, settings)} ×${count}` : null;
   },
 
-  highlightItemText(
-    _verse,
-    text: string,
-    language: TextLanguage,
-    settings,
-    data,
-  ): DocumentFragment {
+  highlightItemText(verse, text: string, language: TextLanguage, settings, data): DocumentFragment {
     const fragment = document.createDocumentFragment();
     const derived = derivationFor(data, settings);
     if (language !== HEBREW || !derived) {
@@ -339,44 +368,34 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
       return fragment;
     }
     const holder = document.createElement('div');
-    holder.innerHTML = highlightTropInText(text, derived.entry.unicode);
+    const signs = signsOf(derived.entry.mark, systemOf(verse.book, verse.chapter, verse.verse));
+    holder.innerHTML = highlightTropInText(text, signs);
     fragment.append(...holder.childNodes);
     return fragment;
   },
 };
 
-// Wraps a trop mark together with its base letter and any other combining
+// Wraps each of `signs` together with its base letter and any other combining
 // marks between them (Hebrew points/accents, U+0591-U+05C7), so the <mark>
 // highlights a whole grapheme instead of just the trop character.
-export function highlightTropInText(hebrewText: string, tropUnicode: string): string {
+export function highlightTropInText(hebrewText: string, signs: readonly string[]): string {
+  const positions = signPositions(hebrewText, signs);
   const result: string[] = [];
-  let i = 0;
 
-  while (i < hebrewText.length) {
+  for (let i = 0; i < hebrewText.length; i++) {
     const char = hebrewText[i];
-
-    if (char === tropUnicode) {
-      if (result.length > 0) {
-        const highlighted: string[] = [];
-        while (result.length > 0) {
-          const last = result[result.length - 1];
-          const lastCode = last.codePointAt(0) || 0;
-          if (isNikkud(lastCode)) {
-            highlighted.unshift(result.pop()!);
-          } else {
-            highlighted.unshift(result.pop()!);
-            break;
-          }
-        }
-        highlighted.push(char);
-        result.push(`<mark class="trop-highlight">${highlighted.join('')}</mark>`);
-      } else {
-        result.push(`<mark class="trop-highlight">${char}</mark>`);
-      }
-    } else {
+    if (!positions.has(i)) {
       result.push(char);
+      continue;
     }
-    i++;
+    const highlighted: string[] = [];
+    while (result.length > 0) {
+      const last = result.pop()!;
+      highlighted.unshift(last);
+      if (!isNikkud(last.codePointAt(0) || 0)) break;
+    }
+    highlighted.push(char);
+    result.push(`<mark class="trop-highlight">${highlighted.join('')}</mark>`);
   }
 
   return result.join('');

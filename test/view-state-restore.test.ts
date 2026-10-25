@@ -205,7 +205,20 @@ describe('restoring a link as one complete view', () => {
     it('marks the trop button the link names', () => {
       const controls = controlsAfter('?overlay=trop&trop=tipcha');
 
-      expect(controls.querySelector('button.selected')?.getAttribute('title')).toMatch(/^Tipcha/);
+      expect(controls.querySelector<HTMLElement>('.trop-grid button.selected')?.dataset.slug).toBe(
+        'tipcha',
+      );
+    });
+
+    it('shows the trop tab the link names', () => {
+      const controls = controlsAfter('?overlay=trop&trop=tarcha&tab=poetic');
+
+      expect(controls.querySelector<HTMLElement>('.trop-tabs .selected')?.dataset.tab).toBe(
+        'poetic',
+      );
+      expect(controls.querySelector<HTMLElement>('.trop-grid button.selected')?.dataset.slug).toBe(
+        'tarcha',
+      );
     });
 
     it('clears the trop selection when the link names no mark', () => {
@@ -213,7 +226,7 @@ describe('restoring a link as one complete view', () => {
       const controls = controlsAfter('?overlay=trop');
 
       expect(settings.toUrl(getOverlay('trop')!)).toEqual({});
-      expect(controls.querySelector('button.selected')).toBeNull();
+      expect(controls.querySelector('.trop-grid button.selected')).toBeNull();
     });
 
     it('clears the search when the link names none', () => {
