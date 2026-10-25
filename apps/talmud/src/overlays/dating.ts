@@ -65,7 +65,7 @@ const GREY: Color = [0.62, 0.62, 0.62];
 /** How much of its usual colour a segment that names no rabbi keeps. */
 const FAINT = 0.3;
 
-export const mix = (a: readonly number[], b: readonly number[], toward: number): Color => [
+const mix = (a: readonly number[], b: readonly number[], toward: number): Color => [
   a[0] + (b[0] - a[0]) * toward,
   a[1] + (b[1] - a[1]) * toward,
   a[2] + (b[2] - a[2]) * toward,

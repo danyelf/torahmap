@@ -16,7 +16,7 @@ export interface RabbiSettings {
   picked: string[];
 }
 
-/** One more than a passage can show colours for would only repeat a colour. */
+/** At most this many rabbis picked; a square shows `MAX_COLORS` of the ones it names. */
 export const MAX_PICKS = 6;
 /** What the renderer can split one square into. */
 export const MAX_COLORS = 4;

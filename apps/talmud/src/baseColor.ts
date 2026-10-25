@@ -20,12 +20,18 @@ function jitteredColor(
   ];
 }
 
-export function mishnahOrGemaraColor(structure: TalmudStructure, id: TalmudIdentity): Color {
+/** `quiet` drops the Mishnah's hue, where its violet would crowd a tool's colors. */
+export function mishnahOrGemaraColor(
+  structure: TalmudStructure,
+  id: TalmudIdentity,
+  quiet = false,
+): Color {
   const mishnah = isSegmentMishnah(structure, id.tractate, id.daf, id.amud, id.segment);
-  return jitteredColor(mishnah ? MISHNAH_BASE_COLOR : GEMARA_BASE_COLOR, id);
+  const mishnahColor = quiet ? grayOf([...MISHNAH_BASE_COLOR]) : MISHNAH_BASE_COLOR;
+  return jitteredColor(mishnah ? mishnahColor : GEMARA_BASE_COLOR, id);
 }
 
-/** The same brightness with no hue: a Mishnah segment where the Mishnah's violet would crowd a tool's colors. */
+/** The same brightness with no hue. */
 export function grayOf([r, g, b]: Color): Color {
   const gray = 0.299 * r + 0.587 * g + 0.114 * b;
   return [gray, gray, gray];

@@ -61,7 +61,7 @@ const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
 
 /** "1273 passages", "21 passages, 91 unsure", "91 unsure passages". */
 function passageCounts(sure: number, maybe: number): string {
-  if (!sure) return `${count(maybe, 'unsure passage')}`;
+  if (!sure) return count(maybe, 'unsure passage');
   return maybe ? `${count(sure, 'passage')}, ${maybe} unsure` : count(sure, 'passage');
 }
 
@@ -180,6 +180,7 @@ export function rabbisOverlay(
       back.className = `${CONTROL.icon} rabbi-back`;
       back.textContent = '×';
       back.title = 'Choose another';
+      back.setAttribute('aria-label', back.title);
       back.addEventListener('click', () => {
         finder.asking = null;
         finder.draw();
@@ -211,9 +212,10 @@ export function rabbisOverlay(
         row.className = 'rabbi-picked-row';
         const remove = document.createElement('button');
         remove.type = 'button';
-        remove.className = `${CONTROL.icon}`;
+        remove.className = CONTROL.icon;
         remove.textContent = '×';
         remove.title = `Unpick ${rabbi.en}`;
+        remove.setAttribute('aria-label', remove.title);
         remove.addEventListener('click', () => onChange(removePick(rabbi.id)));
         const text = document.createElement('div');
         text.className = 'rabbi-picked-text';

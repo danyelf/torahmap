@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { HEBREW } from '@torahmap/shell/language.ts';
 import type { TalmudDating } from '../src/dating.ts';
+import { fadeTo } from '../src/overlays/dating.ts';
 import { DATING_FILE } from '../src/dating.ts';
 import { RABBIS_FILE, type TalmudRabbis } from '../src/rabbis.ts';
 import { talmudText } from '../src/text.ts';
@@ -77,9 +78,8 @@ describe('the rabbis overlay colours', () => {
     const [sure] = colours(picking('gamliel-a', 'lakish'), 'A.2a.2');
     const [maybe] = colours(picking('gamliel-a'), 'A.2a.3');
     const solid = pickColors([rabbis.rabbis[0]])[0];
-    expect(maybe).not.toEqual(solid);
-    expect(maybe).not.toEqual(unlitColour);
-    expect(sure).not.toEqual(unlitColour);
+    expect(sure).toEqual(pickColors([rabbis.rabbis[0], rabbis.rabbis[2]])[1]);
+    expect(maybe).toEqual(fadeTo(solid, 0.8));
   });
 
   it('never splits a square into more colours than it can show', () => {
