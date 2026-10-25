@@ -7,6 +7,7 @@ import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import { EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
+import { COLORTESTBED_PATH } from '@torahmap/colortestbed/page.ts';
 import { OWNER_PID_ENV } from './test/browser/owner.ts';
 import { alive } from './scripts/suite-lock.ts';
 import { builtPages, isLiveBuild, unpublished, type BuiltPage } from './build.ts';
@@ -49,7 +50,11 @@ function pagePlugin(): Plugin {
 
 const TEMPLATE = resolve(__dirname, 'index.html');
 type ExtraPage = Exclude<BuiltPage, 'main'>;
-const PAGE_PATHS: Record<ExtraPage, string> = { talmud: TALMUD_PATH, euaiact: EUAIACT_PATH };
+const PAGE_PATHS: Record<ExtraPage, string> = {
+  talmud: TALMUD_PATH,
+  euaiact: EUAIACT_PATH,
+  colortestbed: COLORTESTBED_PATH,
+};
 const htmlPath = (page: ExtraPage) => `${PAGE_PATHS[page]}index.html`;
 // No such file: pageAddressPlugin gives the build index.html under this name.
 const htmlFile = (page: ExtraPage) => resolve(__dirname, `.${htmlPath(page)}`);
@@ -57,6 +62,7 @@ const PAGE_FILES: Record<BuiltPage, string> = {
   main: TEMPLATE,
   talmud: htmlFile('talmud'),
   euaiact: htmlFile('euaiact'),
+  colortestbed: htmlFile('colortestbed'),
 };
 
 // A page beside the Tanakh's is index.html at its own address: the dev server
@@ -132,6 +138,7 @@ export default defineConfig(({ command }) => {
       pagePlugin(),
       pageAddressPlugin('talmud'),
       pageAddressPlugin('euaiact'),
+      pageAddressPlugin('colortestbed'),
       assetsIgnorePlugin(live),
       exitWithOwnerPlugin(),
     ],

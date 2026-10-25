@@ -1,0 +1,16 @@
+{
+  "name": "@torahmap/colortestbed",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@torahmap/engine": "*",
+    "@torahmap/link": "*",
+    "@torahmap/shell": "*",
+    "@torahmap/site": "*",
+    "@torahmap/stories": "*",
+    "@torahmap/utils": "*"
+  }
+}

@@ -5,6 +5,7 @@ export * from './html.ts';
 export * from './idle.ts';
 export * from './jitter.ts';
 export * from './memo.ts';
+export * from './oklch.ts';
 export * from './random.ts';
 export * from './scale.ts';
 export * from './sefaria.ts';

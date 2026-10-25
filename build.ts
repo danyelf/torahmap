@@ -4,7 +4,7 @@
 import { EUAIACT_DATA_DIR } from '@torahmap/euaiact/data.ts';
 import { TALMUD_DATA_DIR } from '@torahmap/talmud/data.ts';
 
-export type BuiltPage = 'main' | 'talmud' | 'euaiact';
+export type BuiltPage = 'main' | 'talmud' | 'euaiact' | 'colortestbed';
 
 /** A page beside the Tanakh's: its data folder under public/data/, and whether the live site has it. */
 export interface ExtraPage {
@@ -16,6 +16,8 @@ export interface ExtraPage {
 export const EXTRA_PAGES: readonly ExtraPage[] = [
   { page: 'talmud', dataDir: TALMUD_DATA_DIR, live: true },
   { page: 'euaiact', dataDir: EUAIACT_DATA_DIR, live: true },
+  // A tool for judging colour; it has no data and only previews carry it.
+  { page: 'colortestbed', dataDir: 'colortestbed', live: false },
 ];
 
 export function isLiveBuild(command: 'build' | 'serve', branch: string): boolean {

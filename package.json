@@ -49,6 +49,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@torahmap/colortestbed": "*",
     "@torahmap/engine": "*",
     "@torahmap/euaiact": "*",
     "@torahmap/link": "*",
