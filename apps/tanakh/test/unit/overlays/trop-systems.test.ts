@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { tropOverlay, RARE_MATCH_COLOR } from '../../../src/overlays/trop';
-import { systemOf, TROP_MARKS, SYSTEM_INFO, SYSTEMS } from '../../../src/overlays/trop/marks';
+import {
+  signsOf,
+  systemOf,
+  TROP_MARKS,
+  SYSTEM_INFO,
+  SYSTEMS,
+} from '../../../src/overlays/trop/marks';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse } from '../../helpers/fixtures';
 import type { VerseTexts } from '../../../src/verseTexts';
@@ -163,14 +169,11 @@ describe('the marks data', () => {
     }
   });
 
-  it('writes every mark with at least one sign', () => {
+  it('writes every mark with at least one sign in each system it is used in', () => {
     for (const mark of TROP_MARKS) {
-      const signs = [
-        ...(mark.signs ?? []),
-        ...(mark.proseSigns ?? []),
-        ...(mark.poeticSigns ?? []),
-      ];
-      expect(signs.length).toBeGreaterThan(0);
+      for (const system of SYSTEMS) {
+        if (mark.groups[system]) expect(signsOf(mark, system).length).toBeGreaterThan(0);
+      }
     }
   });
 });

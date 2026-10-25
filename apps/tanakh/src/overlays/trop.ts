@@ -25,7 +25,7 @@ import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import {
   buildTropIndex,
   getRarityTier,
-  MARK_BY_SLUG,
+  offers,
   marksByGroup,
   nameIn,
   otherName,
@@ -41,7 +41,7 @@ import {
   type TropMark,
 } from './trop/marks.ts';
 import { axisGradient, legendCaption, legendRow } from './legend.ts';
-import { TROP, TROP_TABS } from '@torahmap/overlay-catalog';
+import { TROP } from '@torahmap/overlay-catalog';
 
 /**
  * The tab the chart shows; the mark clicked, and the mark the pointer is over
@@ -57,7 +57,7 @@ export interface TropSettings {
 /** The mark the map shows, if the tab offers it. */
 function shownMark(settings: TropSettings): string | null {
   const slug = settings.preview ?? settings.mark;
-  return slug && MARK_BY_SLUG.get(slug)?.groups[settings.tab] ? slug : null;
+  return slug && offers(settings.tab, slug) ? slug : null;
 }
 
 export interface TropData {
@@ -188,9 +188,7 @@ function markButton(mark: TropMark, system: System): HTMLButtonElement {
     <span class="trop-sign">ב${signsOf(mark, system)[0]}</span>
     <span class="trop-name">${name}</span>
     <span class="trop-hebrew-name"><span lang="he">${hebrewName}</span>${
-      other
-        ? ` <span class="trop-other-name">[${other} in ${system === 'prose' ? 'poetry' : 'prose'}]</span>`
-        : ''
+      other ? ` <span class="trop-other-name">[${other}]</span>` : ''
     }</span>`;
   return button;
 }
@@ -229,8 +227,7 @@ function renderTropChart(
         onChange((current) => ({
           ...current,
           tab: system,
-          mark:
-            current.mark && MARK_BY_SLUG.get(current.mark)?.groups[system] ? current.mark : null,
+          mark: current.mark && offers(system, current.mark) ? current.mark : null,
         })),
       );
       tabs.appendChild(tab);
@@ -306,7 +303,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
   settingsToUrl(settings: TropSettings): Record<string, string> {
     return {
       ...(settings.mark ? { trop: settings.mark } : {}),
-      ...(settings.tab === TROP_TABS[0] ? {} : { tab: settings.tab }),
+      tab: settings.tab,
     };
   },
 
@@ -346,7 +343,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     const slug = shownMark({ ...settings, preview: null });
     const derived = derivationOf(data, slug);
     if (!derived) return {};
-    const detail = slug ?? undefined;
+    const detail = slug!;
     const { legend } = derived;
     return legend.kind === 'swatches'
       ? { detail, colors: [legend.contains] }

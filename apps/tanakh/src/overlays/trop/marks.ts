@@ -89,11 +89,10 @@ export interface TropMark {
   hebrewName: string;
   /** What poetry calls the mark, when it is not the same. */
   inPoetry?: { name: string; hebrewName: string };
-  /** The signs that write the mark in either system. */
-  signs?: readonly string[];
+  /** The signs that write the mark in every system it is used in. */
+  signs: readonly string[];
   /** Signs that write the mark in prose only; the poetic books use them for another mark. */
   proseSigns?: readonly string[];
-  poeticSigns?: readonly string[];
   /** The group the mark belongs to in each system it is used in. */
   groups: Partial<Record<System, string>>;
 }
@@ -120,7 +119,7 @@ export const TROP_MARKS: readonly TropMark[] = [
     signs: ['֑'],
     groups: { prose: 'emperors', poetic: 'dividers' },
   },
-  { name: 'Tipcha', hebrewName: 'טפחא', proseSigns: ['֖'], groups: { prose: 'kings' } },
+  { name: 'Tipcha', hebrewName: 'טפחא', signs: ['֖'], groups: { prose: 'kings' } },
   { name: 'Zaqef Qatan', hebrewName: 'זקף קטן', signs: ['֔'], groups: { prose: 'kings' } },
   { name: 'Zaqef Gadol', hebrewName: 'זקף גדול', signs: ['֕'], groups: { prose: 'kings' } },
   { name: 'Segol', hebrewName: 'סגול', signs: ['֒'], groups: { prose: 'kings' } },
@@ -194,11 +193,11 @@ export const TROP_MARKS: readonly TropMark[] = [
     signs: ['֨'],
     groups: { prose: 'servants', poetic: 'servants' },
   },
-  { name: 'Tarcha', hebrewName: 'טרחא', poeticSigns: ['֖'], groups: { poetic: 'servants' } },
+  { name: 'Tarcha', hebrewName: 'טרחא', signs: ['֖'], groups: { poetic: 'servants' } },
   {
     name: 'Tsinnorit',
     hebrewName: 'צנורית',
-    poeticSigns: ['֘'],
+    signs: ['֘'],
     groups: { poetic: 'servants' },
   },
   {
@@ -243,12 +242,18 @@ export function nameIn(mark: TropMark, system: System): { name: string; hebrewNa
   return system === 'poetic' && mark.inPoetry ? mark.inPoetry : mark;
 }
 
-/** The mark's name in the other system when it differs, for a reader who knows it by that. */
+/** Does `system`'s chart offer the mark with this slug? */
+export function offers(system: System, slug: string): boolean {
+  return Boolean(MARK_BY_SLUG.get(slug)?.groups[system]);
+}
+
+/** "Azla in poetry": the mark's name in the other system when it differs, for a reader who knows it by that. */
 export function otherName(mark: TropMark, system: System): string | null {
   if (!mark.groups.prose || !mark.groups.poetic) return null;
-  const other: System = system === 'prose' ? 'poetic' : 'prose';
+  const [other, where] =
+    system === 'prose' ? (['poetic', 'poetry'] as const) : (['prose', 'prose'] as const);
   const there = nameIn(mark, other).name;
-  return there === nameIn(mark, system).name ? null : there;
+  return there === nameIn(mark, system).name ? null : `${there} in ${where}`;
 }
 
 /** The marks a system draws, by group, in drawing order. */
@@ -261,10 +266,8 @@ export function marksByGroup(system: System): { group: Group; marks: TropMark[] 
 
 /** The signs that write `mark` in verses of `system`. */
 export function signsOf(mark: TropMark, system: System): readonly string[] {
-  return [
-    ...(mark.signs ?? []),
-    ...((system === 'prose' ? mark.proseSigns : mark.poeticSigns) ?? []),
-  ];
+  if (!mark.groups[system]) return [];
+  return system === 'prose' ? [...mark.signs, ...(mark.proseSigns ?? [])] : mark.signs;
 }
 
 const OWNER: Record<System, Map<string, TropMark>> = { prose: new Map(), poetic: new Map() };
