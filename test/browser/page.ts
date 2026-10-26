@@ -1,10 +1,11 @@
 // What both browser suites share: opening the map, waiting on it, reading its
 // pixels and recording what it sends.
 import { expect, test, type Page } from '@playwright/test';
+import { MAP_BACKGROUND } from '../../packages/engine/src/constants.ts';
 import { isFake } from './fakeMap.ts';
 
-/** The canvas's clear colour and the page's background: #1a1a1a. */
-const BACKGROUND = 26;
+/** The canvas's clear colour and the page's background, as a 0 to 255 channel. */
+const BACKGROUND = Math.round(MAP_BACKGROUND[0] * 255);
 /** A channel this far from the background counts as drawn. */
 const DRAWN_DELTA = 12;
 /** Fewer drawn pixels than this is a map that did not draw. */

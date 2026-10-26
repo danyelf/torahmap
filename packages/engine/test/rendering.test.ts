@@ -8,6 +8,7 @@ import {
   type RenderContext,
   type RenderState,
   type Camera,
+  MAP_BACKGROUND,
   RINGS,
 } from '../src/index.ts';
 import { createMockCanvas } from './mocks.ts';
@@ -193,7 +194,7 @@ describe('rendering', () => {
       render(context, state, camera, null, null);
 
       expect(context.gl.viewport).toHaveBeenCalledWith(0, 0, 800, 600);
-      expect(context.gl.clearColor).toHaveBeenCalledWith(0.1, 0.1, 0.1, 1.0);
+      expect(context.gl.clearColor).toHaveBeenCalledWith(...MAP_BACKGROUND, 1.0);
       expect(context.gl.clear).toHaveBeenCalled();
     });
 

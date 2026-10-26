@@ -107,4 +107,4 @@ export const BRIGHTNESS_JITTER = 0.18;
 export const POSITION_JITTER = 0.7;
 
 // The covers are drawn over the canvas in their seder's tint at this opacity.
-export const COVER_OPACITY = 0.1;
+export const COVER_OPACITY = 0.08;
