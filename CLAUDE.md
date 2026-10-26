@@ -50,8 +50,8 @@ The two browser suites take turns across the machine, whichever checkout starts 
 saying for whom, until the one before it ends. `SUITE_LOCK=off` skips the wait.
 
 `.githooks/pre-commit` checks formatting, typechecks and runs the tests before every commit. After
-cloning, run `./scripts/install-hooks.sh` once if your npm config sets `ignore-scripts=true`
-(Danyel's does), since `npm install` then skips it.
+cloning, run `git config core.hooksPath .githooks` and
+`git config blame.ignoreRevsFile .git-blame-ignore-revs` once.
 
 ## Project Structure
 

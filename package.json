@@ -9,7 +9,6 @@
     "apps/*"
   ],
   "scripts": {
-    "prepare": "sh scripts/install-hooks.sh --warn-only",
     "dev": "vite",
     "harness": "vite --open /test-harness/",
     "build": "node packages/stories/generate.mjs && tsc --project tsconfig.build.json && vite build",
