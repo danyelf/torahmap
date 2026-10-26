@@ -36,7 +36,7 @@ export type OccasionCategory =
   | 'fast-days'
   | 'other';
 
-export interface SpecialOccasionData {
+interface SpecialOccasionData {
   name: string;
   hebrewName: string;
   category: OccasionCategory;

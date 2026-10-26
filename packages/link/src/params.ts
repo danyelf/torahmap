@@ -110,7 +110,7 @@ function baseValidate(value: string | null, maxLength: number): string | null {
 }
 
 /** Like baseValidate, and also rejects slashes, backslashes, pipes, and semicolons. */
-export function validateString(
+function validateString(
   value: string | null,
   maxLength: number = MAX_STRING_LENGTH,
 ): string | null {

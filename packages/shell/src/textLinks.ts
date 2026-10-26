@@ -17,7 +17,7 @@ export interface TextReference {
 export const TEXT_LINK = 'text-link';
 
 /** The class added to the anchor a reference becomes. */
-export const TEXT_REFERENCE = 'text-reference';
+const TEXT_REFERENCE = 'text-reference';
 
 function anchor(href: string, text: string): HTMLAnchorElement {
   const a = document.createElement('a');

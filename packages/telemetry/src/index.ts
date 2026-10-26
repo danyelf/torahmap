@@ -81,7 +81,7 @@ export type WorkerEvent = {
 }[EventName];
 
 /** Events only the Worker writes; toDataPoint refuses them from the page. */
-export const WORKER_EVENTS: ReadonlySet<EventName> = new Set(
+const WORKER_EVENTS: ReadonlySet<EventName> = new Set(
   (Object.keys(EVENTS) as EventName[]).filter((e) => 'by' in EVENTS[e]),
 );
 

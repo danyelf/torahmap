@@ -71,7 +71,7 @@ export function displayedText(
   return index.byId.get(id)?.text[language.id] ?? null;
 }
 
-export interface TermMatch {
+interface TermMatch {
   termIndex: number;
 }
 

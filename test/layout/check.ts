@@ -69,7 +69,7 @@ export async function measureLayout(
 }
 
 /** Measures the page and fails on every violation that `KNOWN` does not record exactly. */
-export async function checkLayout(page: Page, state: State): Promise<void> {
+async function checkLayout(page: Page, state: State): Promise<void> {
   const info = test.info();
   const measured = await measureLayout(page, CHROME, state.shown);
   for (const rule of RULES) {

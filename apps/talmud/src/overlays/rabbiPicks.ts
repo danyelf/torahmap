@@ -75,7 +75,7 @@ const build = (dating: TalmudDating): Index => {
 };
 
 const indexOf = memoByValue(build);
-export const indexFor = ({ dating }: RabbiData): Index => indexOf(dating);
+const indexFor = ({ dating }: RabbiData): Index => indexOf(dating);
 
 /** The picked rabbis' places, in the order picked; slugs the data does not hold are dropped. */
 export function pickedPlaces(settings: RabbiSettings, data: RabbiData): number[] {
@@ -92,7 +92,7 @@ export function readingOf(
 }
 
 /** How each rabbi a passage may name stands in it: certain where any one name settles him. */
-export function standingIn({ dating }: RabbiData, id: string): Map<number, Certainty> {
+function standingIn({ dating }: RabbiData, id: string): Map<number, Certainty> {
   const found = new Map<number, Certainty>();
   for (const person of dating.segments[id]?.[2] ?? []) {
     const { sure, who } = readingOf(dating, person);
@@ -138,7 +138,7 @@ export function quickPicks(data: RabbiData): { heading: string; entries: Entry[]
 }
 
 /** Lower case, without vowel points, accents or punctuation. */
-export const plain = (text: string): string =>
+const plain = (text: string): string =>
   text
     .normalize('NFD')
     .replace(/[̀-֑ͯ-ׇ]/g, '')

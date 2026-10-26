@@ -15,7 +15,7 @@ export const PARSE = SEARCH_FILES.parse.optional;
 // As apps/tanakh/src/overlays/commentary.ts names it; that module imports CSS, which
 // Playwright cannot load.
 export const COMMENTARY = 'overlays/commentary/counts.json';
-export const HAFTARAH = HAFTARAH_FILES.mappings;
-export const TEXT_ANALYTICS = SCORES_FILE;
+const HAFTARAH = HAFTARAH_FILES.mappings;
+const TEXT_ANALYTICS = SCORES_FILE;
 /** Every file but the structure. */
 export const EVERYTHING = [TEXTS_FILE, ...DICTIONARY, PARSE, COMMENTARY, HAFTARAH, TEXT_ANALYTICS];

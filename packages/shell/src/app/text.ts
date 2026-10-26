@@ -60,7 +60,7 @@ export interface MapText<I extends MapItem, S = unknown> {
 }
 
 /** A text once its first files are in. */
-export interface OpenText<I extends MapItem, S = unknown> {
+interface OpenText<I extends MapItem, S = unknown> {
   items: I[];
   startCamera(viewport: Viewport): Camera;
   /** A square's colour while no tool colours it. */

@@ -36,10 +36,6 @@ export function assertColorEquals(
   }
 }
 
-export function assertApproximately(actual: number, expected: number, epsilon: number = 0.01) {
-  expect(Math.abs(actual - expected)).toBeLessThan(epsilon);
-}
-
 /** A summary's strip names its low and high ends, and not alike. */
 export function assertNamedEnds(summary: OverlaySummary) {
   const [low, high] = summary.strip?.ends ?? [];

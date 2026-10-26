@@ -121,7 +121,7 @@ const shade = (code: string, uncertain: boolean): Color =>
   uncertain ? uncertainColor(generationColor(code)) : generationColor(code);
 
 /** A generation as a key row gives it, under its era's heading: "4th generation", "3rd pair". */
-export function rowLabel(code: string): string {
+function rowLabel(code: string): string {
   if (code === TRANSITION) return 'Tanna/Amora transition';
   return `${ORDINALS[Number(code.slice(1))]} ${code[0] === 'Z' ? 'pair' : 'generation'}`;
 }

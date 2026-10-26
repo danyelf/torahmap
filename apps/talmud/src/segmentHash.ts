@@ -5,12 +5,7 @@
 
 import type { TalmudIdentity } from './types.ts';
 
-export function segmentHash(
-  tractate: string,
-  daf: number,
-  amud: 'a' | 'b',
-  segment: number,
-): number {
+function segmentHash(tractate: string, daf: number, amud: 'a' | 'b', segment: number): number {
   let h = 0;
   for (let i = 0; i < tractate.length; i++) {
     h = (h * 31 + tractate.charCodeAt(i)) | 0;

@@ -71,7 +71,7 @@ export function findFuzzyHit<T>(
  * The standout under a world point, by the square it is drawn as: at least
  * STANDOUT_MIN_PX a side around its cell's centre. The last one drawn is on top.
  */
-export function findStandoutHit<T>(
+function findStandoutHit<T>(
   items: SpatialItem<T>[],
   standout: readonly boolean[],
   zoom: number,

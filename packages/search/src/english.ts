@@ -3,7 +3,7 @@ import type { TextRange } from '@torahmap/utils';
 import type { SearchLanguage } from './language.ts';
 
 /** A term is text a reader typed, so it can hold anything a regex reads. */
-export function escapeForRegex(term: string): string {
+function escapeForRegex(term: string): string {
   return term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 

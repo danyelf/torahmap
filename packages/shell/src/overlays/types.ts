@@ -5,7 +5,7 @@ import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
 import type { TextRange } from '@torahmap/utils';
 
-export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '@torahmap/link';
+export type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 export type { Credit } from '../credits.ts';
 
 /** The overlay id that stands for none: the picker's first option, and what telemetry records. */

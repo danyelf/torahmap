@@ -25,7 +25,7 @@ interface EventsDataset {
   writeDataPoint(point: DataPoint): void;
 }
 
-export interface Env {
+interface Env {
   TORAHMAP_EVENTS: EventsDataset;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
