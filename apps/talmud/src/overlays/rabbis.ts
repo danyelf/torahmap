@@ -7,7 +7,7 @@ import { CONTROL } from '@torahmap/shell/panel.ts';
 import { colorToCss, type Color } from '@torahmap/utils';
 import { DATING_FILE, type Rabbi, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
-import { GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE } from '../constants.ts';
+import { GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS } from '../constants.ts';
 import { fadeTo, markNames, nameFor, row, type RabbiLink } from './dating.ts';
 import {
   eraLine,
@@ -94,7 +94,7 @@ export function rabbisOverlay(
   base: (item: TalmudLayoutItem) => Color,
   link: RabbiLink,
 ): Overlay<TalmudLayoutItem, RabbiSettings, RabbiData> {
-  const unlit = (item: TalmudLayoutItem): Color => fadeTo(base(item), SEARCH_KEEPS_BASE);
+  const unlit = (item: TalmudLayoutItem): Color => fadeTo(base(item), RABBIS_UNLIT_KEEPS);
 
   /** The colours to draw a passage in: one when one picked rabbi is named there, else a split. */
   function colorsOf(
@@ -296,7 +296,7 @@ export function rabbisOverlay(
     id: RABBIS_ID,
     name: 'Rabbis',
     description:
-      'Lights every passage that names the rabbis you pick, each rabbi in a color of his own. ' +
+      'Lights every passage that names the rabbis you pick, each rabbi in a color of his own; the rest of the map dims. ' +
       'A passage naming two of them is split between their colors. A faded passage names someone ' +
       'who could be that rabbi, among others.',
     credits: [
@@ -337,7 +337,7 @@ export function rabbisOverlay(
       const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
       container.innerHTML = [
         row(faded(colors[0]), 'Faded: a name that might be him'),
-        row(fadeTo(GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE), 'Names none of them'),
+        row(fadeTo(GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS), 'Names none of them'),
       ].join('');
       container.prepend(
         ...places.map((place, i) => {

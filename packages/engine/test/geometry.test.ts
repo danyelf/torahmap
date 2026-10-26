@@ -225,6 +225,17 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_shape')[3]).toBe(SHAPE_FLAGS.STANDOUT | SHAPE_FLAGS.HALO);
       expect(field(buffer, 0, 'a_nextShape')[3]).toBe(SHAPE_FLAGS.STANDOUT);
     });
+
+    it('marks a round square in both pictures, beside its other flags', () => {
+      const buffer = buildItemGeometry(
+        [createItem({ round: true }), createItem()],
+        { colors: [WHITE, WHITE], standout: [true, false] },
+        { colors: [RED, RED] },
+      );
+      expect(field(buffer, 0, 'a_shape')[3]).toBe(SHAPE_FLAGS.STANDOUT | SHAPE_FLAGS.ROUND);
+      expect(field(buffer, 0, 'a_nextShape')[3]).toBe(SHAPE_FLAGS.ROUND);
+      expect(field(buffer, 1, 'a_shape')[3]).toBe(0);
+    });
   });
 });
 

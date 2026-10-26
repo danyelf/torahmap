@@ -93,6 +93,10 @@ export const HADRAN_RING_COLOR: Color = [0.95, 0.93, 0.86];
 // still shows from Gemara.
 export const SEARCH_KEEPS_BASE = 0.6;
 
+// What the Rabbis overlay leaves of a passage that names none of the picks. Less than a search
+// leaves, so the picks stand out.
+export const RABBIS_UNLIT_KEEPS = 0.35;
+
 // --- Per-segment brightness jitter ---
 // Each segment is a deterministic ±BRIGHTNESS_JITTER brighter or darker
 // (baseColor.ts), so the grid reads as rainfall rather than flat tiles, and

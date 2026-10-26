@@ -79,6 +79,9 @@ const VERTEX_SHADER = `#version 300 es
   flat out float v_glow;
   // How far the halo reaches past the square, as a share of its side; 0 for none.
   flat out float v_halo;
+  // 1 for a square drawn as a circle: only where it has room for a ring's hole, since trimming
+  // tiny squares would add moiré.
+  flat out float v_round;
   out vec2 v_uv;
   out vec2 v_seed;
 
@@ -95,6 +98,10 @@ const VERTEX_SHADER = `#version 300 es
 
   float standout(vec4 shape) {
     return float((int(shape.w) & ${SHAPE_FLAGS.STANDOUT}) != 0);
+  }
+
+  float isRound(vec4 shape) {
+    return float((int(shape.w) & ${SHAPE_FLAGS.ROUND}) != 0);
   }
 
   float halo(vec4 shape) {
@@ -156,6 +163,7 @@ const VERTEX_SHADER = `#version 300 es
       ? 1 + (ivec2(a_shape.w, a_nextShape.w) & ${SHAPE_FLAGS.UNCOLOURED})
       : ivec2(0);
     v_side = holes ? (rect.zw - rect.xy) * u_zoom : vec2(0.0);
+    v_round = holes ? isRound(a_shape) : 0.0;
     v_uv = uv;
     // The square's own corner, which zooming does not move, seeds its dithering noise
     v_seed = a_rect.xy + a_jitter;
@@ -175,6 +183,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in vec2 v_side;
   flat in float v_glow;
   flat in float v_halo;
+  flat in float v_round;
   in vec2 v_uv;
   in vec2 v_seed;
   out vec4 fragColor;
@@ -194,11 +203,17 @@ const FRAGMENT_SHADER = `#version 300 es
     return all(greaterThanEqual(p, vec2(0))) && all(lessThan(p, vec2(1)));
   }
 
+  // The square, or the circle in it for a round square.
+  bool inShape(vec2 p) {
+    return inSquare(p) && (v_round == 0.0 || length(p - 0.5) < 0.5);
+  }
+
   // The ring is measured in from the drawn edge, so a grown square's ring is
   // as thick as any other's.
   bool inHole(vec2 p) {
     float inset = u_ring.x + u_ring.y;
     vec2 px = p * v_side;
+    if (v_round > 0.0) return length(px - v_side * 0.5) < v_side.x * 0.5 - inset;
     return v_side.x > 0.0 &&
       all(greaterThanEqual(px, vec2(inset))) &&
       all(lessThan(px, v_side - inset));
@@ -215,7 +230,7 @@ const FRAGMENT_SHADER = `#version 300 es
       if (k >= count && k > 0) break;
       float s = (float(k) - float(max(count, 1) - 1) * 0.5) * ${BAND_OFFSET.toFixed(4)};
       vec2 q = p - s * vec2(1.0, -1.0);
-      if (!inSquare(q)) continue;
+      if (!inShape(q)) continue;
       if (hole == 1 && inHole(q)) continue;
       if (hole == 2 && !inHole(q)) continue;
       if (count > 1 && int(floor(min((q.x + q.y) * 0.5, 0.999) * float(count))) != k) continue;
@@ -250,7 +265,8 @@ const FRAGMENT_SHADER = `#version 300 es
       if (v_halo <= 0.0) discard;
       // Outside the square of a standout with a halo: its fill, fading out.
       vec2 outside = max(max(-v_uv, v_uv - 1.0), 0.0);
-      float alpha = ${STANDOUT_HALO.ALPHA.toFixed(4)} * (1.0 - smoothstep(0.0, v_halo, length(outside)));
+      float away = v_round > 0.0 ? max(length(v_uv - 0.5) - 0.5, 0.0) : length(outside);
+      float alpha = ${STANDOUT_HALO.ALPHA.toFixed(4)} * (1.0 - smoothstep(0.0, v_halo, away));
       if (alpha <= 0.0) discard;
       fragColor = vec4(mix(unpack(v_fill.x), unpack(v_nextFill.x), u_fade), alpha);
       return;

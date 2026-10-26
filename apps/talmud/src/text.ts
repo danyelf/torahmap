@@ -19,6 +19,7 @@ import { talmudSite } from './site.ts';
 import { talmudFiles } from './files.ts';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
+import { createMishnahLetters } from './mishnahMarks.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import {
   HADRAN_RING_COLOR,
@@ -139,8 +140,10 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           sectionSize: SEDER_LABEL_SIZE,
           tab: TRACTATE_TAB,
         });
+        const moveLetters = createMishnahLetters(laid.items, container);
         return (offset, zoom) => {
           moveMarks(offset, zoom);
+          moveLetters(offset, zoom);
           moveNames(offset, zoom);
         };
       },

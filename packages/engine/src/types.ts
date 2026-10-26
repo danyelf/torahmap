@@ -19,6 +19,8 @@ export interface MapItem {
    * into a grid. Taken out as they are widened into bars.
    */
   jitter?: { x: number; y: number };
+  /** Drawn as a circle, with a ring as a circular band, where the square is big enough for a ring's hole. */
+  round?: boolean;
 }
 
 /** A text's own fields (book, chapter and verse; or a Talmud segment) on a square. */

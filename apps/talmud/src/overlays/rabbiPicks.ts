@@ -1,9 +1,9 @@
 // Which passages name the picked rabbis, how to find a rabbi by any of his names, and the colour
 // each pick gets. No page in here.
 
-import { maxChroma, memoByValue, oklchToRgb, rgbToOklch, type Color } from '@torahmap/utils';
-import { isSure, UNDATED, type Rabbi, type TalmudDating } from '../dating.ts';
-import { ERAS, eraOf, eraText, generationColor, TRANSITION } from './dating.ts';
+import { maxChroma, memoByValue, oklchToRgb, type Color } from '@torahmap/utils';
+import { isSure, type Rabbi, type TalmudDating } from '../dating.ts';
+import { ERAS, eraOf, eraText, TRANSITION } from './dating.ts';
 
 export interface RabbiData {
   dating: TalmudDating;
@@ -121,10 +121,6 @@ const TRANSITION_NAME = 'Tanna/Amora transition';
 /** The headings of a key: each era, with the transition generation between the Tannaim and Amoraim. */
 const GROUPS = ERAS.flatMap(({ name }) => (name === 'Tannaim' ? [name, TRANSITION_NAME] : [name]));
 
-/** The generation whose colour stands for the undated, who share the Amoraim's. */
-const UNDATED_COLORS_AS = 'A4';
-const colorGeneration = (gen: string) => (gen === UNDATED ? UNDATED_COLORS_AS : gen);
-
 /**
  * The most-named choices, in groups by era and within each by generation, a group only if it has
  * a choice. A name that can mean several people is one choice, and asks which.
@@ -211,44 +207,25 @@ export function suggest(
 }
 
 /**
- * OKLCH hues, in the order an era's rabbis are picked. Each era is a broad family: the Amoraim
- * from teal to indigo, the Tannaim from orange to crimson, the Zugot from violet to pink. A second
- * pick sits at the far end of the family from the first, and the ends keep clear of the next
- * family's (indigo from violet, pink from crimson) and of the Mishnah's violet (hue 302). From the
- * third pick on the hue leaves the family, since the family has no room left to tell them apart.
+ * The OKLCH hue of each pick, in the order picked, and how much of the gamut's edge its chroma
+ * uses. Four hues far apart: cyan, coral, green, pink. The green is held back, since at full
+ * chroma it reads harsher than the others at the same lightness.
  */
-const HUES: Record<string, readonly number[]> = {
-  Amoraim: [198, 268, 150, 232],
-  Tannaim: [64, 26, 112, 44],
-  Zugot: [350, 304, 130, 85],
-};
+const PICKS: readonly { hue: number; chroma: number }[] = [
+  { hue: 215, chroma: 0.97 },
+  { hue: 35, chroma: 0.97 },
+  { hue: 150, chroma: 0.6 },
+  { hue: 330, chroma: 0.97 },
+];
+/** Every pick is this light, so none looks brighter than another. */
+const PICK_LIGHTNESS = 0.8;
 
-/** Past this, a hue's chroma would be garish beside the others. */
-const CHROMA_CAP = 0.14;
-/** How much of the gamut's edge a chroma may use, so no color is clipped. */
-const CHROMA_ROOM = 0.97;
-
-/**
- * A color for each rabbi, in order. A rabbi alone in his era has his generation's color in
- * Dating. Rabbis of one era have the first one's lightness, so they look equally bright, and the
- * hues of `HUES`, so they are told apart at a glance.
- */
+/** A color for each rabbi, by the order picked. */
 export function pickColors(picked: readonly Rabbi[]): Color[] {
-  const eras = picked.map((rabbi) => eraOf(colorGeneration(rabbi.gen)));
-  const colors: Color[] = [];
-  for (const era of new Set(eras)) {
-    const group = picked.flatMap((_, i) => (eras[i] === era ? [i] : []));
-    if (group.length === 1) {
-      colors[group[0]] = generationColor(colorGeneration(picked[group[0]].gen));
-      continue;
-    }
-    const { l } = rgbToOklch(generationColor(colorGeneration(picked[group[0]].gen)));
-    group.forEach((i, k) => {
-      const h = HUES[era][k];
-      colors[i] = oklchToRgb(l, Math.min(CHROMA_CAP, maxChroma(l, h) * CHROMA_ROOM), h);
-    });
-  }
-  return colors;
+  return picked.map((_, i) => {
+    const { hue, chroma } = PICKS[i];
+    return oklchToRgb(PICK_LIGHTNESS, maxChroma(PICK_LIGHTNESS, hue) * chroma, hue);
+  });
 }
 
 /** The link's value for the picks, and the picks a link's value names. */
