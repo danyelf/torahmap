@@ -4,9 +4,8 @@ What CLAUDE.md leaves out because most tasks don't need it.
 
 ## The pre-commit hook
 
-Read `.githooks/pre-commit` for how to bypass it deliberately. `npm install` points git at it
-through the `prepare` script, which `ignore-scripts=true` (a reasonable supply-chain precaution)
-skips silently. See `scripts/install-hooks.sh` for what else it checks and when it refuses to run.
+Read `.githooks/pre-commit` for how to bypass it deliberately. Once per clone, point git at it with
+`git config core.hooksPath .githooks`.
 
 ## Layout tests
 
@@ -57,9 +56,8 @@ JavaScript identifiers, so nothing forces the quotes, but the letters are much e
 with them.
 
 The bulk reformat is listed in `.git-blame-ignore-revs` so that blame keeps naming whoever last
-wrote a line, instead of stopping at the commit that rewrapped everything at once;
-`install-hooks.sh` applies that setting along with the hooks path, and explains the one sharp edge
-it has on an old branch.
+wrote a line, instead of stopping at the commit that rewrapped everything at once. It takes
+one setting, once per clone: `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 Markdown and `data/`/`public/data/` are excluded from formatting; see `.prettierignore` for why.
 

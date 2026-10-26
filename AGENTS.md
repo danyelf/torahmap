@@ -11,6 +11,10 @@ This project tracks issues on **GitHub Issues**: https://github.com/danyelf/tora
 **Always work in a worktree**, made before your first edit; a hook refuses new branches in the
 primary checkout. Once there, work as autonomously as you can on the issue.
 
+Claude Code sets `core.hooksPath` to the primary checkout's `.githooks` whenever it makes a
+worktree, so every worktree runs the primary checkout's hooks. A branch that changes `.githooks/`
+tests its copy by running it directly.
+
 **Mark the issue you take.** Once the worktree exists, label the issue and say where the work lives,
 so Danyel can see what is being worked on and find it:
 
