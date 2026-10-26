@@ -118,12 +118,13 @@ export function rabbisOverlay(
     });
   }
 
-  /** A rabbi as every list of rabbis shows him: his names, then his generation and years. */
+  /** A rabbi as every list of rabbis shows him: his names on one line, his generation and years under it. */
   const rabbiLine = (rabbi: Rabbi, dating: TalmudDating): HTMLElement => {
     const line = document.createElement('span');
     line.className = 'rabbi-line';
-    line.append(span('rabbi-en', rabbi.en), ' ', span('rabbi-he', rabbi.he, 'he'));
-    line.append(span('rabbi-era-line', `, ${eraLine(rabbi, dating)}`));
+    const names = span('', '');
+    names.append(span('rabbi-en', rabbi.en), ' ', span('rabbi-he', rabbi.he, 'he'));
+    line.append(names, span('rabbi-meta', eraLine(rabbi, dating)));
     return line;
   };
 
