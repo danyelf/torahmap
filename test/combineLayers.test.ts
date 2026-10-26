@@ -167,6 +167,21 @@ describe('combineLayers', () => {
       );
       expect(standout).toEqual([true, true, false]);
     });
+
+    it('carries the overlay’s halos, and none when it asks for none', () => {
+      const withHalo = combineLayers(
+        2,
+        null,
+        [RED, RED],
+        getDefaultColor,
+        undefined,
+        undefined,
+        [true, true],
+        [false, true],
+      );
+      expect(withHalo.halo).toEqual([false, true]);
+      expect(combineLayers(1, null, [RED], getDefaultColor).halo).toBeUndefined();
+    });
   });
 });
 

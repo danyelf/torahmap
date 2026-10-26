@@ -151,7 +151,7 @@ describe('the restore guard itself', () => {
 
 describe('whole links, parsed with the real overlay declarations', () => {
   const links: Array<[string, Record<string, string>]> = [
-    ['?overlay=trop&trop=etnachta', { trop: 'etnachta' }],
+    ['?overlay=trop&trop=etnachta', { trop: 'etnachta', tab: 'prose' }],
     ['?overlay=commentary&category=Midrash', { category: 'Midrash' }],
     ['?overlay=commentary&category=Jewish%20Thought', { category: 'Jewish Thought' }],
   ];

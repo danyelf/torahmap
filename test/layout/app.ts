@@ -208,6 +208,13 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
+    name: 'explore-trop-poetic',
+    // Centered on Psalms, so the poetic mark lights verses in view.
+    link: 'overlay=trop&trop=tarcha&tab=poetic&zoom=0.8&x=2900&y=1420',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
     name: 'explore-text-analytics',
     link: 'overlay=text-analytics&analysis=repetitive-wording',
     then: (page) => viaMenu(page, 'overlay'),

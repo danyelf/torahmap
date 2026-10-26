@@ -32,7 +32,8 @@ function brightenBands(color: ItemColor, factor: number): ItemColor {
  * With both on, a square neither colours dims from its `base` colour. With
  * search alone, a square it does not find keeps `keepsBase` of its base
  * colour, or goes grey without it. Every match stands out, so it shows at any
- * zoom, and so does every square `overlayStandout` marks.
+ * zoom, and so does every square `overlayStandout` marks; `overlayHalo` keeps a
+ * faint glow on some of those at every zoom.
  */
 export function combineLayers(
   count: number,
@@ -42,6 +43,7 @@ export function combineLayers(
   nonMatchDim: number = SEARCH_NON_MATCH_DIM,
   keepsBase?: number,
   overlayStandout?: readonly boolean[] | null,
+  overlayHalo?: readonly boolean[] | null,
 ): Picture<ItemColor | null> {
   const colors: (ItemColor | null)[] = new Array(count);
   const rings: (ItemColor | null)[] = new Array(count).fill(null);
@@ -66,6 +68,7 @@ export function combineLayers(
 
   const picture: Picture<ItemColor | null> = search && overlay ? { colors, rings } : { colors };
   if (standout) picture.standout = standout;
+  if (overlayHalo) picture.halo = [...overlayHalo];
   return picture;
 }
 
@@ -121,6 +124,7 @@ export function toolsPicture<T>(
     nonMatchDim,
     keepsBase,
     overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data),
+    overlay?.tool.halosFor?.(items, overlay.settings, overlay.data),
   );
 }
 

@@ -7,10 +7,10 @@ import {
   NO_MATCH_COLOR,
   type TropSettings,
 } from '../../../src/overlays/trop';
-import { colorToCss } from '@torahmap/utils';
+import { colorToCss, type Color } from '@torahmap/utils';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse, SAMPLE_TROP_MARKS } from '../../helpers/fixtures';
-import { assertNamedEnds, assertValidColor } from '../../helpers/assertions';
+import { assertValidColor } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { RARITY_THRESHOLDS } from '../../../src/overlays/trop/marks';
@@ -95,14 +95,28 @@ describe('Trop Overlay', () => {
       chapter[String(verse)] = { he: 'בְּרֵאשִׁ֑ית', en: 'In the beginning' };
     }
     const host = hostOverlay(tropOverlay, { texts: { 'Genesis': { '1': chapter } } });
-    selectFirstMark(host);
+    host.restore({ trop: 'etnachta' });
     return host;
+  }
+
+  /** The colors of verses carrying a common mark once, twice, three, four and nine times. */
+  function countColors(host: ReturnType<typeof makeHost>) {
+    const counts = [1, 2, 3, 4, 9];
+    const he = (count: number) => 'ב\u0591'.repeat(count);
+    const chapter: Record<string, { he: string; en: string }> = {};
+    counts.forEach((count, i) => (chapter[String(i + 1)] = { he: he(count), en: '' }));
+    chapter['10'] = { he: he(RARITY_THRESHOLDS.RARE), en: '' };
+    host.setData({ texts: { 'Genesis': { '1': chapter } } });
+    host.restore({ trop: 'etnachta' });
+    return counts.map((_, i) =>
+      host.getItemColor(createVerse({ chapter: 1, verse: i + 1 })),
+    ) as Color[];
   }
 
   /** Click the first button in a freshly drawn set of controls; returns the host and button. */
   function selectFirstMark(host: ReturnType<typeof makeHost>) {
     const container = host.renderControls();
-    const button = container.querySelector('button') as HTMLButtonElement;
+    const button = container.querySelector('.trop-grid button') as HTMLButtonElement;
     button.click();
     return { container, button };
   }
@@ -136,47 +150,9 @@ describe('Trop Overlay', () => {
       const chart = container.querySelector('.trop-chart');
       expect(chart).not.toBeNull();
 
-      const buttons = chart?.querySelectorAll('button');
+      const buttons = chart?.querySelectorAll('.trop-grid button');
       expect(buttons).not.toBeNull();
       expect(buttons!.length).toBeGreaterThan(0);
-    });
-
-    it('displays trop marks on bet character', () => {
-      const host = makeHost();
-      const container = host.renderControls();
-
-      const buttons = container.querySelectorAll('button');
-      expect(buttons.length).toBeGreaterThan(0);
-      buttons.forEach((button) => {
-        expect(button.textContent).toMatch(/^ב/);
-      });
-    });
-
-    it('shows trop name on hover', () => {
-      const host = makeHost();
-      const container = host.renderControls();
-
-      const info = container.querySelector('.trop-info') as HTMLElement;
-      const button = container.querySelector('button') as HTMLButtonElement;
-
-      button.dispatchEvent(new MouseEvent('mouseenter'));
-      expect(info.textContent).not.toBe('');
-      expect(info.textContent).toContain('occurrences');
-    });
-
-    it('clears info on mouseleave when no selection', () => {
-      const host = makeHost();
-      const container = host.renderControls();
-
-      const info = container.querySelector('.trop-info') as HTMLElement;
-      const button = container.querySelector('button') as HTMLButtonElement;
-
-      button.dispatchEvent(new MouseEvent('mouseenter'));
-      expect(info.textContent).not.toBe('');
-
-      button.dispatchEvent(new MouseEvent('mouseleave'));
-      vi.runAllTimers();
-      expect(info.textContent).toBe('');
     });
 
     it('selects a mark on click', () => {
@@ -198,7 +174,7 @@ describe('Trop Overlay', () => {
 
       // The button clicked is the same element after the change is applied:
       // renderControls updates the existing chart in place, it does not rebuild it.
-      expect(container.querySelector('button')).toBe(button);
+      expect(container.querySelector('.trop-grid button')).toBe(button);
 
       button.click();
       expect(button.classList.contains('selected')).toBe(false);
@@ -209,7 +185,7 @@ describe('Trop Overlay', () => {
       const host = makeHost();
       const container = host.renderControls();
 
-      const buttons = container.querySelectorAll('button');
+      const buttons = container.querySelectorAll('.trop-grid button');
       expect(buttons.length).toBeGreaterThanOrEqual(2);
       const [button1, button2] = Array.from(buttons) as HTMLButtonElement[];
 
@@ -222,7 +198,7 @@ describe('Trop Overlay', () => {
       expect(button2.classList.contains('selected')).toBe(true);
 
       // Still the same DOM elements: the controls updated in place.
-      const buttonsAfter = container.querySelectorAll('button');
+      const buttonsAfter = container.querySelectorAll('.trop-grid button');
       expect(buttonsAfter[0]).toBe(button1);
       expect(buttonsAfter[1]).toBe(button2);
     });
@@ -234,13 +210,17 @@ describe('Trop Overlay', () => {
       /** The map's colours with `button` clicked, from a host of its own. */
       function coloursClicked(index: number) {
         const host = makeHost();
-        (host.renderControls().querySelectorAll('button')[index] as HTMLButtonElement).click();
+        (
+          host.renderControls().querySelectorAll('.trop-grid button')[index] as HTMLButtonElement
+        ).click();
         return colours(host);
       }
 
       it('colours the map for a hovered mark without selecting it', () => {
         const host = makeHost();
-        const button = host.renderControls().querySelector('button') as HTMLButtonElement;
+        const button = host
+          .renderControls()
+          .querySelector('.trop-grid button') as HTMLButtonElement;
 
         button.dispatchEvent(new MouseEvent('mouseenter'));
 
@@ -252,7 +232,9 @@ describe('Trop Overlay', () => {
 
       it('returns to no colouring on leaving when nothing is clicked', () => {
         const host = makeHost();
-        const button = host.renderControls().querySelector('button') as HTMLButtonElement;
+        const button = host
+          .renderControls()
+          .querySelector('.trop-grid button') as HTMLButtonElement;
 
         button.dispatchEvent(new MouseEvent('mouseenter'));
         button.dispatchEvent(new MouseEvent('mouseleave'));
@@ -264,7 +246,7 @@ describe('Trop Overlay', () => {
       it('returns to the clicked mark on leaving another', () => {
         const host = makeHost();
         const [first, second] = Array.from(
-          host.renderControls().querySelectorAll('button'),
+          host.renderControls().querySelectorAll('.trop-grid button'),
         ) as HTMLButtonElement[];
         first.click();
 
@@ -280,7 +262,7 @@ describe('Trop Overlay', () => {
       it('goes straight from one hovered mark to the next, never through no mark', () => {
         const host = makeHost();
         const [first, second] = Array.from(
-          host.renderControls().querySelectorAll('button'),
+          host.renderControls().querySelectorAll('.trop-grid button'),
         ) as HTMLButtonElement[];
 
         first.dispatchEvent(new MouseEvent('mouseenter'));
@@ -294,7 +276,9 @@ describe('Trop Overlay', () => {
 
       it('names the hovered mark in the legend', () => {
         const host = makeHost();
-        const button = host.renderControls().querySelector('button') as HTMLButtonElement;
+        const button = host
+          .renderControls()
+          .querySelector('.trop-grid button') as HTMLButtonElement;
         button.dispatchEvent(new MouseEvent('mouseenter'));
 
         const legend = document.createElement('div');
@@ -304,52 +288,27 @@ describe('Trop Overlay', () => {
 
       it('is not restored from a link', () => {
         const host = makeHost();
-        (host.renderControls().querySelector('button') as HTMLButtonElement).dispatchEvent(
-          new MouseEvent('mouseenter'),
-        );
+        (
+          host.renderControls().querySelector('.trop-grid button') as HTMLButtonElement
+        ).dispatchEvent(new MouseEvent('mouseenter'));
         host.restore({});
         expect(colours(host).every((c) => c === null)).toBe(true);
       });
     });
 
-    it('marks a rare trop with a special class', () => {
-      const host = makeHost();
-      const container = host.renderControls();
-
-      const buttons = container.querySelectorAll('button');
-      const hasRareButton = Array.from(buttons).some((button) => button.classList.contains('rare'));
-      expect(hasRareButton).toBe(true);
-    });
-
-    it('draws the rare marker in the gold the map draws a rare mark in', () => {
-      const chart = makeHost().renderControls().querySelector<HTMLElement>('.trop-chart')!;
-      expect(chart.style.getPropertyValue('--rare-marker')).toBe(colorToCss(RARE_MATCH_COLOR));
-    });
-
-    it('goes back to the chosen mark’s info once the pointer leaves another', () => {
-      const host = makeHost();
-      const container = host.renderControls();
-      const [chosen, other] = container.querySelectorAll<HTMLButtonElement>('button');
-      const info = container.querySelector('.trop-info') as HTMLElement;
-
-      chosen.click();
-      const chosenInfo = info.textContent;
-      other.dispatchEvent(new MouseEvent('mouseenter'));
-      expect(info.textContent).not.toBe(chosenInfo);
-      other.dispatchEvent(new MouseEvent('mouseleave'));
-      vi.runAllTimers();
-      expect(info.textContent).toBe(chosenInfo);
-    });
-
     it('shows the selection a link named when the controls are first drawn', () => {
       const first = makeHost();
-      const chosen = selectFirstMark(first).container.querySelector('button')!.dataset.slug!;
+      const chosen =
+        selectFirstMark(first).container.querySelector<HTMLButtonElement>('.trop-grid button')!
+          .dataset.slug!;
 
       const second = makeHost();
       second.restore({ trop: chosen });
       const container = second.renderControls();
 
-      const selected = container.querySelector('button.selected') as HTMLButtonElement | null;
+      const selected = container.querySelector(
+        '.trop-grid button.selected',
+      ) as HTMLButtonElement | null;
       expect(selected).not.toBeNull();
       expect(selected!.dataset.slug).toBe(chosen);
     });
@@ -357,12 +316,11 @@ describe('Trop Overlay', () => {
 
   describe('Rarity-Based Coloring', () => {
     describe('Rare Marks', () => {
-      it('returns gold for a verse holding a rare mark', () => {
+      it('colors a verse holding a rare mark with the match color', () => {
         const host = makeHost();
         const container = host.renderControls();
-        const rareButton = Array.from(container.querySelectorAll('button')).find((b) =>
-          b.classList.contains('rare'),
-        ) as HTMLButtonElement | undefined;
+        const rareButton =
+          container.querySelector<HTMLButtonElement>('[data-slug="tipcha"]') ?? undefined;
         expect(rareButton).toBeDefined();
         rareButton!.click();
 
@@ -373,9 +331,8 @@ describe('Trop Overlay', () => {
       it('returns dim gray for a verse without the rare mark', () => {
         const host = makeHost();
         const container = host.renderControls();
-        const rareButton = Array.from(container.querySelectorAll('button')).find((b) =>
-          b.classList.contains('rare'),
-        ) as HTMLButtonElement | undefined;
+        const rareButton =
+          container.querySelector<HTMLButtonElement>('[data-slug="tipcha"]') ?? undefined;
         expect(rareButton).toBeDefined();
         rareButton!.click();
 
@@ -386,9 +343,8 @@ describe('Trop Overlay', () => {
       it('uses binary coloring for rare marks', () => {
         const host = makeHost();
         const container = host.renderControls();
-        const rareButton = Array.from(container.querySelectorAll('button')).find((b) =>
-          b.classList.contains('rare'),
-        ) as HTMLButtonElement | undefined;
+        const rareButton =
+          container.querySelector<HTMLButtonElement>('[data-slug="tipcha"]') ?? undefined;
         expect(rareButton).toBeDefined();
         rareButton!.click();
 
@@ -443,7 +399,7 @@ describe('Trop Overlay', () => {
       const held = host.settings;
       const urlBefore = host.toUrl();
 
-      const otherSettings: TropSettings = { mark: null, preview: null };
+      const otherSettings: TropSettings = { tab: 'prose', mark: null, preview: null };
       tropOverlay.colorsFor!(testVerses, otherSettings, null, host.data);
 
       expect(host.settings).toBe(held);
@@ -462,9 +418,8 @@ describe('Trop Overlay', () => {
     it('shows the binary legend for a rare mark', () => {
       const host = makeHost();
       const controls = host.renderControls();
-      const rareButton = Array.from(controls.querySelectorAll('button')).find((b) =>
-        b.classList.contains('rare'),
-      ) as HTMLButtonElement | undefined;
+      const rareButton =
+        controls.querySelector<HTMLButtonElement>('[data-slug="tipcha"]') ?? undefined;
       expect(rareButton).toBeDefined();
       rareButton!.click();
 
@@ -478,31 +433,32 @@ describe('Trop Overlay', () => {
       ]);
     });
 
-    it('draws its strip in its own colours, owing nothing to commentary', () => {
+    it('draws one square for each step of the count, in the colors the map uses', () => {
       const host = hostShowingCommonMark();
 
       const container = document.createElement('div');
       host.renderLegend(container);
 
-      const strip = container.querySelector<HTMLElement>('.trop-gradient');
-      expect(strip).not.toBeNull();
-      expect(container.querySelector('.legend-gradient')).toBeNull();
-      // The ends of trop's own gradient, not a hand-written approximation.
-      expect(strip?.style.background).toContain('rgb(51, 26, 77) 0%');
-      expect(strip?.style.background).toContain('rgb(242, 153, 230) 100%');
+      const steps = [...container.querySelectorAll<HTMLElement>('.trop-step')];
+      expect(steps.map((step) => step.textContent)).toEqual(['1', '2', '3', '4+']);
+      const drawn = steps.map((step) => step.querySelector('i')!.style.background);
+      expect(new Set(drawn).size).toBe(4);
+      const onMap = countColors(host);
+      expect(drawn).toEqual(onMap.slice(0, 4).map(colorToCss));
+      expect(onMap[4]).toEqual(onMap[3]);
     });
   });
 
   describe('Legend card', () => {
-    it('names the ends of the strip of a common mark', () => {
-      assertNamedEnds(hostShowingCommonMark().summary());
+    it('shows the count steps of a common mark, labeled', () => {
+      const { steps, strip } = hostShowingCommonMark().summary();
+      expect(steps?.map((step) => step.label)).toEqual(['1', '2', '3', '4+']);
+      expect(strip).toBeUndefined();
     });
 
     it('shows a rare mark by the colour of the verses that carry it, with no ends', () => {
       const host = makeHost();
-      const rare = Array.from(host.renderControls().querySelectorAll('button')).find((b) =>
-        b.classList.contains('rare'),
-      ) as HTMLButtonElement;
+      const rare = host.renderControls().querySelector<HTMLButtonElement>('[data-slug="tipcha"]')!;
       rare.click();
       const { colors, strip } = host.summary();
       expect(colors).toContain(colorToCss(RARE_MATCH_COLOR));
@@ -565,7 +521,9 @@ describe('Trop Overlay', () => {
 
     it('restores a mark named by a link', () => {
       const first = makeHost();
-      const slug = selectFirstMark(first).container.querySelector('button')!.dataset.slug!;
+      const slug =
+        selectFirstMark(first).container.querySelector<HTMLButtonElement>('.trop-grid button')!
+          .dataset.slug!;
 
       const second = makeHost();
       second.restore({ trop: slug });
@@ -610,7 +568,7 @@ describe('Trop Overlay', () => {
       const host = makeHost();
       const container = host.renderControls();
 
-      for (const button of Array.from(container.querySelectorAll('button'))) {
+      for (const button of Array.from(container.querySelectorAll('.trop-grid button'))) {
         (button as HTMLButtonElement).click();
         const withMultiple = testVerses.find((v) => {
           const info = host.getHoverInfo(v);
@@ -632,7 +590,7 @@ describe('Trop Overlay', () => {
       const hebrewText = 'בְּרֵאשִׁ֖ית';
       const tropUnicode = SAMPLE_TROP_MARKS.TIPCHA;
 
-      const result = highlightTropInText(hebrewText, tropUnicode);
+      const result = highlightTropInText(hebrewText, [tropUnicode]);
 
       expect(result).toContain('<mark');
       expect(result).toContain('trop-highlight');
@@ -641,32 +599,32 @@ describe('Trop Overlay', () => {
 
     it('wraps the base letter and the mark together', () => {
       const hebrewText = 'בְּרֵאשִׁ֖ית';
-      const result = highlightTropInText(hebrewText, SAMPLE_TROP_MARKS.TIPCHA);
+      const result = highlightTropInText(hebrewText, [SAMPLE_TROP_MARKS.TIPCHA]);
       const markCount = (result.match(/<mark/g) || []).length;
       expect(markCount).toBeGreaterThan(0);
     });
 
     it('leaves text without the mark unchanged', () => {
       const hebrewText = 'בראשית';
-      const result = highlightTropInText(hebrewText, SAMPLE_TROP_MARKS.TIPCHA);
+      const result = highlightTropInText(hebrewText, [SAMPLE_TROP_MARKS.TIPCHA]);
       expect(result).not.toContain('<mark');
       expect(result).toBe(hebrewText);
     });
 
     it('handles multiple occurrences of the same mark', () => {
       const hebrewText = 'בְּרֵאשִׁ֖ית וְהָאָ֖רֶץ'; // Two tipcha marks
-      const result = highlightTropInText(hebrewText, SAMPLE_TROP_MARKS.TIPCHA);
+      const result = highlightTropInText(hebrewText, [SAMPLE_TROP_MARKS.TIPCHA]);
       const markCount = (result.match(/<mark/g) || []).length;
       expect(markCount).toBeGreaterThanOrEqual(1);
     });
 
     it('handles empty text', () => {
-      expect(highlightTropInText('', SAMPLE_TROP_MARKS.TIPCHA)).toBe('');
+      expect(highlightTropInText('', [SAMPLE_TROP_MARKS.TIPCHA])).toBe('');
     });
 
     it('preserves other marks', () => {
       const hebrewText = 'בְּרֵאשִׁ֖ית אֱלֹהִ֑ים'; // Contains tipcha and etnachta
-      const result = highlightTropInText(hebrewText, SAMPLE_TROP_MARKS.TIPCHA);
+      const result = highlightTropInText(hebrewText, [SAMPLE_TROP_MARKS.TIPCHA]);
       expect(result).toContain(SAMPLE_TROP_MARKS.ETNACHTA);
     });
   });
@@ -675,8 +633,8 @@ describe('Trop Overlay', () => {
     it('marks the selected trop in Hebrew verse text', () => {
       const host = makeHost();
       const container = host.renderControls();
-      const button = container.querySelector('button') as HTMLButtonElement;
-      const unicode = button.dataset.unicode!;
+      const button = container.querySelector('[data-slug="tipcha"]') as HTMLButtonElement;
+      const unicode = SAMPLE_TROP_MARKS.TIPCHA;
       button.click();
 
       const fragment = host.highlightItemText(createVerse(), `בְּרֵאשִׁ${unicode}ית`, 'he');
@@ -705,16 +663,8 @@ describe('Trop Overlay', () => {
   });
 
   describe('data', () => {
-    it('offers the marks of the texts it is handed now', () => {
-      const host = makeHost();
-      const before = host.renderControls().querySelectorAll('button').length;
-      host.setData({ texts: { Genesis: { '1': { '1': { he: 'בָּרָ֣א', en: 'created' } } } } });
-      const after = host.renderControls().querySelectorAll('button').length;
-      expect(after).toBeLessThan(before);
-    });
-
     it('colours the same whether or not prebuild ran first', () => {
-      const settings = { mark: 'tipcha', preview: null };
+      const settings: TropSettings = { tab: 'prose', mark: 'tipcha', preview: null };
       const onDemand = tropOverlay.colorsFor!(testVerses, settings, null, {
         texts: structuredClone(testVerseTexts),
       });
@@ -725,11 +675,21 @@ describe('Trop Overlay', () => {
 
     it('draws the chart once the data arrives, into controls first drawn without it', () => {
       const container = document.createElement('div');
-      tropOverlay.renderControls!(container, { mark: null, preview: null }, () => {}, null);
+      tropOverlay.renderControls!(
+        container,
+        { tab: 'prose', mark: null, preview: null },
+        () => {},
+        null,
+      );
       expect(container.querySelectorAll('.trop-chart button')).toHaveLength(0);
-      tropOverlay.renderControls!(container, { mark: null, preview: null }, () => {}, {
-        texts: testVerseTexts,
-      });
+      tropOverlay.renderControls!(
+        container,
+        { tab: 'prose', mark: null, preview: null },
+        () => {},
+        {
+          texts: testVerseTexts,
+        },
+      );
       expect(container.querySelectorAll('.trop-chart button').length).toBeGreaterThan(0);
     });
   });
@@ -739,11 +699,15 @@ describe('Trop Overlay', () => {
       const hostA = makeHost();
       const hostB = makeHost();
 
-      const slugA = selectFirstMark(hostA).container.querySelector('button')!.dataset.slug!;
+      const slugA =
+        selectFirstMark(hostA).container.querySelector<HTMLButtonElement>('.trop-grid button')!
+          .dataset.slug!;
       expect(hostB.settings.mark).toBeNull();
 
       const containerB = hostB.renderControls();
-      const buttons = Array.from(containerB.querySelectorAll('button')) as HTMLButtonElement[];
+      const buttons = Array.from(
+        containerB.querySelectorAll('.trop-grid button'),
+      ) as HTMLButtonElement[];
       const other = buttons.find((b) => b.dataset.slug !== slugA) ?? buttons[1];
       if (other) {
         other.click();
@@ -772,31 +736,6 @@ describe('Trop Overlay', () => {
     });
   });
 
-  describe('Cache Performance', () => {
-    it('recalculates when the selected mark changes', () => {
-      const host = makeHost();
-      const container = host.renderControls();
-      const buttons = container.querySelectorAll('button');
-      if (buttons.length < 2) return;
-      const [button1, button2] = Array.from(buttons) as HTMLButtonElement[];
-
-      button1.click();
-      const verse = testVerses[0];
-      const color1 = host.getItemColor(verse);
-      const slug1 = host.settings.mark;
-
-      button2.click();
-      const color2 = host.getItemColor(verse);
-      const slug2 = host.settings.mark;
-
-      expect(color1).not.toBeNull();
-      expect(color2).not.toBeNull();
-      if (slug1 !== slug2) {
-        expect(slug1).not.toEqual(slug2);
-      }
-    });
-  });
-
   describe('standing out', () => {
     const verses = [
       createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
@@ -812,31 +751,37 @@ describe('Trop Overlay', () => {
       },
     });
     const standouts = (mark: string | null, texts: VerseTexts) =>
-      tropOverlay.standoutsFor!(verses, { mark, preview: null }, { texts });
+      tropOverlay.standoutsFor!(verses, { tab: 'prose', mark, preview: null }, { texts });
 
     it('makes the verses holding a rare mark stand out, and no others', () => {
       expect(standouts('shalshelet', textsWith(1))).toEqual([true, false]);
     });
 
-    it('makes nothing stand out for a mark drawn on a scale', () => {
-      expect(standouts('tipcha', textsWith(RARITY_THRESHOLDS.UNCOMMON))).toEqual([false, false]);
+    // Many verses with a few tipchas, and one with far more.
+    const crowd = (high: number): VerseTexts => {
+      const chapter: Record<string, { he: string; en: string }> = {};
+      for (let verse = 1; verse <= 300; verse++) {
+        chapter[String(verse)] = { he: 'ב֖'.repeat(verse === 300 ? high : 2), en: '' };
+      }
+      return { 'Genesis': { '1': chapter } };
+    };
+    const glowing = (high: number) =>
+      tropOverlay.standoutsFor!(
+        [1, 2, 300].map((verse) => createVerse({ chapter: 1, verse })),
+        { tab: 'prose', mark: 'tipcha', preview: null },
+        { texts: crowd(high) },
+      ).map(Boolean);
+
+    it('makes only a verse with an unusually high count stand out for a mark drawn by count', () => {
+      expect(glowing(20)).toEqual([false, false, true]);
+    });
+
+    it('lets no count below the floor stand out', () => {
+      expect(glowing(4)).toEqual([false, false, false]);
     });
 
     it('makes nothing stand out with no mark chosen', () => {
       expect(standouts(null, textsWith(1))).toEqual([false, false]);
-    });
-
-    it('makes a mark’s verses stand out exactly when its chart button is marked rare', () => {
-      const he =
-        'ב֓' + 'ב֖'.repeat(RARITY_THRESHOLDS.RARE) + 'ב֑'.repeat(RARITY_THRESHOLDS.UNCOMMON);
-      const texts: VerseTexts = { 'Genesis': { '1': { '1': { he, en: '' } } } };
-      const chart = hostOverlay(tropOverlay, { texts }).renderControls();
-      const buttons = [...chart.querySelectorAll<HTMLButtonElement>('button')];
-      expect(buttons).toHaveLength(3);
-      for (const button of buttons) {
-        const [standsOut] = standouts(button.dataset.slug!, texts);
-        expect(standsOut, button.dataset.slug).toBe(button.classList.contains('rare'));
-      }
     });
   });
 });

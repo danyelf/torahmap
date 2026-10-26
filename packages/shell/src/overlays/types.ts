@@ -115,6 +115,10 @@ interface OverlayMembers<T, S, D> {
   // never too small to see. For an overlay that can light only a few squares.
   standoutsFor?(items: SpatialItem<T>[], settings: S, data: D): boolean[];
 
+  // Which of the standouts also keep a faint halo when zoomed in, where a
+  // standout is otherwise a plain square.
+  halosFor?(items: SpatialItem<T>[], settings: S, data: D): boolean[];
+
   // The panel may be drawn without the overlay's data; then data is null.
   //
   // Draw the controls for `settings`. The app calls this again with the same
@@ -185,6 +189,8 @@ export interface OverlaySummary {
   colors?: string[];
   /** Colours shown as squares in groups, a small gap between the groups and none within. */
   groups?: string[][];
+  /** Colours shown as squares, each labeled. */
+  steps?: { color: string; label: string; glows?: boolean }[];
   /** A continuous scale: its CSS gradient, between words for its low and high ends. */
   strip?: { gradient: string; ends: [low: string, high: string] };
 }

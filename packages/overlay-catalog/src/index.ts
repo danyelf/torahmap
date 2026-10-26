@@ -33,7 +33,13 @@ export const COMMENTARY = {
   urlParams: COMMENTARY_PARAMS,
 } as const satisfies OverlayEntry;
 
-const TROP_PARAMS = [{ key: 'trop', kind: 'token' }] as const satisfies readonly UrlParamSpec[];
+/** The two chant systems the trop overlay has a tab for, the first shown by default. */
+export const TROP_TABS = ['prose', 'poetic'] as const;
+
+const TROP_PARAMS = [
+  { key: 'trop', kind: 'token' },
+  { key: 'tab', kind: 'token', allowed: TROP_TABS, default: TROP_TABS[0] },
+] as const satisfies readonly UrlParamSpec[];
 
 export const TROP = {
   id: 'trop',

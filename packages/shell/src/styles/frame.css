@@ -641,6 +641,7 @@ body[data-open='about'] #about-panel {
 }
 
 .summary-term,
+.summary-step,
 .summary-swatches {
   display: inline-flex;
   align-items: center;
@@ -660,4 +661,8 @@ body[data-open='about'] #about-panel {
 
 .summary-swatch.strip {
   width: 60px;
+}
+
+.summary-swatch.glows {
+  box-shadow: 0 0 5px 2px rgba(255, 235, 225, 0.8);
 }

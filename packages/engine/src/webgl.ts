@@ -8,7 +8,13 @@ import {
   SHAPE_FLAGS,
   type ItemAttributeName,
 } from './geometry.ts';
-import { BARS, HIGHLIGHT_CONSTANTS, STANDOUT_GLOW, STANDOUT_MIN_PX } from './constants.ts';
+import {
+  BARS,
+  HIGHLIGHT_CONSTANTS,
+  STANDOUT_GLOW,
+  STANDOUT_HALO,
+  STANDOUT_MIN_PX,
+} from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -71,6 +77,8 @@ const VERTEX_SHADER = `#version 300 es
   // 0 when the square is too small for a hole.
   flat out vec2 v_side;
   flat out float v_glow;
+  // How far the halo reaches past the square, as a share of its side; 0 for none.
+  flat out float v_halo;
   out vec2 v_uv;
   out vec2 v_seed;
 
@@ -87,6 +95,10 @@ const VERTEX_SHADER = `#version 300 es
 
   float standout(vec4 shape) {
     return float((int(shape.w) & ${SHAPE_FLAGS.STANDOUT}) != 0);
+  }
+
+  float halo(vec4 shape) {
+    return float((int(shape.w) & ${SHAPE_FLAGS.HALO}) != 0);
   }
 
   void main() {
@@ -122,7 +134,14 @@ const VERTEX_SHADER = `#version 300 es
       rect = mix(rect, vec4(centre - halfSide, centre + halfSide), standsOut);
       v_glow = standsOut;
     }
-    float pad = max(bandReach(a_shape), bandReach(a_nextShape));
+    // A standout with a halo, once it is big enough to be drawn as itself, is
+    // surrounded by a soft glow: the quad reaches past it to hold the glow.
+    v_halo = 0.0;
+    if (v_glow == 0.0 && mix(halo(a_shape), halo(a_nextShape), u_fade) > 0.0) {
+      float cssPx = u_standoutSide / ${STANDOUT_MIN_PX.toFixed(4)};
+      v_halo = ${STANDOUT_HALO.PX.toFixed(4)} * cssPx / max(side, 1.0);
+    }
+    float pad = max(max(bandReach(a_shape), bandReach(a_nextShape)), v_halo);
     uv = mix(vec2(-pad), vec2(1.0 + pad), uv);
     vec2 world = mix(rect.xy, rect.zw, uv);
     vec2 pos = (world + u_pan) * u_zoom;
@@ -155,6 +174,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in ivec2 v_hover;
   flat in vec2 v_side;
   flat in float v_glow;
+  flat in float v_halo;
   in vec2 v_uv;
   in vec2 v_seed;
   out vec4 fragColor;
@@ -226,7 +246,15 @@ const FRAGMENT_SHADER = `#version 300 es
     // shows in one picture only, and the map does not blend, so it shows whole.
     vec4 a = picture(v_fill, v_ring, v_counts.x, v_counts.y, v_hover.x);
     vec4 b = picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w, v_hover.y);
-    if (a.a == 0.0 && b.a == 0.0) discard;
+    if (a.a == 0.0 && b.a == 0.0) {
+      if (v_halo <= 0.0) discard;
+      // Outside the square of a standout with a halo: its fill, fading out.
+      vec2 outside = max(max(-v_uv, v_uv - 1.0), 0.0);
+      float alpha = ${STANDOUT_HALO.ALPHA.toFixed(4)} * (1.0 - smoothstep(0.0, v_halo, length(outside)));
+      if (alpha <= 0.0) discard;
+      fragColor = vec4(mix(unpack(v_fill.x), unpack(v_nextFill.x), u_fade), alpha);
+      return;
+    }
     vec3 color = a.a == 0.0 ? b.rgb : b.a == 0.0 ? a.rgb : mix(a.rgb, b.rgb, u_fade);
 
     // Add subtle dithering noise to break up moiré patterns (UV-based for zoom stability)

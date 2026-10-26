@@ -215,6 +215,16 @@ describe('buildItemGeometry', () => {
       expect(flags(1, 'a_shape')).toBe(0);
       expect(flags(1, 'a_nextShape')).toBe(SHAPE_FLAGS.STANDOUT);
     });
+
+    it('marks a halo on the picture that has it, beside standing out', () => {
+      const buffer = buildItemGeometry(
+        createItems(1),
+        { colors: [WHITE], standout: [true], halo: [true] },
+        { colors: [RED], standout: [true] },
+      );
+      expect(field(buffer, 0, 'a_shape')[3]).toBe(SHAPE_FLAGS.STANDOUT | SHAPE_FLAGS.HALO);
+      expect(field(buffer, 0, 'a_nextShape')[3]).toBe(SHAPE_FLAGS.STANDOUT);
+    });
   });
 });
 

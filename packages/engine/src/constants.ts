@@ -68,3 +68,13 @@ export const STANDOUT_GLOW = {
   SIDE_PX: 7.6,
   ALPHA: 0.45,
 } as const;
+
+/**
+ * A standout that has a halo and is at least STANDOUT_MIN_PX across is drawn
+ * as it is, in a soft glow of its own color that starts at ALPHA and fades out
+ * PX past its edge, in CSS pixels. Smaller, it is the glowing dot above.
+ */
+export const STANDOUT_HALO = {
+  PX: 6,
+  ALPHA: 0.5,
+} as const;

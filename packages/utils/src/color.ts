@@ -97,3 +97,23 @@ export function hslToRgb(hsl: HSL): Color {
 
   return [hueToRgb(p, q, hNorm + 1 / 3), hueToRgb(p, q, hNorm), hueToRgb(p, q, hNorm - 1 / 3)];
 }
+
+/**
+ * A color given in OKLCH: lightness 0 to 1, chroma (about 0 to 0.4) and hue in
+ * degrees. Equal steps in lightness and chroma look equally far apart, which
+ * RGB and HSL steps do not. The result is not clamped, so a color outside the
+ * screen's range has a channel below 0 or above 1.
+ */
+export function oklchToRgb(lightness: number, chroma: number, hue: number): Color {
+  const a = chroma * Math.cos((hue * Math.PI) / 180);
+  const b = chroma * Math.sin((hue * Math.PI) / 180);
+  const l = (lightness + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (lightness - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (lightness - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const encode = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+  return [
+    encode(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    encode(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    encode(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+  ];
+}
