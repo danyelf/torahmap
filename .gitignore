@@ -43,20 +43,5 @@ scripts/print/out/
 # Written by scripts/telemetry/usage.sh and report-html.sh
 telemetry-report/
 
-# The IEEE VIS papers' text, written by scripts/ieeevis/build.py; its copyright varies.
+# The IEEE VIS papers' text, written by the ieeevis-scrape project's build.py; its copyright varies.
 public/data/ieeevis/texts.json
-
-# The IEEE VIS working files (scripts/ieeevis): papers, PDFs, sources and cached pages stay out;
-# the program, the search ledger and the match lists carry titles, authors and URLs only.
-data/ieeevis/*
-!data/ieeevis/program.json
-!data/ieeevis/ledger.csv
-!data/ieeevis/workshops.csv
-!data/ieeevis/arxiv/
-data/ieeevis/arxiv/*
-!data/ieeevis/arxiv/matches.json
-!data/ieeevis/workshops/
-data/ieeevis/workshops/*
-!data/ieeevis/workshops/found.json
-!data/ieeevis/workshops/listed.json
-!data/ieeevis/workshops/pages.json
