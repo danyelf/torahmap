@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { talmudFixture } from '../../../apps/talmud/test/helpers/talmudFixture.ts';
 import { datingFrom, placeIn, type Placement } from '../dating.ts';
+import { UNDATED } from '@torahmap/talmud/dating.ts';
 import type { Facts, Mention } from '../facts.ts';
 
 const ARAMAIC = 'William Davidson Edition - Aramaic';
@@ -253,10 +254,12 @@ describe('the rabbis and who each name can mean', () => {
           'elazar-(ambiguous)': { ...topics['elazar-(ambiguous)'], names: ['Elazar'] },
           'solo-(ambiguous)': { en: 'Solo', he: '', generation: null, names: [] },
           'elazar-c': { en: 'Elazar the unplaced', he: '', generation: null, names: [] },
+          'lone-(ambiguous)': { en: 'Lone', he: '', generation: null, names: [] },
         },
         candidates: {
           'elazar-(ambiguous)': ['elazar-a', 'elazar-b', 'elazar-c'],
           'solo-(ambiguous)': ['meir'],
+          'lone-(ambiguous)': ['elazar-c'],
         },
       },
       talmudFixture,
@@ -267,16 +270,16 @@ describe('the rabbis and who each name can mean', () => {
   const meaning = (slug: string) =>
     dating.people.find((p) => p.id === slug)!.means.map((place) => ids[place]);
 
-  it('makes rabbis of the people with a generation whom a listed name can mean', () => {
-    expect(ids).toEqual(['elazar-a', 'elazar-b', 'meir', 'rava']);
+  it('makes rabbis of the people a listed name can mean, those with no generation included', () => {
+    expect(ids).toEqual(['elazar-a', 'elazar-b', 'elazar-c', 'meir', 'rava']);
   });
 
   it('reads a plain name as the person himself', () => {
     expect(meaning('rava')).toEqual(['rava']);
   });
 
-  it('reads a shared name as each of its dated candidates', () => {
-    expect(meaning('elazar-(ambiguous)')).toEqual(['elazar-a', 'elazar-b']);
+  it('reads a shared name as each of its candidates, dated or not', () => {
+    expect(meaning('elazar-(ambiguous)')).toEqual(['elazar-a', 'elazar-b', 'elazar-c']);
   });
 
   it('reads a shared name with one candidate as that person', () => {
@@ -297,5 +300,13 @@ describe('the rabbis and who each name can mean', () => {
 
   it('gives each rabbi his generation code', () => {
     expect(dating.rabbis[ids.indexOf('elazar-b')].gen).toBe('A3');
+  });
+
+  it('marks a rabbi with no generation as undated', () => {
+    expect(dating.rabbis[ids.indexOf('elazar-c')].gen).toBe(UNDATED);
+  });
+
+  it('does not date a passage by a name that can mean only an undated rabbi', () => {
+    expect(people(['lone-(ambiguous)']).segments).toEqual({});
   });
 });

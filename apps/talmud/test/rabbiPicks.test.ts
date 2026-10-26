@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { rgbToOklch } from '@torahmap/utils';
 import { MISHNAH_BASE_COLOR } from '../src/constants.ts';
 import { generationColor } from '../src/overlays/dating.ts';
-import type { Rabbi, TalmudDating } from '../src/dating.ts';
+import { UNDATED, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import {
   namedIn,
   passagesOf,
@@ -152,12 +152,13 @@ describe('the quick picks', () => {
   });
 });
 
+const hue = (a: number, b: number) => {
+  const d = Math.abs(a - b) % 360;
+  return Math.min(d, 360 - d);
+};
+
 describe('colours for the picks', () => {
   const pick = (...ids: string[]) => pickColors(ids.map((id) => rabbis[place(id)]));
-  const hue = (a: number, b: number) => {
-    const d = Math.abs(a - b) % 360;
-    return Math.min(d, 360 - d);
-  };
 
   it('keeps a lone rabbi in his generation’s Dating colour', () => {
     expect(pick('lakish')[0]).toEqual(generationColor('A2'));
@@ -205,6 +206,29 @@ describe('colours for the picks', () => {
   });
 });
 
+describe('a rabbi Sefaria gives no generation', () => {
+  const levi: Rabbi = { id: 'levi', en: 'Levi', he: 'לוי', gen: UNDATED, names: [] };
+  const withLevi: RabbiData = {
+    dating: {
+      ...dating,
+      rabbis: [...rabbis, levi],
+      people: [...dating.people, { id: 'levi', en: 'Levi', he: 'לוי', gen: 0, means: [5] }],
+      segments: { ...dating.segments, 'A.2a.6': [0, 0, [5], []] },
+    },
+  };
+
+  it('is coloured from the Amoraim, and told apart from an Amora picked beside him', () => {
+    expect(pickColors([levi])[0]).toEqual(generationColor('A4'));
+    const [a, b] = pickColors([rabbis[2], levi]).map(rgbToOklch);
+    expect(hue(a.h, b.h)).toBeGreaterThan(30);
+  });
+
+  it('is offered under a heading of his own, after the eras', () => {
+    const groups = quickPicks(withLevi);
+    expect(groups.at(-1)).toMatchObject({ heading: 'Undated', entries: [{ en: 'Levi' }] });
+  });
+});
+
 describe('the link', () => {
   it('round-trips the picks in order', () => {
     expect(picksFromUrl(picksToUrl(['lakish', 'rabbi-x-(ii)', 'abaye']))).toEqual([
@@ -216,7 +240,7 @@ describe('the link', () => {
 
   it('holds no pick twice and no more than can be told apart', () => {
     expect(picksFromUrl('a,a,b')).toEqual(['a', 'b']);
-    expect(picksFromUrl('a,b,c,d,e,f,g,h')).toHaveLength(6);
+    expect(picksFromUrl('a,b,c,d,e,f,g,h')).toHaveLength(4);
     expect(picksFromUrl(undefined)).toEqual([]);
   });
 });

@@ -74,29 +74,6 @@ describe('the rabbis overlay colours', () => {
     expect(maybe).toEqual(fadeTo(solid, 0.8));
   });
 
-  it('never splits a square into more colours than it can show', () => {
-    const many: Rabbi[] = Array.from({ length: 6 }, (_, i) => ({
-      id: `r${i}`,
-      en: `R${i}`,
-      he: '',
-      gen: 'A2',
-      names: [],
-    }));
-    const crowd: TalmudDating = {
-      ...dating,
-      people: many.map((r, i) => ({ id: r.id, en: r.en, he: '', gen: 0, means: [i] })),
-      rabbis: many,
-      segments: { 'A.2a.1': [0, 0, [0, 1, 2, 3, 4, 5], []] },
-    };
-    const [drawn] = overlay.colorsFor(
-      [item('A.2a.1')],
-      picking('r0', 'r1', 'r2', 'r3', 'r4', 'r5'),
-      null,
-      { dating: crowd },
-    );
-    expect(drawn).toHaveLength(4);
-  });
-
   it('marks lit passages to stand out', () => {
     const lit = overlay.standoutsFor!(
       ['A.2a.1', 'A.2a.3', 'A.2a.4'].map(item),
@@ -135,6 +112,11 @@ describe('picking a rabbi from a name', () => {
   it('changes nothing if he is already picked', () => {
     const current = picking('lakish');
     expect(addPick('lakish')(current)).toBe(current);
+  });
+
+  it('changes nothing once as many are picked as a square can show', () => {
+    const full = picking('a', 'b', 'c', 'd');
+    expect(addPick('lakish')(full)).toBe(full);
   });
 });
 
@@ -274,7 +256,7 @@ describe('the shipped rabbis', () => {
   it('gives each rabbi a unique id and a generation', () => {
     const ids = shipped.rabbis.map((r) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const r of shipped.rabbis) expect(r.gen).toMatch(/^(?:[ZTA]\d|TA)$/);
+    for (const r of shipped.rabbis) expect(r.gen).toMatch(/^(?:[ZTA]\d|TA|undated)$/);
   });
 
   it('marks a passage uncertain exactly when no name it lists is certain', () => {

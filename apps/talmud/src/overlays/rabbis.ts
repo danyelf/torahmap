@@ -18,7 +18,6 @@ import {
   type RabbiLink,
 } from './dating.ts';
 import {
-  MAX_COLORS,
   MAX_PICKS,
   namedIn,
   passagesOf,
@@ -44,9 +43,9 @@ const MAYBE_KEEPS = 0.8;
 
 export const addPick = (id: string): SettingsUpdate<RabbiSettings> =>
   function (current) {
-    return current.picked.includes(id)
+    return current.picked.includes(id) || current.picked.length >= MAX_PICKS
       ? current
-      : { picked: [...current.picked, id].slice(-MAX_PICKS) };
+      : { picked: [...current.picked, id] };
   };
 
 const removePick = (id: string): SettingsUpdate<RabbiSettings> =>
@@ -121,7 +120,7 @@ export function rabbisOverlay(
         return [how === 'sure' ? colors[i] : faded(colors[i])];
       });
       if (!drawn.length) return dim;
-      return drawn.length === 1 ? drawn[0] : drawn.slice(0, MAX_COLORS);
+      return drawn.length === 1 ? drawn[0] : drawn;
     });
   }
 

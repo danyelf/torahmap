@@ -4,7 +4,7 @@
 import { MAP_BACKGROUND } from '@torahmap/engine';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { colorToCss, escapeHtml, hslToRgb, type Color } from '@torahmap/utils';
-import { DATING_FILE, isSure, type Generation, type TalmudDating } from '../dating.ts';
+import { DATING_FILE, isSure, UNDATED, type Generation, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR } from '../constants.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
@@ -98,6 +98,7 @@ const ORDINALS = ['', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th'];
  * "Tanna/Amora transition". `short` is for a line of names: "5th-gen Tanna", "Zugot, 3rd pair".
  */
 export function generationLabel(code: string, short = false): string {
+  if (code === UNDATED) return 'Undated';
   if (code === TRANSITION) return 'Tanna/Amora transition';
   const ordinal = ORDINALS[Number(code.slice(1))];
   if (code[0] === 'Z') return short ? `Zugot, ${ordinal} pair` : `${ordinal} pair of the Zugot`;
@@ -117,6 +118,7 @@ const shade = (code: string, uncertain: boolean): Color =>
 
 /** A generation as a key row gives it, under its era's heading: "4th generation", "3rd pair". */
 export function rowLabel(code: string): string {
+  if (code === UNDATED) return 'Undated';
   if (code === TRANSITION) return 'Tanna/Amora transition';
   return `${ORDINALS[Number(code.slice(1))]} ${code[0] === 'Z' ? 'pair' : 'generation'}`;
 }

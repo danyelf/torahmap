@@ -14,7 +14,7 @@ import type {
   Rabbi,
   TalmudDating,
 } from '@torahmap/talmud/dating.ts';
-import { DATING_FILE, isSure } from '@torahmap/talmud/dating.ts';
+import { DATING_FILE, isSure, UNDATED } from '@torahmap/talmud/dating.ts';
 import {
   STRUCTURE_FILE,
   textsFile,
@@ -110,11 +110,8 @@ export function datingFrom(
           .sort((a, b) => periods[b].from - periods[a].from)[0] ?? null)
       : latestGeneration(topics[slug]?.generation, periods);
 
-  /** The dated people a name can mean: a shared name, any of its candidates. */
-  const meant = (slug: string): string[] =>
-    (isAmbiguous(slug) ? (candidates[slug] ?? []) : [slug]).filter(
-      (id) => latestGeneration(topics[id]?.generation, periods) !== null,
-    );
+  /** The people a name can mean: a shared name, any of its candidates, dated or not. */
+  const meant = (slug: string): string[] => (isAmbiguous(slug) ? (candidates[slug] ?? []) : [slug]);
   const sure = (slug: string) => isSure({ means: meant(slug) });
 
   const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
@@ -147,7 +144,7 @@ export function datingFrom(
     { code: string; uncertain: boolean; slugs: string[]; shown: Mention[] }
   >();
   for (const [id, mentions] of byId) {
-    const dated = mentions.filter((m) => sure(m.topic));
+    const dated = mentions.filter((m) => sure(m.topic) && generationOf(m.topic));
     const shared = mentions.filter((m) => !sure(m.topic) && generationOf(m.topic));
     const uncertain = dated.length === 0;
     // Only certain names date a passage that has any; its shared names are listed, not counted.
@@ -200,7 +197,7 @@ export function datingFrom(
     id,
     en: topics[id].en ?? id,
     he: topics[id].he ?? '',
-    gen: latestGeneration(topics[id].generation, periods)!,
+    gen: latestGeneration(topics[id].generation, periods) ?? UNDATED,
     names: [...new Set([...topics[id].names, ...(sharedNames.get(id) ?? [])])].sort(),
   }));
 

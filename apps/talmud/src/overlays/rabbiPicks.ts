@@ -2,7 +2,7 @@
 // each pick gets. No page in here.
 
 import { maxChroma, memoByValue, oklchToRgb, rgbToOklch, type Color } from '@torahmap/utils';
-import { isSure, type Rabbi, type TalmudDating } from '../dating.ts';
+import { isSure, UNDATED, type Rabbi, type TalmudDating } from '../dating.ts';
 import { ERAS, eraOf, generationColor, TRANSITION } from './dating.ts';
 
 export interface RabbiData {
@@ -14,10 +14,8 @@ export interface RabbiSettings {
   picked: string[];
 }
 
-/** At most this many rabbis picked; a square shows `MAX_COLORS` of the ones it names. */
-export const MAX_PICKS = 6;
-/** What the renderer can split one square into. */
-export const MAX_COLORS = 4;
+/** At most this many rabbis picked: what the renderer can split one square into. */
+export const MAX_PICKS = 4;
 const QUICK_PICKS = 28;
 const SUGGESTIONS = 6;
 
@@ -120,8 +118,17 @@ const GENERATION_ORDER = ERAS.flatMap((era) =>
 
 const TRANSITION_NAME = 'Tanna/Amora transition';
 
-/** The headings of a key: each era, with the transition generation between the Tannaim and Amoraim. */
-const GROUPS = ERAS.flatMap(({ name }) => (name === 'Tannaim' ? [name, TRANSITION_NAME] : [name]));
+const UNDATED_NAME = 'Undated';
+
+/** The headings of a key: each era, with the transition generation between the Tannaim and Amoraim, and the undated last. */
+const GROUPS = [
+  ...ERAS.flatMap(({ name }) => (name === 'Tannaim' ? [name, TRANSITION_NAME] : [name])),
+  UNDATED_NAME,
+];
+
+/** The generation whose colour stands for the undated, who share the Amoraim's. */
+const UNDATED_COLORS_AS = 'A4';
+const colorGeneration = (gen: string) => (gen === UNDATED ? UNDATED_COLORS_AS : gen);
 
 /**
  * The most-named choices, in groups by era and within each by generation, a group only if it has
@@ -129,7 +136,12 @@ const GROUPS = ERAS.flatMap(({ name }) => (name === 'Tannaim' ? [name, TRANSITIO
  */
 export function quickPicks(data: RabbiData): { heading: string; entries: Entry[] }[] {
   const chosen = indexFor(data).entries.slice(0, QUICK_PICKS);
-  const groupOf = (entry: Entry) => (entry.gen === TRANSITION ? TRANSITION_NAME : eraOf(entry.gen));
+  const groupOf = (entry: Entry) =>
+    entry.gen === UNDATED
+      ? UNDATED_NAME
+      : entry.gen === TRANSITION
+        ? TRANSITION_NAME
+        : eraOf(entry.gen);
   const rank = (entry: Entry) => GENERATION_ORDER.indexOf(entry.gen);
   return GROUPS.map((heading) => ({
     heading,
@@ -213,15 +225,15 @@ const CHROMA_ROOM = 0.97;
  * hues of `HUES`, so they are told apart at a glance.
  */
 export function pickColors(picked: readonly Rabbi[]): Color[] {
-  const eras = picked.map((rabbi) => eraOf(rabbi.gen));
+  const eras = picked.map((rabbi) => eraOf(colorGeneration(rabbi.gen)));
   const colors: Color[] = [];
   for (const era of new Set(eras)) {
     const group = picked.flatMap((_, i) => (eras[i] === era ? [i] : []));
     if (group.length === 1) {
-      colors[group[0]] = generationColor(picked[group[0]].gen);
+      colors[group[0]] = generationColor(colorGeneration(picked[group[0]].gen));
       continue;
     }
-    const { l } = rgbToOklch(generationColor(picked[group[0]].gen));
+    const { l } = rgbToOklch(generationColor(colorGeneration(picked[group[0]].gen)));
     group.forEach((i, k) => {
       const h = HUES[era][k];
       colors[i] = oklchToRgb(l, Math.min(CHROMA_CAP, maxChroma(l, h) * CHROMA_ROOM), h);

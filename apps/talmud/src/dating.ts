@@ -26,12 +26,15 @@ export interface Person {
 /** A name is certain when it can mean only one person. */
 export const isSure = ({ means }: { means: readonly unknown[] }) => means.length === 1;
 
-/** A person Sefaria gives a generation. `gen` is a generation's code. */
+/** The `gen` of a rabbi Sefaria gives no generation. */
+export const UNDATED = 'undated';
+
 export interface Rabbi {
   /** His Sefaria slug. */
   id: string;
   en: string;
   he: string;
+  /** A generation's code, or `UNDATED`. */
   gen: string;
   /** Every name Sefaria records for him, and those of the shared names that can mean him. */
   names: string[];
