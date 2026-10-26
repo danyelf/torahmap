@@ -31,6 +31,8 @@ export const DAF_LABEL_ROOM = {
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
 // A cover's room left of its tractate's squares, and the gap between covers on a shelf.
 export const BOOK_PADDING = 12;
+// A cover's room above its tractate's name.
+export const BOOK_HEADROOM = 10;
 export const BOOK_GAP = 24;
 export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
 // A tractate's name, a tab above its first row that scales with the map. It fades out below the

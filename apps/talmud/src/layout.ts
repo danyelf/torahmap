@@ -26,6 +26,7 @@ import {
   POSITION_JITTER,
   SEDARIM,
   DAF_LABEL_ROOM,
+  BOOK_HEADROOM,
   BOOK_PADDING,
 } from './constants.ts';
 
@@ -414,7 +415,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     );
   }
 
-  let shelfY = 0;
+  let shelfY = BOOK_HEADROOM;
   for (const tractates of bySeder.values()) {
     if (tractates.length === 0) continue;
     const shelfHeight = TRACTATE_LABEL_HEIGHT + Math.max(...tractates.map((t) => t.height));
@@ -428,7 +429,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
       const tractateBottom = tractateTop + t.height;
       const cover = {
         minX: tractateLeftEdge - BOOK_PADDING,
-        minY: shelfY,
+        minY: shelfY - BOOK_HEADROOM,
         maxX: tractateRightEdge + DAF_LABEL_ROOM.right,
         maxY: shelfY + shelfHeight + DAF_LABEL_ROOM.below,
       };
