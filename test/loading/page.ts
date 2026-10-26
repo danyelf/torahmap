@@ -16,11 +16,9 @@ import {
 const COLOURED_FLOOR = 100;
 
 /**
- * A slow phone, for the dev server: it sends files uncompressed, about four
- * times the bytes the site sends, so this is four times a 4 Mbit/s connection.
- * Only the data files cross it: the dev server sends the code as some 160
- * separate files, where the site sends a few, so throttled code is slower than
- * any reader's and makes the suite take a quarter longer.
+ * A slow phone: the suite's server sends files uncompressed, about four times
+ * the bytes the site sends, so this is four times a 4 Mbit/s connection. Only
+ * the data files cross it.
  */
 const SLOW_MOBILE_DATA = {
   urlPattern: '*://*:*/data/*',

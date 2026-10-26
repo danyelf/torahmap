@@ -1,16 +1,21 @@
 import { defineConfig } from '@playwright/test';
-import { LAUNCH_ARGS, SCREENS, suitePort, webServer } from '../browser/screens.ts';
-
-const PORT = await suitePort('LAYOUT_PORT');
+import { LAUNCH_ARGS, SCREENS } from '../browser/screens.ts';
+import { ORIGIN_ENV } from '../browser/globalSetup.ts';
 
 export default defineConfig({
   testDir: '.',
   outputDir: '../../test-results',
   fullyParallel: true,
   workers: 4,
-  reporter: [['list'], ['./contactSheet.ts', { outputDir: '../../layout-report' }]],
+  globalSetup: '../browser/globalSetup.ts',
+  reporter: [
+    ['list'],
+    ['../browser/stopOnRefusal.ts'],
+    ['./contactSheet.ts', { outputDir: '../../layout-report' }],
+  ],
   use: {
-    baseURL: `http://localhost:${PORT}/`,
+    // Set by globalSetup, so only the workers see it.
+    baseURL: process.env[ORIGIN_ENV],
     // Transitions finish at once, so nothing is measured mid-animation.
     contextOptions: { reducedMotion: 'reduce' },
     launchOptions: { args: LAUNCH_ARGS },
@@ -20,5 +25,4 @@ export default defineConfig({
     use: s.use,
     testMatch: '*.spec.ts',
   })),
-  webServer: webServer(PORT),
 });

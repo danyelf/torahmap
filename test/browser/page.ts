@@ -174,21 +174,19 @@ export async function hold(
   return release;
 }
 
+const sent = new WeakMap<Page, Sent[]>();
+
 /**
- * Turns on the app's analytics, which the dev server leaves off, sending each
- * event to window.sent. The module script imports the app's own module: the
- * browser loads a URL once.
+ * Starts recording the events the app sends from now on: the beacon requests the built page
+ * makes to /api/event.
  */
 export async function recordEvents(page: Page): Promise<void> {
-  await page.addScriptTag({
-    type: 'module',
-    content: `
-      import { configureAnalytics } from '/packages/shell/src/analytics.ts';
-      window.sent = [];
-      configureAnalytics({ enabled: true, send: (body) => window.sent.push(JSON.parse(body)) });
-    `,
+  const events: Sent[] = [];
+  sent.set(page, events);
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/event')
+      events.push(JSON.parse(request.postData() ?? 'null'));
   });
-  await page.waitForFunction(() => 'sent' in window);
 }
 
 interface Sent {
@@ -198,13 +196,7 @@ interface Sent {
 
 /** The fields of every `event` sent so far, in order. */
 export async function sentFields(page: Page, event: string): Promise<Record<string, unknown>[]> {
-  return page.evaluate(
-    (name) =>
-      ((window as unknown as { sent?: Sent[] }).sent ?? [])
-        .filter((e) => e.event === name)
-        .map((e) => e.fields),
-    event,
-  );
+  return (sent.get(page) ?? []).filter((e) => e.event === event).map((e) => e.fields);
 }
 
 /** The term of every search recorded so far, in order. */

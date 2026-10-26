@@ -1,5 +1,6 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { openMap, viaMenu } from '../browser/page.ts';
 import {
@@ -13,6 +14,14 @@ import { TALMUD_STATES } from './app.ts';
 import { testStates } from './check.ts';
 import { apart, outsideOf, type Box } from './geometry.ts';
 import { TALMUD_PATH as TALMUD } from '@torahmap/talmud/page.ts';
+import { computeTalmudLayout } from '@torahmap/talmud/layout.ts';
+import { SQUARE_GAP } from '@torahmap/engine';
+
+const laid = computeTalmudLayout(
+  JSON.parse(
+    readFileSync(new URL('../../public/data/talmud/structure.json', import.meta.url), 'utf8'),
+  ),
+);
 
 /** Whole boxes, so what is off screen is checked too. */
 const full = async (page: Page, selector: string) =>
@@ -26,14 +35,8 @@ async function outsideOneCover(page: Page, labels: Box[]): Promise<string[]> {
     .map((l) => `${l.name} at ${l.x},${l.y}`);
 }
 
-/** Berakhot's top-right corner, in map units, from the page's own layout. */
-const berakhotCorner = (page: Page) =>
-  page.evaluate(async () => {
-    const load = (path: string) => import(/* @vite-ignore */ path);
-    const { computeTalmudLayout } = await load('/apps/talmud/src/layout.ts');
-    const laid = computeTalmudLayout(await (await fetch('/data/talmud/structure.json')).json());
-    return { x: laid.tractateBlocks[0].maxX as number, y: laid.tractateBlocks[0].minY as number };
-  });
+/** Berakhot's top-right corner, in map units. */
+const berakhotCorner = { x: laid.tractateBlocks[0].maxX, y: laid.tractateBlocks[0].minY };
 
 /** Moves the map to `link` as Back to it does, without loading the page again. */
 async function backTo(page: Page, link: string): Promise<void> {
@@ -46,27 +49,21 @@ async function backTo(page: Page, link: string): Promise<void> {
 }
 
 /**
- * The squares on screen, from the page's own layout, placed by the first tractate's cover, whose box
+ * The squares on screen, from the layout, placed by the first tractate's cover, whose box
  * the layout also gives.
  */
 async function squaresOnScreen(page: Page): Promise<Box[]> {
   const cover = (await full(page, '#talmud-books > *'))[0];
   const view = (await boxes(page, '#canvas'))[0];
-  const squares: Box[] = await page.evaluate(async (cover) => {
-    const load = (path: string) => import(/* @vite-ignore */ path);
-    const { computeTalmudLayout } = await load('/apps/talmud/src/layout.ts');
-    const { SQUARE_GAP } = await load('/packages/engine/src/index.ts');
-    const laid = computeTalmudLayout(await (await fetch('/data/talmud/structure.json')).json());
-    const world = laid.tractateBlocks[0].cover;
-    const zoom = cover.width / (world.maxX - world.minX);
-    return laid.items.map((s: { id: string; x: number; y: number; size: number }) => ({
-      name: s.id,
-      x: cover.x + (s.x - world.minX) * zoom,
-      y: cover.y + (s.y - world.minY) * zoom,
-      width: (s.size - SQUARE_GAP) * zoom,
-      height: (s.size - SQUARE_GAP) * zoom,
-    }));
-  }, cover);
+  const world = laid.tractateBlocks[0].cover;
+  const zoom = cover.width / (world.maxX - world.minX);
+  const squares: Box[] = laid.items.map((s) => ({
+    name: s.id,
+    x: cover.x + (s.x - world.minX) * zoom,
+    y: cover.y + (s.y - world.minY) * zoom,
+    width: (s.size - SQUARE_GAP) * zoom,
+    height: (s.size - SQUARE_GAP) * zoom,
+  }));
   return squares.filter((b) => outsideOf([b], view).length === 0);
 }
 
@@ -87,7 +84,7 @@ for (const zoom of [0.4, 1, 2]) {
     desktopAndPhoneOnly();
     await openMap(page, '', TALMUD);
     // Berakhot's top-right corner, near the canvas's top-right.
-    const corner = await berakhotCorner(page);
+    const corner = berakhotCorner;
     const [view] = await boxes(page, '#canvas');
     const x = Math.round(corner.x - (view.width / 2 - 100) / zoom);
     const y = Math.round(corner.y + (view.height / 2 - 100) / zoom);

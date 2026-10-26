@@ -1,5 +1,6 @@
 // The AI Act's page, at /euaiact/: it draws, keeps the layout rules the Tanakh's page keeps, and a
 // pinned square shows its text.
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { ACT_STATES } from './app.ts';
 import { testStates } from './check.ts';
@@ -20,6 +21,14 @@ import {
   SQUARE_SIZE,
 } from '@torahmap/euaiact/constants.ts';
 import { EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
+import { computeActLayout } from '@torahmap/euaiact/layout.ts';
+import { SQUARE_GAP } from '@torahmap/engine';
+
+const laid = computeActLayout(
+  JSON.parse(
+    readFileSync(new URL('../../public/data/euaiact/structure.json', import.meta.url), 'utf8'),
+  ),
+);
 
 testStates(ACT_STATES, ACT);
 
@@ -121,29 +130,20 @@ test('offers no language choice, and never writes one', async ({ page }) => {
 
 const NUMBERS = '#act-article-numbers .row-number';
 
-/** The article squares on screen, from the page's own layout, placed by Chapter III's name. */
+/** The article squares on screen, from the layout, placed by Chapter III's name. */
 async function squaresOnScreen(page: Page, zoom: number): Promise<Box[]> {
   const [{ full: label }] = await shown(page, '#book-labels [data-book-name="Ch. III"]');
   const [view] = await boxes(page, '#canvas');
-  const squares: Box[] = await page.evaluate(
-    async ({ label, zoom, tab }) => {
-      const load = (path: string) => import(/* @vite-ignore */ path);
-      const { computeActLayout } = await load('/apps/euaiact/src/layout.ts');
-      const { SQUARE_GAP } = await load('/packages/engine/src/index.ts');
-      const laid = computeActLayout(await (await fetch('/data/euaiact/structure.json')).json());
-      const three = laid.books.find((b: { name: string }) => b.name === 'Ch. III');
-      return laid.items
-        .filter((s: { layer: string }) => s.layer === 'article')
-        .map((s: { id: string; x: number; y: number; size: number }) => ({
-          name: s.id,
-          x: label.x + (s.x - three.minX - tab.inset) * zoom,
-          y: label.y + (s.y - three.minY + tab.above) * zoom,
-          width: (s.size - SQUARE_GAP) * zoom,
-          height: (s.size - SQUARE_GAP) * zoom,
-        }));
-    },
-    { label, zoom, tab: CHAPTER_TAB },
-  );
+  const three = laid.books.find((b) => b.name === 'Ch. III')!;
+  const squares: Box[] = laid.items
+    .filter((s) => s.layer === 'article')
+    .map((s) => ({
+      name: s.id,
+      x: label.x + (s.x - three.minX - CHAPTER_TAB.inset) * zoom,
+      y: label.y + (s.y - three.minY + CHAPTER_TAB.above) * zoom,
+      width: (s.size - SQUARE_GAP) * zoom,
+      height: (s.size - SQUARE_GAP) * zoom,
+    }));
   return squares.filter((b) => outsideOf([b], view).length === 0);
 }
 
