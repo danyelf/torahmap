@@ -209,9 +209,9 @@ export function suggest(
  * third pick on the hue leaves the family, since the family has no room left to tell them apart.
  */
 const HUES: Record<string, readonly number[]> = {
-  Amoraim: [198, 268, 150, 232, 110, 172],
-  Tannaim: [64, 26, 112, 44, 90, 140],
-  Zugot: [350, 304, 130, 85, 200, 60],
+  Amoraim: [198, 268, 150, 232],
+  Tannaim: [64, 26, 112, 44],
+  Zugot: [350, 304, 130, 85],
 };
 
 /** Past this, a hue's chroma would be garish beside the others. */

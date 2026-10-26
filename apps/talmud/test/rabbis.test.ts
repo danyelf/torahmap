@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { HEBREW } from '@torahmap/shell/language.ts';
-import { DATING_FILE, isSure, type Rabbi, type TalmudDating } from '../src/dating.ts';
+import { DATING_FILE, isSure, UNDATED, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import { fadeTo } from '../src/overlays/dating.ts';
 import { talmudText } from '../src/text.ts';
 import { addPick, rabbisOverlay } from '../src/overlays/rabbis.ts';
@@ -263,6 +263,11 @@ describe('the shipped rabbis', () => {
     for (const [, uncertain, listed] of Object.values(shipped.segments)) {
       expect(uncertain === 1).toBe(!listed.some((place) => isSure(shipped.people[place])));
     }
+  });
+
+  it('leaves the undated out of the generations Dating colours', () => {
+    expect(shipped.generations.map((g) => g.code)).not.toContain(UNDATED);
+    expect(shipped.rabbis.some((r) => r.gen === UNDATED)).toBe(true);
   });
 
   it('reads a name that is not shared as the rabbi himself', () => {

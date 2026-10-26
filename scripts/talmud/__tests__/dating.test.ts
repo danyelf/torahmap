@@ -255,17 +255,19 @@ describe('the rabbis and who each name can mean', () => {
           'solo-(ambiguous)': { en: 'Solo', he: '', generation: null, names: [] },
           'elazar-c': { en: 'Elazar the unplaced', he: '', generation: null, names: [] },
           'lone-(ambiguous)': { en: 'Lone', he: '', generation: null, names: [] },
+          'mixed-(ambiguous)': { en: 'Mixed', he: '', generation: null, names: [] },
         },
         candidates: {
           'elazar-(ambiguous)': ['elazar-a', 'elazar-b', 'elazar-c'],
           'solo-(ambiguous)': ['meir'],
           'lone-(ambiguous)': ['elazar-c'],
+          'mixed-(ambiguous)': ['elazar-a', 'elazar-c'],
         },
       },
       talmudFixture,
       texts,
     );
-  const dating = people(['rava', 'elazar-(ambiguous)', 'solo-(ambiguous)']);
+  const dating = people(['rava', 'elazar-(ambiguous)', 'solo-(ambiguous)', 'mixed-(ambiguous)']);
   const ids = dating.rabbis.map((r) => r.id);
   const meaning = (slug: string) =>
     dating.people.find((p) => p.id === slug)!.means.map((place) => ids[place]);
@@ -304,6 +306,11 @@ describe('the rabbis and who each name can mean', () => {
 
   it('marks a rabbi with no generation as undated', () => {
     expect(dating.rabbis[ids.indexOf('elazar-c')].gen).toBe(UNDATED);
+  });
+
+  it('keeps a shared name uncertain when one of its candidates is undated', () => {
+    expect(meaning('mixed-(ambiguous)')).toEqual(['elazar-a', 'elazar-c']);
+    expect(people(['mixed-(ambiguous)']).segments['TractA.2a.1'][1]).toBe(1);
   });
 
   it('does not date a passage by a name that can mean only an undated rabbi', () => {
