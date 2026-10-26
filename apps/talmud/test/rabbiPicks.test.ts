@@ -4,6 +4,7 @@ import { MISHNAH_BASE_COLOR } from '../src/constants.ts';
 import { generationColor } from '../src/overlays/dating.ts';
 import { UNDATED, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import {
+  eraLine,
   namedIn,
   passagesOf,
   pickColors,
@@ -11,6 +12,7 @@ import {
   picksFromUrl,
   picksToUrl,
   quickPicks,
+  shortName,
   suggest,
   type RabbiData,
 } from '../src/overlays/rabbiPicks.ts';
@@ -203,6 +205,36 @@ describe('colours for the picks', () => {
   it('gives rabbis of different eras different hues', () => {
     const [a, b] = pick('lakish', 'gamliel-a').map(rgbToOklch);
     expect(hue(a.h, b.h)).toBeGreaterThan(60);
+  });
+});
+
+describe('how a rabbi is named', () => {
+  const table: TalmudDating = {
+    ...dating,
+    generations: [
+      { code: 'Z2', from: -140, to: -100 },
+      { code: 'T5', from: 135, to: 170 },
+      { code: 'A4', from: 320, to: 350 },
+    ],
+  };
+  const meir: Rabbi = { id: 'meir', en: 'Rabbi Meir', he: 'רבי מאיר', gen: 'T5', names: [] };
+
+  it('gives the generation and its years in a list', () => {
+    expect(eraLine(meir, table)).toBe('5th-gen Tanna, 135–170');
+    expect(eraLine({ ...meir, gen: 'A4' }, table)).toBe('4th-gen Amora, 320–350');
+    expect(eraLine({ ...meir, gen: 'Z2' }, table)).toBe('Zugot, 2nd pair, 140–100 BCE');
+  });
+
+  it('gives no years to a rabbi with no generation', () => {
+    expect(eraLine({ ...meir, gen: UNDATED }, table)).toBe('Undated');
+  });
+
+  it('shortens Rabbi and רבי, and nothing else, where space is short', () => {
+    expect(shortName(meir)).toBe('R. Meir ר׳ מאיר');
+    expect(shortName({ ...meir, en: 'Rav Ashi', he: 'רב אשי' })).toBe('Rav Ashi רב אשי');
+    expect(shortName({ ...meir, en: 'Rabbi Yehuda b. Rabbi Ilai', he: '' })).toBe(
+      'R. Yehuda b. R. Ilai',
+    );
   });
 });
 

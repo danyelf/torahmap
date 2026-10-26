@@ -287,14 +287,15 @@ describe('the shipped dating file', () => {
   });
 
   it('points every segment at a generation and every rabbi it lists', () => {
-    for (const [generation, , people, spans] of Object.values(shipped.segments)) {
-      expect(shipped.generations[generation]).toBeDefined();
-      for (const p of people) expect(shipped.people[p]).toBeDefined();
+    const broken: string[] = [];
+    for (const [id, [generation, , people, spans]] of Object.entries(shipped.segments)) {
+      if (!shipped.generations[generation]) broken.push(`${id} generation`);
+      if (people.some((p) => !shipped.people[p])) broken.push(`${id} person`);
       for (let i = 0; i < spans.length; i += 3) {
-        expect(spans[i]).toBeLessThan(spans[i + 1]);
-        expect(people).toContain(spans[i + 2]);
+        if (!(spans[i] < spans[i + 1]) || !people.includes(spans[i + 2])) broken.push(`${id} span`);
       }
     }
+    expect(broken).toEqual([]);
     for (const person of shipped.people) expect(shipped.generations[person.gen]).toBeDefined();
   });
 });

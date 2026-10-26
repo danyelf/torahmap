@@ -164,6 +164,17 @@ describe('the pinned passage', () => {
   });
 });
 
+describe('the hover text', () => {
+  it('names the picked rabbis a passage names, shortened, with a ? where only a name might be him', () => {
+    expect(overlay.getHoverInfo!(item('A.2a.1'), picking('lakish'), data)).toBe(
+      'R. Shimon b. Lakish ריש לקיש',
+    );
+    expect(overlay.getHoverInfo!(item('A.2a.3'), picking('gamliel-a'), data)).toBe(
+      'Rabban Gamliel haZaken רבן גמליאל?',
+    );
+  });
+});
+
 describe('the finder', () => {
   function open(settings = picking()) {
     const container = document.createElement('div');
@@ -189,6 +200,13 @@ describe('the finder', () => {
     };
     return { container, type, changes, rows: () => [...container.querySelectorAll('.rabbi-row')] };
   }
+
+  it('labels each suggestion with its rabbi’s generation and years', () => {
+    const finder = open();
+    finder.type('yoch');
+    expect(finder.rows()[0].textContent).toContain('Rabbi Yochanan');
+    expect(finder.rows()[0].textContent).toContain('2nd-gen Amora, 250–290');
+  });
 
   it('suggests a rabbi by another name and picks him on click', () => {
     const finder = open();

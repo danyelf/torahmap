@@ -8,16 +8,9 @@ import { colorToCss, type Color } from '@torahmap/utils';
 import { DATING_FILE, type Rabbi } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE } from '../constants.ts';
+import { fadeTo, markNames, nameFor, row, type RabbiLink } from './dating.ts';
 import {
-  fadeTo,
-  generationLabel,
-  markNames,
-  nameFor,
-  row,
-  yearsShort,
-  type RabbiLink,
-} from './dating.ts';
-import {
+  eraLine,
   MAX_PICKS,
   namedIn,
   passagesOf,
@@ -27,6 +20,7 @@ import {
   picksToUrl,
   quickPicks,
   readingOf,
+  shortName,
   suggest,
   type Entry,
   type RabbiData,
@@ -124,10 +118,11 @@ export function rabbisOverlay(
     });
   }
 
-  const rabbiLine = (rabbi: Rabbi): HTMLElement => {
+  const rabbiLine = (rabbi: Rabbi, era?: string): HTMLElement => {
     const line = document.createElement('span');
     line.className = 'rabbi-line';
     line.append(span('rabbi-en', rabbi.en), ' ', span('rabbi-he', rabbi.he, 'he'));
+    if (era) line.append(span('rabbi-era-line', `, ${era}`));
     return line;
   };
 
@@ -143,8 +138,10 @@ export function rabbisOverlay(
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'rabbi-row';
-    const meta = [generationLabel(rabbi.gen, true), passageCounts(sure, maybe)];
-    row.append(rabbiLine(rabbi), span('rabbi-meta', meta.join(' · ')));
+    row.append(
+      rabbiLine(rabbi, eraLine(rabbi, data.dating)),
+      span('rabbi-meta', passageCounts(sure, maybe)),
+    );
     if (matched) row.append(span('rabbi-meta', `also written ${matched.replace(/^#/, '')}`));
     row.addEventListener('click', onClick);
     return row;
@@ -363,7 +360,7 @@ export function rabbisOverlay(
       const named = namedIn(data, item.id, places);
       if (!named.size) return null;
       return [...named]
-        .map(([place, how]) => data.dating.rabbis[place].en + (how === 'maybe' ? '?' : ''))
+        .map(([place, how]) => shortName(data.dating.rabbis[place]) + (how === 'maybe' ? '?' : ''))
         .join(', ');
     },
 
@@ -385,13 +382,11 @@ export function rabbisOverlay(
           const at = places.indexOf(who[0]);
           if (at >= 0) entry.append(swatch(colors[at]));
           entry.classList.toggle('picked', at >= 0);
-          const era = data.dating.generations.find((g) => g.code === rabbi.gen);
-          const when = generationLabel(rabbi.gen, true) + (era ? `, ${yearsShort(era)}` : '');
           entry.append(
             nameFor(rabbi.en, rabbi.id, link),
             ' · ',
             span('', rabbi.he, 'he'),
-            ` (${when})`,
+            ` (${eraLine(rabbi, data.dating)})`,
           );
         } else {
           const name = data.dating.people[person];
