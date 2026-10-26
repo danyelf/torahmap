@@ -1,16 +1,12 @@
 // Layout algorithm: compute (x, y) position for every verse
 
 import type { Bounds } from '@torahmap/engine';
-import { seededRandom } from '@torahmap/utils';
+import { positionJitter } from '@torahmap/utils';
 import type { TorahData, LayoutConfig, TanakhLayout, Book } from './types.ts';
 import { verseId } from '@torahmap/link/tanakh';
 
-/**
- * Position jitter for verse squares: (seededRandom() - JITTER_CENTER) * JITTER_RANGE
- * gives a ±1px offset that breaks up the regular grid and reduces moiré.
- */
-const JITTER_CENTER = 0.5;
-const JITTER_RANGE = 2.0;
+/** Each verse square is nudged up to this far on each axis, to break up the grid and reduce moiré. */
+const POSITION_JITTER = 1;
 
 const VERSE_SIZE = 6; // pixels per verse square
 const CHAPTER_GAP = 2; // gap between chapter rows
@@ -82,10 +78,7 @@ function layoutChapter(
         x: bookX + lineIndent + lineVerseIdx * VERSE_SIZE,
         y: currentY,
         size: VERSE_SIZE,
-        jitter: {
-          x: (seededRandom(globalVerseIdx.value * 2) - JITTER_CENTER) * JITTER_RANGE,
-          y: (seededRandom(globalVerseIdx.value * 2 + 1) - JITTER_CENTER) * JITTER_RANGE,
-        },
+        jitter: positionJitter(globalVerseIdx.value, POSITION_JITTER),
       });
 
       maxWidth = Math.max(maxWidth, lineIndent + (lineVerseIdx + 1) * VERSE_SIZE);

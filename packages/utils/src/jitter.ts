@@ -12,7 +12,7 @@ export function positionJitter(seed: number, range: number): { x: number; y: num
 }
 
 /** The colour up to ±range lighter or darker; multiplied, so the hue holds. */
-export function brightnessJitter(color: Color, seed: number, range: number): Color {
+export function brightnessJitter(color: Readonly<Color>, seed: number, range: number): Color {
   const f = 1 + (seededRandom(seed) - 0.5) * 2 * range;
   return color.map((c) => Math.max(0, Math.min(1, c * f))) as Color;
 }

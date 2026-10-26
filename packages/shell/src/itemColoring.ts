@@ -1,20 +1,10 @@
 // Colour computation for spatial items
 
 import { type SpatialItem, type ItemColor, type Picture, sameItem } from '@torahmap/engine';
-import { type Color, seededRandom, brighten } from '@torahmap/utils';
+import { type Color, brighten } from '@torahmap/utils';
 import type { Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { ColorSource } from './scrollytelling/driver';
-import { DEFAULT_BRIGHTNESS, SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
-
-/**
- * Default gray for a square with no overlay color, brightness-varied by a
- * seeded random to reduce moiré.
- */
-export function getDefaultColor(itemIndex: number): Color {
-  const brightness =
-    DEFAULT_BRIGHTNESS.MIN + seededRandom(itemIndex * 3) * DEFAULT_BRIGHTNESS.RANGE;
-  return [brightness, brightness, brightness];
-}
+import { SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
 
 function brightenBands(color: ItemColor, factor: number): ItemColor {
   const one = (c: Color): Color => brighten(c, factor);

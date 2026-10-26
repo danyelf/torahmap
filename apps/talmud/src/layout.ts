@@ -10,7 +10,7 @@
 
 import type { SpatialItem } from '@torahmap/engine';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
-import { seededRandom } from '@torahmap/utils';
+import { positionJitter } from '@torahmap/utils';
 import type { TalmudIdentity } from './types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
 import { segmentHashId } from './segmentHash.ts';
@@ -320,10 +320,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           y,
           size: SEGMENT_SIZE,
           round: seg.isMishnah,
-          jitter: {
-            x: (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER,
-            y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER,
-          },
+          jitter: positionJitter(seed, POSITION_JITTER),
         });
       }
       y += SEGMENT_SIZE;
