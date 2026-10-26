@@ -7,8 +7,6 @@ import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import { EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
-import { OWNER_PID_ENV } from './test/browser/owner.ts';
-import { alive } from './scripts/suite-lock.ts';
 import { builtPages, isLiveBuild, unpublished, type BuiltPage } from './build.ts';
 
 // Get the current git branch name
@@ -107,25 +105,9 @@ function assetsIgnorePlugin(live: boolean): Plugin {
   };
 }
 
-// A browser suite names the process that started it; the server stops when that process is gone,
-// which a run killed outright cannot do for it.
-function exitWithOwnerPlugin(): Plugin {
-  const owner = Number(process.env[OWNER_PID_ENV]);
-  return {
-    name: 'exit-with-owner',
-    apply: 'serve',
-    configureServer() {
-      if (!owner) return;
-      setInterval(() => {
-        if (!alive(owner)) process.exit(0);
-      }, 1000).unref();
-    },
-  };
-}
-
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command, mode }) => {
   const branch = getGitBranch();
-  const live = isLiveBuild(command, branch);
+  const live = mode === 'production' && isLiveBuild(command, branch);
   return {
     plugins: [
       storiesPlugin(),
@@ -133,7 +115,6 @@ export default defineConfig(({ command }) => {
       pageAddressPlugin('talmud'),
       pageAddressPlugin('euaiact'),
       assetsIgnorePlugin(live),
-      exitWithOwnerPlugin(),
     ],
     // Declared in packages/shell/src/env.d.ts.
     define: {

@@ -11,8 +11,7 @@ skips silently. See `scripts/install-hooks.sh` for what else it checks and when 
 ## Layout tests
 
 `npm run test:layout` tests the interface for layout in a real browser, at four screen sizes, from
-a phone to a desktop. It starts its own dev server on a free port (`LAYOUT_PORT` to choose one),
-renders the map with software WebGL, and checks every state in `test/layout/app.ts`: no control
+a phone to a desktop. It renders the map with software WebGL, and checks every state in `test/layout/app.ts`: no control
 off screen; the panel, the zoom buttons and the verse popup clear of each other, and the panel
 clear of the map; no clipped text; on the touch screens (tablet and phone), touch targets at least
 24×24 (WCAG 2.2 AA); the elements each state must show, shown in full; and a map that actually
@@ -25,9 +24,17 @@ It runs on four workers, too long for the pre-commit hook.
 ## Loading tests
 
 The map draws before its data and fills in as each file lands. `npm run test:loading` tests that
-in a real browser at one desktop and one phone size, on its own dev server on a free port
-(`LOADING_PORT` to choose one). A dev server stops itself when the run that started it has gone;
-`test/loading/serverExit.spec.ts` checks that, so a change to `vite.config.ts` or to Vite runs it.
+in a real browser at one desktop and one phone size.
+
+## The site a browser suite runs against
+
+Both browser suites build the site once into a temporary folder and serve it from the Playwright
+runner itself, on a port the operating system picks (`test/browser/site.ts`, started by
+`globalSetup`). The data in `public/` is read in place rather than copied. Nothing outlives the
+run, and no other process can stop the server. The first refused connection stops the run. The
+built page sends its analytics events to `/api/event`, which the server answers with an empty 204;
+`recordEvents` in `test/browser/page.ts` reads them from those requests. Hence a change to
+`vite.config.ts` can break either suite.
 
 ## Test harness
 

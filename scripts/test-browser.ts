@@ -36,7 +36,7 @@ const RULES: [RegExp, Suite[]][] = [
   [/^test\/loading\//, LOADING],
   [/^test\/browser\//, BOTH],
   [/^test\/layout\//, LAYOUT],
-  // The page, its dev server and its dependencies. A dependency changes
+  // The page, its build and its dependencies. A dependency changes
   // package-lock.json; package.json alone is scripts and settings.
   [/^index\.html$/, LAYOUT],
   [/^(vite\.config\.ts|pages\.ts|build\.ts|package-lock\.json)$/, BOTH],

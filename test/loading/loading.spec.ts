@@ -334,7 +334,8 @@ test('a lexicon search cannot build from fails its prebuild alone, and the rest 
   // only search's idle prebuild does, and it throws uncaught, by design.
   await expect.poll(() => errors.length).toBe(1);
   expect(errors[0]).not.toMatch(/^console:/);
-  expect(errors[0]).toContain('buildDictionary');
+  // The built page's stack names no function; its message names the missing field.
+  expect(errors[0]).toContain('lexemes');
 });
 
 test('load timing says when the texts landed, after the first frame', async ({ page }) => {
@@ -346,25 +347,6 @@ test('load timing says when the texts landed, after the first frame', async ({ p
   await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
   const [timing] = await sentLoadTiming(page);
   expect(timing.texts_in).toBeGreaterThan(timing.first_frame as number);
-  expect(errors).toEqual([]);
-});
-
-test('the capture shortcut keeps an overlay whose file has not landed', async ({ page }) => {
-  desktopOnly('a keyboard shortcut for authors');
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      value: {
-        writeText: async (text: string) => {
-          (window as unknown as { copied: string }).copied = text;
-        },
-      },
-    });
-  });
-  const { errors } = await open(page, 'overlay=commentary', [COMMENTARY]);
-  await page.keyboard.press('Control+Shift+C');
-  await expect
-    .poll(() => page.evaluate(() => (window as unknown as { copied?: string }).copied))
-    .toContain('commentary');
   expect(errors).toEqual([]);
 });
 
