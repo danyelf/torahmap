@@ -44,8 +44,10 @@ def main(vis: Path) -> None:
             )
         else:
             row['arxiv_author_search'] = 'not done'
-            if a is None:
+            if a is None or a['status'] == 'to search':
                 row['arxiv_title_search'] = 'not yet searched'
+            elif a['status'] == 'failed':
+                row['arxiv_title_search'] = 'search failed'
             elif a['accepted']:
                 acc = a['accepted']
                 row.update(

@@ -1,14 +1,17 @@
 """Looks the VIS program's papers up on arXiv by title, and fetches the matches.
 
-    uv run --no-project python -I scripts/ieeevis/arxiv.py bulk <vis dir>
-    uv run --no-project python -I scripts/ieeevis/arxiv.py lookup <vis dir>
+    uv run --no-project python -I scripts/ieeevis/arxiv.py lookup <vis dir> [batches]
     uv run --no-project python -I scripts/ieeevis/arxiv.py fetch <vis dir> pdf|source
 
 <vis dir> holds program.json. Every response is cached under <vis dir>/arxiv/, so a rerun
-fetches nothing twice. Requests go out at most one every 3 seconds, as arXiv asks.
+fetches nothing twice. Requests go out one at a time, 10 seconds apart (arXiv's
+terms of use ask for at least 3), and the first refused or failed request stops the run: arXiv may block a
+client that keeps asking after a refusal.
 
-lookup writes <vis dir>/arxiv/matches.json: for each program paper index, the accepted arXiv
-entry, and the rejected near-misses with their title similarity and author overlap.
+lookup keeps <vis dir>/arxiv/matches.json: for each program paper index, its status ('to
+search', 'searched' or 'failed') and, once searched, the accepted arXiv entry and the rejected
+near-misses with their title similarity and author overlap. A rerun searches only what is not
+yet 'searched', BATCH titles to a request; `batches` caps how many requests it sends.
 """
 
 import difflib
@@ -23,13 +26,12 @@ import urllib.request
 from pathlib import Path
 
 AGENT = 'torahmap-vis-map/0.1 (research spike; danyel-claude@users.noreply.github.com)'
-PAUSE = 3.1
+PAUSE = 10
 KINDS = ('Full VIS Paper', 'VIS Short Paper', 'TVCG Paper', 'CG&A Paper')
 SIMILAR = 0.92  # title similarity to accept, after normalising
 NEAR = 0.6  # similarity worth recording as a rejected near-miss
-
-PAGE = 2000
-WINDOW = ('202501010000', '202610312359')
+BATCH = 20  # titles joined with OR into one search
+BATCH_RESULTS = 200
 
 _last = 0.0
 
@@ -42,19 +44,8 @@ def get(url: str, cache: Path) -> bytes:
     global _last
     time.sleep(max(0.0, _last + PAUSE - time.time()))
     request = urllib.request.Request(url, headers={'User-Agent': AGENT})
-    for attempt in range(3):
-        try:
-            _last = time.time()
-            data = urllib.request.urlopen(request, timeout=240).read()
-            break
-        except Exception as e:  # noqa: BLE001
-            # Retry-After says how long arXiv wants; without it, back off for minutes.
-            wait = getattr(e, 'headers', {}).get('Retry-After') if hasattr(e, 'headers') else None
-            pause = int(wait) if wait and wait.isdigit() else 120 * (attempt + 1)
-            print('retry in', pause, 's:', url[:90], e, flush=True)
-            time.sleep(pause)
-    else:
-        raise RuntimeError(url)
+    _last = time.time()
+    data = urllib.request.urlopen(request, timeout=240).read()
     path.write_bytes(data)
     return data
 
@@ -109,61 +100,45 @@ def judge(p: dict, found: list[dict]) -> dict:
     return {'title': title, 'kind': p['kind'], 'accepted': accepted, 'rejected': rejected}
 
 
-def bulk(vis: Path) -> None:
-    """Every cs.HC and cs.GR listing in the window, in pages of PAGE entries, into arxiv/listing.json."""
-    cache = vis / 'arxiv' / 'cache'
-    cache.mkdir(parents=True, exist_ok=True)
-    listing: dict[str, dict] = {}
-    for cat in ('cs.HC', 'cs.GR'):
-        query = f'cat:{cat} AND submittedDate:[{WINDOW[0]} TO {WINDOW[1]}]'
-        start = 0
-        while True:
-            url = (
-                f'https://export.arxiv.org/api/query?max_results={PAGE}&start={start}'
-                f'&sortBy=submittedDate&sortOrder=ascending&search_query={urllib.parse.quote(query)}'
-            )
-            page = entries(get(url, cache).decode())
-            for e in page:
-                listing[e['id']] = e
-            print(cat, start, len(page), len(listing), flush=True)
-            if len(page) < PAGE:
-                break
-            start += PAGE
-    (vis / 'arxiv' / 'listing.json').write_text(json.dumps(list(listing.values())))
+def phrase(p: dict) -> str:
+    words = re.sub(r'[^A-Za-z0-9 ]+', ' ', html.unescape(p['title'])).split()
+    return 'ti:"' + ' '.join(words) + '"'
 
 
-def lookup(vis: Path) -> None:
-    """Matches against the bulk listing first, then single-title searches for what is left."""
+def lookup(vis: Path, batches: int | None) -> None:
+    """Searches arXiv for the program papers' titles not yet searched, stopping at the first failure."""
     program = json.loads((vis / 'program.json').read_text())
     cache = vis / 'arxiv' / 'cache'
     cache.mkdir(parents=True, exist_ok=True)
-    listing = json.loads((vis / 'arxiv' / 'listing.json').read_text()) if (vis / 'arxiv' / 'listing.json').exists() else []
-    tokens = [(set(norm(e['title']).split()), e) for e in listing]
-    result: dict[str, dict] = {}
-    todo = candidates(program)
-    for i, p in todo:
-        words = set(norm(html.unescape(p['title'])).split())
-        near = [e for t, e in tokens if len(words & t) >= 0.6 * max(len(words), len(t))]
-        result[str(i)] = judge(p, near)
-    print(len(todo), 'titles;', sum(1 for r in result.values() if r['accepted']), 'matched in the listing', flush=True)
     out = vis / 'arxiv' / 'matches.json'
-    out.write_text(json.dumps(result, indent=1))
-    left = [(i, p) for i, p in todo if not result[str(i)]['accepted']]
-    print(len(left), 'to search one by one', flush=True)
-    for n, (i, p) in enumerate(left):
-        words = re.sub(r'[^A-Za-z0-9 ]+', ' ', html.unescape(p['title'])).split()
-        query = 'ti:"' + ' '.join(words) + '"'
-        url = 'https://export.arxiv.org/api/query?max_results=5&search_query=' + urllib.parse.quote(query)
-        single = judge(p, entries(get(url, cache).decode()))
-        if single['accepted'] or not result[str(i)]['rejected']:
-            result[str(i)] = single
-        else:
-            result[str(i)]['rejected'] += single['rejected']
-        if n % 25 == 0:
-            print(n, '/', len(left), sum(1 for r in result.values() if r['accepted']), 'accepted', flush=True)
+    result: dict[str, dict] = json.loads(out.read_text()) if out.exists() else {}
+    papers = candidates(program)
+    for i, p in papers:
+        result.setdefault(str(i), {'title': html.unescape(p['title']), 'kind': p['kind'], 'status': 'to search'})
+    left = [(i, p) for i, p in papers if result[str(i)]['status'] != 'searched']
+    groups = [left[k : k + BATCH] for k in range(0, len(left), BATCH)][:batches]
+    print(len(left), 'titles to search;', len(groups), 'requests this run', flush=True)
+    for group in groups:
+        query = ' OR '.join(phrase(p) for _, p in group)
+        url = f'https://export.arxiv.org/api/query?max_results={BATCH_RESULTS}&search_query=' + urllib.parse.quote(query)
+        try:
+            found = entries(get(url, cache).decode())
+        except Exception as e:  # noqa: BLE001
+            for i, _ in group:
+                result[str(i)]['status'] = 'failed'
             out.write_text(json.dumps(result, indent=1))
-    out.write_text(json.dumps(result, indent=1))
-    print('done', sum(1 for r in result.values() if r['accepted']), 'accepted of', len(result))
+            sys.exit(f'stopped: arXiv request failed ({e}); {len(group)} titles marked failed')
+        full = len(found) == BATCH_RESULTS
+        for i, p in group:
+            judged = judge(p, found)
+            # A full page may have cut off this title's match, so an unmatched title waits for a rerun.
+            if judged['accepted'] or not full:
+                result[str(i)] = {**judged, 'status': 'searched'}
+        out.write_text(json.dumps(result, indent=1))
+        matched = sum(1 for i, _ in group if result[str(i)].get('accepted'))
+        print(len(group), 'titles,', len(found), 'results,', matched, 'matched' + (' (page full)' if full else ''), flush=True)
+    status = [r['status'] for r in result.values()]
+    print({s: status.count(s) for s in sorted(set(status))}, sum(1 for r in result.values() if r.get('accepted')), 'matched')
 
 
 def arxiv_id(url: str) -> str:
@@ -177,7 +152,7 @@ def fetch(vis: Path, what: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     only = set(sys.argv[4].split(',')) if len(sys.argv) > 4 else None
     for i, m in matches.items():
-        if not m['accepted'] or (only and i not in only):
+        if not m.get('accepted') or (only and i not in only):
             continue
         aid = arxiv_id(m['accepted']['arxiv'])
         base = re.sub(r'v\d+$', '', aid).replace('/', '_')
@@ -191,4 +166,7 @@ def fetch(vis: Path, what: str) -> None:
 
 if __name__ == '__main__':
     cmd, vis = sys.argv[1], Path(sys.argv[2])
-    {'bulk': bulk, 'lookup': lookup}[cmd](vis) if cmd != 'fetch' else fetch(vis, sys.argv[3])
+    if cmd == 'lookup':
+        lookup(vis, int(sys.argv[3]) if len(sys.argv) > 3 else None)
+    else:
+        fetch(vis, sys.argv[3])
