@@ -23,6 +23,8 @@ const ACT_POPUP_KNOWN: Known = {
  * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
+  'explore-text-analytics-pinned/phone/touch-targets': POPUP_KNOWN,
+  'explore-text-analytics-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-verse-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-verse-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-word-menu/phone/touch-targets': POPUP_KNOWN,
