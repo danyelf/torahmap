@@ -106,6 +106,10 @@ export function generationLabel(code: string, short = false): string {
   return `${ordinal}${short ? '-gen' : '-generation'} ${era}`;
 }
 
+/** "5th-gen Tanna, 135-170": a generation by its code and years, `mark` after the label where it is a guess; no years without a generation. */
+export const eraText = (code: string, years: Generation | undefined, mark = ''): string =>
+  generationLabel(code, true) + mark + (years ? `, ${yearsShort(years)}` : '');
+
 /** `color` with only `keeps` of it left over the map's background. */
 export const fadeTo = (color: readonly number[], keeps: number): Color =>
   mix(MAP_BACKGROUND, color, keeps);
@@ -255,10 +259,7 @@ export function datingOverlay(
           person.gen === generation && (sure || uncertain) ? 'strong' : 'span',
         );
         // A shared name gives its latest candidate only where it dates the passage.
-        const where =
-          !sure && !uncertain
-            ? ' ?'
-            : ` (${generationLabel(era.code, true)}${sure ? '' : '?'}, ${yearsShort(era)})`;
+        const where = !sure && !uncertain ? ' ?' : ` (${eraText(era.code, era, sure ? '' : '?')})`;
         entry.append(
           nameFor(person.en, sure ? dating.rabbis[person.means[0]].id : null, link),
           ' · ',

@@ -3,7 +3,7 @@
 
 import { maxChroma, memoByValue, oklchToRgb, rgbToOklch, type Color } from '@torahmap/utils';
 import { isSure, UNDATED, type Rabbi, type TalmudDating } from '../dating.ts';
-import { ERAS, eraOf, generationColor, generationLabel, TRANSITION, yearsShort } from './dating.ts';
+import { ERAS, eraOf, eraText, generationColor, TRANSITION } from './dating.ts';
 
 export interface RabbiData {
   dating: TalmudDating;
@@ -155,14 +155,21 @@ const untitled = (name: string): string =>
   name.replace(/^(?:(?:rabban|rabbi|rebbi|rav|rabi|r|רבן|רבי|רב|ר) )+/u, '');
 
 /** A rabbi's generation and its years, as "5th-gen Tanna, 135–170"; "Undated" has no years. */
-export function eraLine(rabbi: Rabbi, { generations }: TalmudDating): string {
-  const era = generations.find((g) => g.code === rabbi.gen);
-  return generationLabel(rabbi.gen, true) + (era ? `, ${yearsShort(era)}` : '');
-}
+export const eraLine = (rabbi: Rabbi, { generations }: TalmudDating): string =>
+  eraText(
+    rabbi.gen,
+    generations.find((g) => g.code === rabbi.gen),
+  );
 
-/** A name where space is short: "R. Meir ר׳ מאיר". Only "Rabbi" and רבי are shortened. */
+/**
+ * A name where space is short: "R. Meir ר׳ מאיר". "Rabbi" and רבי are shortened where a name
+ * follows them, so "Rabbi Shimon b. Rabbi" keeps its last word.
+ */
 export function shortName({ en, he }: Rabbi): string {
-  const short = [en.replace(/\bRabbi\b/g, 'R.'), he.replace(/(?<![א-ת])רבי(?![א-ת])/gu, 'ר׳')];
+  const short = [
+    en.replace(/\bRabbi\b(?= \S)/g, 'R.'),
+    he.replace(/(?<![א-ת])רבי(?= [א-ת])/gu, 'ר׳'),
+  ];
   return short.filter(Boolean).join(' ');
 }
 

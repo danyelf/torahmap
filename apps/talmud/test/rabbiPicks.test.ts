@@ -236,6 +236,15 @@ describe('how a rabbi is named', () => {
       'R. Yehuda b. R. Ilai',
     );
   });
+
+  it('keeps a title that has no name after it, and words that only contain one', () => {
+    expect(shortName({ ...meir, en: 'Rabbi Shimon b. Rabbi', he: 'רבי שמעון בן רבי' })).toBe(
+      'R. Shimon b. Rabbi ר׳ שמעון בן רבי',
+    );
+    expect(shortName({ ...meir, en: 'Rabi', he: 'רבי' })).toBe('Rabi רבי');
+    expect(shortName({ ...meir, en: 'Rabbinic X', he: 'רבינא' })).toBe('Rabbinic X רבינא');
+    expect(shortName({ ...meir, en: 'Bar Rabbi', he: 'ברבי עקיבא' })).toBe('Bar Rabbi ברבי עקיבא');
+  });
 });
 
 describe('a rabbi Sefaria gives no generation', () => {
