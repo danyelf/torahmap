@@ -12,6 +12,8 @@ import {
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { trackSearchExecute } from '@torahmap/shell/analytics.ts';
 import { MEANINGS_KEY, SEARCH_URL_PARAMS } from '@torahmap/overlay-catalog';
+import type { SearchLanguage, SearchTerm } from '@torahmap/search';
+import type { TextRange } from '@torahmap/utils';
 import type { TanakhLayout } from '../types.ts';
 import { dictionaryOf, SEARCH_FILES, textIndexOf, type SearchData } from './data.ts';
 import { spellingFor, versesFor, wordsOfVerse } from './dictionary.ts';
@@ -42,15 +44,42 @@ function onlyParseDiffers(a: SearchData, b: SearchData): boolean {
   return keys.every((key) => key === 'parse' || a[key] === b[key]);
 }
 
+const HEBREW_LANGUAGE = TANAKH_LANGUAGES.find((l) => l.id === HEBREW)!;
+
+/** The words of one verse that a term in meanings mode marks. */
+function markedIn(
+  { dictionary, parse }: MeaningsData,
+  term: SearchTerm,
+  itemId: string,
+  text: string,
+  language: SearchLanguage,
+  limit?: number,
+): TextRange[] {
+  return language.id === HEBREW
+    ? meaningRanges(dictionary, wordsOfVerse(parse, itemId, text), term, text, language, limit)
+    : [];
+}
+
 /** Meanings mode, as the search runs it. */
 const meanings: ExtraMode<MeaningsData, SearchData> = {
   ...meaningsMode,
   build: (data) => meaningsData(dictionaryOf(data), data.parse),
-  itemsFor: ({ dictionary }, term) => versesFor(dictionary, selectedKeys(dictionary, term)),
-  ranges: ({ dictionary, parse }, term, { itemId, text, language }) =>
-    language.id === HEBREW
-      ? meaningRanges(dictionary, wordsOfVerse(parse, itemId, text), term, text, language)
-      : [],
+  // A verse is found when the highlighter marks a word in it. The per-verse
+  // dictionary list only says which verses are worth reading; without the
+  // parse the list decides alone, and words are marked by spelling.
+  itemsFor(data, term, index) {
+    const listed = versesFor(data.dictionary, selectedKeys(data.dictionary, term));
+    if (!data.parse) return listed;
+    const found = new Set<string>();
+    for (const itemId of listed) {
+      const text = index.byId.get(itemId)?.text[HEBREW];
+      if (text !== undefined && markedIn(data, term, itemId, text, HEBREW_LANGUAGE, 1).length > 0) {
+        found.add(itemId);
+      }
+    }
+    return found;
+  },
+  ranges: (data, term, { itemId, text, language }) => markedIn(data, term, itemId, text, language),
   quoted: quotedMeaning,
   // Each word as typed, then which of its checked meanings this verse holds.
   hoverNote({ dictionary }, term, itemId) {

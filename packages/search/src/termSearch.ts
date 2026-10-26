@@ -75,7 +75,11 @@ export interface TermSearchSpec<D, X> {
   defaultMode?: MatchMode;
   /** As SearchTool's `filesNow`. */
   filesNow?(settings: TermSettings): readonly string[];
-  /** Whether going from `before` to `after` changes only what result rows quote, so they are quoted again in place. */
+  /**
+   * Whether going from `before` to `after` can change only what result rows
+   * quote. They are quoted again in place when the search also finds the same
+   * items for the same terms.
+   */
   onlyQuotesChange?(before: D, after: D): boolean;
   /** What records the search, built from what it counts. */
   telemetry?(search: SearchCounts<D>): SearchTelemetry<TermSettings, D>;
@@ -150,6 +154,19 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
   ): TermSettings | null;
   /** What the extra mode works from, built from search's files. */
   extraOf(data: D): X | null;
+}
+
+/** Whether two searches find the same items for the same terms, in the same order. */
+function sameFinds(a: readonly SearchResult[], b: readonly SearchResult[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every(
+      (result, i) =>
+        result.id === b[i].id &&
+        result.matchingTerms.length === b[i].matchingTerms.length &&
+        result.matchingTerms.every((m, j) => m.termIndex === b[i].matchingTerms[j].termIndex),
+    )
+  );
 }
 
 export function createTermSearch<I extends { id: string }, D, X = never>(
@@ -485,7 +502,8 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         settings === previous &&
         data &&
         previousData &&
-        spec.onlyQuotesChange?.(previousData, data)
+        spec.onlyQuotesChange?.(previousData, data) &&
+        sameFinds(searchFor(previousData, settings).results, searchFor(data, settings).results)
       ) {
         // Quote the list again in place, so the reader keeps their place in it.
         resultsList.requote(searchResults, snippetFor(data));

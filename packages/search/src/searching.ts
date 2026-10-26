@@ -51,7 +51,7 @@ function itemsOf<X>(
   context: SearchContext<X>,
 ): ReadonlySet<string> {
   if (byExtra(context, term) && context.extra.itemsFor)
-    return context.extra.itemsFor(context.x, term);
+    return context.extra.itemsFor(context.x, term, index);
   const mode = modeIn(context, term);
   // An extra mode without its data finds by whole word, as it does where it cannot apply.
   const match: MatchMode = mode === 'substring' ? 'substring' : 'word';

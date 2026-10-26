@@ -200,7 +200,7 @@ export const meaningsMode: ExtraMode<MeaningsData> = {
  * By position rather than by spelling, which is what separates the two words
  * spelled עלה in Genesis 8:20 — a spelling could be either, and only the place
  * in the verse says which this one is. A meaning is Hebrew, so it marks nothing
- * in English.
+ * in English. `limit` stops after that many words.
  */
 export function meaningRanges(
   dictionary: Dictionary,
@@ -208,6 +208,7 @@ export function meaningRanges(
   term: SearchTerm,
   text: string,
   language: SearchLanguage,
+  limit = Infinity,
 ): TextRange[] {
   const keys = selectedKeys(dictionary, term);
   if (language.id !== HEBREW || keys.length === 0) return [];
@@ -216,6 +217,7 @@ export function meaningRanges(
   for (const { word, start, end } of splitIntoWords(folded)) {
     if (wordMatches(dictionary, words, keys, word, text, start)) {
       ranges.push({ start: language.toOriginal(text, start), end: language.toOriginal(text, end) });
+      if (ranges.length >= limit) break;
     }
   }
   return ranges;

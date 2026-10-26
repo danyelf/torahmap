@@ -1,5 +1,6 @@
 import type { TextRange } from '@torahmap/utils';
 import type { SearchLanguage } from './language.ts';
+import type { TextIndex } from './textIndex.ts';
 import type { SearchTerm } from './terms.ts';
 
 /**
@@ -28,8 +29,8 @@ export interface ExtraMode<X, D = unknown> {
 
   /** What it works from. The same files give the same object. */
   build?(data: D): X;
-  /** The ids of the items a term in this mode finds. */
-  itemsFor?(x: X, term: SearchTerm): ReadonlySet<string>;
+  /** The ids of the items a term in this mode finds; `index` holds their text. */
+  itemsFor?(x: X, term: SearchTerm, index: TextIndex): ReadonlySet<string>;
   /** The stretches of an item's text, in its own positions, that a term in this mode claims. */
   ranges?(
     x: X,
