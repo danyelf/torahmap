@@ -82,6 +82,9 @@ export async function startSite(): Promise<{ origin: string; stop: () => Promise
     await rm(out, { recursive: true, force: true });
   };
   try {
+    // The build of a branch, whatever branch this is: the live build of main hides pages and
+    // stories that previews show (build.ts).
+    process.env.WORKERS_CI_BRANCH = 'browser-suite';
     await build({
       root: ROOT,
       logLevel: 'warn',
