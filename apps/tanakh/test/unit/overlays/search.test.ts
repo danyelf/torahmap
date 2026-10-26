@@ -1452,7 +1452,7 @@ describe('Search Overlay', () => {
       expect(changed).not.toHaveBeenCalled();
     });
 
-    it('gives the colours getItemColor gives for the same query', () => {
+    it('gives a verse the same colour alone as in a batch for the same query', () => {
       searchOverlay.restore({ search: 'God, heavens' });
       const expected = testVerses.map((v) => searchOverlay.getItemColor(v));
 

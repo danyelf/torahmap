@@ -24,7 +24,6 @@ export const amendmentOverlay: Overlay<ActItem> = {
   name: 'Amendment',
   description:
     'Shows which paragraphs the 2026 amendment inserted or replaced. Orange is new, yellow is reworded.',
-  getItemColor: (item) => colorOf(item),
   colorsFor: (items) => items.map(colorOf),
   renderLegend(container) {
     container.innerHTML = Object.values(AMENDED)

@@ -19,7 +19,12 @@ const item = (id: string, over: Partial<ActItem> = {}): ActItem => ({
 describe('the amendment overlay', () => {
   it('colours text inserted and replaced in 2026 differently from the rest', () => {
     const colour = (origin: ActItem['origin']) =>
-      amendmentOverlay.getItemColor(item('1', { origin }), undefined as never, undefined as never);
+      amendmentOverlay.colorsFor(
+        [item('1', { origin })],
+        undefined as never,
+        null,
+        undefined as never,
+      )[0];
     expect(colour('M1 inserted')).not.toEqual(colour('B'));
     expect(colour('M1 replaced')).not.toEqual(colour('B'));
     expect(colour('M1 replaced')).not.toEqual(colour('M1 inserted'));
@@ -27,7 +32,12 @@ describe('the amendment overlay', () => {
 
   it('draws a list’s lead-in darker than its points', () => {
     const colour = (lead: boolean) =>
-      amendmentOverlay.getItemColor(item('1', { lead }), undefined as never, undefined as never);
+      amendmentOverlay.colorsFor(
+        [item('1', { lead })],
+        undefined as never,
+        null,
+        undefined as never,
+      )[0];
     expect(colour(true)).not.toEqual(colour(false));
   });
 });

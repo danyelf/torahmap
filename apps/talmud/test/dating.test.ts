@@ -46,7 +46,7 @@ const item = (id: string) => ({ id, x: 0, y: 0, size: 6 }) as never;
 const base = () => [0.6, 0.5, 0.4] as [number, number, number];
 const overlay = datingOverlay(base);
 const colour = (id: string) =>
-  overlay.getItemColor(item(id), undefined as never, { dating }) as number[];
+  overlay.colorsFor([item(id)], undefined as never, null, { dating })[0] as number[];
 
 describe('the dating overlay', () => {
   it('links a shared name that can mean one person to that person', () => {

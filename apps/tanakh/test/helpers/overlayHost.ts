@@ -31,7 +31,8 @@ export interface OverlayHost<S, D> {
   /** Called after every change the controls or `change` make. Restoring is not a change. */
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
-  getItemColor(verse: TanakhLayout): ReturnType<TanakhOverlay['getItemColor']>;
+  /** The colour of one verse, as `colorsFor` gives it with nothing hovered. */
+  getItemColor(verse: TanakhLayout): ReturnType<TanakhOverlay['colorsFor']>[number];
   /** Returns false when the overlay declares no hoverChangesColors of its own. */
   hoverChangesColors(before: TanakhLayout | null, after: TanakhLayout | null): boolean;
   getHoverInfo(verse: TanakhLayout): string | null;
@@ -93,7 +94,7 @@ export function hostOverlay<S, D>(
       return store.toUrl(overlay);
     },
     getItemColor(verse) {
-      return overlay.getItemColor(verse, store.get(overlay), held);
+      return overlay.colorsFor([verse], store.get(overlay), null, held)[0];
     },
     hoverChangesColors(before, after) {
       return overlay.hoverChangesColors?.(before, after, store.get(overlay), held) ?? false;

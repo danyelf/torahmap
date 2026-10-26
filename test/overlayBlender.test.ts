@@ -40,19 +40,17 @@ beforeEach(() => {
 const multiColorOverlay: TanakhOverlay = {
   id: 'test-multi-color',
   name: 'Test Multi-color',
-  getItemColor: (verse) => {
-    if (verse.verse === 1) {
-      // Multi-color: red + blue
-      return [
-        [1, 0, 0],
-        [0, 0, 1],
-      ] as [number, number, number][];
-    }
-    return [0.5, 0.5, 0.5] as [number, number, number];
-  },
-  colorsFor(items, settings, _hovered, data) {
-    return items.map((item) => multiColorOverlay.getItemColor(item, settings, data));
-  },
+  colorsFor: (items) =>
+    items.map((verse) => {
+      if (verse.verse === 1) {
+        // Multi-color: red + blue
+        return [
+          [1, 0, 0],
+          [0, 0, 1],
+        ] as [number, number, number][];
+      }
+      return [0.5, 0.5, 0.5] as [number, number, number];
+    }),
 };
 
 describe('computeBlendedColors multi-color preservation', () => {
@@ -177,7 +175,6 @@ describe('story stop settings reach the overlay', () => {
     urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
     settingsFromUrl: (params) => params,
     settingsToUrl: () => ({}),
-    getItemColor: () => [0.5, 0.5, 0.5] as [number, number, number],
     colorsFor(items, settings: UrlParamValues) {
       received = { ...settings };
       return items.map(() => [0.5, 0.5, 0.5] as [number, number, number]);
@@ -227,7 +224,6 @@ describe('story stop settings reach the overlay', () => {
       urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
       settingsFromUrl: (params) => ({ on: params.state === 'on' }),
       settingsToUrl: () => ({}),
-      getItemColor: () => [0.5, 0.5, 0.5] as [number, number, number],
       colorsFor(items, settings) {
         handed = settings;
         return items.map(() => [0.5, 0.5, 0.5] as [number, number, number]);
@@ -256,9 +252,9 @@ describe('the blender evaluates without disturbing the overlay', () => {
     settings.restore(commentaryOverlay, { category: 'Midrash' });
     const held = settings.get(commentaryOverlay);
     const verse = verses[0];
-    const before = commentaryOverlay.getItemColor(verse, held, {
+    const before = commentaryOverlay.colorsFor([verse], held, null, {
       counts: SAMPLE_COMMENTARY_COUNTS,
-    });
+    })[0];
 
     const fromStop: ResolvedStoryStop = {
       id: 'a',
@@ -288,9 +284,9 @@ describe('the blender evaluates without disturbing the overlay', () => {
     );
 
     expect(
-      commentaryOverlay.getItemColor(verse, settings.get(commentaryOverlay), {
+      commentaryOverlay.colorsFor([verse], settings.get(commentaryOverlay), null, {
         counts: SAMPLE_COMMENTARY_COUNTS,
-      }),
+      })[0],
     ).toEqual(before);
   });
 });
@@ -306,7 +302,6 @@ describe('the blender memoises colours by settings', () => {
       urlParams: [{ key: 'state', kind: 'token' }],
       settingsFromUrl: (params) => params,
       settingsToUrl: () => ({}),
-      getItemColor: () => [0.2, 0.2, 0.2] as [number, number, number],
       colorsFor: colorsForSpy,
     };
     registerOverlay(memoOverlay);
@@ -346,7 +341,6 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const hoverOverlay: TanakhOverlay = {
       id: 'test-hover',
       name: 'Test Hover',
-      getItemColor: () => [0.3, 0.3, 0.3] as [number, number, number],
       colorsFor: hoverColorsFor,
       hoverChangesColors: () => false,
     };
@@ -358,7 +352,6 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const noHoverOverlay: TanakhOverlay = {
       id: 'test-no-hover',
       name: 'Test No Hover',
-      getItemColor: () => [0.4, 0.4, 0.4] as [number, number, number],
       colorsFor: noHoverColorsFor,
     };
     registerOverlay(noHoverOverlay);
@@ -453,7 +446,7 @@ describe('a stop whose overlay data is missing', () => {
     id: 'test-late-data',
     name: 'Late',
     data: { marks: 'late.json' },
-    getItemColor: () => RED,
+    colorsFor: (items) => items.map(() => RED),
   });
   const stop: ResolvedStoryStop = {
     id: 'late',

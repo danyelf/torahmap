@@ -3,7 +3,7 @@ import { expect } from 'vitest';
 import type { OverlaySummary } from '@torahmap/shell/overlays/types.ts';
 
 // All channels must be in [0, 1]. Accepts Color | Color[] (overlay
-// getItemColor's return type).
+// colorsFor's return type).
 export function assertValidColor(
   color: number[] | [number, number, number] | (number[] | [number, number, number])[],
 ) {

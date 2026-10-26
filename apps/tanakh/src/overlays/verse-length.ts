@@ -75,10 +75,6 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> 
     wordCountsOf(data);
   },
 
-  getItemColor(verse, _settings, data) {
-    return verseColorAt(data, verse);
-  },
-
   colorsFor(items, _settings, _hovered, data) {
     return items.map((item) => verseColorAt(data, item));
   },

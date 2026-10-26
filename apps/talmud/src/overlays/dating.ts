@@ -201,7 +201,6 @@ export function datingOverlay(
     ],
     data: { dating: DATING_FILE },
 
-    getItemColor: (item, _settings, data) => colorOf(item, data),
     colorsFor: (items, _settings, _hovered, data) => items.map((item) => colorOf(item, data)),
 
     renderLegend(container, _settings, data) {
