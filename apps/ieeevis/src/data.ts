@@ -28,6 +28,8 @@ export interface Paper {
 
 export interface Session {
   name: string;
+  /** When its first paper starts, "10:00", or empty when the program gives no time. */
+  start: string;
   papers: Paper[];
 }
 

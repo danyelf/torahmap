@@ -267,7 +267,12 @@ def main(vis: Path) -> None:
             by_day.get(day, {}).items(), key=lambda kv: (min(t for t, _ in kv[1]), kv[0])
         )
         sessions = [
-            {'name': name, 'papers': [papers[i] for _, i in sorted(items)]}
+            {
+                'name': name,
+                # The program gives each paper's start, not the session's end.
+                'start': min(t for t, _ in items),
+                'papers': [papers[i] for _, i in sorted(items)],
+            }
             for name, items in ordered
         ]
         days.append({'name': day, 'sessions': sessions})

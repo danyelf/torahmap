@@ -16,6 +16,8 @@ const PAPERS_PER_LINE = 8;
 const PAPER_GAP = SQUARE_SIZE;
 const LINE_GAP = 2 * SQUARE_SIZE;
 const LABEL_ROOM = 6 * SQUARE_SIZE; // above each session, for its name
+const SLOT_GAP = 6 * SQUARE_SIZE; // between one time slot and the next
+const SLOT_ROOM = 2 * SQUARE_SIZE; // under a slot's time, before its first session
 const DAY_GAP = 10 * SQUARE_SIZE; // holds the panel padding and the day label that stands to the left
 const DAY_WIDTH = PAPERS_PER_LINE * PAPER_COLUMNS * SQUARE_SIZE + (PAPERS_PER_LINE - 1) * PAPER_GAP;
 
@@ -101,7 +103,21 @@ export function computeLayout(structure: Structure): Layout {
 
   for (const day of structure.days) {
     let y = 0;
+    let slot: string | null = null;
     for (const session of day.sessions) {
+      if (session.start !== slot) {
+        slot = session.start;
+        y += (y > 0 ? SLOT_GAP : 0) + LABEL_ROOM;
+        books.push({
+          name: slot || 'No time given',
+          hebrewName: '',
+          section: day.name,
+          minX: x,
+          maxX: x + DAY_WIDTH,
+          minY: y,
+        });
+        y += SLOT_ROOM;
+      }
       y += LABEL_ROOM;
       books.push({
         name: session.name,
