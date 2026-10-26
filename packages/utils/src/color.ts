@@ -117,3 +117,36 @@ export function oklchToRgb(lightness: number, chroma: number, hue: number): Colo
     encode(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
   ];
 }
+
+/** A color as `oklchToRgb` takes it. */
+export interface OKLCH {
+  l: number;
+  c: number;
+  h: number;
+}
+
+export function rgbToOklch(color: Color): OKLCH {
+  const [r, g, b] = color.map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return {
+    l: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    c: Math.hypot(a, bb),
+    h: ((Math.atan2(bb, a) * 180) / Math.PI + 360) % 360,
+  };
+}
+
+/** The largest chroma that stays inside the screen's range at this lightness and hue. */
+export function maxChroma(lightness: number, hue: number): number {
+  let [low, high] = [0, 0.4];
+  for (let i = 0; i < 20; i++) {
+    const mid = (low + high) / 2;
+    const inside = oklchToRgb(lightness, mid, hue).every((v) => v >= -1e-4 && v <= 1 + 1e-4);
+    if (inside) low = mid;
+    else high = mid;
+  }
+  return low;
+}

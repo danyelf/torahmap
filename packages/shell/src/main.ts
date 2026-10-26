@@ -994,6 +994,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function activateOverlay(id: string): void {
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
+    document.body.dataset.overlay = currentOverlay?.id ?? NO_OVERLAY;
   }
 
   function renderOverlayLegend(): void {
@@ -1150,6 +1151,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       if (frame.full) setFrame({ ...frame, full: false });
       pinItem(item);
       glideToItem(item);
+    },
+    openOverlay: (overlay, update) => {
+      takeOver('takeover');
+      if (currentOverlay?.id !== overlay.id) {
+        overlaySettings.restore(overlay, {});
+        setOverlay(overlay.id);
+      }
+      changeSettings(overlay, update);
+      if (frame.mode === 'explore' && frame.open !== 'overlay') {
+        dispatch({ type: 'choose', panel: 'overlay' });
+      }
     },
     searchSettings: () => overlaySettings.get(searchTool),
     changeSearch: (update) => {

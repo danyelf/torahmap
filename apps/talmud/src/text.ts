@@ -28,7 +28,8 @@ import {
   TRACTATE_TAB,
 } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
-import { datingOverlay } from './overlays/dating.ts';
+import { datingOverlay, type RabbiLink } from './overlays/dating.ts';
+import { addPick, RABBIS_ID, RABBIS_URL_PARAMS, rabbisOverlay } from './overlays/rabbis.ts';
 import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
@@ -64,7 +65,7 @@ const WHOLE_MAP: Story = {
 const TALMUD_LINK_KEYS: LinkKeys = {
   square: 'at',
   search: TERM_SEARCH_PARAMS,
-  overlayParams: () => undefined,
+  overlayParams: (id) => (id === RABBIS_ID ? RABBIS_URL_PARAMS : undefined),
   // Low enough for the whole Talmud to fit across a phone.
   zoom: { min: 0.05, max: 10, start: 1 },
 };
@@ -95,8 +96,11 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         hadranLines(t).map((line) => talmudId({ tractate: t.name, ...line })),
       ),
     );
-    const baseColor = (item: TalmudLayoutItem) =>
-      hadrans.has(item.id) ? MAP_BACKGROUND : mishnahOrGemaraColor(structure, item);
+    const colorOf = (item: TalmudLayoutItem, quiet: boolean) =>
+      hadrans.has(item.id) ? MAP_BACKGROUND : mishnahOrGemaraColor(structure, item, quiet);
+    const baseColor = (item: TalmudLayoutItem) => colorOf(item, false);
+    const link: RabbiLink = {};
+    const rabbis = rabbisOverlay((item) => colorOf(item, true), link);
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
     /** Where a segment is in its tractate's files, which list segments by amud. */
@@ -166,11 +170,12 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         };
       },
 
-      overlays: [datingOverlay(baseColor)],
+      overlays: [datingOverlay(baseColor, link), rabbis],
 
       search: talmudSearch,
 
       start(shell) {
+        link.open = (id) => shell.openOverlay(rabbis, addPick(id));
         // Most hits are off screen, so a result travels to its segment as well as pinning it.
         configureSearch(laid.items, shell.pinAndGlide);
       },

@@ -1,0 +1,172 @@
+.rabbi-finder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rabbi-lists {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rabbi-suggestions,
+.rabbi-which,
+.rabbi-picked {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rabbi-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 8px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #1c1c1c;
+  color: #eee;
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.rabbi-row:hover {
+  border-color: #6ab0f3;
+}
+
+.rabbi-he {
+  color: #bbb;
+}
+
+.rabbi-line {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.rabbi-meta {
+  color: #888;
+  font-size: 11px;
+}
+
+.rabbi-note {
+  color: #999;
+  font-size: 12px;
+}
+
+.rabbi-which .panel-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rabbi-picked-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.rabbi-picked-row .swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.rabbi-picked-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rabbi-era {
+  margin-top: 6px;
+}
+
+.rabbi-era-name {
+  color: #999;
+  font-size: 11px;
+}
+
+.rabbi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.rabbi-chip {
+  padding: 2px 8px;
+  border: 1px solid #444;
+  border-radius: 10px;
+  background: none;
+  color: #ddd;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .rabbi-chip {
+    min-height: 24px;
+  }
+}
+
+.rabbi-chip:hover:not(:disabled) {
+  border-color: #6ab0f3;
+}
+
+.rabbi-chip.on {
+  border-color: #666;
+  color: #888;
+}
+
+.rabbi-chip:disabled {
+  cursor: default;
+}
+
+/* A rabbi's name in a pinned passage, which opens him on the Rabbis map. */
+.rabbi-name {
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .rabbi-name {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+  }
+}
+
+.rabbi-name:hover {
+  color: #6ab0f3;
+}
+
+.rabbi-entry {
+  display: block;
+}
+
+.rabbi-entry .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-inline-end: 4px;
+  border-radius: 2px;
+}
+
+.rabbi-entry.picked {
+  font-weight: 600;
+}

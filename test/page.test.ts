@@ -2,6 +2,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { MAP_BACKGROUND } from '@torahmap/engine';
+import { colorToCss } from '@torahmap/utils';
 import { fillPage } from '../packages/shell/src/app/page.ts';
 import { PAGES, pageAt } from '../pages.ts';
 import { tanakhText } from '@torahmap/tanakh/text.ts';
@@ -40,6 +42,12 @@ describe.each(PAGES)('the page at $path', ({ copy, entry }) => {
 
   it('leaves no placeholder unfilled', () => {
     expect(page).not.toMatch(/%[A-Z_]+%/);
+  });
+
+  it('has the map’s background behind it', () => {
+    expect(page).toContain(
+      `<body data-mode="story" style="background: ${colorToCss(MAP_BACKGROUND)}">`,
+    );
   });
 
   it('is titled with its site’s name, and runs its own text', () => {

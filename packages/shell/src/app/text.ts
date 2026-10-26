@@ -14,7 +14,7 @@ import type { Story, StoryStop } from '@torahmap/stories';
 import type { Credit } from '../credits.ts';
 import type { PageCopy } from './page.ts';
 import type { Loaded } from '../dataFiles.ts';
-import type { Overlay, ToolOnMap } from '../overlays/types.ts';
+import type { Overlay, SettingsUpdate, ToolOnMap } from '../overlays/types.ts';
 import type { SearchTool } from './search.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { PopupText } from '../sidebar.ts';
@@ -122,6 +122,11 @@ export interface Shell<I extends MapItem, S = unknown> {
   holdPopup(): () => void;
   /** Pin a square and travel to it, as a search result does. */
   pinAndGlide(item: I): void;
+  /**
+   * Show `overlay` with its settings changed by `update`, and open its panel. An overlay not
+   * showing starts from its default settings.
+   */
+  openOverlay<O>(overlay: Overlay<I, O>, update: SettingsUpdate<O>): void;
   /** The text's stories changed, as they do when one is edited on the dev server. */
   storiesChanged(list: readonly Story[]): void;
 }

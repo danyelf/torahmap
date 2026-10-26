@@ -1,14 +1,20 @@
 #!/usr/bin/env tsx
-// Build public/data/talmud/dating.json from the facts sefaria-dating-facts.py reads out of
-// Sefaria's database dump:
+// Build public/data/talmud/dating.json from the facts sefaria-dating-facts.py
+// reads out of Sefaria's database dump:
 //
 //   uv run scripts/talmud/sefaria-dating-facts.py <dump dir> <facts.json>
 //   node scripts/talmud/dating.ts <facts.json>
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { DatedSegment, Generation, Person, TalmudDating } from '@torahmap/talmud/dating.ts';
-import { DATING_FILE } from '@torahmap/talmud/dating.ts';
+import type {
+  DatedSegment,
+  Generation,
+  Person,
+  Rabbi,
+  TalmudDating,
+} from '@torahmap/talmud/dating.ts';
+import { DATING_FILE, isSure, UNDATED } from '@torahmap/talmud/dating.ts';
 import {
   STRUCTURE_FILE,
   textsFile,
@@ -16,31 +22,10 @@ import {
   type TalmudTractateText,
 } from '@torahmap/talmud/data.ts';
 import { talmudId } from '@torahmap/talmud/layout.ts';
+import { isAmbiguous, latestGeneration, type Facts, type Mention } from './facts.ts';
 
 /** The edition the map shows, whose character positions the tags use. */
 const EDITION = 'William Davidson Edition - Aramaic';
-
-/** A generation, as opposed to the other kinds of period Sefaria codes. */
-const GENERATION_CODE = /^(?:[ZTA]\d|TA)$/;
-
-export interface Mention {
-  ref: string;
-  topic: string;
-  language: string | null;
-  version: string | null;
-  start: number | null;
-  end: number | null;
-  /** The tagged words as the dump's edition spells them. */
-  text: string | null;
-}
-
-export interface Facts {
-  mentions: Mention[];
-  /** An ambiguous topic's possible people. */
-  candidates: Record<string, string[]>;
-  topics: Record<string, { en: string | null; he: string | null; generation: string | null }>;
-  periods: Record<string, { from: number; to: number }>;
-}
 
 const REF = /^(.+) (\d+)([ab]):(\d+)(.*)$/;
 /** How far from its tagged position a name may be found in the map's own text. */
@@ -64,8 +49,30 @@ function spellings(word: string): string {
   return `[בכלמשוהד]{0,3}(?:${full}${abbreviations}|(?<=א")ר)`;
 }
 
-/** Where `mention`'s words stand in `line`: at its tagged position, else the nearest spelling of them within NEARBY. */
+/** Vowel points, accents and the like: the tags count the text without them, the map shows it with. */
+const MARKS = /[֑-ׇֽֿׁׂׅׄ]/;
+
+/** Where `mention`'s words stand in `line`, which may be vowelled: at its tagged position, else the nearest spelling of them within NEARBY. */
 export function placeIn(
+  line: string,
+  mention: Mention,
+): { start: number; end: number; exact: boolean } | null {
+  const origin: number[] = [];
+  let bare = '';
+  for (let i = 0; i < line.length; i++) {
+    if (MARKS.test(line[i])) continue;
+    origin.push(i);
+    bare += line[i];
+  }
+  const found = placeInBare(bare, mention);
+  if (!found) return null;
+  // The end takes the marks that follow its last letter.
+  let end = origin[found.end - 1] + 1;
+  while (end < line.length && MARKS.test(line[end])) end++;
+  return { start: origin[found.start], end, exact: found.exact };
+}
+
+function placeInBare(
   line: string,
   { start, end, text }: Mention,
 ): { start: number; end: number; exact: boolean } | null {
@@ -95,20 +102,17 @@ export function datingFrom(
 ): TalmudDating {
   const { periods, topics, candidates } = facts;
 
-  /** The latest generation a code names, "A2/A3" being A3; null for a code that is none. */
-  const latestOf = (code: string | null | undefined): string | null => {
-    const parts = (code ?? '').split('/').filter((c) => GENERATION_CODE.test(c) && periods[c]);
-    return parts.sort((a, b) => periods[b].from - periods[a].from)[0] ?? null;
-  };
-
-  const isAmbiguous = (slug: string) => slug.endsWith('(ambiguous)');
   const generationOf = (slug: string): string | null =>
     isAmbiguous(slug)
       ? ((candidates[slug] ?? [])
-          .map((c) => latestOf(topics[c]?.generation))
+          .map((c) => latestGeneration(topics[c]?.generation, periods))
           .filter((c): c is string => c !== null)
           .sort((a, b) => periods[b].from - periods[a].from)[0] ?? null)
-      : latestOf(topics[slug]?.generation);
+      : latestGeneration(topics[slug]?.generation, periods);
+
+  /** The people a name can mean: a shared name, any of its candidates, dated or not. */
+  const meant = (slug: string): string[] => (isAmbiguous(slug) ? (candidates[slug] ?? []) : [slug]);
+  const sure = (slug: string) => isSure({ means: meant(slug) });
 
   const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
   const byId = new Map<string, Mention[]>();
@@ -140,16 +144,16 @@ export function datingFrom(
     { code: string; uncertain: boolean; slugs: string[]; shown: Mention[] }
   >();
   for (const [id, mentions] of byId) {
-    const dated = mentions.filter((m) => !isAmbiguous(m.topic) && generationOf(m.topic));
-    const ambiguous = mentions.filter((m) => isAmbiguous(m.topic) && generationOf(m.topic));
+    const dated = mentions.filter((m) => sure(m.topic) && generationOf(m.topic));
+    const shared = mentions.filter((m) => !sure(m.topic) && generationOf(m.topic));
     const uncertain = dated.length === 0;
-    // Only resolved names date a passage that has any; its ambiguous names are listed, not counted.
-    const pool = uncertain ? ambiguous : dated;
+    // Only certain names date a passage that has any; its shared names are listed, not counted.
+    const pool = uncertain ? shared : dated;
     if (pool.length === 0) continue;
     const code = pool
       .map((m) => generationOf(m.topic)!)
       .sort((a, b) => periods[b].from - periods[a].from)[0];
-    const listed = [...dated, ...ambiguous];
+    const listed = [...dated, ...shared];
     // A title tagged as its own person inside a fuller name stays out of the list.
     const inside = (m: Mention) =>
       listed.some(
@@ -180,11 +184,29 @@ export function datingFrom(
   }));
   const placeOfCode = new Map(codes.map((c, i) => [c, i]));
 
+  const ids = [...new Set(slugs.flatMap(meant))].sort();
+  const placeOfRabbi = new Map(ids.map((id, i) => [id, i]));
+  // A shared name can be said of each person it may mean.
+  const sharedNames = new Map<string, string[]>();
+  for (const [name, people] of Object.entries(candidates)) {
+    for (const id of people) {
+      sharedNames.set(id, [...(sharedNames.get(id) ?? []), ...(topics[name]?.names ?? [])]);
+    }
+  }
+  const rabbis: Rabbi[] = ids.map((id) => ({
+    id,
+    en: topics[id].en ?? id,
+    he: topics[id].he ?? '',
+    gen: latestGeneration(topics[id].generation, periods) ?? UNDATED,
+    names: [...new Set([...topics[id].names, ...(sharedNames.get(id) ?? [])])].sort(),
+  }));
+
   const people: Person[] = slugs.map((slug) => ({
+    id: slug,
     en: topics[slug].en ?? slug,
     he: topics[slug].he ?? '',
     gen: placeOfCode.get(generationOf(slug)!)!,
-    ...(isAmbiguous(slug) ? { ambiguous: true as const } : {}),
+    means: meant(slug).map((id) => placeOfRabbi.get(id)!),
   }));
   const placeOfSlug = new Map(slugs.map((s, i) => [s, i]));
 
@@ -220,7 +242,7 @@ export function datingFrom(
       }
     }
   }
-  return { generations, people, segments };
+  return { generations, people, rabbis, segments };
 }
 
 async function main() {
@@ -248,6 +270,7 @@ async function main() {
   console.log(
     `names marked in the text: ${placement.exact} exactly, ${placement.nearby} nearby, ${placement.dropped} not found or overlapping`,
   );
+  console.log(`${dating.rabbis.length} rabbis to pick`);
   for (const g of dating.generations) console.log(`  ${g.code} ${g.from} to ${g.to}`);
 }
 

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { talmudFixture } from '../../../apps/talmud/test/helpers/talmudFixture.ts';
-import { datingFrom, placeIn, type Facts, type Mention, type Placement } from '../dating.ts';
+import { datingFrom, placeIn, type Placement } from '../dating.ts';
+import { UNDATED } from '@torahmap/talmud/dating.ts';
+import type { Facts, Mention } from '../facts.ts';
 
 const ARAMAIC = 'William Davidson Edition - Aramaic';
 
@@ -12,7 +14,7 @@ const periods: Facts['periods'] = {
   'A2/A3': { from: 250, to: 320 },
 };
 
-const topics: Facts['topics'] = {
+const named: Record<string, Omit<Facts['topics'][string], 'names'>> = {
   meir: { en: 'Rabbi Meir', he: 'רבי מאיר', generation: 'T5' },
   rava: { en: 'Rava', he: 'רבא', generation: 'A4' },
   abaye: { en: 'Abaye', he: 'אביי', generation: 'A4' },
@@ -25,6 +27,10 @@ const topics: Facts['topics'] = {
   'elazar-a': { en: 'Elazar b. Shammua', he: 'אלעזר בן שמוע', generation: 'T5' },
   'elazar-b': { en: 'Elazar b. Pedat', he: 'אלעזר בן פדת', generation: 'A3' },
 };
+
+const topics: Facts['topics'] = Object.fromEntries(
+  Object.entries(named).map(([slug, topic]) => [slug, { ...topic, names: [] }]),
+);
 
 const candidates = { 'elazar-(ambiguous)': ['elazar-a', 'elazar-b'] };
 
@@ -184,6 +190,14 @@ describe('datingFrom', () => {
     expect(placeIn('אמר רב', rav)).toMatchObject({ start: 4, end: 6 });
   });
 
+  it('places a tag, which counts the bare letters, on a vowelled line, marks included', () => {
+    const rava = mention('TractA 2a:1', 'rava', { start: 4, end: 7, text: 'רבא' });
+    const line = 'אָמַר רָבָא, אָמַר';
+    const at = placeIn(line, rava)!;
+    expect(line.slice(at.start, at.end)).toBe('רָבָא');
+    expect(at.exact).toBe(true);
+  });
+
   it('finds a name whose prefix the map spells differently', () => {
     const named = mention('TractA 2a:1', 'meir', { start: 2, end: 12, text: 'לרבי יוסי' });
     expect(placeIn('אמר רבי יוסי', named)).toMatchObject({ start: 4 });
@@ -223,5 +237,83 @@ describe('datingFrom', () => {
 
   it('stops on a segment the map does not have', () => {
     expect(() => build([mention('TractA 2a:6', 'rava')])).toThrow(/segment/i);
+  });
+});
+
+describe('the rabbis and who each name can mean', () => {
+  const people = (slugs: string[]) =>
+    datingFrom(
+      {
+        mentions: slugs.map((slug, i) =>
+          mention('TractA 2a:1', slug, { start: i * 10, end: i * 10 + 4 }),
+        ),
+        periods,
+        topics: {
+          ...topics,
+          rava: { ...topics.rava, names: ['Rava', 'Raba'] },
+          'elazar-(ambiguous)': { ...topics['elazar-(ambiguous)'], names: ['Elazar'] },
+          'solo-(ambiguous)': { en: 'Solo', he: '', generation: null, names: [] },
+          'elazar-c': { en: 'Elazar the unplaced', he: '', generation: null, names: [] },
+          'lone-(ambiguous)': { en: 'Lone', he: '', generation: null, names: [] },
+          'mixed-(ambiguous)': { en: 'Mixed', he: '', generation: null, names: [] },
+        },
+        candidates: {
+          'elazar-(ambiguous)': ['elazar-a', 'elazar-b', 'elazar-c'],
+          'solo-(ambiguous)': ['meir'],
+          'lone-(ambiguous)': ['elazar-c'],
+          'mixed-(ambiguous)': ['elazar-a', 'elazar-c'],
+        },
+      },
+      talmudFixture,
+      texts,
+    );
+  const dating = people(['rava', 'elazar-(ambiguous)', 'solo-(ambiguous)', 'mixed-(ambiguous)']);
+  const ids = dating.rabbis.map((r) => r.id);
+  const meaning = (slug: string) =>
+    dating.people.find((p) => p.id === slug)!.means.map((place) => ids[place]);
+
+  it('makes rabbis of the people a listed name can mean, those with no generation included', () => {
+    expect(ids).toEqual(['elazar-a', 'elazar-b', 'elazar-c', 'meir', 'rava']);
+  });
+
+  it('reads a plain name as the person himself', () => {
+    expect(meaning('rava')).toEqual(['rava']);
+  });
+
+  it('reads a shared name as each of its candidates, dated or not', () => {
+    expect(meaning('elazar-(ambiguous)')).toEqual(['elazar-a', 'elazar-b', 'elazar-c']);
+  });
+
+  it('reads a shared name with one candidate as that person', () => {
+    expect(meaning('solo-(ambiguous)')).toEqual(['meir']);
+  });
+
+  it('dates a segment by a shared name with one candidate as it would the person', () => {
+    expect(people(['solo-(ambiguous)']).segments['TractA.2a.1'][1]).toBe(0);
+  });
+
+  it('gives a rabbi the names of the shared names that can mean him', () => {
+    expect(dating.rabbis[ids.indexOf('elazar-a')].names).toContain('Elazar');
+  });
+
+  it('gives a rabbi every name Sefaria records for him', () => {
+    expect(dating.rabbis[ids.indexOf('rava')].names).toEqual(['Raba', 'Rava']);
+  });
+
+  it('gives each rabbi his generation code', () => {
+    expect(dating.rabbis[ids.indexOf('elazar-b')].gen).toBe('A3');
+  });
+
+  it('marks a rabbi with no generation as undated', () => {
+    expect(dating.rabbis[ids.indexOf('elazar-c')].gen).toBe(UNDATED);
+  });
+
+  it('keeps a shared name uncertain when one of its candidates is undated', () => {
+    expect(meaning('mixed-(ambiguous)')).toEqual(['elazar-a', 'elazar-c']);
+    expect(people(['mixed-(ambiguous)']).segments['TractA.2a.1'][1]).toBe(1);
+  });
+
+  it('does not date a passage by a name that can mean only an undated rabbi', () => {
+    expect(people(['lone-(ambiguous)']).segments).toEqual({});
   });
 });

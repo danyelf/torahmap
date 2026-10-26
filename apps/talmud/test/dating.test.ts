@@ -23,9 +23,15 @@ const dating: TalmudDating = {
     { code: 'A4', from: 320, to: 350 },
   ],
   people: [
-    { en: 'Rabbi Meir', he: 'רבי מאיר', gen: 0 },
-    { en: 'Rava', he: 'רבא', gen: 2 },
-    { en: 'Rabbi Elazar', he: 'ר"א', gen: 1, ambiguous: true },
+    { id: 'meir', en: 'Rabbi Meir', he: 'רבי מאיר', gen: 0, means: [0] },
+    { id: 'rava', en: 'Rava', he: 'רבא', gen: 2, means: [1] },
+    { id: 'elazar-(ambiguous)', en: 'Rabbi Elazar', he: 'ר"א', gen: 1, means: [2, 3] },
+  ],
+  rabbis: [
+    { id: 'meir', en: 'Rabbi Meir', he: 'רבי מאיר', gen: 'T5', names: [] },
+    { id: 'rava', en: 'Rava', he: 'רבא', gen: 'A4', names: [] },
+    { id: 'elazar-a', en: 'Rabbi Elazar', he: 'ר"א', gen: 'T5', names: [] },
+    { id: 'elazar-b', en: 'Rabbi Elazar', he: 'ר"א', gen: 'A2', names: [] },
   ],
   segments: {
     'A.2a.1': [0, 0, [0], [0, 3, 0]],
@@ -43,6 +49,22 @@ const colour = (id: string) =>
   overlay.getItemColor(item(id), undefined as never, { dating }) as number[];
 
 describe('the dating overlay', () => {
+  it('links a shared name that can mean one person to that person', () => {
+    const solo: TalmudDating = {
+      ...dating,
+      people: [{ id: 'meir-(ambiguous)', en: 'Meir', he: 'מאיר', gen: 0, means: [0] }],
+      segments: { 'A.2a.1': [0, 0, [0], []] },
+    };
+    const opened: string[] = [];
+    const linked = datingOverlay(base, { open: (id) => opened.push(id) });
+    const box = linked.renderSidebarInfo?.(item('A.2a.1'), true, undefined as never, {
+      dating: solo,
+    }) as HTMLElement;
+    box.querySelector<HTMLButtonElement>('.rabbi-name')!.click();
+    expect(opened).toEqual(['meir']);
+    expect(box.textContent).not.toContain('?');
+  });
+
   it('gives each generation its own colour', () => {
     const colours = ['A.2a.1', 'A.2a.2'].map(colour);
     expect(colours[0]).not.toEqual(colours[1]);
@@ -265,14 +287,15 @@ describe('the shipped dating file', () => {
   });
 
   it('points every segment at a generation and every rabbi it lists', () => {
-    for (const [generation, , people, spans] of Object.values(shipped.segments)) {
-      expect(shipped.generations[generation]).toBeDefined();
-      for (const p of people) expect(shipped.people[p]).toBeDefined();
+    const broken: string[] = [];
+    for (const [id, [generation, , people, spans]] of Object.entries(shipped.segments)) {
+      if (!shipped.generations[generation]) broken.push(`${id} generation`);
+      if (people.some((p) => !shipped.people[p])) broken.push(`${id} person`);
       for (let i = 0; i < spans.length; i += 3) {
-        expect(spans[i]).toBeLessThan(spans[i + 1]);
-        expect(people).toContain(spans[i + 2]);
+        if (!(spans[i] < spans[i + 1]) || !people.includes(spans[i + 2])) broken.push(`${id} span`);
       }
     }
+    expect(broken).toEqual([]);
     for (const person of shipped.people) expect(shipped.generations[person.gen]).toBeDefined();
   });
 });

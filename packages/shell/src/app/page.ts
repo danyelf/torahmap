@@ -1,6 +1,7 @@
 // A text's page: index.html, filled from its copy.
 
-import { escapeHtml } from '@torahmap/utils';
+import { MAP_BACKGROUND } from '@torahmap/engine';
+import { colorToCss, escapeHtml } from '@torahmap/utils';
 
 /** What a text's page says before the map runs, and to link previews; plain text throughout. */
 export interface PageCopy {
@@ -41,6 +42,7 @@ export function fillPage(html: string, copy: PageCopy, entry: string): string {
     TEXT_URL: escapeHtml(copy.textUrl),
     TEXT_SOURCE: escapeHtml(copy.textSource),
     ENTRY: escapeHtml(entry),
+    MAP_BACKGROUND: colorToCss(MAP_BACKGROUND),
   };
   return html.replace(/%([A-Z_]+)%/g, (whole, name: string) => fills[name] ?? whole);
 }
