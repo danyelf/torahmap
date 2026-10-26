@@ -201,6 +201,16 @@ describe('the finder', () => {
     return { container, type, changes, rows: () => [...container.querySelectorAll('.rabbi-row')] };
   }
 
+  it('labels a picked rabbi as it labels a suggestion, and the legend does too', () => {
+    const finder = open(picking('yochanan'));
+    const picked = finder.container.querySelector('.rabbi-picked-row')!;
+    expect(picked.textContent).toContain('Rabbi Yochanan');
+    expect(picked.textContent).toContain('2nd-gen Amora, 250–290');
+    const legend = document.createElement('div');
+    overlay.renderLegend!(legend, picking('yochanan'), data);
+    expect(legend.querySelector('.legend-row')!.textContent).toContain('2nd-gen Amora, 250–290');
+  });
+
   it('labels each suggestion with its rabbi’s generation and years', () => {
     const finder = open();
     finder.type('yoch');

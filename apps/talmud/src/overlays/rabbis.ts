@@ -5,7 +5,7 @@ import type { Overlay, SettingsUpdate, UrlParamSpec } from '@torahmap/shell/over
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { colorToCss, type Color } from '@torahmap/utils';
-import { DATING_FILE, type Rabbi } from '../dating.ts';
+import { DATING_FILE, type Rabbi, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE } from '../constants.ts';
 import { fadeTo, markNames, nameFor, row, type RabbiLink } from './dating.ts';
@@ -118,11 +118,12 @@ export function rabbisOverlay(
     });
   }
 
-  const rabbiLine = (rabbi: Rabbi, era?: string): HTMLElement => {
+  /** A rabbi as every list of rabbis shows him: his names, then his generation and years. */
+  const rabbiLine = (rabbi: Rabbi, dating: TalmudDating): HTMLElement => {
     const line = document.createElement('span');
     line.className = 'rabbi-line';
     line.append(span('rabbi-en', rabbi.en), ' ', span('rabbi-he', rabbi.he, 'he'));
-    if (era) line.append(span('rabbi-era-line', `, ${era}`));
+    line.append(span('rabbi-era-line', `, ${eraLine(rabbi, dating)}`));
     return line;
   };
 
@@ -138,10 +139,7 @@ export function rabbisOverlay(
     const row = document.createElement('button');
     row.type = 'button';
     row.className = 'rabbi-row';
-    row.append(
-      rabbiLine(rabbi, eraLine(rabbi, data.dating)),
-      span('rabbi-meta', passageCounts(sure, maybe)),
-    );
+    row.append(rabbiLine(rabbi, data.dating), span('rabbi-meta', passageCounts(sure, maybe)));
     if (matched) row.append(span('rabbi-meta', `also written ${matched.replace(/^#/, '')}`));
     row.addEventListener('click', onClick);
     return row;
@@ -214,7 +212,7 @@ export function rabbisOverlay(
         remove.addEventListener('click', () => onChange(removePick(rabbi.id)));
         const text = document.createElement('div');
         text.className = 'rabbi-picked-text';
-        text.append(rabbiLine(rabbi), span('rabbi-meta', passageCounts(sure, maybe)));
+        text.append(rabbiLine(rabbi, data.dating), span('rabbi-meta', passageCounts(sure, maybe)));
         row.append(swatch(colors[i]), text, remove);
         chosen.append(row);
       });
@@ -337,10 +335,17 @@ export function rabbisOverlay(
       }
       const colors = pickColors(places.map((p) => data.dating.rabbis[p]));
       container.innerHTML = [
-        ...places.map((place, i) => row(colors[i], data.dating.rabbis[place].en)),
         row(faded(colors[0]), 'Faded: a name that might be him'),
         row(fadeTo(GEMARA_BASE_COLOR, SEARCH_KEEPS_BASE), 'Names none of them'),
       ].join('');
+      container.prepend(
+        ...places.map((place, i) => {
+          const line = document.createElement('div');
+          line.className = 'legend-row';
+          line.append(swatch(colors[i]), rabbiLine(data.dating.rabbis[place], data.dating));
+          return line;
+        }),
+      );
     },
 
     summary(settings, data) {
