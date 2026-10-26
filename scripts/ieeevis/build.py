@@ -14,11 +14,15 @@ its first piece. Section letters per piece: a abstract, i introduction, r relate
 m method, e evaluation, d discussion, c conclusion, f references, o other, x no text.
 """
 
+import gzip
 import html
+import io
 import json
 import re
 import subprocess
 import sys
+import tarfile
+import tempfile
 from pathlib import Path
 
 PIECE_WORDS = 250
@@ -196,6 +200,83 @@ def read_pdf(pdf: Path) -> list[tuple[str, str]]:
         ['pdftotext', str(pdf), '-'], capture_output=True, text=True, check=True
     ).stdout
     return cut_pieces(words_with_sections(re.sub(r'(\w)-\n(\w)', r'\1\2', raw)))
+
+
+# ---- Reading an arXiv source ---------------------------------------------------------------
+
+PANDOC_TEMPLATE = 'ABSTRACT_START\n$abstract$\nABSTRACT_END\n$body$\n'
+
+
+def unpack_source(blob: bytes, into: Path) -> Path | None:
+    """The main .tex file of an arXiv source download (a tar.gz, or one gzipped .tex)."""
+    try:
+        with tarfile.open(fileobj=io.BytesIO(blob), mode='r:*') as tar:
+            tar.extractall(into, filter='data')
+    except tarfile.TarError:
+        try:
+            (into / 'main.tex').write_bytes(gzip.decompress(blob))
+        except OSError:
+            return None
+    mains = [
+        (f, f.read_text(errors='replace'))
+        for f in into.rglob('*.tex')
+    ]
+    # A paper's main file pulls the others in; a standalone appendix may be larger but does not.
+    mains = [(f, t) for f, t in mains if r'\begin{document}' in t]
+    return max(mains, key=lambda ft: (len(re.findall(r'\\(?:input|include)\b', ft[1])), len(ft[1])))[0] if mains else None
+
+
+def markdown_words(md: str) -> list[tuple[str, str]]:
+    """(word, section letter) from pandoc's markdown of a paper: the abstract, then the body,
+    whose top-level headings (# ...) are the paper's own sections."""
+    md = re.sub(r'!\[[^\]]*\]\([^)]*\)(\{[^}]*\})?', ' ', md)  # figures
+    md = re.sub(r'\[@[^\]]*\]|\[[^\]]*\]\{\.[^}]*\}', ' ', md)  # citations
+    md = re.sub(r'\[(?:[^\]\\]|\\.)*\]\(#[^)]*\)(\{[^}]*\})?', ' ', md)  # cross-references
+    md = re.sub(r'\[([^\]]*)\]\([^)]*\)', r'\1', md)  # links keep their text
+    md = re.sub(r'\$\$.*?\$\$|\$[^$\n]*\$', ' ', md, flags=re.S)  # math
+    md = re.sub(r'\{[#.][^}]*\}|^:::.*$|^[\s|+=:-]+$|^\|.*$', ' ', md, flags=re.M)
+    md = re.sub(r'\\([^\w\s])', r'\1', md)
+    head, _, rest = md.partition('ABSTRACT_END')
+    abstract = head.replace('ABSTRACT_START', '')
+    # Text before the first heading is the abstract, whatever macro the paper's template set it in.
+    section = 'a'
+    out = [(w, section) for w in abstract.split()]
+    front: list[str] = []
+    for line in rest.split('\n'):
+        m = re.match(r'^#\s+(.*?)\s*$', line)
+        if m:
+            if section == 'a' and not out:
+                out = [(w, 'a') for w in front[-PIECE_WORDS:]]
+            section = classify(m.group(1), section)
+            continue
+        if section == 'a' and not out:
+            front.extend(line.split())
+            continue
+        if line.startswith('#'):  # subsections belong to their section
+            continue
+        line = re.sub(r'\s+([.,;:!?)])', r'\1', re.sub(r'[*_`>]', '', line))
+        out.extend((w, section) for w in line.split())
+    return out
+
+
+def read_source(blob: bytes) -> list[tuple[str, str]] | None:
+    """Pieces from an arXiv source download, or None when it will not convert."""
+    with tempfile.TemporaryDirectory() as tmp:
+        main = unpack_source(blob, Path(tmp))
+        if not main:
+            return None
+        template = Path(tmp) / 'abstract-first.md'
+        template.write_text(PANDOC_TEMPLATE)
+        try:
+            md = subprocess.run(
+                ['pandoc', main.name, '-f', 'latex', '-t', 'markdown-smart', '--wrap=none',
+                 f'--template={template}', '-s'],
+                cwd=main.parent, capture_output=True, text=True, timeout=60, check=True,
+            ).stdout
+        except (subprocess.SubprocessError, OSError):
+            return None
+    words = markdown_words(md)
+    return cut_pieces(words) if len(words) > 500 else None
 
 
 # ---- The program --------------------------------------------------------------------------
