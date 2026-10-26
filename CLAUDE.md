@@ -41,7 +41,7 @@ npm run test:browser   # the browser suites the branch's changes can break; -- -
 ```
 
 Run `npm run test:browser` before opening or updating a PR: it reads the files changed since
-`origin/main` and runs the layout suite (`test:layout`, about four minutes), the loading suite
+`origin/main` and runs the layout suite (`test:layout`, a minute or two), the loading suite
 (`test:loading`) or both, by the rules in `scripts/test-browser.ts`. While working, run only the
 layout states a change touches (`npm run test:layout -- -g <name>`). Run the loading suite by hand
 after changing what `main.ts` asks of the loader and `viewFiles.ts` (the comment above

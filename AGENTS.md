@@ -22,7 +22,7 @@ gh issue comment <N> --body "🤖 Claude: working on this in branch \`$(git bran
 If you stop without opening a PR, remove the label (`gh issue edit <N> --remove-label in-progress`).
 
 **UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until
-Danyel has looked at it and agreed it's ready to close. Run `npm run test:browser` first, and embed in
+Danyel has looked at it and agreed it's ready to close. Run `npm run test:browser` first, then `npm run test:layout:shots` (about five minutes), and embed in
 the PR the screenshots it writes to `layout-report/shots/` for the states the change touches: commit
 them and link them by commit-pinned URL, since relative image paths 404 until the PR merges.
 Cloudflare builds every pull request and gives it a public `workers.dev` link, which is how he looks

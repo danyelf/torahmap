@@ -1,5 +1,6 @@
 // What the reader's actions record.
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../browser/fakeMap.ts';
 import {
   allLoaded,
   collectErrors,

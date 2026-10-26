@@ -11,12 +11,12 @@ skips silently. See `scripts/install-hooks.sh` for what else it checks and when 
 ## Layout tests
 
 `npm run test:layout` tests the interface for layout in a real browser, at four screen sizes, from
-a phone to a desktop. It renders the map with software WebGL, and checks every state in `test/layout/app.ts`: no control
+a phone to a desktop. It draws no map (see `test/browser/fakeMap.ts`), and checks every state in `test/layout/app.ts`: no control
 off screen; the panel, the zoom buttons and the verse popup clear of each other, and the panel
 clear of the map; no clipped text; on the touch screens (tablet and phone), touch targets at least
-24×24 (WCAG 2.2 AA); the elements each state must show, shown in full; and a map that actually
-drew. Text ending in a deliberate ellipsis counts as fitting. `test/layout/known.ts` lists the
-failures accepted for now, what each measures and why. It ends by writing
+24×24 (WCAG 2.2 AA); the elements each state must show, shown in full; and, on the few checks
+that read pixels, a map that actually drew. Text ending in a deliberate ellipsis counts as fitting. `test/layout/known.ts` lists the
+failures accepted for now, what each measures and why. `npm run test:layout:shots` draws the real map with software WebGL and writes
 `layout-report/index.html`, every state at every size side by side.
 
 It runs on four workers, too long for the pre-commit hook.

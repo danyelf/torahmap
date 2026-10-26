@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Page, type TestInfo } from '@playwright/test';
 import type { Box, Shown } from './geometry.ts';
 import { DESKTOP_AND_PHONE, DESKTOP_TABLET_AND_PHONE } from '../browser/screens.ts';
 import { VISITED_KEY } from '../../packages/shell/src/visits.ts';
@@ -164,4 +164,12 @@ export async function closeFromLegend(page: Page, panel: 'search' | 'overlay'): 
   await page.goBack();
   await expect(row).toBeVisible();
   await expect.poll(inLink).toBe(before);
+}
+
+/** Attaches a screenshot for the contact sheet, only on the run that asks for them (SCREENSHOTS). */
+export async function attachScreenshot(page: Page, info: TestInfo): Promise<void> {
+  if (!process.env.SCREENSHOTS) return;
+  const shot = info.outputPath('screen.png');
+  await page.screenshot({ path: shot });
+  await info.attach('layout', { path: shot, contentType: 'image/png' });
 }

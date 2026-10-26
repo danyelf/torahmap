@@ -1,7 +1,8 @@
 // The AI Act's page, at /euaiact/: it draws, keeps the layout rules the Tanakh's page keeps, and a
 // pinned square shows its text.
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../browser/fakeMap.ts';
 import { ACT_STATES } from './app.ts';
 import { testStates } from './check.ts';
 import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
@@ -52,7 +53,7 @@ test('a recital is pinned by a click on its right half', async ({ page }) => {
 
 test.describe('on a dense screen', () => {
   // A ring is 2.5 CSS pixels; at three device pixels to each, a thin edge is several pixels thin.
-  test.use({ deviceScaleFactor: 3 });
+  test.use({ deviceScaleFactor: 3, realMap: true });
 
   test('a search hit on a recital is ringed as thick along its top as down its side', async ({
     page,
