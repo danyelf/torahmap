@@ -18,6 +18,8 @@ import { ieeevisSite } from './site.ts';
 const DAY_LABEL_SIZE = { fontSize: 14, gapEm: 0.5 };
 const SESSION_TAB = { fontSize: 12, above: 28, inset: 4, minPx: 7 };
 const SESSION_NAME_LENGTH = 40;
+/** The popup's heading fits one line at this length, beside "(30/57)" and the link out. */
+const POPUP_TITLE_LENGTH = 32;
 
 const WHOLE_MAP: Story = {
   id: 'ieeevis',
@@ -43,8 +45,8 @@ const LINK_KEYS: LinkKeys = {
   zoom: { min: 0.08, max: 12, start: 1 },
 };
 
-const short = (name: string) =>
-  name.length > SESSION_NAME_LENGTH ? `${name.slice(0, SESSION_NAME_LENGTH - 1)}…` : name;
+const short = (name: string, length: number) =>
+  name.length > length ? `${name.slice(0, length - 1).trimEnd()}…` : name;
 
 export const ieeevisText: MapText<PieceItem, TermSettings> = {
   site: ieeevisSite,
@@ -69,7 +71,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
 
       labels(container) {
         return createMapLabels(
-          laid.books.map((book) => ({ ...book, name: short(book.name) })),
+          laid.books.map((book) => ({ ...book, name: short(book.name, SESSION_NAME_LENGTH) })),
           container,
           {
             sectionNames: Object.fromEntries(
@@ -84,10 +86,9 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
 
       popupText(item, loadedFiles) {
         const texts = loadedFiles.get(TEXTS_FILE) as PaperTexts | undefined;
-        const of = item.paper.pieces.length;
-        const note = isPlaceholder(item) ? ' · no text yet' : '';
+        const { title, pieces } = item.paper;
         return {
-          ref: `${item.paper.kind} · piece ${item.piece + 1} of ${of}${note}`,
+          ref: `${short(title, POPUP_TITLE_LENGTH)} (${item.piece + 1}/${pieces.length})`,
           hebrew: '',
           english: squareBody(item, texts?.[item.id]),
           link: 'https://ieeevis.org/',

@@ -1,4 +1,4 @@
-// Every piece's text, with its paper's title, authors and session.
+// Every piece’s text; a paper’s first piece also carries its title and authors.
 import { memoByValue } from '@torahmap/utils';
 import { TERM_SEARCH_PARAMS } from '@torahmap/link';
 import { buildTextIndex, createTermSearch, english, type SearchEntry } from '@torahmap/search';
@@ -13,11 +13,13 @@ export interface VisSearchData {
 
 const LANGUAGES = [english];
 
-/** What a square shows and search reads: its paper's title, authors and session, then its text. */
-export function squareBody(item: PieceItem, text: string | undefined): string {
-  const { title, authors, when } = item.paper;
-  const head = [title, authors.join(', '), [item.session, when].filter(Boolean).join(' · ')];
-  return text ? `${head.join('\n')}\n\n${text}` : head.join('\n');
+/** What a square shows and search reads: its text, after the authors on a paper's first piece. */
+export function squareBody(
+  { paper, piece }: Pick<PieceItem, 'paper' | 'piece'>,
+  text?: string,
+): string {
+  const parts = [piece === 0 ? paper.authors.join(', ') : '', text ?? 'No text yet.'];
+  return parts.filter(Boolean).join('\n\n');
 }
 
 function* entries({ structure, texts }: VisSearchData): Iterable<SearchEntry> {
@@ -26,7 +28,9 @@ function* entries({ structure, texts }: VisSearchData): Iterable<SearchEntry> {
       for (const paper of session.papers) {
         for (let n = 0; n < paper.pieces.length; n++) {
           const id = pieceId(paper.index, n);
-          const body = squareBody({ paper, session: session.name } as PieceItem, texts[id]);
+          // The title is the popup's heading, so only a paper's first square shows it to search.
+          const shown = squareBody({ paper, piece: n }, texts[id]);
+          const body = n === 0 ? `${paper.title}\n\n${shown}` : shown;
           yield { id, ref: paper.title, text: { [english.id]: body } };
         }
       }
@@ -42,7 +46,7 @@ const search = createTermSearch<PieceItem, VisSearchData>({
   index: (data) => indexes(data),
   noun: { one: 'piece', many: 'pieces' },
   placeholder: 'Search the papers…',
-  description: 'Finds a word or phrase in any paper’s title, authors, session or text.',
+  description: 'Finds a word or phrase in any paper’s title, authors or text.',
   urlParams: TERM_SEARCH_PARAMS,
 });
 
