@@ -1,6 +1,6 @@
 # Layout tests
 
-These tests check that the interface fits the screen. They load the real map in headless Chromium
+These tests check that the interface fits the screen. They load the page in headless Chromium
 at four sizes (desktop, laptop, tablet, iPhone 13) and measure where the panel, controls and verse
 popup land. They do not test what the map draws, what search finds or how the story reads; the
 vitest suite covers those.

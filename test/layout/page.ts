@@ -1,4 +1,5 @@
 import { expect, type Page, type TestInfo } from '@playwright/test';
+import { SCREENSHOTS } from '../browser/fakeMap.ts';
 import type { Box, Shown } from './geometry.ts';
 import { DESKTOP_AND_PHONE, DESKTOP_TABLET_AND_PHONE } from '../browser/screens.ts';
 import { VISITED_KEY } from '../../packages/shell/src/visits.ts';
@@ -168,7 +169,7 @@ export async function closeFromLegend(page: Page, panel: 'search' | 'overlay'): 
 
 /** Attaches a screenshot for the contact sheet, only on the run that asks for them (SCREENSHOTS). */
 export async function attachScreenshot(page: Page, info: TestInfo): Promise<void> {
-  if (!process.env.SCREENSHOTS) return;
+  if (!SCREENSHOTS) return;
   const shot = info.outputPath('screen.png');
   await page.screenshot({ path: shot });
   await info.attach('layout', { path: shot, contentType: 'image/png' });

@@ -4,6 +4,9 @@
 // suite's time. A WebGL call that would throw in a real browser is not caught here.
 import { test as base } from '@playwright/test';
 
+/** A run that wants screenshots needs the real map to take them of. */
+export const SCREENSHOTS = !!process.env.SCREENSHOTS;
+
 /** Runs in the page before any of its scripts. */
 function installFakeWebGL2(): void {
   const contexts = new WeakMap<HTMLCanvasElement, unknown>();
@@ -14,6 +17,7 @@ function installFakeWebGL2(): void {
       {
         get: (target, name) => {
           if (name in target) return target[name as keyof typeof target];
+          if (typeof name === 'symbol' || name === 'then') return undefined;
           const key = String(name);
           if (/^[A-Z_0-9]+$/.test(key)) return 1;
           if (key === 'getShaderParameter' || key === 'getProgramParameter') return () => true;
@@ -43,7 +47,7 @@ function installFakeWebGL2(): void {
  * that reads pixels or by SCREENSHOTS in the environment.
  */
 export const test = base.extend<{ realMap: boolean }>({
-  realMap: [!!process.env.SCREENSHOTS, { option: true }],
+  realMap: [SCREENSHOTS, { option: true }],
   context: async ({ context, realMap }, use) => {
     if (!realMap) await context.addInitScript(installFakeWebGL2);
     await use(context);
