@@ -7,7 +7,7 @@ import { verseLengthOverlay } from './verse-length.ts';
 import { textAnalyticsOverlay } from './text-analytics.ts';
 import { OVERLAYS, type OverlayId } from '@torahmap/overlay-catalog';
 
-export type { TanakhOverlay, TanakhTool, TanakhTools } from './tanakhTypes.ts';
+export type { TanakhOverlay, TanakhTool } from './tanakhTypes.ts';
 export { registerOverlay, getOverlay, getAllOverlays } from './registry.ts';
 
 // The catalog decides which overlays the menu offers and in what order; this

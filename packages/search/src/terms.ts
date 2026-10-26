@@ -12,7 +12,7 @@ import type { ExtraMode } from './extraMode.ts';
 import type { SearchLanguage } from './language.ts';
 import type { MatchMode } from './matching.ts';
 
-export const MATCH_MODES = ['substring', 'word'] as const satisfies readonly MatchMode[];
+const MATCH_MODES = ['substring', 'word'] as const satisfies readonly MatchMode[];
 
 export interface SearchTerm {
   /** Stable for the life of the term; survives edits to its text. */

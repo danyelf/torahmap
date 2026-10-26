@@ -246,7 +246,7 @@ export function slugOf(mark: TropMark): string {
   return mark.name.toLowerCase().replace(/\s+/g, '-');
 }
 
-export const MARK_BY_SLUG: ReadonlyMap<string, TropMark> = new Map(
+const MARK_BY_SLUG: ReadonlyMap<string, TropMark> = new Map(
   TROP_MARKS.map((mark) => [slugOf(mark), mark]),
 );
 

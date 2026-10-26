@@ -27,7 +27,7 @@ const SLOW_MOBILE_DATA = {
   uploadThroughput: 375_000,
 };
 
-export async function throttle(page: Page): Promise<void> {
+async function throttle(page: Page): Promise<void> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Network.enable');
   await cdp.send('Network.emulateNetworkConditionsByRule', {

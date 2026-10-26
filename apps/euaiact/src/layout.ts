@@ -31,7 +31,7 @@ export interface ActItem extends MapItem {
 }
 
 /** Where an article's number goes: its column's left edge, above its first row and that row's jitter. */
-export interface ArticleAnchor {
+interface ArticleAnchor {
   number: string;
   x: number;
   y: number;

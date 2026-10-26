@@ -28,17 +28,17 @@ export interface ActBlock {
 }
 
 /** A column of blocks; `runs` are separated by a section gap. `label` names a split chapter's section. */
-export interface ActColumn {
+interface ActColumn {
   label: string | null;
   runs: ActBlock[][];
 }
 
-export interface ActChapter {
+interface ActChapter {
   number: string;
   columns: ActColumn[];
 }
 
-export interface ActAnnex {
+interface ActAnnex {
   number: string;
   blocks: ActBlock[];
 }

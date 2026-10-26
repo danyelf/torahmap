@@ -55,7 +55,7 @@ export function markRange(
  * text's own positions. A term is matched against whatever text it is given:
  * its own language decides how it is searched, the text's how it is marked.
  */
-export function termRanges(
+function termRanges(
   text: string,
   language: SearchLanguage,
   term: SearchTerm,

@@ -7,7 +7,7 @@ import { memoByValue } from '@torahmap/utils';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildDictionary, type BookOrder, type Dictionary } from '../../src/search/search';
+import { type BookOrder, type Dictionary } from '../../src/search/search';
 import {
   DICTIONARY_FILES,
   dictionaryOf,
@@ -20,8 +20,6 @@ import type { Parse } from '../../src/search/dictionary';
 import type { VerseTexts } from '../../src/verseTexts';
 import { EMPTY_DICTIONARY_FILES } from './fixtures';
 
-export { EMPTY_DICTIONARY_FILES };
-
 const dataDir = join(
   dirname(fileURLToPath(import.meta.url)),
   '..',
@@ -32,8 +30,6 @@ const dataDir = join(
   'data',
 );
 const read = <T>(path: string): T => JSON.parse(readFileSync(join(dataDir, path), 'utf8'));
-
-export const EMPTY_DICTIONARY: Dictionary = buildDictionary(EMPTY_DICTIONARY_FILES);
 
 /** The books in the order the texts hold them, as a structure file would list them. */
 export const inTextsOrder = memoByValue((texts: VerseTexts): BookOrder => ({

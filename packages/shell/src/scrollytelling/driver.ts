@@ -23,7 +23,7 @@ export const REJOIN_EASE_MS = 700;
 export const SWIPE_EASE_MS = 1500;
 
 /** Between two stops as the story scrolls, `t` of the way from one to the other. */
-export interface StoryBlend {
+interface StoryBlend {
   from: ResolvedStoryStop;
   to: ResolvedStoryStop;
   t: number;
