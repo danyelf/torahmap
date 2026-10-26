@@ -3,7 +3,7 @@
 Most data comes from [Sefaria](https://www.sefaria.org/):
 
 - **Verse texts**: the Sefaria export bucket, `gs://sefaria-export`
-- **Structure data**: Sefaria `/api/shape/` endpoint
+- **Structure data**: chapter lengths counted from the downloaded Hebrew texts; the layout block is kept by hand in `scripts/fetch-tanakh-structure.js`
 - **Commentary links**: Sefaria Links CSV exports, from the same bucket
 
 Everything below reads from the bucket, which needs no credentials. The
@@ -65,7 +65,7 @@ thing afterwards.
 ## Structure Data
 
 ```bash
-# Regenerate structure from Sefaria API
+# Regenerate structure from the downloaded Hebrew texts (run the Verse Texts step first)
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 ```
 
