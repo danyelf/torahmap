@@ -242,14 +242,16 @@ def markdown_words(md: str) -> list[tuple[str, str]]:
     section = 'a'
     out = [(w, section) for w in abstract.split()]
     front: list[str] = []
+    seen_heading = False
     for line in rest.split('\n'):
         m = re.match(r'^#\s+(.*?)\s*$', line)
         if m:
-            if section == 'a' and not out:
+            if not seen_heading and not out:
                 out = [(w, 'a') for w in front[-PIECE_WORDS:]]
+            seen_heading = True
             section = classify(m.group(1), section)
             continue
-        if section == 'a' and not out:
+        if not seen_heading:
             front.extend(line.split())
             continue
         if line.startswith('#'):  # subsections belong to their section
@@ -259,24 +261,96 @@ def markdown_words(md: str) -> list[tuple[str, str]]:
     return out
 
 
+def braced(text: str, at: int) -> tuple[int, int]:
+    """The span of the {...} group whose opening brace is at `at`, braces inside it balanced."""
+    depth = 0
+    for i in range(at, len(text)):
+        if text[i] == '{' and text[i - 1] != '\\':
+            depth += 1
+        elif text[i] == '}' and text[i - 1] != '\\':
+            depth -= 1
+            if depth == 0:
+                return at, i
+    return at, len(text) - 1
+
+
+def with_abstract_environment(tex: str) -> str:
+    """The VIS template sets the abstract with \\abstract{...}; pandoc only knows the environment."""
+    m = re.search(r'\\abstract\s*\{', tex)
+    if not m or r'\begin{abstract}' in tex:
+        return tex
+    start, end = braced(tex, m.end() - 1)
+    block = '\\begin{abstract}' + tex[start + 1 : end] + '\\end{abstract}'
+    tex = tex[: m.start()] + tex[end + 1 :]
+    # Pandoc reads only the document body, and the template sets it in the preamble.
+    return tex.replace('\\begin{document}', '\\begin{document}\n' + block, 1)
+
+
+def bibliography_text(root: Path, tex: str, md: str) -> str:
+    """The paper's reference list as plain text: its compiled .bbl, else the entries it cites from
+    the .bib files its main file names."""
+    for bbl in sorted(root.rglob('*.bbl'), key=lambda f: -f.stat().st_size)[:1]:
+        stub = bbl.with_name('references-only.tex')
+        stub.write_text('\\documentclass{article}\\begin{document}' + bbl.read_text(errors='replace') + '\\end{document}')
+        return pandoc(['-f', 'latex', '-t', 'plain', '--wrap=none', stub.name], stub.parent)
+    names = {
+        n.strip().removesuffix('.bib')
+        for group in re.findall(r'\\(?:bibliography|addbibresource)\{([^}]*)\}', tex)
+        for n in group.split(',')
+    }
+    bibs = [str(b) for b in sorted(root.rglob('*.bib')) if b.stem in {Path(n).name for n in names}]
+    cited = sorted(set(re.findall(r'@([\w:.\-/]+)', ''.join(re.findall(r'\[@[^\]]*\]', md)))))
+    if not bibs or not cited:
+        return ''
+    # One malformed entry makes pandoc refuse a whole .bib file, so only the cited, well-formed entries go in.
+    kept = [
+        entry
+        for b in bibs
+        for entry in re.split(r'(?=^@\w+\s*\{)', Path(b).read_text(errors='replace'), flags=re.M)
+        if (m := re.match(r'@\w+\s*\{\s*([^,\s]+)', entry)) and m.group(1) in cited and balanced(entry)
+    ]
+    cited_bib = root / 'cited-only.bib'
+    cited_bib.write_text('\n'.join(kept))
+    stub = root / 'references-only.md'
+    stub.write_text('---\nnocite: "' + '; '.join('@' + k for k in cited) + '"\n---\n')
+    return pandoc(['-C', '-t', 'plain', '--wrap=none', '--bibliography', cited_bib.name, stub.name], root)
+
+
+def balanced(entry: str) -> bool:
+    plain = re.sub(r'\\.', '', entry)
+    return plain.count('{') == plain.count('}')
+
+
+def pandoc(args: list[str], cwd: Path) -> str:
+    try:
+        return subprocess.run(
+            ['pandoc', *args], cwd=cwd, capture_output=True, text=True, timeout=60, check=True
+        ).stdout
+    except (subprocess.SubprocessError, OSError):
+        return ''
+
+
 def read_source(blob: bytes) -> list[tuple[str, str]] | None:
-    """Pieces from an arXiv source download, or None when it will not convert."""
+    """Pieces from an arXiv source download, or None when it will not convert. The references
+    come from its .bbl or .bib, so a paper keeps its reference tail."""
     with tempfile.TemporaryDirectory() as tmp:
         main = unpack_source(blob, Path(tmp))
         if not main:
             return None
+        tex = with_abstract_environment(main.read_text(errors='replace'))
+        main.write_text(tex)
         template = Path(tmp) / 'abstract-first.md'
         template.write_text(PANDOC_TEMPLATE)
-        try:
-            md = subprocess.run(
-                ['pandoc', main.name, '-f', 'latex', '-t', 'markdown-smart', '--wrap=none',
-                 f'--template={template}', '-s'],
-                cwd=main.parent, capture_output=True, text=True, timeout=60, check=True,
-            ).stdout
-        except (subprocess.SubprocessError, OSError):
-            return None
+        md = pandoc(
+            [main.name, '-f', 'latex', '-t', 'markdown-smart', '--wrap=none', f'--template={template}', '-s'],
+            main.parent,
+        )
+        references = bibliography_text(Path(tmp), tex, md)
     words = markdown_words(md)
-    return cut_pieces(words) if len(words) > 500 else None
+    if len(words) <= 500:
+        return None
+    words += [(w, 'f') for w in references.split()]
+    return cut_pieces(words)
 
 
 # ---- The program --------------------------------------------------------------------------

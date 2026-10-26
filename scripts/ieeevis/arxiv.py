@@ -48,8 +48,11 @@ def get(url: str, cache: Path) -> bytes:
             data = urllib.request.urlopen(request, timeout=240).read()
             break
         except Exception as e:  # noqa: BLE001
-            print('retry', url, e, flush=True)
-            time.sleep(60 * (attempt + 1))
+            # Retry-After says how long arXiv wants; without it, back off for minutes.
+            wait = getattr(e, 'headers', {}).get('Retry-After') if hasattr(e, 'headers') else None
+            pause = int(wait) if wait and wait.isdigit() else 120 * (attempt + 1)
+            print('retry in', pause, 's:', url[:90], e, flush=True)
+            time.sleep(pause)
     else:
         raise RuntimeError(url)
     path.write_bytes(data)
@@ -181,7 +184,7 @@ def fetch(vis: Path, what: str) -> None:
         target = out / (f'{i}.pdf' if what == 'pdf' else f'{i}.src')
         if target.exists():
             continue
-        url = f'https://arxiv.org/{"pdf" if what == "pdf" else "e-print"}/{re.sub(r"v\d+$", "", aid)}'
+        url = f'https://export.arxiv.org/{"pdf" if what == "pdf" else "e-print"}/{re.sub(r"v\d+$", "", aid)}'
         target.write_bytes(get(url, cache))
         print('fetched', i, base, target.stat().st_size, flush=True)
 
