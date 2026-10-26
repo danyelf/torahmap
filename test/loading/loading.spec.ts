@@ -4,11 +4,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   allLoaded,
+  canvasShot,
   desktopOnly,
+  DRAWN_FLOOR,
   firstFrame,
   hold,
   openMap,
   param,
+  pixelCounts,
   recordEvents,
   sentSearches,
   viaMenu,
@@ -471,4 +474,16 @@ test("a link's search reaches the Talmud's own search, not the Tanakh's", async 
   await openMap(page, 'search=משנה', TALMUD_PATH);
   await expect(page.locator('#search-input')).toHaveValue('משנה');
   expect(searchFiles).toEqual([]);
+});
+
+test('a returning reader on the bare address gets the map in its colours, not a plain grey', async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('torahMap.visited', 'true'));
+  await page.goto(TALMUD_PATH);
+  await allLoaded(page);
+  // The Talmud's tan and violet count as coloured; the plain grey does not.
+  await expect
+    .poll(async () => (await pixelCounts(page, await canvasShot(page))).coloured)
+    .toBeGreaterThan(DRAWN_FLOOR);
 });

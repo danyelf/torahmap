@@ -1685,6 +1685,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     closeStory(landingFrame(phone, 'overlay', true));
     // No stop has drawn the overlay panel, so None's places to start are not in it yet.
     drawOverlayPanel(true);
+    // Nor its colours: a link that names no view never reaches restoreFromUrl, and
+    // without an overlay no file landing repaints the map.
+    applyTools();
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
