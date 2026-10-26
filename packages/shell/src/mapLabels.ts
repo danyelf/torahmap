@@ -81,6 +81,12 @@ export interface MapLabelSettings {
   tab?: BookTab;
   /** Which way the text reads: a book's label starts at its right edge, or its left. Right to left unless said. */
   direction?: 'rtl' | 'ltr';
+  /**
+   * Which side of its books a section's name stands: right, reading down, or left, reading up.
+   * Right unless said. `sectionClear` keeps it that many map units further from the books.
+   */
+  sectionSide?: 'right' | 'left';
+  sectionClear?: number;
 }
 
 /** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
@@ -135,7 +141,11 @@ function bookLabel(book: BookBox): HTMLDivElement {
   return label;
 }
 
-function sectionLabel(section: string, name: SectionName | undefined): HTMLDivElement {
+function sectionLabel(
+  section: string,
+  name: SectionName | undefined,
+  side: 'right' | 'left',
+): HTMLDivElement {
   const label = document.createElement('div');
   label.style.cssText = `
     position:absolute;
@@ -145,7 +155,9 @@ function sectionLabel(section: string, name: SectionName | undefined): HTMLDivEl
     white-space:nowrap;
     line-height:${SECTION_LABEL_LINE_EM}em;
     transform-origin:0 0;
-    transform:rotate(90deg) translateY(-100%);
+    transform:${
+      side === 'right' ? 'rotate(90deg) translateY(-100%)' : 'rotate(-90deg) translateX(-100%)'
+    };
   `;
   // Turned clockwise about its own top-left corner, so the text reads downward
   // from the top of the book labels and its line box sits right of the anchor.
@@ -175,7 +187,14 @@ export function bookLabelSize(zoom: number): { fontSize: number; rise: number } 
 export function createMapLabels(
   books: readonly BookBox[],
   parent: HTMLElement,
-  { sectionNames, sectionSize, tab, direction = 'rtl' }: MapLabelSettings,
+  {
+    sectionNames,
+    sectionSize,
+    tab,
+    direction = 'rtl',
+    sectionSide = 'right',
+    sectionClear = 0,
+  }: MapLabelSettings,
 ): (pan: Pan, zoom: number) => void {
   const container = document.createElement('div');
   container.id = 'book-labels';
@@ -197,7 +216,7 @@ export function createMapLabels(
     return { el, book };
   });
   const sectionLabels = [...sectionBoxes(books)].map(([section, box]) => {
-    const el = sectionLabel(section, sectionNames[section]);
+    const el = sectionLabel(section, sectionNames[section], sectionSide);
     container.appendChild(el);
     return { el, box };
   });
@@ -219,7 +238,11 @@ export function createMapLabels(
     }
     const sectionFontSize = Math.min(MAX_SECTION_FONT_SIZE, sectionSize.fontSize * zoom);
     for (const { el, box } of sectionLabels) {
-      el.style.left = (box.maxX + pan.x) * zoom + sectionFontSize * sectionSize.gapEm + 'px';
+      const clear = sectionClear * zoom + sectionFontSize * sectionSize.gapEm;
+      el.style.left =
+        sectionSide === 'right'
+          ? (box.maxX + pan.x) * zoom + clear + 'px'
+          : (box.minX + pan.x) * zoom - clear - sectionFontSize * SECTION_LABEL_LINE_EM + 'px';
       el.style.top = (box.minY + pan.y) * zoom - rise + 'px';
       el.style.fontSize = sectionFontSize + 'px';
     }

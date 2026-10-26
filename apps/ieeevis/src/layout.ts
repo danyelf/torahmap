@@ -4,6 +4,7 @@
 import type { MapItem } from '@torahmap/engine';
 import { positionJitter } from '@torahmap/utils';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
+import type { CoverBox } from '@torahmap/shell/covers.ts';
 import type { Paper, Section, Structure } from './data.ts';
 
 export const SQUARE_SIZE = 6;
@@ -15,7 +16,7 @@ const PAPERS_PER_LINE = 8;
 const PAPER_GAP = SQUARE_SIZE;
 const LINE_GAP = 2 * SQUARE_SIZE;
 const LABEL_ROOM = 6 * SQUARE_SIZE; // above each session, for its name
-const DAY_GAP = 10 * SQUARE_SIZE; // includes the day label that stands to the right
+const DAY_GAP = 10 * SQUARE_SIZE; // holds the panel padding and the day label that stands to the left
 const DAY_WIDTH = PAPERS_PER_LINE * PAPER_COLUMNS * SQUARE_SIZE + (PAPERS_PER_LINE - 1) * PAPER_GAP;
 
 export interface PieceItem extends MapItem {
@@ -30,6 +31,8 @@ export interface PieceItem extends MapItem {
 export interface Layout {
   items: PieceItem[];
   books: BookBox[];
+  /** Each day's column, without its panel padding. */
+  days: CoverBox[];
   bounds: { width: number; height: number };
 }
 
@@ -91,6 +94,7 @@ function slotsOf(pieces: string, fill: Fill): { slots: Slot[]; rows: number } {
 export function computeLayout(structure: Structure): Layout {
   const items: PieceItem[] = [];
   const books: BookBox[] = [];
+  const days: CoverBox[] = [];
   let x = 0;
   let height = 0;
   const fill = fillFromAddress();
@@ -132,8 +136,9 @@ export function computeLayout(structure: Structure): Layout {
         y += Math.max(...blocks.map((b) => b.rows)) * SQUARE_SIZE + LINE_GAP;
       }
     }
+    days.push({ minX: x, maxX: x + DAY_WIDTH, minY: 0, maxY: y - LINE_GAP });
     height = Math.max(height, y);
     x += DAY_WIDTH + DAY_GAP;
   }
-  return { items, books, bounds: { width: x - DAY_GAP, height } };
+  return { items, books, days, bounds: { width: x - DAY_GAP, height } };
 }

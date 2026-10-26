@@ -5,6 +5,7 @@ import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
+import { coverElement, placeCover } from '@torahmap/shell/covers.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
 import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
@@ -16,6 +17,11 @@ import { configureSearch, squareBody, visSearch } from './search.ts';
 import { ieeevisSite } from './site.ts';
 
 const DAY_LABEL_SIZE = { fontSize: 14, gapEm: 0.5 };
+// A day's panel reaches this far past its squares; the day label stands beyond it.
+const PANEL_PAD = 8;
+const PANEL_TINT = [150, 170, 220] as const;
+const PANEL_OPACITY = 0.07;
+const PANEL_EDGE_OPACITY = 0.3;
 const SESSION_TAB = { fontSize: 12, above: 28, inset: 4, minPx: 7 };
 const SESSION_NAME_LENGTH = 40;
 /** The popup's heading fits one line at this length, beside "(30/57)" and the link out. */
@@ -61,8 +67,13 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       items: laid.items,
 
       startCamera(viewport) {
-        const width = laid.bounds.width + sectionLabelReach(DAY_LABEL_SIZE);
-        const box = { minX: 0, minY: 0, maxX: width, maxY: laid.bounds.height };
+        const reach = sectionLabelReach(DAY_LABEL_SIZE) + PANEL_PAD;
+        const box = {
+          minX: -reach,
+          minY: -PANEL_PAD,
+          maxX: laid.bounds.width + PANEL_PAD,
+          maxY: laid.bounds.height + PANEL_PAD,
+        };
         return cameraToFit(box, viewport.width, viewport.height, LINK_KEYS.zoom);
       },
 
@@ -70,7 +81,19 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       baseRing: (item) => (isPlaceholder(item) ? PLACEHOLDER_RING : null),
 
       labels(container) {
-        return createMapLabels(
+        const panels = laid.days.map((day) => ({
+          el: coverElement(PANEL_TINT, PANEL_OPACITY, PANEL_EDGE_OPACITY),
+          box: {
+            minX: day.minX - PANEL_PAD,
+            minY: day.minY,
+            maxX: day.maxX + PANEL_PAD,
+            maxY: day.maxY + PANEL_PAD,
+          },
+        }));
+        const panelLayer = document.createElement('div');
+        panelLayer.append(...panels.map((p) => p.el));
+        container.appendChild(panelLayer);
+        const moveLabels = createMapLabels(
           laid.books.map((book) => ({ ...book, name: short(book.name, SESSION_NAME_LENGTH) })),
           container,
           {
@@ -80,8 +103,15 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
             sectionSize: DAY_LABEL_SIZE,
             tab: SESSION_TAB,
             direction: 'ltr',
+            sectionSide: 'left',
+            sectionClear: PANEL_PAD,
           },
         );
+        return (pan, zoom) => {
+          panelLayer.style.transform = `translate(${pan.x * zoom}px, ${pan.y * zoom}px)`;
+          for (const { el, box } of panels) placeCover(el, box, zoom);
+          moveLabels(pan, zoom);
+        };
       },
 
       popupText(item, loadedFiles) {
