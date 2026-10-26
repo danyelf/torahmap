@@ -9,8 +9,7 @@ vitest suite covers those.
 npm run test:layout
 ```
 
-The run builds the site and serves it itself, and takes about
-5 minutes. It is not part of the pre-commit hook. Run it before opening a pull request that changes
+It is not part of the pre-commit hook. Run it before opening a pull request that changes
 the interface.
 
 ## What a run does

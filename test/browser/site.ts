@@ -29,7 +29,13 @@ const TYPES: Record<string, string> = {
  */
 export function fileFor(path: string, roots: readonly string[]): string | undefined {
   for (const root of roots) {
-    const file = resolve(root, `.${normalize(decodeURIComponent(path))}`);
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(path);
+    } catch {
+      return undefined;
+    }
+    const file = resolve(root, `.${normalize(decoded)}`);
     if (file !== root && !file.startsWith(root + sep)) continue;
     const found =
       existsSync(file) && statSync(file).isDirectory() ? join(file, 'index.html') : file;
@@ -50,7 +56,9 @@ function serve(roots: readonly string[]): Server {
     const file = fileFor(path, roots);
     if (file) {
       res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' });
-      createReadStream(file).pipe(res);
+      createReadStream(file)
+        .on('error', () => res.destroy())
+        .pipe(res);
     } else if (!path.endsWith('/') && fileFor(`${path}/`, roots)) {
       // What the dev server and the Worker do for a page's address.
       res.writeHead(302, { Location: `${path}/${query === undefined ? '' : `?${query}`}` }).end();

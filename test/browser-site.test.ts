@@ -23,6 +23,7 @@ describe('the site a browser suite serves', () => {
   it('never names a file outside its roots', () => {
     expect(fileFor('/../secret.txt', [shared])).toBeUndefined();
     expect(fileFor('/%2e%2e/secret.txt', [shared])).toBeUndefined();
+    expect(fileFor('/%E0%A4%A', [shared])).toBeUndefined();
   });
 });
 

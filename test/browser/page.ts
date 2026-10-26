@@ -185,7 +185,7 @@ export async function recordEvents(page: Page): Promise<void> {
   sent.set(page, events);
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/api/event')
-      events.push(JSON.parse(request.postData() ?? 'null'));
+      events.push(JSON.parse(request.postData() ?? '{}'));
   });
 }
 

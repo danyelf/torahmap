@@ -13,7 +13,6 @@ export default defineConfig({
   globalSetup: '../browser/globalSetup.ts',
   reporter: [['list'], ['../browser/stopOnRefusal.ts']],
   use: {
-    // Set by globalSetup, so only the workers see it.
     baseURL: process.env[ORIGIN_ENV],
     launchOptions: { args: LAUNCH_ARGS },
   },
