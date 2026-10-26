@@ -3,9 +3,9 @@ import { describe, it, expect } from 'vitest';
 import {
   combineLayers,
   fillDefaultColors,
-  getDefaultColor,
   toolsPicture,
 } from '../packages/shell/src/itemColoring.ts';
+import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
 import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 

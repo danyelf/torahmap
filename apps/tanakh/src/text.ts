@@ -6,7 +6,7 @@ import { SECTION_NAMES, SECTION_SIZE, bookBoxes } from './labels.ts';
 import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
 import { structureFrom } from './verseTexts.ts';
 import { initBookData } from './books.ts';
-import { getDefaultColor } from '@torahmap/shell/itemColoring.ts';
+import { getDefaultColor } from './baseColor.ts';
 import { popupText } from './popup.ts';
 import { EXAMPLES, verseReader } from './references.ts';
 import { createCamera } from './camera.ts';

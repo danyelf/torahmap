@@ -19,7 +19,7 @@ import {
   SAMPLE_LOADED,
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
-import { getDefaultColor } from '../packages/shell/src/itemColoring.ts';
+import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
 import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 
 // The tools a stop can name, as a text hands them over: the overlays these

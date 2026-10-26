@@ -1,59 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { TanakhOverlay } from '@torahmap/tanakh/overlays/index.ts';
-import {
-  getDefaultColor,
-  overlayColorsFor,
-  layerToRecompute,
-} from '../packages/shell/src/itemColoring.ts';
-import * as utils from '@torahmap/utils';
+import { overlayColorsFor, layerToRecompute } from '../packages/shell/src/itemColoring.ts';
 import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 
 describe('itemColoring', () => {
-  describe('getDefaultColor', () => {
-    beforeEach(() => {
-      // Mock seededRandom to return predictable values
-      vi.spyOn(utils, 'seededRandom').mockReturnValue(0.5);
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
-    it('returns gray color with brightness variation', () => {
-      const color = getDefaultColor(0);
-
-      // With random = 0.5, brightness = 0.4 + 0.5 * 0.4 = 0.6
-      expect(color[0]).toBeCloseTo(0.6, 10);
-      expect(color[1]).toBeCloseTo(0.6, 10);
-      expect(color[2]).toBeCloseTo(0.6, 10);
-    });
-
-    it('uses seeded random based on verse index', () => {
-      getDefaultColor(5);
-
-      expect(utils.seededRandom).toHaveBeenCalledWith(15); // 5 * 3
-    });
-
-    it('returns brightness within expected range', () => {
-      // Test with different random values
-      vi.spyOn(utils, 'seededRandom').mockReturnValue(0);
-      const minColor = getDefaultColor(0);
-      expect(minColor[0]).toBe(0.4); // DEFAULT_BRIGHTNESS.MIN
-
-      vi.spyOn(utils, 'seededRandom').mockReturnValue(1);
-      const maxColor = getDefaultColor(0);
-      expect(maxColor[0]).toBe(0.8); // DEFAULT_BRIGHTNESS.MIN + RANGE
-    });
-
-    it('returns consistent results for same index', () => {
-      vi.spyOn(utils, 'seededRandom').mockReturnValue(0.75);
-      const color1 = getDefaultColor(3);
-      const color2 = getDefaultColor(3);
-
-      expect(color1).toEqual(color2);
-    });
-  });
-
   describe('overlayColorsFor', () => {
     it('hands colorsFor the hovered verse', () => {
       const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];

@@ -8,9 +8,6 @@ export const ZOOM_IN_FACTOR = 1.1; // 10% zoom in per wheel tick
 // Debounced so pan/zoom doesn't flood browser history with replaceState calls
 export const URL_UPDATE_DEBOUNCE_MS = 300;
 
-/** A square's grey with no overlay: random within this range, to reduce moiré. */
-export const DEFAULT_BRIGHTNESS = { MIN: 0.4, RANGE: 0.4 } as const;
-
 /** The grey of a square left out. */
 export const DIMMED_GREY: Color = [0.18, 0.18, 0.18];
 
