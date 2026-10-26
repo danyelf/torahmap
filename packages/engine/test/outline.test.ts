@@ -23,6 +23,15 @@ describe('buildOutlineGeometry', () => {
     });
   });
 
+  describe('round', () => {
+    it('is one rectangle round the square, for the shader to cut into a band', () => {
+      const buffer = buildOutlineGeometry({ x: 100, y: 200, size: 10 }, 2, true);
+      expect(buffer).toHaveLength(12);
+      expect([buffer[0], buffer[1]]).toEqual([98, 198]);
+      expect([buffer[10], buffer[11]]).toEqual([110, 210]);
+    });
+  });
+
   describe('default thickness', () => {
     it('uses default thickness of 2 when not specified', () => {
       const bounds: OutlineBounds = { x: 100, y: 200, size: 10 };

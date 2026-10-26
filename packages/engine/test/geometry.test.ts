@@ -9,6 +9,7 @@ import {
   ITEM_ATTRIBUTES,
   ITEM_OFFSETS,
   SHAPE_FLAGS,
+  hasRingRoom,
   type ItemAttributeName,
 } from '../src/index.ts';
 import { createItem, createItems, RED, GREEN, BLUE, WHITE } from './fixtures.ts';
@@ -236,6 +237,13 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_nextShape')[3]).toBe(SHAPE_FLAGS.ROUND);
       expect(field(buffer, 1, 'a_shape')[3]).toBe(0);
     });
+  });
+});
+
+describe('hasRingRoom', () => {
+  it('is true from a drawn side of 8 pixels', () => {
+    expect(hasRingRoom(4, 2)).toBe(true);
+    expect(hasRingRoom(4, 1.99)).toBe(false);
   });
 });
 

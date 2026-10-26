@@ -2,7 +2,7 @@
 
 import { SQUARE_GAP } from '@torahmap/engine';
 import { HEBREW_LABEL_FONT } from '@torahmap/shell/labelTypography.ts';
-import { DAF_LABEL_ZOOM_ALL, SEGMENT_SIZE } from './constants.ts';
+import { MISHNAH_LETTER_ZOOM, SEGMENT_SIZE } from './constants.ts';
 import type { TalmudLayoutItem } from './layout.ts';
 
 export interface Mark {
@@ -59,7 +59,7 @@ export function createMishnahLetters(
   const drawn = SEGMENT_SIZE - SQUARE_GAP;
   return (pan, zoom) => {
     container.style.transform = `translate(${pan.x * zoom}px, ${pan.y * zoom}px)`;
-    const shown = zoom >= DAF_LABEL_ZOOM_ALL;
+    const shown = zoom >= MISHNAH_LETTER_ZOOM;
     container.style.display = shown ? '' : 'none';
     if (!shown) return;
     const side = drawn * zoom;

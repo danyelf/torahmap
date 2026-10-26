@@ -45,6 +45,10 @@ export const RINGS = {
   RING_MIN_SQUARE_PX: 8,
 } as const;
 
+/** Whether a square of this side, in map units, has room for a ring's hole at this zoom: the shader's `holes`. */
+export const hasRingRoom = (side: number, zoom: number): boolean =>
+  side * zoom >= RINGS.RING_MIN_SQUARE_PX;
+
 /**
  * Squares smaller than START_PX on screen start widening into bars, and reach
  * their row neighbour at FULL_PX. In device pixels, as the flicker and merging

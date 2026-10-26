@@ -12,6 +12,9 @@ export const SEGMENT_SIZE = 6; // px per segment square
 export const PEREK_LABEL_ZOOM = 0.7;
 export const DAF_LABEL_ZOOM_ALL = 1.5;
 
+// The Mishnah's letters show from this zoom, about where its squares become circles (zoom 2).
+export const MISHNAH_LETTER_ZOOM = 2.5;
+
 // A perek name's size at zoom 1, and the bounds it is held between, in pixels.
 export const PEREK_SIZE = { base: 9, min: 7, max: 18 };
 

@@ -293,8 +293,10 @@ const OUTLINE_VERTEX_SHADER = `#version 300 es
   uniform float u_zoom;
 
   in vec2 a_position;
+  out vec2 v_world;
 
   void main() {
+    v_world = a_position;
     vec2 pos = (a_position + u_pan) * u_zoom;
     vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
@@ -304,9 +306,14 @@ const OUTLINE_VERTEX_SHADER = `#version 300 es
 const OUTLINE_FRAGMENT_SHADER = `#version 300 es
   precision mediump float;
   uniform vec3 u_color;
+  // A round square's centre and its band's inner and outer radius; an outer radius of 0 for a square.
+  uniform vec4 u_disc;
+  in vec2 v_world;
   out vec4 fragColor;
 
   void main() {
+    float d = length(v_world - u_disc.xy);
+    if (u_disc.w > 0.0 && (d < u_disc.z || d > u_disc.w)) discard;
     fragColor = vec4(u_color, 1.0);
   }
 `;
@@ -375,6 +382,7 @@ export interface OutlineProgram {
     pan: WebGLUniformLocation | null;
     zoom: WebGLUniformLocation | null;
     color: WebGLUniformLocation | null;
+    disc: WebGLUniformLocation | null;
   };
 }
 
@@ -402,6 +410,7 @@ export function createOutlineProgram(gl: WebGL2RenderingContext): OutlineProgram
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
       color: gl.getUniformLocation(program, 'u_color'),
+      disc: gl.getUniformLocation(program, 'u_disc'),
     },
   };
 }
