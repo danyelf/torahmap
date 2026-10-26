@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeTalmudLayout, type TalmudLayoutItem } from '../src/layout.ts';
-import { mishnahMarks } from '../src/mishnahMarks.ts';
+import { mishnahMarks, onScreen } from '../src/mishnahMarks.ts';
 import { mishnahOrGemaraColor } from '../src/baseColor.ts';
 import { GEMARA_BASE_COLOR, MISHNAH_BASE_COLOR } from '../src/constants.ts';
 import { talmudFixture as fixture } from './helpers/talmudFixture.ts';
@@ -53,5 +53,26 @@ describe('the Mishnah’s colour', () => {
     const [r, g, b] = hueOf(mishnahOrGemaraColor(fixture, mishnah, true), GEMARA_BASE_COLOR);
     expect(g).toBeCloseTo(r, 5);
     expect(b).toBeCloseTo(r, 5);
+  });
+});
+
+describe('onScreen', () => {
+  // At zoom 2 with the map panned by (-100, -50), a 400 × 300 screen shows map x 100–300, y 50–200.
+  const view = onScreen({ x: -100, y: -50 }, 2, 400, 300, 5);
+
+  it('takes in a square on the screen', () => {
+    expect(view(150, 100)).toBe(true);
+  });
+
+  it('takes in a square only partly on the screen', () => {
+    expect(view(97, 48)).toBe(true);
+    expect(view(299, 199)).toBe(true);
+  });
+
+  it('leaves out a square off each side', () => {
+    expect(view(94, 100)).toBe(false);
+    expect(view(301, 100)).toBe(false);
+    expect(view(150, 44)).toBe(false);
+    expect(view(150, 201)).toBe(false);
   });
 });
