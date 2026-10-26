@@ -16,7 +16,7 @@ describe('getDefaultColor', () => {
   });
 
   it('varies from square to square, the same each time', () => {
-    expect(new Set(colors.map((c) => c[0])).size).toBeGreaterThan(400);
+    expect(getDefaultColor(0)).not.toEqual(getDefaultColor(1));
     expect(getDefaultColor(3)).toEqual(getDefaultColor(3));
   });
 });

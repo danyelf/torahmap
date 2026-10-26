@@ -2,7 +2,7 @@
 
 import { brightnessJitter, type Color } from '@torahmap/utils';
 
-/** A grey from 0.4 to 0.8, lighter or darker by the square's place, which reduces moiré. */
+/** A grey, lighter or darker by the square's place, which reduces moiré. */
 export function getDefaultColor(itemIndex: number): Color {
   return brightnessJitter([0.6, 0.6, 0.6], itemIndex * 3, 1 / 3);
 }
