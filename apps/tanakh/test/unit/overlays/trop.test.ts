@@ -384,13 +384,13 @@ describe('Trop Overlay', () => {
       expect(host.getItemColor(verse)).toEqual(host.getItemColor(verse));
     });
 
-    it('colorsFor agrees with getItemColor for every verse', () => {
+    it('colorsFor gives a verse the same colour alone as in a batch', () => {
       const host = makeHost();
       selectFirstMark(host);
 
       const fromColorsFor = tropOverlay.colorsFor!(testVerses, host.settings, null, host.data);
-      const fromGetItemColor = testVerses.map((v) => host.getItemColor(v));
-      expect(fromColorsFor).toEqual(fromGetItemColor);
+      const alone = testVerses.map((v) => host.getItemColor(v));
+      expect(fromColorsFor).toEqual(alone);
     });
 
     it('colorsFor does not read or write the settings a host holds', () => {

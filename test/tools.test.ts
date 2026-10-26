@@ -7,7 +7,6 @@ import { SAMPLE_LOADED, testOverlay } from '../apps/tanakh/test/helpers/fixtures
 const counts = testOverlay({
   id: 'counts',
   name: 'Counts',
-  getItemColor: () => null,
   data: { counts: 'counts.json' },
 });
 

@@ -237,15 +237,6 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     return keyIfRelevant(before) !== keyIfRelevant(after);
   },
 
-  /** The colour with nothing hovered on the map. The map asks colorsFor, which takes the hover. */
-  getItemColor(
-    verse: TanakhLayout,
-    settings: HaftarahSettings,
-    data: HaftarahData,
-  ): Color | Color[] | null {
-    return colorAt(verse, deriveHaftarah(data, settings.custom), litFor(data, settings, null));
-  },
-
   colorsFor(items, settings, hovered, data) {
     const derived = deriveHaftarah(data, settings.custom);
     const lit = litFor(data, settings, hovered);

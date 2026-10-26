@@ -355,11 +355,12 @@ describe('Haftarah Overlay', () => {
       expect(sum(haftarahOverlay.getItemColor(genesis) as Color)).toBeGreaterThan(sum(cold));
       expect(sum(haftarahOverlay.getItemColor(noach) as Color)).toBeLessThan(
         sum(
-          haftarahOverlay.overlay.getItemColor(
-            noach,
+          haftarahOverlay.overlay.colorsFor(
+            [noach],
             haftarahOverlay.fromUrl({}),
+            null,
             haftarahOverlay.data,
-          ) as Color,
+          )[0] as Color,
         ),
       );
     });
@@ -370,14 +371,15 @@ describe('Haftarah Overlay', () => {
         { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
       ]);
       const noachLit = () => {
-        const cold = haftarahOverlay.overlay.getItemColor(
-          noach,
+        const cold = haftarahOverlay.overlay.colorsFor(
+          [noach],
           {
             ...haftarahOverlay.settings,
             preview: null,
           },
+          null,
           haftarahOverlay.data,
-        ) as Color;
+        )[0] as Color;
         return sum(haftarahOverlay.getItemColor(noach) as Color) > sum(cold);
       };
 

@@ -123,15 +123,11 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void, TextDatingData> = 
 
   data: { dates: 'text-dating.json' },
 
-  getItemColor(verse: TanakhIdentity, _settings, data): Color | null {
-    const verseData = getVerseData(data, verse);
-    if (!verseData) return null;
-
-    return getVerseColorFromDate(midpointBCE(verseData.d));
-  },
-
-  colorsFor(items, settings, _hovered, data) {
-    return items.map((item) => this.getItemColor(item, settings, data));
+  colorsFor(items, _settings, _hovered, data) {
+    return items.map((item) => {
+      const verseData = getVerseData(data, item);
+      return verseData ? getVerseColorFromDate(midpointBCE(verseData.d)) : null;
+    });
   },
 
   renderLegend(container: HTMLElement) {

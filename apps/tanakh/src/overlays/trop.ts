@@ -286,10 +286,6 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     marksOf(data);
   },
 
-  getItemColor(verse, settings, data) {
-    return tropColorAt(verse, derivationFor(data, settings));
-  },
-
   colorsFor(items, settings, _hovered, data) {
     const derived = derivationFor(data, settings);
     return items.map((item) => tropColorAt(item, derived));

@@ -3,7 +3,7 @@
 import { optional } from '../src/dataFiles.ts';
 import type { Overlay } from '../src/overlays/types.ts';
 
-const colour = { getItemColor: () => null, colorsFor: () => [] };
+const colour = { colorsFor: () => [] };
 
 // @ts-expect-error An overlay that takes data names its files.
 export const takesDataNamesNone: Overlay<unknown, void, { texts: string[] }> = {

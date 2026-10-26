@@ -83,10 +83,6 @@ export const textAnalyticsOverlay: Overlay<
     scaleOf(data);
   },
 
-  getItemColor(verse, _settings, data) {
-    return colorAt(data, verse);
-  },
-
   colorsFor(items, _settings, _hovered, data) {
     return items.map((item) => colorAt(data, item));
   },

@@ -98,12 +98,10 @@ interface OverlayMembers<T, S, D> {
 
   destroy?(): void;
 
-  // null renders default gray; Color[] splits the square corner to corner, one band per color.
-  getItemColor(item: SpatialItem<T>, settings: S, data: D): Color | Color[] | null;
-
-  // The same colours for many items at once, as the map and the story's blend
-  // ask for them. `hovered` is the item under the cursor; only Haftarah's
-  // colours depend on it.
+  // One colour per item, as the map and the story's blend ask for them: null
+  // renders default gray; Color[] splits the square corner to corner, one band
+  // per color. `hovered` is the item under the cursor; only Haftarah's and
+  // the EU AI Act references' colours depend on it.
   colorsFor(
     items: SpatialItem<T>[],
     settings: S,

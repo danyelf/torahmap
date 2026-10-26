@@ -6,7 +6,6 @@ function claiming(key: string): TanakhOverlay {
   return {
     id: `claims-${key}`,
     name: 'Claims',
-    getItemColor: () => null,
     colorsFor: (items) => items.map(() => null),
     urlParams: [{ key, kind: 'token' }],
     settingsFromUrl: (params) => params,

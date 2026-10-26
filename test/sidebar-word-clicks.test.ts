@@ -149,7 +149,6 @@ describe('words in the popup', () => {
     const mockOverlay = testOverlay({
       id: 'test-overlay',
       name: 'Test overlay',
-      getItemColor: () => null,
       highlightItemText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
         const fragment = document.createDocumentFragment();
         if (language !== 'he') {

@@ -80,7 +80,7 @@ describe('Verse Length Overlay', () => {
     });
 
     it('has required methods', () => {
-      expect(overlay.getItemColor).toBeDefined();
+      expect(overlay.colorsFor).toBeDefined();
       expect(overlay.renderLegend).toBeDefined();
       expect(overlay.getHoverInfo).toBeDefined();
       expect(overlay.renderSidebarInfo).toBeDefined();

@@ -144,13 +144,11 @@ describe('dataFor', () => {
   const reader = testOverlay({
     id: 'r',
     name: 'R',
-    getItemColor: () => null,
     data: { texts: 'all-texts.json' },
   });
   const counter = testOverlay({
     id: 'c',
     name: 'C',
-    getItemColor: () => null,
     data: { words: 'all-texts.json' },
   });
 
@@ -166,7 +164,6 @@ describe('dataFor', () => {
     const other = testOverlay({
       id: 'o',
       name: 'O',
-      getItemColor: () => null,
       data: { counts: 'counts.json' },
     });
     mockFetch({ '/data/counts.json': { n: 1 }, '/data/all-texts.json': mockFetchStatus(500) });
@@ -188,7 +185,7 @@ describe('dataFor', () => {
   });
 
   it('hands an overlay that names no files undefined, never null', () => {
-    const plain = testOverlay({ id: 'p', name: 'P', getItemColor: () => null });
+    const plain = testOverlay({ id: 'p', name: 'P' });
     expect(dataFor(plain, new Map())).toBeUndefined();
   });
 });
@@ -199,7 +196,6 @@ describe('an optional file', () => {
   const reader = testOverlay({
     id: 'opt',
     name: 'Opt',
-    getItemColor: () => null,
     data: { texts: 'all-texts.json', parse: optional('parse.json') },
   });
 

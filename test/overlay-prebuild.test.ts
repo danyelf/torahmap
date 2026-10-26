@@ -9,7 +9,7 @@ function turns() {
 }
 
 const withPrebuild = (id: string, path: string, prebuild = vi.fn()) =>
-  testOverlay({ id, name: id, getItemColor: () => null, data: { file: path }, prebuild });
+  testOverlay({ id, name: id, data: { file: path }, prebuild });
 
 describe('prebuildCompleted', () => {
   it('prebuilds one overlay per idle turn, each with its own data, nothing before the first', () => {
@@ -36,7 +36,7 @@ describe('prebuildCompleted', () => {
 
   it('skips an overlay whose data is missing, and one with nothing to prebuild', () => {
     const missing = withPrebuild('m', 'missing.json');
-    const plain = testOverlay({ id: 'p', name: 'p', getItemColor: () => null });
+    const plain = testOverlay({ id: 'p', name: 'p' });
     const idle = turns();
     prebuildCompleted([missing, plain], new Map(), new Map(), () => {}, idle.schedule);
     idle.next();
