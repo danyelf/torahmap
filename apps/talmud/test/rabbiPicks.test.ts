@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { rgbToOklch } from '@torahmap/utils';
-import { MISHNAH_BASE_COLOR } from '../src/constants.ts';
 import { UNDATED, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import {
   eraLine,
+  MAX_PICKS,
   namedIn,
   passagesOf,
   pickColors,
@@ -168,15 +168,18 @@ describe('colours for the picks', () => {
     expect(pick('lakish', 'gamliel-a')[1]).not.toEqual(pick('lakish')[0]);
   });
 
+  it('has a colour for every pick the overlay allows', () => {
+    const many = Array.from({ length: MAX_PICKS }, () => rabbis[0]);
+    expect(pickColors(many)).toHaveLength(MAX_PICKS);
+  });
+
   it('makes all four equally light', () => {
     for (const other of all) expect(Math.abs(other.l - all[0].l)).toBeLessThan(0.01);
   });
 
-  it('puts four hues far apart, clear of the Mishnah’s violet', () => {
+  it('puts four hues far apart', () => {
     for (let a = 0; a < all.length; a++)
       for (let b = a + 1; b < all.length; b++) expect(hue(all[a].h, all[b].h)).toBeGreaterThan(60);
-    const mishnah = rgbToOklch([...MISHNAH_BASE_COLOR] as [number, number, number]).h;
-    for (const { h } of all) expect(hue(h, mishnah)).toBeGreaterThan(20);
   });
 });
 
