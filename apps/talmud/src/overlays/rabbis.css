@@ -45,6 +45,8 @@
 
 .rabbi-era-line {
   color: #999;
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .rabbi-meta {
