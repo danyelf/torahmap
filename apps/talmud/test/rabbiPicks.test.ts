@@ -208,24 +208,11 @@ describe('colours for the picks', () => {
 
 describe('a rabbi Sefaria gives no generation', () => {
   const levi: Rabbi = { id: 'levi', en: 'Levi', he: 'לוי', gen: UNDATED, names: [] };
-  const withLevi: RabbiData = {
-    dating: {
-      ...dating,
-      rabbis: [...rabbis, levi],
-      people: [...dating.people, { id: 'levi', en: 'Levi', he: 'לוי', gen: 0, means: [5] }],
-      segments: { ...dating.segments, 'A.2a.6': [0, 0, [5], []] },
-    },
-  };
 
   it('is coloured from the Amoraim, and told apart from an Amora picked beside him', () => {
     expect(pickColors([levi])[0]).toEqual(generationColor('A4'));
     const [a, b] = pickColors([rabbis[2], levi]).map(rgbToOklch);
     expect(hue(a.h, b.h)).toBeGreaterThan(30);
-  });
-
-  it('is offered under a heading of his own, after the eras', () => {
-    const groups = quickPicks(withLevi);
-    expect(groups.at(-1)).toMatchObject({ heading: 'Undated', entries: [{ en: 'Levi' }] });
   });
 });
 

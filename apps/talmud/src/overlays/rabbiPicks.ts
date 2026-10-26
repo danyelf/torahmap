@@ -118,13 +118,8 @@ const GENERATION_ORDER = ERAS.flatMap((era) =>
 
 const TRANSITION_NAME = 'Tanna/Amora transition';
 
-const UNDATED_NAME = 'Undated';
-
-/** The headings of a key: each era, with the transition generation between the Tannaim and Amoraim, and the undated last. */
-const GROUPS = [
-  ...ERAS.flatMap(({ name }) => (name === 'Tannaim' ? [name, TRANSITION_NAME] : [name])),
-  UNDATED_NAME,
-];
+/** The headings of a key: each era, with the transition generation between the Tannaim and Amoraim. */
+const GROUPS = ERAS.flatMap(({ name }) => (name === 'Tannaim' ? [name, TRANSITION_NAME] : [name]));
 
 /** The generation whose colour stands for the undated, who share the Amoraim's. */
 const UNDATED_COLORS_AS = 'A4';
@@ -136,12 +131,7 @@ const colorGeneration = (gen: string) => (gen === UNDATED ? UNDATED_COLORS_AS : 
  */
 export function quickPicks(data: RabbiData): { heading: string; entries: Entry[] }[] {
   const chosen = indexFor(data).entries.slice(0, QUICK_PICKS);
-  const groupOf = (entry: Entry) =>
-    entry.gen === UNDATED
-      ? UNDATED_NAME
-      : entry.gen === TRANSITION
-        ? TRANSITION_NAME
-        : eraOf(entry.gen);
+  const groupOf = (entry: Entry) => (entry.gen === TRANSITION ? TRANSITION_NAME : eraOf(entry.gen));
   const rank = (entry: Entry) => GENERATION_ORDER.indexOf(entry.gen);
   return GROUPS.map((heading) => ({
     heading,
