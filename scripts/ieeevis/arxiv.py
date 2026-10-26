@@ -4,9 +4,11 @@
     uv run --no-project python -I scripts/ieeevis/arxiv.py fetch <vis dir> pdf|source
 
 <vis dir> holds program.json. Every response is cached under <vis dir>/arxiv/, so a rerun
-fetches nothing twice. Requests go out one at a time, 10 seconds apart (arXiv's
-terms of use ask for at least 3), and the first refused or failed request stops the run: arXiv may block a
-client that keeps asking after a refusal.
+fetches nothing twice. Requests go out one at a time, searches 10 seconds apart (arXiv's
+terms of use ask for at least 3) and downloads 2 minutes apart. Downloads 10 s apart were
+refused at the third; 2 minutes apart, at the 22nd, after about 150 MB in 42 minutes. The
+first refused or failed request stops the run, saving a refusal's headers and body under
+<vis dir>/arxiv/refusals/: arXiv may block a client that keeps asking after a refusal.
 
 lookup keeps <vis dir>/arxiv/matches.json: for each program paper index, its status ('to
 search', 'searched' or 'failed') and, once searched, the accepted arXiv entry and the rejected
@@ -21,12 +23,14 @@ import json
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
 AGENT = 'torahmap-vis-map/0.1 (research spike; danyel-claude@users.noreply.github.com)'
 PAUSE = 10
+FETCH_PAUSE = 120
 KINDS = ('Full VIS Paper', 'VIS Short Paper', 'TVCG Paper', 'CG&A Paper')
 SIMILAR = 0.92  # title similarity to accept, after normalising
 NEAR = 0.6  # similarity worth recording as a rejected near-miss
@@ -36,16 +40,24 @@ BATCH_RESULTS = 200
 _last = 0.0
 
 
-def get(url: str, cache: Path) -> bytes:
+def get(url: str, cache: Path, pause: float = PAUSE) -> bytes:
     """The response for `url`, from the cache if it was fetched before."""
     path = cache / hashlib.sha1(url.encode()).hexdigest()
     if path.exists():
         return path.read_bytes()
     global _last
-    time.sleep(max(0.0, _last + PAUSE - time.time()))
+    time.sleep(max(0.0, _last + pause - time.time()))
     request = urllib.request.Request(url, headers={'User-Agent': AGENT})
     _last = time.time()
-    data = urllib.request.urlopen(request, timeout=240).read()
+    try:
+        data = urllib.request.urlopen(request, timeout=240).read()
+    except urllib.error.HTTPError as e:
+        # The headers may say when to come back (Retry-After) and the body what the limit is.
+        refused = cache.parent / 'refusals' / f'{time.strftime("%Y%m%dT%H%M%S")}.txt'
+        refused.parent.mkdir(exist_ok=True)
+        refused.write_text(f'{url}\n{e.code} {e.reason}\n\n{e.headers}\n{e.read().decode(errors="replace")}')
+        print('refusal saved to', refused, flush=True)
+        raise
     path.write_bytes(data)
     return data
 
@@ -160,8 +172,8 @@ def fetch(vis: Path, what: str) -> None:
         if target.exists():
             continue
         url = f'https://export.arxiv.org/{"pdf" if what == "pdf" else "e-print"}/{re.sub(r"v\d+$", "", aid)}'
-        target.write_bytes(get(url, cache))
-        print('fetched', i, base, target.stat().st_size, flush=True)
+        target.write_bytes(get(url, cache, FETCH_PAUSE))
+        print(time.strftime('%H:%M:%S'), 'fetched', i, base, target.stat().st_size, flush=True)
 
 
 if __name__ == '__main__':
