@@ -77,35 +77,64 @@ export function formulas(books: ParsedBook[]): Set<string> {
   );
 }
 
+interface Place {
+  verse: number;
+  position: number;
+}
+
+/**
+ * Every place in `verses` where a run recurs in its book within reach, with the other places it
+ * recurs at; the one rule that repeated words and echoes both read.
+ */
+function recurrences(verses: string[][], stock: Set<string>): { place: Place; others: Place[] }[] {
+  // Where each run is found in the book.
+  const at = new Map<string, Place[]>();
+  verses.forEach((verse, v) =>
+    runsIn(verse).forEach((run, position) => {
+      if (stock.has(run)) return;
+      if (!at.has(run)) at.set(run, []);
+      at.get(run)!.push({ verse: v, position });
+    }),
+  );
+
+  const found: { place: Place; others: Place[] }[] = [];
+  for (const places of at.values()) {
+    for (const place of places) {
+      const others = places.filter(
+        (other) => other !== place && Math.abs(other.verse - place.verse) <= PARAMETERS.reachVerses,
+      );
+      if (others.length > 0) found.push({ place, others });
+    }
+  }
+  return found;
+}
+
 /** Each book's verses, each word flagged when it sits in a run the book repeats nearby. */
 export function repeatedWords(books: ParsedBook[], stock = formulas(books)): boolean[][][] {
   return books.map(({ verses }) => {
-    // Where each run is found in the book.
-    const at = new Map<string, { verse: number; position: number }[]>();
-    verses.forEach((verse, v) =>
-      runsIn(verse).forEach((run, position) => {
-        if (stock.has(run)) return;
-        if (!at.has(run)) at.set(run, []);
-        at.get(run)!.push({ verse: v, position });
-      }),
-    );
-
     const repeated = verses.map((verse) => new Array<boolean>(verse.length).fill(false));
-    for (const places of at.values()) {
-      if (places.length < 2) continue;
-      for (const place of places) {
-        const recurs = places.some(
-          (other) =>
-            other !== place && Math.abs(other.verse - place.verse) <= PARAMETERS.reachVerses,
-        );
-        if (!recurs) continue;
-        for (let k = 0; k < PARAMETERS.runWords; k++) {
-          repeated[place.verse][place.position + k] = true;
-        }
+    for (const { place } of recurrences(verses, stock)) {
+      for (let k = 0; k < PARAMETERS.runWords; k++) {
+        repeated[place.verse][place.position + k] = true;
       }
     }
-
     return repeated;
+  });
+}
+
+/**
+ * Each book's verses, each with the other verses it shares a repeated run with, as offsets in
+ * reading order from it (negative before it), ascending.
+ */
+export function echoes(books: ParsedBook[], stock = formulas(books)): number[][][] {
+  return books.map(({ verses }) => {
+    const near = verses.map(() => new Set<number>());
+    for (const { place, others } of recurrences(verses, stock)) {
+      for (const other of others) {
+        if (other.verse !== place.verse) near[place.verse].add(other.verse - place.verse);
+      }
+    }
+    return near.map((offsets) => [...offsets].sort((a, b) => a - b));
   });
 }
 

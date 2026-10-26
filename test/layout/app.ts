@@ -225,6 +225,17 @@ export const STATES: State[] = [
     link: 'overlay=text-analytics&analysis=repetitive-wording&verse=Genesis.5.25',
     shown: ['#popup', '#map-legend'],
   },
+  {
+    // Numbers 7 repeats one offering six verses on; the pointer is on verse 37, 134 pixels
+    // left of the centre at this zoom.
+    name: 'explore-text-analytics-hover',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67',
+    then: async (page) => {
+      const canvas = (await page.locator('#canvas').boundingBox())!;
+      await page.mouse.move(canvas.x + canvas.width / 2 - 134, canvas.y + canvas.height / 2);
+    },
+    shown: ['#map-legend'],
+  },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.
   {
     name: 'explore-trop-rare',

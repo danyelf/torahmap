@@ -8,6 +8,8 @@ import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
+import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
+import { verseId } from '@torahmap/link/tanakh';
 import { TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
   HIGH_PERCENTILE,
@@ -60,6 +62,32 @@ const scaleOf = memoByValue((data: TextAnalyticsData) => {
   return { scale: scale(low, high, LINEAR, CIVIDIS_STOPS), low, high };
 });
 
+/** Each book's verses in reading order, as chapter and verse numbers, and where each begins. */
+const readingOrder = memoByValue((data: TextAnalyticsData) => {
+  const order = new Map<string, { chapter: number; verse: number }[]>();
+  const index = new Map<string, number>();
+  for (const [book, chapters] of Object.entries(data.scores.repetition)) {
+    const verses: { chapter: number; verse: number }[] = [];
+    for (const [chapter, scores] of Object.entries(chapters)) {
+      index.set(`${book} ${chapter}`, verses.length);
+      scores.forEach((_, i) => verses.push({ chapter: Number(chapter), verse: i + 1 }));
+    }
+    order.set(book, verses);
+  }
+  return { order, index };
+});
+
+/** The ids of the verses that share a repeated run with `verse`, none when it has no echoes. */
+function echoesOf(data: TextAnalyticsData, verse: TanakhLayout): string[] {
+  const offsets = data.scores.echoes[verse.book]?.[verse.chapter]?.[verse.verse] ?? [];
+  const { order, index } = readingOrder(data);
+  const start = (index.get(`${verse.book} ${verse.chapter}`) ?? 0) + verse.verse - 1;
+  return offsets.map((offset) => {
+    const { chapter, verse: v } = order.get(verse.book)![start + offset];
+    return verseId(verse.book, chapter, v);
+  });
+}
+
 function colorAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
   const score = scoreAt(data, verse);
   return score === null ? NO_DATA : scaleOf(data).scale.colorOf(score);
@@ -85,8 +113,18 @@ export const textAnalyticsOverlay: Overlay<
     scaleOf(data);
   },
 
-  colorsFor(items, _settings, _hovered, data) {
-    return items.map((item) => colorAt(data, item));
+  // A hovered verse with echoes lights them and itself; every other verse goes grey.
+  colorsFor(items, _settings, hovered, data) {
+    const echoes = hovered ? echoesOf(data, hovered) : [];
+    if (!hovered || echoes.length === 0) return items.map((item) => colorAt(data, item));
+    const lit = new Set([hovered.id, ...echoes]);
+    return items.map((item) => (lit.has(item.id) ? colorAt(data, item) : DIMMED_GREY));
+  },
+
+  hoverChangesColors(before, after, _settings, data) {
+    const hasEchoes = (verse: TanakhLayout | null) =>
+      verse && echoesOf(data, verse).length > 0 ? verse.id : null;
+    return hasEchoes(before) !== hasEchoes(after);
   },
 
   renderLegend(container, _settings, data) {
@@ -106,7 +144,7 @@ export const textAnalyticsOverlay: Overlay<
           `or more books) don't count`,
         `Blue = ${ENDS[0]} wording · Yellow = ${ENDS[1]} wording`,
         `Verses under ${p.minWords} words are not coloured`,
-        `Select a verse to see its repeated words marked in its text`,
+        `Hover a verse to light the verses it shares a phrase with; select it to mark the words`,
       ]
         .map(legendCaption)
         .join('');

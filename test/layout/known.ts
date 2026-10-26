@@ -9,6 +9,12 @@ const POPUP_KNOWN: Known = {
   violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
 };
 
+// A hovered verse's popup has no close button.
+const HOVER_POPUP_KNOWN: Known = {
+  reason: "The verse popup's Sefaria link is under 24px; accepted for now.",
+  violations: ['a.sefaria-link is 103×15px, under 24'],
+};
+
 // The same popup on the AI Act's page, its link naming EUR-Lex.
 const ACT_POPUP_KNOWN: Known = {
   reason: POPUP_KNOWN.reason,
@@ -23,6 +29,8 @@ const ACT_POPUP_KNOWN: Known = {
  * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
+  'explore-text-analytics-hover/phone/touch-targets': HOVER_POPUP_KNOWN,
+  'explore-text-analytics-hover/tablet/touch-targets': HOVER_POPUP_KNOWN,
   'explore-text-analytics-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-text-analytics-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-verse-pinned/phone/touch-targets': POPUP_KNOWN,

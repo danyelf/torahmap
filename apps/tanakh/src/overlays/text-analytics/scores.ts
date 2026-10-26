@@ -13,6 +13,13 @@ export type MeasureScores = Record<string, Record<string, (number | null)[]>>;
  */
 export type RepeatedWords = Record<string, Record<string, Record<string, number[]>>>;
 
+/**
+ * Book → chapter → verse number → the other verses of the book that share a repeated run with
+ * it, as offsets in reading order from the verse (negative before it). A verse with none is left
+ * out.
+ */
+export type Echoes = Record<string, Record<string, Record<string, number[]>>>;
+
 /** The values the scores were computed with, for the legend to name. */
 export interface ScoreParameters {
   minWords: number;
@@ -25,6 +32,7 @@ export interface ScoresFile {
   parameters: ScoreParameters;
   repetition: MeasureScores;
   repeated: RepeatedWords;
+  echoes: Echoes;
 }
 
 // The colours span the middle of the scores, so a handful of extreme passages

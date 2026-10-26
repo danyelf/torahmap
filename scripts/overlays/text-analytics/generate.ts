@@ -11,12 +11,14 @@ import { TEXTS_FILE, type VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
 import {
   SCORES_FILE,
   type MeasureScores,
+  type Echoes,
   type RepeatedWords,
   type ScoresFile,
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 import {
   PARAMETERS,
   parse,
+  echoes,
   repeatedStretches,
   repeatedWords,
   repetitionScores,
@@ -86,6 +88,23 @@ function nestStretches(
   return result;
 }
 
+/** Each verse's echoes, leaving out verses with none. */
+function nestEchoes(
+  books: ParsedBook[],
+  refs: [string, string][][],
+  offsets: number[][][],
+): Echoes {
+  const result: Echoes = {};
+  books.forEach((book, b) => {
+    const chapters: Echoes[string] = {};
+    refs[b].forEach(([chapter, verse], i) => {
+      if (offsets[b][i].length > 0) (chapters[chapter] ??= {})[verse] = offsets[b][i];
+    });
+    result[book.name] = chapters;
+  });
+  return result;
+}
+
 if (import.meta.main) {
   const { books, refs } = readBooks();
   const scores = repetitionScores(books);
@@ -93,6 +112,7 @@ if (import.meta.main) {
     parameters: PARAMETERS,
     repetition: nest(books, refs, scores),
     repeated: nestStretches(books, refs, scores, repeatedWords(books)),
+    echoes: nestEchoes(books, refs, echoes(books)),
   };
   const out = join(DATA, SCORES_FILE);
   mkdirSync(dirname(out), { recursive: true });
