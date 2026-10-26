@@ -14,13 +14,20 @@ import {
   ITEM_ATTRIBUTES,
   ITEM_OFFSETS,
   FLOATS_PER_ITEM,
+  SQUARE_GAP,
   type Picture,
 } from './geometry.ts';
 import { buildOutlineGeometry } from './outline.ts';
 import type { SpatialItem } from './types.ts';
 import { sameItem } from './items.ts';
 import { viewOffset, type Camera } from './camera.ts';
-import { HIGHLIGHT_CONSTANTS, MAP_BACKGROUND, RINGS, STANDOUT_MIN_PX } from './constants.ts';
+import {
+  HIGHLIGHT_CONSTANTS,
+  hasRingRoom,
+  MAP_BACKGROUND,
+  RINGS,
+  STANDOUT_MIN_PX,
+} from './constants.ts';
 
 function offsetFor(
   canvas: HTMLCanvasElement,
@@ -215,7 +222,9 @@ export function renderOutline<T>(
   const { gl, programs, canvas } = context;
   const { dpr } = state;
 
-  const geometry = buildOutlineGeometry(item, thickness);
+  const width = (item.width ?? item.size) - SQUARE_GAP;
+  const round = !!item.round && hasRingRoom(Math.min(width, item.size - SQUARE_GAP), camera.zoom);
+  const geometry = buildOutlineGeometry(item, thickness, round);
 
   let currentBuffer = buffer;
   if (!currentBuffer) {
@@ -233,14 +242,22 @@ export function renderOutline<T>(
   gl.uniform2f(programs.outline.uniforms.pan, offset.x, offset.y);
   gl.uniform1f(programs.outline.uniforms.zoom, camera.zoom * dpr);
   gl.uniform3f(programs.outline.uniforms.color, ...color);
+  const radius = width / 2;
+  const band = thickness ?? HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS;
+  gl.uniform4f(
+    programs.outline.uniforms.disc,
+    item.x + (item.jitter?.x ?? 0) + radius,
+    item.y + (item.jitter?.y ?? 0) + radius,
+    radius,
+    round ? radius + band : 0,
+  );
 
   gl.bindBuffer(gl.ARRAY_BUFFER, currentBuffer);
 
   gl.enableVertexAttribArray(programs.outline.attribs.position);
   gl.vertexAttribPointer(programs.outline.attribs.position, 2, gl.FLOAT, false, 0, 0);
 
-  // 4 borders * 6 vertices each = 24 vertices
-  gl.drawArrays(gl.TRIANGLES, 0, 24);
+  gl.drawArrays(gl.TRIANGLES, 0, geometry.length / 2);
 
   return currentBuffer;
 }

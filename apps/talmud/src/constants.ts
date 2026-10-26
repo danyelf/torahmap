@@ -12,6 +12,9 @@ export const SEGMENT_SIZE = 6; // px per segment square
 export const PEREK_LABEL_ZOOM = 0.7;
 export const DAF_LABEL_ZOOM_ALL = 1.5;
 
+// The Mishnah's letters show from this zoom, about where its squares become circles (zoom 2).
+export const MISHNAH_LETTER_ZOOM = 2.5;
+
 // A perek name's size at zoom 1, and the bounds it is held between, in pixels.
 export const PEREK_SIZE = { base: 9, min: 7, max: 18 };
 
@@ -92,6 +95,10 @@ export const HADRAN_RING_COLOR: Color = [0.95, 0.93, 0.86];
 // What a segment a search does not find keeps of its base colour, so Mishnah
 // still shows from Gemara.
 export const SEARCH_KEEPS_BASE = 0.6;
+
+// What the Rabbis overlay leaves of a passage that names none of the picks. Less than a search
+// leaves, so the picks stand out.
+export const RABBIS_UNLIT_KEEPS = 0.35;
 
 // --- Per-segment brightness jitter ---
 // Each segment is a deterministic ±BRIGHTNESS_JITTER brighter or darker

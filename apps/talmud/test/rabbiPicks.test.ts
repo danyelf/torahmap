@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { rgbToOklch } from '@torahmap/utils';
-import { MISHNAH_BASE_COLOR } from '../src/constants.ts';
-import { generationColor } from '../src/overlays/dating.ts';
 import { UNDATED, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import {
   eraLine,
+  MAX_PICKS,
   namedIn,
   passagesOf,
   pickColors,
@@ -161,50 +160,26 @@ const hue = (a: number, b: number) => {
 
 describe('colours for the picks', () => {
   const pick = (...ids: string[]) => pickColors(ids.map((id) => rabbis[place(id)]));
+  const all = pick('lakish', 'yochanan', 'gamliel-a', 'gamliel-b').map(rgbToOklch);
 
-  it('keeps a lone rabbi in his generation’s Dating colour', () => {
-    expect(pick('lakish')[0]).toEqual(generationColor('A2'));
-    expect(pick('lakish')[0]).toEqual(pick('yochanan')[0]);
+  it('gives each pick a colour by the order picked, whatever his generation', () => {
+    expect(pick('lakish')[0]).toEqual(pick('gamliel-a')[0]);
+    expect(pick('lakish', 'gamliel-a')[0]).toEqual(pick('gamliel-a', 'lakish')[0]);
+    expect(pick('lakish', 'gamliel-a')[1]).not.toEqual(pick('lakish')[0]);
   });
 
-  const gens = (...codes: string[]) =>
-    pickColors(codes.map((gen) => ({ id: gen, en: gen, he: '', gen, names: [] })));
-
-  // Each era is a family of hues: the first two picks sit at its two ends.
-  const families: [string, string, number, number][] = [
-    ['Amoraim', 'A4', 190, 275],
-    ['Tannaim', 'T3', 15, 70],
-    ['Zugot', 'Z5', 295, 360],
-  ];
-  for (const [era, code, from, to] of families) {
-    it(`gives three ${era} equal lightness and hues far apart, two of them at the ends of the family`, () => {
-      const [a, b, c] = gens(code, code, code).map(rgbToOklch);
-      for (const other of [b, c]) expect(Math.abs(other.l - a.l)).toBeLessThan(0.01);
-      expect(hue(a.h, b.h)).toBeGreaterThan(35);
-      expect(hue(a.h, c.h)).toBeGreaterThan(35);
-      expect(hue(b.h, c.h)).toBeGreaterThan(35);
-      for (const { h } of [a, b]) {
-        expect(h).toBeGreaterThan(from > 290 && h < 100 ? from - 360 : from);
-        expect(h < 100 && from > 290 ? h + 360 : h).toBeLessThan(to + 0.001);
-      }
-    });
-  }
-
-  it('keeps the ends of each family clear of the next, and of the Mishnah’s violet', () => {
-    const ends = (code: string) => gens(code, code).map((c) => rgbToOklch(c).h);
-    const [teal, indigo] = ends('A4');
-    const [orange, crimson] = ends('T3');
-    const [pink, violet] = ends('Z5');
-    expect(hue(indigo, violet)).toBeGreaterThan(30);
-    expect(hue(crimson, pink)).toBeGreaterThan(30);
-    expect(hue(teal, orange)).toBeGreaterThan(60);
-    const mishnah = rgbToOklch([...MISHNAH_BASE_COLOR] as [number, number, number]).h;
-    expect(hue(indigo, mishnah)).toBeGreaterThan(30);
+  it('has a colour for every pick the overlay allows', () => {
+    const many = Array.from({ length: MAX_PICKS }, () => rabbis[0]);
+    expect(pickColors(many)).toHaveLength(MAX_PICKS);
   });
 
-  it('gives rabbis of different eras different hues', () => {
-    const [a, b] = pick('lakish', 'gamliel-a').map(rgbToOklch);
-    expect(hue(a.h, b.h)).toBeGreaterThan(60);
+  it('makes all four equally light', () => {
+    for (const other of all) expect(Math.abs(other.l - all[0].l)).toBeLessThan(0.01);
+  });
+
+  it('puts four hues far apart', () => {
+    for (let a = 0; a < all.length; a++)
+      for (let b = a + 1; b < all.length; b++) expect(hue(all[a].h, all[b].h)).toBeGreaterThan(60);
   });
 });
 
@@ -244,16 +219,6 @@ describe('how a rabbi is named', () => {
     expect(shortName({ ...meir, en: 'Rabi', he: 'רבי' })).toBe('Rabi רבי');
     expect(shortName({ ...meir, en: 'Rabbinic X', he: 'רבינא' })).toBe('Rabbinic X רבינא');
     expect(shortName({ ...meir, en: 'Bar Rabbi', he: 'ברבי עקיבא' })).toBe('Bar Rabbi ברבי עקיבא');
-  });
-});
-
-describe('a rabbi Sefaria gives no generation', () => {
-  const levi: Rabbi = { id: 'levi', en: 'Levi', he: 'לוי', gen: UNDATED, names: [] };
-
-  it('is coloured from the Amoraim, and told apart from an Amora picked beside him', () => {
-    expect(pickColors([levi])[0]).toEqual(generationColor('A4'));
-    const [a, b] = pickColors([rabbis[2], levi]).map(rgbToOklch);
-    expect(hue(a.h, b.h)).toBeGreaterThan(30);
   });
 });
 

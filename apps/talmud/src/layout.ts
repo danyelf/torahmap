@@ -319,6 +319,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           x: baseX,
           y,
           size: SEGMENT_SIZE,
+          round: seg.isMishnah,
           jitter: {
             x: (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER,
             y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER,
