@@ -30,6 +30,7 @@ export function systemOf(book: string, chapter: number, verse: number): System {
 interface Group {
   id: string;
   title: string;
+  hebrew: string;
   /** What the group's marks do, as one short line. */
   blurb: string;
 }
@@ -46,11 +47,11 @@ export const SYSTEM_INFO: Record<System, SystemInfo> = {
     label: 'Prose',
     intro: 'Ranked as the chant ranks them: each mark divides the verse, or leads into the next.',
     groups: [
-      { id: 'emperors', title: 'Emperors', blurb: 'end the verse and its half' },
-      { id: 'kings', title: 'Kings', blurb: 'divide each half' },
-      { id: 'dukes', title: 'Dukes', blurb: 'divide the parts of each half' },
-      { id: 'counts', title: 'Counts', blurb: 'divide the smallest parts' },
-      { id: 'servants', title: 'Servants', blurb: 'lead into the next mark' },
+      { id: 'emperors', title: 'Emperors', hebrew: 'קיסרים', blurb: 'end the verse and its half' },
+      { id: 'kings', title: 'Kings', hebrew: 'מלכים', blurb: 'divide each half' },
+      { id: 'dukes', title: 'Dukes', hebrew: 'משנים', blurb: 'divide the parts of each half' },
+      { id: 'counts', title: 'Counts', hebrew: 'שלישים', blurb: 'divide the smallest parts' },
+      { id: 'servants', title: 'Servants', hebrew: 'משרתים', blurb: 'lead into the next mark' },
     ],
   },
   poetic: {
@@ -59,8 +60,8 @@ export const SYSTEM_INFO: Record<System, SystemInfo> = {
       'The poetic books, the Sifrei Emet, are chanted in a system of their own. Several signs ' +
       'look like prose marks but are not: the tipcha sign is tarcha, a servant.',
     groups: [
-      { id: 'dividers', title: 'Dividers', blurb: 'divide the verse' },
-      { id: 'servants', title: 'Servants', blurb: 'lead into the next mark' },
+      { id: 'dividers', title: 'Dividers', hebrew: 'מפסיקים', blurb: 'divide the verse' },
+      { id: 'servants', title: 'Servants', hebrew: 'משרתים', blurb: 'lead into the next mark' },
     ],
   },
 };

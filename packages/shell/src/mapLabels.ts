@@ -84,7 +84,7 @@ export interface MapLabelSettings {
 }
 
 /** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
-function hebrewSpan(text: string, className: string): HTMLSpanElement {
+export function hebrewSpan(text: string, className: string): HTMLSpanElement {
   const span = document.createElement('span');
   span.className = className;
   span.style.fontFamily = HEBREW_LABEL_FONT;

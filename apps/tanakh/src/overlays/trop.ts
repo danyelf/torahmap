@@ -35,6 +35,7 @@ import {
   type TropIndexEntry,
   type TropMark,
 } from './trop/marks.ts';
+import { hebrewSpan } from '@torahmap/shell/mapLabels.ts';
 import { legendCaption, legendRow } from './legend.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
@@ -241,7 +242,10 @@ function renderTropChart(
       panel.appendChild(intro);
       for (const { group, marks } of marksByGroup(system)) {
         const heading = document.createElement('h4');
-        heading.innerHTML = `${group.title} <span>${group.blurb}</span>`;
+        const blurb = document.createElement('span');
+        blurb.className = 'trop-group-blurb';
+        blurb.textContent = group.blurb;
+        heading.append(`${group.title} `, hebrewSpan(group.hebrew, 'trop-group-he'), ' ', blurb);
         const grid = document.createElement('div');
         grid.className = 'trop-grid';
         for (const mark of marks) {

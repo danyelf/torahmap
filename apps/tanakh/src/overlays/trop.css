@@ -64,7 +64,7 @@
   color: #fff;
 }
 
-.trop-chart h4 span {
+.trop-chart h4 .trop-group-blurb {
   font-weight: normal;
   color: #888;
 }
