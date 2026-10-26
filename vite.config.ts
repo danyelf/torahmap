@@ -105,9 +105,9 @@ function assetsIgnorePlugin(live: boolean): Plugin {
   };
 }
 
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command, mode }) => {
   const branch = getGitBranch();
-  const live = isLiveBuild(command, branch);
+  const live = mode === 'production' && isLiveBuild(command, branch);
   return {
     plugins: [
       storiesPlugin(),
