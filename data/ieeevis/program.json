@@ -1,0 +1,5975 @@
+[
+ {
+  "kind": "VIS Short Paper",
+  "title": "Exploring LLM Agent Designs and Interaction Modalities for Scientific Visualization",
+  "authors": [
+   "Jackson Vonderhorst",
+   "Kuangshi Ai",
+   "Haichao Miao",
+   "Shusen Liu",
+   "Chaoli Wang"
+  ],
+  "when": "Wed, Nov 11, 13:00",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "Olli with Hypergraphs: An Extensible Architecture for Accessible Charts and Diagrams",
+  "authors": [
+   "Jonathan Zong"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "QueerTravel: Visualizing Social Safety Enriched with Community Experiences to Support Travel Decisions",
+  "authors": [
+   "Ba\u015fak Oral",
+   "Alexandru Telea",
+   "Evanthia Dimara"
+  ],
+  "when": "Thu, Nov 12, 08:36",
+  "session": "Story time"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "ConformaLens: conformational states in Adaptive Molecular Dynamics",
+  "authors": [
+   "Hossein Fathollahian",
+   "Siyuan Zhao",
+   "Marziye Salahshour",
+   "Saeed Boorboor",
+   "G. Elisabeta Marai"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Bio+MedVis Challenge"
+ },
+ {
+  "kind": "vis4climate Workshop Paper",
+  "title": "AgroScan - An Interactive SOC Prediction Tool for Farmers",
+  "authors": [
+   "Margarete Breitenhuber",
+   "Clara Buller",
+   "Claudio Bussinger",
+   "Jerome Reiter",
+   "Mennatallah El-Assady",
+   "Yannick Metz",
+   "Christina Humer"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "vis4climate: Workshop on Building a Transdisciplinary Climate Vis Community"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Measuring the Collaboration, Not the Agent: An Evaluation Framework for Human-AI High-Dimensional Visual Analytics",
+  "authors": [
+   "Xinxiao Li",
+   "EISEI NAKAHARA"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Designing Within the Lines: Practitioners\u2019 Perspectives and Visualisation Tool Evaluation in the Arabic Context",
+  "authors": [
+   "Muna Alebri",
+   "No\u00eblle Rakotondravony",
+   "Yassine Bechqito",
+   "Georgia Panagiotidou",
+   "Salem Alkaabi",
+   "Hassan Jamal Aldhanhani",
+   "Lane Harrison"
+  ],
+  "when": "Tue, Nov 10, 13:00",
+  "session": "How you show it makes a difference!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "DebrisTracer: Reliable Tracking in Hypervelocity Impact Fast Imaging",
+  "authors": [
+   "Th\u00e9ophane Loloum",
+   "Fabien Vivodtzev",
+   "David Hebert",
+   "Baptiste Reynier",
+   "Michel Arrigoni",
+   "Julien Tierny"
+  ],
+  "when": "Tue, Nov 10, 13:12",
+  "session": "Making things visual in science and engineering"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "EvidenceLens: A Claim-Evidence Matrix for Auditing Financial Question Answering",
+  "authors": [
+   "Fengchen Gu",
+   "Xiaotian Ren",
+   "Zhengyong Jiang",
+   "Zhilu Zhang",
+   "\u00c1ngel F. Garc\u00eda-Fern\u00e1ndez",
+   "Angelos Stefanidis",
+   "Mian Zhou",
+   "Huakang Li",
+   "Jionglong Su"
+  ],
+  "when": "Thu, Nov 12, 08:45",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Marks, Channels, and Dead Ends: Stop Running Graphical Perception Studies and Start Modeling Visualizations as Images",
+  "authors": [
+   "Khairi Reda",
+   "Shambhawi Sharma",
+   "Luc Renambot",
+   "Fabio Miranda",
+   "Saeed Boorboor"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Agentic Anomaly Visual Analytics",
+  "authors": [
+   "Muqi Zhang",
+   "Chunpo Wu",
+   "Furkan Erdi",
+   "Manuel Schmidt",
+   "Daniel A Keim",
+   "Julius Rauscher"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "BackdoorScope: Visual Analytics of Internal Behaviors in LLMs under Backdoor Attacks",
+  "authors": [
+   "Hanze Jia",
+   "Tan Tang",
+   "Yan Chen",
+   "Feiyuan Qu",
+   "Dazhen Deng",
+   "Yule Liu",
+   "Shouling Ji",
+   "Yingcai Wu"
+  ],
+  "when": "Wed, Nov 11, 13:36",
+  "session": "Let&#39;s figure out how things work behind the scenes"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Attention Dynamics in Diffusion Models: A Visual Analytics Framework for Human\u2013AI Collaboration",
+  "authors": [
+   "Yiran Xiao",
+   "George Legrady"
+  ],
+  "when": "Thu, Nov 12, 08:09",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "The Values of Visualization: Nurturing a Reflective Community of Practice with Critical Visualization Activities",
+  "authors": [
+   "Tatiana Losev",
+   "Fearn Bishop",
+   "Jason Dykes",
+   "S\u00f8ren Knudsen",
+   "Doris Kosminsky",
+   "Isabel Meirelles",
+   "Jagoda Walny",
+   "Wesley Willett",
+   "Georgia Panagiotidou"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Toward AI VIS Co-Scientists: An Agent Harness for End-to-End Design of Scientific Visualization Applications",
+  "authors": [
+   "Haichao Miao",
+   "Zhimin Li",
+   "Kuangshi Ai",
+   "Kaiyuan Tang",
+   "Chaoli Wang",
+   "Peer-Timo Bremer",
+   "Shusen Liu"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "What Do We Mean When We Talk About Infographics?",
+  "authors": [
+   "Xiaoyu Liu",
+   "Vishnu Sreekanth",
+   "Vraj Patel",
+   "Shalin Muzumdar",
+   "Diego Lopez",
+   "Fumeng Yang",
+   "Zhicheng Liu"
+  ],
+  "when": "Tue, Nov 10, 10:09",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Toward Visual Methods: Reflections on How Visuals Enrich Empirical Research",
+  "authors": [
+   "Zezhong Wang",
+   "Sheelagh Carpendale",
+   "Samuel Huron"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ProVega: A Grammar to Ease the Prototyping, Creation, and Reproducibility of Progressive Data Analysis and Visualization Solutions",
+  "authors": [
+   "Matteo Filosa",
+   "Graziano Blasilli",
+   "Emilio Martino",
+   "Marco Angelini"
+  ],
+  "when": "Tue, Nov 10, 11:12",
+  "session": "Please don&#39;t just stare at the picture"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Interaction Techniques for Virtual Dissectible Models",
+  "authors": [
+   "Tim McGraw",
+   "Jack Myers"
+  ],
+  "when": "Tue, Nov 10, 10:27",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Organelles: Visual Analytics for Governing Federated Multi-Agent Organizations",
+  "authors": [
+   "Andralyn Yao",
+   "Sizheng Cailean Chen",
+   "Aaron Wang",
+   "Justin Li",
+   "Jasmine Tang",
+   "Nabin Khanal",
+   "Qi Yang",
+   "Hannah Yanhua Zong",
+   "Jieqiong Zhao",
+   "Yingjie Victor Chen",
+   "Zhenyu Cheryl Qian"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Revisiting Channel Effectiveness: A Multi-Dimensional Evaluation with Primitive Visual Stimuli",
+  "authors": [
+   "Soohyun Lee",
+   "Seokhyeon Park",
+   "Minsuk Chang",
+   "Jinwook Seo"
+  ],
+  "when": "Wed, Nov 11, 13:12",
+  "session": "Did you see that? Are you sure?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Representational Fidelity in Didactic Visualization: Toward a Multidimensional Design Space",
+  "authors": [
+   "Shehryar Saharan",
+   "Michele Oliver",
+   "Karen Gordon",
+   "Ga\u00ebl McGill",
+   "Jodie Jenkinson"
+  ],
+  "when": "Thu, Nov 12, 13:00",
+  "session": "From design spaces to visual design"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "The Grand Challenge of AI, Visualization, and Healthcare: Insights from the VAHC Workshop 2025",
+  "authors": [
+   "J\u00fcrgen Bernard",
+   "David Gotz",
+   "Robert S. Laramee",
+   "Silvia Miksch",
+   "Gabriela Morgenshtern",
+   "Renata Georgia Raidou",
+   "Alessio Arleo"
+  ],
+  "when": "Thu, Nov 12, 13:54",
+  "session": "Tools of the Trade"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "What-If Demolition: Home-First Narrative Anchoring for Public-Facing Gentrification Analytics",
+  "authors": [
+   "Ibrahim Al-Hazwani",
+   "Yanick Bachmann",
+   "Mennatallah El-Assady"
+  ],
+  "when": "Wed, Nov 11, 11:03",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Visualizing Uncertainty in Non-linear Projections with Ensembles",
+  "authors": [
+   "Kai Nylund",
+   "Michael Correll",
+   "Lace M. Padilla"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Targeted and Traceable Investigation of Multi-Agent LLM Dialogue via Semantic Bundling of Knowledge Graphs",
+  "authors": [
+   "Zeyu Hua",
+   "Adam J Coscia",
+   "Alex Endert"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Vibes on Demand: Adding Vibrotactile Encoding to Line Charts Shows Experiential Benefits Without Performance Costs",
+  "authors": [
+   "Anchit Mishra",
+   "Oliver Schneider",
+   "Matthew Brehmer"
+  ],
+  "when": "Fri, Nov 13, 08:12",
+  "session": "This feels amazingly real!"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Visualizing Lagrangian Heat Transport Paths and Density Structures in Unsteady Heat Transfer",
+  "authors": [
+   "Besm Osman",
+   "Andrei Jalba",
+   "Michel Speetjens",
+   "Anna Vilanova"
+  ],
+  "when": "Fri, Nov 13, 08:09",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "VisxVision Workshop Paper",
+  "title": "How Does Title Framing Influence Pattern Identification in Line Charts?",
+  "authors": [
+   "Jasmine Lim",
+   "Tapendra Pandey",
+   "Arran Zeyu Wang",
+   "Sungahn Ko",
+   "Ghulam Jilani Quadri"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VisxVision: Workshop on Novel Directions in Vision Science and Visualization Research"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "AgentPulse: Visual Analytics of Communication and Activity in LLM-Based Multi-Agent Systems",
+  "authors": [
+   "Kathrin Guckes",
+   "Andreas Kyek"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "CATVis: A Collaborative Multi-Agent Workflow for Turbomachinery Simulation Data Visualization",
+  "authors": [
+   "Zhe Wang",
+   "Zehao Lou",
+   "Guanghui Zhao",
+   "Yu Dong",
+   "Guan Li",
+   "Pengyi Xu",
+   "GAORONG LIANG",
+   "Jun Liu",
+   "Guihua Shan"
+  ],
+  "when": "Fri, Nov 13, 08:54",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "VisxVision Workshop Paper",
+  "title": "Can a Neural Encoding Model Replicate an fMRI Visualization Study?",
+  "authors": [
+   "Erfan Nasirzadeh Orang",
+   "Zack While"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VisxVision: Workshop on Novel Directions in Vision Science and Visualization Research"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Colour Blinded by the Noise",
+  "authors": [
+   "Harriet Mason",
+   "Rachel ES Rogers",
+   "Alison Kleffner",
+   "Di Cook"
+  ],
+  "when": "Thu, Nov 12, 09:12",
+  "session": "I&#39;m not so certain"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "The Indoor Emerald Necklace: Amplifying Boston\u2019s Winter Spatial Inequality",
+  "authors": [
+   "Natalie Ng",
+   "Michael Lawrence Evans"
+  ],
+  "when": "Wed, Nov 11, 08:24",
+  "session": "VISAP - Making Data Tangible: Materiality, Space, and Public Life"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Swipytics: Leveraging Short-form Video Stream Metaphor in Exploratory Data Analysis",
+  "authors": [
+   "Jiwon Choi",
+   "Sehi L&#39;Yi",
+   "Seojin Kim",
+   "Jaemin Jo"
+  ],
+  "when": "Thu, Nov 12, 15:09",
+  "session": "Lost in Dimensions"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "TrustStream: How Much Should We Trust AI Agents? Visual Analytics for Alignment Monitoring in Multi-Agent Systems",
+  "authors": [
+   "Aaron Wang",
+   "Justin Li",
+   "Sizheng Cailean Chen",
+   "Andralyn Yao",
+   "Nabin Khanal",
+   "Qi Yang",
+   "Jasmine Tang",
+   "Zhancheng Su",
+   "Jieqiong Zhao",
+   "Hannah Yanhua Zong",
+   "Zhenyu Cheryl Qian",
+   "Yingjie Victor Chen"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Forensic Intelligence and Network Oversight",
+  "authors": [
+   "Juan Leibniz Aquino Espinoza",
+   "Josue Arbulu Pastor",
+   "Ricardo Amiel Acu\u00f1a Villogas",
+   "Cesar Eduardo Pajuelo Reyes",
+   "Germain Garcia-Zanabria"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "VisPuzzle: Task-Aware Composite Visualization Construction",
+  "authors": [
+   "Zheng Wang",
+   "Zhiyang Shen",
+   "Lingyun Yu",
+   "Shixia Liu"
+  ],
+  "when": "Wed, Nov 11, 08:24",
+  "session": "I feel tangled in a net"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "Snailpocalypse: A Physical Escape Room Game for Students Fostering Data Visualisation Literacy",
+  "authors": [
+   "Christina Stoiber",
+   "Magdalena Boucher",
+   "Julia B\u00f6ck",
+   "Kate Farrell",
+   "Jasmeen Kanwal",
+   "Wolfgang Aigner"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "SpheriColor: Colormaps for Spherical Geospatial Input Topographies",
+  "authors": [
+   "Julius Rauscher",
+   "Johannes Fuchs",
+   "Daniel A Keim",
+   "Frederik L. Dennig"
+  ],
+  "when": "Tue, Nov 10, 10:00",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Ripples: Exploring Communication Patterns in Organizational Multi-Agent Systems",
+  "authors": [
+   "Nabin Khanal",
+   "Qi Yang",
+   "Sizheng Cailean Chen",
+   "Jasmine Tang",
+   "Andralyn Yao",
+   "Justin Li",
+   "Zhancheng Su",
+   "Aaron Wang",
+   "Hannah Yanhua Zong",
+   "Zhenyu Cheryl Qian",
+   "Yingjie Victor Chen",
+   "Jieqiong Zhao"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Uncertainty Visualization for Approximated Barycenter of Contour Trees Based on Partial Optimal Transport",
+  "authors": [
+   "Mingzhe Li",
+   "Fangfei Lan",
+   "Gunther H Weber",
+   "Bei Wang"
+  ],
+  "when": "Wed, Nov 11, 08:18",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "TopoInVis Workshop Paper",
+  "title": "Explainable Reaction Atlas",
+  "authors": [
+   "Jason Li",
+   "Rodrigo de la Nuez Moraleda",
+   "Dhruv Meduri",
+   "Kelin XIA",
+   "Bei Wang"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "TopoInVis Connect: Topology meets Artificial Intelligence"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ResonaVis: Visualizing Interactive Music Data to Support Reflective Music Composition for Therapeutic Contexts",
+  "authors": [
+   "Abhishek Karwankar",
+   "Elise Ruggiero",
+   "Daniel Stevens",
+   "Matthew Louis Mauriello"
+  ],
+  "when": "Tue, Nov 10, 15:00",
+  "session": "Data really is everywhere"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Conversational Tactile Data Interfaces: Co-Designing Accessible Data Experiences with Blind Users Using Refreshable Tactile Displays and Conversational AI",
+  "authors": [
+   "Samuel Reinders",
+   "Munazza Zaib",
+   "Bongshin Lee",
+   "Ingrid Zukerman",
+   "Matthew Butler",
+   "Thien Autran",
+   "Sascha Cowley",
+   "Francois Jacobs",
+   "Lizhen Qu",
+   "Kim Marriott"
+  ],
+  "when": "Fri, Nov 13, 08:36",
+  "session": "This feels amazingly real!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "PaintEcho: Bringing Paintings to Photos through Cross-domain Visual Exploration",
+  "authors": [
+   "Yihan Gao",
+   "Tan Tang",
+   "Jianing Yin",
+   "Haobo Zheng",
+   "Tianyi Chen",
+   "Lu Ying",
+   "Yanhong Wu",
+   "Yingcai Wu"
+  ],
+  "when": "Tue, Nov 10, 15:12",
+  "session": "Data really is everywhere"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "A Multimodal Reasoning Typology for Grounding Chart-Image Coherence in Science Communication",
+  "authors": [
+   "Avina Nakarmi",
+   "Sohom Sen",
+   "Xun Song",
+   "Sreyashi Samaddar",
+   "Aritra Dasgupta"
+  ],
+  "when": "Wed, Nov 11, 13:36",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Data Visualization for Teenage Teaching: A Review of Current Applications, Pedagogical Strategies, and Impact on Learning",
+  "authors": [
+   "Xingyu Lan",
+   "Xian Xu",
+   "Yifan Wang"
+  ],
+  "when": "Thu, Nov 12, 15:00",
+  "session": "Kids these days don&#39;t learn anything anymore, let&#39;s fix that!"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "On Interpretability Methods for Vision Language Models in Visualization",
+  "authors": [
+   "Pranava Madhyastha",
+   "Maeve Hutchinson"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Meandering Photo Lines: Fluid Multiscale Exploration of Photographic Archives",
+  "authors": [
+   "Mark-Jan Bludau",
+   "Christian Tominski",
+   "Marian D\u00f6rk"
+  ],
+  "when": "Tue, Nov 10, 15:24",
+  "session": "Data really is everywhere"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "CHS-Parasar-MC1",
+  "authors": [
+   "Nilesh Parasar"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Mitigating Confirmation Bias Through Hand-Drawing Videos",
+  "authors": [
+   "Chenyu Lin",
+   "Cindy Xiong Bearfield",
+   "Icy(Yunyi) Zhang"
+  ],
+  "when": "Wed, Nov 11, 08:00",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "SIGMA: A Spatial Interaction Grammar for Multi-Display Visual Analytics",
+  "authors": [
+   "Yogesh Rai",
+   "Haeyong Chung"
+  ],
+  "when": "Thu, Nov 12, 14:12",
+  "session": "Places and spaces"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "CausalChat: Interactive Causal Model Development and Refinement Using Large Language Models",
+  "authors": [
+   "Yanming Zhang",
+   "Akshith Kota",
+   "Eric Papenhausen",
+   "Klaus Mueller"
+  ],
+  "when": "Tue, Nov 10, 13:00",
+  "session": "Modern talking-visually"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "GNN101: Visual Learning of Graph Neural Networks in Your Web Browser",
+  "authors": [
+   "Yilin Lu",
+   "Chongwei Chen",
+   "Yuxin Chen",
+   "Kexin Huang",
+   "Marinka Zitnik",
+   "Qianwen Wang"
+  ],
+  "when": "Wed, Nov 11, 13:24",
+  "session": "Let&#39;s figure out how things work behind the scenes"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Beyond the Good, the Bad, and the Ugly: Colormap Assessment through Data-Aware Perceptual Metric",
+  "authors": [
+   "Xi Duan",
+   "Yiwei Lin",
+   "Shiqing Xin",
+   "Aoying Wang",
+   "Yucheng Wang",
+   "Changhe Tu",
+   "Qiong Zeng"
+  ],
+  "when": "Tue, Nov 10, 16:12",
+  "session": "Figuring out how to do good research"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "BUAA-Yang-MC2",
+  "authors": [
+   "shibo yang"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "TuneScape: Visualizing Multi-Tuner Parameter Optimization Logs",
+  "authors": [
+   "Donghee Hong",
+   "Minjong Kim",
+   "Sooyoung Cha",
+   "Jaemin Jo"
+  ],
+  "when": "Thu, Nov 12, 13:18",
+  "session": "Tools of the Trade"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Visual Decoding Operators: Towards a Compositional Theory of Visualization Perception",
+  "authors": [
+   "Sheng Long",
+   "Remco Chang",
+   "Eugene Wu",
+   "Alex Kale",
+   "Matthew Kay"
+  ],
+  "when": "Wed, Nov 11, 13:00",
+  "session": "Did you see that? Are you sure?"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "HCMUS-Nguyen-MC1",
+  "authors": [
+   "Ngan V.T. Nguyen",
+   "My Tran",
+   "An Nguyen"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "reVISit-XR: Bringing Extended Reality into Embeddable, Trackable, and Replayable Visualization Studies",
+  "authors": [
+   "Shano Liang",
+   "Max Chen",
+   "Lane Harrison"
+  ],
+  "when": "Thu, Nov 12, 13:27",
+  "session": "Tools of the Trade"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ManyFold: A Design Exploration of Data Visualization on Foldable Mobile Devices",
+  "authors": [
+   "Julian Baader",
+   "Ricardo Langner",
+   "Can Liu",
+   "Raimund Dachselt"
+  ],
+  "when": "Fri, Nov 13, 08:00",
+  "session": "This feels amazingly real!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "NEXO: Adaptive Visualization for Comparative Exploration of Knowledge Graphs with Natural Language Interaction",
+  "authors": [
+   "Reza Shahriari",
+   "Justin Whorton",
+   "Jonathan Bona",
+   "Kevin Sexton",
+   "Mathias Brochhausen",
+   "Jaime Ruiz",
+   "Eric Ragan"
+  ],
+  "when": "Tue, Nov 10, 11:12",
+  "session": "Talk to my agent"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "TailVis: Expressive Visualization Refinement Preserving Data-Binding Integrity",
+  "authors": [
+   "Yumin Song",
+   "Seokhyeon Park",
+   "Soohyun Lee",
+   "Aeri Cho",
+   "Hyeon Jeon",
+   "John Joon Young Chung",
+   "Jinwook Seo"
+  ],
+  "when": "Thu, Nov 12, 08:36",
+  "session": "How can I do this myself?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Scalable Semantic Steering of Embedding Projections",
+  "authors": [
+   "Wei Liu",
+   "Eric Krokos",
+   "Kirsten Whitley",
+   "Rebecca Faust",
+   "Chris North"
+  ],
+  "when": "Thu, Nov 12, 15:36",
+  "session": "Lost in Dimensions"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "EvoInsight: A Conversational Framework for End-to-End Generation of Topic-Oriented Videos from Large-Scale Texts",
+  "authors": [
+   "Zongchao Dai",
+   "Chenyi Liu",
+   "Jie Li"
+  ],
+  "when": "Fri, Nov 13, 09:12",
+  "session": "Let&#39;s dig into the data (from China)"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Exposing the Unsaid: Visualizing Hidden LLM Bias through Stochastic Path Aggregation",
+  "authors": [
+   "Matteo Pelossi",
+   "Rita Sevastjanova",
+   "Thilo Spinner",
+   "Mennatallah El-Assady"
+  ],
+  "when": "Wed, Nov 11, 08:12",
+  "session": "Let&#39;s dig into the data (from France)"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Counterbalance: A Declarative Tool for Privacy-Preserving Statistical Chart Authoring based on Differential Privacy",
+  "authors": [
+   "Xumeng Wang",
+   "Shuangcheng Jiao",
+   "Chris Bryan",
+   "Yining Wang"
+  ],
+  "when": "Thu, Nov 12, 08:24",
+  "session": "Story time"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Structuring Line Ensembles with Path-Integrated Fidelity and Structural Inconsistency Fields",
+  "authors": [
+   "Yumeng Xue",
+   "Patrick Paetzold",
+   "Bin Chen",
+   "Yunhai Wang",
+   "Christophe Hurter",
+   "Oliver Deussen"
+  ],
+  "when": "Thu, Nov 12, 13:24",
+  "session": "Places and spaces"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "360\u00b0 Rays: Familiar, Yet Different and Better!",
+  "authors": [
+   "Bipasha Garg",
+   "Kamalakar Karlapalem"
+  ],
+  "when": "Tue, Nov 10, 10:36",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Distribution-Agnostic Isocontour Confidence Bounds for Robust Uncertainty Visualization of Scalar Field Data",
+  "authors": [
+   "Timbwaoga A. J. Ouermi",
+   "Nina M. Gottschling",
+   "Alex Gorczowski",
+   "Tushar M. Athawale"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "Exploring Tactile Chart Authoring for Refreshable Tactile Displays: Lessons from a Co-Design Case Study",
+  "authors": [
+   "Pramod Chundury",
+   "J. Bern Jordan",
+   "Yasmin Reyazuddin",
+   "Niklas Elmqvist",
+   "Jonathan Lazar"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Charting the Immersive Self: A Scoping Review of Immersive Personal Visualisation",
+  "authors": [
+   "Thomas James Davidson",
+   "Zihan Dai",
+   "Yalong Yang",
+   "Emily Wall",
+   "Keke Wu"
+  ],
+  "when": "Fri, Nov 13, 09:12",
+  "session": "This feels amazingly real!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "The CAPED Framework: Characterizing User Skills in Chart Authoring through the Lens of Tasks and Tools",
+  "authors": [
+   "Bongshin Lee",
+   "Zhicheng Liu",
+   "John R Thompson",
+   "Chenglong Wang"
+  ],
+  "when": "Thu, Nov 12, 09:00",
+  "session": "How can I do this myself?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "VisCanvas: A Node-Based Interface for Exploratory Visualization Authoring with LLMs",
+  "authors": [
+   "Yuki Ueno",
+   "Bretho Danzy",
+   "Zhuojun Jiang",
+   "Chris Bryan"
+  ],
+  "when": "Tue, Nov 10, 14:00",
+  "session": "Modern talking-visually"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Epistemic Tensions: Reframing A Visualization Co-Design through Entanglement Theory",
+  "authors": [
+   "Wei Wei",
+   "Foroozan Daneshzand",
+   "Zezhong Wang",
+   "Erica Mattson",
+   "Jenny Farkas",
+   "Sarah Storteboom",
+   "Charles Perin",
+   "Sheelagh Carpendale"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Beyond Initial Creation: Two Decades of Community-based Chart Revisions from Wikimedia Commons",
+  "authors": [
+   "Jasmine Y Shih",
+   "Chase Stokes",
+   "Melanie Tory",
+   "Marti Hearst"
+  ],
+  "when": "Wed, Nov 11, 10:45",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "HopViz: Tracing Anomalous Behaviour Hop-By-Hop Through a Tangled Multi-Agent System",
+  "authors": [
+   "Joel Perca",
+   "Luis Sante",
+   "Dany Mauro Diaz Espino",
+   "Leighton Estrada-Rayme",
+   "Juanpablo Heredia",
+   "Felipe Moreno-Vera",
+   "Jo\u00e3o Rulff",
+   "Jorge Poco"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Prediction market visualizations, betting, and uncertainty: A study of Reddit Posts and Comments",
+  "authors": [
+   "Subham Sah",
+   "Alireza Karduni",
+   "Doug Markant",
+   "Wenwen Dou"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "GEMS - Guided Evolutionary Molecule Design for Sustainable Chemicals",
+  "authors": [
+   "Coelina Robinson",
+   "Franziska Weissbach",
+   "Kjell Jorner",
+   "Mennatallah El-Assady",
+   "Christina Humer"
+  ],
+  "when": "Fri, Nov 13, 09:03",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "VAxAutoSci Workshop Paper",
+  "title": "ViSAXS: Visual Analytics for Human-Guided SAXS Morphology Exploration in Autonomous Characterization",
+  "authors": [
+   "Aishik Deb",
+   "Kevin Yager",
+   "Klaus Mueller"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAxAutoSci: Visual Analytics in the Age of Autonomous Science"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Chart2SVG: Editable SVG Generation from Raster Chart Images",
+  "authors": [
+   "Jinning Cui",
+   "Lu Chen",
+   "Haoyan Shi",
+   "Yue He",
+   "Chenglong Wang",
+   "Mengyu Zhou",
+   "Weidong Huang",
+   "Yunhai Wang"
+  ],
+  "when": "Thu, Nov 12, 09:12",
+  "session": "How can I do this myself?"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "LoCoMapper: Local Structural Uncertainty Analysis of Mapper Graphs under Cover Perturbations",
+  "authors": [
+   "Xinyuan Yan",
+   "Jixian Li",
+   "Bei Wang"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "VeriLLMed: Visual Debugging of Medical Large Language Models with Knowledge Graphs",
+  "authors": [
+   "Yurui Xiang",
+   "Xingyi Mao",
+   "Rui Sheng",
+   "Zixin Chen",
+   "Zelin Zang",
+   "Yuyang Wu",
+   "Haipeng Zeng",
+   "Huamin Qu",
+   "Yushi Sun",
+   "Yanna Lin"
+  ],
+  "when": "Tue, Nov 10, 13:00",
+  "session": "Can we have a (real) doctor, please?"
+ },
+ {
+  "kind": "VAxAutoSci Workshop Paper",
+  "title": "MolExplain: An Interactive Tool for Explainable Molecular Property Prediction",
+  "authors": [
+   "Pirm Dhararag",
+   "Dylan Cashman"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAxAutoSci: Visual Analytics in the Age of Autonomous Science"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Similar Ratings, Different Consensus: Visualizing Agreement Uncertainty in Survey Data",
+  "authors": [
+   "Vrushali Koli",
+   "Yi Meng",
+   "Eugene P. Deess",
+   "Aritra Dasgupta"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Interactive Hierarchical Visualization for Exploring the Neotoma Paleoecological Taxonomy",
+  "authors": [
+   "Yanbing Chen",
+   "Jonathan Nelson",
+   "Simon Goring",
+   "Qianheng Zhang",
+   "Jessica Blois",
+   "John Williams"
+  ],
+  "when": "Wed, Nov 11, 13:18",
+  "session": "Connecting the Dots"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "MV-Bench: Benchmarking Multimodal Large Language Models for Coordinated Multi-View Interface Construction",
+  "authors": [
+   "Yue Zhao",
+   "Hongxu Liu",
+   "Feiyu Wang",
+   "Xiaoyu Yang",
+   "Tong Ge",
+   "Zhen Yang",
+   "Chao Wang",
+   "Qiong Zeng"
+  ],
+  "when": "Fri, Nov 13, 08:36",
+  "session": "Let&#39;s dig into the data (from China)"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Topology-Preserving Meshing of Implicit Scalar Fields via Monotonicity Constraints",
+  "authors": [
+   "Tanner Finken",
+   "Jixian Li",
+   "Bei Wang",
+   "Hanqi Guo",
+   "Joshua A Levine"
+  ],
+  "when": "Fri, Nov 13, 08:45",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "vis4climate Workshop Paper",
+  "title": "Enabling a Material Re-Use Workflow with LLM-Extracted Metadata for Circular Construction",
+  "authors": [
+   "Peter Waldert",
+   "Lukas Gschweitl",
+   "Benedikt Kantz",
+   "Matthias Lang-Raudaschl",
+   "Milena Stavric",
+   "Tobias Schreck"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "vis4climate: Workshop on Building a Transdisciplinary Climate Vis Community"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Practice improves performance with uncertainty visualization tasks.",
+  "authors": [
+   "Benjamin T Files",
+   "Laura Marusich",
+   "Mark S. Dennison"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "&quot;It Seems Like Such a Simple Thing&quot;: Challenges and Opportunities for Giving Credit in Science Museums",
+  "authors": [
+   "Kate Blomgren",
+   "Derya Akbaba",
+   "Ryan Wyatt",
+   "Miriah Meyer"
+  ],
+  "when": "Thu, Nov 12, 11:12",
+  "session": "My followers need to know about this!"
+ },
+ {
+  "kind": "VisxVision Workshop Paper",
+  "title": "Visual Embellishments are Potential Distractions in Double-Column Reading",
+  "authors": [
+   "Songwen Hu",
+   "Chase Stokes",
+   "Marti Hearst",
+   "Cindy Xiong Bearfield"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VisxVision: Workshop on Novel Directions in Vision Science and Visualization Research"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Ice Archives: Amplifying Greenland\u2019s Geologic Memory",
+  "authors": [
+   "Francesca Samsel",
+   "Benjamin Keisling",
+   "Greg Abram"
+  ],
+  "when": "Wed, Nov 11, 13:12",
+  "session": "VISAP Pictorial - Beyond the Visual: Materiality, Memory, and Identity"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "An Algorithmic Perspective on Information Visualization",
+  "authors": [
+   "Wouter Meulemans"
+  ],
+  "when": "Wed, Nov 11, 08:48",
+  "session": "Let&#39;s dig into the data (from France)"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Exploring Text Classification Models with Sparse Autoencoders",
+  "authors": [
+   "Daniel Kerrigan",
+   "Brian Barr",
+   "Enrico Bertini"
+  ],
+  "when": "Thu, Nov 12, 08:27",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Field Guide: Making Lived Uncertainty Interpretable in Women\u2019s Return-to-Play",
+  "authors": [
+   "Rhiannon Sian Owen",
+   "Jonathan C Roberts"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "SOCAS: A Social Media Public Opinion Causal Analysis System Validated by the Funnel of Causality Theory",
+  "authors": [
+   "Chen Yi",
+   "Yihang Yang",
+   "Xingyu Lan",
+   "Siming Chen"
+  ],
+  "when": "Thu, Nov 12, 10:36",
+  "session": "My followers need to know about this!"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "UNIPO: Unified Interactive Visual Explanation for RL Fine-Tuning Policy Optimization",
+  "authors": [
+   "Aeree Cho",
+   "Alexander D Greenhalgh",
+   "Jonathan Bodea",
+   "ShengYun Peng",
+   "Duen Horng Chau"
+  ],
+  "when": "Thu, Nov 12, 08:36",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "What Data Do and Do Not Represent: Visualizing the Archive of Slavery",
+  "authors": [
+   "Shiyao Li",
+   "Margy Adams",
+   "Tanvi Sharma",
+   "Jay Varner",
+   "Lauren Klein"
+  ],
+  "when": "Thu, Nov 12, 08:48",
+  "session": "Applications, Domain Science &amp; Data Representation"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "SciVisAgentBench: A Benchmark for Evaluating Scientific Data Analysis and Visualization Agents",
+  "authors": [
+   "Kuangshi Ai",
+   "Haichao Miao",
+   "Kaiyuan Tang",
+   "Nathaniel Gorski",
+   "Jianxin Sun",
+   "Guoxi Liu",
+   "Helgi Ingolfsson",
+   "David Lenz",
+   "Hanqi Guo",
+   "Hongfeng Yu",
+   "Teja Leburu",
+   "Michael Molash",
+   "Bei Wang",
+   "Tom Peterka",
+   "Chaoli Wang",
+   "Shusen Liu"
+  ],
+  "when": "Tue, Nov 10, 16:00",
+  "session": "Figuring out how to do good research"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "AttentionRadViz: Token-Anchored Attention Profile Visualization for Transformer Head Analysis",
+  "authors": [
+   "Jared Wilber"
+  ],
+  "when": "Thu, Nov 12, 08:54",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Save It for the \u201cHot\u201d Day: An LLM-Empowered Visual Analytics System for Heat Risk Management",
+  "authors": [
+   "Haobo Li",
+   "Wong Kam-Kwai",
+   "Yan Luo",
+   "Juntong Chen",
+   "Chengzhong Liu",
+   "Yaxuan Zhang",
+   "Alexis Kai Hon Lau",
+   "Huamin Qu",
+   "Dongyu Liu"
+  ],
+  "when": "Tue, Nov 10, 15:48",
+  "session": "Data really is everywhere"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Designing a Visualization Atlas: Lessons &amp; Reflections from The UK Co-Benefits Atlas for Climate Mitigation",
+  "authors": [
+   "Jinrui Wang",
+   "Alexis Pister",
+   "Sian Phillips",
+   "Sarah Bissett",
+   "Ruaidhri Higgins-Lavery",
+   "Clare Wharmby",
+   "Andrew Sudmant",
+   "Uta Hinrichs",
+   "Benjamin Bach"
+  ],
+  "when": "Thu, Nov 12, 13:00",
+  "session": "Places and spaces"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "EventColumn: Integrating Event Sequences into Tabular Visualizations",
+  "authors": [
+   "Jakob Zethofer",
+   "Andreas Hinterreiter",
+   "Lukas Schieferm\u00fcller",
+   "Belgin Mutlu",
+   "Marc Streit"
+  ],
+  "when": "Wed, Nov 11, 13:45",
+  "session": "Connecting the Dots"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "An Age-Based Study Into Interactive Narrative Visualization Engagement",
+  "authors": [
+   "Nina Errey",
+   "Yi Chen",
+   "Yu Dong",
+   "Quang Vinh Nguyen",
+   "Xiaoru Yuan",
+   "Tuck Wah Leong",
+   "Christy Jie Liang"
+  ],
+  "when": "Thu, Nov 12, 15:12",
+  "session": "Human-Centered Design, Accessibility &amp; Interaction"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Adaptive Uncertainty Visualization With jk-Plots",
+  "authors": [
+   "Nikolaus Piccolotto",
+   "Daniel Pahr",
+   "Laura Lotteraner",
+   "Fatih \u00d6ztank",
+   "Markus B\u00f6gl"
+  ],
+  "when": "Wed, Nov 11, 08:54",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Sycamore: Exploring Grounded Synthetic Evaluation for Visualization Systems",
+  "authors": [
+   "Huyen N. Nguyen",
+   "Astrid van den Brandt",
+   "Nils Gehlenborg"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "DVD: Scaffolding Non-experts&#39; Ideation of Data Videos through Co-creation with AI",
+  "authors": [
+   "Xiaozhu Hu",
+   "Yuchao Zhuo",
+   "Bingyuan Wang",
+   "Zeyu Wang",
+   "Mingming Fan",
+   "Tristan Braud",
+   "Xian Xu"
+  ],
+  "when": "Tue, Nov 10, 11:12",
+  "session": "The more the merrier"
+ },
+ {
+  "kind": "VisxVision Workshop Paper",
+  "title": "Are Average Estimates in Line Graphs Biased Toward Areas of Higher Variability?",
+  "authors": [
+   "Sheng Long"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VisxVision: Workshop on Novel Directions in Vision Science and Visualization Research"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Divided Attention Amplifies the Importance of Expectation-Aligned Visualization Design",
+  "authors": [
+   "Jiho Kim",
+   "Anna L Chinni",
+   "Karen Schloss",
+   "Michael Gleicher"
+  ],
+  "when": "Wed, Nov 11, 13:36",
+  "session": "Did you see that? Are you sure?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Adapting CCDF Plots for Visualizing Ordinal Regression Results",
+  "authors": [
+   "Abhraneel Sarma"
+  ],
+  "when": "Tue, Nov 10, 11:03",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Untangling Rhetoric, Pathos, and Aesthetics in Data Visualization",
+  "authors": [
+   "Verena Prantl",
+   "Torsten M\u00f6ller",
+   "Laura Koesten"
+  ],
+  "when": "Tue, Nov 10, 13:36",
+  "session": "How you show it makes a difference!"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "MammoWeave: Fidelity-First Cohort Cartography for Auditing Mammography Data and Automated Labels",
+  "authors": [
+   "Chaofan Qiao"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Bio+MedVis Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Mixed Uncertainty in One View: Co-Visualizing Statistical Variability and Qualitative Confidence",
+  "authors": [
+   "Racquel Fygenson",
+   "Lace M. Padilla",
+   "Laura Matzen"
+  ],
+  "when": "Thu, Nov 12, 08:12",
+  "session": "I&#39;m not so certain"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "lpviz: Interactive Linear Programming Visualization",
+  "authors": [
+   "Evan Grand",
+   "Michael Klamkin"
+  ],
+  "when": "Thu, Nov 12, 13:00",
+  "session": "Tools of the Trade"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Understanding the Research-Practice Gap in Visualization Design Guidelines",
+  "authors": [
+   "Nam Wook Kim",
+   "Grace Myers",
+   "Jinhan Choi",
+   "Yoonsuh Cho",
+   "Changhoon Oh",
+   "Yea-Seul Kim"
+  ],
+  "when": "Thu, Nov 12, 16:00",
+  "session": "Kids these days don&#39;t learn anything anymore, let&#39;s fix that!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "EMINDS: Understanding User Behavior Progression for Mental Health Exploration on Social Media",
+  "authors": [
+   "Rui Sheng",
+   "Yifang Wang",
+   "Xingbo Wang",
+   "Shun Dai",
+   "Qingyu Guo",
+   "Tai-Quan Peng",
+   "Huamin Qu",
+   "Dongyu Liu"
+  ],
+  "when": "Thu, Nov 12, 10:24",
+  "session": "My followers need to know about this!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Trustworthy Deep Learning-Assisted Visualization and Analysis for Distribution-Based Ensemble Scientific Data Summarization",
+  "authors": [
+   "Han Huang",
+   "Zheng-Han Huang",
+   "Nathania Josephine",
+   "Guan Li",
+   "Ko-Chih Wang"
+  ],
+  "when": "Tue, Nov 10, 15:36",
+  "session": "Let me through, I&#39;m a scientist!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "When Data Offers No Right Answer: Designing Failure in Serious Data Visualization Games",
+  "authors": [
+   "Yechun Peng",
+   "Qiushi He",
+   "Yiting Liu",
+   "Yang Shi"
+  ],
+  "when": "Tue, Nov 10, 14:12",
+  "session": "How you show it makes a difference!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "SigTime: Learning and Visually Explaining Time Series Signatures",
+  "authors": [
+   "Yu-Chia Huang",
+   "Juntong Chen",
+   "Dongyu Liu",
+   "Kwan-Liu Ma"
+  ],
+  "when": "Thu, Nov 12, 10:24",
+  "session": "Time after time"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Less Is More Reflective: Intervention Intensity and Metacognitive Disruption in Visual Analytics",
+  "authors": [
+   "Mengyu Chen",
+   "Yixin Bai",
+   "Zheyuan Lin",
+   "Emily Wall"
+  ],
+  "when": "Wed, Nov 11, 14:00",
+  "session": "Did you see that? Are you sure?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "VACP: Visual Analytics Context Protocol",
+  "authors": [
+   "Tobias St\u00e4hle",
+   "P\u00e9ter Ferenc Gyarmati",
+   "Thilo Spinner",
+   "Rita Sevastjanova",
+   "Dominik Moritz",
+   "Mennatallah El-Assady"
+  ],
+  "when": "Wed, Nov 11, 09:00",
+  "session": "Let&#39;s dig into the data (from France)"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "DAVA: Decoding Art With Visual Analytics Through Feature Modeling and Multi-Agent Collaboration",
+  "authors": [
+   "Wei Zhang",
+   "Xiaoyan Gu",
+   "Hengru Liu",
+   "Peiyi Jiang",
+   "Xianfeng Peng",
+   "Zhenqian Xu",
+   "Yifang Wang",
+   "Wei Chen"
+  ],
+  "when": "Tue, Nov 10, 10:48",
+  "session": "The more the merrier"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Tracing Recurring Agent Pathways: Evidence-Centered Visual Analytics for Intervention Design",
+  "authors": [
+   "Zhixuan Hu",
+   "Liduan Liu",
+   "Zhenghan Chen",
+   "Chunran Hu",
+   "Yuetong Guo",
+   "Junyan Liu",
+   "Jingqi Du"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "A Generic Lagrangian-Hamiltonian Framework for Optimal Reference Frames in Unsteady Flow",
+  "authors": [
+   "Xingdi Zhang",
+   "Amani Waleed Ageeli",
+   "Thomas Theu\u00dfl",
+   "Peter Rautek",
+   "Markus Hadwiger"
+  ],
+  "when": "Tue, Nov 10, 15:00",
+  "session": "Let me through, I&#39;m a scientist!"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Computing the Quality of Isosurface-Based Visualizations Using a Feed-Forward Model for Single-Image Reconstruction",
+  "authors": [
+   "Li-Ta Lo",
+   "Christian Heine",
+   "Roxana Bujack"
+  ],
+  "when": "Fri, Nov 13, 08:36",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "What Draws Your Attention First? An Attention Prediction Model Based on Spatial Features in Virtual Reality",
+  "authors": [
+   "Matthew S. Castellana",
+   "Ping Hu",
+   "Doris Gutierrez",
+   "Arie E. Kaufman"
+  ],
+  "when": "Wed, Nov 11, 13:24",
+  "session": "Did you see that? Are you sure?"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Saying Uncertain, Showing Certain: Evidence-Action Mismatches in LLM Visualization Agents",
+  "authors": [
+   "Arindam Bhattacharya"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "The Choreographic Genome: Amplifying the Silent Structure of Text into Dance",
+  "authors": [
+   "Michael Li",
+   "Alison Ding"
+  ],
+  "when": "Wed, Nov 11, 10:48",
+  "session": "VISAP - Reimagining Archives: AI, Performance, and Cultural Memory"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Visual Analytics for Multi-Agent Event Logs",
+  "authors": [
+   "Rients Dotinga",
+   "Angelos Chatzimparmpas"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Visualizing High-Dimensional Graph Embeddings via Informed Multi-View Projections",
+  "authors": [
+   "Ya Ji",
+   "Xuefeng Li",
+   "Timo Brand",
+   "Jacob Miller",
+   "Peng Zhang",
+   "Stephen Kobourov",
+   "Yifan Hu"
+  ],
+  "when": "Wed, Nov 11, 08:12",
+  "session": "I feel tangled in a net"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Super-Gaussian: Interactive Scene Editing for 3D Gaussian Splatting and NLI-Based Volume Visualization in Virtual Reality",
+  "authors": [
+   "Suemin Jeon",
+   "Kaiyuan Tang",
+   "Chaoli Wang",
+   "Won-Ki Jeong"
+  ],
+  "when": "Thu, Nov 12, 13:00",
+  "session": "Turn up the volume(s)!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Into the Void: Mapping the Unseen Gaps in High Dimensional Data",
+  "authors": [
+   "Xinyu Zhang",
+   "Tyler Estro",
+   "Geoff Kuenning",
+   "Erez Zadok",
+   "Klaus Mueller"
+  ],
+  "when": "Thu, Nov 12, 11:12",
+  "session": "That&#39;s way too many dimensions for me"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "CanvasObs: Structured Spatial Observation for Agent Editing in 2D Workspaces",
+  "authors": [
+   "Jiahao Xu",
+   "Haohui Wang",
+   "Rebecca Faust",
+   "Dawei Zhou",
+   "Chris North"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "CounterCrime - Using counterfactual explanations to explore crime reduction scenarios",
+  "authors": [
+   "Marcos M. Raimundo",
+   "Germain Garcia-Zanabria",
+   "Luis Gustavo Nonato",
+   "Jorge Poco"
+  ],
+  "when": "Thu, Nov 12, 13:48",
+  "session": "Places and spaces"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "What Do Visualization Instructors Want Students to Learn? Introducing a Concept Inventory for Visualization Design",
+  "authors": [
+   "Medina Lamkin",
+   "Heer Patel",
+   "Sayamindu Dasgupta",
+   "Leilani Battle"
+  ],
+  "when": "Thu, Nov 12, 15:12",
+  "session": "Kids these days don&#39;t learn anything anymore, let&#39;s fix that!"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "LLM Agents for Visualization Generation and Vision-First Evaluation",
+  "authors": [
+   "Tahsen Islam Sajon"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Interactive Visual Exploration of Rule-Based Model Logic",
+  "authors": [
+   "Natalia Andrienko",
+   "Gennady Andrienko",
+   "Bahavathy Kathirgamanathan"
+  ],
+  "when": "Fri, Nov 13, 09:12",
+  "session": "I don&#39;t trust you, explain yourself!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Coherent Visualization of 2D Scalar Field Contour Ensembles With Probabilistic Latent Space Modeling",
+  "authors": [
+   "Cenyang Wu",
+   "Runhao Lin",
+   "Qinhan Yu",
+   "Liang Zhou"
+  ],
+  "when": "Thu, Nov 12, 09:00",
+  "session": "I&#39;m not so certain"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Lost in Transliteration: Not My Name, Not My Gender",
+  "authors": [
+   "Liuhuaying Yang"
+  ],
+  "when": "Wed, Nov 11, 13:36",
+  "session": "VISAP Pictorial - Beyond the Visual: Materiality, Memory, and Identity"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "MAPLE: Self-supervised Learning-Enhanced Nonlinear Dimensionality Reduction for Visual Analysis",
+  "authors": [
+   "Zeyang Huang",
+   "Takanori Fujiwara",
+   "Angelos Chatzimparmpas",
+   "Wandrille Duchemin",
+   "Andreas Kerren"
+  ],
+  "when": "Thu, Nov 12, 10:24",
+  "session": "That&#39;s way too many dimensions for me"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Rotation-Minimizing Space Deformations for the Analysis of Lagrangian Vortex Corelines",
+  "authors": [
+   "Julio Alberto Rey Ramirez",
+   "Xingdi Zhang",
+   "Markus Hadwiger",
+   "Peter Rautek"
+  ],
+  "when": "Tue, Nov 10, 15:12",
+  "session": "Let me through, I&#39;m a scientist!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Libra+: Compositional Interaction for Data Visualization",
+  "authors": [
+   "Xu Luo",
+   "Yue Zhao",
+   "Bongshin Lee",
+   "Jean-Daniel Fekete",
+   "Yunhai Wang"
+  ],
+  "when": "Tue, Nov 10, 10:12",
+  "session": "Please don&#39;t just stare at the picture"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "UMATO: Bridging Local and Global Structures for Reliable Visual Analytics with Dimensionality Reduction",
+  "authors": [
+   "Hyeon Jeon",
+   "Kwon Ko",
+   "Soohyun Lee",
+   "Jake Hyun",
+   "Taehyun Yang",
+   "Gyehun Go",
+   "Jaemin Jo",
+   "Jinwook Seo"
+  ],
+  "when": "Thu, Nov 12, 11:00",
+  "session": "That&#39;s way too many dimensions for me"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "What Should the Agent Withhold? Designing Cognitive Friction Against Over-Reliance in Visualization Design Learning",
+  "authors": [
+   "Jing Lu",
+   "Yuheng Zhao",
+   "Cagatay Turkay",
+   "Siming Chen"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Rethinking Utility in Differentially Private Visualization: A Channel-Centric Perspective",
+  "authors": [
+   "Jing Yang",
+   "Sarayu Pacca",
+   "Zhaocong Yang",
+   "Liyue Fan"
+  ],
+  "when": "Wed, Nov 11, 08:45",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Graphical Perception Across Encoding Channels in Multimodal LLMs",
+  "authors": [
+   "Markus Wallinger",
+   "Jakob Tobias Z\u00f6bl",
+   "Stephen Kobourov"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Distortion-aware brushing for reliable cluster analysis in multidimensional projections",
+  "authors": [
+   "Hyeon Jeon",
+   "Micha\u00ebl Aupetit",
+   "Soohyun Lee",
+   "Kwon Ko",
+   "Youngtaek Kim",
+   "Ghulam Jilani Quadri",
+   "Jinwook Seo"
+  ],
+  "when": "Tue, Nov 10, 11:00",
+  "session": "Please don&#39;t just stare at the picture"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "PoseForge: Editable Pose Analytics for AI-Assisted Sports Coaching",
+  "authors": [
+   "Shuvam Swapnil Dash",
+   "Arpit Narechania"
+  ],
+  "when": "Tue, Nov 10, 16:12",
+  "session": "Data really is everywhere"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Mission Control: Forensic Visual Analytics for AI-Agent Embargo Breach Investigation",
+  "authors": [
+   "Anna Baynes",
+   "Sheri Snehith"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Beyond Quantification of Neighborhoods: Perception-Driven Quality Measures for Dimensionality Reduction",
+  "authors": [
+   "Jiazhi Xia",
+   "Chunxi Deng",
+   "Xiangyu Zhu"
+  ],
+  "when": "Fri, Nov 13, 08:24",
+  "session": "Let&#39;s dig into the data (from China)"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Generate, Validate, Repair: Reliable Visual Data Reporting with LLM Agents",
+  "authors": [
+   "Naga Datha Saikiran Battula",
+   "Vrushali Koli",
+   "Bayan Divaaniaazar",
+   "Aritra Dasgupta"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Cognitive Affordances in Visualization: Related Constructs, Design Factors, and Framework",
+  "authors": [
+   "Racquel Fygenson",
+   "Lace Padilla",
+   "Enrico Bertini"
+  ],
+  "when": "Thu, Nov 12, 14:12",
+  "session": "From design spaces to visual design"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "A Stevens&#39; Power Law Measurement for Multimodal Large Language Models",
+  "authors": [
+   "Kaichun Yang",
+   "Jian Chen"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Make the Fastest Faster: Importance Mask Synthesis for Interactive Volume Visualization using Reconstruction Neural Networks",
+  "authors": [
+   "Jianxin Sun",
+   "David Lenz",
+   "Hongfeng Yu",
+   "Tom Peterka"
+  ],
+  "when": "Thu, Nov 12, 13:36",
+  "session": "Turn up the volume(s)!"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "TUM-Ilina-MC1",
+  "authors": [
+   "Daria Ilina",
+   "Jacob Miller"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "CUBE-ism: An Interactive Visual Analytics System for Real-Time Darknet Traffic Triage",
+  "authors": [
+   "Kanta Okugawa",
+   "Koei Suzuki",
+   "Masaki Kubo",
+   "Ryutaro Ushigome",
+   "Yukiko Endo",
+   "Takahiro Kasama"
+  ],
+  "when": "Wed, Nov 11, 14:00",
+  "session": "Let&#39;s figure out how things work behind the scenes"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "Toward Softerware: Enabling Personalization of Interactive Data Representations for Users With Disabilities",
+  "authors": [
+   "Frank Elavsky",
+   "Marita Vindedal",
+   "Ted Gies",
+   "Patrick Carrington",
+   "Dominik Moritz",
+   "\u00d8ystein Moseng"
+  ],
+  "when": "Thu, Nov 12, 16:00",
+  "session": "Human-Centered Design, Accessibility &amp; Interaction"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "PROVA-GT: PROvenance-centered Visual Analytics for Grounded Theory",
+  "authors": [
+   "Qifan Zhou",
+   "Qingqing Bi",
+   "Weihua Zhou",
+   "Duo Chen",
+   "Siwei Fu"
+  ],
+  "when": "Wed, Nov 11, 08:00",
+  "session": "Let&#39;s dig into the data (from France)"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Where LLMs Fail with Visualization DSLs",
+  "authors": [
+   "Chang Han",
+   "Andrew M McNutt",
+   "Katherine E. Isaacs"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "Evaluating Human-LLM Alignment on Visualization Preference",
+  "authors": [
+   "Tanmay Bakshi",
+   "Chenglong Wang",
+   "Simra Shahid"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "AgentAudit: Visual Analytics for Tracing Behavioral Escalation in Multi-Agent Systems",
+  "authors": [
+   "Luis Sante",
+   "Dany Mauro Diaz Espino",
+   "Leighton Estrada-Rayme",
+   "Juanpablo Heredia",
+   "Joel Perca",
+   "Felipe Moreno-Vera",
+   "Jo\u00e3o Rulff",
+   "Jorge Poco"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Toward More Explainable Nonlinear Dimensionality Reduction: A Feature-Driven Interaction Approach",
+  "authors": [
+   "Aeri Cho",
+   "Hyeon Jeon",
+   "Kiroong Choe",
+   "Seokhyeon Park",
+   "Jinwook Seo"
+  ],
+  "when": "Thu, Nov 12, 10:36",
+  "session": "That&#39;s way too many dimensions for me"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "\u201cListening to the City, Seeing the Planet\u201d: Integrating Environmental Complaints and AlphaEarth for Multi-Scale Visual Analytics",
+  "authors": [
+   "Yunchao Wang",
+   "Jinghui Chu",
+   "Kaijun Yang",
+   "zhe chen",
+   "Gefei Zhang",
+   "Guodao Sun",
+   "Ronghua Liang"
+  ],
+  "when": "Thu, Nov 12, 09:12",
+  "session": "Story time"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Loom: Multi-Region Analysis of Spatial Transcriptomics with Local Neighborhoods and Global Trajectories",
+  "authors": [
+   "Siyuan Zhao",
+   "Md Nafiul Alam Nipu",
+   "Hossein Fathollahian",
+   "Hao Chen",
+   "Ameen Salahudeen",
+   "Olga Karginova",
+   "G. Elisabeta Marai"
+  ],
+  "when": "Wed, Nov 11, 10:12",
+  "session": "What does it mean to live, anyway?"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Topological Autoencoders++: Fast and Accurate Cycle-Aware Dimensionality Reduction",
+  "authors": [
+   "Matt\u00e9o Cl\u00e9mot",
+   "Julie Digne",
+   "Julien Tierny"
+  ],
+  "when": "Thu, Nov 12, 10:48",
+  "session": "That&#39;s way too many dimensions for me"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "TimeAperture: Density-Aware Visual Analytics for Comprehensive Characterization of Agentic Control Breakdown",
+  "authors": [
+   "You Li",
+   "Tongyu Wu",
+   "Xinhang Xie",
+   "Siming Chen"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "PolarWeather: Visual Analysis of Multi-Platform Polarization Dynamics on Social Media",
+  "authors": [
+   "Jianing Yin",
+   "Tan Tang",
+   "Haobo Zheng",
+   "Buwei Zhou",
+   "Lu Ying",
+   "Songela Nurdawuliet",
+   "Yuan Tian",
+   "Tai-Quan Peng",
+   "Dazhen Deng",
+   "Yingcai Wu"
+  ],
+  "when": "Thu, Nov 12, 10:00",
+  "session": "My followers need to know about this!"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Tracing Agent-Mediated File-Source Posts with Visual Analytics",
+  "authors": [
+   "Feihan Chen",
+   "Wentao Song",
+   "Tao Yan"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Stop Misusing t-SNE and UMAP for Visual Analytics",
+  "authors": [
+   "Hyeon Jeon",
+   "Jeongin Park",
+   "Sungbok Shin",
+   "Jinwook Seo"
+  ],
+  "when": "Tue, Nov 10, 16:00",
+  "session": "Great, now you scattered the data everywhere!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "HeedVision: Attention Awareness in Collaborative Immersive Analytics Environments",
+  "authors": [
+   "Arvind Srinivasan",
+   "Niklas Elmqvist"
+  ],
+  "when": "Fri, Nov 13, 08:48",
+  "session": "This feels amazingly real!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Emotional Engagement in Narrative Medical Visualization: An Electrodermal Activity and Eye-Tracking Study",
+  "authors": [
+   "Beatrice Budich",
+   "Laura Garrison",
+   "Marc Vaudel",
+   "Jone Trovik",
+   "Florian Heinrich",
+   "Bernhard Preim",
+   "Monique Meuschke"
+  ],
+  "when": "Tue, Nov 10, 14:12",
+  "session": "Can we have a (real) doctor, please?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Confirmation Bias Shapes Outlier Identification and Removal in Data Cleaning with Scatterplots",
+  "authors": [
+   "Shiyao Li",
+   "Akul Rana",
+   "Cindy Xiong Bearfield",
+   "Emily Wall"
+  ],
+  "when": "Tue, Nov 10, 15:24",
+  "session": "Great, now you scattered the data everywhere!"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "P.each Peach: Materializing Immortality Desire through Data-Driven Sculptures",
+  "authors": [
+   "Yihan Wang",
+   "Yixiong Wang",
+   "Jia-Qi Shi"
+  ],
+  "when": "Wed, Nov 11, 08:00",
+  "session": "VISAP - Making Data Tangible: Materiality, Space, and Public Life"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "From Agents to Agency: Rethinking Human Agency in Agentic Visualization",
+  "authors": [
+   "Narges Mahyar",
+   "Mahmood Jasim",
+   "Niklas Elmqvist",
+   "Ali Sarvghad"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Hindsight: Similarity-Based Analytics for Mars Rover Drive Retrieval",
+  "authors": [
+   "Luke Fiorante",
+   "Leslie Liu",
+   "Adam Zhengyuan Xu",
+   "Xianmei Lei",
+   "Darwin Chiu",
+   "Krys Blackwood",
+   "Maggie Hendrie",
+   "Scott Davidoff",
+   "Santiago V Lombeyda",
+   "Hillary Mushkin"
+  ],
+  "when": "Thu, Nov 12, 15:27",
+  "session": "Lost in Dimensions"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Charting the Moral Universe: Capturing Virtues and Values of Data Visualization Practice",
+  "authors": [
+   "Chloe Hudson Prock",
+   "Enrico Bertini",
+   "Michael Correll"
+  ],
+  "when": "Tue, Nov 10, 14:00",
+  "session": "How you show it makes a difference!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "EnsembleNGP: Exploring Time-Varying Ensemble Data via Parameter and Spatial Space Decomposition",
+  "authors": [
+   "Jun Han"
+  ],
+  "when": "Thu, Nov 12, 10:48",
+  "session": "Time after time"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Generating Coherent Visualization Sequences for Multivariate Data by Causal Graph Traversal",
+  "authors": [
+   "Puripant Ruchikachorn",
+   "Darius Coelho",
+   "Jun Wang",
+   "Kristina Striegnitz",
+   "Klaus Mueller"
+  ],
+  "when": "Tue, Nov 10, 16:12",
+  "session": "Great, now you scattered the data everywhere!"
+ },
+ {
+  "kind": "TopoInVis Workshop Paper",
+  "title": "Exact Computation of Trait-induced Merge Trees for Bivariate Fields",
+  "authors": [
+   "Petar Hristov",
+   "Ingrid Hotz",
+   "Talha Bin Masood"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "TopoInVis Connect: Topology meets Artificial Intelligence"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Beyond One Output: Visualizing and Comparing Distributions of Language Model Generations",
+  "authors": [
+   "Emily Reif",
+   "Claire Y Yang",
+   "Jared Hwang",
+   "Deniz Nazar",
+   "Noah Smith",
+   "Jeffrey Heer"
+  ],
+  "when": "Tue, Nov 10, 13:12",
+  "session": "Modern talking-visually"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Robust Barycenters of Persistence Diagrams",
+  "authors": [
+   "Keanu Sisouk",
+   "Eloi Tanguy",
+   "Julie Delon",
+   "Julien Tierny"
+  ],
+  "when": "Thu, Nov 12, 16:12",
+  "session": "That&#39;s way too big!"
+ },
+ {
+  "kind": "TopoInVis Workshop Paper",
+  "title": "Visualizing Local Maxima of the Ohio overdose epidemic with Vineyards",
+  "authors": [
+   "Nicholas A Bermingham",
+   "David White",
+   "Nathan Willey"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "TopoInVis Connect: Topology meets Artificial Intelligence"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "UnitoPia: Interactive Construction of Pictorial Unit Visualization using a Contain-and-Fill Model",
+  "authors": [
+   "Xinghui Fu",
+   "Zhida Sun",
+   "Yoojin Jeon",
+   "Guozheng Li",
+   "Yu Zhang",
+   "Bongshin Lee",
+   "Min Lu"
+  ],
+  "when": "Tue, Nov 10, 10:36",
+  "session": "Please don&#39;t just stare at the picture"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Baseline Exposure to Common Data Visualization Types Among the U.S. Adult Population",
+  "authors": [
+   "Kiegan Rice",
+   "Nola du Toit",
+   "Quentin Brummet",
+   "Heike Hofmann"
+  ],
+  "when": "Thu, Nov 12, 15:36",
+  "session": "Kids these days don&#39;t learn anything anymore, let&#39;s fix that!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Contextualization or Rationalization? The Effect of Causal Priors on Data Visualization Interpretation",
+  "authors": [
+   "Arran Zeyu Wang",
+   "David Borland",
+   "Estella Calcaterra",
+   "David Gotz"
+  ],
+  "when": "Wed, Nov 11, 13:48",
+  "session": "Did you see that? Are you sure?"
+ },
+ {
+  "kind": "VISxGenAI Workshop Paper",
+  "title": "How Do Artificial Agents Make Decisions in Light of Visual Data?",
+  "authors": [
+   "Keyty Loza",
+   "Shayan Monadjemi"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VISxGenAI: 2nd GenAI, Agents, and the Future of VIS"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Compendia: Automated Visual Storytelling Generation from Online Article Collection",
+  "authors": [
+   "Manusha Karunathilaka",
+   "Litian Lei",
+   "Yiming Gao",
+   "Yong Wang",
+   "Jiannan Li"
+  ],
+  "when": "Tue, Nov 10, 13:48",
+  "session": "How you show it makes a difference!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "LiverPlan: A Stage-Adaptive Immersive Visual Analytics Framework for Anatomical Liver Surgical Planning",
+  "authors": [
+   "Qixuan Liu",
+   "Shi Qiu",
+   "Xiwen Wu",
+   "Yuqi Tong",
+   "Yinqiao Wang",
+   "Ruiyang Li",
+   "Jialun Pei",
+   "Shengdong Zhao",
+   "Chi-Wing Fu",
+   "Pheng Ann Heng"
+  ],
+  "when": "Fri, Nov 13, 09:00",
+  "session": "This feels amazingly real!"
+ },
+ {
+  "kind": "TopoInVis Workshop Paper",
+  "title": "Temporal Tracking of Reeb-Space Sheets",
+  "authors": [
+   "Mohit Sharma",
+   "Petar Hristov",
+   "Talha Bin Masood",
+   "Ingrid Hotz"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "TopoInVis Connect: Topology meets Artificial Intelligence"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "ChannelExplorer: Exploring Class Separability Through Activation Channel Visualization",
+  "authors": [
+   "Md Rahat-uz- Zaman",
+   "Bei Wang",
+   "Paul Rosen"
+  ],
+  "when": "Wed, Nov 11, 14:12",
+  "session": "Let&#39;s figure out how things work behind the scenes"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Visualization Tasks for Unlabeled Graphs",
+  "authors": [
+   "Matt I. B. Oddo",
+   "Ryan Smith",
+   "Stephen Kobourov",
+   "Tamara Munzner"
+  ],
+  "when": "Wed, Nov 11, 09:12",
+  "session": "I feel tangled in a net"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Visualize the Invisible: Exposing Causal Layers in GPU Performance Analysis through Milestone Abstractions",
+  "authors": [
+   "Yuanhuan Deng",
+   "Katherine E. Isaacs",
+   "Yifan Sun"
+  ],
+  "when": "Tue, Nov 10, 11:00",
+  "session": "The more the merrier"
+ },
+ {
+  "kind": "TopoInVis Workshop Paper",
+  "title": "Categorical Framework for Visualization Software Architecture",
+  "authors": [
+   "Hannah Rachel Aizenman",
+   "Mikael Vejdemo-Johansson",
+   "Thomas Caswell",
+   "Michael D Grossberg"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "TopoInVis Connect: Topology meets Artificial Intelligence"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Crossing the Chasm: Bridging Visual Augmentations and Designer Intent",
+  "authors": [
+   "Luke S. Snyder",
+   "Maureen C. Stone",
+   "Jeffrey Heer"
+  ],
+  "when": "Thu, Nov 12, 13:24",
+  "session": "From design spaces to visual design"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Guidelines Are Not Rules: Characterizing Terminologies around Visualization Design Guidelines",
+  "authors": [
+   "Anna L Chinni",
+   "Md Dilshadur Rahman",
+   "Bon Adriel Aseniero",
+   "Petra Isenberg",
+   "Kushin Mukherjee",
+   "Ghulam Jilani Quadri",
+   "Paul Rosen",
+   "Karen Schloss",
+   "Daniel Weiskopf"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "Quantum Computing and Visualization Research Challenges and Opportunities",
+  "authors": [
+   "E. Wes Bethel",
+   "Roel Van Beeumen",
+   "Talita Perciano"
+  ],
+  "when": "Thu, Nov 12, 08:00",
+  "session": "Applications, Domain Science &amp; Data Representation"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Design Knowledge in Data Visualization: Mapping the Epistemic Landscape",
+  "authors": [
+   "Paul C Parsons",
+   "Colin M. Gray",
+   "Ali Baigelenov"
+  ],
+  "when": "Thu, Nov 12, 13:36",
+  "session": "From design spaces to visual design"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Exploring MLLMs Perception of Network Visualization Principles",
+  "authors": [
+   "Jacob Miller",
+   "Markus Wallinger",
+   "Ludwig Felder",
+   "Timo Brand",
+   "Henry F\u00f6rster",
+   "Johannes Zink",
+   "Chunyang Chen",
+   "Stephen Kobourov"
+  ],
+  "when": "Tue, Nov 10, 13:48",
+  "session": "Modern talking-visually"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "More Than 63% of IEEE VIS Research Liable to be Retracted?! Ethics Approval Statements Protect Participants (and Researchers!)",
+  "authors": [
+   "Lonni Besan\u00e7on",
+   "Tobias Isenberg"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "From Scalars to Time Series: Rethinking Implicit Neural Representations for Time-Varying Volumetric Data",
+  "authors": [
+   "Weihan Zhang",
+   "Xuan Zhao",
+   "Yenwen Peng",
+   "Yuqi Chen",
+   "Jun Tao"
+  ],
+  "when": "Thu, Nov 12, 11:12",
+  "session": "Time after time"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Materializing Inter-Channel Relationships with Multi-Density Woodcock Tracking",
+  "authors": [
+   "Alper Sahistan",
+   "Stefan Zellmann",
+   "Haichao Miao",
+   "Nate Morrical",
+   "Ingo Wald",
+   "Valerio Pascucci"
+  ],
+  "when": "Thu, Nov 12, 14:00",
+  "session": "Turn up the volume(s)!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Visibility Optimization for Direct and Indirect Volume Rendering using Level Set Propagation",
+  "authors": [
+   "Paul Himmler",
+   "Tobias G\u00fcnther"
+  ],
+  "when": "Thu, Nov 12, 13:48",
+  "session": "Turn up the volume(s)!"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "PLUTO: A Public Value Assessment Tool",
+  "authors": [
+   "Laura Koesten",
+   "P\u00e9ter Ferenc Gyarmati",
+   "Connor Hogan",
+   "Bernhard Jordan",
+   "Seliem El-Sayed",
+   "Magdalena Eitenberger",
+   "Marlene Auer",
+   "Torsten M\u00f6ller",
+   "Barbara Prainsack"
+  ],
+  "when": "Thu, Nov 12, 08:12",
+  "session": "Applications, Domain Science &amp; Data Representation"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Who&#39;s That Player?: Externalizing Query Interpretation in Spoken XR Sports Interaction",
+  "authors": [
+   "Chunggi Lee",
+   "Tica Lin",
+   "Yalong Yang",
+   "Hanspeter Pfister"
+  ],
+  "when": "Tue, Nov 10, 16:00",
+  "session": "Data really is everywhere"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "GeoAuthor: Linking Text and Visualization for Geographic Article Authoring",
+  "authors": [
+   "Zhenning Chen",
+   "Hanbei Zhan",
+   "Shifu Chen",
+   "Zikun Deng",
+   "Di Weng",
+   "Yingcai Wu"
+  ],
+  "when": "Thu, Nov 12, 08:12",
+  "session": "How can I do this myself?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "NeuroBreak: Unveil Internal Jailbreak Mechanisms in Large Language Models",
+  "authors": [
+   "Chuhan Zhang",
+   "Ye Zhang",
+   "Bowen Shi",
+   "Yuyou Gan",
+   "Tianyu Du",
+   "Shouling Ji",
+   "Dazhen Deng",
+   "Yingcai Wu"
+  ],
+  "when": "Wed, Nov 11, 13:48",
+  "session": "Let&#39;s figure out how things work behind the scenes"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "May (A)I Beautify Your Visualization? Expert Judgments of Acceptable Aesthetic Alterations",
+  "authors": [
+   "Kalina Borkiewicz",
+   "Jixian Li",
+   "Joshua A Levine",
+   "Katherine E. Isaacs"
+  ],
+  "when": "Wed, Nov 11, 10:00",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Preserving Discrete Morse\u2013Smale Complexes in Error-Bounded Lossy Compression",
+  "authors": [
+   "Yuxiao Li",
+   "Mingze Xia",
+   "Xin Liang",
+   "Bei Wang",
+   "Hanqi Guo"
+  ],
+  "when": "Thu, Nov 12, 15:12",
+  "session": "That&#39;s way too big!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "LAMDA: Aiding Visual Exploration of Atomic Displacements in Molecular Dynamics Simulations",
+  "authors": [
+   "Rostyslav Hnatyshyn",
+   "Danny Perez",
+   "Gerik Scheuermann",
+   "Ross Maciejewski",
+   "Baldwin Nsonga"
+  ],
+  "when": "Wed, Nov 11, 10:36",
+  "session": "What does it mean to live, anyway?"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "MAGIC: Marching Cubes Isosurface Uncertainty Visualization for Gaussian Uncertain Data with Spatial Correlation",
+  "authors": [
+   "Tushar M. Athawale",
+   "Kenneth Moreland",
+   "David Pugmire",
+   "Chris R. Johnson",
+   "Paul Rosen",
+   "Matthew Norman",
+   "Antigoni Georgiadou",
+   "Alireza Entezari"
+  ],
+  "when": "Thu, Nov 12, 14:12",
+  "session": "Turn up the volume(s)!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "DeepConnect: A Visual Analytics System for Bridging Interdisciplinary Research Collaborations",
+  "authors": [
+   "Yingchaojie Feng",
+   "Zekai Shao",
+   "Yiqun Sun",
+   "Yixuan Tang",
+   "Anthony K. H. Tung"
+  ],
+  "when": "Tue, Nov 10, 10:12",
+  "session": "The more the merrier"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "VIVA: Virtual Healthcare Interactions Using Visual Analytics, With Controllability Through Configuration",
+  "authors": [
+   "J\u00fcrgen Bernard",
+   "Mara Solen",
+   "Helen Novak Lauscher",
+   "Kurtis Stewart",
+   "Kendall Ho",
+   "Tamara Munzner"
+  ],
+  "when": "Tue, Nov 10, 13:36",
+  "session": "Can we have a (real) doctor, please?"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "A General Approach to Visualizing Uncertainty in Statistical Graphics",
+  "authors": [
+   "Bernarda Petek",
+   "David Nabergoj",
+   "Erik \u0160trumbelj"
+  ],
+  "when": "Thu, Nov 12, 08:24",
+  "session": "I&#39;m not so certain"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "Ambient Analytics: Calm Technology for Immersive Visualization and Sensemaking",
+  "authors": [
+   "Sebastian Hubenschmid",
+   "Arvind Srinivasan",
+   "Niklas Elmqvist",
+   "Dieter Schmalstieg",
+   "Michael Sedlmair"
+  ],
+  "when": "Thu, Nov 12, 15:00",
+  "session": "Human-Centered Design, Accessibility &amp; Interaction"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "LayoutAgent: LLM-Guided Multi-Objective Optimization for Graph Layout Generation",
+  "authors": [
+   "Yilei He",
+   "Jiansu Pu",
+   "Chengjin Shi",
+   "Miao Zheng",
+   "Jinyue Huang"
+  ],
+  "when": "Wed, Nov 11, 08:36",
+  "session": "I feel tangled in a net"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "A Survey on Annotations in Information Visualization: Empirical Studies, Applications, and Challenges",
+  "authors": [
+   "Md Dilshadur Rahman",
+   "Bhavana Doppalapudi",
+   "Ghulam Jilani Quadri",
+   "Paul Rosen"
+  ],
+  "when": "Tue, Nov 10, 13:24",
+  "session": "How you show it makes a difference!"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "A Case Study in Accessible Redesign of a Wastewater Dashboard",
+  "authors": [
+   "Tingying He",
+   "Jake Wagoner",
+   "Md Rahat-uz- Zaman",
+   "Md Dilshadur Rahman",
+   "Willy Ray",
+   "George G Vega Yon",
+   "Matthew Samore",
+   "Alexander Lex",
+   "Paul Rosen"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Not Always Top-Left: Untangling the Signals that Guide Dashboard Reading Order",
+  "authors": [
+   "Nicole Sultanum",
+   "Vidya Setlur"
+  ],
+  "when": "Tue, Nov 10, 15:00",
+  "session": "Figuring out how to do good research"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "SMG-Vis: Supporting Judgment in Multi-Target Social Media Analysis through Group Exploration and Stance Reasoning",
+  "authors": [
+   "Yihang Yang",
+   "Kengyi Wang",
+   "Chen Yi",
+   "Chunran Hu",
+   "Xingyu Lan",
+   "Siming Chen"
+  ],
+  "when": "Thu, Nov 12, 10:48",
+  "session": "My followers need to know about this!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "VIGMA: An Open-Access Framework for Visual Gait and Motion Analytics",
+  "authors": [
+   "Kazi Shahrukh Omar",
+   "Shuaijie Wang",
+   "Ridhuparan Kungumaraju",
+   "Tanvi Bhatt",
+   "Fabio Miranda"
+  ],
+  "when": "Tue, Nov 10, 13:24",
+  "session": "Can we have a (real) doctor, please?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Pointing at Data Together: Establishing Common Ground With Multi-modal Data Representations in Blind/Sighted Collaboration",
+  "authors": [
+   "Jonathan Zong",
+   "Arvind Satyanarayan"
+  ],
+  "when": "Tue, Nov 10, 10:36",
+  "session": "The more the merrier"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "The State of Single-Cell Atlas Data Visualization in the Biological Literature",
+  "authors": [
+   "Mark S. Keller",
+   "Eric M\u00f6rth",
+   "Thomas C. Smits",
+   "Simon Warchol",
+   "Grace Guo",
+   "Qianwen Wang",
+   "Robert Krueger",
+   "Hanspeter Pfister",
+   "Nils Gehlenborg"
+  ],
+  "when": "Thu, Nov 12, 08:36",
+  "session": "Applications, Domain Science &amp; Data Representation"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ECoNGS: Efficient Compressive Neural Gaussian Splats for Volume Visualization",
+  "authors": [
+   "Kaiyuan Tang",
+   "Chaoli Wang"
+  ],
+  "when": "Thu, Nov 12, 15:24",
+  "session": "That&#39;s way too big!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "GeoNarrative: Transforming geospatial textual data into narrative storytelling visualization",
+  "authors": [
+   "Ruixian Ma",
+   "Biru Cao",
+   "Winston Yap",
+   "Jiaxin Gao",
+   "Wenzhe Peng",
+   "Takehiko Nagakura",
+   "F\u00e1bio Duarte",
+   "Paolo Santi",
+   "Carlo Ratti"
+  ],
+  "when": "Thu, Nov 12, 08:12",
+  "session": "Story time"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Treadstone: A Communication Channel for Human-AI Collaborative Data Analysis",
+  "authors": [
+   "Hyunwook Lee",
+   "Sungbeom Cho",
+   "William Benjamin",
+   "Changhee Lee",
+   "Hyotaek Jeon",
+   "Daeun Jeong",
+   "Sungbok Shin",
+   "Sungahn Ko",
+   "Niklas Elmqvist"
+  ],
+  "when": "Tue, Nov 10, 11:00",
+  "session": "Talk to my agent"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "dtour: a Steerable Tour de Vis Through High-Dimensional Data",
+  "authors": [
+   "Fritz Lekschas",
+   "Nezar Abdennur"
+  ],
+  "when": "Thu, Nov 12, 15:00",
+  "session": "Lost in Dimensions"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Nanouniverse: Virtual Instancing of Structural Detail and Adaptive Shell Mapping",
+  "authors": [
+   "Ruwayda Alharbi",
+   "Ond\u0159ej Strnad",
+   "Markus Hadwiger",
+   "Ivan Viola"
+  ],
+  "when": "Wed, Nov 11, 11:12",
+  "session": "What does it mean to live, anyway?"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Visual Stenography: Feature Recreation and Preservation in Sketches of Noisy Line Charts",
+  "authors": [
+   "Rifat Ara Proma",
+   "Michael Correll",
+   "Ghulam Jilani Quadri",
+   "Paul Rosen"
+  ],
+  "when": "Thu, Nov 12, 10:12",
+  "session": "Time after time"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "DARE: An Explainable AI-visualization Framework for Ill-defined Decision Making",
+  "authors": [
+   "Angelos Chatzimparmpas",
+   "Evanthia Dimara"
+  ],
+  "when": "Tue, Nov 10, 10:48",
+  "session": "Talk to my agent"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "MuCHEx: A Multimodal Conversational Debugging Tool for Interactive Visual Exploration of Hierarchical Object Classification",
+  "authors": [
+   "Reza Shahriari",
+   "Yichi Yang",
+   "Danish Nisar Ahmed Tamboli",
+   "Michael Perez",
+   "Yuheng Zha",
+   "Jinyu Hou",
+   "Mingkai Deng",
+   "Eric D. Ragan",
+   "Jaime Ruiz",
+   "Daisy Zhe Wang",
+   "Zhiting Hu",
+   "Eric Xing"
+  ],
+  "when": "Thu, Nov 12, 15:36",
+  "session": "Human-Centered Design, Accessibility &amp; Interaction"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "When One Point Is Not Enough: Addressing Ambiguous Instances in Dimensionality Reduction by Splitting",
+  "authors": [
+   "Diede P M van der Hoorn",
+   "Alessio Arleo",
+   "Fernando V Paulovich"
+  ],
+  "when": "Thu, Nov 12, 10:00",
+  "session": "That&#39;s way too many dimensions for me"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Who Paid for It? Evaluating Reasoning Cost in AI-Mediated Visual Analytics",
+  "authors": [
+   "Aritra Dasgupta",
+   "Naga Datha Saikiran Battula"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Harnessing LLMs Without Surrendering Control: Delegation Boundaries in Visual Data Storytelling Authoring",
+  "authors": [
+   "Zhuojun Jiang",
+   "Yuki Ueno",
+   "Chris Bryan"
+  ],
+  "when": "Wed, Nov 11, 13:18",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Fixation-Related Potentials as Implicit Markers of Task Relevance in Data Visualization",
+  "authors": [
+   "Kathrin Schnizer",
+   "Francesco Chiossi",
+   "Benedikt Werner",
+   "Sven Mayer"
+  ],
+  "when": "Tue, Nov 10, 15:12",
+  "session": "Figuring out how to do good research"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Considering Contribution Statements in Visualization and HCI Research",
+  "authors": [
+   "Mara Solen",
+   "Wesley Willett",
+   "Andrew M McNutt"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Should We Dangle a Carrot? The Effect of Performance-based Incentives in Visualization Experiments",
+  "authors": [
+   "Abhraneel Sarma",
+   "Matthew Kay",
+   "Sheng Long",
+   "Michael Correll",
+   "Alexander Lex"
+  ],
+  "when": "Tue, Nov 10, 15:36",
+  "session": "Figuring out how to do good research"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Investigating Status Quo Effects in Visualization-Aided Choice",
+  "authors": [
+   "Ba\u015fak Oral",
+   "Wouter Ubbink",
+   "Evanthia Dimara",
+   "Angelos Chatzimparmpas"
+  ],
+  "when": "Wed, Nov 11, 08:09",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Model Literacy: An Extra Summative Evaluation Factor for Visual Analytics",
+  "authors": [
+   "Lei Xia",
+   "Siyu Wu",
+   "Ye Sun",
+   "haodian li",
+   "Liang Zhou",
+   "Lei Shi"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Geranium: Multimodal Retrieval of Genomics Data Visualizations",
+  "authors": [
+   "Huyen N. Nguyen",
+   "Sehi L&#39;Yi",
+   "Thomas C. Smits",
+   "Shanghua Gao",
+   "Marinka Zitnik",
+   "Nils Gehlenborg"
+  ],
+  "when": "Wed, Nov 11, 10:48",
+  "session": "What does it mean to live, anyway?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Conveying Causality through Visualization: A Survey of Visual Causal Inference",
+  "authors": [
+   "Arran Zeyu Wang",
+   "David Borland",
+   "David Gotz"
+  ],
+  "when": "Fri, Nov 13, 08:00",
+  "session": "I don&#39;t trust you, explain yourself!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Diving Deep into Time: Temporal Arrangements for Embedded Visualization in Swimming Videos",
+  "authors": [
+   "Junxiu Tang",
+   "Lijie Yao",
+   "Lu Ying",
+   "Romain Vuillemot",
+   "Petra Isenberg"
+  ],
+  "when": "Tue, Nov 10, 15:36",
+  "session": "Data really is everywhere"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Reimagining Disassembly Interfaces with Visualization: Combining Instruction Tracing and Control Flow with DisViz",
+  "authors": [
+   "Shadmaan Hye",
+   "Matthew P. LeGendre",
+   "Katherine E. Isaacs"
+  ],
+  "when": "Wed, Nov 11, 13:00",
+  "session": "Let&#39;s figure out how things work behind the scenes"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Charting Public Health: A Taxonomic Study of Visualization Practices in the Public Health Field",
+  "authors": [
+   "Mia Hines",
+   "Alvitta Ottley"
+  ],
+  "when": "Tue, Nov 10, 14:00",
+  "session": "Can we have a (real) doctor, please?"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "A Neural Field-Based Approach for View Computation &amp; Data Exploration in 3D Urban Environments",
+  "authors": [
+   "Stefan Cobeli",
+   "Kazi Shahrukh Omar",
+   "Rodrigo Valen\u00e7a",
+   "Nivan Ferreira",
+   "Fabio Miranda"
+  ],
+  "when": "Thu, Nov 12, 13:36",
+  "session": "Places and spaces"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "RuleScope: Semantic-aware Authoring of Data Validation Rules",
+  "authors": [
+   "Zhongsu Luo",
+   "Di Weng",
+   "Jiawen Zhu",
+   "Shuhan Liu",
+   "Xiwen Cai",
+   "Ran Chen",
+   "Kai Xiong",
+   "Jiajun Zhu",
+   "Xinhuan Shu",
+   "Yingcai Wu"
+  ],
+  "when": "Tue, Nov 10, 10:36",
+  "session": "Talk to my agent"
+ },
+ {
+  "kind": "VISions Talk",
+  "title": "Will Visualization Help Humans Act on Data or Help AI Act on Humans?",
+  "authors": [
+   "Chen Zhu-Tian"
+  ],
+  "when": "Wed, Nov 11, 15:00",
+  "session": "VISions"
+ },
+ {
+  "kind": "VAxAutoSci Workshop Paper",
+  "title": "Spatial Action Review: A Visual Analytics Dashboard for Auditing Language-to-Action Hand-offs in Electron Microscopy",
+  "authors": [
+   "Samia Mohinta",
+   "Albert Cardona"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAxAutoSci: Visual Analytics in the Age of Autonomous Science"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Comparing the Emotional Impact of Thematic Versus Episodic Framing in Visualization Text",
+  "authors": [
+   "Poorna Talkad Sukumar",
+   "Maurizio Porfiri",
+   "Oded Nov"
+  ],
+  "when": "Wed, Nov 11, 10:27",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Drag, Infer, Reproject: Grounding LLMs through Spatial Interaction for Image Clustering",
+  "authors": [
+   "Yang Liu",
+   "Xuxin Tang",
+   "Jiahao Xu",
+   "Chris North"
+  ],
+  "when": "Wed, Nov 11, 13:27",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Ten Things We Hate About Current IEEE VIS Reviewing Practices",
+  "authors": [
+   "Petra Isenberg",
+   "Sheelagh Carpendale"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Visualization Autocomplete: Visualization Authoring via Stepwise Design Recommendations",
+  "authors": [
+   "Hyeon Jeon",
+   "Sungbok Shin",
+   "Niklas Elmqvist"
+  ],
+  "when": "Thu, Nov 12, 08:00",
+  "session": "How can I do this myself?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "MLLM Perception of Color-Encoded Scalar Fields Reveals Model-Dependent Inversion of Chain-of-Thought",
+  "authors": [
+   "Minyi Liu",
+   "Yue Zhao",
+   "Xiaoyang Song",
+   "Shufan Qian",
+   "Yulong Bian",
+   "Qiong Zeng"
+  ],
+  "when": "Wed, Nov 11, 09:03",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Debugging as Evidence-Driven Reasoning: Visualization Opportunities in Data-Intensive Programming",
+  "authors": [
+   "Yongbo Chen",
+   "Yan Zhu",
+   "Rebecca Faust"
+  ],
+  "when": "Thu, Nov 12, 13:09",
+  "session": "Tools of the Trade"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Mind the Badge: How Visualization Badges Impact Reading Visualizations",
+  "authors": [
+   "Valentin Edelsbrunner",
+   "Jinrui Wang",
+   "Min Chen",
+   "Pierre Dragicevic",
+   "Benjamin Bach"
+  ],
+  "when": "Thu, Nov 12, 09:00",
+  "session": "Story time"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "DataMagic: Authoring Data Videos through Declarative Multi-Agent Orchestration",
+  "authors": [
+   "Yupeng Xie",
+   "ZhenYang Wang",
+   "Liangwei Wang",
+   "Jiayi ZHU",
+   "Zhouan Shen",
+   "Yuyu Luo"
+  ],
+  "when": "Thu, Nov 12, 08:48",
+  "session": "How can I do this myself?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Fact-Check Your Information (FYI): A Design Probe to Understand How People Actually Fact-Check Data-Driven Articles",
+  "authors": [
+   "Nguyen-Truong Thinh",
+   "Yuxuan DU",
+   "Phongsakon Mark Konrad",
+   "Arpit Narechania"
+  ],
+  "when": "Fri, Nov 13, 08:12",
+  "session": "I don&#39;t trust you, explain yourself!"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Information Terra: A Narrative-Anchored Semantic-First Projection of Document Embeddings",
+  "authors": [
+   "Brian Keith Norambuena",
+   "Fausto German",
+   "Chris North"
+  ],
+  "when": "Thu, Nov 12, 15:18",
+  "session": "Lost in Dimensions"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Are We All Archivists Now? Provenance Provocations for Information Visualization",
+  "authors": [
+   "Anamaria Crisan"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "GraphPolaris: A System for Query, Analysis, and Visualization of Graph Databases",
+  "authors": [
+   "Michael Behrisch",
+   "Sjoerd Vink",
+   "Leonardo Christino",
+   "Remco Chang"
+  ],
+  "when": "Wed, Nov 11, 08:48",
+  "session": "I feel tangled in a net"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Spatial Visual Analytics for Multi-Document Summary Verification",
+  "authors": [
+   "Jiahao Xu",
+   "Wei Liu",
+   "Yang Liu",
+   "Eric Krokos",
+   "Kirsten Whitley",
+   "Xuan Wang",
+   "Rebecca Faust",
+   "Chris North"
+  ],
+  "when": "Fri, Nov 13, 08:24",
+  "session": "I don&#39;t trust you, explain yourself!"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "In Between Portraits: Institutional Archives and the Artist\u2019s Voice",
+  "authors": [
+   "Magdalena Navracruz",
+   "Thiago G. Hersan"
+  ],
+  "when": "Wed, Nov 11, 10:24",
+  "session": "VISAP - Reimagining Archives: AI, Performance, and Cultural Memory"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Touching or Chatting: The Utility of LLMs and Tactile Charts for Learning about Complex Chart Types by BLV Individuals",
+  "authors": [
+   "Tingying He",
+   "Maggie K McCracken",
+   "Daniel Hajas",
+   "Sarah Creem-Regehr",
+   "Alexander Lex"
+  ],
+  "when": "Fri, Nov 13, 08:24",
+  "session": "This feels amazingly real!"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "Visual Accessibility Auditing Across Interaction States and Reading Orders",
+  "authors": [
+   "Md Rahat-uz- Zaman",
+   "Jake Wagoner",
+   "Tingying He",
+   "Alexander Lex",
+   "Paul Rosen"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Multimodal Data Comprehension: Understanding How Visual-Textual Chains of Information Influence Data Interpretation",
+  "authors": [
+   "Arran Zeyu Wang",
+   "Fuling Sun",
+   "Danielle Albers Szafir"
+  ],
+  "when": "Tue, Nov 10, 13:12",
+  "session": "How you show it makes a difference!"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "A Collective Reflection on Surface and Substance in Visualization Teaching and Learning",
+  "authors": [
+   "Shehryar Saharan",
+   "Jenny Long",
+   "Ke Er Amy Zhang",
+   "Ibrahim Al-Hazwani",
+   "Alessia Musio",
+   "Narges Mahyar",
+   "Laura Garrison",
+   "Uta Hinrichs"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "Reflections on Working with Older Adults in Visualization Research",
+  "authors": [
+   "Zack While"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "Fading the Training Wheels: Chart Taxonomies as Instructional Scaffolding in Data Visualization Education",
+  "authors": [
+   "Hannah Yanhua Zong",
+   "Nabin Khanal",
+   "Yingjie Victor Chen"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Data Visualization Style Guides in Practice: Why They Emerge, How They Work, and When They Bend",
+  "authors": [
+   "Alvitta Ottley",
+   "Jon Schwabish"
+  ],
+  "when": "Thu, Nov 12, 16:12",
+  "session": "Kids these days don&#39;t learn anything anymore, let&#39;s fix that!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "HealthTale: A Patient-Centric Health Story Visualization Tool",
+  "authors": [
+   "Ryan Smith",
+   "Kyle D Chin",
+   "Tamara Munzner"
+  ],
+  "when": "Tue, Nov 10, 13:12",
+  "session": "Can we have a (real) doctor, please?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Parts Measured, Persons Missed: A Profile-Centered Account of Visualization User Experience",
+  "authors": [
+   "Anjana Arunkumar",
+   "Lace M. Padilla"
+  ],
+  "when": "Wed, Nov 11, 10:18",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "EVOLVE: Efficient Learned Volume Compression with Variable-Rate Encoding on a Cross-Domain Database",
+  "authors": [
+   "Kaiyuan Tang",
+   "Maizhe Yang",
+   "Chaoli Wang"
+  ],
+  "when": "Thu, Nov 12, 16:00",
+  "session": "That&#39;s way too big!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ForestVis: Visualization of 3D Forestry Point Clouds",
+  "authors": [
+   "Benjamin Powley",
+   "Petra Horv\u00e1th",
+   "Basam Dahy",
+   "Nivan Ferreira",
+   "Johan E.S. Fransson",
+   "Andreas Kerren",
+   "Claudio D. G. Linhares",
+   "Amilcar Soares"
+  ],
+  "when": "Wed, Nov 11, 08:24",
+  "session": "Let&#39;s dig into the data (from France)"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "Constructing Visualizations to Investigate Plate Tectonics: Lessons for Visualization Education from an Earthquake Activity",
+  "authors": [
+   "Cassia Fernandez"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "CatPAL: Task-Aware Learning for Categorical Palette Recommendation",
+  "authors": [
+   "Chin Tseng",
+   "Arran Zeyu Wang",
+   "Yunqi Li",
+   "Danielle Albers Szafir"
+  ],
+  "when": "Tue, Nov 10, 15:36",
+  "session": "Great, now you scattered the data everywhere!"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Superposition Explainer: Visualizing Feature Overcompression Through Guided Experimentation",
+  "authors": [
+   "Philip M\u00fcller",
+   "Peter Steinbach"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Street Scores: Composing the Social Life of Public Space",
+  "authors": [
+   "Jingrong Zhang",
+   "F\u00e1bio Duarte"
+  ],
+  "when": "Wed, Nov 11, 08:48",
+  "session": "VISAP - Making Data Tangible: Materiality, Space, and Public Life"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Lossless-INR: Lossless Volumetric Implicit Neural Representations",
+  "authors": [
+   "Kaiyuan Tang",
+   "Daniel Burke",
+   "Chaoli Wang"
+  ],
+  "when": "Fri, Nov 13, 08:27",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Byte-Pair Encoding Explainer: An Interactive Visualization for Understanding Subword Tokenization",
+  "authors": [
+   "Philip M\u00fcller",
+   "Peter Steinbach"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "VEIL: How Visual Encoding Hijacking Induces Bias In Vision Models",
+  "authors": [
+   "Suranjana Sooraj",
+   "Xuyang Chen",
+   "Madhumitha Venkatesan",
+   "Dongyu Liu"
+  ],
+  "when": "Thu, Nov 12, 08:18",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Embodied XAI Is All You Need: Tracing hierarchical VLM\u2013PPO decisions via 4D spatio-temporal saliency",
+  "authors": [
+   "Suzan Mohammad Halim"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "KeySI: An Interaction Framework for Tuning Text Embeddings Based on Human Feedback",
+  "authors": [
+   "Yan Zhu",
+   "Yongbo Chen",
+   "Rebecca Faust"
+  ],
+  "when": "Tue, Nov 10, 10:24",
+  "session": "Please don&#39;t just stare at the picture"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "HCMUS-Nguyen-MC2",
+  "authors": [
+   "Ngan V.T. Nguyen",
+   "My Tran",
+   "An Nguyen"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "MoEXViz: Interactive Visualizations of Sparse Mixture-of-Experts",
+  "authors": [
+   "Chinmayee Raman",
+   "Hazim Hasan Bajamal",
+   "Reza Rawassizadeh"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "What Cognitive Accessibility Reveals About Data Visualization",
+  "authors": [
+   "Keke Wu",
+   "Jinjuan Heidi Feng",
+   "Jonathan Lazar"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Seeing Through Uncertainty: Optical Operations as a Design Vocabulary for Uncertainty Visualization",
+  "authors": [
+   "Stephen Brooks"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "TokenTour: Tracing LLM Conversations from Messages to Tokens and KV Cache",
+  "authors": [
+   "Liwen Fan",
+   "Yu Zhang",
+   "Yuheng Zhao",
+   "Siming Chen"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ZipLine: Visual Analysis of Multivariate Graphs with Predicate Logic",
+  "authors": [
+   "Sjoerd Vink",
+   "Susie S.Y. Li",
+   "Brian Montambault",
+   "Michael Behrisch",
+   "Mingwei S.G. Li",
+   "Remco Chang"
+  ],
+  "when": "Wed, Nov 11, 08:00",
+  "session": "I feel tangled in a net"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Made to Feel: How Designers Bring Emotions into Affective Visualization",
+  "authors": [
+   "Yixin Bai",
+   "Ziyi Wang",
+   "Keke Wu",
+   "Fumeng Yang"
+  ],
+  "when": "Wed, Nov 11, 10:36",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "From Access to Discovery: Tactile Data Art for Blind and Visually Impaired Audiences",
+  "authors": [
+   "Rhiannon Sian Owen",
+   "Jonathan C Roberts"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Facilitating Reproducibility in Visualization Systems Research Through Containerization",
+  "authors": [
+   "Thomas Breimer",
+   "Pirm Dhararag",
+   "Kiya Gedamu",
+   "Paras Pandey",
+   "Marie Amandine Reyes",
+   "Tal Spector",
+   "Galileo Steinberg",
+   "Nathan Subrahmanian",
+   "Paul Weir",
+   "Peter Williams",
+   "Weichen Zhao",
+   "Dylan Cashman"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Rectified Flow Explainer: A Visual Introduction to Rectified Flows",
+  "authors": [
+   "Alec Helbling"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Seeing Through the Forecast Clutter: Communicating Climate Forecast Distributions with Weighted Multiple Forecast Visualizations",
+  "authors": [
+   "Ruishi Zou",
+   "Siyi Wu",
+   "Racquel Fygenson",
+   "Dakuo Wang",
+   "Michael Correll",
+   "Lace M. Padilla"
+  ],
+  "when": "Thu, Nov 12, 08:48",
+  "session": "I&#39;m not so certain"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "arxAIv: An AI Generated Research Universe",
+  "authors": [
+   "Allison Andreyev"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "Accessibility Considerations for Geovisual Analytics",
+  "authors": [
+   "Susannah C. Cox",
+   "Jonathan Nelson",
+   "P. William Limpisathian"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "SIVA: A Conversational and Declarative Scientific Visualization Tool",
+  "authors": [
+   "Michael Ballantyne",
+   "Aayush Kaji Shrestha",
+   "Pascal Grosset",
+   "Thomas Gilray",
+   "Roxana Bujack"
+  ],
+  "when": "Wed, Nov 11, 13:54",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "The ODDness of Matplotlib",
+  "authors": [
+   "Hannah Rachel Aizenman",
+   "Elliott Sales de Andrade",
+   "Kyle Sunden"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "VisxVision Workshop Paper",
+  "title": "More Accurate, Less Human: Gestalt Grouping in Vision Models",
+  "authors": [
+   "Sudhanva Manjunath Athreya",
+   "Sai Phani Kumar Malladi"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VisxVision: Workshop on Novel Directions in Vision Science and Visualization Research"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Visualizing and Interpreting Temporal Care Team Dynamics for Cancer Survival Risk Analysis",
+  "authors": [
+   "Yuhua Huang",
+   "Hsiao-Ying Lu",
+   "Kwan-Liu Ma"
+  ],
+  "when": "Tue, Nov 10, 13:48",
+  "session": "Can we have a (real) doctor, please?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Evaluating a Visual Query Tracer and Builder for Learning Declarative Logic Programming",
+  "authors": [
+   "Juli\u00e1n M\u00e9ndez",
+   "Lukas Gerlach",
+   "Tobias Wieland",
+   "Alex Ivliev",
+   "Markus Kr\u00f6tzsch",
+   "Raimund Dachselt"
+  ],
+  "when": "Thu, Nov 12, 08:00",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Fraying Certainty: Material Degradation as an Uncertainty Channel in Woven Textile Visualization",
+  "authors": [
+   "Stephen Brooks"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Do You \u201cTrust\u201d This Visualization? An Inventory to Measure Trust in Visualizations",
+  "authors": [
+   "Huichen Will Wang",
+   "Kylie Lin",
+   "Andrew Cohen",
+   "Ryan Kennedy",
+   "Zachary Zwald",
+   "Carolina Nobre",
+   "Cindy Xiong Bearfield"
+  ],
+  "when": "Fri, Nov 13, 08:48",
+  "session": "I don&#39;t trust you, explain yourself!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "CellPrism: A Visual Analytics System for Exploring AI-Driven Virtual Cells in Drug Discovery",
+  "authors": [
+   "Chuhan Shi",
+   "Zijian Guo",
+   "Zelin Zang",
+   "Chengbo Zheng",
+   "Ding Ding",
+   "Rui Sheng"
+  ],
+  "when": "Wed, Nov 11, 11:00",
+  "session": "What does it mean to live, anyway?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Skeleton: Visual Authoring of Non-visual Data Experiences",
+  "authors": [
+   "Frank Elavsky",
+   "Chieri J Nnadozie",
+   "Lucas Nadolskis",
+   "Patrick Carrington",
+   "Dominik Moritz"
+  ],
+  "when": "Thu, Nov 12, 08:24",
+  "session": "How can I do this myself?"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Some Vector Algebra for Model Steering",
+  "authors": [
+   "Mingwei S.G. Li",
+   "Susie S.Y. Li",
+   "Remco Chang"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ESVR: 3D Ellipsoid-based Sparse Volume Rendering via Structure-aware Primitive Learning and Per-primitive Ray Sampling",
+  "authors": [
+   "Suemin Jeon",
+   "Youjin Kim",
+   "Jungwoo Park",
+   "Kyungryun Lee",
+   "Won-Ki Jeong"
+  ],
+  "when": "Thu, Nov 12, 13:12",
+  "session": "Turn up the volume(s)!"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Uncertainty-Aware Jacobi Sets",
+  "authors": [
+   "Daniel Kl\u00f6tzl",
+   "Daniel Weiskopf"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "A Design Space for Quantum Circuit Visualizations",
+  "authors": [
+   "Hyeok Kim",
+   "Leilani Battle"
+  ],
+  "when": "Thu, Nov 12, 13:12",
+  "session": "From design spaces to visual design"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Exploring The Geographic Assumptions in Text-to-Image Models with Underspecified Prompts",
+  "authors": [
+   "Giray Unlu",
+   "Amal Alnouri",
+   "Ahmed Mansour",
+   "Andreas Hinterreiter",
+   "Marc Streit"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "How Do Researchers Manage Visualization Experiment Stimuli?",
+  "authors": [
+   "Hyeok Kim",
+   "Jeffrey Heer"
+  ],
+  "when": "Tue, Nov 10, 15:24",
+  "session": "Figuring out how to do good research"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "HiLSVA: Design and Evaluation of a Human-in-the-Loop Agentic System for Scientific Visualization",
+  "authors": [
+   "Kuangshi Ai",
+   "Patrick Phuoc Do",
+   "Chaoli Wang"
+  ],
+  "when": "Tue, Nov 10, 10:12",
+  "session": "Talk to my agent"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Visualization Color Repair: A Browser Extension for Colorblind Users",
+  "authors": [
+   "Ayan Nath",
+   "Alex Kale"
+  ],
+  "when": "Wed, Nov 11, 10:09",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "A Query-Efficient Stochastic Volume Rendering Framework for Time-Varying Implicit Neural Volumes",
+  "authors": [
+   "Alper Sahistan",
+   "Haichao Miao",
+   "Zhimin Li",
+   "Peer-Timo Bremer",
+   "Joshua A Levine",
+   "Valerio Pascucci"
+  ],
+  "when": "Thu, Nov 12, 13:24",
+  "session": "Turn up the volume(s)!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "EXaCTz: Guaranteed Extremum Graph and Contour Tree Preservation for Distributed and GPU-Parallel Lossy Compression",
+  "authors": [
+   "Yuxiao Li",
+   "Mingze Xia",
+   "Xin Liang",
+   "Bei Wang",
+   "Hanqi Guo"
+  ],
+  "when": "Thu, Nov 12, 15:48",
+  "session": "That&#39;s way too big!"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "BLIMMP-Explorer: A Visual Decomposition of Bayesian Evidence in Metabolic Module Inference",
+  "authors": [
+   "Neha Sontakke",
+   "Joshua A Levine",
+   "Travis Wheeler"
+  ],
+  "when": "Wed, Nov 11, 13:00",
+  "session": "Connecting the Dots"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ProgressiVis: A Language and Environment for Progressive Data Analysis and Visualization",
+  "authors": [
+   "Jean-Daniel Fekete",
+   "Christian Poli"
+  ],
+  "when": "Wed, Nov 11, 09:12",
+  "session": "Let&#39;s dig into the data (from France)"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Flint: A Semantic-driven Data Visualization Intermediate Language",
+  "authors": [
+   "Yunhai Wang",
+   "Kecheng Lu",
+   "Junhao Chen",
+   "Alper Sarikaya",
+   "Chenglong Wang"
+  ],
+  "when": "Tue, Nov 10, 14:12",
+  "session": "Modern talking-visually"
+ },
+ {
+  "kind": "VAxAutoSci Workshop Paper",
+  "title": "Defaulting to Bar Charts: Chart-Type Bias and Scalar-Comparison Collapse in Autonomous Visualization Agents",
+  "authors": [
+   "Abhinav Chinnaiyan",
+   "Qiuhai Zeng",
+   "Qunhua Li",
+   "Claire Jin"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAxAutoSci: Visual Analytics in the Age of Autonomous Science"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "VQ-ANR: Attention Neural Representation with Vector Quantization for Time-Varying Ensemble Data Exploration",
+  "authors": [
+   "Huayuan Ye",
+   "Bolin Zhao",
+   "Chenhui Li",
+   "Jun Han"
+  ],
+  "when": "Tue, Nov 10, 13:24",
+  "session": "Making things visual in science and engineering"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ChartFI: Benchmarking Faithfulness and Insightfulness of Chart Descriptions from Multimodal Large Language Models",
+  "authors": [
+   "Fen Wang",
+   "Zekai Shao",
+   "Qiman Kang",
+   "Chunran Hu",
+   "Zhixuan Zhang",
+   "Lexu Xie",
+   "Chao Liu",
+   "Siming Chen"
+  ],
+  "when": "Tue, Nov 10, 13:24",
+  "session": "Modern talking-visually"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "NCDL Explainer: Non-Cartesian Deep Learning Explained",
+  "authors": [
+   "Mohammad Sakib Hossain",
+   "Usman Alim"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "SNAP-tFDP: Massively Scalable Graph Layouts via Sparse Negative Sampling",
+  "authors": [
+   "Xin Chen",
+   "Shuowei Hou",
+   "Yifan Wang",
+   "Mingliang Xue",
+   "Zezheng Feng",
+   "Oliver Deussen",
+   "Weidong Huang",
+   "Yunhai Wang"
+  ],
+  "when": "Fri, Nov 13, 09:00",
+  "session": "Let&#39;s dig into the data (from China)"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "SalusChart: A Data Visualization Library for Mobile Health Apps",
+  "authors": [
+   "Sebin Hwang",
+   "Seongjae Bae",
+   "Jehu Ahn",
+   "Zekai Shao",
+   "Eun Kyoung Choe",
+   "Bongshin Lee"
+  ],
+  "when": "Thu, Nov 12, 13:36",
+  "session": "Tools of the Trade"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "More Features Than Neurons",
+  "authors": [
+   "Nikhil Maturi"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Region-Aware Wasserstein Distances of Persistence Diagrams and Merge Trees",
+  "authors": [
+   "Mathieu Pont",
+   "Christoph Garth"
+  ],
+  "when": "Thu, Nov 12, 14:00",
+  "session": "Places and spaces"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "The Story of Inference-Time Scaling and the training-time loop behind it",
+  "authors": [
+   "Shashank Bangalore Lakshman",
+   "Scott Eiers"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Walking through Discussions: A Mobile Visual Analytics System for In-Situ Group Discussion Analysis",
+  "authors": [
+   "Yiping Sun",
+   "Ziyao Kang",
+   "Wei Zeng",
+   "Minli Wu",
+   "Jiazhi Xia"
+  ],
+  "when": "Fri, Nov 13, 08:12",
+  "session": "Let&#39;s dig into the data (from China)"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Proportional Aggregation in Hierarchical Data Visualization",
+  "authors": [
+   "Antonia Schlieder",
+   "Jan Rummel",
+   "Filip Sadlo"
+  ],
+  "when": "Wed, Nov 11, 09:00",
+  "session": "I feel tangled in a net"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Hairpin Vortices Extraction in Turbulent Boundary Layer Flows",
+  "authors": [
+   "Adeel Zafar",
+   "Zahra Poorshayegh",
+   "Lei Si",
+   "Di Yang",
+   "Guoning Chen"
+  ],
+  "when": "Tue, Nov 10, 13:48",
+  "session": "Making things visual in science and engineering"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "The Confident Machine",
+  "authors": [
+   "Shashank Bangalore Lakshman",
+   "Shravan Joshi"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "VizPilot: Automated Onboarding for SVG-based Composite Visualizations using Multimodal LLMs",
+  "authors": [
+   "Nishaanthini Gnanavel",
+   "Yong WANG"
+  ],
+  "when": "Thu, Nov 12, 15:48",
+  "session": "Kids these days don&#39;t learn anything anymore, let&#39;s fix that!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Multiresolution Density-Equalizing Transformation for Scatterplots",
+  "authors": [
+   "Hennes Rave",
+   "Vladimir Molchanov",
+   "Yuki Tatsukawa",
+   "Quynh Quang Ngo",
+   "Steffen Frey",
+   "Takeo Igarashi",
+   "Lars Linsen"
+  ],
+  "when": "Tue, Nov 10, 15:00",
+  "session": "Great, now you scattered the data everywhere!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Spatio-Temporal Kernel Density Estimation for Streaming Time-Varying Data",
+  "authors": [
+   "Aritra Bhowmick",
+   "Yi-Jen Chiang",
+   "Christopher Musco"
+  ],
+  "when": "Thu, Nov 12, 11:00",
+  "session": "Time after time"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Homology-Preserving Dimensionality Reduction via Adaptive Mapper and Landmark Isomap",
+  "authors": [
+   "Shakiba Khourashahi",
+   "Ilia Jahanshahi",
+   "Bei Wang",
+   "Lin Yan"
+  ],
+  "when": "Thu, Nov 12, 10:12",
+  "session": "That&#39;s way too many dimensions for me"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Same Data, Different Audiences: Using Personas to Scope a Supercomputing Job Queue Visualization",
+  "authors": [
+   "Connor Scully-Allison",
+   "Kevin Menear",
+   "Kristin Potter",
+   "Andrew McNutt",
+   "Katherine E. Isaacs",
+   "Dmitry Duplyakin"
+  ],
+  "when": "Wed, Nov 11, 13:12",
+  "session": "Let&#39;s figure out how things work behind the scenes"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Measuring Distortion in the Empty Regions of Dimensionality Reduction Scatterplots with the Gap Index",
+  "authors": [
+   "Jaume Ros",
+   "Alessio Arleo",
+   "Fernando V Paulovich"
+  ],
+  "when": "Tue, Nov 10, 15:12",
+  "session": "Great, now you scattered the data everywhere!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "SocialFiVis: A Visual Analytics Sandbox for LLM-Grounded Multi-Agent Simulation in Social Finance",
+  "authors": [
+   "Yi-Fan Cao",
+   "Qing Shi",
+   "Liangwei Wang",
+   "Leo Yu-Ho Lo",
+   "Lin Chen",
+   "Yuzi Han",
+   "Yang Wang",
+   "Kani Chen"
+  ],
+  "when": "Thu, Nov 12, 10:12",
+  "session": "My followers need to know about this!"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Interpreting Bio-Foundation Models with Sparse Autoencoders",
+  "authors": [
+   "Jared Wilber",
+   "Tyler Carter Shimko"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Cost-Benefit Modeling of Interactive Visual Machine Learning Systems",
+  "authors": [
+   "Yixuan Wang",
+   "Rolando Garcia",
+   "Alex Endert",
+   "Ross Maciejewski"
+  ],
+  "when": "Tue, Nov 10, 10:00",
+  "session": "Talk to my agent"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "Detecting Stable Cross-Impact Patterns in Bivariate Time Series",
+  "authors": [
+   "Gennady Andrienko",
+   "Natalia Andrienko",
+   "Maram Akila",
+   "Bahavathy Kathirgamanathan",
+   "Miguel Ponce-de-Leon"
+  ],
+  "when": "Thu, Nov 12, 10:36",
+  "session": "Time after time"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "Visualizing and Comparing Distributions of Language Model Generations: interactive article",
+  "authors": [
+   "Emily Reif",
+   "Claire Y Yang",
+   "Jared Hwang",
+   "Deniz Nazar",
+   "Noah Smith",
+   "Jeffrey Heer"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "FZ-VIS: A Visual Analytics Framework for Quantities-of-Interest-Aware Scientific Lossy Compression",
+  "authors": [
+   "Guoxi Liu",
+   "Yuxiao Li",
+   "Congrong Ren",
+   "Robert Underwood",
+   "Xin Liang",
+   "Bei Wang",
+   "Sheng Di",
+   "Franck Cappello",
+   "Hanqi Guo"
+  ],
+  "when": "Thu, Nov 12, 15:36",
+  "session": "That&#39;s way too big!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "How Scale Breaks &quot;Normalized Stress&quot; and KL Divergence: Rethinking Quality Metrics",
+  "authors": [
+   "Kiran Smelser",
+   "Kaviru Gunaratne",
+   "Jacob Miller",
+   "Stephen Kobourov"
+  ],
+  "when": "Tue, Nov 10, 15:48",
+  "session": "Great, now you scattered the data everywhere!"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "How to Win the Lottery within Neural Networks",
+  "authors": [
+   "Ammar Mustafa Nagri"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "Mastery Learning Improves Performance on Complex Tasks on PCP Literacy Test",
+  "authors": [
+   "Chandana Srinivas",
+   "Elif E. Firat",
+   "Robert S. Laramee",
+   "Alark P. Joshi"
+  ],
+  "when": "Thu, Nov 12, 15:24",
+  "session": "Human-Centered Design, Accessibility &amp; Interaction"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "FADEx: Feature Attribution and Distortion-based Explanation of Dimensionality Reduction",
+  "authors": [
+   "Lucas Greff Meneses",
+   "Evandro S. Ortigossa",
+   "Claudio Silva",
+   "Luis Gustavo Nonato"
+  ],
+  "when": "Fri, Nov 13, 09:00",
+  "session": "I don&#39;t trust you, explain yourself!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Beyond the Post Hoc User Study: Modeling Visual Decision-Making with Active Inference",
+  "authors": [
+   "Harrison J Goldwyn",
+   "Graham Johnson",
+   "Christopher Ibarra",
+   "Lace M. Padilla",
+   "Kenny Gruchalla"
+  ],
+  "when": "Tue, Nov 10, 15:48",
+  "session": "Figuring out how to do good research"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Read, Critique, or Sketch? Investigating Alternative Visualization Literacy Assessment Modalities",
+  "authors": [
+   "Zach Cutler",
+   "Lily W. Ge",
+   "Matthew Kay",
+   "Lane Harrison",
+   "Andrew M McNutt",
+   "Alexander Lex"
+  ],
+  "when": "Thu, Nov 12, 15:24",
+  "session": "Kids these days don&#39;t learn anything anymore, let&#39;s fix that!"
+ },
+ {
+  "kind": "TVCG Paper",
+  "title": "More Like Vis, Less Like Vis: Comparing Interactions for Integrating User Preferences into Partial Specification Recommenders",
+  "authors": [
+   "Grace Guo",
+   "Subhajit Das",
+   "Jian Zhao",
+   "Alex Endert"
+  ],
+  "when": "Tue, Nov 10, 10:00",
+  "session": "Please don&#39;t just stare at the picture"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Playing the Archive: Audiovisual Latent Space Exploration with The Ocular Harpsichord 2.0",
+  "authors": [
+   "Johan Malmstedt"
+  ],
+  "when": "Wed, Nov 11, 10:00",
+  "session": "VISAP - Reimagining Archives: AI, Performance, and Cultural Memory"
+ },
+ {
+  "kind": "VAxAutoSci Workshop Paper",
+  "title": "Toward a Scientific Discovery Engine for Weather and Climate Data: A Visual Analytics Workbench for Embedding-Based Exploration",
+  "authors": [
+   "Nihanth W Cherukuru",
+   "Matthew Rehme",
+   "Kirsten Mayer",
+   "David John Gagne",
+   "John Schreck",
+   "john clyne",
+   "Charles Becker"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAxAutoSci: Visual Analytics in the Age of Autonomous Science"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Meta-Acervos: AI, Metadata, and the Politics of Visibility in Brazilian Museum Collections",
+  "authors": [
+   "Thiago G. Hersan",
+   "Giselle Beiguelman",
+   "Ana Gon\u00e7alves Magalh\u00e3es"
+  ],
+  "when": "Wed, Nov 11, 10:36",
+  "session": "VISAP - Reimagining Archives: AI, Performance, and Cultural Memory"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Visual Analytics of Neighborhood Attribute Profiles for Exploring Structural Equivalence",
+  "authors": [
+   "Kohei Arimoto",
+   "Masahiko Itoh"
+  ],
+  "when": "Wed, Nov 11, 13:09",
+  "session": "Connecting the Dots"
+ },
+ {
+  "kind": "VAxAutoSci Workshop Paper",
+  "title": "Visualizing Graph-to-Answer Mechanism Recovery in Materials-Science Hypothesis Generation",
+  "authors": [
+   "Shashwat Sourav",
+   "Subhadeep Pal",
+   "Markus Buehler",
+   "Sanjay Das",
+   "Fiona Wang",
+   "Dominik Soos",
+   "Tirthankar Ghosal"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAxAutoSci: Visual Analytics in the Age of Autonomous Science"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Peeling Cycle: Performative Visualization of Synthetic Datafication in Live AI Performance",
+  "authors": [
+   "Han Zhang",
+   "Anqi Liu",
+   "Mingyong Cheng"
+  ],
+  "when": "Wed, Nov 11, 10:12",
+  "session": "VISAP - Reimagining Archives: AI, Performance, and Cultural Memory"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "FeatureZ: A General Framework for Feature-Preserving Compression via Pointwise Bounds and Star Classification",
+  "authors": [
+   "Nathaniel Gorski",
+   "Xin Liang",
+   "Hanqi Guo",
+   "Bei Wang"
+  ],
+  "when": "Thu, Nov 12, 15:00",
+  "session": "That&#39;s way too big!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Juicy Interactive Visualization: Evaluating How Excessive Feedback Design Shapes Visualization Engagement",
+  "authors": [
+   "Shano Liang",
+   "Max Chen",
+   "Lane Harrison"
+  ],
+  "when": "Tue, Nov 10, 10:48",
+  "session": "Please don&#39;t just stare at the picture"
+ },
+ {
+  "kind": "vis4climate Workshop Paper",
+  "title": "GeoXplain: On-the-Fly Visual Explanations for Weather Foundation Models",
+  "authors": [
+   "Clemens Walter Koprolin",
+   "Leonardo Trentini",
+   "Benedikt Soja",
+   "Mennatallah El-Assady",
+   "Christina Humer"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "vis4climate: Workshop on Building a Transdisciplinary Climate Vis Community"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Proteus",
+  "authors": [
+   "David Hunter",
+   "Anika Mahajan",
+   "Rishi Vanukuru",
+   "Che Chuan Weng",
+   "Brad Gallagher",
+   "Ada Yi Zhao",
+   "Shih-Yu Ma",
+   "Daniel Leithinger",
+   "Ellen Yi-Luen Do"
+  ],
+  "when": "Wed, Nov 11, 13:00",
+  "session": "VISAP Pictorial - Beyond the Visual: Materiality, Memory, and Identity"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "The Balance between Nuance and Clarity: Decluttering Tabular Sequential Graphs to Counter Money Laundering",
+  "authors": [
+   "Salom\u00e9 Esteves",
+   "Rita Costa",
+   "Louise Fallon",
+   "Pedro Bizarro"
+  ],
+  "when": "Tue, Nov 10, 10:45",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Guan-Guan: A Visual Cartography of Sound and Structure in the Shijing (Book of Songs)",
+  "authors": [
+   "Sean Zhai",
+   "Rebecca Ruige Xu"
+  ],
+  "when": "Wed, Nov 11, 13:24",
+  "session": "VISAP Pictorial - Beyond the Visual: Materiality, Memory, and Identity"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Guided Exploration of Iterative Schedule Modifications: A Design Study on Railway Traction Unit Scheduling",
+  "authors": [
+   "Andreas Zajic",
+   "Vera Hechtl",
+   "Cornelia Geischl\u00e4ger",
+   "Maximilian Kunovjanek-Bachler",
+   "Thomas Hulka",
+   "Anna-Lena Penk",
+   "Belma Turan",
+   "Nadine Schwab",
+   "Maximilian Viehauser",
+   "Helwig Hauser",
+   "Kresimir Matkovic"
+  ],
+  "when": "Tue, Nov 10, 13:00",
+  "session": "Making things visual in science and engineering"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "The Data Twist: Co-designing a Survey for Public Performance",
+  "authors": [
+   "Lins Derry"
+  ],
+  "when": "Wed, Nov 11, 08:12",
+  "session": "VISAP - Making Data Tangible: Materiality, Space, and Public Life"
+ },
+ {
+  "kind": "vis4climate Workshop Paper",
+  "title": "Visualizing and ``Budgeting&#39;&#39; the Emissions of Everyday GenAI Use",
+  "authors": [
+   "Yuheng Ren",
+   "Luiz Augusto Morais",
+   "Fr\u00e9d\u00e9rique Krupa",
+   "Francisco Paulo Magalh\u00e3es Sim\u00f5es",
+   "Nivan Ferreira",
+   "Georgia Panagiotidou"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "vis4climate: Workshop on Building a Transdisciplinary Climate Vis Community"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "A Task-Driven Framework for Multiscale Ocean Flow Dynamics through Integrated Simulation and Visualization",
+  "authors": [
+   "James Kress",
+   "Jithendra Nadimpalli",
+   "Shehzad Afzal",
+   "Sohaib Ghani",
+   "Ibrahim Hoteit"
+  ],
+  "when": "Tue, Nov 10, 13:36",
+  "session": "Making things visual in science and engineering"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "Automating the Path: An R&amp;D Agenda for Human-Centered AI and Visualization",
+  "authors": [
+   "Niklas Elmqvist",
+   "Clemens Nylandsted Klokmose"
+  ],
+  "when": "Thu, Nov 12, 15:48",
+  "session": "Human-Centered Design, Accessibility &amp; Interaction"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Visualizing in the Mind&#39;s Eye: Icon Design Shapes Mental Imagery of Fire Risks",
+  "authors": [
+   "Wen Xu",
+   "Anjana Arunkumar",
+   "Lace M. Padilla"
+  ],
+  "when": "Tue, Nov 10, 10:18",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "VisxVision Workshop Paper",
+  "title": "Evaluating Just Noticeable Differences in Layered Opacity Visualizations",
+  "authors": [
+   "Alark Joshi",
+   "Shano Liang",
+   "Lane Harrison",
+   "Caterina Ponti"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VisxVision: Workshop on Novel Directions in Vision Science and Visualization Research"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Sheaves for Visual Encodings and Visual Fusion",
+  "authors": [
+   "Dhruv Meduri",
+   "Youjia Zhou",
+   "Bei Wang"
+  ],
+  "when": "Thu, Nov 12, 14:00",
+  "session": "From design spaces to visual design"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Lexara-RF: Reference-Free Metrics for Evaluating Conversational Visual Analytics Agents",
+  "authors": [
+   "Srishti Palani",
+   "Vidya Setlur"
+  ],
+  "when": "Wed, Nov 11, 13:09",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Vis4GS: A Visual Analytic Tool for 3D Gaussian Splatting Reconstruction",
+  "authors": [
+   "Kai-Yuan Lin",
+   "Aryabima Mandala Putra",
+   "Jui-Chi Lee",
+   "Shih-Hsuan Hung"
+  ],
+  "when": "Fri, Nov 13, 08:00",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Within Reach: String as a Material for Tactile Data Physicalization",
+  "authors": [
+   "Jordan Gilardi",
+   "Dietmar Offenhuber"
+  ],
+  "when": "Wed, Nov 11, 13:48",
+  "session": "VISAP Pictorial - Beyond the Visual: Materiality, Memory, and Identity"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "A Data-Centric Perspective on Tree Visualizations",
+  "authors": [
+   "Manling Yang",
+   "Alexandra Scott",
+   "Chris Ahn",
+   "Daniel Jakab",
+   "Susie S.Y. Li",
+   "Mingwei S.G. Li",
+   "Remco Chang"
+  ],
+  "when": "Thu, Nov 12, 15:54",
+  "session": "Lost in Dimensions"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Streami: An MPI Data-Parallel Library to Compute Field Lines on GPUs",
+  "authors": [
+   "Stefan Zellmann",
+   "Milan Jaro\u0161",
+   "Andrea Paris",
+   "Ingo Wald",
+   "Tatiana von Landesberger"
+  ],
+  "when": "Fri, Nov 13, 08:18",
+  "session": "Big Data, Bigger Physics"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Explainable Mapper: Charting LLM Embedding Spaces Using Perturbation-Based Exploration, Explanation, and Verification Agents",
+  "authors": [
+   "Xinyuan Yan",
+   "Rita Sevastjanova",
+   "Sinie van der Ben",
+   "Mennatallah El-Assady",
+   "Bei Wang"
+  ],
+  "when": "Tue, Nov 10, 10:24",
+  "session": "Talk to my agent"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Attention-Guided Saliency Maps for Interpreting Visualization Literacy in VLMs",
+  "authors": [
+   "Maeve Hutchinson",
+   "Abderrahmane Wassim Mehdaoui",
+   "Pranava Madhyastha"
+  ],
+  "when": "Thu, Nov 12, 09:03",
+  "session": "Is the Model Even Thinking?"
+ },
+ {
+  "kind": "VIS Arts Program",
+  "title": "Reciprocal Parametric Design for Multimodal Visualization: A Case Study of The Rap Tapestry",
+  "authors": [
+   "Carmen Hull",
+   "Gregory Gold",
+   "Matthew Brehmer"
+  ],
+  "when": "Wed, Nov 11, 08:36",
+  "session": "VISAP - Making Data Tangible: Materiality, Space, and Public Life"
+ },
+ {
+  "kind": "VisxVision Workshop Paper",
+  "title": "Ten Years Later: Replicating Two Color Discrimination Studies",
+  "authors": [
+   "Shadmaan Hye",
+   "Andrew M McNutt",
+   "Katherine E. Isaacs"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "VisxVision: Workshop on Novel Directions in Vision Science and Visualization Research"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "High Fidelity Visualization: Parameter Mapping as an Analytical Tool for Assessing Structural Correspondence",
+  "authors": [
+   "Carmen Hull",
+   "Jagoda Walny"
+  ],
+  "when": "Tue, Nov 10, 10:54",
+  "session": "Form Follows Function"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Predicting affective connotation of visualizations from their constituent colors",
+  "authors": [
+   "Karen Schloss",
+   "Halle Braun",
+   "Kushin Mukherjee",
+   "Anna L Chinni",
+   "Seth R Gorelik"
+  ],
+  "when": "Thu, Nov 12, 13:48",
+  "session": "From design spaces to visual design"
+ },
+ {
+  "kind": "VISxAI Workshop Paper",
+  "title": "New Francisco or San York? A Visual Explanation of Text Diffusion",
+  "authors": [
+   "Susie S.Y. Li",
+   "Mingwei S.G. Li",
+   "Remco Chang"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VISxAI: 9th Workshop on Visualization for AI Explainability"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "\u201cTrust Junk\u201d Leads to Unjustified Support for Highly Discriminatory Predictive Models",
+  "authors": [
+   "Michael Correll",
+   "Lucy Havens",
+   "Mahsan Nourani"
+  ],
+  "when": "Wed, Nov 11, 08:27",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "On Defining Chart Types Boundaries",
+  "authors": [
+   "Chang Han",
+   "Andrew M McNutt",
+   "Katherine E. Isaacs"
+  ],
+  "when": "Thu, Nov 12, 10:00",
+  "session": "Time after time"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "LatentFlow: Visual Analytics for Latent Space Analysis in Molecular Graph Neural Networks",
+  "authors": [
+   "Shiyi Liu",
+   "Jiaqing Chen",
+   "Nicholas Hadler",
+   "Rostyslav Hnatyshyn",
+   "Michael Mahoney",
+   "Talita Perciano",
+   "John F. Hartwig",
+   "Gunther H Weber",
+   "Ross Maciejewski"
+  ],
+  "when": "Wed, Nov 11, 10:24",
+  "session": "What does it mean to live, anyway?"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "mlx-vis: GPU-Native Dimensionality Reduction on Apple Silicon",
+  "authors": [
+   "Han Xiao"
+  ],
+  "when": "Thu, Nov 12, 15:45",
+  "session": "Lost in Dimensions"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "FA-INR: Adaptive Implicit Neural Representations for Interpretable Exploration of Simulation Ensembles",
+  "authors": [
+   "Ziwei Li",
+   "Yuhan Duan",
+   "Tianyu Xiong",
+   "Yi-Tang Chen",
+   "Wei-Lun Chao",
+   "Han-Wei Shen"
+  ],
+  "when": "Tue, Nov 10, 15:24",
+  "session": "Let me through, I&#39;m a scientist!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "What\u2019s Your VATI? Understanding Attraction Profiles for Data Visualization on Social Media",
+  "authors": [
+   "Chuyi Zheng",
+   "Zikai Li",
+   "Zijian Yang",
+   "Shenghong Li",
+   "Lixing Chen",
+   "Yang Shi"
+  ],
+  "when": "Wed, Nov 11, 08:36",
+  "session": "Let&#39;s dig into the data (from France)"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "A Task Taxonomy for Edge and Trail Bundling",
+  "authors": [
+   "Markus Wallinger",
+   "Stephen Kobourov"
+  ],
+  "when": "Wed, Nov 11, 13:27",
+  "session": "Connecting the Dots"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Topological Analysis of Kernel Density Estimates via Uncertainty-Aware Morse Complexes and Coresets",
+  "authors": [
+   "Weiran Lyu",
+   "Jeff M. Phillips",
+   "Bei Wang"
+  ],
+  "when": "Thu, Nov 12, 08:00",
+  "session": "I&#39;m not so certain"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "GeneaLink: Reconstructing Marriages in Genealogies with Visual Analytics Coupling GNN Link Prediction and Multi-Agent Negotiation",
+  "authors": [
+   "Zhuoyang Bu",
+   "Junjie Xiong",
+   "Shenghan Gao",
+   "Haipeng Zhang",
+   "Quan Li"
+  ],
+  "when": "Thu, Nov 12, 13:45",
+  "session": "Tools of the Trade"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "FOX: Visual Exploration of Data Fact Outliers",
+  "authors": [
+   "Yikai Li",
+   "Yong WANG"
+  ],
+  "when": "Fri, Nov 13, 08:36",
+  "session": "I don&#39;t trust you, explain yourself!"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Human-Guided Causal Knowledge Injection for Virtual Cells",
+  "authors": [
+   "Pengcheng Wang",
+   "Changjian Chen",
+   "Zhuo Tang",
+   "You Wu",
+   "Long Wang",
+   "Feng Yu",
+   "Kenli Li"
+  ],
+  "when": "Wed, Nov 11, 10:00",
+  "session": "What does it mean to live, anyway?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Visual Indicators to Increase the Detection of Linguistic Media Bias",
+  "authors": [
+   "Smi Hinterreiter",
+   "Anna Chelsea Bah\u00df",
+   "Ann-Christin Gah",
+   "Timo Spinde",
+   "Isao Echizen",
+   "Marc Erich Latoschik"
+  ],
+  "when": "Thu, Nov 12, 08:36",
+  "session": "I&#39;m not so certain"
+ },
+ {
+  "kind": "AccessViz Workshop Paper",
+  "title": "Chart-Supported or Model-Supplied? Examining MLLM-Generated Claims for Accessible Visualization",
+  "authors": [
+   "Ishrat Jahan Eliza",
+   "Md Dilshadur Rahman"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "AccessViz: 3rd Workshop on Accessible Data Visualization"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "\u201cI Want More Nuance\u201d: Investigating the use of Physicalizations to Facilitate Discussions",
+  "authors": [
+   "Emmanuel Courtoux",
+   "Nathalie Bressa",
+   "Samuel Huron"
+  ],
+  "when": "Wed, Nov 11, 10:54",
+  "session": "Data, Meet Human: Vis That Cares"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Subdivision Matters: Partitioning Strategies for Task-Parallel Topological Visualization",
+  "authors": [
+   "Mithilesh Biradar",
+   "Guoxi Liu",
+   "Federico Iuricich"
+  ],
+  "when": "Wed, Nov 11, 13:36",
+  "session": "Connecting the Dots"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "Inkling: Exploring How Students Design Visualizations with Integrated Sketching, Natural Language, and Code Editing",
+  "authors": [
+   "Sadie M Fisher",
+   "Austin P Wright",
+   "Ayaan M Kazerouni"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Verify-First: Visual Triage of Structurally Consequential Instability in LLM-Generated Analytical Explanations",
+  "authors": [
+   "Suhyun Park"
+  ],
+  "when": "Wed, Nov 11, 14:03",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "BELIV Workshop Paper",
+  "title": "Why Question Answering Modality Matters in Visualization Studies and Tests",
+  "authors": [
+   "Anne-Flore Cabouat",
+   "Lily W. Ge",
+   "Tobias Isenberg",
+   "Samuel Huron",
+   "Matthew Kay",
+   "Petra Isenberg"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "ProvTales: A Dataset for Key Narrative Extraction from Provenance Graphs",
+  "authors": [
+   "Qi Jiang",
+   "Zhentao Zheng",
+   "Ziyu Huang",
+   "Binyan Gao",
+   "Xueqian Zheng",
+   "Xuhui Ma",
+   "Ronghua Liang",
+   "Guodao Sun"
+  ],
+  "when": "Thu, Nov 12, 08:00",
+  "session": "Story time"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "Inheriting the Count: How Visualization Literacy Got Its Measure",
+  "authors": [
+   "Jos\u00e9 Bener",
+   "Miriah Meyer"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "1d5v (1 Dataset, 5 Visualizations): A Scalable Peer-Critique Model for Teaching Visualization Design",
+  "authors": [
+   "Wesley Willett",
+   "Karly J. Ross"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "C\u00f4\u00f4rdVis-MD: From Cohorts to Conformations in Adaptive Molecular Dynamics Ensembles",
+  "authors": [
+   "Marcus Matheus Lameira de Ara\u00fajo",
+   "Bianchi Serique Meiguins",
+   "Carlos Gustavo Resque dos Santos"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Bio+MedVis Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Probe-Driven Visual Analytics for Diagnosing and Enhancing Physical Knowledge in Air Quality Forecasting Models",
+  "authors": [
+   "Yiming Lin",
+   "Jinghan Bai",
+   "Huijie Zhang",
+   "Qiushi Xia",
+   "Jialu Dong"
+  ],
+  "when": "Fri, Nov 13, 08:48",
+  "session": "Let&#39;s dig into the data (from China)"
+ },
+ {
+  "kind": "TopoInVis Workshop Paper",
+  "title": "Continuous Edit Distance between Time-varying Persistence Diagrams",
+  "authors": [
+   "Sebastien Tchitchek",
+   "Mohamed KISSI",
+   "Julien Tierny"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "TopoInVis Connect: Topology meets Artificial Intelligence"
+ },
+ {
+  "kind": "VISions Talk",
+  "title": "Ways of Thinking, Ways of Doing, and the Future of Visualization Research",
+  "authors": [
+   "Anamaria Crisan"
+  ],
+  "when": "Wed, Nov 11, 15:12",
+  "session": "VISions"
+ },
+ {
+  "kind": "EduVis Workshop Paper",
+  "title": "Do Visualization Literacy Assessment Tests Account for High-Level Visualization Comprehension?",
+  "authors": [
+   "Tapendra Pandey",
+   "Aaryani Chowdary Ambati",
+   "Arran Zeyu Wang",
+   "Ghulam Jilani Quadri"
+  ],
+  "when": "Mon, Nov 9, 08:00",
+  "session": "EduVis: 4th IEEE VIS Workshop on Visualization Education, Literacy, and Activities"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "EmbargoLens: Tracing Disclosure Pathways in Multi-Agent Communications through Temporal, Behavioral, and Message-Level Visual Analysis",
+  "authors": [
+   "Ruqi Sun",
+   "Jiaping Li",
+   "Qianxi Xu",
+   "Yuxin Ma"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "TopoInVis Workshop Paper",
+  "title": "Temporal Visualization of Hurricane Wind Fields Using Mapper Graphs",
+  "authors": [
+   "Justin Hoffmeier"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "TopoInVis Connect: Topology meets Artificial Intelligence"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "DiffGraph: Controllable Graph Layout Generation with Diffusion Models",
+  "authors": [
+   "Guozheng Li",
+   "Xudong Zhou",
+   "Haotian Mi",
+   "Jinyuan Liang",
+   "Min Lu",
+   "Yi Chen",
+   "Takayuki Itoh",
+   "Chi Harold Liu"
+  ],
+  "when": "Fri, Nov 13, 08:00",
+  "session": "Let&#39;s dig into the data (from China)"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Reconstructing an Embargo Breach in a Multi-Agent Corporate Communications System Using Visual Analytics",
+  "authors": [
+   "Lauma Ernestsone",
+   "Angelos Chatzimparmpas"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Situatedness in Visualization Design: Making Unresolved Work Actionable",
+  "authors": [
+   "Paul C Parsons",
+   "Prakash Chandra Shukla",
+   "Phuong Bui",
+   "Srishti Agrawal",
+   "Ali Baigelenov"
+  ],
+  "when": "Tue, Nov 10, 10:00",
+  "session": "The more the merrier"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "UrbanTrace: LLM-Assisted Discovery and Semantics-Aware Integration of Spatial Data",
+  "authors": [
+   "Sonia Castelo",
+   "Eden Wu",
+   "Jo\u00e3o Rulff",
+   "Harish Doraiswamy",
+   "Juliana Freire",
+   "Claudio Silva"
+  ],
+  "when": "Thu, Nov 12, 13:12",
+  "session": "Places and spaces"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Sounds Uncertain: Exploring the Affective Aspects of Sonification for Uncertainty Visualization",
+  "authors": [
+   "Marcel Dutt",
+   "Sita Vriend",
+   "Elias Elmquist",
+   "Daniel Weiskopf"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Linking Heterogeneous Data with Coordinated Agent Flows for Social Media Analysis",
+  "authors": [
+   "Shifu Chen",
+   "Dazhen Deng",
+   "Zhihong Xu",
+   "Sijia Xu",
+   "Linyu Qin",
+   "Tai-Quan Peng",
+   "Yingcai Wu"
+  ],
+  "when": "Thu, Nov 12, 11:00",
+  "session": "My followers need to know about this!"
+ },
+ {
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "title": "Visualizing Uncertainty-to-Action Composition for Human Oversight",
+  "authors": [
+   "Chisom Anyabolu",
+   "Akshat Dubey",
+   "Georges Hattab"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Uncertainty Visualization: How to Make it Interpretable, Integrable, and Accessible?"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Zhejiang University of Science and Technology-Yanni Peng-MC2",
+  "authors": [
+   "Yanni Peng",
+   "Yi Zhang",
+   "Ye Fu",
+   "Qiuyu Wang"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Submission for VAST MC2 2026 - TUM",
+  "authors": [
+   "Advitya Chopra",
+   "Jacob Miller",
+   "Oscar Edgardo Navarro Banderas"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "CG&amp;A Paper",
+  "title": "From Prediction to Insight: Visual Analytics for Understanding Compound Potency Models",
+  "authors": [
+   "Bahavathy Kathirgamanathan",
+   "Tiago Janela",
+   "Elena Xerxa",
+   "Gennady Andrienko",
+   "J\u00fcrgen Bajorath",
+   "Natalia Andrienko"
+  ],
+  "when": "Thu, Nov 12, 08:24",
+  "session": "Applications, Domain Science &amp; Data Representation"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Embedding Video into Collaborative Visualizations: Hybrid Gesture Interaction and Snapping Fisheye Support for Remote Sensemaking",
+  "authors": [
+   "Adrian Kristanto",
+   "Tim Dwyer",
+   "Maxime Cordeil",
+   "Jens Emil Sloth Gr\u00f8nb\u00e6k",
+   "Benjamin Tag",
+   "Christophe Hurter",
+   "Jesper Kjeldskov"
+  ],
+  "when": "Tue, Nov 10, 10:24",
+  "session": "The more the merrier"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Automatic Transfer Function Design via MLLM-Assisted 2D Semantic Decomposition",
+  "authors": [
+   "Haejin Jeong",
+   "Won-Ki Jeong"
+  ],
+  "when": "Tue, Nov 10, 13:36",
+  "session": "Modern talking-visually"
+ },
+ {
+  "kind": "Full VIS Paper",
+  "title": "Authoring Narrative Visualization in Motion:Visual Storytelling in Swimming Videos",
+  "authors": [
+   "Junhao Zhao",
+   "Romain Vuillemot",
+   "Petra Isenberg",
+   "Lijie Yao"
+  ],
+  "when": "Thu, Nov 12, 08:48",
+  "session": "Story time"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "LeakAnalysis: Investigation of the Embargo Breach",
+  "authors": [
+   "Dmytro Murza",
+   "Michael Adewole",
+   "Julia Maria G\u00f6rlach",
+   "Diana Gaus",
+   "Daniel A Keim",
+   "Manuel Schmidt",
+   "Julius Rauscher"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Multi-Agent Embargo Breach: A Visualization Dashboard",
+  "authors": [
+   "Kerem Ilgaz",
+   "Kanta Ito",
+   "Zainab Hussaini",
+   "Julius Rauscher",
+   "Manuel Schmidt",
+   "Daniel A Keim"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Benchmarking Multimodal Large Language Models for Scientific Visualization Literacy",
+  "authors": [
+   "Patrick Phuoc Do",
+   "Chau Ta",
+   "Chaoli Wang"
+  ],
+  "when": "Wed, Nov 11, 13:45",
+  "session": "Me, Myself, and AI"
+ },
+ {
+  "kind": "VIS Short Paper",
+  "title": "Error Aware Distribution Prediction for Lightweight Implicit Neural Representations",
+  "authors": [
+   "Zhimin Li",
+   "Jake Dylan Balla",
+   "Joshua A Levine"
+  ],
+  "when": "Wed, Nov 11, 08:36",
+  "session": "Can We Trust This Chart? (Asking for a Friend)"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "Ensemble Lens: Comparing Conformational Ensembles to Explain How  Two Drug Candidates Reshape A\u03b242",
+  "authors": [
+   "Augustine Nwafor",
+   "Eric First",
+   "Urska Cvek"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Bio+MedVis Challenge"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "AmpliFY: Coordinated Visual Analytics for Investigating Multi-Agent Communications",
+  "authors": [
+   "HOCK LIN TAI"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "VAST Challenge"
+ },
+ {
+  "kind": "Challenge Contribution",
+  "title": "StateWeaver: Tracing State Changes in Adaptive Molecular Dynamics",
+  "authors": [
+   "Nikhil Maturi"
+  ],
+  "when": "Mon, Nov 9, 13:00",
+  "session": "Bio+MedVis Challenge"
+ },
+ {
+  "kind": "Poster",
+  "title": "Vibe Widget: Studying Interface Use via Intent\u2013Artifact Traces",
+  "authors": [
+   "Dylan Wootton",
+   "Ryan Yen"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Catching Spheres, Chasing Colors: How Tracking Load Affects Color Perception in Visualizations",
+  "authors": [
+   "Hanyu Huang",
+   "Wei Wei",
+   "Weike Zeng",
+   "Jie Lyu",
+   "YuJie Zhou",
+   "qing sheng"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "DescribeMap: Writing Map Alt Text with AI in Journalistic Context",
+  "authors": [
+   "Lilou Lagrede Drai",
+   "Christophe Hurter",
+   "Thomas Hurtut"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Not Quite Human: An Exploratory Study on the Affective Divergence Between MLLMs and Humans in Infographics",
+  "authors": [
+   "Yunfan Shang",
+   "R\u00e9mi Monier",
+   "Christophe Hurter",
+   "Thomas Hurtut"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "GPUMAP: GPU-Accelerated Progressive Uniform Manifold Approximation and Projection",
+  "authors": [
+   "Myeongwon Jung",
+   "Jaemin Jo"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Field Guide: Explanatory Visualisation for Women\u2019s Return-to-Play in Grassroots Football Rhiannon Owen *",
+  "authors": [
+   "Rhiannon Sian Owen",
+   "Jonathan C Roberts"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "RectEuler over Time: Stable Rectangular Euler Diagrams for Dynamic Sets",
+  "authors": [
+   "Patrick Paetzold",
+   "Oliver Deussen"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Exploring Agentic Schemes for Authoring Interactive Multiview Visualizations in Genomics",
+  "authors": [
+   "Astrid van den Brandt",
+   "Kiroong Choe",
+   "Sehi L&#39;Yi",
+   "Devin Lange",
+   "Nils Gehlenborg"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Modeling Visualization as an Affective Trigger for Human Decision-Making The VP-RAFIAH Framework",
+  "authors": [
+   "Ibrahim Ismail-Adebiyi",
+   "Emily Wall",
+   "Victoria Interrante"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "The Whole is More Than the Sum of Its Parts: Coordinated Visualizations for Code Understanding and Error",
+  "authors": [
+   "Mariana Villamizar",
+   "Shani Claire Spivak",
+   "Enrico Bertini",
+   "Melanie Tory"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Naturalistic Visual Search with Imprecise Assistance",
+  "authors": [
+   "Benjamin T Files",
+   "Laura Marusich",
+   "Mark S. Dennison"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Do Better Embeddings Lead to Better Judgments? A User Study of PCA and UMAP for Single-Cell Data",
+  "authors": [
+   "Helena Qing Huang",
+   "Kris Sankaran"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Benchmarking the Analysation and Visualization of Single Cell RNA Sequencing Data",
+  "authors": [
+   "Abhigya Agrawal",
+   "Katy B\u00f6rner"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Geometry-Instanced Glyphs as Navigational Interfaces for Scientific Data Exploration",
+  "authors": [
+   "Adam Zhengyuan Xu",
+   "Leslie Liu",
+   "Luke Fiorante",
+   "Brandon Woodard",
+   "Casey Law",
+   "Xianmei Lei",
+   "Darwin Chiu",
+   "Krys Blackwood",
+   "Maggie Hendrie",
+   "Scott Davidoff",
+   "Santiago V Lombeyda",
+   "Hillary Mushkin"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Project AINA: Understanding Data Visualization Research through its Study Participants",
+  "authors": [
+   "No\u00eblle Rakotondravony",
+   "Jiarong Feng",
+   "Yannick Metz",
+   "Katy P Williams",
+   "Lane Harrison"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Pluot: Unified and interoperable visualization software architecture",
+  "authors": [
+   "Mark S Keller",
+   "Nils Gehlenborg"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Human in the Loop AI Design using the Five Design-Sheets method: Supporting Reflective Visualisation and Rapid Design",
+  "authors": [
+   "Rafi Ullah Tori",
+   "Panagiotis D. Ritsos",
+   "Peter W. S. Butcher",
+   "Jonathan C Roberts"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Peak-a-boo: Making Binary Chromatographic Peak Detections Reviewable",
+  "authors": [
+   "Saurav Ghosh",
+   "Saugat Pandey",
+   "Alvitta Ottley"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Agency Over Transparency: Empirical Evidence for the Understanding-Trust Gap in AI-Assisted Camouflage Analysis",
+  "authors": [
+   "Debra L Hogue",
+   "Ghulam Jilani Quadri"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Blooming Vowels: Visualizing Four Hu and Emotional Expression in Mandopop Lyrics",
+  "authors": [
+   "Jiayi Sun",
+   "Xiaoyu Zhang"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "MEanings: Visualizing Multimodal Wellbeing Data through a Colour-Pictorial Dashboard for Holistic Reflection",
+  "authors": [
+   "Ana Marques",
+   "Sabah Azhar",
+   "Narges Mahyar"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "A Visual Approach to Auditing Cross-Lingual Attribution Bias in LLMs",
+  "authors": [
+   "Priscylla Silva"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "X-Raying a Research Institute: An interactive visual analytics system for exploring a research center&#39;s teams, topics, and collaborations over time",
+  "authors": [
+   "Olha Baliasina",
+   "Petra Isenberg",
+   "Jean-Daniel Fekete"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Beyond Turns: Fragment-Response Alignment for Evolving Intent and Traceable Review in LLM Chat",
+  "authors": [
+   "Xichun Xu",
+   "Ruofei Du",
+   "Jiaqi Zheng",
+   "Qingping Wang",
+   "Lijie Yao",
+   "Liu YANG"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "VizSync: Supporting Interactive Audience Exploration in Data-Rich Presentations",
+  "authors": [
+   "Matthew Klich",
+   "Jillian Aurisano"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "From Model Disagreement to Reusable Evidence: Human-in-the-Loop Visual Adjudication for Multi-Model Timing-Diagram Parsing",
+  "authors": [
+   "Yaping Liu",
+   "Shenghan Gao",
+   "Quan Li"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Allocating the Diameter Budget: Task-Aware Bubble Size Emphasis under Fixed Layout Constraints",
+  "authors": [
+   "Kedi Zhang"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Visualization Literacy in United States Classrooms: A Qualitative Analysis of State Standards for K\u201312 Education Policy",
+  "authors": [
+   "Julia Weppler",
+   "Mackenzie Michael Creamer",
+   "Michelle A. Borkin"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Enriching Practice Understanding for Leisure-Time Squash Players",
+  "authors": [
+   "Xi Zhou",
+   "Junhao Zhao",
+   "Liu YANG",
+   "Lijie Yao"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Do OpenVLA Transformers Encode Motion Primitives? A Layer-wise Attention Analysis",
+  "authors": [
+   "Yuanzhe Jin",
+   "Qiong Wang",
+   "Yiwen Xing"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "ProGram: A Grammar for Progressive Visualization Pipelines",
+  "authors": [
+   "SeungHoon Jung",
+   "Jaemin Jo"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "PlotWise: Exploring Instruction-Practice Alignment in Interactive Visualization Learning",
+  "authors": [
+   "Jiarong Feng",
+   "Karen Bonilla",
+   "Stacy Shaw",
+   "Icy(Yunyi) Zhang",
+   "Lane Harrison"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Trade-offs in Data Color Palette Design Tools",
+  "authors": [
+   "Shiyi He",
+   "Andrew M McNutt"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "The Met Origins: A Spatial Discovery Interface for Connecting Audiences to Museum Objects Through Space and Time",
+  "authors": [
+   "Kshitija Chandra Tammireddi",
+   "Kanishka Balaji Baskar"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Philosophical Lenses on Data Visualization",
+  "authors": [
+   "Stefan Matei Cobeli",
+   "Gustavo Moreira"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Tracing Communicative Motive in LLM-Generated Visualizations: An Activity-Theory-Informed Artifact Analysis",
+  "authors": [
+   "Divya Prasanth Paraman",
+   "Katy B\u00f6rner"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "JITVis: A Phase-based Visualization for Intermediate Representations in JIT Compilers",
+  "authors": [
+   "Kwasi Buansi",
+   "Olivia Burls",
+   "Ellora Devulapally",
+   "Taft Harrell",
+   "HeuiChan (Terrence) Lim",
+   "Katy P Williams"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Echo: Visual Steering for AI-Assisted Cohort Definition and Comparison in Electronic Health Records",
+  "authors": [
+   "Ruey-Ling Weng",
+   "Vincent J. Zhang",
+   "Lingfei Qian",
+   "Vipina K. Keloth",
+   "Yujia Zhou",
+   "Na Hong",
+   "Hua Xu",
+   "Huan He"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "The LLM Belief Atlas: Visualizing How Language-Model Stances Depend on Elicitation",
+  "authors": [
+   "Fan Huang"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "From Visual Multiplexing to Zebra Maps",
+  "authors": [
+   "Yiwen Xing",
+   "Afrah Farea",
+   "Saiful Khan",
+   "Min Chen"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "A Geospatial Visualization Framework for Large Displays",
+  "authors": [
+   "Jalal Safari Bazargani",
+   "Soo-Mi Choi"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Factories, Flowers, and Trees: Visual Metaphors of People\u2019s AI Mental Models",
+  "authors": [
+   "Shani Claire Spivak",
+   "Lucy Havens",
+   "Mahsan Nourani"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "An expressive, flexible railroad layout engine",
+  "authors": [
+   "Shardul Chiplunkar",
+   "Cl\u00e9ment Pit-Claudel"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Visualizing Dengue Forecasts for Public Health Preparedness",
+  "authors": [
+   "Yiwen Xing",
+   "Tuyen Huynh",
+   "Abhishek Dasgupta",
+   "Iago Perez Fernandez",
+   "Manh Nguyen",
+   "Moritz Kraemer",
+   "Marc Choisy",
+   "David Wallom",
+   "Sophie Yacoub",
+   "Sarah Sparrow",
+   "Min Chen"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "The Effect of Visual Mark Arrangement on Value Estimation Accuracy in Waffle Charts",
+  "authors": [
+   "Dheerissara Lertpiriyasap",
+   "Puripant Ruchikachorn"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Visualizing the Silence: Design Challenges in Representing Asymmetric, Sparse Outcome Data",
+  "authors": [
+   "Kanishka Balaji Baskar",
+   "Kshitija Chandra Tammireddi"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Towards Better Point Cloud Visualizations for Tree Segmentations",
+  "authors": [
+   "Adam Niemczura",
+   "Mahsa Partovi",
+   "Dongyun Han",
+   "Federico Iuricich"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "A Spatiotemporal Interface Integrating ML Chemical Classification and Orbital Dynamics for Saturn Ring-Plane Dust from the NASA Cassini Mission",
+  "authors": [
+   "Lauren Pryor",
+   "Hillary Mushkin",
+   "Santiago V Lombeyda"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Lost in Translation: Visualizing Cultural Bias in AI Semantic Space",
+  "authors": [
+   "Han Zhang"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Bringing Journaling Data to Life: Designing Data Characters for the Emotional Self",
+  "authors": [
+   "Diego Alexander Abarcar-Calugay",
+   "Isabella Amador",
+   "Keke Wu"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Quick-View Takeaways: How Does Title Framing Influences Pattern Identification in Line Charts?",
+  "authors": [
+   "Jasmine Lim",
+   "Tapendra Pandey",
+   "Arran Zeyu Wang",
+   "Ghulam Jilani Quadri"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "PyProgressive: A Lightweight Library for Progressive Computations",
+  "authors": [
+   "SeungHoon Jung",
+   "Jaemin Jo"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "From Design Guidelines to Readability: Comparing Draco 2 with Human Judgments",
+  "authors": [
+   "Sidonie Minodier",
+   "Katerina Batziakoudi",
+   "Anne-Flore Cabouat",
+   "Petra Isenberg"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "VideoMaster: Directing Data Videos with Cinematic Narrative",
+  "authors": [
+   "Yile Luo",
+   "Yupeng Xie",
+   "Weikai Yang"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "A Declarative Specification for Clinical Reference Range Number Line Visualizations",
+  "authors": [
+   "Zoe J Fisk",
+   "Skyler Lin",
+   "Zachary Medailleu",
+   "Morgan Elizabeth Vasiliou",
+   "Karen Bonilla",
+   "Lane Harrison"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "Visualizing \u201cOur Neighborhood Walk\u201d: what can storymaps tell us about human-canine-environment interactions?",
+  "authors": [
+   "Alton L Hipps",
+   "Makinnley Tomberlin",
+   "Jonathan Nelson"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "An Exploratory Pilot Study of the Effectiveness of XAI Visual Explanations for Novice Users",
+  "authors": [
+   "Thomas Breimer",
+   "Dylan Cashman"
+  ],
+  "when": null,
+  "session": null
+ },
+ {
+  "kind": "Poster",
+  "title": "A Design Space of Interactive Visual Interface for Generative Image Models",
+  "authors": [
+   "Susie S.Y. Li",
+   "Mingwei S.G. Li",
+   "Remco Chang",
+   "Keynote",
+   "Keynote by Kimberly K Arcand",
+   "Speakers:",
+   "Kimberly K Arcand"
+  ],
+  "when": "Tue, Nov 10, 08:00",
+  "session": "VIS Opening + Keynote"
+ }
+]

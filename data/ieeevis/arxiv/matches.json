@@ -1,0 +1,675 @@
+{
+ "0": {
+  "title": "Exploring LLM Agent Designs and Interaction Modalities for Scientific Visualization",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2604.27996v3",
+   "title": "Exploring LLM Agent Designs and Interaction Modalities for Scientific Visualization",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "1": {
+  "title": "Olli with Hypergraphs: An Extensible Architecture for Accessible Charts and Diagrams",
+  "kind": "AccessViz Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "2": {
+  "title": "QueerTravel: Visualizing Social Safety Enriched with Community Experiences to Support Travel Decisions",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "4": {
+  "title": "AgroScan - An Interactive SOC Prediction Tool for Farmers",
+  "kind": "vis4climate Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "5": {
+  "title": "Measuring the Collaboration, Not the Agent: An Evaluation Framework for Human-AI High-Dimensional Visual Analytics",
+  "kind": "VISxGenAI Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "6": {
+  "title": "Designing Within the Lines: Practitioners\u2019 Perspectives and Visualisation Tool Evaluation in the Arabic Context",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.24571v1",
+   "title": "Designing Within the Lines: Practitioners' Perspectives and Visualisation Tool Evaluation in the Arabic Context",
+   "similarity": 1.0,
+   "author_overlap": 0.86
+  },
+  "rejected": []
+ },
+ "7": {
+  "title": "DebrisTracer: Reliable Tracking in Hypervelocity Impact Fast Imaging",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.15986v1",
+   "title": "DebrisTracer: Reliable Tracking in Hypervelocity Impact Fast Imaging",
+   "similarity": 1.0,
+   "author_overlap": 0.83
+  },
+  "rejected": []
+ },
+ "8": {
+  "title": "EvidenceLens: A Claim-Evidence Matrix for Auditing Financial Question Answering",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2606.23724v1",
+   "title": "EvidenceLens: A Claim-Evidence Matrix for Auditing Financial Question Answering",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "9": {
+  "title": "Marks, Channels, and Dead Ends: Stop Running Graphical Perception Studies and Start Modeling Visualizations as Images",
+  "kind": "BELIV Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.07834v1",
+   "title": "Marks, Channels, and Dead Ends: Stop Running Graphical Perception Studies and Start Modeling Visualizations as Images",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "11": {
+  "title": "BackdoorScope: Visual Analytics of Internal Behaviors in LLMs under Backdoor Attacks",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "12": {
+  "title": "Attention Dynamics in Diffusion Models: A Visual Analytics Framework for Human\u2013AI Collaboration",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.02563v1",
+   "title": "Attention Dynamics in Diffusion Models: A Visual Analytics Framework for Human-AI Collaboration",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "13": {
+  "title": "The Values of Visualization: Nurturing a Reflective Community of Practice with Critical Visualization Activities",
+  "kind": "BELIV Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "14": {
+  "title": "Toward AI VIS Co-Scientists: An Agent Harness for End-to-End Design of Scientific Visualization Applications",
+  "kind": "VISxGenAI Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "15": {
+  "title": "What Do We Mean When We Talk About Infographics?",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.12370v1",
+   "title": "What Do We Mean When We Talk About Infographics?",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "16": {
+  "title": "Toward Visual Methods: Reflections on How Visuals Enrich Empirical Research",
+  "kind": "BELIV Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "17": {
+  "title": "ProVega: A Grammar to Ease the Prototyping, Creation, and Reproducibility of Progressive Data Analysis and Visualization Solutions",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2604.02096v1",
+   "title": "ProVega: A Grammar to Ease the Prototyping, Creation, and Reproducibility of Progressive Data Analysis and Visualization Solutions",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "18": {
+  "title": "Interaction Techniques for Virtual Dissectible Models",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "20": {
+  "title": "Revisiting Channel Effectiveness: A Multi-Dimensional Evaluation with Primitive Visual Stimuli",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.04435v1",
+   "title": "Revisiting Channel Effectiveness: A Multi-Dimensional Evaluation with Primitive Visual Stimuli",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "21": {
+  "title": "Representational Fidelity in Didactic Visualization: Toward a Multidimensional Design Space",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2609.08037v1",
+   "title": "Representational Fidelity in Didactic Visualization: Toward a Multidimensional Design Space",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "22": {
+  "title": "The Grand Challenge of AI, Visualization, and Healthcare: Insights from the VAHC Workshop 2025",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "23": {
+  "title": "What-If Demolition: Home-First Narrative Anchoring for Public-Facing Gentrification Analytics",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "24": {
+  "title": "Visualizing Uncertainty in Non-linear Projections with Ensembles",
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.14513v2",
+   "title": "Visualizing Uncertainty in Non-linear Projections with Ensembles",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "26": {
+  "title": "Vibes on Demand: Adding Vibrotactile Encoding to Line Charts Shows Experiential Benefits Without Performance Costs",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.15307v2",
+   "title": "Vibes on Demand: Adding Vibrotactile Encoding to Line Charts Shows Experiential Benefits Without Performance Costs",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "27": {
+  "title": "Visualizing Lagrangian Heat Transport Paths and Density Structures in Unsteady Heat Transfer",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.00909v1",
+   "title": "Visualizing Lagrangian Heat Transport Paths and Density Structures in Unsteady Heat Transfer",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "28": {
+  "title": "How Does Title Framing Influence Pattern Identification in Line Charts?",
+  "kind": "VisxVision Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2609.17455v1",
+   "title": "How Does Title Framing Influence Pattern Identification in Line Charts?",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": [
+   {
+    "arxiv": "http://arxiv.org/abs/2609.17485v1",
+    "title": "Quick-View Takeaways: How Does Title Framing Influences Pattern Identification in Line Charts?",
+    "similarity": 0.864,
+    "author_overlap": 0.8
+   }
+  ]
+ },
+ "29": {
+  "title": "AgentPulse: Visual Analytics of Communication and Activity in LLM-Based Multi-Agent Systems",
+  "kind": "VISxGenAI Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "30": {
+  "title": "CATVis: A Collaborative Multi-Agent Workflow for Turbomachinery Simulation Data Visualization",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2609.16598v1",
+   "title": "CATVis: A Collaborative Multi-Agent Workflow for Turbomachinery Simulation Data Visualization",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "31": {
+  "title": "Can a Neural Encoding Model Replicate an fMRI Visualization Study?",
+  "kind": "VisxVision Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2609.15685v1",
+   "title": "Can a Neural Encoding Model Replicate an fMRI Visualization Study?",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "32": {
+  "title": "Colour Blinded by the Noise",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.17976v1",
+   "title": "Colour Blinded by the Noise",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "34": {
+  "title": "Swipytics: Leveraging Short-form Video Stream Metaphor in Exploratory Data Analysis",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "37": {
+  "title": "VisPuzzle: Task-Aware Composite Visualization Construction",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.11635v1",
+   "title": "VisPuzzle: Task-Aware Composite Visualization Construction",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "38": {
+  "title": "Snailpocalypse: A Physical Escape Room Game for Students Fostering Data Visualisation Literacy",
+  "kind": "EduVis Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "39": {
+  "title": "SpheriColor: Colormaps for Spherical Geospatial Input Topographies",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2610.11470v1",
+   "title": "SpheriColor: Colormaps for Spherical Geospatial Input Topographies",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "41": {
+  "title": "Uncertainty Visualization for Approximated Barycenter of Contour Trees Based on Partial Optimal Transport",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "42": {
+  "title": "Explainable Reaction Atlas",
+  "kind": "TopoInVis Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "43": {
+  "title": "ResonaVis: Visualizing Interactive Music Data to Support Reflective Music Composition for Therapeutic Contexts",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.10338v1",
+   "title": "ResonaVis: Visualizing Interactive Music Data to Support Reflective Music Composition for Therapeutic Contexts",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "44": {
+  "title": "Conversational Tactile Data Interfaces: Co-Designing Accessible Data Experiences with Blind Users Using Refreshable Tactile Displays and Conversational AI",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.14588v1",
+   "title": "Conversational Tactile Data Interfaces: Co-Designing Accessible Data Experiences with Blind Users Using Refreshable Tactile Displays and Conversational AI",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "45": {
+  "title": "PaintEcho: Bringing Paintings to Photos through Cross-domain Visual Exploration",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "46": {
+  "title": "A Multimodal Reasoning Typology for Grounding Chart-Image Coherence in Science Communication",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.05222v1",
+   "title": "A Multimodal Reasoning Typology for Grounding Chart-Image Coherence in Science Communication",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "47": {
+  "title": "Data Visualization for Teenage Teaching: A Review of Current Applications, Pedagogical Strategies, and Impact on Learning",
+  "kind": "TVCG Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "48": {
+  "title": "On Interpretability Methods for Vision Language Models in Visualization",
+  "kind": "VISxGenAI Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "49": {
+  "title": "Meandering Photo Lines: Fluid Multiscale Exploration of Photographic Archives",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.23769v1",
+   "title": "Meandering Photo Lines: Fluid Multiscale Exploration of Photographic Archives",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "51": {
+  "title": "Mitigating Confirmation Bias Through Hand-Drawing Videos",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.01359v1",
+   "title": "Mitigating Confirmation Bias through Hand-Drawing Videos",
+   "similarity": 1.0,
+   "author_overlap": 0.67
+  },
+  "rejected": []
+ },
+ "52": {
+  "title": "SIGMA: A Spatial Interaction Grammar for Multi-Display Visual Analytics",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "53": {
+  "title": "CausalChat: Interactive Causal Model Development and Refinement Using Large Language Models",
+  "kind": "TVCG Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2410.14146v1",
+   "title": "CausalChat: Interactive Causal Model Development and Refinement Using Large Language Models",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "54": {
+  "title": "GNN101: Visual Learning of Graph Neural Networks in Your Web Browser",
+  "kind": "TVCG Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2411.17849v4",
+   "title": "GNN101: Visual Learning of Graph Neural Networks in Your Web Browser",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "55": {
+  "title": "Beyond the Good, the Bad, and the Ugly: Colormap Assessment through Data-Aware Perceptual Metric",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2610.03720v1",
+   "title": "Beyond the Good, the Bad, and the Ugly: Colormap Assessment through Data-Aware Perceptual Metric",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "57": {
+  "title": "TuneScape: Visualizing Multi-Tuner Parameter Optimization Logs",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "58": {
+  "title": "Visual Decoding Operators: Towards a Compositional Theory of Visualization Perception",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2604.02220v2",
+   "title": "Visual Decoding Operators: Towards a Compositional Theory of Visualization Perception",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "60": {
+  "title": "reVISit-XR: Bringing Extended Reality into Embeddable, Trackable, and Replayable Visualization Studies",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2610.08700v1",
+   "title": "reVISit-XR: Bringing Extended Reality into Embeddable, Trackable, and Replayable Visualization Studies",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "61": {
+  "title": "ManyFold: A Design Exploration of Data Visualization on Foldable Mobile Devices",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.02232v1",
+   "title": "ManyFold: A Design Exploration of Data Visualization on Foldable Mobile Devices",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "62": {
+  "title": "NEXO: Adaptive Visualization for Comparative Exploration of Knowledge Graphs with Natural Language Interaction",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "63": {
+  "title": "TailVis: Expressive Visualization Refinement Preserving Data-Binding Integrity",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "64": {
+  "title": "Scalable Semantic Steering of Embedding Projections",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.03978v1",
+   "title": "Scalable Semantic Steering of Embedding Projections",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "65": {
+  "title": "EvoInsight: A Conversational Framework for End-to-End Generation of Topic-Oriented Videos from Large-Scale Texts",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "66": {
+  "title": "Exposing the Unsaid: Visualizing Hidden LLM Bias through Stochastic Path Aggregation",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2606.19344v1",
+   "title": "Exposing the Unsaid: Visualizing Hidden LLM Bias through Stochastic Path Aggregation",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "67": {
+  "title": "Counterbalance: A Declarative Tool for Privacy-Preserving Statistical Chart Authoring based on Differential Privacy",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "68": {
+  "title": "Structuring Line Ensembles with Path-Integrated Fidelity and Structural Inconsistency Fields",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.25121v1",
+   "title": "Structuring Line Ensembles with Path-Integrated Fidelity and Structural Inconsistency Fields",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "69": {
+  "title": "360\u00b0 Rays: Familiar, Yet Different and Better!",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "70": {
+  "title": "Distribution-Agnostic Isocontour Confidence Bounds for Robust Uncertainty Visualization of Scalar Field Data",
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.18220v2",
+   "title": "Distribution-Agnostic Isocontour Confidence Bounds for Robust Uncertainty Visualization of Scalar Field Data",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "71": {
+  "title": "Exploring Tactile Chart Authoring for Refreshable Tactile Displays: Lessons from a Co-Design Case Study",
+  "kind": "AccessViz Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "72": {
+  "title": "Charting the Immersive Self: A Scoping Review of Immersive Personal Visualisation",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "73": {
+  "title": "The CAPED Framework: Characterizing User Skills in Chart Authoring through the Lens of Tasks and Tools",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "74": {
+  "title": "VisCanvas: A Node-Based Interface for Exploratory Visualization Authoring with LLMs",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.21886v3",
+   "title": "VisCanvas: A Node-Based Interface for Exploratory Visualization Authoring with LLMs",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "75": {
+  "title": "Epistemic Tensions: Reframing A Visualization Co-Design through Entanglement Theory",
+  "kind": "BELIV Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.14364v1",
+   "title": "Epistemic Tensions: Reframing A Visualization Co-Design through Entanglement Theory",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "76": {
+  "title": "Beyond Initial Creation: Two Decades of Community-based Chart Revisions from Wikimedia Commons",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2610.19337v1",
+   "title": "Beyond Initial Creation: Two Decades of Community-based Chart Revisions from Wikimedia Commons",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "78": {
+  "title": "Prediction market visualizations, betting, and uncertainty: A study of Reddit Posts and Comments",
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.16814v1",
+   "title": "Prediction market visualizations, betting, and uncertainty: A study of Reddit Posts and Comments",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "79": {
+  "title": "GEMS - Guided Evolutionary Molecule Design for Sustainable Chemicals",
+  "kind": "VIS Short Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2605.15932v2",
+   "title": "GEMS -- Guided Evolutionary Molecule Design for Sustainable Chemicals",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "80": {
+  "title": "ViSAXS: Visual Analytics for Human-Guided SAXS Morphology Exploration in Autonomous Characterization",
+  "kind": "VAxAutoSci Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "81": {
+  "title": "Chart2SVG: Editable SVG Generation from Raster Chart Images",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2608.26544v1",
+   "title": "Chart2SVG: Editable SVG Generation from Raster Chart Images",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "82": {
+  "title": "LoCoMapper: Local Structural Uncertainty Analysis of Mapper Graphs under Cover Perturbations",
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "83": {
+  "title": "VeriLLMed: Visual Debugging of Medical Large Language Models with Knowledge Graphs",
+  "kind": "Full VIS Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "84": {
+  "title": "MolExplain: An Interactive Tool for Explainable Molecular Property Prediction",
+  "kind": "VAxAutoSci Workshop Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2609.25355v1",
+   "title": "MolExplain: An Interactive Tool for Explainable Molecular Property Prediction",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ },
+ "85": {
+  "title": "Similar Ratings, Different Consensus: Visualizing Agreement Uncertainty in Survey Data",
+  "kind": "Uncertainty Visualization Workshop Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "86": {
+  "title": "Interactive Hierarchical Visualization for Exploring the Neotoma Paleoecological Taxonomy",
+  "kind": "VIS Short Paper",
+  "accepted": null,
+  "rejected": []
+ },
+ "87": {
+  "title": "MV-Bench: Benchmarking Multimodal Large Language Models for Coordinated Multi-View Interface Construction",
+  "kind": "Full VIS Paper",
+  "accepted": {
+   "arxiv": "http://arxiv.org/abs/2607.19910v1",
+   "title": "MV-Bench: Benchmarking Multimodal Large Language Models for Coordinated Multi-View Interface Construction",
+   "similarity": 1.0,
+   "author_overlap": 1.0
+  },
+  "rejected": []
+ }
+}

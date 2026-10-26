@@ -1,0 +1,12 @@
+{
+ "AccessViz Workshop Paper": ["https://accessviz.github.io/"],
+ "BELIV Workshop Paper": ["https://beliv-workshop.github.io/", "https://beliv-workshop.github.io/schedule.html"],
+ "EduVis Workshop Paper": ["https://ieee-eduvis.github.io/"],
+ "TopoInVis Workshop Paper": ["https://topoinvis-workshop.github.io/2026/", "https://topoinvis-workshop.github.io/2026/accepted-papers.html", "https://topoinvis-workshop.github.io/2026/program.html"],
+ "Uncertainty Visualization Workshop Paper": ["https://tusharathawale.github.io/uncertainty-vis-workshop-2026/", "https://tusharathawale.github.io/uncertainty-vis-workshop-2026/accepted-papers.html"],
+ "VAxAutoSci Workshop Paper": ["https://vaxautosci.org/", "https://vaxautosci.org/program"],
+ "vis4climate Workshop Paper": ["https://vis4climate.ivia.ch/workshop"],
+ "VISxAI Workshop Paper": ["https://visxai.io/"],
+ "VISxGenAI Workshop Paper": ["https://visxgenai.github.io/"],
+ "VisxVision Workshop Paper": ["https://visxvision.com/vis-2026/", "https://visxvision.com/research/"]
+}
