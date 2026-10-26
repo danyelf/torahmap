@@ -6,6 +6,13 @@ export const SCORES_FILE = 'overlays/text-analytics/scores.json';
 /** Book → chapter → each verse's score, from verse 1; null for a verse with none. */
 export type MeasureScores = Record<string, Record<string, (number | null)[]>>;
 
+/**
+ * Book → chapter → verse number → the stretches of the verse's words that repeat, as start, end
+ * pairs (end excluded) in one list, counting words as the verse's length does. A verse with
+ * none, or without a score, is left out.
+ */
+export type RepeatedWords = Record<string, Record<string, Record<string, number[]>>>;
+
 /** The values the scores were computed with, for the legend to name. */
 export interface ScoreParameters {
   minWords: number;
@@ -17,6 +24,7 @@ export interface ScoreParameters {
 export interface ScoresFile {
   parameters: ScoreParameters;
   repetition: MeasureScores;
+  repeated: RepeatedWords;
 }
 
 // The colours span the middle of the scores, so a handful of extreme passages

@@ -77,8 +77,8 @@ export function formulas(books: ParsedBook[]): Set<string> {
   );
 }
 
-/** Each book's repetitive-wording scores, parallel to `books`. */
-export function repetitionScores(books: ParsedBook[], stock = formulas(books)): BookScores[] {
+/** Each book's verses, each word flagged when it sits in a run the book repeats nearby. */
+export function repeatedWords(books: ParsedBook[], stock = formulas(books)): boolean[][][] {
   return books.map(({ verses }) => {
     // Where each run is found in the book.
     const at = new Map<string, { verse: number; position: number }[]>();
@@ -105,8 +105,25 @@ export function repetitionScores(books: ParsedBook[], stock = formulas(books)): 
       }
     }
 
-    return repeated.map((marks) =>
-      marks.length >= PARAMETERS.minWords ? marks.filter(Boolean).length / marks.length : null,
-    );
+    return repeated;
   });
+}
+
+/** Each book's repetitive-wording scores, parallel to `books`. */
+export function repetitionScores(books: ParsedBook[], stock = formulas(books)): BookScores[] {
+  return repeatedWords(books, stock).map((verses) =>
+    verses.map((marks) =>
+      marks.length >= PARAMETERS.minWords ? marks.filter(Boolean).length / marks.length : null,
+    ),
+  );
+}
+
+/** The flagged stretches of a verse's words, as start, end pairs (end excluded) in one list. */
+export function repeatedStretches(marks: boolean[]): number[] {
+  const stretches: number[] = [];
+  marks.forEach((marked, i) => {
+    if (marked && !marks[i - 1]) stretches.push(i);
+    if (marked && !marks[i + 1]) stretches.push(i + 1);
+  });
+  return stretches;
 }
