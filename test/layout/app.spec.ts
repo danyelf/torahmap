@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../browser/fakeMap.ts';
 import { ABRAHAM, CHROME, STATES } from './app.ts';
 import { measureLayout, testStates } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
@@ -21,19 +22,6 @@ import {
   longestDrawnRun,
   stepShare,
 } from './page.ts';
-
-test('the render check sees a map that drew nothing', async ({ page }) => {
-  // No draw call runs; the clear still does.
-  await page.addInitScript(() => {
-    const proto = WebGL2RenderingContext.prototype as unknown as Record<string, unknown>;
-    for (const name of Object.getOwnPropertyNames(proto)) {
-      if (/^draw(Arrays|Elements|RangeElements)/.test(name)) proto[name] = () => {};
-    }
-  });
-  await page.goto('/?overlay=commentary');
-  await allLoaded(page);
-  expect(await drawnPixels(page)).toBeLessThan(DRAWN_FLOOR);
-});
 
 test('measuring finds the panel and its controls', async ({ page }) => {
   desktopAndPhoneOnly();
@@ -130,25 +118,43 @@ test('the title face loads', async ({ page }) => {
   );
 });
 
-test('zoomed far out, a line of verses draws as one unbroken bar', async ({ page }) => {
-  desktopOnly('one screen, at one pixel to the pixel');
-  // Squares 1.2 pixels wide, with 0.6 between them unless they are widened.
-  await openMap(page, 'zoom=0.3');
-  expect(await longestDrawnRun(page, await canvasShot(page))).toBeGreaterThan(40);
-});
+// What the map draws, on the real map.
+test.describe('the drawn map', () => {
+  test.use({ realMap: true });
 
-test('zoomed far out, bars keep their vertical jitter', async ({ page }) => {
-  desktopOnly('one screen, at one pixel to the pixel');
-  // Measured 0.087 with the jitter and 0 without it.
-  await openMap(page, 'zoom=0.3');
-  expect(await stepShare(page, await canvasShot(page))).toBeGreaterThan(0.04);
-});
+  test('the render check sees a map that drew nothing', async ({ page }) => {
+    // No draw call runs; the clear still does.
+    await page.addInitScript(() => {
+      const proto = WebGL2RenderingContext.prototype as unknown as Record<string, unknown>;
+      for (const name of Object.getOwnPropertyNames(proto)) {
+        if (/^draw(Arrays|Elements|RangeElements)/.test(name)) proto[name] = () => {};
+      }
+    });
+    await page.goto('/?overlay=commentary');
+    await allLoaded(page);
+    expect(await drawnPixels(page)).toBeLessThan(DRAWN_FLOOR);
+  });
 
-test('zoomed far out, a search hit glows, fading out from a solid core', async ({ page }) => {
-  desktopOnly('one screen, at one pixel to the pixel');
-  // Measured 0.44 with the glow and 0.08 with solid squares.
-  await openMap(page, `search=${encodeURIComponent('אליהו')}&zoom=0.1`);
-  expect(await faintShare(page, await canvasShot(page))).toBeGreaterThan(0.25);
+  test('zoomed far out, a line of verses draws as one unbroken bar', async ({ page }) => {
+    desktopOnly('one screen, at one pixel to the pixel');
+    // Squares 1.2 pixels wide, with 0.6 between them unless they are widened.
+    await openMap(page, 'zoom=0.3');
+    expect(await longestDrawnRun(page, await canvasShot(page))).toBeGreaterThan(40);
+  });
+
+  test('zoomed far out, bars keep their vertical jitter', async ({ page }) => {
+    desktopOnly('one screen, at one pixel to the pixel');
+    // Measured 0.087 with the jitter and 0 without it.
+    await openMap(page, 'zoom=0.3');
+    expect(await stepShare(page, await canvasShot(page))).toBeGreaterThan(0.04);
+  });
+
+  test('zoomed far out, a search hit glows, fading out from a solid core', async ({ page }) => {
+    desktopOnly('one screen, at one pixel to the pixel');
+    // Measured 0.44 with the glow and 0.08 with solid squares.
+    await openMap(page, `search=${encodeURIComponent('אליהו')}&zoom=0.1`);
+    expect(await faintShare(page, await canvasShot(page))).toBeGreaterThan(0.25);
+  });
 });
 
 test("the search card's × clears the search, and Back brings it back", async ({ page }) => {

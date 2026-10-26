@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { FullConfig, Reporter, Suite, TestCase, TestResult } from '@playwright/test/reporter';
 import { SCREENS } from '../browser/screens.ts';
@@ -36,6 +36,8 @@ export default class ContactSheet implements Reporter {
   }
 
   onBegin(config: FullConfig, suite: Suite): void {
+    // A run's report is its own: a run without screenshots leaves no earlier one to pass for it.
+    rmSync(this.dir, { recursive: true, force: true });
     this.order = config.projects.map((p) => p.name);
     for (const t of suite.allTests()) {
       if (!this.rank.has(t.title)) this.rank.set(t.title, this.rank.size);

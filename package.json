@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:layout": "node scripts/suite-lock.ts playwright test -c test/layout",
+    "test:layout:shots": "SCREENSHOTS=1 node scripts/suite-lock.ts playwright test -c test/layout",
     "test:loading": "node scripts/suite-lock.ts playwright test -c test/loading",
     "test:browser": "node scripts/test-browser.ts",
     "video": "node video/render.ts",

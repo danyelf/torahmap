@@ -1,6 +1,7 @@
 // What both browser suites share: opening the map, waiting on it, reading its
 // pixels and recording what it sends.
 import { expect, test, type Page } from '@playwright/test';
+import { isFake } from './fakeMap.ts';
 
 /** The canvas's clear colour and the page's background: #1a1a1a. */
 const BACKGROUND = 26;
@@ -61,9 +62,11 @@ export async function openMap(page: Page, link: string, path = '/'): Promise<str
   const errors = collectErrors(page);
   await page.goto(link ? `${path}?${link}` : path);
   await allLoaded(page);
-  await expect
-    .poll(async () => drawnPixels(page), { timeout: 15_000 })
-    .toBeGreaterThan(DRAWN_FLOOR);
+  if (!(await isFake(page))) {
+    await expect
+      .poll(async () => drawnPixels(page), { timeout: 15_000 })
+      .toBeGreaterThan(DRAWN_FLOOR);
+  }
   expect(errors, 'page errors').toEqual([]);
   return errors;
 }

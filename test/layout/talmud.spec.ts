@@ -1,9 +1,11 @@
 // The Talmud page, at /talmud/: it draws, its labels sit over the map, and a pinned segment
 // shows its text.
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../browser/fakeMap.ts';
 import { openMap, viaMenu } from '../browser/page.ts';
 import {
+  attachScreenshot,
   boxes,
   closeFromLegend,
   desktopAndPhoneOnly,
@@ -183,9 +185,7 @@ test('a Talmud search lists the segments it finds, each quoted with its match ma
   const errors = await openMap(page, `search=${encodeURIComponent('רבי יוחנן')}`, TALMUD);
   await viaMenu(page, 'search');
   await expect(page.locator('.search-result .snippet mark').first()).toBeVisible();
-  const shot = info.outputPath('screen.png');
-  await page.screenshot({ path: shot });
-  await info.attach('layout', { path: shot, contentType: 'image/png' });
+  await attachScreenshot(page, info);
   expect(errors).toEqual([]);
 });
 
@@ -216,9 +216,7 @@ test('an English Talmud search lists what it finds, and marks the popup’s Engl
   );
   expect(outsideBold).toHaveLength(0);
   await marks.first().scrollIntoViewIfNeeded();
-  const shot = info.outputPath('screen.png');
-  await page.screenshot({ path: shot });
-  await info.attach('layout', { path: shot, contentType: 'image/png' });
+  await attachScreenshot(page, info);
   expect(errors).toEqual([]);
 });
 

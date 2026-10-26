@@ -1,9 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
+import { test } from '../browser/fakeMap.ts';
 import { CHROME, type State } from './app.ts';
 import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
 import { KNOWN } from './known.ts';
 import { openMap } from '../browser/page.ts';
-import { asReturningReader, boxes, clippedText, shown } from './page.ts';
+import { asReturningReader, attachScreenshot, boxes, clippedText, shown } from './page.ts';
 
 /** The selectors the rules measure, which belong to the interface being tested. */
 export interface Chrome {
@@ -99,9 +100,7 @@ export function testStates(states: readonly State[], path = '/'): void {
       const errors = await openMap(page, state.link, path);
       await state.then?.(page);
       expect(errors, `page errors after opening ${state.name}`).toEqual([]);
-      const shot = info.outputPath('screen.png');
-      await page.screenshot({ path: shot });
-      await info.attach('layout', { path: shot, contentType: 'image/png' });
+      await attachScreenshot(page, info);
       await checkLayout(page, state);
       expect(errors, 'page errors while measuring').toEqual([]);
     });

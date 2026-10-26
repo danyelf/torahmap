@@ -1,6 +1,6 @@
 # Layout tests
 
-These tests check that the interface fits the screen. They load the real map in headless Chromium
+These tests check that the interface fits the screen. They load the page in headless Chromium
 at four sizes (desktop, laptop, tablet, iPhone 13) and measure where the panel, controls and verse
 popup land. They do not test what the map draws, what search finds or how the story reads; the
 vitest suite covers those.
@@ -29,17 +29,18 @@ map, takes a screenshot and checks six rules:
 The last rule matters because the others measure whatever their selectors find. If a redesign
 renames an element, they find nothing and have nothing to report; `shown` turns that into a failure.
 
-At the end, the run writes `layout-report/index.html`: every state at every size, side by side,
+`npm run test:layout:shots` also draws the real map and, at the end, writes
+`layout-report/index.html`: every state at every size, side by side,
 with failures marked in red. Look at it; the rules catch overlaps and clipping, not ugliness.
 
 ## Why it waits for the map to draw
 
-The map is drawn with WebGL, which headless Chromium lacks, so the config switches on software
-rendering. The tests don't check what the map shows. They wait until it has drawn something, for two
-reasons: the story moves the camera and fills the panel only once the map has started, so measuring
-earlier measures a half-built page; and a screenshot of a blank map would make the contact sheet
-worthless for judging the layout. `the render check sees a map that drew nothing` switches drawing
-off to prove that wait can't pass on a blank canvas.
+The page starts only once the map has a WebGL context: the story moves the camera and fills the
+panel after that, so measuring earlier measures a half-built page. Headless Chromium has none
+without software rendering, which is slow, so the layout checks run against a context that draws
+nothing (`test/browser/fakeMap.ts`). The checks that read pixels, and `test:layout:shots`, use the
+real map: `test.use({ realMap: true })`. `the render check sees a map that drew nothing` switches
+drawing off to prove the real map's wait can't pass on a blank canvas.
 
 ## Files
 
