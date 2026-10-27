@@ -3,12 +3,15 @@ import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overl
 import { NO_DATA } from '../../../src/overlays/colors';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
+import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { assertNamedEnds } from '../../helpers/assertions';
 
 const data: TextAnalyticsData = {
   scores: {
     parameters: SAMPLE_TEXT_ANALYTICS_SCORES.parameters,
     repetition: { Genesis: { '1': [0, 0.5, null, 0.25] } },
+    // Verse 1's fourth and fifth words, a maqaf pair.
+    repeated: { Genesis: { '1': { '1': [3, 5] } } },
   },
   texts: {
     Genesis: {
@@ -29,6 +32,16 @@ function host() {
 }
 
 describe('Text Analytics overlay', () => {
+  it('marks the repeated words of a verse, in its Hebrew text only', () => {
+    const text = data.texts!.Genesis['1'][1].he;
+    const h = host();
+    const marked = h.highlightItemText(verse(1), text, HEBREW);
+    expect([...marked.querySelectorAll('mark')].map((m) => m.textContent)).toEqual(['מנס־עפצ']);
+    expect(marked.textContent).toBe(text);
+    expect(h.highlightItemText(verse(1), text, ENGLISH).querySelector('mark')).toBeNull();
+    expect(h.highlightItemText(verse(2), text, HEBREW).querySelector('mark')).toBeNull();
+  });
+
   it('colours each verse by its score', () => {
     const h = host();
     expect(h.getItemColor(verse(1))).not.toEqual(h.getItemColor(verse(2)));

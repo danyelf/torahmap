@@ -220,6 +220,11 @@ export const STATES: State[] = [
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select'],
   },
+  {
+    name: 'explore-text-analytics-pinned',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&verse=Genesis.5.25',
+    shown: ['#popup', '#map-legend'],
+  },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.
   {
     name: 'explore-trop-rare',

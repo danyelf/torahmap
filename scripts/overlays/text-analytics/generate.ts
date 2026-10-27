@@ -11,11 +11,14 @@ import { TEXTS_FILE, type VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
 import {
   SCORES_FILE,
   type MeasureScores,
+  type RepeatedWords,
   type ScoresFile,
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
 import {
   PARAMETERS,
   parse,
+  repeatedStretches,
+  repeatedWords,
   repetitionScores,
   type BookScores,
   type ParsedBook,
@@ -64,11 +67,32 @@ function nest(
   return result;
 }
 
+/** Where each scored verse's repeated words are, leaving out verses with none. */
+function nestStretches(
+  books: ParsedBook[],
+  refs: [string, string][][],
+  scores: BookScores[],
+  flags: boolean[][][],
+): RepeatedWords {
+  const result: RepeatedWords = {};
+  books.forEach((book, b) => {
+    const chapters: RepeatedWords[string] = {};
+    refs[b].forEach(([chapter, verse], i) => {
+      const stretches = scores[b][i] === null ? [] : repeatedStretches(flags[b][i]);
+      if (stretches.length > 0) (chapters[chapter] ??= {})[verse] = stretches;
+    });
+    result[book.name] = chapters;
+  });
+  return result;
+}
+
 if (import.meta.main) {
   const { books, refs } = readBooks();
+  const scores = repetitionScores(books);
   const file: ScoresFile = {
     parameters: PARAMETERS,
-    repetition: nest(books, refs, repetitionScores(books)),
+    repetition: nest(books, refs, scores),
+    repeated: nestStretches(books, refs, scores, repeatedWords(books)),
   };
   const out = join(DATA, SCORES_FILE);
   mkdirSync(dirname(out), { recursive: true });

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { PARAMETERS, repetitionScores, parse, words, type ParsedBook } from '../measures.ts';
+import {
+  PARAMETERS,
+  repeatedStretches,
+  repeatedWords,
+  repetitionScores,
+  parse,
+  words,
+  type ParsedBook,
+} from '../measures.ts';
 
 const {
   minWords: MIN_WORDS,
@@ -110,5 +118,24 @@ describe('repetitionScores', () => {
       [...phrase, ...fresh(8 - RUN_WORDS)],
     ];
     expect(repetitionScores([book('A', verses)])[0][1]).toBe(0);
+  });
+});
+
+describe('repeatedStretches', () => {
+  const phrase = ['אמר', 'משה', 'לאהרן', 'ולבניו', 'לאמר'].slice(0, RUN_WORDS);
+
+  it('gives each run of flagged words as a start and an end', () => {
+    expect(repeatedStretches([false, true, true, false, true])).toEqual([1, 3, 4, 5]);
+    expect(repeatedStretches([false, false])).toEqual([]);
+  });
+
+  it('finds the words of a run that comes back within reach', () => {
+    const verses = [
+      [...fresh(2), ...phrase],
+      [...phrase, ...fresh(2)],
+    ];
+    const [flags] = repeatedWords([book('A', verses)]);
+    expect(repeatedStretches(flags[0])).toEqual([2, 2 + RUN_WORDS]);
+    expect(repeatedStretches(flags[1])).toEqual([0, RUN_WORDS]);
   });
 });

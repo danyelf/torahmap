@@ -2,7 +2,9 @@
 // computed ahead of time by scripts/overlays/text-analytics/generate.ts.
 
 import { type Color, type ColorStop, scale, LINEAR, memoByValue } from '@torahmap/utils';
+import './text-analytics.css';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
@@ -104,6 +106,7 @@ export const textAnalyticsOverlay: Overlay<
           `or more books) don't count`,
         `Blue = ${ENDS[0]} wording · Yellow = ${ENDS[1]} wording`,
         `Verses under ${p.minWords} words are not coloured`,
+        `Select a verse to see its repeated words marked in its text`,
       ]
         .map(legendCaption)
         .join('');
@@ -121,5 +124,36 @@ export const textAnalyticsOverlay: Overlay<
     const words = wordsRead(text).length;
     const repeated = Math.round(score * words);
     return `${repeated} of its ${words} words ${repeated === 1 ? 'repeats' : 'repeat'} nearby`;
+  },
+
+  // One colour for every repeated word; the stretch is marked whole, spaces and all.
+  highlightItemText(
+    verse,
+    text: string,
+    language: TextLanguage,
+    _settings,
+    data,
+  ): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+    const stretches = data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? [];
+    if (language !== HEBREW || stretches.length === 0) {
+      fragment.appendChild(document.createTextNode(text));
+      return fragment;
+    }
+    const words = wordsRead(text);
+    let at = 0;
+    for (let i = 0; i < stretches.length; i += 2) {
+      const first = words[stretches[i]];
+      const last = words[stretches[i + 1] - 1];
+      if (!first || !last) continue;
+      fragment.appendChild(document.createTextNode(text.slice(at, first.start)));
+      const mark = document.createElement('mark');
+      mark.className = 'repeated-words';
+      mark.textContent = text.slice(first.start, last.end);
+      fragment.appendChild(mark);
+      at = last.end;
+    }
+    fragment.appendChild(document.createTextNode(text.slice(at)));
+    return fragment;
   },
 };
