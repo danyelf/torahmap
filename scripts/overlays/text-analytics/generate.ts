@@ -121,11 +121,11 @@ if (import.meta.main) {
   writeFileSync(out, JSON.stringify(file) + '\n');
   console.log(`Wrote ${out}`);
 
-  const echoes: EchoesFile = {};
+  const everyEcho: EchoesFile = {};
   echoesAnywhere(books).forEach((others, v) => {
-    if (others.length > 0) echoes[v] = others;
+    if (others.length > 0) everyEcho[v] = others;
   });
   const echoesOut = join(DATA, ECHOES_FILE);
-  writeFileSync(echoesOut, JSON.stringify(echoes) + '\n');
+  writeFileSync(echoesOut, JSON.stringify(everyEcho) + '\n');
   console.log(`Wrote ${echoesOut}`);
 }
