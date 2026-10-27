@@ -10,8 +10,6 @@ export interface RabbiData {
   dating: TalmudDating;
 }
 
-export type RabbiSettings = PickSettings;
-
 const QUICK_PICKS = 28;
 const SUGGESTIONS = 6;
 
@@ -74,7 +72,7 @@ const indexOf = memoByValue(build);
 const indexFor = ({ dating }: RabbiData): Index => indexOf(dating);
 
 /** The picked rabbis' places, in the order picked; slugs the data does not hold are dropped. */
-export function pickedPlaces(settings: RabbiSettings, data: RabbiData): number[] {
+export function pickedPlaces(settings: PickSettings, data: RabbiData): number[] {
   const { placeOf } = indexFor(data);
   return settings.picked.flatMap((id) => placeOf.get(id) ?? []);
 }

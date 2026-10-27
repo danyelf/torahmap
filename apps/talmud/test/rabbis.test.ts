@@ -6,7 +6,8 @@ import { DATING_FILE, isSure, UNDATED, type Rabbi, type TalmudDating } from '../
 import { fadeTo } from '../src/overlays/dating.ts';
 import { talmudText } from '../src/text.ts';
 import { rabbisOverlay } from '../src/overlays/rabbis.ts';
-import { type RabbiData, type RabbiSettings } from '../src/overlays/rabbiPicks.ts';
+import { type PickSettings } from '@torahmap/shell/overlays/picks.ts';
+import { type RabbiData } from '../src/overlays/rabbiPicks.ts';
 
 const rabbis: Rabbi[] = [
   { id: 'gamliel-a', en: 'Rabban Gamliel haZaken', he: 'רבן גמליאל', gen: 'T1', names: [] },
@@ -42,8 +43,8 @@ const item = (id: string) => ({ id, x: 0, y: 0, size: 6 }) as never;
 const base = () => [0.6, 0.5, 0.4] as [number, number, number];
 const link: { open?: (id: string) => void } = {};
 const overlay = rabbisOverlay(base, link);
-const picking = (...picked: string[]): RabbiSettings => ({ picked });
-const colours = (settings: RabbiSettings, ...ids: string[]) =>
+const picking = (...picked: string[]): PickSettings => ({ picked });
+const colours = (settings: PickSettings, ...ids: string[]) =>
   overlay.colorsFor(ids.map(item), settings, null, data);
 const unlitColour = colours(picking('lakish'), 'A.2a.4')[0];
 
@@ -134,7 +135,7 @@ describe('the pinned passage', () => {
 
   it('marks only the picked rabbi’s name in the Hebrew', () => {
     const text = 'ריש יוחנן';
-    const words = (settings: RabbiSettings) =>
+    const words = (settings: PickSettings) =>
       [
         ...overlay.highlightItemText!(
           item('A.2a.1'),
@@ -165,7 +166,7 @@ describe('the finder', () => {
   function open(settings = picking()) {
     const container = document.createElement('div');
     document.body.append(container);
-    const changes: RabbiSettings[] = [];
+    const changes: PickSettings[] = [];
     let current = settings;
     const draw = () =>
       overlay.renderControls!(

@@ -12,14 +12,19 @@ import {
   picksFromUrl,
   picksToUrl,
   removePick,
+  type PickSettings,
 } from '@torahmap/shell/overlays/picks.ts';
 import {
+  pickChip,
+  pickChips,
   pickedList,
   pickFinderIn,
   pickMeta,
   pickNote,
   pickRow,
+  pickSuggestions,
   pickSwatch,
+  span,
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { DATING_FILE, type Rabbi, type TalmudDating } from '../dating.ts';
@@ -37,7 +42,6 @@ import {
   suggest,
   type Entry,
   type RabbiData,
-  type RabbiSettings,
 } from './rabbiPicks.ts';
 
 export const RABBIS_ID = 'rabbis';
@@ -58,40 +62,27 @@ function passageCounts(sure: number, maybe: number): string {
   return maybe ? `${count(sure, 'passage')}, ${maybe} unsure` : count(sure, 'passage');
 }
 
-const span = (className: string, text: string, lang?: string): HTMLSpanElement => {
-  const element = document.createElement('span');
-  element.className = className;
-  element.textContent = text;
-  if (lang) {
-    element.lang = lang;
-    element.dir = 'rtl';
-  }
-  return element;
-};
-
 /** What the finder keeps between drawings, per container it is drawn into. */
 interface Finder extends PickFinder {
   /** The shared name the reader is choosing a person for. */
   asking: Entry | null;
   draw(): void;
-  settings: RabbiSettings;
+  settings: PickSettings;
   data: RabbiData | null;
-  onChange(update: SettingsUpdate<RabbiSettings>): void;
+  onChange(update: SettingsUpdate<PickSettings>): void;
 }
-
-const finders = new WeakMap<PickFinder, Finder>();
 
 /** The overlay for a Talmud whose passages `base` colours when no tool does. */
 export function rabbisOverlay(
   base: (item: TalmudLayoutItem) => Color,
   link: RabbiLink,
-): Overlay<TalmudLayoutItem, RabbiSettings, RabbiData> {
+): Overlay<TalmudLayoutItem, PickSettings, RabbiData> {
   const unlit = (item: TalmudLayoutItem): Color => fadeTo(base(item), RABBIS_UNLIT_KEEPS);
 
   /** The colours to draw a passage in: one when one picked rabbi is named there, else a split. */
   function colorsOf(
     items: readonly TalmudLayoutItem[],
-    settings: RabbiSettings,
+    settings: PickSettings,
     data: RabbiData,
   ): (Color | Color[])[] {
     const places = pickedPlaces(settings, data);
@@ -174,14 +165,15 @@ export function rabbisOverlay(
       lists.append(who);
     } else if (typed.trim()) {
       const found = suggest(data, typed, places);
-      const box = document.createElement('div');
-      box.className = 'pick-suggestions';
-      if (full) box.append(pickNote(`${MAX_PICKS} at most: unpick one first.`));
-      else if (!found.length) box.append(pickNote('No rabbi by that name.'));
-      else
-        for (const { place, matched } of found)
-          box.append(rabbiRow(data, place, () => pick(place), matched));
-      lists.append(box);
+      lists.append(
+        pickSuggestions(
+          full
+            ? [pickNote(`${MAX_PICKS} at most: unpick one first.`)]
+            : found.length
+              ? found.map(({ place, matched }) => rabbiRow(data, place, () => pick(place), matched))
+              : [pickNote('No rabbi by that name.')],
+        ),
+      );
     }
 
     if (places.length) {
@@ -211,58 +203,50 @@ export function rabbisOverlay(
       const group = document.createElement('div');
       group.className = 'rabbi-era';
       group.append(span('rabbi-era-name', era));
-      const chips = document.createElement('div');
-      chips.className = 'pick-chips';
-      for (const entry of entries) {
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'pick-chip';
-        chip.textContent = entry.single ? entry.en : `${entry.en}…`;
-        chip.title = entry.single
-          ? count(entry.named, 'passage')
-          : `${count(entry.named, 'passage')} name this, and it can mean several people`;
-        const already = entry.single && places.includes(entry.rabbis[0]);
-        chip.classList.toggle('on', already);
-        const unpicked = entry.rabbis.filter((p) => !places.includes(p));
-        chip.disabled = full || unpicked.length === 0;
-        chip.addEventListener('click', () => {
-          if (entry.single) pick(entry.rabbis[0]);
-          else {
-            finder.asking = entry;
-            finder.draw();
-          }
-        });
-        chips.append(chip);
-      }
+      const chips = pickChips(
+        entries.map((entry) =>
+          pickChip(entry.single ? entry.en : `${entry.en}…`, {
+            title: entry.single
+              ? count(entry.named, 'passage')
+              : `${count(entry.named, 'passage')} name this, and it can mean several people`,
+            on: entry.single && places.includes(entry.rabbis[0]),
+            disabled: full || entry.rabbis.every((p) => places.includes(p)),
+            onClick() {
+              if (entry.single) pick(entry.rabbis[0]);
+              else {
+                finder.asking = entry;
+                finder.draw();
+              }
+            },
+          }),
+        ),
+      );
       group.append(chips);
       quick.append(group);
     }
     lists.append(quick);
   }
 
-  function finderIn(container: HTMLElement): Finder {
-    const base: PickFinder = pickFinderIn(container, {
+  const finderIn = (container: HTMLElement): Finder =>
+    pickFinderIn<Finder>(container, {
       placeholder: 'Find a rabbi by any of his names…',
       label: 'Find a rabbi',
-      onType() {
-        const finder = finders.get(base)!;
+      extend(parts) {
+        const finder: Finder = {
+          ...parts,
+          asking: null,
+          settings: { picked: [] },
+          data: null,
+          onChange: () => {},
+          draw: () => drawFinder(finder),
+        };
+        return finder;
+      },
+      onType(finder) {
         finder.asking = null;
         finder.draw();
       },
     });
-    const known = finders.get(base);
-    if (known) return known;
-    const finder: Finder = {
-      ...base,
-      asking: null,
-      settings: { picked: [] },
-      data: null,
-      onChange: () => {},
-      draw: () => drawFinder(finder),
-    };
-    finders.set(base, finder);
-    return finder;
-  }
 
   return {
     id: RABBIS_ID,

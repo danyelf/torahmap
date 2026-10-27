@@ -1,5 +1,5 @@
 // Picking a few things from a long list to light on the map: how many, the colour each gets, how
-// they travel in a link, and how a typed name is compared. No page in here.
+// they travel in a link, and how a typed name is compared.
 
 import { maxChroma, oklchToRgb, type Color } from '@torahmap/utils';
 import type { SettingsUpdate } from './types.ts';
