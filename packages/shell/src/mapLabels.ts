@@ -65,13 +65,15 @@ export function sectionLabelReach(size: SectionLabelSize): number {
  * A book label set as a tab inside its book's box, scaled with the map rather
  * than held to a readable size: its font size, how far above the book's first
  * row its top sits and how far in from its right edge, in map units, and the
- * smallest font, in pixels, it shows at. Smaller, it fades out.
+ * smallest font, in pixels, it shows at. Smaller, it fades out. With `wrap`, a name too long for
+ * its book's width goes on to further lines above the first, instead of running on.
  */
 export interface BookTab {
   fontSize: number;
   above: number;
   inset: number;
   minPx: number;
+  wrap?: boolean;
 }
 
 export interface MapLabelSettings {
@@ -207,6 +209,11 @@ export function createMapLabels(
   const bookLabels = books.map((book) => {
     const el = bookLabel(book);
     if (direction === 'ltr') el.style.transform = 'none';
+    if (tab?.wrap) {
+      el.style.whiteSpace = 'normal';
+      // The last line stays where a one-line name sits; the rest stand above it.
+      el.style.transform = 'translateY(calc(-100% + 1.2em))';
+    }
     // A tab keeps its length on the map, so whether its English fits does not change.
     if (tab) {
       const englishWidth = tab.fontSize * (ENGLISH_MIN_BOOK_WIDTH_PX / BASE_FONT_SIZE);
@@ -230,6 +237,7 @@ export function createMapLabels(
       el.style.left = (anchorX(book) + pan.x) * zoom + 'px';
       el.style.top = (book.minY + pan.y) * zoom - rise + 'px';
       el.style.fontSize = fontSize + 'px';
+      if (tab?.wrap) el.style.width = (book.maxX - book.minX - 2 * inset) * zoom + 'px';
       if (tab) el.style.opacity = fontSize < tab.minPx ? '0' : '';
       else {
         const bookScreenWidth = (book.maxX - book.minX) * zoom;

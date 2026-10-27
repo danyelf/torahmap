@@ -2,7 +2,7 @@
 // each pick gets. No page in here.
 
 import { memoByValue } from '@torahmap/utils';
-import { plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
+import { pickSlots, plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
 import { isSure, type Rabbi, type TalmudDating } from '../dating.ts';
 import { ERAS, eraOf, eraText, TRANSITION } from './dating.ts';
 
@@ -71,11 +71,22 @@ const build = (dating: TalmudDating): Index => {
 const indexOf = memoByValue(build);
 const indexFor = ({ dating }: RabbiData): Index => indexOf(dating);
 
-/** The picked rabbis' places, in the order picked; slugs the data does not hold are dropped. */
-export function pickedPlaces(settings: PickSettings, data: RabbiData): number[] {
+/** The picked rabbis, in the order picked; slugs the data does not hold are dropped. */
+function pickedRabbis(settings: PickSettings, data: RabbiData): { place: number; slot: number }[] {
   const { placeOf } = indexFor(data);
-  return settings.picked.flatMap((id) => placeOf.get(id) ?? []);
+  return pickSlots(settings, (id) => placeOf.has(id)).map(({ id, slot }) => ({
+    place: placeOf.get(id)!,
+    slot,
+  }));
 }
+
+/** The picked rabbis' places, in the order picked. */
+export const pickedPlaces = (settings: PickSettings, data: RabbiData): number[] =>
+  pickedRabbis(settings, data).map(({ place }) => place);
+
+/** Each picked rabbi's place among the picks, which sets their colour. */
+export const pickedSlots = (settings: PickSettings, data: RabbiData): number[] =>
+  pickedRabbis(settings, data).map(({ slot }) => slot);
 
 /** What a person's name can mean: whether it is certain, and the rabbis it can be. */
 export function readingOf(

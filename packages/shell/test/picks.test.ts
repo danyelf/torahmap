@@ -6,7 +6,9 @@ import {
   pickColors,
   picksFromUrl,
   picksToUrl,
+  pickSlots,
   plainName,
+  removePick,
 } from '../src/overlays/picks.ts';
 
 const hue = (a: number, b: number) => {
@@ -15,11 +17,11 @@ const hue = (a: number, b: number) => {
 };
 
 describe('colours for the picks', () => {
-  const all = pickColors(MAX_PICKS).map(rgbToOklch);
+  const all = pickColors([0, 1, 2, 3]).map(rgbToOklch);
 
-  it('gives each pick a colour by the order picked, whatever else is picked', () => {
-    expect(pickColors(2)[0]).toEqual(pickColors(1)[0]);
-    expect(pickColors(2)[1]).not.toEqual(pickColors(1)[0]);
+  it('gives each place its own colour, whatever else is picked', () => {
+    expect(pickColors([1])[0]).toEqual(pickColors([0, 1])[1]);
+    expect(pickColors([1])[0]).not.toEqual(pickColors([0])[0]);
   });
 
   it('has a colour for every pick allowed', () => {
@@ -48,6 +50,11 @@ describe('the link', () => {
   it('holds no pick twice and no more than can be told apart', () => {
     expect(picksFromUrl('a,a,b')).toEqual(['a', 'b']);
     expect(picksFromUrl('a,b,c,d,e,f,g,h')).toHaveLength(MAX_PICKS);
+  });
+
+  it('keeps a free place between picks, so each pick comes back in its colour', () => {
+    expect(picksFromUrl('a,,c')).toEqual(['a', '', 'c']);
+    expect(picksFromUrl('a,b,,')).toEqual(['a', 'b']);
     expect(picksFromUrl(undefined)).toEqual([]);
   });
 });
@@ -65,6 +72,35 @@ describe('picking', () => {
   it('changes nothing once as many are picked as a square can show', () => {
     const full = { picked: ['a', 'b', 'c', 'd'] };
     expect(addPick('e')(full)).toBe(full);
+  });
+});
+
+describe('colours that stay put', () => {
+  it('keep a pick in its place when another is removed', () => {
+    const picks = { picked: ['lane', 'petra'] };
+    const after = removePick('lane')(picks);
+    expect(pickSlots(after)).toEqual([{ id: 'petra', slot: 1 }]);
+  });
+
+  it('give a new pick the first free place', () => {
+    const after = addPick('chaoli')(removePick('lane')({ picked: ['lane', 'petra'] }));
+    expect(pickSlots(after)).toEqual([
+      { id: 'chaoli', slot: 0 },
+      { id: 'petra', slot: 1 },
+    ]);
+  });
+
+  it('put a new pick after the last when no place is free', () => {
+    expect(addPick('c')({ picked: ['a', 'b'] }).picked).toEqual(['a', 'b', 'c']);
+  });
+
+  it('count only the picks, not the free places, against the limit', () => {
+    const three = removePick('b')({ picked: ['a', 'b', 'c', 'd'] });
+    expect(addPick('e')(three).picked).toEqual(['a', 'e', 'c', 'd']);
+  });
+
+  it('drop the free places after the last pick', () => {
+    expect(removePick('b')({ picked: ['a', 'b'] }).picked).toEqual(['a']);
   });
 });
 

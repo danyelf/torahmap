@@ -1,4 +1,4 @@
-// Where every piece of the program stands: days side by side, a day's sessions down its column,
+// Where every piece of the program stands: days side by side, a day's time slots down its column,
 // a session's papers in rows of PAPERS_PER_LINE, each paper's pieces in a narrow block.
 
 import type { MapItem } from '@torahmap/engine';
@@ -33,8 +33,8 @@ export interface PieceItem extends MapItem {
 export interface Layout {
   items: PieceItem[];
   books: BookBox[];
-  /** Each day's column, without its panel padding. */
-  days: CoverBox[];
+  /** Each time slot's panel, without its padding. */
+  panels: CoverBox[];
   bounds: { width: number; height: number };
 }
 
@@ -96,7 +96,7 @@ function slotsOf(pieces: string, fill: Fill): { slots: Slot[]; rows: number } {
 export function computeLayout(structure: Structure): Layout {
   const items: PieceItem[] = [];
   const books: BookBox[] = [];
-  const days: CoverBox[] = [];
+  const panels: CoverBox[] = [];
   let x = 0;
   let height = 0;
   const fill = fillFromAddress();
@@ -104,10 +104,15 @@ export function computeLayout(structure: Structure): Layout {
   for (const day of structure.days) {
     let y = 0;
     let slot: string | null = null;
+    let panel: CoverBox | null = null;
     for (const session of day.sessions) {
       if (session.start !== slot) {
         slot = session.start;
-        y += (y > 0 ? SLOT_GAP : 0) + LABEL_ROOM;
+        if (panel) panel.maxY = y - LINE_GAP;
+        y += y > 0 ? SLOT_GAP : 0;
+        panel = { minX: x, maxX: x + DAY_WIDTH, minY: y, maxY: y };
+        panels.push(panel);
+        y += LABEL_ROOM;
         books.push({
           name: slot || 'No time given',
           hebrewName: '',
@@ -152,9 +157,9 @@ export function computeLayout(structure: Structure): Layout {
         y += Math.max(...blocks.map((b) => b.rows)) * SQUARE_SIZE + LINE_GAP;
       }
     }
-    days.push({ minX: x, maxX: x + DAY_WIDTH, minY: 0, maxY: y - LINE_GAP });
+    if (panel) panel.maxY = y - LINE_GAP;
     height = Math.max(height, y);
     x += DAY_WIDTH + DAY_GAP;
   }
-  return { items, books, days, bounds: { width: x - DAY_GAP, height } };
+  return { items, books, panels, bounds: { width: x - DAY_GAP, height } };
 }

@@ -43,6 +43,8 @@ export interface ListKind {
   /** What the overlay does, said in the picker. */
   description: string;
   namesOf(paper: Paper): readonly string[];
+  /** How a name is shown; the name itself, as written, is still what is picked and linked. */
+  display?(name: string): string;
   /** Under the legend: what the picks do not cover. */
   legendNote?(listing: { papers: number; total: number }): string;
 }
@@ -60,6 +62,7 @@ export function listOverlay(kind: ListKind): {
   const { noun } = kind;
   const urlParams = [{ key: kind.urlKey, kind: 'text' }] as const satisfies readonly UrlParamSpec[];
   const picks = picksOf(kind.namesOf);
+  const show = kind.display ?? ((name: string) => name);
 
   function drawFinder({ settings, data, onChange, input, lists }: Finder): void {
     lists.replaceChildren();
@@ -68,7 +71,7 @@ export function listOverlay(kind: ListKind): {
       return;
     }
     const picked = picks.picked(settings, data);
-    const colors = pickColors(picked.length);
+    const colors = pickColors(picks.slots(settings, data));
     const full = picked.length >= MAX_PICKS;
     const choose = (entry: Entry) => {
       input.value = '';
@@ -83,7 +86,7 @@ export function listOverlay(kind: ListKind): {
             ? [pickNote(`${MAX_PICKS} at most: unpick one first.`)]
             : found.length
               ? found.map((entry) =>
-                  pickRow([entry.name, pickMeta(papers(entry.papers))], () => choose(entry)),
+                  pickRow([show(entry.name), pickMeta(papers(entry.papers))], () => choose(entry)),
                 )
               : [pickNote(`No ${noun.one} by that name.`)],
         ),
@@ -95,8 +98,8 @@ export function listOverlay(kind: ListKind): {
         pickedList(
           picked.map((entry, i) => ({
             color: colors[i],
-            text: [entry.name, pickMeta(papers(entry.papers))],
-            removeTitle: `Unpick ${entry.name}`,
+            text: [show(entry.name), pickMeta(papers(entry.papers))],
+            removeTitle: `Unpick ${show(entry.name)}`,
             onRemove: () => onChange(removePick(entry.name)),
           })),
         ),
@@ -107,11 +110,12 @@ export function listOverlay(kind: ListKind): {
     heading.textContent = 'Most papers';
     const chips = pickChips(
       picks.quick(data).map((entry) =>
-        pickChip(entry.name, {
+        pickChip(show(entry.name), {
           title: papers(entry.papers),
           on: picked.includes(entry),
-          disabled: full || picked.includes(entry),
-          onClick: () => choose(entry),
+          disabled: full && !picked.includes(entry),
+          onClick: () =>
+            picked.includes(entry) ? onChange(removePick(entry.name)) : choose(entry),
         }),
       ),
     );
@@ -144,7 +148,7 @@ export function listOverlay(kind: ListKind): {
     colorsFor(items, settings, _hovered, data) {
       const picked = picks.picked(settings, data);
       if (!picked.length) return items.map(baseColor);
-      const colors = pickColors(picked.length);
+      const colors = pickColors(picks.slots(settings, data));
       return items.map((item) => {
         const lit = listedBy(picked, kind.namesOf(item.paper)).map((i) => colors[i]);
         if (!lit.length) return unlit(item);
@@ -175,8 +179,8 @@ export function listOverlay(kind: ListKind): {
       };
       if (!picked.length) row(`Pick ${noun.a} to light its papers.`);
       else {
-        const colors = pickColors(picked.length);
-        picked.forEach((entry, i) => row(pickSwatch(colors[i]), entry.name));
+        const colors = pickColors(picks.slots(settings, data));
+        picked.forEach((entry, i) => row(pickSwatch(colors[i]), show(entry.name)));
         row(pickSwatch(brighten(TEXT, UNLIT_KEEPS)), 'Papers under none of them');
       }
       const note = kind.legendNote?.(picks.listing(data));
@@ -188,14 +192,14 @@ export function listOverlay(kind: ListKind): {
       const picked = picks.picked(settings, data);
       if (!picked.length) return { detail: `pick ${noun.a}` };
       return {
-        detail: picked.length === 1 ? picked[0].name : `${picked.length} ${noun.many}`,
-        colors: pickColors(picked.length).map(colorToCss),
+        detail: picked.length === 1 ? show(picked[0].name) : `${picked.length} ${noun.many}`,
+        colors: pickColors(picks.slots(settings, data)).map(colorToCss),
       };
     },
 
     getHoverInfo(item, settings, data) {
       const picked = picks.picked(settings, data);
-      const names = listedBy(picked, kind.namesOf(item.paper)).map((i) => picked[i].name);
+      const names = listedBy(picked, kind.namesOf(item.paper)).map((i) => show(picked[i].name));
       return names.length ? names.join(', ') : null;
     },
   };

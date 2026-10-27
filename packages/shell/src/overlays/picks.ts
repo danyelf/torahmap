@@ -5,7 +5,7 @@ import { maxChroma, oklchToRgb, type Color } from '@torahmap/utils';
 import type { SettingsUpdate } from './types.ts';
 
 export interface PickSettings {
-  /** Ids, in the order picked. */
+  /** Ids by colour: a pick keeps its place, and so its colour, until it is removed. An empty place is free. */
   picked: string[];
 }
 
@@ -35,27 +35,46 @@ const PICKS: readonly { hue: number; chroma: number }[] = [
 /** Every pick is this light, so none looks brighter than another. */
 const PICK_LIGHTNESS = 0.8;
 
-/** A color for each of `count` picks, by the order picked. */
-export function pickColors(count: number): Color[] {
-  return Array.from({ length: count }, (_, i) => {
-    const { hue, chroma } = PICKS[i];
+/** The colours of the given places among the picks. */
+export const pickColors = (slots: readonly number[]): Color[] =>
+  slots.map((slot) => {
+    const { hue, chroma } = PICKS[slot];
     return oklchToRgb(PICK_LIGHTNESS, maxChroma(PICK_LIGHTNESS, hue) * chroma, hue);
   });
+
+/** The picks that `known` accepts, each with its place among the picks. */
+export const pickSlots = (
+  { picked }: PickSettings,
+  known: (id: string) => boolean = () => true,
+): { id: string; slot: number }[] =>
+  picked.flatMap((id, slot) => (id && known(id) ? [{ id, slot }] : []));
+
+/** The link's value for the picks, with a free place left empty, and the picks it names. */
+export const picksToUrl = (picked: readonly string[]): string => picked.join(',');
+export function picksFromUrl(value: string | undefined): string[] {
+  const seen = new Set<string>();
+  const picked = (value ?? '').split(',').filter((id) => !id || (!seen.has(id) && seen.add(id)));
+  return trimFree(picked.slice(0, MAX_PICKS));
 }
 
-/** The link's value for the picks, and the picks a link's value names. */
-export const picksToUrl = (picked: readonly string[]): string => picked.join(',');
-export const picksFromUrl = (value: string | undefined): string[] =>
-  [...new Set((value ?? '').split(',').filter(Boolean))].slice(0, MAX_PICKS);
+const trimFree = (picked: string[]): string[] => {
+  let end = picked.length;
+  while (end > 0 && !picked[end - 1]) end--;
+  return picked.slice(0, end);
+};
 
+/** A new pick takes the first free place. */
 export const addPick = (id: string): SettingsUpdate<PickSettings> =>
   function (current) {
-    return current.picked.includes(id) || current.picked.length >= MAX_PICKS
-      ? current
-      : { picked: [...current.picked, id] };
+    const { picked } = current;
+    if (picked.includes(id) || pickSlots(current).length >= MAX_PICKS) return current;
+    const free = picked.indexOf('');
+    return {
+      picked: free < 0 ? [...picked, id] : picked.map((p, slot) => (slot === free ? id : p)),
+    };
   };
 
 export const removePick = (id: string): SettingsUpdate<PickSettings> =>
-  function (current) {
-    return { picked: current.picked.filter((p) => p !== id) };
+  function ({ picked }) {
+    return { picked: trimFree(picked.map((p) => (p === id ? '' : p))) };
   };

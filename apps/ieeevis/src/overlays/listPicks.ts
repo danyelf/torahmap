@@ -2,7 +2,7 @@
 // its name. No page in here.
 
 import { memoByValue } from '@torahmap/utils';
-import { plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
+import { pickSlots, plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
 import type { Paper, Structure } from '../data.ts';
 
 export interface ListData {
@@ -28,6 +28,8 @@ export interface Picks {
   listing(data: ListData): { papers: number; total: number };
   /** The picked entries in the order picked; names no paper lists are dropped. */
   picked(settings: ListSettings, data: ListData): Entry[];
+  /** Each picked entry's place among the picks, which sets its colour. */
+  slots(settings: ListSettings, data: ListData): number[];
   /** The entries with the most papers, to start from. */
   quick(data: ListData): Entry[];
   /** Entries whose name holds every word typed, those starting with the typing first. */
@@ -54,7 +56,10 @@ export function picksOf(namesOf: (paper: Paper) => readonly string[]): Picks {
       const all = papersOf(data);
       return { papers: all.filter((paper) => namesOf(paper).length > 0).length, total: all.length };
     },
-    picked: (settings, data) => settings.picked.flatMap((name) => byName(data).get(name) ?? []),
+    picked: (settings, data) =>
+      pickSlots(settings, (name) => byName(data).has(name)).map(({ id }) => byName(data).get(id)!),
+    slots: (settings, data) =>
+      pickSlots(settings, (name) => byName(data).has(name)).map(({ slot }) => slot),
     quick: (data) => entries(data).slice(0, QUICK_PICKS),
     suggest(data, typed, skip = []) {
       const words = plainName(typed).split(' ').filter(Boolean);

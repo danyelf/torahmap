@@ -48,13 +48,13 @@ const colours = (picked: string[], ...papers: number[]) =>
 describe('the authors overlay', () => {
   it('lights an author’s papers and dims the rest', () => {
     const [mine, other] = colours(['Bei Wang'], 1, 2);
-    expect(mine).toEqual(pickColors(1)[0]);
+    expect(mine).toEqual(pickColors([0])[0]);
     expect(other).not.toEqual(mine);
   });
 
   it('splits a paper by two picked authors between their colours', () => {
     const [both] = colours(['Ana Silva', 'Bei Wang'], 0);
-    expect(both).toEqual(pickColors(2));
+    expect(both).toEqual(pickColors([0, 1]));
   });
 
   it('stands out only the picked authors’ papers', () => {
@@ -100,17 +100,47 @@ describe('the keywords overlay', () => {
 
   it('lights the papers that list a keyword, and dims the ones that list none', () => {
     const [listed, none] = colourOf(['Visual analytics'], 1, 2);
-    expect(listed).toEqual(pickColors(1)[0]);
+    expect(listed).toEqual(pickColors([0])[0]);
     expect(none).not.toEqual(listed);
   });
 
   it('splits a paper listing two picked keywords between their colours', () => {
-    expect(colourOf(['Visual analytics', 'Uncertainty'], 0)[0]).toEqual(pickColors(2));
+    expect(colourOf(['Visual analytics', 'Uncertainty'], 0)[0]).toEqual(pickColors([0, 1]));
   });
 
   it('says how many papers list keywords', () => {
     const container = document.createElement('div');
     keywordsOverlay.renderLegend!(container, { picked: [] }, data);
     expect(container.textContent).toContain('2 of 3 papers list keywords');
+  });
+});
+
+describe('the quick picks', () => {
+  const open = (settings: { picked: string[] }) => {
+    const container = document.createElement('div');
+    const changes: { picked: string[] }[] = [];
+    keywordsOverlay.renderControls!(
+      container,
+      settings,
+      (update) => changes.push(update(settings)),
+      data,
+    );
+    const chips = [...container.querySelectorAll<HTMLButtonElement>('.pick-chip')];
+    return { chips, changes };
+  };
+
+  it('are shown in Title Case, and pick the keyword as written', () => {
+    const { chips, changes } = open({ picked: [] });
+    const chip = chips.find((c) => c.textContent === 'Visual Analytics')!;
+    chip.click();
+    expect(changes).toEqual([{ picked: ['Visual analytics'] }]);
+  });
+
+  it('unpick a keyword when clicked again', () => {
+    const { chips, changes } = open({ picked: ['Visual analytics'] });
+    const chip = chips.find((c) => c.textContent === 'Visual Analytics')!;
+    expect(chip.disabled).toBe(false);
+    chip.click();
+    expect(changes).toEqual([{ picked: [] }]);
   });
 });

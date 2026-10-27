@@ -479,6 +479,12 @@ export const TALMUD_STATES: State[] = [
 
 /** The VIS map's page, at /ieeevis/ (ieeevis.spec.ts). */
 export const IEEEVIS_STATES: State[] = [
+  { name: 'vis-default', link: '', shown: ['#map-legend'] },
+  {
+    name: 'vis-authors-colours-kept',
+    link: 'overlay=authors&authors=,Chaoli Wang,,Lane Harrison',
+    shown: ['#map-legend'],
+  },
   {
     name: 'vis-authors',
     link: 'overlay=authors&authors=Bei Wang,Chaoli Wang',
