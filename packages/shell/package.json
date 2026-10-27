@@ -7,6 +7,7 @@
     "./app/page.ts": "./src/app/page.ts",
     "./app/search.ts": "./src/app/search.ts",
     "./app/text.ts": "./src/app/text.ts",
+    "./bookCovers.ts": "./src/bookCovers.ts",
     "./constants.ts": "./src/constants.ts",
     "./dataFiles.ts": "./src/dataFiles.ts",
     "./itemColoring.ts": "./src/itemColoring.ts",

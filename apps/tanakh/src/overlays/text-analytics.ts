@@ -152,38 +152,23 @@ function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: b
   return mute ? muted(color, (score - low) / (high - low)) : color;
 }
 
-// How far the farthest echo reaches, in verses, for an echo to count as far: a nearby echo
-// (within the reach the repetitive-wording measure uses) is shown at NEAR_STRENGTH of the bright
-// colour, so far ones stand out, rising to the full colour by FAR_VERSES.
-const NEAR_STRENGTH = 0.3;
-const FAR_VERSES = 1500;
-
-/** How much of the bright colour a verse shows, by how far away its farthest echo is. */
-function strengthAt(distance: number, reach: number): number {
-  if (distance <= reach) return NEAR_STRENGTH;
-  const along = Math.log(distance / reach) / Math.log(FAR_VERSES / reach);
-  return NEAR_STRENGTH + (1 - NEAR_STRENGTH) * Math.min(1, along);
-}
-
 /**
- * A verse with echoes is the colour of the spectrum where its farthest echo lies, brighter the
- * farther that is; one without, or one out of focus, is the faint colour of its own place.
+ * A verse with echoes is the colour of the spectrum where its farthest echo lies; one without, or
+ * one out of focus, takes the map's grey.
  */
 function echoColorAt(
   data: TextAnalyticsData,
   { words }: TextAnalyticsSettings,
   verse: TanakhLayout,
   mute: boolean,
-): Color {
-  const { faint, bright } = spectrumOf(data.scores);
+): Color | null {
   const position = readingOrder(data.scores).positions.get(verse.id)!;
   const echoes = mute ? [] : echoesAt(data.echoes, position, words);
-  if (echoes.length === 0) return faint[position];
+  if (echoes.length === 0) return null;
   const [farthest] = echoes.reduce((far, e) =>
     Math.abs(e[0] - position) > Math.abs(far[0] - position) ? e : far,
   );
-  const strength = strengthAt(Math.abs(farthest - position), data.scores.parameters.reachVerses);
-  return faint[farthest].map((c, i) => c + (bright[farthest][i] - c) * strength) as Color;
+  return spectrumOf(data.scores).bright[farthest];
 }
 
 function colorAt(
@@ -191,7 +176,7 @@ function colorAt(
   settings: TextAnalyticsSettings,
   verse: TanakhLayout,
   mute = false,
-): Color {
+): Color | null {
   return settings.analysis === 'echoes'
     ? echoColorAt(data, settings, verse, mute)
     : repetitionColorAt(data, verse, mute);
@@ -222,7 +207,7 @@ function renderSpectrum(data: TextAnalyticsData): string {
   return `<div class="legend-gradient" style="background: ${gradient}"></div><div class="legend-ticks">${ticks}</div>`;
 }
 
-const SPECTRUM_SAMPLES = 24;
+const SPECTRUM_SAMPLES = 60;
 
 function spectrumGradient(data: TextAnalyticsData): string {
   const { bright } = spectrumOf(data.scores);
@@ -344,10 +329,9 @@ export const textAnalyticsOverlay: Overlay<
       container.innerHTML =
         renderSpectrum(data) +
         [
-          `Each verse sits on a spectrum in reading order, from Genesis to Chronicles`,
           `A verse that shares a phrase with others takes the colour of the place of the echo ` +
-            `farthest from it, brighter the farther that is: echoes nearby stay in their own colour`,
-          `A verse with no echo is a faint tint of its own place`,
+            `farthest from it; the colours run in reading order, from Genesis to Chronicles`,
+          `A verse with no echo is grey. Each book's panel is the colour of its middle`,
           `Phrases that recur in many verses wherever they appear don't count`,
           `Hover or select a verse to light its parallels`,
         ]
@@ -371,6 +355,10 @@ export const textAnalyticsOverlay: Overlay<
       ]
         .map(legendCaption)
         .join('');
+  },
+
+  bookTints(settings, data) {
+    return settings.analysis === 'echoes' ? spectrumOf(data.scores).books : null;
   },
 
   summary(settings, data) {

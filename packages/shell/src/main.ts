@@ -339,6 +339,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     }
     showLegend(mapLegend, rows, warnings);
+    text.tintBooks?.(
+      tools.overlay?.tool.bookTints?.(tools.overlay.settings, tools.overlay.data) ?? null,
+    );
   }
 
   /** The map exploring shows: the tools as they stand, the front one in front. */

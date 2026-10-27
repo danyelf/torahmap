@@ -2,6 +2,7 @@
 
 import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createMapLabels } from '@torahmap/shell/mapLabels.ts';
+import { createBookCovers } from '@torahmap/shell/bookCovers.ts';
 import { SECTION_NAMES, SECTION_SIZE, bookBoxes } from './labels.ts';
 import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
 import { structureFrom } from './verseTexts.ts';
@@ -23,6 +24,10 @@ import { tanakhSite } from './site.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 
+// The room a book's panel leaves around its squares, in map units, and how strongly it shows.
+const BOOK_PADDING = 8;
+const BOOK_COVER_OPACITY = 0.12;
+
 export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
   site: tanakhSite,
   link: LINK_KEYS,
@@ -36,6 +41,8 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
     const sections = new Map(data.books.map((b) => [b.name, b.section]));
     const items = computeLayout(data, (message) => reportError('layout', message));
     const bounds = getLayoutBounds(items);
+    let covers: ReturnType<typeof createBookCovers> | null = null;
+    let coverNames: string[] = [];
 
     return {
       items,
@@ -45,15 +52,38 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
       baseColor: (_, i) => getDefaultColor(i),
 
       labels(container) {
-        const moveNames = createMapLabels(bookBoxes(items, data.books), container, {
+        const boxes = bookBoxes(items, data.books);
+        const layer = document.createElement('div');
+        layer.id = 'tanakh-labels';
+        covers = createBookCovers(
+          'tanakh-books',
+          boxes.map(({ minX, maxX, minY, maxY }) => ({
+            minX: minX - BOOK_PADDING,
+            maxX: maxX + BOOK_PADDING,
+            minY: minY - BOOK_PADDING,
+            maxY: maxY + BOOK_PADDING,
+          })),
+          boxes.map(() => null),
+          BOOK_COVER_OPACITY,
+        );
+        coverNames = boxes.map(({ name }) => name);
+        layer.appendChild(covers.el);
+        container.appendChild(layer);
+        const moveNames = createMapLabels(boxes, container, {
           sectionNames: SECTION_NAMES,
           sectionSize: SECTION_SIZE,
         });
         const mapTitle = createMapTitle(items, container, (book) => sections.get(book) === 'torah');
         return (offset, zoom) => {
+          layer.style.transform = `translate(${offset.x * zoom}px, ${offset.y * zoom}px)`;
+          covers!.place(zoom);
           moveNames(offset, zoom);
           updateMapTitlePosition(mapTitle, offset, zoom);
         };
+      },
+
+      tintBooks(tints) {
+        coverNames.forEach((name, i) => covers?.tint(i, tints?.[name] ?? null));
       },
 
       popupText,

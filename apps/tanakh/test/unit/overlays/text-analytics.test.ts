@@ -182,12 +182,12 @@ describe('Text Analytics overlay', () => {
         ...data,
         echoes,
       });
-    const chroma = ([r, g, b]: number[]) => Math.max(r, g, b) - Math.min(r, g, b);
 
-    it('shows a verse with echoes in a stronger colour than one without', () => {
-      const [first] = colors({ 0: [3, 5] }, null) as number[][];
-      const [alone] = colors({}, null) as number[][];
-      expect(chroma(first)).toBeGreaterThan(chroma(alone));
+    it("colours a verse with echoes and leaves one without in the map's grey", () => {
+      const [first, second] = colors({ 0: [3, 5] }, null);
+      expect(first).not.toBeNull();
+      expect(second).toBeNull();
+      expect(colors({}, null)[0]).toBeNull();
     });
 
     it('colours a verse by the place of its farthest echo', () => {
@@ -264,6 +264,21 @@ describe('Text Analytics overlay', () => {
       expect(h.settings).toEqual({ analysis: 'echoes', words: 8 });
       h.restore({ analysis: 'repetitive-wording' });
       expect(h.renderControls().querySelector('label')!.hidden).toBe(true);
+    });
+
+    it('tints a book panel for this analysis only, with no green shared by the Prophets and Writings', () => {
+      const book = (n: number) => ({ '1': Array<number | null>(n).fill(0.1) });
+      const scores = {
+        ...data.scores,
+        repetition: { Genesis: book(4), Joshua: book(4), Psalms: book(4) },
+      };
+      const spread = { ...data, scores };
+      const tints = textAnalyticsOverlay.bookTints!(echoSettings, spread)!;
+      expect(Object.keys(tints)).toEqual(['Genesis', 'Joshua', 'Psalms']);
+      expect(textAnalyticsOverlay.bookTints!(wording, spread)).toBeNull();
+      const [, prophets, writings] = ['Genesis', 'Joshua', 'Psalms'].map((b) => tints[b]);
+      expect(prophets[1]).toBeGreaterThan(prophets[2]);
+      expect(writings[2]).toBeGreaterThan(writings[1]);
     });
   });
 });

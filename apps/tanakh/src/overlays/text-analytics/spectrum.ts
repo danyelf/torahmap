@@ -31,10 +31,14 @@ export const readingOrder = memoByValue((scores: ScoresFile) => {
   return { places, positions, bookStarts };
 });
 
-/** The hue, in OKLCH degrees, at the first verse, the end of the Torah, the end of the Prophets, and the last verse. */
-const HUES = { start: 25, torahEnd: 65, prophetsEnd: 160, end: 320 };
+// The hue, in OKLCH degrees, where each section starts and ends: the Torah runs red to orange, the
+// Prophets yellow to green, and the Writings blue to purple, so no hue belongs to two sections.
+const HUES = {
+  torah: [25, 70],
+  prophets: [95, 150],
+  writings: [255, 320],
+} as const;
 
-const FAINT = { lightness: 0.4, chroma: 0.035 };
 const BRIGHT = { lightness: 0.78, chroma: 0.17 };
 
 /** The Prophets begin at Joshua and the Writings at Psalms. */
@@ -72,33 +76,34 @@ function oklch(lightness: number, chroma: number, hue: number): Color {
   return toSrgb(lightness, 0, hue)!;
 }
 
-/** Where along the spectrum, 0 to 1, each section starts, and the verse count the spectrum spans. */
+/** Every verse's colour on the spectrum, each book's middle colour, and where each section starts, 0 to 1. */
 export const spectrumOf = memoByValue((scores: ScoresFile) => {
   const { places, bookStarts } = readingOrder(scores);
-  const last = places.length - 1;
-  const torahEnd = (bookStarts.get('Joshua') ?? last) - 1;
-  const prophetsEnd = (bookStarts.get('Psalms') ?? last) - 1;
+  const joshua = bookStarts.get('Joshua') ?? places.length;
+  const psalms = bookStarts.get('Psalms') ?? places.length;
 
   const hueAt = (position: number): number => {
-    const [from, to, a, b] =
-      position <= torahEnd
-        ? [0, torahEnd, HUES.start, HUES.torahEnd]
-        : position <= prophetsEnd
-          ? [torahEnd, prophetsEnd, HUES.torahEnd, HUES.prophetsEnd]
-          : [prophetsEnd, last, HUES.prophetsEnd, HUES.end];
-    return a + ((position - from) / (to - from)) * (b - a);
+    const [[from, to], [first, last]] =
+      position < joshua
+        ? [[0, joshua - 1], HUES.torah]
+        : position < psalms
+          ? [[joshua, psalms - 1], HUES.prophets]
+          : [[psalms, places.length - 1], HUES.writings];
+    return first + ((position - from) / Math.max(1, to - from)) * (last - first);
   };
 
-  const at = (tone: { lightness: number; chroma: number }) =>
-    places.map((_, p) => oklch(tone.lightness, tone.chroma, hueAt(p)));
+  const bright = places.map((_, p) => oklch(BRIGHT.lightness, BRIGHT.chroma, hueAt(p)));
+  const starts = [...bookStarts.values(), places.length];
+  const books: Record<string, Color> = {};
+  [...bookStarts.keys()].forEach((book, i) => {
+    books[book] = bright[Math.floor((starts[i] + starts[i + 1] - 1) / 2)];
+  });
   return {
-    /** A verse's own place on the spectrum, faint. */
-    faint: at(FAINT),
-    /** A verse's own place on the spectrum, bright. */
-    bright: at(BRIGHT),
+    bright,
+    books,
     sections: SECTION_STARTS.map(({ name, book }) => ({
       name,
-      at: (bookStarts.get(book) ?? 0) / last,
+      at: (bookStarts.get(book) ?? 0) / (places.length - 1),
     })),
   };
 });

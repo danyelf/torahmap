@@ -1,0 +1,9 @@
+.map-cover {
+  position: absolute;
+  background: rgba(var(--tint), var(--cover-opacity));
+  border-radius: 4px;
+}
+
+.map-cover[hidden] {
+  display: none;
+}

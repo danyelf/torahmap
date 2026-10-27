@@ -137,6 +137,10 @@ interface OverlayMembers<T, S, D> {
     pinned?: SpatialItem<T> | null,
   ): boolean[];
 
+  // A faint panel behind each book (tractate), by name, in these colours; null for none. The
+  // books not named have none.
+  bookTints?(settings: S, data: D): Record<string, Color> | null;
+
   // The panel may be drawn without the overlay's data; then data is null.
   //
   // Draw the controls for `settings`. The app calls this again with the same
