@@ -28,7 +28,6 @@ export const sectionsOverlay: Overlay<PieceItem> = {
   name: 'Sections',
   description:
     'Colors each piece by the section of its paper it falls in, so the shape of every paper shows. Dark squares have no text yet.',
-  getItemColor: (item) => colorOf(item),
   colorsFor: (items) => items.map(colorOf),
   renderLegend(container) {
     container.innerHTML = Object.values(SECTIONS)
