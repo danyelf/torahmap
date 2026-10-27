@@ -56,7 +56,7 @@ export function parse(book: Book): ParsedBook {
 }
 
 /** The runs a verse holds, in order. */
-const runsIn = (verse: string[]): string[] =>
+export const runsIn = (verse: string[]): string[] =>
   Array.from({ length: Math.max(0, verse.length - PARAMETERS.runWords + 1) }, (_, p) =>
     verse.slice(p, p + PARAMETERS.runWords).join(' '),
   );

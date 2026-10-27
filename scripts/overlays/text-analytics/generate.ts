@@ -1,6 +1,6 @@
 /**
  * Writes the Text Analytics overlay's scores, every verse's repetitive-wording
- * score, from the bundled verse texts.
+ * score, and the echoes between verses anywhere, from the bundled verse texts.
  *
  * Run with: npx tsx scripts/overlays/text-analytics/generate.ts
  */
@@ -15,6 +15,8 @@ import {
   type RepeatedWords,
   type ScoresFile,
 } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
+import { ECHOES_FILE, type EchoesFile } from '@torahmap/tanakh/overlays/text-analytics/echoes.ts';
+import { echoesAnywhere } from './echoes.ts';
 import {
   PARAMETERS,
   parse,
@@ -118,4 +120,12 @@ if (import.meta.main) {
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, JSON.stringify(file) + '\n');
   console.log(`Wrote ${out}`);
+
+  const echoes: EchoesFile = {};
+  echoesAnywhere(books).forEach((others, v) => {
+    if (others.length > 0) echoes[v] = others;
+  });
+  const echoesOut = join(DATA, ECHOES_FILE);
+  writeFileSync(echoesOut, JSON.stringify(echoes) + '\n');
+  console.log(`Wrote ${echoesOut}`);
 }
