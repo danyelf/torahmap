@@ -19,6 +19,8 @@ export interface Paper {
   index: number;
   title: string;
   authors: string[];
+  /** The keywords the program lists for it; absent when it lists none. */
+  keywords?: string[];
   kind: string;
   /** "Wed, Nov 11, 13:00", or empty when the program gives no time. */
   when: string;

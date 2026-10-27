@@ -490,4 +490,15 @@ export const IEEEVIS_STATES: State[] = [
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['.pick-input', '.pick-picked-row'],
   },
+  {
+    name: 'vis-keywords',
+    link: 'overlay=keywords&keywords=visual analytics,Uncertainty visualization',
+    shown: ['#map-legend'],
+  },
+  {
+    name: 'vis-keywords-panel',
+    link: 'overlay=keywords&keywords=visual analytics,Uncertainty visualization',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['.pick-input'],
+  },
 ];

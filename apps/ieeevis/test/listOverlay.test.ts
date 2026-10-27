@@ -3,9 +3,11 @@ import { pickColors } from '@torahmap/shell/overlays/picks.ts';
 import type { Structure } from '../src/data.ts';
 import type { PieceItem } from '../src/layout.ts';
 import { authorsOverlay } from '../src/overlays/authors.ts';
-import { suggest } from '../src/overlays/authorPicks.ts';
+import { keywordsOverlay } from '../src/overlays/keywords.ts';
+import { picksOf } from '../src/overlays/listPicks.ts';
 
-const paper = (index: number, authors: string[], pieces = 'ai') => ({
+const paper = (index: number, authors: string[], pieces = 'ai', keywords?: string[]) => ({
+  ...(keywords ? { keywords } : {}),
   index,
   title: `Paper ${index}`,
   authors,
@@ -23,8 +25,8 @@ const structure: Structure = {
           name: 'S',
           start: '',
           papers: [
-            paper(0, ['Ana Silva', 'Bei Wang']),
-            paper(1, ['Bei Wang']),
+            paper(0, ['Ana Silva', 'Bei Wang'], 'ai', ['Visual analytics', 'Uncertainty']),
+            paper(1, ['Bei Wang'], 'ai', ['Visual analytics']),
             paper(2, ['José Núñez'], 'x'),
           ],
         },
@@ -33,6 +35,7 @@ const structure: Structure = {
   ],
 };
 const data = { structure };
+const { suggest } = picksOf((p) => p.authors);
 
 const squares = (...papers: number[]) =>
   papers.map((i) => {
@@ -88,5 +91,26 @@ describe('finding an author', () => {
   it('leaves out authors already picked', () => {
     const [bei] = suggest(data, 'bei');
     expect(suggest(data, 'bei', [bei])).toEqual([]);
+  });
+});
+
+describe('the keywords overlay', () => {
+  const colourOf = (picked: string[], ...papers: number[]) =>
+    keywordsOverlay.colorsFor(squares(...papers) as never, { picked }, null, data);
+
+  it('lights the papers that list a keyword, and dims the ones that list none', () => {
+    const [listed, none] = colourOf(['Visual analytics'], 1, 2);
+    expect(listed).toEqual(pickColors(1)[0]);
+    expect(none).not.toEqual(listed);
+  });
+
+  it('splits a paper listing two picked keywords between their colours', () => {
+    expect(colourOf(['Visual analytics', 'Uncertainty'], 0)[0]).toEqual(pickColors(2));
+  });
+
+  it('says how many papers list keywords', () => {
+    const container = document.createElement('div');
+    keywordsOverlay.renderLegend!(container, { picked: [] }, data);
+    expect(container.textContent).toContain('2 of 3 papers list keywords');
   });
 });
