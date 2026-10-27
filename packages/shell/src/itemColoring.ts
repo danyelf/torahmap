@@ -121,8 +121,8 @@ export function toolsPicture<T>(
 /**
  * Which colour layer a move of the hovered square makes stale: a story
  * transition's blend, the settled overlay's colours if they depend on the
- * hover, or neither. A timed ease blends colours captured when it began,
- * and a pin leaves the hover where it was, so neither recomputes anything.
+ * focus (the hovered square, else the pinned one), or neither. A timed ease
+ * blends colours captured when it began, so it recomputes nothing.
  */
 export function layerToRecompute<T>(
   source: ColorSource,

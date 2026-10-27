@@ -8,8 +8,7 @@ import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
-import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
-import { verseId } from '@torahmap/link/tanakh';
+import { parseVerseId, verseId } from '@torahmap/link/tanakh';
 import { TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
   HIGH_PERCENTILE,
@@ -88,6 +87,11 @@ function echoesOf(data: TextAnalyticsData, verse: TanakhLayout): string[] {
   });
 }
 
+/** A scale colour darkened and tinged orange, for the verses out of focus. */
+function muted([r, g, b]: Color): Color {
+  return [r * 0.45 + 0.16, g * 0.45 + 0.09, b * 0.45];
+}
+
 function colorAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
   const score = scoreAt(data, verse);
   return score === null ? NO_DATA : scaleOf(data).scale.colorOf(score);
@@ -113,12 +117,28 @@ export const textAnalyticsOverlay: Overlay<
     scaleOf(data);
   },
 
-  // A hovered verse with echoes lights them and itself; every other verse goes grey.
+  // The focused verse with echoes keeps them and itself in the scale's colours; the rest are muted.
   colorsFor(items, _settings, hovered, data) {
     const echoes = hovered ? echoesOf(data, hovered) : [];
     if (!hovered || echoes.length === 0) return items.map((item) => colorAt(data, item));
     const lit = new Set([hovered.id, ...echoes]);
-    return items.map((item) => (lit.has(item.id) ? colorAt(data, item) : DIMMED_GREY));
+    return items.map((item) =>
+      lit.has(item.id) ? colorAt(data, item) : muted(colorAt(data, item)),
+    );
+  },
+
+  renderFocus(container, item, _settings, data) {
+    const places = (item ? echoesOf(data, item) : []).map((id) => parseVerseId(id)!);
+    if (places.length === 0) return;
+    const byBook = new Map<string, string[]>();
+    for (const { book, chapter, verse } of places) {
+      byBook.set(book, [...(byBook.get(book) ?? []), `${chapter}:${verse}`]);
+    }
+    const note = document.createElement('p');
+    note.className = 'parallel-verses';
+    note.textContent =
+      'Parallel verses: ' + [...byBook].map(([book, at]) => `${book} ${at.join(', ')}`).join('; ');
+    container.appendChild(note);
   },
 
   hoverChangesColors(before, after, _settings, data) {
@@ -144,7 +164,7 @@ export const textAnalyticsOverlay: Overlay<
           `or more books) don't count`,
         `Blue = ${ENDS[0]} wording · Yellow = ${ENDS[1]} wording`,
         `Verses under ${p.minWords} words are not coloured`,
-        `Hover a verse to light the verses it shares a phrase with; select it to mark the words`,
+        `Hover or select a verse to light the verses it shares a phrase with, listed above; selecting also marks its words`,
       ]
         .map(legendCaption)
         .join('');

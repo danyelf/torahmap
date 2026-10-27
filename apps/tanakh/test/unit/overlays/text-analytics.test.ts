@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overlays/text-analytics';
-import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import { NO_DATA } from '../../../src/overlays/colors';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
@@ -45,14 +44,28 @@ describe('Text Analytics overlay', () => {
     expect(h.highlightItemText(verse(2), text, HEBREW).querySelector('mark')).toBeNull();
   });
 
-  it('lights a hovered verse and its echoes, and greys the rest', () => {
+  it("keeps a focused verse and its echoes in the scale's colours and mutes the rest", () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = { analysis: 'repetitive-wording' as const };
     const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(4), data);
     expect(colors[0]).toEqual(host().getItemColor(verse(1)));
     expect(colors[3]).toEqual(host().getItemColor(verse(4)));
-    expect(colors[1]).toEqual(DIMMED_GREY);
-    expect(colors[2]).toEqual(DIMMED_GREY);
+    for (const i of [1, 2]) {
+      const plain = host().getItemColor(verse(i + 1)) as number[];
+      const muted = colors[i] as number[];
+      expect(muted).not.toEqual(plain);
+      expect(muted[0]).toBeGreaterThan(muted[2]);
+    }
+  });
+
+  it("lists the focused verse's echoes in words, and nothing for a verse without any", () => {
+    const say = (v: number) => {
+      const panel = document.createElement('div');
+      textAnalyticsOverlay.renderFocus!(panel, verse(v), { analysis: 'repetitive-wording' }, data);
+      return panel.textContent;
+    };
+    expect(say(1)).toContain('Genesis 1:4');
+    expect(say(2)).toBe('');
   });
 
   it('colours the map as usual when the hovered verse has no echoes', () => {

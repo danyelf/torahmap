@@ -346,7 +346,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return toolsPicture(
       toolsNow(),
       items,
-      hoveredItem,
+      focusItem(),
       base,
       dimFor(frontTool),
       text.searchKeepsBase,
@@ -418,7 +418,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       to,
       t,
       items,
-      hoveredItem,
+      focusItem(),
       loader.loaded(),
       base,
       textTools,
@@ -432,18 +432,23 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (colors) setColorLayer(colors);
   }
 
+  /** The square the overlay colours for: the one under the pointer, else the pinned one. */
+  function focusItem(): I | null {
+    return hoveredItem ?? pinnedItem;
+  }
+
   /**
-   * Repaint after the hovered or pinned square changes. `hoveredBefore` is the
-   * hover the colour layer was drawn for; a pin leaves the hover alone, so it
-   * passes nothing and only composites.
+   * Repaint after the hovered or pinned square changes. `focusBefore` is the
+   * focus the colour layer was drawn for.
    */
-  function repaint(hoveredBefore: I | null = hoveredItem): void {
+  function repaint(focusBefore: I | null = focusItem()): void {
     const layer = layerToRecompute(
       colorSource(driver),
       toolsNow().overlay,
-      hoveredBefore,
-      hoveredItem,
+      focusBefore,
+      focusItem(),
     );
+    renderOverlayFocus();
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
     else composite();
@@ -781,20 +786,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function pinItem(item: I, centerCamera: boolean = false): void {
     takeOver('takeover');
     trackSquareClick(item.id, text.area(item).area);
+    const focusBefore = focusItem();
     pinnedItem = item;
     updateSidebarWrapper(item, true);
     if (centerCamera) {
       centerOnItem(item);
     }
-    repaint();
+    repaint(focusBefore);
     syncUrl(true);
   }
 
   function unpinItem(): void {
     takeOver('takeover');
+    const focusBefore = focusItem();
     pinnedItem = null;
     updateSidebarWrapper(null);
-    repaint();
+    repaint(focusBefore);
     syncUrl(true);
   }
 
@@ -811,8 +818,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function setHover(square: I | null): void {
     const before = hoveredItem;
+    const focusBefore = focusItem();
     hoveredItem = square;
-    if (!sameItem(before, square)) repaint(before);
+    if (!sameItem(before, square)) repaint(focusBefore);
   }
 
   const gestures = createMapGestures<I>({
@@ -988,6 +996,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     closed: showLoadState,
   });
   const overlayLegendContainer = document.getElementById('overlay-legend');
+  const overlayFocusContainer = document.getElementById('overlay-focus');
   const overlayStarts = document.getElementById('overlay-starts')!;
 
   /** Switch the active overlay without drawing its UI, painting or writing the URL. */
@@ -1009,6 +1018,16 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         );
       }
     }
+  }
+
+  /** Draw what the active overlay says about the square in focus. */
+  function renderOverlayFocus(): void {
+    if (!overlayFocusContainer) return;
+    overlayFocusContainer.innerHTML = '';
+    const overlay = currentOverlay;
+    if (!overlay?.renderFocus) return;
+    const data = dataFor(overlay, loader.loaded());
+    if (data) overlay.renderFocus(overlayFocusContainer, focusItem(), currentSettings(), data);
   }
 
   /** Draw the active overlay's controls into what is already there. */
@@ -1043,6 +1062,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         : startingPointsHtml(searchTool, text.overlays, storyColumn.listed());
     }
     renderOverlayControls();
+    renderOverlayFocus();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
   }

@@ -4,3 +4,9 @@
   border-radius: 2px;
   padding: 0 1px;
 }
+
+.parallel-verses {
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+}

@@ -100,8 +100,8 @@ interface OverlayMembers<T, S, D> {
 
   // One colour per item, as the map and the story's blend ask for them: null
   // renders default gray; Color[] splits the square corner to corner, one band
-  // per color. `hovered` is the item under the cursor; only Haftarah's and
-  // the EU AI Act references' colours depend on it.
+  // per color. `hovered` is the item in focus, the one under the cursor
+  // else the pinned one; only some overlays' colours depend on it.
   colorsFor(
     items: SpatialItem<T>[],
     settings: S,
@@ -135,15 +135,20 @@ interface OverlayMembers<T, S, D> {
   ): void;
   renderLegend?(container: HTMLElement, settings: S, data: D | null): void;
 
+  // Says in the panel what the overlay finds about the square in focus: the one
+  // under the pointer, else the pinned one, else null. The container is emptied
+  // before each call. Only called once the overlay's data is in.
+  renderFocus?(container: HTMLElement, item: SpatialItem<T> | null, settings: S, data: D): void;
+
   // What the panel's one-line summary shows after the overlay's name; colours
   // are CSS values. Absent, the line is the name alone.
   summary?(settings: S, data: D): OverlaySummary;
 
   getHoverInfo?(item: SpatialItem<T>, settings: S, data: D): string | null;
 
-  // Declaring this marks an overlay's colours as depending on the hovered square:
+  // Declaring this marks an overlay's colours as depending on the square in focus:
   // the map recomputes them when it says so, and the story's blend does not
-  // memoise them. True when moving the hover from `before` to `after` changes them.
+  // memoise them. True when moving the focus from `before` to `after` changes them.
   hoverChangesColors?(
     before: SpatialItem<T> | null,
     after: SpatialItem<T> | null,

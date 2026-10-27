@@ -31,6 +31,10 @@ const ACT_POPUP_KNOWN: Known = {
 export const KNOWN: Record<string, Known> = {
   'explore-text-analytics-hover/phone/touch-targets': HOVER_POPUP_KNOWN,
   'explore-text-analytics-hover/tablet/touch-targets': HOVER_POPUP_KNOWN,
+  'explore-text-analytics-echoes-pinned/phone/touch-targets': POPUP_KNOWN,
+  'explore-text-analytics-echoes-pinned/tablet/touch-targets': POPUP_KNOWN,
+  'explore-haftarah-pinned/phone/touch-targets': POPUP_KNOWN,
+  'explore-haftarah-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-text-analytics-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-text-analytics-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-verse-pinned/phone/touch-targets': POPUP_KNOWN,

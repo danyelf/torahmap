@@ -236,6 +236,18 @@ export const STATES: State[] = [
     },
     shown: ['#map-legend'],
   },
+  {
+    // Pinned, a verse keeps its echoes lit with the pointer elsewhere.
+    name: 'explore-text-analytics-echoes-pinned',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67&verse=Numbers.7.37',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // Pinned, a verse keeps its reading and haftarah lit.
+    name: 'explore-haftarah-pinned',
+    link: 'overlay=haftarah&verse=Genesis.1.1',
+    shown: ['#popup', '#map-legend'],
+  },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.
   {
     name: 'explore-trop-rare',
