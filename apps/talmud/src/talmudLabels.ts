@@ -11,13 +11,22 @@ import {
   SEDARIM,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
-import { createBookCovers } from '@torahmap/shell/bookCovers.ts';
 import './talmudLabels.css';
 import { createRowNumbers, labelGroup, type Placed } from '@torahmap/shell/rowNumbers.ts';
 
 interface Pan {
   x: number;
   y: number;
+}
+
+function coverOf(block: TractateBlock): HTMLElement | null {
+  const tint = SEDARIM.find((s) => s.en === block.section)?.tint;
+  if (!tint) return null;
+  const [r, g, b] = tint.map((c) => Math.round(c * 255));
+  const el = document.createElement('div');
+  el.className = 'talmud-cover';
+  el.style.cssText = `--tint:${r},${g},${b}; --cover-opacity:${COVER_OPACITY};`;
+  return el;
 }
 
 function perekLabel(a: PerekAnchor): Placed {
@@ -53,19 +62,17 @@ export function createTalmudLabels(
   container.id = 'talmud-labels';
 
   // First, so the labels and the map's own labels sit on top.
-  const tinted = tractateBlocks.flatMap((block) => {
-    const tint = SEDARIM.find((s) => s.en === block.section)?.tint;
-    return tint ? [{ cover: block.cover, tint }] : [];
+  const covers = document.createElement('div');
+  covers.id = 'talmud-books';
+  const placedCovers = tractateBlocks.flatMap((block) => {
+    const el = coverOf(block);
+    if (!el) return [];
+    covers.appendChild(el);
+    return [{ el, cover: block.cover }];
   });
-  const covers = createBookCovers(
-    'talmud-books',
-    tinted.map(({ cover }) => cover),
-    tinted.map(({ tint }) => tint),
-    COVER_OPACITY,
-  );
 
   const pereks = labelGroup('talmud-perek-labels', perekAnchors.map(perekLabel));
-  container.append(covers.el, pereks.el);
+  container.append(covers, pereks.el);
   parent.appendChild(container);
   const moveDapim = createRowNumbers(
     'talmud-daf-labels',
@@ -79,12 +86,17 @@ export function createTalmudLabels(
     { ...DAF_LABEL, side: 'right' },
   );
 
-  let pereksAt = NaN;
+  let coversAt = NaN;
   return (pan, zoom) => {
     container.style.transform = `translate(${pan.x * zoom}px, ${pan.y * zoom}px)`;
-    covers.place(zoom);
-    if (zoom !== pereksAt) {
-      pereksAt = zoom;
+    if (zoom !== coversAt) {
+      coversAt = zoom;
+      for (const { el, cover } of placedCovers) {
+        el.style.left = `${cover.minX * zoom}px`;
+        el.style.top = `${cover.minY * zoom}px`;
+        el.style.width = `${(cover.maxX - cover.minX) * zoom}px`;
+        el.style.height = `${(cover.maxY - cover.minY) * zoom}px`;
+      }
       const { base, min, max } = PEREK_SIZE;
       pereks.el.style.fontSize = `${Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE}px`;
     }

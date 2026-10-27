@@ -19,7 +19,6 @@ import type { SearchTool } from './search.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { PopupText } from '../sidebar.ts';
 import type { TextLanguage } from '../language.ts';
-import type { Color } from '@torahmap/utils';
 
 /** What a text's site calls itself and its links. */
 export interface Site {
@@ -72,8 +71,6 @@ interface OpenText<I extends MapItem, S = unknown> {
   searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
-  /** Shows a panel behind each named book in its tint, and none behind the rest; null shows none. */
-  tintBooks?(tints: Record<string, Color> | null): void;
   /** What a square's popup says; the shell marks it and makes its words clickable. */
   popupText(item: I, loaded: Loaded, overlay: ToolOnMap<I> | null): PopupText;
   overlays: Overlay<I>[];

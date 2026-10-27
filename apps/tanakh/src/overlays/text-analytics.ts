@@ -8,8 +8,10 @@ import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts'
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
-import { axisGradient, buildLegendGradient, legendCaption, renderAxis } from './legend.ts';
+import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
+import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
+import { verseRef } from '@torahmap/link/tanakh';
 import { ECHO_WORDS, TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
   HIGH_PERCENTILE,
@@ -20,7 +22,13 @@ import {
   type ScoresFile,
 } from './text-analytics/scores.ts';
 import { ECHOES_FILE, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
-import { readingOrder, spectrumOf, type Place } from './text-analytics/spectrum.ts';
+import {
+  backdropOf,
+  readingOrder,
+  wheelOf,
+  wheelStops,
+  type Place,
+} from './text-analytics/wheel.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { wordsRead } from '../search/dictionary.ts';
@@ -138,10 +146,17 @@ const REDDEN_FROM = 0.25;
 const REDDEN_FULL = 0.55;
 const MUTED_RED: Color = [0.5, 0.13, 0.1];
 
+// How much of its own colour an echo-bearing verse out of focus loses to grey.
+const DIM_SHARE = 0.75;
+
+function mixToward(color: Color, target: Color, share: number): Color {
+  return color.map((c, i) => c + (target[i] - c) * share) as Color;
+}
+
 /** A scale colour for a verse out of focus: the low end as it is, the bright end turned toward red. */
 function muted(color: Color, position: number): Color {
   const toward = Math.min(1, Math.max(0, (position - REDDEN_FROM) / (REDDEN_FULL - REDDEN_FROM)));
-  return color.map((c, i) => c + (MUTED_RED[i] - c) * toward) as Color;
+  return mixToward(color, MUTED_RED, toward);
 }
 
 function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: boolean): Color {
@@ -153,32 +168,37 @@ function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: b
 }
 
 /**
- * A verse with echoes is the colour of the spectrum where its farthest echo lies; one without, or
- * one out of focus, takes the map's grey.
+ * A verse with echoes is the wheel's colour where its farthest echo lies; one without takes the
+ * map's grey. Out of focus both dim: the grey to the dimmed grey, the colour toward it.
  */
 function echoColorAt(
   data: TextAnalyticsData,
   { words }: TextAnalyticsSettings,
+  wheel: ReturnType<typeof wheelOf>,
   verse: TanakhLayout,
-  mute: boolean,
+  dim: boolean,
 ): Color | null {
-  const position = readingOrder(data.scores).positions.get(verse.id)!;
-  const echoes = mute ? [] : echoesAt(data.echoes, position, words);
-  if (echoes.length === 0) return null;
+  const { places, positions } = readingOrder(data.scores);
+  const position = positions.get(verse.id)!;
+  const echoes = echoesAt(data.echoes, position, words);
+  if (echoes.length === 0) return dim ? DIMMED_GREY : null;
   const [farthest] = echoes.reduce((far, e) =>
     Math.abs(e[0] - position) > Math.abs(far[0] - position) ? e : far,
   );
-  return spectrumOf(data.scores).bright[farthest];
+  const color = wheel.colorAt(places[farthest].id);
+  if (!color) return dim ? DIMMED_GREY : null;
+  return dim ? mixToward(color, DIMMED_GREY, DIM_SHARE) : color;
 }
 
 function colorAt(
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
+  wheel: ReturnType<typeof wheelOf>,
   verse: TanakhLayout,
   mute = false,
 ): Color | null {
   return settings.analysis === 'echoes'
-    ? echoColorAt(data, settings, verse, mute)
+    ? echoColorAt(data, settings, wheel, verse, mute)
     : repetitionColorAt(data, verse, mute);
 }
 
@@ -192,29 +212,6 @@ function matched(
 ): boolean[] {
   const matches = focusEchoes(data, settings, hovered ?? null, pinned ?? null)?.matches;
   return items.map((item) => !!matches?.has(item.id));
-}
-
-/** The spectrum with the sections of the Tanakh marked along it. */
-function renderSpectrum(data: TextAnalyticsData): string {
-  const { sections } = spectrumOf(data.scores);
-  const gradient = spectrumGradient(data);
-  const ticks = sections
-    .map(({ name, at }, i) => {
-      const edge = i === 0 ? ' tick-start' : '';
-      return `<span class="tick${edge}" style="left: ${at * 100}%">${name}</span>`;
-    })
-    .join('');
-  return `<div class="legend-gradient" style="background: ${gradient}"></div><div class="legend-ticks">${ticks}</div>`;
-}
-
-const SPECTRUM_SAMPLES = 60;
-
-function spectrumGradient(data: TextAnalyticsData): string {
-  const { bright } = spectrumOf(data.scores);
-  return buildLegendGradient(
-    SPECTRUM_SAMPLES,
-    (i) => bright[Math.round((i / (SPECTRUM_SAMPLES - 1)) * (bright.length - 1))],
-  );
 }
 
 export const textAnalyticsOverlay: Overlay<
@@ -237,7 +234,6 @@ export const textAnalyticsOverlay: Overlay<
 
   prebuild(data) {
     scaleOf(data);
-    spectrumOf(data.scores);
   },
 
   renderControls(container, settings, onChange) {
@@ -274,7 +270,8 @@ export const textAnalyticsOverlay: Overlay<
   // The focused verse with echoes keeps them and itself in full colour; the rest are muted.
   colorsFor(items, settings, hovered, data, pinned) {
     const lit = focusEchoes(data, settings, hovered, pinned ?? null)?.matches;
-    return items.map((item) => colorAt(data, settings, item, !!lit && !lit.has(item.id)));
+    const wheel = wheelOf(items);
+    return items.map((item) => colorAt(data, settings, wheel, item, !!lit && !lit.has(item.id)));
   },
 
   // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
@@ -289,25 +286,27 @@ export const textAnalyticsOverlay: Overlay<
   renderFocus(container, hovered, pinned, settings, data, travelTo) {
     const found = focusEchoes(data, settings, hovered, pinned);
     if (!found) return;
-    const byBook = new Map<string, Place[]>();
-    for (const place of found.places) {
-      byBook.set(place.book, [...(byBook.get(place.book) ?? []), place]);
-    }
-    const note = document.createElement('p');
+    const note = document.createElement('div');
     note.className = 'parallel-verses';
-    note.append('Parallel verses: ');
-    let firstBook = true;
-    for (const [book, inBook] of byBook) {
-      note.append(`${firstBook ? '' : '; '}${book} `);
-      firstBook = false;
-      inBook.forEach(({ id, chapter, verse }, i) => {
-        const link = document.createElement('button');
-        link.type = 'button';
-        link.textContent = `${chapter}:${verse}`;
-        link.addEventListener('click', () => travelTo(id));
-        note.append(i > 0 ? ', ' : '', link);
-      });
+    const heading = document.createElement('p');
+    heading.textContent = `Parallel verses (${found.places.length})`;
+    const list = document.createElement('div');
+    list.className = 'parallel-list';
+    for (const place of found.places) {
+      const row = document.createElement('button');
+      row.type = 'button';
+      const ref = document.createElement('span');
+      ref.className = 'parallel-ref';
+      ref.textContent = verseRef(place);
+      const quote = document.createElement('span');
+      quote.className = 'parallel-quote';
+      quote.dir = 'auto';
+      quote.textContent = data.texts?.[place.book]?.[place.chapter]?.[place.verse]?.he ?? '';
+      row.append(ref, quote);
+      row.addEventListener('click', () => travelTo(place.id));
+      list.appendChild(row);
     }
+    note.append(heading, list);
     container.appendChild(note);
   },
 
@@ -327,11 +326,11 @@ export const textAnalyticsOverlay: Overlay<
     }
     if (settings.analysis === 'echoes') {
       container.innerHTML =
-        renderSpectrum(data) +
+        `<div class="echo-wheel" style="background: conic-gradient(${wheelStops().join(', ')})"></div>` +
         [
-          `A verse that shares a phrase with others takes the colour of the place of the echo ` +
-            `farthest from it; the colours run in reading order, from Genesis to Chronicles`,
-          `A verse with no echo is grey. Each book's panel is the colour of its middle`,
+          `A colour wheel over the map, centred near the end of II Kings: a verse that shares a ` +
+            `phrase with others takes the colour at the place of the echo farthest from it`,
+          `A verse with no echo is grey`,
           `Phrases that recur in many verses wherever they appear don't count`,
           `Hover or select a verse to light its parallels`,
         ]
@@ -357,13 +356,13 @@ export const textAnalyticsOverlay: Overlay<
         .join('');
   },
 
-  bookTints(settings, data) {
-    return settings.analysis === 'echoes' ? spectrumOf(data.scores).books : null;
+  backdrop(items, settings) {
+    return settings.analysis === 'echoes' ? backdropOf(items) : null;
   },
 
   summary(settings, data) {
     if (settings.analysis === 'echoes') {
-      return { strip: { gradient: spectrumGradient(data), ends: ['Torah', 'Writings'] } };
+      return { colors: wheelStops().filter((_, degree) => degree % 45 === 0) };
     }
     return { strip: { gradient: axisGradient(scaleOf(data).scale), ends: ENDS } };
   },

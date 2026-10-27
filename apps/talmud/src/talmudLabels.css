@@ -1,5 +1,11 @@
+.talmud-cover {
+  position: absolute;
+  background: rgba(var(--tint), var(--cover-opacity));
+  border-radius: 4px;
+}
+
 /* Under Rabbis the picks need the room: the tint fades and the edge keeps its strength. */
-body[data-overlay='rabbis'] .map-cover {
+body[data-overlay='rabbis'] .talmud-cover {
   background: rgba(var(--tint), calc(var(--cover-opacity) * 0.4));
   box-shadow: inset 0 0 0 1.5px rgba(var(--tint), calc(var(--cover-opacity) * 3));
 }

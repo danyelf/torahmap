@@ -137,9 +137,8 @@ interface OverlayMembers<T, S, D> {
     pinned?: SpatialItem<T> | null,
   ): boolean[];
 
-  // A faint panel behind each book (tractate), by name, in these colours; null for none. The
-  // books not named have none.
-  bookTints?(settings: S, data: D): Record<string, Color> | null;
+  // A field behind the squares; null for none.
+  backdrop?(items: SpatialItem<T>[], settings: S, data: D): Backdrop | null;
 
   // The panel may be drawn without the overlay's data; then data is null.
   //
@@ -221,6 +220,17 @@ interface OverlayMembers<T, S, D> {
   // panel. Omit when the overlay derives everything from already-credited text;
   // a test enforces this for everything else.
   credits?: readonly Credit[];
+}
+
+/**
+ * A faint colour field behind the map: `stops` are CSS colours spread evenly round a circle,
+ * clockwise from straight up, around `centre`; it covers `rect`, all in map units.
+ */
+export interface Backdrop {
+  rect: { minX: number; minY: number; maxX: number; maxY: number };
+  centre: { x: number; y: number };
+  stops: string[];
+  opacity: number;
 }
 
 export interface OverlaySummary {

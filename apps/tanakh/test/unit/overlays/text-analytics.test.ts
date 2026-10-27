@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overlays/text-analytics';
 import { NO_DATA } from '../../../src/overlays/colors';
+import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
@@ -190,14 +191,6 @@ describe('Text Analytics overlay', () => {
       expect(colors({}, null)[0]).toBeNull();
     });
 
-    it('colours a verse by the place of its farthest echo', () => {
-      const [farthest] = colors({ 0: [1, 5, 3, 5] }, null);
-      const [nearest] = colors({ 0: [1, 5] }, null);
-      const [other] = colors({ 0: [3, 5] }, null);
-      expect(farthest).toEqual(other);
-      expect(farthest).not.toEqual(nearest);
-    });
-
     it('counts only the echoes sharing at least the chosen words in a row', () => {
       const echoes = { 0: [3, 5], 1: [2, 7] };
       expect(colors(echoes, null, 6)[0]).toEqual(colors({}, null)[0]);
@@ -219,12 +212,15 @@ describe('Text Analytics overlay', () => {
       expect(say(6)).toBe('');
     });
 
-    it('mutes the verses outside the focus to the faint colour of their own place', () => {
-      const lit = colors(data.echoes, verse(1));
-      const plain = colors(data.echoes, null);
+    it('dims the verses outside the focus: greys to the dimmed grey, colours toward it', () => {
+      const echoes = { 0: [3, 5], 1: [2, 7], 2: [3, 5] };
+      const plain = colors(echoes, null);
+      const lit = colors(echoes, verse(1));
       expect(lit[0]).toEqual(plain[0]);
+      expect(lit[3]).toEqual(plain[3]);
       expect(lit[1]).not.toEqual(plain[1]);
-      expect(lit[1]).toEqual(colors({}, null)[1]);
+      expect(lit[1]).not.toEqual(DIMMED_GREY);
+      expect(colors({ 0: [3, 5] }, verse(1))[1]).toEqual(DIMMED_GREY);
     });
 
     it('does not mark words of the verse text', () => {
@@ -266,19 +262,46 @@ describe('Text Analytics overlay', () => {
       expect(h.renderControls().querySelector('label')!.hidden).toBe(true);
     });
 
-    it('tints a book panel for this analysis only, with no green shared by the Prophets and Writings', () => {
-      const book = (n: number) => ({ '1': Array<number | null>(n).fill(0.1) });
-      const scores = {
-        ...data.scores,
-        repetition: { Genesis: book(4), Joshua: book(4), Psalms: book(4) },
-      };
-      const spread = { ...data, scores };
-      const tints = textAnalyticsOverlay.bookTints!(echoSettings, spread)!;
-      expect(Object.keys(tints)).toEqual(['Genesis', 'Joshua', 'Psalms']);
-      expect(textAnalyticsOverlay.bookTints!(wording, spread)).toBeNull();
-      const [, prophets, writings] = ['Genesis', 'Joshua', 'Psalms'].map((b) => tints[b]);
-      expect(prophets[1]).toBeGreaterThan(prophets[2]);
-      expect(writings[2]).toBeGreaterThan(writings[1]);
+    describe('the colour wheel', () => {
+      // The map is 1000 units square, so the wheel's centre is at about (503, 508).
+      const anchor = createVerse({ book: 'Exodus', chapter: 1, verse: 1, x: 994, y: 994 });
+      const partnerAt = (x: number, y: number) => [
+        createVerse({ verse: 1, x: 0, y: 0 }),
+        createVerse({ verse: 2, x: 50, y: 0 }),
+        createVerse({ verse: 3, x: 50, y: 50 }),
+        createVerse({ verse: 4, x: x - 3, y: y - 3 }),
+        anchor,
+      ];
+      const colourOfFirst = (x: number, y: number) =>
+        textAnalyticsOverlay.colorsFor!(partnerAt(x, y), echoSettings, null, {
+          ...data,
+          echoes: { 0: [3, 5] },
+        })[0];
+
+      it('colours a verse by the direction of its farthest echo from the centre, not the distance', () => {
+        expect(colourOfFirst(603, 408)).toEqual(colourOfFirst(653, 358));
+        expect(colourOfFirst(603, 408)).not.toEqual(colourOfFirst(403, 408));
+      });
+
+      it('colours a verse by the place of its farthest echo in reading order', () => {
+        const items = partnerAt(603, 408);
+        const first = (echoes: TextAnalyticsData['echoes']) =>
+          textAnalyticsOverlay.colorsFor!(items, echoSettings, null, { ...data, echoes })[0];
+        // Verse 2 lies at the left of the centre, verse 4 at the upper right; 4 is the farther.
+        expect(first({ 0: [1, 5, 3, 5] })).toEqual(first({ 0: [3, 5] }));
+        expect(first({ 0: [1, 5, 3, 5] })).not.toEqual(first({ 0: [1, 5] }));
+      });
+
+      it('draws a field behind the squares for this analysis only', () => {
+        const items = partnerAt(603, 408);
+        const field = textAnalyticsOverlay.backdrop!(items, echoSettings, data)!;
+        expect(field.stops).toHaveLength(360);
+        expect(field.rect.minX).toBeLessThan(0);
+        expect(field.rect.maxX).toBeGreaterThan(1000);
+        expect(field.centre.x).toBeGreaterThan(450);
+        expect(field.centre.x).toBeLessThan(550);
+        expect(textAnalyticsOverlay.backdrop!(items, wording, data)).toBeNull();
+      });
     });
   });
 });

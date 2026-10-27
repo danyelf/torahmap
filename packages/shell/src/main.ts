@@ -84,6 +84,7 @@ import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
+import { createBackdrop } from './backdrop.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import { createOverlaySettings, settingsFromLink } from './overlays/settings.ts';
 import { NO_OVERLAY, type Focus, type Overlay, type Tools } from './overlays/types.ts';
@@ -210,6 +211,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   labelLayer.id = 'map-labels';
   document.body.appendChild(labelLayer);
   const moveLabels = text.labels(labelLayer);
+  const backdrop = createBackdrop(labelLayer);
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -339,8 +341,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     }
     showLegend(mapLegend, rows, warnings);
-    text.tintBooks?.(
-      tools.overlay?.tool.bookTints?.(tools.overlay.settings, tools.overlay.data) ?? null,
+    backdrop.show(
+      tools.overlay?.tool.backdrop?.(items, tools.overlay.settings, tools.overlay.data) ?? null,
     );
   }
 
@@ -685,6 +687,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function render(): void {
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
+    backdrop.place(offset, camera.zoom);
     moveLabels(offset, camera.zoom);
   }
 
@@ -1640,7 +1643,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stale.overlayPanel) drawOverlayPanel(false);
     if (stale.searchPanel) drawSearchPanel(false);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
-    if (stale.popup) refreshPopupAfterDownload();
+    if (stale.popup) {
+      refreshPopupAfterDownload();
+      // What the overlay says about the focused square may quote the texts.
+      renderOverlayFocus();
+    }
     if (frame.open === 'goto') goToPanel.redraw();
   }
 

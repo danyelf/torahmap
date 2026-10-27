@@ -13,12 +13,9 @@ export const SECTION_NAMES: Record<string, SectionName> = {
 export const SECTION_SIZE: SectionLabelSize = { fontSize: 32, gapEm: 0.5 };
 
 /** Each book's box around its verses, in the order the books first appear. */
-export function bookBoxes(
-  verses: readonly TanakhLayout[],
-  books: readonly Book[],
-): (BookBox & { maxY: number })[] {
+export function bookBoxes(verses: readonly TanakhLayout[], books: readonly Book[]): BookBox[] {
   const byName = new Map(books.map((b) => [b.name, b]));
-  const boxes = new Map<string, BookBox & { maxY: number }>();
+  const boxes = new Map<string, BookBox>();
   for (const v of verses) {
     const b = boxes.get(v.book);
     if (!b) {
@@ -30,14 +27,12 @@ export function bookBoxes(
         minX: v.x,
         maxX: v.x + v.size,
         minY: v.y,
-        maxY: v.y + v.size,
       });
       continue;
     }
     b.minX = Math.min(b.minX, v.x);
     b.maxX = Math.max(b.maxX, v.x + v.size);
     b.minY = Math.min(b.minY, v.y);
-    b.maxY = Math.max(b.maxY, v.y + v.size);
   }
   return [...boxes.values()];
 }
