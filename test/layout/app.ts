@@ -295,6 +295,17 @@ export const STATES: State[] = [
     then: (page) => viaMenu(page, 'about'),
     shown: ['#language-choice'],
   },
+  ...Object.entries({ both: 'both', english: 'en' }).map(([name, choice]) => ({
+    name: `title-${name}`,
+    link: 'zoom=0.3&x=900&y=500',
+    returning: true,
+    then: async (page: Page) => {
+      await viaMenu(page, 'about');
+      await page.locator(`#language-choice [data-languages="${choice}"]`).click();
+      await page.keyboard.press('Escape');
+    },
+    shown: ['#map-title'],
+  })),
   ...Object.entries({ hebrew: 'he', both: 'both', english: 'en' }).map(([name, choice]) => ({
     name: `languages-${name}`,
     link: 'overlay=commentary&verse=Genesis.12.1',

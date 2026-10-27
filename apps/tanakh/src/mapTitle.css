@@ -11,3 +11,7 @@
   /* Anchored on the middle of the empty corner, not its left edge. */
   transform: translateX(-50%);
 }
+
+body.english-only #map-title .title-he {
+  display: none;
+}

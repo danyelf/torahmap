@@ -24,7 +24,7 @@
   </filter>
 
   <g filter="url(#map-title-shadow)" font-family="David Libre, system-ui, sans-serif">
-    <text x="453.19" y="27" text-anchor="end" font-size="34" font-weight="700" fill="#b9b9b9">מפת התנ״ך</text>
+    <text class="title-he" x="453.19" y="27" text-anchor="end" font-size="34" font-weight="700" fill="#b9b9b9">מפת התנ״ך</text>
     <text x="0" y="103.81" font-size="100" font-weight="700" fill="#eee">Torahmap</text>
     <text x="0" y="151.61" font-family="system-ui, sans-serif" font-size="19" letter-spacing="0.19" fill="#a8a8a8">A visual concordance to the Hebrew Bible</text>
   </g>
