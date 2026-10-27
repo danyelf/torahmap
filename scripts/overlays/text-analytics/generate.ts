@@ -123,7 +123,8 @@ if (import.meta.main) {
 
   const everyEcho: EchoesFile = {};
   echoesAnywhere(books).forEach((others, v) => {
-    if (others.length > 0) everyEcho[v] = others;
+    const later = others.filter(([other]) => other > v).flat();
+    if (later.length > 0) everyEcho[v] = later;
   });
   const echoesOut = join(DATA, ECHOES_FILE);
   writeFileSync(echoesOut, JSON.stringify(everyEcho) + '\n');

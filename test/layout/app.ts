@@ -269,6 +269,29 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
+    name: 'explore-text-analytics-echoes-view',
+    link: 'overlay=text-analytics&analysis=echoes',
+    shown: ['#map-legend'],
+  },
+  {
+    // The whole Tanakh at once: the spectrum reads as sections of colour.
+    name: 'explore-text-analytics-echoes-view-zoomed-out',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.1',
+    shown: ['#map-legend'],
+  },
+  {
+    // The slider at eight words: only the long shared passages remain.
+    name: 'explore-text-analytics-echoes-view-long-phrase',
+    link: 'overlay=text-analytics&analysis=echoes&words=8&zoom=0.1',
+    shown: ['#map-legend'],
+  },
+  {
+    // 2 Kings 22:1 is retold in 1 Kings 15:10 and 2 Chronicles 34:1.
+    name: 'explore-text-analytics-echoes-view-pinned',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.1&verse=II.Kings.22.1',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
     // Pinned, a verse keeps its reading and haftarah lit.
     name: 'explore-haftarah-pinned',
     link: 'overlay=haftarah&verse=Genesis.1.1',

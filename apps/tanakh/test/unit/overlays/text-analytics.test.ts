@@ -15,6 +15,8 @@ const data: TextAnalyticsData = {
     // Verses 1 and 4 share a run.
     echoes: { Genesis: { '1': { '1': [3], '4': [-3] } } },
   },
+  // Verses 1 and 4 share a run of five words, and 2 and 3 one of seven.
+  echoes: { 0: [3, 5], 1: [2, 7] },
   texts: {
     Genesis: {
       '1': Object.fromEntries(
@@ -33,6 +35,9 @@ function host() {
   return hostOverlay(textAnalyticsOverlay, data);
 }
 
+const wording = { analysis: 'repetitive-wording' as const, words: 5 };
+const echoSettings = { analysis: 'echoes' as const, words: 5 };
+
 describe('Text Analytics overlay', () => {
   it('marks the repeated words of a verse, in its Hebrew text only', () => {
     const text = data.texts!.Genesis['1'][1].he;
@@ -46,7 +51,7 @@ describe('Text Analytics overlay', () => {
 
   it("keeps a focused verse and its echoes in the scale's colours and mutes the rest", () => {
     const items = [1, 2, 3, 4].map(verse);
-    const settings = { analysis: 'repetitive-wording' as const };
+    const settings = wording;
     const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(4), data);
     expect(colors[0]).toEqual(host().getItemColor(verse(1)));
     expect(colors[3]).toEqual(host().getItemColor(verse(4)));
@@ -60,14 +65,7 @@ describe('Text Analytics overlay', () => {
   it("lists the focused verse's echoes in words, and nothing for a verse without any", () => {
     const say = (v: number) => {
       const panel = document.createElement('div');
-      textAnalyticsOverlay.renderFocus!(
-        panel,
-        verse(v),
-        null,
-        { analysis: 'repetitive-wording' },
-        data,
-        () => {},
-      );
+      textAnalyticsOverlay.renderFocus!(panel, verse(v), null, wording, data, () => {});
       return panel.textContent;
     };
     expect(say(1)).toContain('Genesis 1:4');
@@ -76,7 +74,7 @@ describe('Text Analytics overlay', () => {
 
   it('makes the focused verse and its echoes stand out, and nothing else', () => {
     const items = [1, 2, 3, 4].map(verse);
-    const settings = { analysis: 'repetitive-wording' as const };
+    const settings = wording;
     expect(textAnalyticsOverlay.standoutsFor!(items, settings, data, verse(1))).toEqual([
       true,
       false,
@@ -94,13 +92,8 @@ describe('Text Analytics overlay', () => {
   it('travels to a parallel verse from its link in the panel', () => {
     const panel = document.createElement('div');
     const travelled: string[] = [];
-    textAnalyticsOverlay.renderFocus!(
-      panel,
-      verse(1),
-      null,
-      { analysis: 'repetitive-wording' },
-      data,
-      (id) => travelled.push(id),
+    textAnalyticsOverlay.renderFocus!(panel, verse(1), null, wording, data, (id) =>
+      travelled.push(id),
     );
     panel.querySelector('button')!.click();
     expect(travelled).toEqual([verse(4).id]);
@@ -108,14 +101,14 @@ describe('Text Analytics overlay', () => {
 
   it('colours the map as usual when neither the hovered nor the pinned verse has echoes', () => {
     const items = [1, 2, 3, 4].map(verse);
-    const settings = { analysis: 'repetitive-wording' as const };
+    const settings = wording;
     const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(2), data, verse(3));
     expect(colors).toEqual(items.map((item) => host().getItemColor(item)));
   });
 
   it("shows a pinned verse's echoes until a hovered verse with echoes of its own takes over", () => {
     const items = [1, 2, 3, 4].map(verse);
-    const settings = { analysis: 'repetitive-wording' as const };
+    const settings = wording;
     const plain = items.map((item) => host().getItemColor(item));
     const pinOnly = textAnalyticsOverlay.colorsFor!(items, settings, null, data, verse(1));
     expect(pinOnly[1]).not.toEqual(plain[1]);
@@ -133,7 +126,7 @@ describe('Text Analytics overlay', () => {
 
   it('repaints on a pin only when it starts or ends on a verse with echoes', () => {
     const { pinChangesColors } = textAnalyticsOverlay;
-    const settings = { analysis: 'repetitive-wording' as const };
+    const settings = wording;
     expect(pinChangesColors!(null, verse(1), settings, data)).toBe(true);
     expect(pinChangesColors!(verse(2), verse(3), settings, data)).toBe(false);
   });
@@ -176,5 +169,101 @@ describe('Text Analytics overlay', () => {
     const h = host();
     expect(h.toUrl()).toEqual({ analysis: 'repetitive-wording' });
     expect(h.fromUrl({})).toEqual(h.fromUrl({ analysis: 'repetitive-wording' }));
+  });
+
+  describe('echoes across the Tanakh', () => {
+    const items = [1, 2, 3, 4].map(verse);
+    const colors = (
+      echoes: TextAnalyticsData['echoes'],
+      hovered: ReturnType<typeof verse> | null,
+      words = 5,
+    ) =>
+      textAnalyticsOverlay.colorsFor!(items, { ...echoSettings, words }, hovered, {
+        ...data,
+        echoes,
+      });
+    const chroma = ([r, g, b]: number[]) => Math.max(r, g, b) - Math.min(r, g, b);
+
+    it('shows a verse with echoes in a stronger colour than one without', () => {
+      const [first] = colors({ 0: [3, 5] }, null) as number[][];
+      const [alone] = colors({}, null) as number[][];
+      expect(chroma(first)).toBeGreaterThan(chroma(alone));
+    });
+
+    it('colours a verse by the place of its farthest echo', () => {
+      const [farthest] = colors({ 0: [1, 5, 3, 5] }, null);
+      const [nearest] = colors({ 0: [1, 5] }, null);
+      const [other] = colors({ 0: [3, 5] }, null);
+      expect(farthest).toEqual(other);
+      expect(farthest).not.toEqual(nearest);
+    });
+
+    it('counts only the echoes sharing at least the chosen words in a row', () => {
+      const echoes = { 0: [3, 5], 1: [2, 7] };
+      expect(colors(echoes, null, 6)[0]).toEqual(colors({}, null)[0]);
+      expect(colors(echoes, null, 6)[1]).not.toEqual(colors({}, null)[1]);
+      expect(colors(echoes, null, 8)[1]).toEqual(colors({}, null)[1]);
+      const say = (words: number) => {
+        const panel = document.createElement('div');
+        textAnalyticsOverlay.renderFocus!(
+          panel,
+          verse(1),
+          null,
+          { ...echoSettings, words },
+          data,
+          () => {},
+        );
+        return panel.textContent;
+      };
+      expect(say(5)).toContain('Genesis 1:4');
+      expect(say(6)).toBe('');
+    });
+
+    it('mutes the verses outside the focus to the faint colour of their own place', () => {
+      const lit = colors(data.echoes, verse(1));
+      const plain = colors(data.echoes, null);
+      expect(lit[0]).toEqual(plain[0]);
+      expect(lit[1]).not.toEqual(plain[1]);
+      expect(lit[1]).toEqual(colors({}, null)[1]);
+    });
+
+    it('does not mark words of the verse text', () => {
+      const text = data.texts!.Genesis['1'][1].he;
+      const marked = textAnalyticsOverlay.highlightItemText!(
+        verse(1),
+        text,
+        HEBREW,
+        echoSettings,
+        data,
+      );
+      expect(marked.querySelector('mark')).toBeNull();
+    });
+
+    it('names the words in a row in the link for this analysis only', () => {
+      const h = host();
+      expect(h.fromUrl({ analysis: 'echoes', words: '7' })).toEqual({
+        analysis: 'echoes',
+        words: 7,
+      });
+      expect(textAnalyticsOverlay.settingsToUrl!({ ...echoSettings, words: 7 })).toEqual({
+        analysis: 'echoes',
+        words: '7',
+      });
+      expect(textAnalyticsOverlay.settingsToUrl!(wording)).toEqual({
+        analysis: 'repetitive-wording',
+      });
+    });
+
+    it('draws the words slider only for this analysis, and reports a move of it', () => {
+      const h = host();
+      h.restore({ analysis: 'echoes' });
+      const slider = h.renderControls().querySelector('input')!;
+      expect(slider.closest('label')!.hidden).toBe(false);
+      slider.value = '8';
+      slider.dispatchEvent(new Event('input'));
+      expect(h.settings).toEqual({ analysis: 'echoes', words: 8 });
+      h.restore({ analysis: 'repetitive-wording' });
+      expect(h.renderControls().querySelector('label')!.hidden).toBe(true);
+    });
   });
 });

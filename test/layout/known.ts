@@ -39,6 +39,7 @@ export const KNOWN: Record<string, Known> = {
     ...onTouchScreens(
       [
         'explore-text-analytics-echoes-pinned',
+        'explore-text-analytics-echoes-view-pinned',
         'explore-text-analytics-echoes-zoomed-out',
         'explore-text-analytics-parallel-link',
         'explore-haftarah-pinned',

@@ -1,5 +1,6 @@
-// Text Analytics: each verse coloured by how much of its wording repeats nearby,
-// computed ahead of time by scripts/overlays/text-analytics/generate.ts.
+// Text Analytics: each verse coloured by how much of its wording repeats nearby, or by where in the
+// Tanakh the verses that share a phrase with it are; computed ahead of time by
+// scripts/overlays/text-analytics/generate.ts.
 
 import { type Color, type ColorStop, scale, LINEAR, memoByValue } from '@torahmap/utils';
 import './text-analytics.css';
@@ -7,9 +8,9 @@ import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts'
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
-import { axisGradient, legendCaption, renderAxis } from './legend.ts';
-import { verseId } from '@torahmap/link/tanakh';
-import { TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
+import { axisGradient, buildLegendGradient, legendCaption, renderAxis } from './legend.ts';
+import { CONTROL } from '@torahmap/shell/panel.ts';
+import { ECHO_WORDS, TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
   HIGH_PERCENTILE,
   LOW_PERCENTILE,
@@ -18,6 +19,8 @@ import {
   percentile,
   type ScoresFile,
 } from './text-analytics/scores.ts';
+import { ECHOES_FILE, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
+import { readingOrder, spectrumOf, type Place } from './text-analytics/spectrum.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { wordsRead } from '../search/dictionary.ts';
@@ -38,10 +41,13 @@ const ENDS: [low: string, high: string] = ['varied', 'repetitive'];
 
 export interface TextAnalyticsSettings {
   analysis: (typeof TEXT_ANALYSES)[number];
+  /** The words in a row two verses share to be echoes, for the echoes analysis. */
+  words: number;
 }
 
 export interface TextAnalyticsData {
   scores: ScoresFile;
+  echoes: EchoesFile;
   // Only the hover's word count needs the texts; the colours come before them.
   texts: VerseTexts | null;
 }
@@ -61,64 +67,69 @@ const scaleOf = memoByValue((data: TextAnalyticsData) => {
   return { scale: scale(low, high, LINEAR, CIVIDIS_STOPS), low, high };
 });
 
-/** Each book's verses in reading order, as chapter and verse numbers, and where each begins. */
-const readingOrder = memoByValue((data: TextAnalyticsData) => {
-  const order = new Map<string, { chapter: number; verse: number }[]>();
-  const index = new Map<string, number>();
-  for (const [book, chapters] of Object.entries(data.scores.repetition)) {
-    const verses: { chapter: number; verse: number }[] = [];
-    for (const [chapter, scores] of Object.entries(chapters)) {
-      index.set(`${book} ${chapter}`, verses.length);
-      scores.forEach((_, i) => verses.push({ chapter: Number(chapter), verse: i + 1 }));
-    }
-    order.set(book, verses);
-  }
-  return { order, index };
-});
-
-/** A verse that shares a repeated run with the focused one. */
-interface Echo {
-  id: string;
-  book: string;
-  chapter: number;
-  verse: number;
-}
-
 /** A verse's echoes, and the ids of it and them, by verse id; null for a verse with none. */
 interface Echoes {
-  places: Echo[];
+  places: Place[];
   matches: Set<string>;
 }
 
+const ANALYSIS_LABELS: Record<TextAnalyticsSettings['analysis'], string> = {
+  'repetitive-wording': 'Repetitive wording',
+  echoes: 'Echoes across the Tanakh',
+};
+
 const echoesCache = memoByValue((_data: TextAnalyticsData) => new Map<string, Echoes | null>());
 
-function echoesOf(data: TextAnalyticsData, verse: TanakhLayout): Echoes | null {
+/** The verses a verse shares a phrase with, by position in reading order. */
+function echoPositions(
+  data: TextAnalyticsData,
+  { analysis, words }: TextAnalyticsSettings,
+  verse: TanakhLayout,
+  position: number,
+): number[] {
+  if (analysis === 'echoes') return echoesAt(data.echoes, position, words).map(([other]) => other);
+  // The nearby echoes are offsets within the verse's own book.
+  return (data.scores.echoes[verse.book]?.[verse.chapter]?.[verse.verse] ?? []).map(
+    (offset) => position + offset,
+  );
+}
+
+function echoesOf(
+  data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
+  verse: TanakhLayout,
+): Echoes | null {
   const cache = echoesCache(data);
-  if (cache.has(verse.id)) return cache.get(verse.id)!;
-  const offsets = data.scores.echoes[verse.book]?.[verse.chapter]?.[verse.verse] ?? [];
-  const { order, index } = readingOrder(data);
-  const start = (index.get(`${verse.book} ${verse.chapter}`) ?? 0) + verse.verse - 1;
-  const places = offsets.map((offset) => {
-    const { chapter, verse: v } = order.get(verse.book)![start + offset];
-    return { id: verseId(verse.book, chapter, v), book: verse.book, chapter, verse: v };
-  });
+  const key = `${settings.analysis} ${settings.words} ${verse.id}`;
+  if (cache.has(key)) return cache.get(key)!;
+  const { places: all, positions } = readingOrder(data.scores);
+  const position = positions.get(verse.id)!;
+  const places = echoPositions(data, settings, verse, position).map((p) => all[p]);
   const found = places.length
     ? { places, matches: new Set([verse.id, ...places.map(({ id }) => id)]) }
     : null;
-  cache.set(verse.id, found);
+  cache.set(key, found);
   return found;
 }
 
 /** The echoes the map shows: the hovered verse's if it has any, else the pinned verse's. */
-const echoKey = (data: TextAnalyticsData, verse: TanakhLayout | null): string | null =>
-  verse && echoesOf(data, verse) ? verse.id : null;
+const echoKey = (
+  data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
+  verse: TanakhLayout | null,
+): string | null => (verse && echoesOf(data, settings, verse) ? verse.id : null);
 
 function focusEchoes(
   data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
   hovered: TanakhLayout | null,
   pinned: TanakhLayout | null,
 ): Echoes | null {
-  return (hovered && echoesOf(data, hovered)) || (pinned && echoesOf(data, pinned)) || null;
+  return (
+    (hovered && echoesOf(data, settings, hovered)) ||
+    (pinned && echoesOf(data, settings, pinned)) ||
+    null
+  );
 }
 
 // The scale from this share of the way up turns toward a dull red, fully red by the second: the
@@ -133,7 +144,7 @@ function muted(color: Color, position: number): Color {
   return color.map((c, i) => c + (MUTED_RED[i] - c) * toward) as Color;
 }
 
-function colorAt(data: TextAnalyticsData, verse: TanakhLayout, mute = false): Color {
+function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: boolean): Color {
   const score = scoreAt(data, verse);
   if (score === null) return NO_DATA;
   const { scale, low, high } = scaleOf(data);
@@ -141,15 +152,84 @@ function colorAt(data: TextAnalyticsData, verse: TanakhLayout, mute = false): Co
   return mute ? muted(color, (score - low) / (high - low)) : color;
 }
 
+// How far the farthest echo reaches, in verses, for an echo to count as far: a nearby echo
+// (within the reach the repetitive-wording measure uses) is shown at NEAR_STRENGTH of the bright
+// colour, so far ones stand out, rising to the full colour by FAR_VERSES.
+const NEAR_STRENGTH = 0.3;
+const FAR_VERSES = 1500;
+
+/** How much of the bright colour a verse shows, by how far away its farthest echo is. */
+function strengthAt(distance: number, reach: number): number {
+  if (distance <= reach) return NEAR_STRENGTH;
+  const along = Math.log(distance / reach) / Math.log(FAR_VERSES / reach);
+  return NEAR_STRENGTH + (1 - NEAR_STRENGTH) * Math.min(1, along);
+}
+
+/**
+ * A verse with echoes is the colour of the spectrum where its farthest echo lies, brighter the
+ * farther that is; one without, or one out of focus, is the faint colour of its own place.
+ */
+function echoColorAt(
+  data: TextAnalyticsData,
+  { words }: TextAnalyticsSettings,
+  verse: TanakhLayout,
+  mute: boolean,
+): Color {
+  const { faint, bright } = spectrumOf(data.scores);
+  const position = readingOrder(data.scores).positions.get(verse.id)!;
+  const echoes = mute ? [] : echoesAt(data.echoes, position, words);
+  if (echoes.length === 0) return faint[position];
+  const [farthest] = echoes.reduce((far, e) =>
+    Math.abs(e[0] - position) > Math.abs(far[0] - position) ? e : far,
+  );
+  const strength = strengthAt(Math.abs(farthest - position), data.scores.parameters.reachVerses);
+  return faint[farthest].map((c, i) => c + (bright[farthest][i] - c) * strength) as Color;
+}
+
+function colorAt(
+  data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
+  verse: TanakhLayout,
+  mute = false,
+): Color {
+  return settings.analysis === 'echoes'
+    ? echoColorAt(data, settings, verse, mute)
+    : repetitionColorAt(data, verse, mute);
+}
+
 /** Which of `items` are the focused verse or its echoes. */
 function matched(
   items: TanakhLayout[],
   data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
   hovered: TanakhLayout | null | undefined,
   pinned: TanakhLayout | null | undefined,
 ): boolean[] {
-  const matches = focusEchoes(data, hovered ?? null, pinned ?? null)?.matches;
+  const matches = focusEchoes(data, settings, hovered ?? null, pinned ?? null)?.matches;
   return items.map((item) => !!matches?.has(item.id));
+}
+
+/** The spectrum with the sections of the Tanakh marked along it. */
+function renderSpectrum(data: TextAnalyticsData): string {
+  const { sections } = spectrumOf(data.scores);
+  const gradient = spectrumGradient(data);
+  const ticks = sections
+    .map(({ name, at }, i) => {
+      const edge = i === 0 ? ' tick-start' : '';
+      return `<span class="tick${edge}" style="left: ${at * 100}%">${name}</span>`;
+    })
+    .join('');
+  return `<div class="legend-gradient" style="background: ${gradient}"></div><div class="legend-ticks">${ticks}</div>`;
+}
+
+const SPECTRUM_SAMPLES = 24;
+
+function spectrumGradient(data: TextAnalyticsData): string {
+  const { bright } = spectrumOf(data.scores);
+  return buildLegendGradient(
+    SPECTRUM_SAMPLES,
+    (i) => bright[Math.round((i / (SPECTRUM_SAMPLES - 1)) * (bright.length - 1))],
+  );
 }
 
 export const textAnalyticsOverlay: Overlay<
@@ -158,39 +238,73 @@ export const textAnalyticsOverlay: Overlay<
   TextAnalyticsData
 > = {
   ...TEXT_ANALYTICS,
-  data: { scores: SCORES_FILE, texts: optional(TEXTS_FILE) },
+  data: { scores: SCORES_FILE, echoes: ECHOES_FILE, texts: optional(TEXTS_FILE) },
 
   settingsFromUrl(params: UrlParamValues<typeof TEXT_ANALYTICS.urlParams>): TextAnalyticsSettings {
-    return { analysis: params.analysis ?? TEXT_ANALYSES[0] };
+    return { analysis: params.analysis ?? TEXT_ANALYSES[0], words: Number(params.words) };
   },
 
   settingsToUrl(settings: TextAnalyticsSettings): Record<string, string> {
-    return { analysis: settings.analysis };
+    return settings.analysis === 'echoes'
+      ? { analysis: settings.analysis, words: String(settings.words) }
+      : { analysis: settings.analysis };
   },
 
   prebuild(data) {
     scaleOf(data);
+    spectrumOf(data.scores);
   },
 
-  // The focused verse with echoes keeps them and itself in the scale's colours; the rest are muted.
-  colorsFor(items, _settings, hovered, data, pinned) {
-    const lit = focusEchoes(data, hovered, pinned ?? null)?.matches;
-    return items.map((item) => colorAt(data, item, !!lit && !lit.has(item.id)));
+  renderControls(container, settings, onChange) {
+    if (!container.querySelector('[data-analysis]')) {
+      container.innerHTML =
+        `<div class="${CONTROL.segments}" role="group" aria-label="Analysis">${TEXT_ANALYSES.map(
+          (a) =>
+            `<button type="button" class="${CONTROL.segment}" data-analysis="${a}">${ANALYSIS_LABELS[a]}</button>`,
+        ).join('')}</div>` +
+        `<label class="echo-words"><span class="echo-words-label"></span>` +
+        `<input type="range" min="${ECHO_WORDS[0]}" max="${ECHO_WORDS[ECHO_WORDS.length - 1]}" step="1"></label>`;
+      container.querySelectorAll<HTMLButtonElement>('[data-analysis]').forEach((button) =>
+        button.addEventListener('click', () => {
+          const analysis = button.dataset.analysis as TextAnalyticsSettings['analysis'];
+          onChange((current) => ({ ...current, analysis }));
+        }),
+      );
+      container.querySelector('input')!.addEventListener('input', (event) => {
+        const words = Number((event.target as HTMLInputElement).value);
+        onChange((current) => ({ ...current, words }));
+      });
+    }
+    container.querySelectorAll<HTMLButtonElement>('[data-analysis]').forEach((button) => {
+      const on = button.dataset.analysis === settings.analysis;
+      button.classList.toggle('on', on);
+      button.setAttribute('aria-pressed', String(on));
+    });
+    container.querySelector<HTMLElement>('.echo-words')!.hidden = settings.analysis !== 'echoes';
+    container.querySelector('.echo-words-label')!.textContent =
+      `Shared phrase: at least ${settings.words} words in a row`;
+    container.querySelector('input')!.value = String(settings.words);
+  },
+
+  // The focused verse with echoes keeps them and itself in full colour; the rest are muted.
+  colorsFor(items, settings, hovered, data, pinned) {
+    const lit = focusEchoes(data, settings, hovered, pinned ?? null)?.matches;
+    return items.map((item) => colorAt(data, settings, item, !!lit && !lit.has(item.id)));
   },
 
   // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
-  standoutsFor(items, _settings, data, hovered, pinned) {
-    return matched(items, data, hovered, pinned);
+  standoutsFor(items, settings, data, hovered, pinned) {
+    return matched(items, data, settings, hovered, pinned);
   },
 
-  halosFor(items, _settings, data, hovered, pinned) {
-    return matched(items, data, hovered, pinned);
+  halosFor(items, settings, data, hovered, pinned) {
+    return matched(items, data, settings, hovered, pinned);
   },
 
-  renderFocus(container, hovered, pinned, _settings, data, travelTo) {
-    const found = focusEchoes(data, hovered, pinned);
+  renderFocus(container, hovered, pinned, settings, data, travelTo) {
+    const found = focusEchoes(data, settings, hovered, pinned);
     if (!found) return;
-    const byBook = new Map<string, Echo[]>();
+    const byBook = new Map<string, Place[]>();
     for (const place of found.places) {
       byBook.set(place.book, [...(byBook.get(place.book) ?? []), place]);
     }
@@ -213,17 +327,32 @@ export const textAnalyticsOverlay: Overlay<
   },
 
   // A hovered verse without echoes leaves the pinned verse's showing, so only echoes count.
-  hoverChangesColors(before, after, _settings, data) {
-    return echoKey(data, before) !== echoKey(data, after);
+  hoverChangesColors(before, after, settings, data) {
+    return echoKey(data, settings, before) !== echoKey(data, settings, after);
   },
 
-  pinChangesColors(before, after, _settings, data) {
-    return echoKey(data, before) !== echoKey(data, after);
+  pinChangesColors(before, after, settings, data) {
+    return echoKey(data, settings, before) !== echoKey(data, settings, after);
   },
 
-  renderLegend(container, _settings, data) {
+  renderLegend(container, settings, data) {
     if (!data) {
       container.innerHTML = '';
+      return;
+    }
+    if (settings.analysis === 'echoes') {
+      container.innerHTML =
+        renderSpectrum(data) +
+        [
+          `Each verse sits on a spectrum in reading order, from Genesis to Chronicles`,
+          `A verse that shares a phrase with others takes the colour of the place of the echo ` +
+            `farthest from it, brighter the farther that is: echoes nearby stay in their own colour`,
+          `A verse with no echo is a faint tint of its own place`,
+          `Phrases that recur in many verses wherever they appear don't count`,
+          `Hover or select a verse to light its parallels`,
+        ]
+          .map(legendCaption)
+          .join('');
       return;
     }
     const { scale, low, high } = scaleOf(data);
@@ -244,11 +373,23 @@ export const textAnalyticsOverlay: Overlay<
         .join('');
   },
 
-  summary(_settings, data) {
+  summary(settings, data) {
+    if (settings.analysis === 'echoes') {
+      return { strip: { gradient: spectrumGradient(data), ends: ['Torah', 'Writings'] } };
+    }
     return { strip: { gradient: axisGradient(scaleOf(data).scale), ends: ENDS } };
   },
 
-  getHoverInfo(verse, _settings, data) {
+  getHoverInfo(verse, settings, data) {
+    if (settings.analysis === 'echoes') {
+      const count = echoesAt(
+        data.echoes,
+        readingOrder(data.scores).positions.get(verse.id)!,
+        settings.words,
+      ).length;
+      if (count === 0) return null;
+      return `Shares a phrase with ${count} other ${count === 1 ? 'verse' : 'verses'}`;
+    }
     const score = scoreAt(data, verse);
     if (score === null) return null;
     const text = data.texts?.[verse.book][verse.chapter][verse.verse].he;
@@ -259,15 +400,12 @@ export const textAnalyticsOverlay: Overlay<
   },
 
   // One colour for every repeated word; the stretch is marked whole, spaces and all.
-  highlightItemText(
-    verse,
-    text: string,
-    language: TextLanguage,
-    _settings,
-    data,
-  ): DocumentFragment {
+  highlightItemText(verse, text: string, language: TextLanguage, settings, data): DocumentFragment {
     const fragment = document.createDocumentFragment();
-    const stretches = data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? [];
+    const stretches =
+      settings.analysis === 'echoes'
+        ? []
+        : (data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? []);
     if (language !== HEBREW || stretches.length === 0) {
       fragment.appendChild(document.createTextNode(text));
       return fragment;
