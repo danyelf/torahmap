@@ -1,11 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { HEBREW } from '@torahmap/shell/language.ts';
+import { pickColors } from '@torahmap/shell/overlays/picks.ts';
 import { DATING_FILE, isSure, UNDATED, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import { fadeTo } from '../src/overlays/dating.ts';
 import { talmudText } from '../src/text.ts';
-import { addPick, rabbisOverlay } from '../src/overlays/rabbis.ts';
-import { pickColors, type RabbiData, type RabbiSettings } from '../src/overlays/rabbiPicks.ts';
+import { rabbisOverlay } from '../src/overlays/rabbis.ts';
+import { type RabbiData, type RabbiSettings } from '../src/overlays/rabbiPicks.ts';
 
 const rabbis: Rabbi[] = [
   { id: 'gamliel-a', en: 'Rabban Gamliel haZaken', he: 'רבן גמליאל', gen: 'T1', names: [] },
@@ -53,7 +54,7 @@ describe('the rabbis overlay colours', () => {
 
   it('lights the passages naming a picked rabbi and dims the rest', () => {
     const [lit, other, unlit] = colours(picking('lakish'), 'A.2a.2', 'A.2a.3', 'A.2a.4');
-    expect(lit).toEqual(pickColors([rabbis[2]])[0]);
+    expect(lit).toEqual(pickColors(1)[0]);
     expect(other).toEqual(unlitColour);
     expect(unlit).toEqual(unlitColour);
     expect(unlitColour).not.toEqual(base());
@@ -61,7 +62,7 @@ describe('the rabbis overlay colours', () => {
 
   it('splits a passage naming two picked rabbis between their colours', () => {
     const [both] = colours(picking('lakish', 'yochanan'), 'A.2a.1');
-    const expected = pickColors([rabbis[2], rabbis[3]]);
+    const expected = pickColors(2);
     expect(both).toEqual(expected);
     expect(expected[0]).not.toEqual(expected[1]);
   });
@@ -69,8 +70,8 @@ describe('the rabbis overlay colours', () => {
   it('fades a passage where a name only might be the rabbi', () => {
     const [sure] = colours(picking('gamliel-a', 'lakish'), 'A.2a.2');
     const [maybe] = colours(picking('gamliel-a'), 'A.2a.3');
-    const solid = pickColors([rabbis[0]])[0];
-    expect(sure).toEqual(pickColors([rabbis[0], rabbis[2]])[1]);
+    const solid = pickColors(1)[0];
+    expect(sure).toEqual(pickColors(2)[1]);
     expect(maybe).toEqual(fadeTo(solid, 0.8));
   });
 
@@ -102,22 +103,6 @@ describe('the rabbis link', () => {
 
   it('writes nothing when nothing is picked', () => {
     expect(overlay.settingsToUrl!(picking())).toEqual({});
-  });
-});
-
-describe('picking a rabbi from a name', () => {
-  it('adds him to the picks', () => {
-    expect(addPick('yochanan')(picking('lakish'))).toEqual(picking('lakish', 'yochanan'));
-  });
-
-  it('changes nothing if he is already picked', () => {
-    const current = picking('lakish');
-    expect(addPick('lakish')(current)).toBe(current);
-  });
-
-  it('changes nothing once as many are picked as a square can show', () => {
-    const full = picking('a', 'b', 'c', 'd');
-    expect(addPick('lakish')(full)).toBe(full);
   });
 });
 
@@ -199,12 +184,12 @@ describe('the finder', () => {
       input.value = text;
       input.dispatchEvent(new Event('input'));
     };
-    return { container, type, changes, rows: () => [...container.querySelectorAll('.rabbi-row')] };
+    return { container, type, changes, rows: () => [...container.querySelectorAll('.pick-row')] };
   }
 
   it('labels a picked rabbi as it labels a suggestion, and the legend does too', () => {
     const finder = open(picking('yochanan'));
-    const picked = finder.container.querySelector('.rabbi-picked-row')!;
+    const picked = finder.container.querySelector('.pick-picked-row')!;
     expect(picked.textContent).toContain('Rabbi Yochanan');
     expect(picked.textContent).toContain('2nd-gen Amora, 250–290');
     const legend = document.createElement('div');
@@ -237,15 +222,15 @@ describe('the finder', () => {
 
   it('shows a picked rabbi with his colour and unpicks him', () => {
     const finder = open(picking('lakish'));
-    expect(finder.container.querySelectorAll('.rabbi-picked-row .swatch')).toHaveLength(1);
-    finder.container.querySelector<HTMLButtonElement>('.rabbi-picked-row button')!.click();
+    expect(finder.container.querySelectorAll('.pick-picked-row .swatch')).toHaveLength(1);
+    finder.container.querySelector<HTMLButtonElement>('.pick-picked-row button')!.click();
     expect(finder.changes).toEqual([picking()]);
   });
 
   it('asks which person when a quick pick is a shared name', () => {
     const finder = open();
-    const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.rabbi-chip')].find(
-      (c) => c.textContent?.startsWith(dating.people[0].en),
+    const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.pick-chip')].find((c) =>
+      c.textContent?.startsWith(dating.people[0].en),
     )!;
     chip.click();
     expect(finder.container.querySelector('.rabbi-which')).not.toBeNull();
@@ -256,8 +241,8 @@ describe('the finder', () => {
 
   it('does not offer a shared name once every person it can mean is picked', () => {
     const finder = open(picking('gamliel-a', 'gamliel-b'));
-    const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.rabbi-chip')].find(
-      (c) => c.textContent?.startsWith(dating.people[0].en),
+    const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.pick-chip')].find((c) =>
+      c.textContent?.startsWith(dating.people[0].en),
     )!;
     expect(chip.disabled).toBe(true);
   });

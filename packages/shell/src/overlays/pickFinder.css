@@ -1,0 +1,106 @@
+.pick-finder {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pick-lists {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pick-suggestions,
+.pick-picked {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pick-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 8px;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: #1c1c1c;
+  color: #eee;
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.pick-row:hover {
+  border-color: #6ab0f3;
+}
+
+.pick-meta {
+  color: #888;
+  font-size: 11px;
+}
+
+.pick-note {
+  color: #999;
+  font-size: 12px;
+}
+
+.pick-picked-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.pick-picked-row .swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.pick-picked-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.pick-chip {
+  padding: 2px 8px;
+  border: 1px solid #444;
+  border-radius: 10px;
+  background: none;
+  color: #ddd;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .pick-chip {
+    min-height: 24px;
+  }
+}
+
+.pick-chip:hover:not(:disabled) {
+  border-color: #6ab0f3;
+}
+
+.pick-chip.on {
+  border-color: #666;
+  color: #888;
+}
+
+.pick-chip:disabled {
+  cursor: default;
+}

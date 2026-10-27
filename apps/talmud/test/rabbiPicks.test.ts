@@ -1,15 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { rgbToOklch } from '@torahmap/utils';
 import { UNDATED, type Rabbi, type TalmudDating } from '../src/dating.ts';
 import {
   eraLine,
-  MAX_PICKS,
   namedIn,
   passagesOf,
-  pickColors,
   pickedPlaces,
-  picksFromUrl,
-  picksToUrl,
   quickPicks,
   shortName,
   suggest,
@@ -153,36 +148,6 @@ describe('the quick picks', () => {
   });
 });
 
-const hue = (a: number, b: number) => {
-  const d = Math.abs(a - b) % 360;
-  return Math.min(d, 360 - d);
-};
-
-describe('colours for the picks', () => {
-  const pick = (...ids: string[]) => pickColors(ids.map((id) => rabbis[place(id)]));
-  const all = pick('lakish', 'yochanan', 'gamliel-a', 'gamliel-b').map(rgbToOklch);
-
-  it('gives each pick a colour by the order picked, whatever his generation', () => {
-    expect(pick('lakish')[0]).toEqual(pick('gamliel-a')[0]);
-    expect(pick('lakish', 'gamliel-a')[0]).toEqual(pick('gamliel-a', 'lakish')[0]);
-    expect(pick('lakish', 'gamliel-a')[1]).not.toEqual(pick('lakish')[0]);
-  });
-
-  it('has a colour for every pick the overlay allows', () => {
-    const many = Array.from({ length: MAX_PICKS }, () => rabbis[0]);
-    expect(pickColors(many)).toHaveLength(MAX_PICKS);
-  });
-
-  it('makes all four equally light', () => {
-    for (const other of all) expect(Math.abs(other.l - all[0].l)).toBeLessThan(0.01);
-  });
-
-  it('puts four hues far apart', () => {
-    for (let a = 0; a < all.length; a++)
-      for (let b = a + 1; b < all.length; b++) expect(hue(all[a].h, all[b].h)).toBeGreaterThan(60);
-  });
-});
-
 describe('how a rabbi is named', () => {
   const table: TalmudDating = {
     ...dating,
@@ -219,21 +184,5 @@ describe('how a rabbi is named', () => {
     expect(shortName({ ...meir, en: 'Rabi', he: 'רבי' })).toBe('Rabi רבי');
     expect(shortName({ ...meir, en: 'Rabbinic X', he: 'רבינא' })).toBe('Rabbinic X רבינא');
     expect(shortName({ ...meir, en: 'Bar Rabbi', he: 'ברבי עקיבא' })).toBe('Bar Rabbi ברבי עקיבא');
-  });
-});
-
-describe('the link', () => {
-  it('round-trips the picks in order', () => {
-    expect(picksFromUrl(picksToUrl(['lakish', 'rabbi-x-(ii)', 'abaye']))).toEqual([
-      'lakish',
-      'rabbi-x-(ii)',
-      'abaye',
-    ]);
-  });
-
-  it('holds no pick twice and no more than can be told apart', () => {
-    expect(picksFromUrl('a,a,b')).toEqual(['a', 'b']);
-    expect(picksFromUrl('a,b,c,d,e,f,g,h')).toHaveLength(4);
-    expect(picksFromUrl(undefined)).toEqual([]);
   });
 });

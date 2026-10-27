@@ -30,7 +30,8 @@ import {
 } from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
 import { datingOverlay, type RabbiLink } from './overlays/dating.ts';
-import { addPick, RABBIS_ID, RABBIS_URL_PARAMS, rabbisOverlay } from './overlays/rabbis.ts';
+import { addPick } from '@torahmap/shell/overlays/picks.ts';
+import { RABBIS_ID, RABBIS_URL_PARAMS, rabbisOverlay } from './overlays/rabbis.ts';
 import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
