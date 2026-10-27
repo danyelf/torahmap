@@ -476,3 +476,18 @@ export const TALMUD_STATES: State[] = [
     shown: [GO_TO_BOX, '.goto-none'],
   },
 ];
+
+/** The VIS map's page, at /ieeevis/ (ieeevis.spec.ts). */
+export const IEEEVIS_STATES: State[] = [
+  {
+    name: 'vis-authors',
+    link: 'overlay=authors&authors=Bei Wang,Chaoli Wang',
+    shown: ['#map-legend'],
+  },
+  {
+    name: 'vis-authors-panel',
+    link: 'overlay=authors&authors=Bei Wang,Chaoli Wang',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['.pick-input', '.pick-picked-row'],
+  },
+];

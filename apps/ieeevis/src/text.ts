@@ -13,6 +13,7 @@ import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
 import { ieeevisFiles } from './files.ts';
 import { computeLayout, type PieceItem } from './layout.ts';
 import { VIS_OVERLAYS } from './overlays/index.ts';
+import { AUTHORS_ID, AUTHORS_URL_PARAMS } from './overlays/authors.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
 import { ieeevisSite } from './site.ts';
 
@@ -47,7 +48,7 @@ const WHOLE_MAP: Story = {
 const LINK_KEYS: LinkKeys = {
   square: 'at',
   search: TERM_SEARCH_PARAMS,
-  overlayParams: () => undefined,
+  overlayParams: (id) => (id === AUTHORS_ID ? AUTHORS_URL_PARAMS : undefined),
   zoom: { min: 0.08, max: 12, start: 1 },
 };
 
