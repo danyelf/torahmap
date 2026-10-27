@@ -154,7 +154,7 @@ To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-sc
 uv run --no-project python -I scripts/build.py data <torahmap checkout>/public/data/ieeevis
 ```
 
-That writes both files into the checkout; commit `structure.json` only. Then upload the text, from
+It writes both files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw downloads, so the checkout's `texts.json` is the copy to upload. Commit `structure.json` only. Then upload the text, from
 the torahmap checkout (needs `wrangler login`):
 
 ```bash
