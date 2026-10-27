@@ -466,6 +466,33 @@ describe('Haftarah Overlay', () => {
       expect(brightnessUnder(noach, noach)).toBeGreaterThan(brightnessUnder(genesis, noach));
     });
 
+    it('keeps a chosen reading lit over a pinned verse of another, until the pin is the only choice', () => {
+      const under = (v: typeof genesis, pinned: typeof genesis | null) =>
+        sum(
+          haftarahOverlay.overlay.colorsFor!(
+            [v],
+            haftarahOverlay.settings,
+            null,
+            DATA,
+            pinned,
+          )[0] as Color,
+        );
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      expect(under(genesis, noach)).toBeGreaterThan(under(noach, noach));
+      haftarahOverlay.restore({});
+      expect(under(noach, noach)).toBeGreaterThan(under(genesis, noach));
+    });
+
+    it('answers a pin move only while no reading is chosen', () => {
+      expect(
+        haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
+      ).toBe(true);
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      expect(
+        haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
+      ).toBe(false);
+    });
+
     it('stays lit while the map hover is on a verse outside every reading', () => {
       haftarahOverlay.restore({ reading: 'Bereshit' });
       expect(brightnessUnder(genesis, psalms)).toBe(brightnessUnder(genesis, null));

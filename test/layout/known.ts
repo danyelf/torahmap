@@ -11,9 +11,15 @@ const POPUP_KNOWN: Known = {
 
 // A hovered verse's popup has no close button.
 const HOVER_POPUP_KNOWN: Known = {
-  reason: "The verse popup's Sefaria link is under 24px; accepted for now.",
-  violations: ['a.sefaria-link is 103×15px, under 24'],
+  reason: POPUP_KNOWN.reason,
+  violations: POPUP_KNOWN.violations.slice(0, 1),
 };
+
+/** `known` for each of `states` on the touch screens. */
+const onTouchScreens = (states: string[], known: Known): [string, Known][] =>
+  states.flatMap((state) =>
+    ['phone', 'tablet'].map((s): [string, Known] => [`${state}/${s}/touch-targets`, known]),
+  );
 
 // The same popup on the AI Act's page, its link naming EUR-Lex.
 const ACT_POPUP_KNOWN: Known = {
@@ -29,18 +35,21 @@ const ACT_POPUP_KNOWN: Known = {
  * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
-  'explore-text-analytics-hover/phone/touch-targets': HOVER_POPUP_KNOWN,
-  'explore-text-analytics-hover/tablet/touch-targets': HOVER_POPUP_KNOWN,
-  'explore-text-analytics-echoes-pinned/phone/touch-targets': POPUP_KNOWN,
-  'explore-text-analytics-echoes-pinned/tablet/touch-targets': POPUP_KNOWN,
-  'explore-haftarah-pinned/phone/touch-targets': POPUP_KNOWN,
-  'explore-haftarah-pinned/tablet/touch-targets': POPUP_KNOWN,
-  'explore-text-analytics-echoes-zoomed-out/phone/touch-targets': POPUP_KNOWN,
-  'explore-text-analytics-echoes-zoomed-out/tablet/touch-targets': POPUP_KNOWN,
-  'explore-text-analytics-parallel-link/phone/touch-targets': POPUP_KNOWN,
-  'explore-text-analytics-parallel-link/tablet/touch-targets': POPUP_KNOWN,
-  'explore-text-analytics-hover-one-echo/phone/touch-targets': HOVER_POPUP_KNOWN,
-  'explore-text-analytics-hover-one-echo/tablet/touch-targets': HOVER_POPUP_KNOWN,
+  ...Object.fromEntries([
+    ...onTouchScreens(
+      [
+        'explore-text-analytics-echoes-pinned',
+        'explore-text-analytics-echoes-zoomed-out',
+        'explore-text-analytics-parallel-link',
+        'explore-haftarah-pinned',
+      ],
+      POPUP_KNOWN,
+    ),
+    ...onTouchScreens(
+      ['explore-text-analytics-hover', 'explore-text-analytics-hover-one-echo'],
+      HOVER_POPUP_KNOWN,
+    ),
+  ]),
   'explore-text-analytics-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-text-analytics-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-verse-pinned/phone/touch-targets': POPUP_KNOWN,

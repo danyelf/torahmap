@@ -11,6 +11,12 @@ export type { Credit } from '../credits.ts';
 /** The overlay id that stands for none: the picker's first option, and what telemetry records. */
 export const NO_OVERLAY = 'none';
 
+/** The squares the reader has the pointer on and has pinned. */
+export interface Focus<T> {
+  hovered: SpatialItem<T> | null;
+  pinned: SpatialItem<T> | null;
+}
+
 // A change to an overlay's settings: the next settings, worked out from the
 // current ones. Typed through a method so that its parameter is checked
 // bivariantly, like the Overlay members below; as a plain function type, S would
@@ -100,28 +106,36 @@ interface OverlayMembers<T, S, D> {
 
   // One colour per item, as the map and the story's blend ask for them: null
   // renders default gray; Color[] splits the square corner to corner, one band
-  // per color. `hovered` is the item in focus, the one under the cursor
-  // else the pinned one; only some overlays' colours depend on it.
+  // per color. `hovered` is the item under the cursor and `pinned` the
+  // pinned one; only some overlays' colours depend on either, and each decides which wins.
   colorsFor(
     items: SpatialItem<T>[],
     settings: S,
     hovered: SpatialItem<T> | null,
     data: D,
+    pinned?: SpatialItem<T> | null,
   ): (Color | Color[] | null)[];
 
   // Which of `items` stand out, as a search match does: drawn over the rest and
   // never too small to see. For an overlay that can light only a few squares.
-  // `focus` is the square in focus, as for colorsFor's `hovered`.
+  // `hovered` and `pinned` are as for colorsFor.
   standoutsFor?(
     items: SpatialItem<T>[],
     settings: S,
     data: D,
-    focus: SpatialItem<T> | null,
+    hovered?: SpatialItem<T> | null,
+    pinned?: SpatialItem<T> | null,
   ): boolean[];
 
   // Which of the standouts also keep a faint halo when zoomed in, where a
   // standout is otherwise a plain square.
-  halosFor?(items: SpatialItem<T>[], settings: S, data: D, focus: SpatialItem<T> | null): boolean[];
+  halosFor?(
+    items: SpatialItem<T>[],
+    settings: S,
+    data: D,
+    hovered?: SpatialItem<T> | null,
+    pinned?: SpatialItem<T> | null,
+  ): boolean[];
 
   // The panel may be drawn without the overlay's data; then data is null.
   //
@@ -141,13 +155,13 @@ interface OverlayMembers<T, S, D> {
   ): void;
   renderLegend?(container: HTMLElement, settings: S, data: D | null): void;
 
-  // Says in the panel what the overlay finds about the square in focus: the one
-  // under the pointer, else the pinned one, else null. The container is emptied
-  // before each call. Only called once the overlay's data is in. `travelTo` takes
-  // the reader to a square by id, as choosing a search result does: pinned, in view.
+  // Says in the panel what the overlay finds about the hovered or pinned square.
+  // The container is emptied before each call; `travelTo` pins a square by id and
+  // brings it into view.
   renderFocus?(
     container: HTMLElement,
-    item: SpatialItem<T> | null,
+    hovered: SpatialItem<T> | null,
+    pinned: SpatialItem<T> | null,
     settings: S,
     data: D,
     travelTo: (id: string) => void,
@@ -159,10 +173,18 @@ interface OverlayMembers<T, S, D> {
 
   getHoverInfo?(item: SpatialItem<T>, settings: S, data: D): string | null;
 
-  // Declaring this marks an overlay's colours as depending on the square in focus:
+  // Declaring this marks an overlay's colours as depending on the hovered square:
   // the map recomputes them when it says so, and the story's blend does not
-  // memoise them. True when moving the focus from `before` to `after` changes them.
+  // memoise them. True when moving the hover from `before` to `after` changes them.
   hoverChangesColors?(
+    before: SpatialItem<T> | null,
+    after: SpatialItem<T> | null,
+    settings: S,
+    data: D,
+  ): boolean;
+
+  // The same for the pinned square.
+  pinChangesColors?(
     before: SpatialItem<T> | null,
     after: SpatialItem<T> | null,
     settings: S,

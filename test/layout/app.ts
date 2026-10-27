@@ -24,8 +24,8 @@ export const CHROME: Chrome = {
   map: '#canvas',
   panel: '#panel',
   interactive:
-    '#panel button, #panel select, #panel input, ' +
-    '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a):not(.parallel-verses a), ' +
+    '#panel button:not(.parallel-verses button), #panel select, #panel input, ' +
+    '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
     '#menu-toggle, #menu button, #map-legend button, ' +
     '#popup button, #popup a, #zoom-controls button',
   text:
@@ -226,8 +226,7 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
-    // Numbers 7 repeats one offering six verses on; the pointer is on verse 37, 134 pixels
-    // left of the centre at this zoom.
+    // Numbers 7 repeats one offering every six verses; the pointer is on verse 37.
     name: 'explore-text-analytics-hover',
     link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67',
     then: async (page) => {
@@ -237,7 +236,7 @@ export const STATES: State[] = [
     shown: ['#map-legend'],
   },
   {
-    // Numbers 1:29 echoes only 2:6; the pointer is on 1:29, 97 pixels left and 11 above the centre.
+    // Numbers 1:29 echoes only 2:6; the pointer is on 1:29.
     name: 'explore-text-analytics-hover-one-echo',
     link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2304&y=11',
     then: async (page) => {
@@ -258,7 +257,7 @@ export const STATES: State[] = [
     link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=0.8&x=2304&y=11&verse=Numbers.1.29',
     then: async (page) => {
       await viaMenu(page, 'overlay');
-      await page.locator('.parallel-verses a').first().click();
+      await page.locator('.parallel-verses button').first().click();
       await expect(page.locator('#popup')).toContainText('Numbers 2:6');
     },
     shown: ['#popup', '#map-legend'],

@@ -63,6 +63,7 @@ describe('Text Analytics overlay', () => {
       textAnalyticsOverlay.renderFocus!(
         panel,
         verse(v),
+        null,
         { analysis: 'repetitive-wording' },
         data,
         () => {},
@@ -96,19 +97,45 @@ describe('Text Analytics overlay', () => {
     textAnalyticsOverlay.renderFocus!(
       panel,
       verse(1),
+      null,
       { analysis: 'repetitive-wording' },
       data,
       (id) => travelled.push(id),
     );
-    panel.querySelector('a')!.click();
+    panel.querySelector('button')!.click();
     expect(travelled).toEqual([verse(4).id]);
   });
 
-  it('colours the map as usual when the hovered verse has no echoes', () => {
+  it('colours the map as usual when neither the hovered nor the pinned verse has echoes', () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = { analysis: 'repetitive-wording' as const };
-    const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(2), data);
+    const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(2), data, verse(3));
     expect(colors).toEqual(items.map((item) => host().getItemColor(item)));
+  });
+
+  it("shows a pinned verse's echoes until a hovered verse with echoes of its own takes over", () => {
+    const items = [1, 2, 3, 4].map(verse);
+    const settings = { analysis: 'repetitive-wording' as const };
+    const plain = items.map((item) => host().getItemColor(item));
+    const pinOnly = textAnalyticsOverlay.colorsFor!(items, settings, null, data, verse(1));
+    expect(pinOnly[1]).not.toEqual(plain[1]);
+    // A hover on a verse with none leaves the pin's showing.
+    expect(textAnalyticsOverlay.colorsFor!(items, settings, verse(2), data, verse(1))).toEqual(
+      pinOnly,
+    );
+    expect(textAnalyticsOverlay.standoutsFor!(items, settings, data, null, verse(1))).toEqual([
+      true,
+      false,
+      false,
+      true,
+    ]);
+  });
+
+  it('repaints on a pin only when it starts or ends on a verse with echoes', () => {
+    const { pinChangesColors } = textAnalyticsOverlay;
+    const settings = { analysis: 'repetitive-wording' as const };
+    expect(pinChangesColors!(null, verse(1), settings, data)).toBe(true);
+    expect(pinChangesColors!(verse(2), verse(3), settings, data)).toBe(false);
   });
 
   it('repaints on a hover only when it starts or ends on a verse with echoes', () => {
