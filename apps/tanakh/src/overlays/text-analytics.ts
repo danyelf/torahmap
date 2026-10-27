@@ -87,14 +87,31 @@ function echoesOf(data: TextAnalyticsData, verse: TanakhLayout): string[] {
   });
 }
 
-/** A scale colour darkened and tinged orange, for the verses out of focus. */
-function muted([r, g, b]: Color): Color {
-  return [r * 0.45 + 0.16, g * 0.45 + 0.09, b * 0.45];
+// Where the bright end goes when muted: a dull red, so the yellow is left to the matches.
+const MUTED_RED: Color = [0.5, 0.13, 0.1];
+
+/** A scale colour for a verse out of focus: the low end as it is, the bright end turned toward red. */
+function muted(color: Color, position: number): Color {
+  const toward = Math.min(1, Math.max(0, (position - 0.25) / 0.3));
+  return color.map((c, i) => c + (MUTED_RED[i] - c) * toward) as Color;
 }
 
 function colorAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
   const score = scoreAt(data, verse);
   return score === null ? NO_DATA : scaleOf(data).scale.colorOf(score);
+}
+
+function mutedAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
+  const score = scoreAt(data, verse);
+  if (score === null) return NO_DATA;
+  const { scale, low, high } = scaleOf(data);
+  return muted(scale.colorOf(score), (score - low) / (high - low));
+}
+
+/** The ids of the focused verse and its echoes; null when it has no echoes. */
+function matchesOf(data: TextAnalyticsData, focus: TanakhLayout | null): Set<string> | null {
+  const echoes = focus ? echoesOf(data, focus) : [];
+  return focus && echoes.length > 0 ? new Set([focus.id, ...echoes]) : null;
 }
 
 export const textAnalyticsOverlay: Overlay<
@@ -119,25 +136,45 @@ export const textAnalyticsOverlay: Overlay<
 
   // The focused verse with echoes keeps them and itself in the scale's colours; the rest are muted.
   colorsFor(items, _settings, hovered, data) {
-    const echoes = hovered ? echoesOf(data, hovered) : [];
-    if (!hovered || echoes.length === 0) return items.map((item) => colorAt(data, item));
-    const lit = new Set([hovered.id, ...echoes]);
+    const matches = matchesOf(data, hovered);
     return items.map((item) =>
-      lit.has(item.id) ? colorAt(data, item) : muted(colorAt(data, item)),
+      !matches || matches.has(item.id) ? colorAt(data, item) : mutedAt(data, item),
     );
   },
 
-  renderFocus(container, item, _settings, data) {
-    const places = (item ? echoesOf(data, item) : []).map((id) => parseVerseId(id)!);
+  // The matches stay visible zoomed out, as search matches do.
+  standoutsFor(items, _settings, data, focus) {
+    const matches = matchesOf(data, focus);
+    return items.map((item) => !!matches?.has(item.id));
+  },
+
+  halosFor(items, settings, data, focus) {
+    return textAnalyticsOverlay.standoutsFor!(items, settings, data, focus);
+  },
+
+  renderFocus(container, item, _settings, data, travelTo) {
+    const places = (item ? echoesOf(data, item) : []).map((id) => ({ id, ...parseVerseId(id)! }));
     if (places.length === 0) return;
-    const byBook = new Map<string, string[]>();
-    for (const { book, chapter, verse } of places) {
-      byBook.set(book, [...(byBook.get(book) ?? []), `${chapter}:${verse}`]);
-    }
+    const byBook = new Map<string, typeof places>();
+    for (const place of places) byBook.set(place.book, [...(byBook.get(place.book) ?? []), place]);
     const note = document.createElement('p');
     note.className = 'parallel-verses';
-    note.textContent =
-      'Parallel verses: ' + [...byBook].map(([book, at]) => `${book} ${at.join(', ')}`).join('; ');
+    note.append('Parallel verses: ');
+    let firstBook = true;
+    for (const [book, inBook] of byBook) {
+      note.append(`${firstBook ? '' : '; '}${book} `);
+      firstBook = false;
+      inBook.forEach(({ id, chapter, verse }, i) => {
+        const link = document.createElement('a');
+        link.href = `?overlay=text-analytics&verse=${id}`;
+        link.textContent = `${chapter}:${verse}`;
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          travelTo(id);
+        });
+        note.append(i > 0 ? ', ' : '', link);
+      });
+    }
     container.appendChild(note);
   },
 

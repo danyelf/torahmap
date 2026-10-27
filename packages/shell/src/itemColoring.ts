@@ -113,8 +113,8 @@ export function toolsPicture<T>(
     base,
     nonMatchDim,
     keepsBase,
-    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data),
-    overlay?.tool.halosFor?.(items, overlay.settings, overlay.data),
+    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data, hovered),
+    overlay?.tool.halosFor?.(items, overlay.settings, overlay.data, hovered),
   );
 }
 

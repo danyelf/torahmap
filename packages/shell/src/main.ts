@@ -1020,6 +1020,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
+  function pinAndGlide(item: I): void {
+    // A full-height sheet would hide the glide.
+    if (frame.full) setFrame({ ...frame, full: false });
+    pinItem(item);
+    glideToItem(item);
+  }
+
   /** Draw what the active overlay says about the square in focus. */
   function renderOverlayFocus(): void {
     if (!overlayFocusContainer) return;
@@ -1027,7 +1034,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const overlay = currentOverlay;
     if (!overlay?.renderFocus) return;
     const data = dataFor(overlay, loader.loaded());
-    if (data) overlay.renderFocus(overlayFocusContainer, focusItem(), currentSettings(), data);
+    if (!data) return;
+    const travelTo = (id: string) => {
+      const item = squares.find(id);
+      if (item) pinAndGlide(item);
+    };
+    overlay.renderFocus(overlayFocusContainer, focusItem(), currentSettings(), data, travelTo);
   }
 
   /** Draw the active overlay's controls into what is already there. */
@@ -1166,12 +1178,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   text.start?.({
     loaded: loader.loaded,
     holdPopup: popupHold.hold,
-    pinAndGlide: (item) => {
-      // A full-height sheet would hide the glide.
-      if (frame.full) setFrame({ ...frame, full: false });
-      pinItem(item);
-      glideToItem(item);
-    },
+    pinAndGlide,
     openOverlay: (overlay, update) => {
       takeOver('takeover');
       if (currentOverlay?.id !== overlay.id) {

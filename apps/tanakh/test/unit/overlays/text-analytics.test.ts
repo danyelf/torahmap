@@ -50,22 +50,58 @@ describe('Text Analytics overlay', () => {
     const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(4), data);
     expect(colors[0]).toEqual(host().getItemColor(verse(1)));
     expect(colors[3]).toEqual(host().getItemColor(verse(4)));
-    for (const i of [1, 2]) {
-      const plain = host().getItemColor(verse(i + 1)) as number[];
-      const muted = colors[i] as number[];
-      expect(muted).not.toEqual(plain);
-      expect(muted[0]).toBeGreaterThan(muted[2]);
-    }
+    // The verse at the top of the scale turns red; one without a score is left as it was.
+    const top = colors[1] as number[];
+    expect(top).not.toEqual(host().getItemColor(verse(2)));
+    expect(top[0]).toBeGreaterThan(top[2]);
+    expect(colors[2]).toEqual(NO_DATA);
   });
 
   it("lists the focused verse's echoes in words, and nothing for a verse without any", () => {
     const say = (v: number) => {
       const panel = document.createElement('div');
-      textAnalyticsOverlay.renderFocus!(panel, verse(v), { analysis: 'repetitive-wording' }, data);
+      textAnalyticsOverlay.renderFocus!(
+        panel,
+        verse(v),
+        { analysis: 'repetitive-wording' },
+        data,
+        () => {},
+      );
       return panel.textContent;
     };
     expect(say(1)).toContain('Genesis 1:4');
     expect(say(2)).toBe('');
+  });
+
+  it('makes the focused verse and its echoes stand out, and nothing else', () => {
+    const items = [1, 2, 3, 4].map(verse);
+    const settings = { analysis: 'repetitive-wording' as const };
+    expect(textAnalyticsOverlay.standoutsFor!(items, settings, data, verse(1))).toEqual([
+      true,
+      false,
+      false,
+      true,
+    ]);
+    expect(textAnalyticsOverlay.standoutsFor!(items, settings, data, verse(2))).toEqual([
+      false,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it('travels to a parallel verse from its link in the panel', () => {
+    const panel = document.createElement('div');
+    const travelled: string[] = [];
+    textAnalyticsOverlay.renderFocus!(
+      panel,
+      verse(1),
+      { analysis: 'repetitive-wording' },
+      data,
+      (id) => travelled.push(id),
+    );
+    panel.querySelector('a')!.click();
+    expect(travelled).toEqual([verse(4).id]);
   });
 
   it('colours the map as usual when the hovered verse has no echoes', () => {

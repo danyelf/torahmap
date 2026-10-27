@@ -111,11 +111,17 @@ interface OverlayMembers<T, S, D> {
 
   // Which of `items` stand out, as a search match does: drawn over the rest and
   // never too small to see. For an overlay that can light only a few squares.
-  standoutsFor?(items: SpatialItem<T>[], settings: S, data: D): boolean[];
+  // `focus` is the square in focus, as for colorsFor's `hovered`.
+  standoutsFor?(
+    items: SpatialItem<T>[],
+    settings: S,
+    data: D,
+    focus: SpatialItem<T> | null,
+  ): boolean[];
 
   // Which of the standouts also keep a faint halo when zoomed in, where a
   // standout is otherwise a plain square.
-  halosFor?(items: SpatialItem<T>[], settings: S, data: D): boolean[];
+  halosFor?(items: SpatialItem<T>[], settings: S, data: D, focus: SpatialItem<T> | null): boolean[];
 
   // The panel may be drawn without the overlay's data; then data is null.
   //
@@ -137,8 +143,15 @@ interface OverlayMembers<T, S, D> {
 
   // Says in the panel what the overlay finds about the square in focus: the one
   // under the pointer, else the pinned one, else null. The container is emptied
-  // before each call. Only called once the overlay's data is in.
-  renderFocus?(container: HTMLElement, item: SpatialItem<T> | null, settings: S, data: D): void;
+  // before each call. Only called once the overlay's data is in. `travelTo` takes
+  // the reader to a square by id, as choosing a search result does: pinned, in view.
+  renderFocus?(
+    container: HTMLElement,
+    item: SpatialItem<T> | null,
+    settings: S,
+    data: D,
+    travelTo: (id: string) => void,
+  ): void;
 
   // What the panel's one-line summary shows after the overlay's name; colours
   // are CSS values. Absent, the line is the name alone.

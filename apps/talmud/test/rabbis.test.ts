@@ -79,6 +79,7 @@ describe('the rabbis overlay colours', () => {
       ['A.2a.1', 'A.2a.3', 'A.2a.4'].map(item),
       picking('lakish', 'gamliel-a'),
       data,
+      null,
     );
     expect(lit).toEqual([true, true, false]);
   });
