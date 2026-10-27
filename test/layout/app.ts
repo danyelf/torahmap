@@ -24,7 +24,7 @@ export const CHROME: Chrome = {
   map: '#canvas',
   panel: '#panel',
   interactive:
-    '#panel button, #panel select, #panel input, ' +
+    '#panel button:not(.parallel-verses button), #panel select, #panel input, ' +
     '#panel a:not(.story-stop a):not(.credits-list a):not(.byline a), ' +
     '#menu-toggle, #menu button, #map-legend button, ' +
     '#popup button, #popup a, #zoom-controls button',
@@ -223,6 +223,55 @@ export const STATES: State[] = [
   {
     name: 'explore-text-analytics-pinned',
     link: 'overlay=text-analytics&analysis=repetitive-wording&verse=Genesis.5.25',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // Numbers 7 repeats one offering every six verses; the pointer is on verse 37.
+    name: 'explore-text-analytics-hover',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67',
+    then: async (page) => {
+      const canvas = (await page.locator('#canvas').boundingBox())!;
+      await page.mouse.move(canvas.x + canvas.width / 2 - 134, canvas.y + canvas.height / 2);
+    },
+    shown: ['#map-legend'],
+  },
+  {
+    // Numbers 1:29 echoes only 2:6; the pointer is on 1:29.
+    name: 'explore-text-analytics-hover-one-echo',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2304&y=11',
+    then: async (page) => {
+      const canvas = (await page.locator('#canvas').boundingBox())!;
+      await page.mouse.move(canvas.x + canvas.width / 2 - 97, canvas.y + canvas.height / 2 - 11);
+    },
+    shown: ['#map-legend'],
+  },
+  {
+    // Zoomed out, a pinned verse and its echoes still show.
+    name: 'explore-text-analytics-echoes-zoomed-out',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=0.3&x=2304&y=11&verse=Numbers.1.29',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // A parallel verse in the panel travels to it and pins it, its own parallels next.
+    name: 'explore-text-analytics-parallel-link',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=0.8&x=2304&y=11&verse=Numbers.1.29',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.parallel-verses button').first().click();
+      await expect(page.locator('#popup')).toContainText('Numbers 2:6');
+    },
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // Pinned, a verse keeps its echoes lit with the pointer elsewhere.
+    name: 'explore-text-analytics-echoes-pinned',
+    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67&verse=Numbers.7.37',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // Pinned, a verse keeps its reading and haftarah lit.
+    name: 'explore-haftarah-pinned',
+    link: 'overlay=haftarah&verse=Genesis.1.1',
     shown: ['#popup', '#map-legend'],
   },
   // A rare mark lights a few dozen verses, which must show with the whole map in view.

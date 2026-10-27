@@ -86,7 +86,7 @@ import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import { createOverlaySettings, settingsFromLink } from './overlays/settings.ts';
-import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
+import { NO_OVERLAY, type Focus, type Overlay, type Tools } from './overlays/types.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, loadFiles, type Loaded } from './dataFiles.ts';
 import { filesFirst, staleAfterLanding, type LandingView, type OpeningView } from './downloads.ts';
@@ -350,6 +350,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       base,
       dimFor(frontTool),
       text.searchKeepsBase,
+      pinnedItem,
     );
   }
 
@@ -432,18 +433,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (colors) setColorLayer(colors);
   }
 
+  function focusNow(): Focus<I> {
+    return { hovered: hoveredItem, pinned: pinnedItem };
+  }
+
   /**
-   * Repaint after the hovered or pinned square changes. `hoveredBefore` is the
-   * hover the colour layer was drawn for; a pin leaves the hover alone, so it
-   * passes nothing and only composites.
+   * Repaint after the hovered or pinned square changes. `focusBefore` is the
+   * focus the colour layer was drawn for.
    */
-  function repaint(hoveredBefore: I | null = hoveredItem): void {
+  function repaint(focusBefore: Focus<I>): void {
     const layer = layerToRecompute(
       colorSource(driver),
       toolsNow().overlay,
-      hoveredBefore,
-      hoveredItem,
+      focusBefore,
+      focusNow(),
     );
+    renderOverlayFocus();
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
     else composite();
@@ -473,6 +478,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
     overlaySettings.restore(searchTool, stop.searchParams ?? {});
+    // The pin is set before the panel is drawn, which draws what the pin has.
+    const unpinned = pinnedItem !== null && !stop.pin;
+    if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
+    else pinnedItem = null;
     searchChanged(true);
     overlayChanged(true);
 
@@ -480,17 +489,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // reader has a panel open to see it (stops don't open panels).
     if (searching()) frontTool = 'search';
 
-    // Sync pinnedItem from stop (without going through pinItem, which writes URL/telemetry)
-    if (stop.pin) {
-      const item = squares.find(stop.pin);
-      if (item && !sameItem(pinnedItem, item)) {
-        pinnedItem = item;
-        updateSidebarWrapper(item, true);
-      }
-    } else if (pinnedItem) {
-      pinnedItem = null;
-      updateSidebarWrapper(null);
-    }
+    // The panel's redraw shows a pin but cannot clear one; pinItem would write URL/telemetry.
+    if (unpinned) updateSidebarWrapper(null);
   }
 
   const camera = text.startCamera(mapViewport());
@@ -781,20 +781,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function pinItem(item: I, centerCamera: boolean = false): void {
     takeOver('takeover');
     trackSquareClick(item.id, text.area(item).area);
+    const focusBefore = focusNow();
     pinnedItem = item;
     updateSidebarWrapper(item, true);
     if (centerCamera) {
       centerOnItem(item);
     }
-    repaint();
+    repaint(focusBefore);
     syncUrl(true);
   }
 
   function unpinItem(): void {
     takeOver('takeover');
+    const focusBefore = focusNow();
     pinnedItem = null;
     updateSidebarWrapper(null);
-    repaint();
+    repaint(focusBefore);
     syncUrl(true);
   }
 
@@ -811,8 +813,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function setHover(square: I | null): void {
     const before = hoveredItem;
+    const focusBefore = focusNow();
     hoveredItem = square;
-    if (!sameItem(before, square)) repaint(before);
+    if (!sameItem(before, square)) repaint(focusBefore);
   }
 
   const gestures = createMapGestures<I>({
@@ -988,6 +991,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     closed: showLoadState,
   });
   const overlayLegendContainer = document.getElementById('overlay-legend');
+  const overlayFocusContainer = document.getElementById('overlay-focus');
   const overlayStarts = document.getElementById('overlay-starts')!;
 
   /** Switch the active overlay without drawing its UI, painting or writing the URL. */
@@ -1009,6 +1013,35 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         );
       }
     }
+  }
+
+  function pinAndGlide(item: I): void {
+    // A full-height sheet would hide the glide.
+    if (frame.full) setFrame({ ...frame, full: false });
+    pinItem(item);
+    glideToItem(item);
+  }
+
+  /** Draw what the active overlay says about the square in focus. */
+  function renderOverlayFocus(): void {
+    if (!overlayFocusContainer) return;
+    overlayFocusContainer.innerHTML = '';
+    const overlay = currentOverlay;
+    if (!overlay?.renderFocus) return;
+    const data = dataFor(overlay, loader.loaded());
+    if (!data) return;
+    const travelTo = (id: string) => {
+      const item = squares.find(id);
+      if (item) pinAndGlide(item);
+    };
+    overlay.renderFocus(
+      overlayFocusContainer,
+      hoveredItem,
+      pinnedItem,
+      currentSettings(),
+      data,
+      travelTo,
+    );
   }
 
   /** Draw the active overlay's controls into what is already there. */
@@ -1043,6 +1076,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         : startingPointsHtml(searchTool, text.overlays, storyColumn.listed());
     }
     renderOverlayControls();
+    renderOverlayFocus();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
   }
@@ -1146,12 +1180,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   text.start?.({
     loaded: loader.loaded,
     holdPopup: popupHold.hold,
-    pinAndGlide: (item) => {
-      // A full-height sheet would hide the glide.
-      if (frame.full) setFrame({ ...frame, full: false });
-      pinItem(item);
-      glideToItem(item);
-    },
+    pinAndGlide,
     openOverlay: (overlay, update) => {
       takeOver('takeover');
       if (currentOverlay?.id !== overlay.id) {
@@ -1656,12 +1685,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     activateOverlay(next.overlay);
     if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
     overlaySettings.restore(searchTool, next.searchParams);
-    searchChanged(true);
-    overlayChanged(true);
-
     const item = next.square ? squares.find(next.square) : null;
     pinnedItem = item;
-    updateSidebarWrapper(item, item !== null);
+    searchChanged(true);
+    overlayChanged(true);
+    if (!item) updateSidebarWrapper(null);
 
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));

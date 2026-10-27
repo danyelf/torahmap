@@ -9,6 +9,18 @@ const POPUP_KNOWN: Known = {
   violations: ['a.sefaria-link is 103×15px, under 24', 'button.close-btn is 20×20px, under 24'],
 };
 
+// A hovered verse's popup has no close button.
+const HOVER_POPUP_KNOWN: Known = {
+  reason: POPUP_KNOWN.reason,
+  violations: POPUP_KNOWN.violations.slice(0, 1),
+};
+
+/** `known` for each of `states` on the touch screens. */
+const onTouchScreens = (states: string[], known: Known): [string, Known][] =>
+  states.flatMap((state) =>
+    ['phone', 'tablet'].map((s): [string, Known] => [`${state}/${s}/touch-targets`, known]),
+  );
+
 // The same popup on the AI Act's page, its link naming EUR-Lex.
 const ACT_POPUP_KNOWN: Known = {
   reason: POPUP_KNOWN.reason,
@@ -23,6 +35,21 @@ const ACT_POPUP_KNOWN: Known = {
  * every entry at once, and the run says so loudly.
  */
 export const KNOWN: Record<string, Known> = {
+  ...Object.fromEntries([
+    ...onTouchScreens(
+      [
+        'explore-text-analytics-echoes-pinned',
+        'explore-text-analytics-echoes-zoomed-out',
+        'explore-text-analytics-parallel-link',
+        'explore-haftarah-pinned',
+      ],
+      POPUP_KNOWN,
+    ),
+    ...onTouchScreens(
+      ['explore-text-analytics-hover', 'explore-text-analytics-hover-one-echo'],
+      HOVER_POPUP_KNOWN,
+    ),
+  ]),
   'explore-text-analytics-pinned/phone/touch-targets': POPUP_KNOWN,
   'explore-text-analytics-pinned/tablet/touch-targets': POPUP_KNOWN,
   'explore-verse-pinned/phone/touch-targets': POPUP_KNOWN,

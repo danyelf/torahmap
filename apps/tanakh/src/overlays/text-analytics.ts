@@ -8,6 +8,7 @@ import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
+import { verseId } from '@torahmap/link/tanakh';
 import { TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
   HIGH_PERCENTILE,
@@ -60,9 +61,95 @@ const scaleOf = memoByValue((data: TextAnalyticsData) => {
   return { scale: scale(low, high, LINEAR, CIVIDIS_STOPS), low, high };
 });
 
-function colorAt(data: TextAnalyticsData, verse: TanakhLayout): Color {
+/** Each book's verses in reading order, as chapter and verse numbers, and where each begins. */
+const readingOrder = memoByValue((data: TextAnalyticsData) => {
+  const order = new Map<string, { chapter: number; verse: number }[]>();
+  const index = new Map<string, number>();
+  for (const [book, chapters] of Object.entries(data.scores.repetition)) {
+    const verses: { chapter: number; verse: number }[] = [];
+    for (const [chapter, scores] of Object.entries(chapters)) {
+      index.set(`${book} ${chapter}`, verses.length);
+      scores.forEach((_, i) => verses.push({ chapter: Number(chapter), verse: i + 1 }));
+    }
+    order.set(book, verses);
+  }
+  return { order, index };
+});
+
+/** A verse that shares a repeated run with the focused one. */
+interface Echo {
+  id: string;
+  book: string;
+  chapter: number;
+  verse: number;
+}
+
+/** A verse's echoes, and the ids of it and them, by verse id; null for a verse with none. */
+interface Echoes {
+  places: Echo[];
+  matches: Set<string>;
+}
+
+const echoesCache = memoByValue((_data: TextAnalyticsData) => new Map<string, Echoes | null>());
+
+function echoesOf(data: TextAnalyticsData, verse: TanakhLayout): Echoes | null {
+  const cache = echoesCache(data);
+  if (cache.has(verse.id)) return cache.get(verse.id)!;
+  const offsets = data.scores.echoes[verse.book]?.[verse.chapter]?.[verse.verse] ?? [];
+  const { order, index } = readingOrder(data);
+  const start = (index.get(`${verse.book} ${verse.chapter}`) ?? 0) + verse.verse - 1;
+  const places = offsets.map((offset) => {
+    const { chapter, verse: v } = order.get(verse.book)![start + offset];
+    return { id: verseId(verse.book, chapter, v), book: verse.book, chapter, verse: v };
+  });
+  const found = places.length
+    ? { places, matches: new Set([verse.id, ...places.map(({ id }) => id)]) }
+    : null;
+  cache.set(verse.id, found);
+  return found;
+}
+
+/** The echoes the map shows: the hovered verse's if it has any, else the pinned verse's. */
+const echoKey = (data: TextAnalyticsData, verse: TanakhLayout | null): string | null =>
+  verse && echoesOf(data, verse) ? verse.id : null;
+
+function focusEchoes(
+  data: TextAnalyticsData,
+  hovered: TanakhLayout | null,
+  pinned: TanakhLayout | null,
+): Echoes | null {
+  return (hovered && echoesOf(data, hovered)) || (pinned && echoesOf(data, pinned)) || null;
+}
+
+// The scale from this share of the way up turns toward a dull red, fully red by the second: the
+// yellow is left to the matches.
+const REDDEN_FROM = 0.25;
+const REDDEN_FULL = 0.55;
+const MUTED_RED: Color = [0.5, 0.13, 0.1];
+
+/** A scale colour for a verse out of focus: the low end as it is, the bright end turned toward red. */
+function muted(color: Color, position: number): Color {
+  const toward = Math.min(1, Math.max(0, (position - REDDEN_FROM) / (REDDEN_FULL - REDDEN_FROM)));
+  return color.map((c, i) => c + (MUTED_RED[i] - c) * toward) as Color;
+}
+
+function colorAt(data: TextAnalyticsData, verse: TanakhLayout, mute = false): Color {
   const score = scoreAt(data, verse);
-  return score === null ? NO_DATA : scaleOf(data).scale.colorOf(score);
+  if (score === null) return NO_DATA;
+  const { scale, low, high } = scaleOf(data);
+  const color = scale.colorOf(score);
+  return mute ? muted(color, (score - low) / (high - low)) : color;
+}
+
+/** Which of `items` are the focused verse or its echoes. */
+function matched(
+  items: TanakhLayout[],
+  data: TextAnalyticsData,
+  hovered: TanakhLayout | null | undefined,
+  pinned: TanakhLayout | null | undefined,
+): boolean[] {
+  const matches = focusEchoes(data, hovered ?? null, pinned ?? null)?.matches;
+  return items.map((item) => !!matches?.has(item.id));
 }
 
 export const textAnalyticsOverlay: Overlay<
@@ -85,8 +172,53 @@ export const textAnalyticsOverlay: Overlay<
     scaleOf(data);
   },
 
-  colorsFor(items, _settings, _hovered, data) {
-    return items.map((item) => colorAt(data, item));
+  // The focused verse with echoes keeps them and itself in the scale's colours; the rest are muted.
+  colorsFor(items, _settings, hovered, data, pinned) {
+    const lit = focusEchoes(data, hovered, pinned ?? null)?.matches;
+    return items.map((item) => colorAt(data, item, !!lit && !lit.has(item.id)));
+  },
+
+  // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
+  standoutsFor(items, _settings, data, hovered, pinned) {
+    return matched(items, data, hovered, pinned);
+  },
+
+  halosFor(items, _settings, data, hovered, pinned) {
+    return matched(items, data, hovered, pinned);
+  },
+
+  renderFocus(container, hovered, pinned, _settings, data, travelTo) {
+    const found = focusEchoes(data, hovered, pinned);
+    if (!found) return;
+    const byBook = new Map<string, Echo[]>();
+    for (const place of found.places) {
+      byBook.set(place.book, [...(byBook.get(place.book) ?? []), place]);
+    }
+    const note = document.createElement('p');
+    note.className = 'parallel-verses';
+    note.append('Parallel verses: ');
+    let firstBook = true;
+    for (const [book, inBook] of byBook) {
+      note.append(`${firstBook ? '' : '; '}${book} `);
+      firstBook = false;
+      inBook.forEach(({ id, chapter, verse }, i) => {
+        const link = document.createElement('button');
+        link.type = 'button';
+        link.textContent = `${chapter}:${verse}`;
+        link.addEventListener('click', () => travelTo(id));
+        note.append(i > 0 ? ', ' : '', link);
+      });
+    }
+    container.appendChild(note);
+  },
+
+  // A hovered verse without echoes leaves the pinned verse's showing, so only echoes count.
+  hoverChangesColors(before, after, _settings, data) {
+    return echoKey(data, before) !== echoKey(data, after);
+  },
+
+  pinChangesColors(before, after, _settings, data) {
+    return echoKey(data, before) !== echoKey(data, after);
   },
 
   renderLegend(container, _settings, data) {
@@ -106,7 +238,7 @@ export const textAnalyticsOverlay: Overlay<
           `or more books) don't count`,
         `Blue = ${ENDS[0]} wording · Yellow = ${ENDS[1]} wording`,
         `Verses under ${p.minWords} words are not coloured`,
-        `Select a verse to see its repeated words marked in its text`,
+        `Hover or select a verse to light its parallels`,
       ]
         .map(legendCaption)
         .join('');

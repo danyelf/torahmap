@@ -70,6 +70,15 @@ function isRelevantVerse(verse: TanakhLayout, derived: HaftarahDerivation): bool
   return derived.torahVerseToParsha.has(key) || derived.haftarahVerseToItem.has(key);
 }
 
+/** The verse's id if it is in any reading, else null: a verse outside every reading colours the map as no verse does. */
+function relevantId(
+  verse: TanakhLayout | null,
+  settings: HaftarahSettings,
+  data: HaftarahData,
+): string | null {
+  return verse && isRelevantVerse(verse, deriveHaftarah(data, settings.custom)) ? verse.id : null;
+}
+
 /** The readings to light: whatever the hovered verse belongs to, or null when it belongs to none. */
 function litByHover(
   derived: HaftarahDerivation,
@@ -113,17 +122,21 @@ function litByName(
 
 /**
  * What the pointer is on wins — a reading in the key, then a verse of a
- * reading on the map — and otherwise the reading the settings name, if any.
+ * reading on the map — then the reading the settings name, if any, and last
+ * the pinned verse's reading.
  */
 function litFor(
   data: HaftarahData,
   settings: HaftarahSettings,
   hovered: TanakhLayout | null,
+  pinned: TanakhLayout | null = null,
 ): Set<HaftarahItem> | null {
+  const derived = deriveHaftarah(data, settings.custom);
   return (
     litByName(data, settings.custom, settings.preview) ??
-    litByHover(deriveHaftarah(data, settings.custom), hovered) ??
-    litByName(data, settings.custom, settings.reading)
+    litByHover(derived, hovered) ??
+    litByName(data, settings.custom, settings.reading) ??
+    litByHover(derived, pinned)
   );
 }
 
@@ -230,16 +243,18 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
 
   hoverChangesColors(before, after, settings, data) {
     if (settings.preview !== null) return false;
-    // A verse outside every reading colours the map the same as no hover.
-    const derived = deriveHaftarah(data, settings.custom);
-    const keyIfRelevant = (verse: TanakhLayout | null) =>
-      verse && isRelevantVerse(verse, derived) ? verse.id : null;
-    return keyIfRelevant(before) !== keyIfRelevant(after);
+    return relevantId(before, settings, data) !== relevantId(after, settings, data);
   },
 
-  colorsFor(items, settings, hovered, data) {
+  pinChangesColors(before, after, settings, data) {
+    if (settings.preview !== null || litByName(data, settings.custom, settings.reading))
+      return false;
+    return relevantId(before, settings, data) !== relevantId(after, settings, data);
+  },
+
+  colorsFor(items, settings, hovered, data, pinned) {
     const derived = deriveHaftarah(data, settings.custom);
-    const lit = litFor(data, settings, hovered);
+    const lit = litFor(data, settings, hovered, pinned);
     return items.map((item) => colorAt(item, derived, lit));
   },
 

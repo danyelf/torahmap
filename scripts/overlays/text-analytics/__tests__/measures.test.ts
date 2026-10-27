@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   PARAMETERS,
+  echoes,
   repeatedStretches,
   repeatedWords,
   repetitionScores,
@@ -137,5 +138,24 @@ describe('repeatedStretches', () => {
     const [flags] = repeatedWords([book('A', verses)]);
     expect(repeatedStretches(flags[0])).toEqual([2, 2 + RUN_WORDS]);
     expect(repeatedStretches(flags[1])).toEqual([0, RUN_WORDS]);
+  });
+});
+
+describe('echoes', () => {
+  const phrase = ['אמר', 'משה', 'לאהרן', 'ולבניו', 'לאמר'].slice(0, RUN_WORDS);
+
+  it('gives each verse the offsets of the other verses that share a run with it', () => {
+    const verses = [[...phrase, ...fresh(3)], fresh(8), [...fresh(2), ...phrase]];
+    expect(echoes([book('A', verses)])[0]).toEqual([[2], [], [-2]]);
+  });
+
+  it('leaves out a run that recurs only beyond reach', () => {
+    const gap = Array.from({ length: PARAMETERS.reachVerses }, () => fresh(8));
+    const verses = [[...phrase, ...fresh(3)], ...gap, [...phrase, ...fresh(3)]];
+    expect(echoes([book('A', verses)])[0][0]).toEqual([]);
+  });
+
+  it('does not count a verse as its own echo', () => {
+    expect(echoes([book('A', [[...phrase, ...phrase]])])[0]).toEqual([[]]);
   });
 });

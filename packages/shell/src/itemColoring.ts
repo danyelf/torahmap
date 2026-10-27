@@ -2,7 +2,7 @@
 
 import { type SpatialItem, type ItemColor, type Picture, sameItem } from '@torahmap/engine';
 import { type Color, brighten } from '@torahmap/utils';
-import type { Overlay, ToolOnMap, Tools } from './overlays/types';
+import type { Focus, Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { ColorSource } from './scrollytelling/driver';
 import { SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
 
@@ -90,8 +90,11 @@ export function overlayColorsFor<T, S, D>(
   settings: S,
   hovered: SpatialItem<T> | null,
   data: D,
+  pinned: SpatialItem<T> | null = null,
 ): (ItemColor | null)[] {
-  return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
+  return overlay
+    ? overlay.colorsFor(items, settings, hovered, data, pinned)
+    : items.map(() => null);
 }
 
 /** The map's colours for the tools a view shows. The colour arguments pass through to combineLayers. */
@@ -102,9 +105,10 @@ export function toolsPicture<T>(
   base: (index: number) => ItemColor,
   nonMatchDim?: number,
   keepsBase?: number,
+  pinned: SpatialItem<T> | null = null,
 ): Picture<ItemColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
-    on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
+    on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data, pinned);
   const { overlay } = tools;
   return combineLayers(
     items.length,
@@ -113,26 +117,31 @@ export function toolsPicture<T>(
     base,
     nonMatchDim,
     keepsBase,
-    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data),
-    overlay?.tool.halosFor?.(items, overlay.settings, overlay.data),
+    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data, hovered, pinned),
+    overlay?.tool.halosFor?.(items, overlay.settings, overlay.data, hovered, pinned),
   );
 }
 
 /**
- * Which colour layer a move of the hovered square makes stale: a story
- * transition's blend, the settled overlay's colours if they depend on the
- * hover, or neither. A timed ease blends colours captured when it began,
- * and a pin leaves the hover where it was, so neither recomputes anything.
+ * Which colour layer a move of the hovered or pinned square makes stale: a story
+ * transition's blend (which ignores the pin), the settled overlay's colours if
+ * they depend on what moved, or neither. A timed ease blends colours captured
+ * when it began, so it recomputes nothing.
  */
 export function layerToRecompute<T>(
   source: ColorSource,
   overlay: ToolOnMap<T> | null,
-  before: SpatialItem<T> | null,
-  after: SpatialItem<T> | null,
+  before: Focus<T>,
+  after: Focus<T>,
 ): 'blend' | 'overlay' | null {
-  if (sameItem(before, after) || source === 'ease') return null;
-  if (source === 'blend') return 'blend';
-  return overlay?.tool.hoverChangesColors?.(before, after, overlay.settings, overlay.data)
-    ? 'overlay'
-    : null;
+  if (source === 'ease') return null;
+  const hoverMoved = !sameItem(before.hovered, after.hovered);
+  const pinMoved = !sameItem(before.pinned, after.pinned);
+  if (source === 'blend') return hoverMoved ? 'blend' : null;
+  if (!overlay) return null;
+  const { tool, settings, data } = overlay;
+  const stale =
+    (hoverMoved && tool.hoverChangesColors?.(before.hovered, after.hovered, settings, data)) ||
+    (pinMoved && tool.pinChangesColors?.(before.pinned, after.pinned, settings, data));
+  return stale ? 'overlay' : null;
 }

@@ -18,6 +18,7 @@ export function overlayPanelHtml(): string {
     </div>
     <div id="overlay-starts"></div>
     <div id="overlay-controls"></div>
+    <div id="overlay-focus"></div>
     <div id="overlay-legend"></div>`,
   );
 }

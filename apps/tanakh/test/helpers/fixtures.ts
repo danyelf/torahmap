@@ -255,6 +255,7 @@ export const SAMPLE_TEXT_ANALYTICS_SCORES: TextAnalyticsData['scores'] = {
   },
   repetition: { Genesis: { '1': [0.1, 0.4, null] } },
   repeated: {},
+  echoes: {},
 };
 
 /** The sample files, under the paths the overlays name. */

@@ -751,7 +751,7 @@ describe('Trop Overlay', () => {
       },
     });
     const standouts = (mark: string | null, texts: VerseTexts) =>
-      tropOverlay.standoutsFor!(verses, { tab: 'prose', mark, preview: null }, { texts });
+      tropOverlay.standoutsFor!(verses, { tab: 'prose', mark, preview: null }, { texts }, null);
 
     it('makes the verses holding a rare mark stand out, and no others', () => {
       expect(standouts('shalshelet', textsWith(1))).toEqual([true, false]);
@@ -770,6 +770,7 @@ describe('Trop Overlay', () => {
         [1, 2, 300].map((verse) => createVerse({ chapter: 1, verse })),
         { tab: 'prose', mark: 'tipcha', preview: null },
         { texts: crowd(high) },
+        null,
       ).map(Boolean);
 
     it('makes only a verse with an unusually high count stand out for a mark drawn by count', () => {
