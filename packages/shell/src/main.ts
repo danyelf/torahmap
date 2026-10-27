@@ -441,15 +441,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * Repaint after the hovered or pinned square changes. `focusBefore` is the
    * focus the colour layer was drawn for.
    */
-  function repaint(focusBefore: Focus<I> = focusNow()): void {
-    const after = focusNow();
-    const layer = layerToRecompute(colorSource(driver), toolsNow().overlay, focusBefore, after);
-    if (
-      !sameItem(focusBefore.hovered, after.hovered) ||
-      !sameItem(focusBefore.pinned, after.pinned)
-    ) {
-      renderOverlayFocus();
-    }
+  function repaint(focusBefore: Focus<I>): void {
+    const layer = layerToRecompute(
+      colorSource(driver),
+      toolsNow().overlay,
+      focusBefore,
+      focusNow(),
+    );
+    renderOverlayFocus();
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
     else composite();
@@ -480,7 +479,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
     overlaySettings.restore(searchTool, stop.searchParams ?? {});
     // The pin is set before the panel is drawn, which draws what the pin has.
-    const pinWas = pinnedItem;
+    const unpinned = pinnedItem !== null && !stop.pin;
     if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
     else pinnedItem = null;
     searchChanged(true);
@@ -490,8 +489,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // reader has a panel open to see it (stops don't open panels).
     if (searching()) frontTool = 'search';
 
-    // Without going through pinItem, which writes URL/telemetry.
-    if (!sameItem(pinWas, pinnedItem)) updateSidebarWrapper(pinnedItem, pinnedItem !== null);
+    // The panel's redraw shows a pin but cannot clear one; pinItem would write URL/telemetry.
+    if (unpinned) updateSidebarWrapper(null);
   }
 
   const camera = text.startCamera(mapViewport());
@@ -1690,7 +1689,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     pinnedItem = item;
     searchChanged(true);
     overlayChanged(true);
-    updateSidebarWrapper(item, item !== null);
+    if (!item) updateSidebarWrapper(null);
 
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));

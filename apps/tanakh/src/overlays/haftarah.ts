@@ -247,7 +247,8 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
   },
 
   pinChangesColors(before, after, settings, data) {
-    if (settings.preview !== null || settings.reading !== null) return false;
+    if (settings.preview !== null || litByName(data, settings.custom, settings.reading))
+      return false;
     return relevantId(before, settings, data) !== relevantId(after, settings, data);
   },
 

@@ -483,7 +483,7 @@ describe('Haftarah Overlay', () => {
       expect(under(noach, noach)).toBeGreaterThan(under(genesis, noach));
     });
 
-    it('answers a pin move only while no reading is chosen', () => {
+    it('answers a pin move only while no reading is lit', () => {
       expect(
         haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
       ).toBe(true);
@@ -491,6 +491,11 @@ describe('Haftarah Overlay', () => {
       expect(
         haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
       ).toBe(false);
+      // A name no reading has lights nothing, so the pin shows.
+      haftarahOverlay.restore({ reading: 'Nonesuch' });
+      expect(
+        haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
+      ).toBe(true);
     });
 
     it('stays lit while the map hover is on a verse outside every reading', () => {
