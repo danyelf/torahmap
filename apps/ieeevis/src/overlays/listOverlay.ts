@@ -11,11 +11,14 @@ import {
   removePick,
 } from '@torahmap/shell/overlays/picks.ts';
 import {
+  pickChip,
+  pickChips,
   pickedList,
   pickFinderIn,
   pickMeta,
   pickNote,
   pickRow,
+  pickSuggestions,
   pickSwatch,
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
@@ -57,7 +60,6 @@ export function listOverlay(kind: ListKind): {
   const { noun } = kind;
   const urlParams = [{ key: kind.urlKey, kind: 'text' }] as const satisfies readonly UrlParamSpec[];
   const picks = picksOf(kind.namesOf);
-  const finders = new WeakMap<PickFinder, Finder>();
 
   function drawFinder({ settings, data, onChange, input, lists }: Finder): void {
     lists.replaceChildren();
@@ -75,14 +77,17 @@ export function listOverlay(kind: ListKind): {
 
     if (input.value.trim()) {
       const found = picks.suggest(data, input.value, picked);
-      const box = document.createElement('div');
-      box.className = 'pick-suggestions';
-      if (full) box.append(pickNote(`${MAX_PICKS} at most: unpick one first.`));
-      else if (!found.length) box.append(pickNote(`No ${noun.one} by that name.`));
-      else
-        for (const entry of found)
-          box.append(pickRow([entry.name, pickMeta(papers(entry.papers))], () => choose(entry)));
-      lists.append(box);
+      lists.append(
+        pickSuggestions(
+          full
+            ? [pickNote(`${MAX_PICKS} at most: unpick one first.`)]
+            : found.length
+              ? found.map((entry) =>
+                  pickRow([entry.name, pickMeta(papers(entry.papers))], () => choose(entry)),
+                )
+              : [pickNote(`No ${noun.one} by that name.`)],
+        ),
+      );
     }
 
     if (picked.length)
@@ -100,36 +105,28 @@ export function listOverlay(kind: ListKind): {
     const heading = document.createElement('div');
     heading.className = 'panel-section-heading';
     heading.textContent = 'Most papers';
-    const chips = document.createElement('div');
-    chips.className = 'pick-chips';
-    for (const entry of picks.quick(data)) {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'pick-chip';
-      chip.textContent = entry.name;
-      chip.title = papers(entry.papers);
-      chip.classList.toggle('on', picked.includes(entry));
-      chip.disabled = full || picked.includes(entry);
-      chip.addEventListener('click', () => choose(entry));
-      chips.append(chip);
-    }
+    const chips = pickChips(
+      picks.quick(data).map((entry) =>
+        pickChip(entry.name, {
+          title: papers(entry.papers),
+          on: picked.includes(entry),
+          disabled: full || picked.includes(entry),
+          onClick: () => choose(entry),
+        }),
+      ),
+    );
     const quick = document.createElement('div');
     quick.append(heading, chips);
     lists.append(quick);
   }
 
-  function finderIn(container: HTMLElement): Finder {
-    const base: PickFinder = pickFinderIn(container, {
+  const finderIn = (container: HTMLElement): Finder =>
+    pickFinderIn<Finder>(container, {
       placeholder: `Find ${noun.a} by name…`,
       label: `Find ${noun.a}`,
-      onType: () => drawFinder(finders.get(base)!),
+      extend: (parts) => ({ ...parts, settings: { picked: [] }, data: null, onChange: () => {} }),
+      onType: drawFinder,
     });
-    const known = finders.get(base);
-    if (known) return known;
-    const finder: Finder = { ...base, settings: { picked: [] }, data: null, onChange: () => {} };
-    finders.set(base, finder);
-    return finder;
-  }
 
   const unlit = (item: PieceItem): Color => brighten(baseColor(item), UNLIT_KEEPS);
 
