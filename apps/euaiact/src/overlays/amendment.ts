@@ -1,8 +1,8 @@
 // Colours each article square by whether the 2026 amendment inserted or replaced its text.
 
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
-import { colorToCss, escapeHtml, type Color } from '@torahmap/utils';
-import { ANNEX, RECITAL, hex } from '../baseColor.ts';
+import { colorToCss, escapeHtml, hex, type Color } from '@torahmap/utils';
+import { ANNEX, RECITAL } from '../baseColor.ts';
 import type { Origin } from '../data.ts';
 import type { ActItem } from '../layout.ts';
 

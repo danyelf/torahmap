@@ -3,8 +3,7 @@
 import type { UrlParamSpec } from '@torahmap/link';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
-import { colorToCss, type Color } from '@torahmap/utils';
-import { hex } from '../baseColor.ts';
+import { colorToCss, hex, type Color } from '@torahmap/utils';
 import { REFS_FILE, type ActRef } from '../data.ts';
 import { layerOf, ownerOf } from '../ids.ts';
 import type { ActItem } from '../layout.ts';

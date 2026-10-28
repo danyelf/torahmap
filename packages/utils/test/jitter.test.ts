@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { brightnessJitter, positionJitter } from '../src/index.ts';
+import { brightnessJitter, idHash, positionJitter } from '../src/index.ts';
 
 const seeds = [1, 2, 3, 4, 5, -77, 123456];
 
@@ -25,5 +25,13 @@ describe('brightness jitter', () => {
       expect(r / 0.2).toBeLessThanOrEqual(1.18 + 1e-9);
     }
     expect(Math.max(...seeds.flatMap((s) => brightnessJitter([1, 1, 1], s, 0.18)))).toBe(1);
+  });
+});
+
+describe('an id’s seed', () => {
+  it('differs between ids and repeats for one', () => {
+    const ids = ['6(1)', '6(2)', '5(1)(h)', 'Recital.1', 'Recital.2'];
+    expect(new Set(ids.map(idHash)).size).toBe(ids.length);
+    expect(idHash('6(1)')).toBe(idHash('6(1)'));
   });
 });
