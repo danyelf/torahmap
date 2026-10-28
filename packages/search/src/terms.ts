@@ -22,8 +22,8 @@ export interface SearchTerm {
   /** What the reader typed. */
   text: string;
   /**
-   * Place in PALETTE. Held from when the term first has a word in it until it is emptied; an
-   * empty term holds none, so what it will take is decided when its first word is typed.
+   * Place in PALETTE, held from when the term first has a word until it is emptied. An empty
+   * term's is a placeholder: its colour is chosen when its first word is typed.
    */
   colorIndex: number;
   /**

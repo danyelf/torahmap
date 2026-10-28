@@ -237,6 +237,33 @@ describe('story stop settings reach the overlay', () => {
   });
 });
 
+describe('a stop with search words and an overlay that colours', () => {
+  it('keeps the overlay out of the colours the words hold', () => {
+    let taken: readonly number[] | null = null;
+    const overlay: Overlay<TanakhLayout, object> = {
+      id: 'test-taking',
+      name: 'Test Taking',
+      urlParams: [],
+      settingsFromUrl: (_params, held) => {
+        taken = held;
+        return {};
+      },
+      settingsToUrl: () => ({}),
+      colorsFor: (items) => items.map(() => [0.5, 0.5, 0.5] as [number, number, number]),
+    };
+    registerOverlay(overlay);
+    const stop: ResolvedStoryStop = {
+      id: 's',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-taking',
+      searchParams: { search: 'God' },
+    };
+    pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools);
+    expect(taken).toEqual([0]);
+  });
+});
+
 describe('the blender evaluates without disturbing the overlay', () => {
   beforeEach(() => {
     registerOverlay(commentaryOverlay);

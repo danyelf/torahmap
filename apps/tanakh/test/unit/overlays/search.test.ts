@@ -1276,7 +1276,7 @@ describe('Search Overlay', () => {
       // The marked text should be "אֱלֹהִים" (with nikkud)
       expect(matches?.[0]).toContain('אֱלֹהִים');
 
-      // Full highlighted text: בְּרֵאשִׁית בָּרָא <mark class="term-0">אֱלֹהִים</mark>
+      // Full highlighted text: בְּרֵאשִׁית בָּרָא <mark>אֱלֹהִים</mark>
       expect(html).toContain('בְּרֵאשִׁית');
       expect(html).toContain('בָּרָא');
       expect(html).toContain('<mark');

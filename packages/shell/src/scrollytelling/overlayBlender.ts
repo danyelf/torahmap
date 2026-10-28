@@ -96,11 +96,18 @@ export function pictureForStop<I extends MapItem>(
   const cached = byHover ? undefined : cache.get(key);
   if (cached) return cached;
 
+  const searchSettings = settingsFromLink(search, stop.searchParams ?? {});
   const shown = toolsShown(
     overlay,
-    overlay ? settingsFromLink(overlay, stop.overlayParams ?? {}) : undefined,
+    overlay
+      ? settingsFromLink(
+          overlay,
+          stop.overlayParams ?? {},
+          search.colorsInUse?.(searchSettings) ?? [],
+        )
+      : undefined,
     search,
-    settingsFromLink(search, stop.searchParams ?? {}),
+    searchSettings,
     loaded,
   );
   const picture = fillDefaultColors(

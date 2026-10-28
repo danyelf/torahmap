@@ -84,8 +84,7 @@ interface OverlayWithSettings<S> {
   // settingsFromUrl receives only declared keys, with declared defaults filled
   // in; an empty link gives the settings the overlay starts with. A value
   // settingsToUrl writes at its declared default stays out of the link.
-  // `taken` is as for SettingsUpdate: the colours the search holds, which a link
-  // does not carry, so what is lit in a colour takes the first free one.
+  // `taken` is as for SettingsUpdate.
   urlParams: readonly UrlParamSpec[];
   settingsFromUrl(params: UrlParamValues, taken: readonly number[]): S;
   settingsToUrl(settings: S): Record<string, string>;

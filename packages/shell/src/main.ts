@@ -1204,7 +1204,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     openOverlay: (overlay, update) => {
       takeOver('takeover');
       if (currentOverlay?.id !== overlay.id) {
-        overlaySettings.restore(overlay, {});
+        overlaySettings.restore(overlay, {}, searchColors());
         setOverlay(overlay.id);
       }
       changeSettings(overlay, update);

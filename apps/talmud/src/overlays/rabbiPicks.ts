@@ -1,8 +1,13 @@
 // Which passages name the picked rabbis, how to find a rabbi by any of his names, and the colour
 // each pick gets. No page in here.
 
-import { memoByValue } from '@torahmap/utils';
-import { pickSlots, plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
+import { memoByValue, type Color } from '@torahmap/utils';
+import {
+  pickColors,
+  pickSlots,
+  plainName,
+  type PickSettings,
+} from '@torahmap/shell/overlays/picks.ts';
 import { isSure, type Rabbi, type TalmudDating } from '../dating.ts';
 import { ERAS, eraOf, eraText, TRANSITION } from './dating.ts';
 
@@ -84,9 +89,9 @@ function pickedRabbis(settings: PickSettings, data: RabbiData): { place: number;
 export const pickedPlaces = (settings: PickSettings, data: RabbiData): number[] =>
   pickedRabbis(settings, data).map(({ place }) => place);
 
-/** Each picked rabbi's place among the picks, which sets their colour. */
-export const pickedSlots = (settings: PickSettings, data: RabbiData): number[] =>
-  pickedRabbis(settings, data).map(({ slot }) => slot);
+/** The picked rabbis' colours, in the order picked. */
+export const pickedColors = (settings: PickSettings, data: RabbiData): Color[] =>
+  pickColors(pickedRabbis(settings, data).map(({ slot }) => slot));
 
 /** What a person's name can mean: whether it is certain, and the rabbis it can be. */
 export function readingOf(

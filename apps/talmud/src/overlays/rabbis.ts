@@ -8,7 +8,6 @@ import { colorToCss, type Color } from '@torahmap/utils';
 import {
   addPick,
   MAX_PICKS,
-  pickColors,
   picksFromUrl,
   picksInUse,
   picksToUrl,
@@ -37,7 +36,7 @@ import {
   namedIn,
   passagesOf,
   pickedPlaces,
-  pickedSlots,
+  pickedColors,
   quickPicks,
   readingOf,
   shortName,
@@ -89,7 +88,7 @@ export function rabbisOverlay(
   ): (Color | Color[])[] {
     const places = pickedPlaces(settings, data);
     if (!places.length) return items.map(base);
-    const colors = pickColors(pickedSlots(settings, data));
+    const colors = pickedColors(settings, data);
     return items.map((item) => {
       const dim = unlit(item);
       const named = namedIn(data, item.id, places);
@@ -135,7 +134,7 @@ export function rabbisOverlay(
       return;
     }
     const places = pickedPlaces(settings, data);
-    const colors = pickColors(pickedSlots(settings, data));
+    const colors = pickedColors(settings, data);
     const full = places.length >= MAX_PICKS;
     const pick = (place: number) => {
       finder.input.value = '';
@@ -296,7 +295,7 @@ export function rabbisOverlay(
         container.innerHTML = `<div class="legend-row">Pick a rabbi to light the passages that name him.</div>`;
         return;
       }
-      const colors = pickColors(pickedSlots(settings, data));
+      const colors = pickedColors(settings, data);
       container.innerHTML = [
         row(faded(colors[0]), 'Faded: a name that might be him'),
         row(fadeTo(GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS), 'Names none of them'),
@@ -313,7 +312,7 @@ export function rabbisOverlay(
 
     summary(settings, data) {
       const places = pickedPlaces(settings, data);
-      const colors = pickColors(pickedSlots(settings, data));
+      const colors = pickedColors(settings, data);
       if (!places.length) return { detail: 'pick a rabbi' };
       // Names would not fit beside the overlay's own on a phone.
       return {
@@ -336,7 +335,7 @@ export function rabbisOverlay(
       const segment = data.dating.segments[item.id];
       if (!isPinned || !segment) return null;
       const places = pickedPlaces(settings, data);
-      const colors = pickColors(pickedSlots(settings, data));
+      const colors = pickedColors(settings, data);
       const box = document.createElement('div');
       const seen = new Set<string>();
       for (const person of segment[2]) {
@@ -373,7 +372,7 @@ export function rabbisOverlay(
       const segment = data.dating.segments[item.id];
       const places = pickedPlaces(settings, data);
       if (language !== HEBREW || !segment || !places.length) return fragment;
-      const colors = pickColors(pickedSlots(settings, data));
+      const colors = pickedColors(settings, data);
       return markNames(fragment, text, segment[3], (person) => {
         const { sure, who } = readingOf(data.dating, person);
         const at = places.findIndex((p) => who.includes(p));

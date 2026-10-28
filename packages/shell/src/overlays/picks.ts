@@ -6,7 +6,10 @@ import { freeColor, PALETTE } from './palette.ts';
 import type { SettingsUpdate } from './types.ts';
 
 export interface PickSettings {
-  /** Ids by place in PALETTE: a pick keeps its place, and so its colour, until it is removed. An empty place is unused. */
+  /**
+   * Ids by place in PALETTE. A pick keeps its place, and so its colour, until it is removed; a link
+   * carries only the order, so opening it places the picks again. An empty place is unused.
+   */
   picked: string[];
 }
 
@@ -23,8 +26,7 @@ export const plainName = (text: string): string =>
     .trim();
 
 /** The colours of the given places in PALETTE. */
-export const pickColors = (slots: readonly number[]): Color[] =>
-  slots.map((slot) => [...PALETTE[slot]]);
+export const pickColors = (slots: readonly number[]): Color[] => slots.map((slot) => PALETTE[slot]);
 
 /** The picks that `known` accepts, each with its place in PALETTE. */
 export const pickSlots = (
