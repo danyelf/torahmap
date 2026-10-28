@@ -83,6 +83,6 @@ export const KNOWN: Record<string, Known> = {
   'act-goto-taken/phone/touch-targets': ACT_POPUP_KNOWN,
   'act-goto-taken/tablet/touch-targets': ACT_POPUP_KNOWN,
   ...Object.fromEntries(
-    onTouchScreens(['vis-session-wrap', 'vis-references-popup'], VIS_POPUP_KNOWN),
+    onTouchScreens(['vis-session-wrap', 'vis-long-paper', 'vis-references-popup'], VIS_POPUP_KNOWN),
   ),
 };

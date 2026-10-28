@@ -39,6 +39,12 @@ export const kindsOverlay: Overlay<PieceItem> = {
   description: 'Colors every square by the kind of paper it belongs to.',
   colorsFor: (items) => items.map(colorOf),
   renderLegend(container) {
-    container.replaceChildren(...FAMILIES.map(({ color, name }) => swatchRow(color, name)));
+    container.replaceChildren(
+      ...FAMILIES.map(({ color, name }, i) => {
+        const row = swatchRow(color, name);
+        row.classList.toggle('apart', i > 0);
+        return row;
+      }),
+    );
   },
 };

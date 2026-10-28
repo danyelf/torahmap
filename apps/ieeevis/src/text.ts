@@ -24,9 +24,9 @@ const PANEL_TINT = [150, 170, 220] as const;
 const PANEL_OPACITY = 0.07;
 const PANEL_EDGE_OPACITY = 0.3;
 const SESSION_TAB = { fontSize: 12, above: 28, inset: 4, minPx: 7, wrap: true };
+// A slot's time keeps a size a reader can make out however far the map is zoomed out.
+const TIME_LABEL = { fontSize: 14, minPx: 9 };
 const NO_TEXT = 'No text yet.';
-/** The popup's heading fits one line at this length, beside "(30/57)" and the link out. */
-const POPUP_TITLE_LENGTH = 32;
 
 const WHOLE_MAP: Story = {
   id: 'ieeevis',
@@ -51,9 +51,6 @@ const LINK_KEYS: LinkKeys = {
   overlayParams: visOverlayParams,
   zoom: { min: 0.08, max: 12, start: 1 },
 };
-
-const short = (name: string, length: number) =>
-  name.length > length ? `${name.slice(0, length - 1).trimEnd()}…` : name;
 
 export const ieeevisText: MapText<PieceItem, TermSettings> = {
   site: ieeevisSite,
@@ -82,10 +79,16 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       baseRing: (item) => (isPlaceholder(item) ? PLACEHOLDER_RING : null),
 
       labels(container) {
-        const panels = laid.panels.map((box) => ({
-          el: coverElement(PANEL_TINT, PANEL_OPACITY, PANEL_EDGE_OPACITY),
-          box,
-        }));
+        const panels = laid.panels.map((box) => {
+          const el = coverElement(PANEL_TINT, PANEL_OPACITY, PANEL_EDGE_OPACITY);
+          const time = document.createElement('div');
+          time.textContent = box.time;
+          time.style.cssText =
+            'position:absolute;color:#eee;font:700 1em system-ui,sans-serif;white-space:nowrap;' +
+            'text-shadow:0 1px 3px rgba(0,0,0,0.8);';
+          el.append(time);
+          return { el, time, box };
+        });
         const panelLayer = document.createElement('div');
         panelLayer.append(...panels.map((p) => p.el));
         container.appendChild(panelLayer);
@@ -101,7 +104,12 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         });
         return (pan, zoom) => {
           panelLayer.style.transform = `translate(${pan.x * zoom}px, ${pan.y * zoom}px)`;
-          for (const { el, box } of panels) placeCover(el, box, zoom);
+          for (const { el, time, box } of panels) {
+            placeCover(el, box, zoom);
+            time.style.left = `${(PANEL_PAD + 4) * zoom}px`;
+            time.style.top = `${PANEL_PAD * zoom}px`;
+            time.style.fontSize = `${Math.max(TIME_LABEL.minPx, TIME_LABEL.fontSize * zoom)}px`;
+          }
           moveLabels(pan, zoom);
         };
       },
@@ -112,7 +120,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
         const shown = text && item.section === 'f' ? referenceLines(text) : text;
         return {
-          ref: `${short(title, POPUP_TITLE_LENGTH)} (${item.piece + 1}/${pieces.length})`,
+          ref: `${title}, piece\u00a0${item.piece + 1}\u00a0of\u00a0${pieces.length}`,
           hebrew: '',
           english: squareBody(item, shown),
           link: IEEEVIS_PAGE.textUrl,
