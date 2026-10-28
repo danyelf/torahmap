@@ -25,7 +25,7 @@ const PANEL_OPACITY = 0.07;
 const PANEL_EDGE_OPACITY = 0.3;
 const SESSION_TAB = { fontSize: 12, above: 28, inset: 4, minPx: 7, wrap: true };
 // A slot's time keeps a size a reader can make out however far the map is zoomed out.
-const TIME_LABEL = { fontSize: 14, minPx: 9 };
+const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, inset: 4, fadesBelowPx: 32 };
 const NO_TEXT = 'No text yet.';
 
 const WHOLE_MAP: Story = {
@@ -106,8 +106,10 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
           panelLayer.style.transform = `translate(${pan.x * zoom}px, ${pan.y * zoom}px)`;
           for (const { el, time, box } of panels) {
             placeCover(el, box, zoom);
-            time.style.left = `${(PANEL_PAD + 4) * zoom}px`;
+            time.style.left = `${(PANEL_PAD + TIME_LABEL.inset) * zoom}px`;
             time.style.top = `${PANEL_PAD * zoom}px`;
+            // Beside its neighbours' times a label that is wider than its panel is a smear.
+            time.style.opacity = (box.maxX - box.minX) * zoom < TIME_LABEL.fadesBelowPx ? '0' : '';
             time.style.fontSize = `${Math.max(TIME_LABEL.minPx, TIME_LABEL.fontSize * zoom)}px`;
           }
           moveLabels(pan, zoom);

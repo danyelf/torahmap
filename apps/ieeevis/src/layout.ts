@@ -13,7 +13,8 @@ const POSITION_JITTER = 0.7;
 export const BRIGHTNESS_JITTER = 0.18;
 
 const MIN_PAPER_COLUMNS = 4; // squares across a short paper
-// Twelve rows is what a typical paper stands; a longer one gains columns rather than height.
+const SHORT_PAPERS_PER_DAY = 8; // across a day's width, which longer papers share
+// Papers of up to 48 pieces keep four columns; a longer one gains columns rather than height.
 const MAX_PAPER_ROWS = 12;
 const PAPER_GAP = SQUARE_SIZE;
 const LINE_GAP = 5 * SQUARE_SIZE; // between one line of papers and the next
@@ -25,7 +26,8 @@ const SLOT_GAP = 6 * SQUARE_SIZE; // between one time slot and the next
 const TIME_ROOM = 10 * SQUARE_SIZE; // at the top of a slot, for its time, before its first session
 export const PANEL_PAD = 8; // a slot's panel reaches this far past its squares, but not above its top
 const DAY_GAP = 10 * SQUARE_SIZE; // holds two panels' padding and the day label that stands to the left
-const DAY_WIDTH = 8 * MIN_PAPER_COLUMNS * SQUARE_SIZE + 7 * PAPER_GAP;
+const DAY_WIDTH =
+  SHORT_PAPERS_PER_DAY * MIN_PAPER_COLUMNS * SQUARE_SIZE + (SHORT_PAPERS_PER_DAY - 1) * PAPER_GAP;
 
 const columnsOf = (paper: Paper): number =>
   Math.max(MIN_PAPER_COLUMNS, Math.ceil(paper.pieces.length / MAX_PAPER_ROWS));
@@ -92,7 +94,7 @@ export function computeLayout(structure: Structure): Layout {
       if (s > 0) y += SLOT_GAP;
       const top = y;
       // A book with no name: the day's name stands level with the top of its first slot.
-      books.push(label('', day, top + LABEL_ROOM));
+      if (s === 0) books.push(label('', day, top + LABEL_ROOM));
       y += TIME_ROOM;
       for (const session of slot.sessions) {
         y += LABEL_ROOM + (nameLines(session.name) - 1) * LABEL_LINE;
