@@ -467,7 +467,7 @@ export const TALMUD_STATES: State[] = [
     name: 'talmud-rabbis-panel',
     link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
     then: (page) => viaMenu(page, 'overlay'),
-    shown: ['.rabbi-input'],
+    shown: ['.pick-input'],
   },
   {
     name: 'talmud-goto-not-found',

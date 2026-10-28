@@ -1,7 +1,8 @@
 // Which passages name the picked rabbis, how to find a rabbi by any of his names, and the colour
 // each pick gets. No page in here.
 
-import { maxChroma, memoByValue, oklchToRgb, type Color } from '@torahmap/utils';
+import { memoByValue } from '@torahmap/utils';
+import { plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
 import { isSure, type Rabbi, type TalmudDating } from '../dating.ts';
 import { ERAS, eraOf, eraText, TRANSITION } from './dating.ts';
 
@@ -9,13 +10,6 @@ export interface RabbiData {
   dating: TalmudDating;
 }
 
-export interface RabbiSettings {
-  /** Sefaria slugs, in the order picked. */
-  picked: string[];
-}
-
-/** At most this many rabbis picked: what the renderer can split one square into. */
-export const MAX_PICKS = 4;
 const QUICK_PICKS = 28;
 const SUGGESTIONS = 6;
 
@@ -78,7 +72,7 @@ const indexOf = memoByValue(build);
 const indexFor = ({ dating }: RabbiData): Index => indexOf(dating);
 
 /** The picked rabbis' places, in the order picked; slugs the data does not hold are dropped. */
-export function pickedPlaces(settings: RabbiSettings, data: RabbiData): number[] {
+export function pickedPlaces(settings: PickSettings, data: RabbiData): number[] {
   const { placeOf } = indexFor(data);
   return settings.picked.flatMap((id) => placeOf.get(id) ?? []);
 }
@@ -137,15 +131,6 @@ export function quickPicks(data: RabbiData): { heading: string; entries: Entry[]
   })).filter(({ entries }) => entries.length > 0);
 }
 
-/** Lower case, without vowel points, accents or punctuation. */
-const plain = (text: string): string =>
-  text
-    .normalize('NFD')
-    .replace(/[̀-֑ͯ-ׇ]/g, '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim();
-
 /** A name without the title in front: "rabban gamliel" is found under G. */
 const untitled = (name: string): string =>
   name.replace(/^(?:(?:rabban|rabbi|rebbi|rav|rabi|r|רבן|רבי|רב|ר) )+/u, '');
@@ -178,7 +163,7 @@ export function suggest(
   typed: string,
   skip: readonly number[] = [],
 ): { place: number; matched: string | null }[] {
-  const words = plain(typed).split(' ').filter(Boolean);
+  const words = plainName(typed).split(' ').filter(Boolean);
   if (!words.length) return [];
   const { sure, maybe } = indexFor(data);
   const found: { place: number; matched: string | null; starts: boolean }[] = [];
@@ -186,7 +171,7 @@ export function suggest(
     if (skip.includes(place)) return;
     const own = [rabbi.en, rabbi.he];
     for (const name of [...own, ...rabbi.names]) {
-      const text = plain(name);
+      const text = plainName(name);
       if (words.every((w) => text.includes(w))) {
         found.push({
           place,
@@ -205,30 +190,3 @@ export function suggest(
     )
     .slice(0, SUGGESTIONS);
 }
-
-/**
- * The OKLCH hue of each pick, in the order picked, and how much of the gamut's edge its chroma
- * uses. Four hues far apart: cyan, coral, green, pink. The green is held back, since at full
- * chroma it reads harsher than the others at the same lightness.
- */
-const PICKS: readonly { hue: number; chroma: number }[] = [
-  { hue: 215, chroma: 0.97 },
-  { hue: 35, chroma: 0.97 },
-  { hue: 150, chroma: 0.6 },
-  { hue: 330, chroma: 0.97 },
-];
-/** Every pick is this light, so none looks brighter than another. */
-const PICK_LIGHTNESS = 0.8;
-
-/** A color for each rabbi, by the order picked. */
-export function pickColors(picked: readonly Rabbi[]): Color[] {
-  return picked.map((_, i) => {
-    const { hue, chroma } = PICKS[i];
-    return oklchToRgb(PICK_LIGHTNESS, maxChroma(PICK_LIGHTNESS, hue) * chroma, hue);
-  });
-}
-
-/** The link's value for the picks, and the picks a link's value names. */
-export const picksToUrl = (picked: readonly string[]): string => picked.join(',');
-export const picksFromUrl = (value: string | undefined): string[] =>
-  [...new Set((value ?? '').split(',').filter(Boolean))].slice(0, MAX_PICKS);
