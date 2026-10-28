@@ -42,3 +42,6 @@ scripts/print/out/
 
 # Written by scripts/telemetry/usage.sh and report-html.sh
 telemetry-report/
+
+# The IEEE VIS papers' text, written by the ieeevis-scrape project's build.py; its copyright varies.
+public/data/ieeevis/texts.json

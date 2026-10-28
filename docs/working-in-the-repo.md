@@ -137,3 +137,50 @@ Hebrew lexeme index behind meanings-mode search comes from the
 [ETCBC BHSA](https://github.com/ETCBC/bhsa) database, read through Text-Fabric. The haftarah
 readings come from [hebcal's leyning tables](https://github.com/hebcal/hebcal-leyning). See
 [DATA_REGENERATION.md](../DATA_REGENERATION.md) for updating data files.
+
+### IEEE VIS data
+
+The VIS map reads two files in `public/data/ieeevis/`. Both come from the
+[ieeevis-scrape](https://github.com/danyelf/ieeevis-scrape) project's `scripts/build.py`:
+
+- `structure.json`: the program (titles, authors, sessions, times, keywords). Committed.
+- `texts.json`: the papers' text, 21 MB. **Never committed** (gitignored): copyright varies and the
+  repository is public. The deployed site serves it from the private R2 bucket `torahmap-ieeevis`,
+  through the Worker, at the same path (`apps/worker`).
+
+To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-scrape/`):
+
+```bash
+uv run --no-project python -I scripts/build.py data <torahmap checkout>/public/data/ieeevis
+```
+
+It writes both files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw downloads, so the checkout's `texts.json` is the copy to upload. Commit `structure.json` only. Then upload the text, from
+the torahmap checkout (needs `wrangler login`):
+
+```bash
+npx wrangler r2 object put torahmap-ieeevis/texts.json \
+  --file public/data/ieeevis/texts.json --content-type application/json --remote
+```
+
+The bucket is the one copy: the live site and every preview build read it, so there is nothing
+to redeploy. A browser keeps its copy only until it next asks, since the Worker answers with an
+ETag. To check the bucket is current, fetch it and compare:
+
+```bash
+npx wrangler r2 object get torahmap-ieeevis/texts.json --remote --file /tmp/texts-remote.json
+cmp /tmp/texts-remote.json public/data/ieeevis/texts.json && echo current
+```
+
+`wrangler dev` reads a separate local bucket; put a copy there with the upload command and
+`--local` in place of `--remote`.
+
+**Keep the text behind Cloudflare Access while it is copyrighted.** Previews are open to the
+Cloudflare account's members only. On torahmap.org the Access app "torahmap private preview" must
+list `torahmap.org/ieeevis` and `torahmap.org/data/ieeevis`, as it lists the Talmud's and the AI
+Act's paths; without them the Worker serves the text to anyone. In the dashboard: Zero Trust,
+Access, Applications, "torahmap private preview", add the two public hostnames and leave its
+policy as is. By API (a token with Access Edit; `$ACCOUNT` is the account id, `$APP` the app's
+id): `GET /accounts/$ACCOUNT/access/apps/$APP`, add the two paths to `destinations`
+(`{"type":"public","uri":"torahmap.org/ieeevis"}`) and to `self_hosted_domains`, send the result
+back with `PUT` (dropping `id`, `uid`, `aud` and the dates, and listing policies by id). Check
+afterwards that `curl -I https://torahmap.org/data/ieeevis/texts.json` answers 302 to Access.
