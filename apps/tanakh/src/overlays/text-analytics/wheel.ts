@@ -134,7 +134,7 @@ export const wheelOf = memoByValue((items: readonly TanakhLayout[]) => {
     at.set(id, { x: x + size / 2, y: y + size / 2 });
   }
   const centre = { x: CENTRE.x * width, y: CENTRE.y * height };
-  const bright = new Map<string, Color>();
+  const colors = new Map<string, Color>();
   return {
     centre,
     rect: { minX: -MARGIN, minY: -MARGIN, maxX: width + MARGIN, maxY: height + MARGIN },
@@ -159,8 +159,8 @@ export const wheelOf = memoByValue((items: readonly TanakhLayout[]) => {
         (reach === undefined ? 1 : Math.min(1, reach / ECHO_FADE_DISTANCE));
       const chroma = Math.round(BRIGHT.chroma * strength * 1000) / 1000;
       const key = `${hue}:${chroma}`;
-      if (!bright.has(key)) bright.set(key, oklch(BRIGHT.lightness, chroma, hue));
-      return bright.get(key)!;
+      if (!colors.has(key)) colors.set(key, oklch(BRIGHT.lightness, chroma, hue));
+      return colors.get(key)!;
     },
   };
 });

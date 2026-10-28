@@ -1,6 +1,7 @@
 // A faint colour field behind the squares, drawn in the label layer as one conic gradient.
 // A conic gradient is a hue by angle around a centre, so it needs no pass of the renderer's
-// own, and its centre and stops are fractions of its box, which zooming does not change.
+// own, and its centre and stops are fractions of its box, which zooming does not change. The
+// optional grey fade over it has a radius in pixels, so it is redrawn when the zoom changes.
 
 import type { Backdrop } from './overlays/types.ts';
 
