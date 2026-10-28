@@ -78,7 +78,7 @@ describe('Overlay Switching Integration', () => {
     overlay.renderControls?.(
       mockControlsContainer,
       settings.get(overlay),
-      (update) => settings.set(overlay, update(settings.get(overlay))),
+      (update) => settings.set(overlay, update(settings.get(overlay), [])),
       data,
     );
 
@@ -251,7 +251,7 @@ describe('Overlay Switching Integration', () => {
       overlay.renderControls?.(
         mockControlsContainer,
         settings.get(overlay),
-        (update) => settings.set(overlay, update(settings.get(overlay))),
+        (update) => settings.set(overlay, update(settings.get(overlay), [])),
         currentData,
       );
       const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;

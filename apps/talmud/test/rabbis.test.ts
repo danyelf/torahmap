@@ -104,7 +104,7 @@ describe('the rabbis link', () => {
   it('carries the picks and comes back as the same picks', () => {
     const settings = picking('lakish', 'gamliel-a');
     const written = overlay.settingsToUrl!(settings);
-    expect(overlay.settingsFromUrl!(written)).toEqual(settings);
+    expect(overlay.settingsFromUrl!(written, [])).toEqual(settings);
   });
 
   it('writes nothing when nothing is picked', () => {
@@ -178,7 +178,7 @@ describe('the finder', () => {
         container,
         current,
         (update) => {
-          current = update(current);
+          current = update(current, []);
           changes.push(current);
           draw();
         },

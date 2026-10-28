@@ -77,8 +77,8 @@ describe('the what-points-here overlay', () => {
   });
 
   it('reads its article from a link and writes it back, leaving the default out', () => {
-    expect(referencesOverlay.settingsFromUrl!({ article: '9' })).toEqual({ article: '9' });
-    expect(referencesOverlay.settingsFromUrl!({})).toEqual({ article: '6' });
+    expect(referencesOverlay.settingsFromUrl!({ article: '9' }, [])).toEqual({ article: '9' });
+    expect(referencesOverlay.settingsFromUrl!({}, [])).toEqual({ article: '6' });
     expect(referencesOverlay.settingsToUrl!({ article: '9' })).toEqual({ article: '9' });
     expect(referencesOverlay.settingsToUrl!({ article: '6' })).toEqual({});
   });

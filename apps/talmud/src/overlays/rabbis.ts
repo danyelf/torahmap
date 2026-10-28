@@ -10,6 +10,7 @@ import {
   MAX_PICKS,
   pickColors,
   picksFromUrl,
+  picksInUse,
   picksToUrl,
   removePick,
   type PickSettings,
@@ -271,7 +272,8 @@ export function rabbisOverlay(
     data: { dating: DATING_FILE },
 
     urlParams: RABBIS_URL_PARAMS,
-    settingsFromUrl: (params) => ({ picked: picksFromUrl(params.rabbis) }),
+    settingsFromUrl: (params, taken) => ({ picked: picksFromUrl(params.rabbis, taken) }),
+    colorsInUse: picksInUse,
     settingsToUrl: ({ picked }) =>
       Object.fromEntries(picked.length ? [['rabbis', picksToUrl(picked)]] : []),
 

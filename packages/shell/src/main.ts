@@ -85,8 +85,14 @@ import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
-import { createOverlaySettings, settingsFromLink } from './overlays/settings.ts';
-import { NO_OVERLAY, type Focus, type Overlay, type Tools } from './overlays/types.ts';
+import { createOverlaySettings, settingsFromLink, type LinkParams } from './overlays/settings.ts';
+import {
+  NO_OVERLAY,
+  type Focus,
+  type Overlay,
+  type SettingsUpdate,
+  type Tools,
+} from './overlays/types.ts';
 import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
 import { dataFor, loadFiles, type Loaded } from './dataFiles.ts';
 import { filesFirst, staleAfterLanding, type LandingView, type OpeningView } from './downloads.ts';
@@ -278,6 +284,21 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function setColorLayer(next: ColorLayer<ItemColor | null>): void {
     colorLayer = next;
     composite();
+  }
+
+  /**
+   * The colours each of the two holds, which the other keeps out of: a word and a pick are never
+   * in the same colour.
+   */
+  const searchColors = (): readonly number[] =>
+    searchTool.colorsInUse?.(overlaySettings.get(searchTool)) ?? [];
+  const overlayColors = (): readonly number[] =>
+    currentOverlay?.colorsInUse?.(overlaySettings.get(currentOverlay)) ?? [];
+
+  /** Restore both from a link or a story stop: the search's colours first, then the overlay's. */
+  function restoreTools(overlayParams: LinkParams, searchParams: LinkParams): void {
+    overlaySettings.restore(searchTool, searchParams);
+    if (currentOverlay) overlaySettings.restore(currentOverlay, overlayParams, searchColors());
   }
 
   /** The overlay and the search as they stand, each null while off. */
@@ -476,8 +497,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       activateOverlay(wantedOverlay);
     }
 
-    if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
-    overlaySettings.restore(searchTool, stop.searchParams ?? {});
+    restoreTools(stop.overlayParams ?? {}, stop.searchParams ?? {});
     // The pin is set before the panel is drawn, which draws what the pin has.
     const unpinned = pinnedItem !== null && !stop.pin;
     if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
@@ -1086,8 +1106,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * control left over from an overlay that is no longer showing still changes
    * that overlay's settings, but paints nothing.
    */
-  function changeSettings<S>(overlay: Overlay<I, S>, update: (current: S) => S): void {
-    overlaySettings.set(overlay, update(overlaySettings.get(overlay)));
+  function changeSettings<S>(overlay: Overlay<I, S>, update: SettingsUpdate<S>): void {
+    overlaySettings.set(overlay, update(overlaySettings.get(overlay), searchColors()));
     if (overlay !== currentOverlay) return;
 
     applyTools();
@@ -1126,9 +1146,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     viewFiles.showSearchNotice();
   }
 
-  function changeSearch(update: (current: S) => S): void {
+  function changeSearch(update: SettingsUpdate<S>): void {
     const before = overlaySettings.get(searchTool);
-    const after = update(before);
+    const after = update(before, overlayColors());
     overlaySettings.set(searchTool, after);
     searchTool.telemetry.readerChanged(after, dataFor(searchTool, loader.loaded()));
     applyTools();
@@ -1260,7 +1280,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     takeOver('fold');
     // Exploring keeps only what a link carries, so a stop's highlight stays behind.
     if (currentOverlay) {
-      overlaySettings.restore(currentOverlay, overlaySettings.toUrl(currentOverlay));
+      overlaySettings.restore(
+        currentOverlay,
+        overlaySettings.toUrl(currentOverlay),
+        searchColors(),
+      );
       applyTools();
     }
     closeStory(exploring);
@@ -1683,8 +1707,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
 
     activateOverlay(next.overlay);
-    if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
-    overlaySettings.restore(searchTool, next.searchParams);
+    restoreTools(next.overlayParams, next.searchParams);
     const item = next.square ? squares.find(next.square) : null;
     pinnedItem = item;
     searchChanged(true);

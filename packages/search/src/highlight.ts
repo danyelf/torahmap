@@ -3,7 +3,8 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import type { TextRange } from '@torahmap/utils';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { colorToCssAlpha, type TextRange } from '@torahmap/utils';
 import type { SearchLanguage } from './language.ts';
 import { matchRanges, type MatchMode } from './matching.ts';
 import { colorIndexAt, type SearchTerm } from './terms.ts';
@@ -16,14 +17,13 @@ export interface TermMatcher {
   rangesOf?(term: SearchTerm, text: string, language: SearchLanguage): TextRange[] | null;
 }
 
-/**
- * A term's colour is carried on the mark's class, and the stylesheet holds one
- * rule per colour slot. Both highlighters in this file go through here, so the
- * class name is written once.
- */
+const MARK_ALPHA = 0.4;
+
+/** A term's mark, in the term's colour. Both highlighters in this file go through here. */
 function mark(text: string, colorIndex: number): HTMLElement {
   const element = document.createElement('mark');
-  element.className = `term-${colorIndex}`;
+  element.style.background = colorToCssAlpha(PALETTE[colorIndex], MARK_ALPHA);
+  element.style.color = '#fff';
   element.textContent = text;
   return element;
 }

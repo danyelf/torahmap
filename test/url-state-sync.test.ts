@@ -126,7 +126,7 @@ describe('URL State Sync Integration', () => {
         overlay?.renderControls?.(
           container,
           settings.get(overlay),
-          (update) => settings.set(overlay, update(settings.get(overlay))),
+          (update) => settings.set(overlay, update(settings.get(overlay), [])),
           dataFor(overlay, SAMPLE_LOADED),
         );
       draw();

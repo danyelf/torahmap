@@ -481,8 +481,8 @@ export const TALMUD_STATES: State[] = [
 export const IEEEVIS_STATES: State[] = [
   { name: 'vis-default', link: '', shown: ['#map-legend'] },
   {
-    name: 'vis-authors-colours-kept',
-    link: 'overlay=authors&authors=,Chaoli Wang,,Lane Harrison',
+    name: 'vis-search-and-keywords',
+    link: 'search=drucker&overlay=keywords&keywords=visual analytics,Uncertainty visualization',
     shown: ['#map-legend'],
   },
   {

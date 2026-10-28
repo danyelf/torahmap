@@ -83,7 +83,7 @@ export function hostOverlay<S, D>(
       return settingsFromLink(overlay, raw);
     },
     change(update) {
-      store.set(overlay, update(store.get(overlay)));
+      store.set(overlay, update(store.get(overlay), []));
       draw();
       listeners.forEach((listener) => listener());
     },

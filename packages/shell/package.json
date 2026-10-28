@@ -15,6 +15,7 @@
     "./main.ts": "./src/main.ts",
     "./covers.ts": "./src/covers.ts",
     "./mapLabels.ts": "./src/mapLabels.ts",
+    "./overlays/palette.ts": "./src/overlays/palette.ts",
     "./overlays/pickFinder.ts": "./src/overlays/pickFinder.ts",
     "./overlays/picks.ts": "./src/overlays/picks.ts",
     "./overlays/settings.ts": "./src/overlays/settings.ts",
