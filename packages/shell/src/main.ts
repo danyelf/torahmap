@@ -1596,6 +1596,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     // Not setHover: the render below draws the highlight.
     hoveredItem = litHoverItem = gestures.squareUnderMouse();
+    restHover.cancel();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.

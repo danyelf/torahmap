@@ -224,14 +224,14 @@ const STRIP_CELLS = 24;
 function sectionStrips(scores: ScoresFile, items: readonly TanakhLayout[]): string {
   const wheel = wheelOf(items);
   const { places } = readingOrder(scores);
-  return (Object.keys(SECTION_NAMES) as Array<keyof typeof SECTION_NAMES>)
+  return Object.keys(SECTION_NAMES)
     .map((section) => {
       const verses = places.filter((place) => getBookSection(place.book) === section);
       if (verses.length === 0) return '';
       const cells = Array.from({ length: STRIP_CELLS }, (_, i) => {
         const verse = verses[Math.floor(((i + 0.5) * verses.length) / STRIP_CELLS)];
-        const color = wheel.colorAt(verse.id);
-        const rgb = color ? color.map((c) => Math.round(c * 255)).join(',') : '128,128,128';
+        const color = wheel.colorAt(verse.id) ?? NO_DATA;
+        const rgb = color.map((c) => Math.round(c * 255)).join(',');
         const from = (i / STRIP_CELLS) * 100;
         const to = ((i + 1) / STRIP_CELLS) * 100;
         return `rgb(${rgb}) ${from}% ${to}%`;

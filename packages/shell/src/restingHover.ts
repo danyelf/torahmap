@@ -1,7 +1,7 @@
 // What the map's colours follow of the pointer: a square once the pointer has rested on it, and
 // nothing as soon as it leaves the map.
 
-// Long enough that sweeping across the map does not flash it, short enough to feel immediate.
+// Long enough that sweeping across the map does not flash it, short enough that a pause shows.
 export const HOVER_REST_MS = 150;
 
 export function restingHover<I>(settle: (item: I | null) => void, delayMs = HOVER_REST_MS) {
@@ -11,6 +11,8 @@ export function restingHover<I>(settle: (item: I | null) => void, delayMs = HOVE
     waiting = null;
   };
   return {
+    /** Drops a square still waiting. */
+    cancel: stopWaiting,
     /** The pointer is on `item`, or off the map when null. */
     move(item: I | null): void {
       stopWaiting();

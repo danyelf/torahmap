@@ -366,12 +366,16 @@ describe('Text Analytics overlay', () => {
     const container = document.createElement('div');
     textAnalyticsOverlay.renderLegend!(container, echoSettings, { ...data, scores }, items);
     const rows = [...container.querySelectorAll('.echo-section')];
-    expect(rows.map((r) => r.querySelector('.echo-section-name')!.textContent)).toEqual([
-      'Five Books',
-      'Prophets',
+    expect(rows).toHaveLength(2);
+    const ends = rows.map((r) =>
+      [...r.querySelectorAll('.echo-strip-ends span')].map((e) => e.textContent),
+    );
+    expect(ends).toEqual([
+      ['Genesis', 'Exodus'],
+      ['Isaiah', 'Isaiah'],
     ]);
-    expect(
-      [...rows[0].querySelectorAll('.echo-strip-ends span')].map((e) => e.textContent),
-    ).toEqual(['Genesis', 'Exodus']);
+    expect(rows.every((r) => r.querySelector<HTMLElement>('.echo-strip')!.style.background)).toBe(
+      true,
+    );
   });
 });
