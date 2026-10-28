@@ -493,6 +493,12 @@ export const IEEEVIS_STATES: State[] = [
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select'],
   },
+  {
+    name: 'vis-sections-legend',
+    link: 'overlay=sections',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
   { name: 'vis-long-paper', link: 'at=394.0&zoom=1.5', shown: ['#popup.visible'] },
   { name: 'vis-references-popup', link: 'at=1.12&zoom=4', shown: ['#popup.visible'] },
   {
