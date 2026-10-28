@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { timeSlotsOf, type Day, type Paper, type Structure } from '../src/data.ts';
-import { computeLayout, pieceId } from '../src/layout.ts';
+import { computeLayout, pieceId, slotsOf } from '../src/layout.ts';
 
 const paper = (index: number, pieces: string): Paper => ({
   index,
@@ -66,5 +66,30 @@ describe('the layout', () => {
   it('has one square for each piece of each paper, every id different', () => {
     expect(laid.items).toHaveLength(4 + 2 + 1 + 6 + 4);
     expect(new Set(laid.items.map((item) => item.id)).size).toBe(laid.items.length);
+  });
+});
+
+describe('a paper’s block', () => {
+  it('starts each section on a new row, in the first column', () => {
+    expect(slotsOf('aaiem')).toEqual([
+      { column: 0, row: 0 },
+      { column: 1, row: 0 },
+      { column: 0, row: 1 },
+      { column: 0, row: 2 },
+      { column: 0, row: 3 },
+    ]);
+  });
+
+  it('wraps a section longer than a row onto the next row', () => {
+    const slots = slotsOf('aaaaaab');
+    expect(slots.slice(0, 6).map((s) => [s.column, s.row])).toEqual([
+      [0, 0],
+      [1, 0],
+      [2, 0],
+      [3, 0],
+      [0, 1],
+      [1, 1],
+    ]);
+    expect(slots[6]).toEqual({ column: 0, row: 2 });
   });
 });

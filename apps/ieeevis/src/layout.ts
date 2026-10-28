@@ -41,6 +41,19 @@ export interface Layout {
 
 export const pieceId = (paper: number, piece: number): string => `${paper}.${piece}`;
 
+/** Each piece's (column, row) in its paper's block: a section starts a row, and wraps when longer. */
+export function slotsOf(pieces: string): { column: number; row: number }[] {
+  let column = 0;
+  let row = 0;
+  return [...pieces].map((letter, n) => {
+    if (n > 0 && (letter !== pieces[n - 1] || column === PAPER_COLUMNS)) {
+      column = 0;
+      row++;
+    }
+    return { column: column++, row };
+  });
+}
+
 export function computeLayout(structure: Structure): Layout {
   const items: PieceItem[] = [];
   const books: BookBox[] = [];
@@ -69,14 +82,15 @@ export function computeLayout(structure: Structure): Layout {
         books.push(label(session.name, day, y));
         for (let start = 0; start < session.papers.length; start += PAPERS_PER_LINE) {
           const line = session.papers.slice(start, start + PAPERS_PER_LINE);
+          const slots = line.map((paper) => slotsOf(paper.pieces));
           line.forEach((paper, k) => {
             const left = x + k * (PAPER_COLUMNS * SQUARE_SIZE + PAPER_GAP);
             [...paper.pieces].forEach((letter, n) => {
               const id = pieceId(paper.index, n);
               items.push({
                 id,
-                x: left + (n % PAPER_COLUMNS) * SQUARE_SIZE,
-                y: y + Math.floor(n / PAPER_COLUMNS) * SQUARE_SIZE,
+                x: left + slots[k][n].column * SQUARE_SIZE,
+                y: y + slots[k][n].row * SQUARE_SIZE,
                 size: SQUARE_SIZE,
                 jitter: positionJitter(idHash(id), POSITION_JITTER),
                 paper,
@@ -87,9 +101,7 @@ export function computeLayout(structure: Structure): Layout {
               });
             });
           });
-          const rows = Math.max(
-            ...line.map((paper) => Math.ceil(paper.pieces.length / PAPER_COLUMNS)),
-          );
+          const rows = Math.max(...slots.map((paper) => (paper[paper.length - 1]?.row ?? -1) + 1));
           y += rows * SQUARE_SIZE + LINE_GAP;
         }
       }
