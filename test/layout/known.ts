@@ -27,6 +27,12 @@ const ACT_POPUP_KNOWN: Known = {
   violations: ['a.sefaria-link is 112×15px, under 24', 'button.close-btn is 20×20px, under 24'],
 };
 
+// The same popup on the VIS map's page, its link naming the conference site.
+const VIS_POPUP_KNOWN: Known = {
+  reason: POPUP_KNOWN.reason,
+  violations: ['a.sefaria-link is 110×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+};
+
 /**
  * Layout failures accepted for now, keyed "<state>/<screen>/<rule>". A known
  * failure whose violations change — fixed, or joined by another — fails the
@@ -76,4 +82,7 @@ export const KNOWN: Record<string, Known> = {
   'act-recital-pinned/tablet/touch-targets': ACT_POPUP_KNOWN,
   'act-goto-taken/phone/touch-targets': ACT_POPUP_KNOWN,
   'act-goto-taken/tablet/touch-targets': ACT_POPUP_KNOWN,
+  ...Object.fromEntries(
+    onTouchScreens(['vis-session-wrap', 'vis-references-popup'], VIS_POPUP_KNOWN),
+  ),
 };

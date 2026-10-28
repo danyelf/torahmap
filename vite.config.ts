@@ -7,6 +7,7 @@ import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import { EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
+import { IEEEVIS_PATH } from '@torahmap/ieeevis/page.ts';
 import { builtPages, isLiveBuild, unpublished, type BuiltPage } from './build.ts';
 
 // Get the current git branch name
@@ -47,7 +48,11 @@ function pagePlugin(): Plugin {
 
 const TEMPLATE = resolve(__dirname, 'index.html');
 type ExtraPage = Exclude<BuiltPage, 'main'>;
-const PAGE_PATHS: Record<ExtraPage, string> = { talmud: TALMUD_PATH, euaiact: EUAIACT_PATH };
+const PAGE_PATHS: Record<ExtraPage, string> = {
+  talmud: TALMUD_PATH,
+  euaiact: EUAIACT_PATH,
+  ieeevis: IEEEVIS_PATH,
+};
 const htmlPath = (page: ExtraPage) => `${PAGE_PATHS[page]}index.html`;
 // No such file: pageAddressPlugin gives the build index.html under this name.
 const htmlFile = (page: ExtraPage) => resolve(__dirname, `.${htmlPath(page)}`);
@@ -55,6 +60,7 @@ const PAGE_FILES: Record<BuiltPage, string> = {
   main: TEMPLATE,
   talmud: htmlFile('talmud'),
   euaiact: htmlFile('euaiact'),
+  ieeevis: htmlFile('ieeevis'),
 };
 
 // A page beside the Tanakh's is index.html at its own address: the dev server
@@ -114,6 +120,7 @@ export default defineConfig(({ command, mode }) => {
       pagePlugin(),
       pageAddressPlugin('talmud'),
       pageAddressPlugin('euaiact'),
+      pageAddressPlugin('ieeevis'),
       assetsIgnorePlugin(live),
     ],
     // Declared in packages/shell/src/env.d.ts.
