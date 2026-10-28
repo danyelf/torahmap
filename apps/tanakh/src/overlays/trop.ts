@@ -90,7 +90,7 @@ function stepFor(count: number): Color {
 // A mark drawn as present or absent, and the verse highlight, are the brightest step.
 export const RARE_MATCH_COLOR: Color = COUNT_STEPS[COUNT_STEPS.length - 1].color;
 
-/** The key's colours, as CSS: "contains" and "does not" swatches, or the count steps. */
+/** The key: "contains" and "does not" swatches, or the count steps (colours as CSS). */
 type TropLegend =
   | { kind: 'swatches'; contains: Color; without: Color }
   | { kind: 'steps'; steps: { color: string; label: string; glows?: boolean }[] };

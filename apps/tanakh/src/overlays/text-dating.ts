@@ -138,12 +138,11 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void, TextDatingData> = 
         name: `${era.name} (${era.dateRange[0]}-${era.dateRange[1]} BCE)`,
       })),
     );
-    container.innerHTML = `
-      <div class="text-dating-legend">
-        ${legendCaption('Darker shades = later within period')}
-      </div>
-    `;
-    container.firstElementChild!.prepend(...rows);
+    const legend = document.createElement('div');
+    legend.className = 'text-dating-legend';
+    legend.innerHTML = legendCaption('Darker shades = later within period');
+    legend.prepend(...rows);
+    container.replaceChildren(legend);
   },
 
   summary() {
