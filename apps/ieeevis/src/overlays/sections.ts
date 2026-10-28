@@ -7,7 +7,7 @@ import type { Section } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
 import { swatchRow } from './legend.ts';
 
-const SECTIONS: Readonly<Record<Exclude<Section, 'x'>, { color: Color; name: string }>> = {
+export const SECTIONS: Readonly<Record<Exclude<Section, 'x'>, { color: Color; name: string }>> = {
   a: { color: hex('#e6c229'), name: 'Abstract' },
   i: { color: hex('#4aa3df'), name: 'Introduction' },
   r: { color: hex('#8e7cc3'), name: 'Related work' },

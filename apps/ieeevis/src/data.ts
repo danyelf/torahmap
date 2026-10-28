@@ -11,8 +11,8 @@ export const STRUCTURE_FILE = `${IEEEVIS_DATA_DIR}/structure.json`;
 export const TEXTS_FILE = `${IEEEVIS_DATA_DIR}/texts.json`;
 
 /**
- * What a piece of a paper is: a abstract, i introduction, r related work, m method,
- * e evaluation, d discussion, c conclusion, f references, o other, x no text.
+ * What a piece of a paper is, by letter: abstract, introduction, related work, method,
+ * evaluation, discussion, conclusion, references, other, or x for no text at all.
  */
 export type Section = 'a' | 'i' | 'r' | 'm' | 'e' | 'd' | 'c' | 'f' | 'o' | 'x';
 
@@ -62,6 +62,9 @@ export function timeSlotsOf({ sessions }: Day): TimeSlot[] {
 export interface Structure {
   days: Day[];
 }
+
+export const papersOf = ({ days }: Structure): Paper[] =>
+  days.flatMap((day) => day.sessions.flatMap((session) => session.papers));
 
 export type PaperTexts = Readonly<Record<string, string>>;
 

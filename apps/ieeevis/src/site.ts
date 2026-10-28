@@ -13,7 +13,7 @@ export const ieeevisSite: Site = {
   credits: [
     {
       source: 'IEEE VIS 2026 program',
-      url: 'https://ieeevis.org/',
+      url: IEEEVIS_PAGE.textUrl,
       note: 'Titles, authors, sessions and times; paper text from arXiv where available.',
       collected: 'October 2026',
     },

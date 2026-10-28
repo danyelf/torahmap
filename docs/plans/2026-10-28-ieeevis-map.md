@@ -15,21 +15,27 @@ thrown away. The reason is evidence, not preference:
 - **The folder is small and has one path through it.** `apps/ieeevis/` was about 1,150 lines. One
   `listOverlay` already builds both Authors and Keywords; one `computeLayout` places everything; the
   shell's search, popup and story are used as the other texts use them. There is no second pipeline
-  and no abandoned option except the layout's `?fill=` choice, which Danyel has not yet decided on.
+  and no abandoned option except the layout's `?fill=` experiment, which no link carried.
 - **The flip-flops were in the shared code, and they are out of the folder.** What the spike changed
-  its mind about (the picker, the colour rules, the Worker route, the label options) lived outside
-  `apps/ieeevis/`. Those pieces are now their own pull requests, each reviewed alone (#493, #496,
-  #497, #498), so the VIS pull request holds only VIS.
+  its mind about (the picker, the colour rules, the Worker route) lived outside `apps/ieeevis/`.
+  Those pieces are now their own pull requests, each reviewed alone (#493, #496, #497, #498). What the
+  VIS pull request holds outside its folder is wiring and the label options (`wrap`, `sectionSide`,
+  `sectionClear`) that only this map uses.
 - **What a rewrite would reproduce, the spike already had.** The rebuilt layout, started from nothing
   but this spec, would have the same modules in the same places. A cleaning pass found what was left
-  over (below) and fixed it; each fix was checked against the spike, with the same twelve states on
-  both servers giving identical pixels and identical text.
+  over (below) and fixed it; each fix was checked against the spike, with eleven states (the opening
+  view, each overlay, search, a pinned popup, a wrapped session name, references) on two dev servers
+  giving identical pixels and text, apart from the two faults fixed below.
 
-Residue found and removed:
+Two reviews of the spike (a fresh drift review and my own read) and a correctness review of the
+cleaned code found what was left over. Fixed:
 
 - The time-slot grouping was a state machine inside the layout loop, comparing each session's start
   with the last one's. It is now a `timeSlotsOf(day)` in the data, and the layout walks slots. The
-  new layout equals the old on the real data in all three fill orders (compared object for object).
+  new layout equals the old on the real data (compared object for object).
+- `?fill=rows|columns|sections` was an experiment: it was read from the address once, was not a link
+  parameter, so the first pan or zoom wrote a link without it, and nothing linked to it. It is gone;
+  pieces fill in rows, as the default did. The `columns` and `sections` fills are in #471's history.
 - `hex` (a colour from `#9aa3ad`) and `idHash` (a square id's jitter seed) were copied from the AI Act's
   code. Both now live in `packages/utils` (#498).
 - `covers.ts`, the tinted panel behind a group of squares, sat in `packages/shell` with a comment
@@ -38,8 +44,23 @@ Residue found and removed:
   third way. One `legendRow` and `swatchRow` now serve all four.
 - Authors and Keywords each exported a URL-parameter list that `text.ts` picked between by id; the
   link keys now ask the overlay list.
+- The panel's padding was applied twice, in `text.ts`, with a comment tying it to the gap between
+  days. `layout.ts` now returns padded panels and exports the padding once.
+- The picked entries and their colour places were two calls zipped back together; one call returns both.
+- The three walks over days, sessions and papers (layout, search, the pickers) share `papersOf`.
+- `https://ieeevis.org/` was written three times; the page's `textUrl` is read instead. `'kinds'` was
+  written in the story and in the overlay; the overlay's id is exported.
 - `data.ts` named a script path that had moved to the scrape project.
 - Exports nothing imported.
+
+Two real faults, both in the spike too:
+
+- **Search read the placeholder "No text yet." as paper text.** The 1,961 placeholder squares (papers
+  with no text) each matched a search for "text", "yet" or "no". A search for "yet" lit 2,671 pieces;
+  it lights 710. Search now reads only a piece's own words; the popup still says "No text yet."
+  for a placeholder, and says nothing while the file is on its way or has failed, as the AI Act's does.
+- Title Case capitalised the small words inside a hyphenated one ("State-Of-The-Art"); it now keeps
+  them lower case ("State-of-the-Art").
 
 ## What the map shows
 
@@ -101,7 +122,6 @@ The map opens on `structure.json` alone; the popup and search ask for `texts.jso
 | `authors`, `keywords` | The picks as a plain, comma-separated list of names as written. |
 | `search`, `mode` | The search words and how each is matched, as for the other texts. |
 | `story`, `stop` | While reading the one story. |
-| `fill` | `rows` (default), `columns` or `sections`: the order a paper's pieces fill its block. |
 
 ## Colour rules for picks and search words
 
@@ -138,5 +158,8 @@ on opening, words take colours first and picks follow in link order. At most fiv
   Rabbis finder does the same (#492).
 - Putting the page live: `live: false` in `build.ts` keeps it out of torahmap.org.
 - Two spellings of one author's name count as two authors; the program gives no author ids.
-- Whether `sections` should be the default fill, and smaller grey time-slot labels.
+- Smaller grey time-slot labels.
+- A session name of three lines runs into the squares above it (#499); the spike did the same.
+- Search is disabled, with a notice, while `texts.json` has not loaded or has failed; titles and authors
+  are not searched without it.
 - Analytics: the page sends none, since an event does not record which text sent it.

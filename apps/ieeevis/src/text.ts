@@ -12,18 +12,19 @@ import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
 import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
 import { ieeevisFiles } from './files.ts';
 import { referenceLines } from './references.ts';
-import { computeLayout, type PieceItem } from './layout.ts';
+import { computeLayout, PANEL_PAD, type PieceItem } from './layout.ts';
+import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
+import { IEEEVIS_PAGE } from './page.ts';
 import { ieeevisSite } from './site.ts';
 
 const DAY_LABEL_SIZE = { fontSize: 14, gapEm: 0.5 };
-// A time slot's panel reaches this far past its squares; the day label stands beyond it.
-const PANEL_PAD = 8;
 const PANEL_TINT = [150, 170, 220] as const;
 const PANEL_OPACITY = 0.07;
 const PANEL_EDGE_OPACITY = 0.3;
 const SESSION_TAB = { fontSize: 12, above: 28, inset: 4, minPx: 7, wrap: true };
+const NO_TEXT = 'No text yet.';
 /** The popup's heading fits one line at this length, beside "(30/57)" and the link out. */
 const POPUP_TITLE_LENGTH = 32;
 
@@ -38,7 +39,7 @@ const WHOLE_MAP: Story = {
         id: 'start',
         text: 'The IEEE VIS 2026 program, one square per quarter page of a paper.',
         camera: 'initial',
-        overlay: 'kinds',
+        overlay: KINDS_ID,
       },
     ],
   },
@@ -81,14 +82,9 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       baseRing: (item) => (isPlaceholder(item) ? PLACEHOLDER_RING : null),
 
       labels(container) {
-        const panels = laid.panels.map((panel) => ({
+        const panels = laid.panels.map((box) => ({
           el: coverElement(PANEL_TINT, PANEL_OPACITY, PANEL_EDGE_OPACITY),
-          box: {
-            minX: panel.minX - PANEL_PAD,
-            minY: panel.minY,
-            maxX: panel.maxX + PANEL_PAD,
-            maxY: panel.maxY + PANEL_PAD,
-          },
+          box,
         }));
         const panelLayer = document.createElement('div');
         panelLayer.append(...panels.map((p) => p.el));
@@ -113,13 +109,13 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       popupText(item, loadedFiles) {
         const texts = loadedFiles.get(TEXTS_FILE) as PaperTexts | undefined;
         const { title, pieces } = item.paper;
-        const text = texts?.[item.id];
+        const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
         const shown = text && item.section === 'f' ? referenceLines(text) : text;
         return {
           ref: `${short(title, POPUP_TITLE_LENGTH)} (${item.piece + 1}/${pieces.length})`,
           hebrew: '',
           english: squareBody(item, shown),
-          link: 'https://ieeevis.org/',
+          link: IEEEVIS_PAGE.textUrl,
         };
       },
 

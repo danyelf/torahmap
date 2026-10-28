@@ -52,6 +52,7 @@ export interface SectionLabelSize {
 
 const MAX_SECTION_FONT_SIZE = 64;
 const SECTION_LABEL_LINE_EM = 1.2;
+const BOOK_LABEL_LINE_EM = 1.2;
 
 /**
  * How far right of its section a section label reaches, in map units, while
@@ -128,7 +129,7 @@ function bookLabel(book: BookBox): HTMLDivElement {
     white-space:nowrap;
     /* A length, not a factor: the larger Hebrew below inherits it as-is and
        so cannot grow the box the positioning maths below assumes. */
-    line-height:1.2em;
+    line-height:${BOOK_LABEL_LINE_EM}em;
     transition:opacity 0.2s;
     transform:translateX(-100%);
   `;
@@ -161,8 +162,9 @@ function sectionLabel(
       side === 'right' ? 'rotate(90deg) translateY(-100%)' : 'rotate(-90deg) translateX(-100%)'
     };
   `;
-  // Turned clockwise about its own top-left corner, so the text reads downward
-  // from the top of the book labels and its line box sits right of the anchor.
+  // On the right it turns clockwise about its own top-left corner, so the text reads downward
+  // from the top of the book labels and its line box sits right of the anchor; on the left it
+  // turns the other way and reads upward.
   label.dataset.section = section;
   label.appendChild(hebrewSpan(name?.he ?? section, 'section-label-he'));
   const enSpan = document.createElement('span');
@@ -212,7 +214,7 @@ export function createMapLabels(
     if (tab?.wrap) {
       el.style.whiteSpace = 'normal';
       // The last line stays where a one-line name sits; the rest stand above it.
-      el.style.transform = 'translateY(calc(-100% + 1.2em))';
+      el.style.transform = `translateY(calc(-100% + ${BOOK_LABEL_LINE_EM}em))`;
     }
     // A tab keeps its length on the map, so whether its English fits does not change.
     if (tab) {

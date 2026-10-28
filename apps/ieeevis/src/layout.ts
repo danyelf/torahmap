@@ -18,7 +18,8 @@ const LINE_GAP = 2 * SQUARE_SIZE;
 const LABEL_ROOM = 6 * SQUARE_SIZE; // above each session, for its name
 const SLOT_GAP = 6 * SQUARE_SIZE; // between one time slot and the next
 const SLOT_ROOM = 2 * SQUARE_SIZE; // under a slot's time, before its first session
-const DAY_GAP = 10 * SQUARE_SIZE; // holds the panel padding and the day label that stands to the left
+export const PANEL_PAD = 8; // a slot's panel reaches this far past its squares, but not above its top
+const DAY_GAP = 10 * SQUARE_SIZE; // holds two panels' padding and the day label that stands to the left
 const DAY_WIDTH = PAPERS_PER_LINE * PAPER_COLUMNS * SQUARE_SIZE + (PAPERS_PER_LINE - 1) * PAPER_GAP;
 
 export interface PieceItem extends MapItem {
@@ -33,60 +34,14 @@ export interface PieceItem extends MapItem {
 export interface Layout {
   items: PieceItem[];
   books: BookBox[];
-  /** Each time slot's panel, without its padding. */
+  /** Each time slot's panel, padded. */
   panels: CoverBox[];
   bounds: { width: number; height: number };
 }
 
 export const pieceId = (paper: number, piece: number): string => `${paper}.${piece}`;
 
-type Fill = 'rows' | 'columns' | 'sections';
-
-/** How a paper's pieces fill its block, from ?fill= in the address. */
-function fillFromAddress(): Fill {
-  const asked =
-    typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('fill');
-  return asked === 'columns' || asked === 'sections' ? asked : 'rows';
-}
-
-interface Cell {
-  column: number;
-  row: number;
-}
-
-/** The (column, row) of every piece of a paper, and how many rows the block takes. */
-function cellsOf(pieces: string, fill: Fill): { cells: Cell[]; rows: number } {
-  const n = pieces.length;
-  const rows = Math.ceil(n / PAPER_COLUMNS);
-  if (fill === 'columns') {
-    return {
-      cells: Array.from({ length: n }, (_, i) => ({ column: Math.floor(i / rows), row: i % rows })),
-      rows,
-    };
-  }
-  if (fill === 'sections') {
-    const cells: Cell[] = [];
-    let column = 0;
-    let row = 0;
-    for (let i = 0; i < n; i++) {
-      if (i > 0 && (pieces[i] !== pieces[i - 1] || column === PAPER_COLUMNS)) {
-        column = 0;
-        row++;
-      }
-      cells.push({ column: column++, row });
-    }
-    return { cells, rows: row + 1 };
-  }
-  return {
-    cells: Array.from({ length: n }, (_, i) => ({
-      column: i % PAPER_COLUMNS,
-      row: Math.floor(i / PAPER_COLUMNS),
-    })),
-    rows,
-  };
-}
-
-export function computeLayout(structure: Structure, fill: Fill = fillFromAddress()): Layout {
+export function computeLayout(structure: Structure): Layout {
   const items: PieceItem[] = [];
   const books: BookBox[] = [];
   const panels: CoverBox[] = [];
@@ -105,7 +60,7 @@ export function computeLayout(structure: Structure, fill: Fill = fillFromAddress
     let y = 0;
     timeSlotsOf(day).forEach((slot, s) => {
       if (s > 0) y += SLOT_GAP;
-      const panel = { minX: x, maxX: x + DAY_WIDTH, minY: y, maxY: y };
+      const top = y;
       y += LABEL_ROOM;
       books.push(label(slot.start || 'No time given', day, y));
       y += SLOT_ROOM;
@@ -114,16 +69,14 @@ export function computeLayout(structure: Structure, fill: Fill = fillFromAddress
         books.push(label(session.name, day, y));
         for (let start = 0; start < session.papers.length; start += PAPERS_PER_LINE) {
           const line = session.papers.slice(start, start + PAPERS_PER_LINE);
-          const blocks = line.map((paper) => cellsOf(paper.pieces, fill));
           line.forEach((paper, k) => {
-            const { cells } = blocks[k];
             const left = x + k * (PAPER_COLUMNS * SQUARE_SIZE + PAPER_GAP);
             [...paper.pieces].forEach((letter, n) => {
               const id = pieceId(paper.index, n);
               items.push({
                 id,
-                x: left + cells[n].column * SQUARE_SIZE,
-                y: y + cells[n].row * SQUARE_SIZE,
+                x: left + (n % PAPER_COLUMNS) * SQUARE_SIZE,
+                y: y + Math.floor(n / PAPER_COLUMNS) * SQUARE_SIZE,
                 size: SQUARE_SIZE,
                 jitter: positionJitter(idHash(id), POSITION_JITTER),
                 paper,
@@ -134,11 +87,18 @@ export function computeLayout(structure: Structure, fill: Fill = fillFromAddress
               });
             });
           });
-          y += Math.max(...blocks.map((b) => b.rows)) * SQUARE_SIZE + LINE_GAP;
+          const rows = Math.max(
+            ...line.map((paper) => Math.ceil(paper.pieces.length / PAPER_COLUMNS)),
+          );
+          y += rows * SQUARE_SIZE + LINE_GAP;
         }
       }
-      panel.maxY = y - LINE_GAP;
-      panels.push(panel);
+      panels.push({
+        minX: x - PANEL_PAD,
+        maxX: x + DAY_WIDTH + PANEL_PAD,
+        minY: top,
+        maxY: y - LINE_GAP + PANEL_PAD,
+      });
     });
     height = Math.max(height, y);
     x += DAY_WIDTH + DAY_GAP;

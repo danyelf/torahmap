@@ -38,7 +38,7 @@ describe('time slots', () => {
 });
 
 describe('the layout', () => {
-  const laid = computeLayout(structure, 'rows');
+  const laid = computeLayout(structure);
 
   it('gives each time slot of each day a panel, one below the next', () => {
     expect(laid.panels).toHaveLength(4);

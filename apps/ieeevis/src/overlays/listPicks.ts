@@ -3,7 +3,7 @@
 
 import { memoByValue } from '@torahmap/utils';
 import { pickSlots, plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
-import type { Paper, Structure } from '../data.ts';
+import { papersOf, type Paper, type Structure } from '../data.ts';
 
 export interface ListData {
   structure: Structure;
@@ -22,27 +22,25 @@ export interface Entry {
   papers: number;
 }
 
+/** A picked entry and its place among the picks, which sets its colour. */
+export type Picked = Entry & { slot: number };
+
 /** The ways to find papers by what they list, for one kind of name. */
 export interface Picks {
   /** Papers that list at least one name. */
   listing(data: ListData): { papers: number; total: number };
   /** The picked entries in the order picked; names no paper lists are dropped. */
-  picked(settings: ListSettings, data: ListData): Entry[];
-  /** Each picked entry's place among the picks, which sets its colour. */
-  slots(settings: ListSettings, data: ListData): number[];
+  picked(settings: ListSettings, data: ListData): Picked[];
   /** The entries with the most papers, to start from. */
   quick(data: ListData): Entry[];
   /** Entries whose name holds every word typed, those starting with the typing first. */
   suggest(data: ListData, typed: string, skip?: readonly Entry[]): Entry[];
 }
 
-const papersOf = ({ structure }: ListData): Paper[] =>
-  structure.days.flatMap((day) => day.sessions.flatMap((session) => session.papers));
-
 export function picksOf(namesOf: (paper: Paper) => readonly string[]): Picks {
   const entries = memoByValue((data: ListData): Entry[] => {
     const counts = new Map<string, number>();
-    for (const paper of papersOf(data))
+    for (const paper of papersOf(data.structure))
       for (const name of new Set(namesOf(paper))) counts.set(name, (counts.get(name) ?? 0) + 1);
     return [...counts]
       .map(([name, papers]) => ({ name, plain: plainName(name), papers }))
@@ -53,20 +51,24 @@ export function picksOf(namesOf: (paper: Paper) => readonly string[]): Picks {
   );
   return {
     listing: (data) => {
-      const all = papersOf(data);
+      const all = papersOf(data.structure);
       return { papers: all.filter((paper) => namesOf(paper).length > 0).length, total: all.length };
     },
     picked: (settings, data) =>
-      pickSlots(settings, (name) => byName(data).has(name)).map(({ id }) => byName(data).get(id)!),
-    slots: (settings, data) =>
-      pickSlots(settings, (name) => byName(data).has(name)).map(({ slot }) => slot),
+      pickSlots(settings, (name) => byName(data).has(name)).map(({ id, slot }) => ({
+        ...byName(data).get(id)!,
+        slot,
+      })),
     quick: (data) => entries(data).slice(0, QUICK_PICKS),
     suggest(data, typed, skip = []) {
       const words = plainName(typed).split(' ').filter(Boolean);
       if (!words.length) return [];
       const starts = (entry: Entry) => entry.plain.split(' ').some((w) => w.startsWith(words[0]));
       return entries(data)
-        .filter((entry) => !skip.includes(entry) && words.every((w) => entry.plain.includes(w)))
+        .filter(
+          (entry) =>
+            !skip.some((s) => s.name === entry.name) && words.every((w) => entry.plain.includes(w)),
+        )
         .sort((a, b) => Number(starts(b)) - Number(starts(a)))
         .slice(0, SUGGESTIONS);
     },

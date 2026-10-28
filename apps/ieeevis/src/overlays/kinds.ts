@@ -31,8 +31,10 @@ const FAMILIES = [
 const colorOf = (item: PieceItem): Color =>
   jittered(FAMILIES.find((f) => f.has(item.paper.kind))!.color, item);
 
+export const KINDS_ID = 'kinds';
+
 export const kindsOverlay: Overlay<PieceItem> = {
-  id: 'kinds',
+  id: KINDS_ID,
   name: 'Paper type',
   description: 'Colors every square by the kind of paper it belongs to.',
   colorsFor: (items) => items.map(colorOf),

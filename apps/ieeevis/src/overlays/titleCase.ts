@@ -15,8 +15,12 @@ export function titleCase(text: string): string {
     .split(' ')
     .map((word, i) => {
       if (keepsCase(word)) return word;
-      if (i > 0 && SMALL.has(word.toLowerCase())) return word.toLowerCase();
-      return word.split('-').map(capitalised).join('-');
+      return word
+        .split('-')
+        .map((part, j) =>
+          i + j > 0 && SMALL.has(part.toLowerCase()) ? part.toLowerCase() : capitalised(part),
+        )
+        .join('-');
     })
     .join(' ');
 }

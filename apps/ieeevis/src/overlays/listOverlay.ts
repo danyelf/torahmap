@@ -27,10 +27,19 @@ import { baseColor, TEXT } from '../baseColor.ts';
 import { STRUCTURE_FILE, type Paper } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
 import { legendRow, swatchRow } from './legend.ts';
-import { listedBy, picksOf, type Entry, type ListData, type ListSettings } from './listPicks.ts';
+import {
+  listedBy,
+  picksOf,
+  type Entry,
+  type ListData,
+  type ListSettings,
+  type Picked,
+} from './listPicks.ts';
 
 /** How much of its colour a paper keeps when it is under none of the picks. */
 const UNLIT_KEEPS = 0.35;
+
+const colorsOf = (picked: readonly Picked[]) => pickColors(picked.map((p) => p.slot));
 
 const papers = (n: number) => `${n} paper${n === 1 ? '' : 's'}`;
 
@@ -39,8 +48,8 @@ export interface ListKind {
   name: string;
   /** The link's parameter for the picks. */
   urlKey: string;
-  /** What a pick is called, in the singular and the plural: "author", "authors", "an author". */
-  noun: { one: string; many: string; a: string };
+  /** What a pick is called, in the singular and the plural: "author", "authors". */
+  noun: { one: string; many: string };
   /** What the overlay does, said in the picker. */
   description: string;
   namesOf(paper: Paper): readonly string[];
@@ -58,6 +67,7 @@ interface Finder extends PickFinder {
 
 export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, ListData> {
   const { noun } = kind;
+  const aNoun = `${/^[aeiou]/.test(noun.one) ? 'an' : 'a'} ${noun.one}`;
   const picks = picksOf(kind.namesOf);
   const show = kind.display ?? ((name: string) => name);
 
@@ -68,7 +78,8 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
       return;
     }
     const picked = picks.picked(settings, data);
-    const colors = pickColors(picks.slots(settings, data));
+    const colors = colorsOf(picked);
+    const isPicked = (entry: Entry) => picked.some((p) => p.name === entry.name);
     const full = picked.length >= MAX_PICKS;
     const choose = (entry: Entry) => {
       input.value = '';
@@ -109,10 +120,9 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
       picks.quick(data).map((entry) =>
         pickChip(show(entry.name), {
           title: papers(entry.papers),
-          on: picked.includes(entry),
-          disabled: full && !picked.includes(entry),
-          onClick: () =>
-            picked.includes(entry) ? onChange(removePick(entry.name)) : choose(entry),
+          on: isPicked(entry),
+          disabled: full && !isPicked(entry),
+          onClick: () => (isPicked(entry) ? onChange(removePick(entry.name)) : choose(entry)),
         }),
       ),
     );
@@ -123,8 +133,8 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
 
   const finderIn = (container: HTMLElement): Finder =>
     pickFinderIn<Finder>(container, {
-      placeholder: `Find ${noun.a} by name…`,
-      label: `Find ${noun.a}`,
+      placeholder: `Find ${aNoun} by name…`,
+      label: `Find ${aNoun}`,
       extend: (parts) => ({ ...parts, settings: { picked: [] }, data: null, onChange: () => {} }),
       onType: drawFinder,
     });
@@ -146,7 +156,7 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
     colorsFor(items, settings, _hovered, data) {
       const picked = picks.picked(settings, data);
       if (!picked.length) return items.map(baseColor);
-      const colors = pickColors(picks.slots(settings, data));
+      const colors = colorsOf(picked);
       return items.map((item) => {
         const lit = listedBy(picked, kind.namesOf(item.paper)).map((i) => colors[i]);
         if (!lit.length) return unlit(item);
@@ -169,9 +179,9 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
       if (!data) return;
       const picked = picks.picked(settings, data);
       const rows: HTMLElement[] = [];
-      if (!picked.length) rows.push(legendRow(`Pick ${noun.a} to light its papers.`));
+      if (!picked.length) rows.push(legendRow(`Pick ${aNoun} to light its papers.`));
       else {
-        const colors = pickColors(picks.slots(settings, data));
+        const colors = colorsOf(picked);
         rows.push(...picked.map((entry, i) => swatchRow(colors[i], show(entry.name))));
         rows.push(swatchRow(brighten(TEXT, UNLIT_KEEPS), 'Papers under none of them'));
       }
@@ -182,10 +192,10 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
 
     summary(settings, data) {
       const picked = picks.picked(settings, data);
-      if (!picked.length) return { detail: `pick ${noun.a}` };
+      if (!picked.length) return { detail: `pick ${aNoun}` };
       return {
         detail: picked.length === 1 ? show(picked[0].name) : `${picked.length} ${noun.many}`,
-        colors: pickColors(picks.slots(settings, data)).map(colorToCss),
+        colors: colorsOf(picked).map(colorToCss),
       };
     },
 

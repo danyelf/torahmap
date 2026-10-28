@@ -19,5 +19,6 @@ describe('keywords shown in Title Case', () => {
     expect(titleCase('the design of visual analytics for the web')).toBe(
       'The Design of Visual Analytics for the Web',
     );
+    expect(titleCase('state-of-the-art methods')).toBe('State-of-the-Art Methods');
   });
 });
