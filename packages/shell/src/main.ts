@@ -85,6 +85,7 @@ import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { createBackdrop } from './backdrop.ts';
+import { restingHover } from './restingHover.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import { createOverlaySettings, settingsFromLink } from './overlays/settings.ts';
 import { NO_OVERLAY, type Focus, type Overlay, type Tools } from './overlays/types.ts';
@@ -351,7 +352,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return toolsPicture(
       toolsNow(),
       items,
-      hoveredItem,
+      litHoverItem,
       base,
       dimFor(frontTool),
       text.searchKeepsBase,
@@ -424,7 +425,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       to,
       t,
       items,
-      hoveredItem,
+      litHoverItem,
       loader.loaded(),
       base,
       textTools,
@@ -439,7 +440,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function focusNow(): Focus<I> {
-    return { hovered: hoveredItem, pinned: pinnedItem };
+    return { hovered: litHoverItem, pinned: pinnedItem };
   }
 
   /**
@@ -503,6 +504,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let pinnedItem: I | null = null;
 
   let hoveredItem: I | null = null;
+  // The hovered square the map's colours follow: it trails hoveredItem, which the highlight and
+  // the panels follow at once.
+  let litHoverItem: I | null = null;
 
   const storyContent = document.getElementById('story-content')!;
 
@@ -817,11 +821,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   render();
 
-  function setHover(square: I | null): void {
-    const before = hoveredItem;
+  const restHover = restingHover<I>((square) => {
     const focusBefore = focusNow();
+    litHoverItem = square;
+    if (!sameItem(focusBefore.hovered, square)) repaint(focusBefore);
+  });
+
+  function setHover(square: I | null): void {
+    if (sameItem(hoveredItem, square)) return;
     hoveredItem = square;
-    if (!sameItem(before, square)) repaint(focusBefore);
+    restHover.move(square);
+    renderOverlayFocus();
+    render();
   }
 
   const gestures = createMapGestures<I>({
@@ -1016,6 +1027,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
           overlayLegendContainer,
           currentSettings(),
           dataFor(overlay, loader.loaded()),
+          items,
         );
       }
     }
@@ -1583,7 +1595,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
     // Not setHover: the render below draws the highlight.
-    hoveredItem = gestures.squareUnderMouse();
+    hoveredItem = litHoverItem = gestures.squareUnderMouse();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.
