@@ -223,16 +223,55 @@ describe('Text Analytics overlay', () => {
       expect(colors({ 0: [3, 5] }, verse(1))[1]).toEqual(DIMMED_GREY);
     });
 
-    it('does not mark words of the verse text', () => {
-      const text = data.texts!.Genesis['1'][1].he;
-      const marked = textAnalyticsOverlay.highlightItemText!(
-        verse(1),
-        text,
-        HEBREW,
-        echoSettings,
-        data,
-      );
-      expect(marked.querySelector('mark')).toBeNull();
+    describe('marking the shared phrase', () => {
+      const he = (words: string[]) => ({ he: words.join(' '), en: '' });
+      const marking: TextAnalyticsData = {
+        ...data,
+        echoes: { 0: [3, 5] },
+        texts: {
+          Genesis: {
+            '1': {
+              1: he(['אבג', 'דהו', 'זחט', 'יכל', 'מנס', 'עפצ', 'קרש']),
+              4: he(['תאב', 'זחט', 'יכל', 'מנס', 'עפצ', 'קרש', 'שין']),
+            },
+          },
+        },
+      };
+      const marked = (fragment: DocumentFragment) =>
+        [...fragment.querySelectorAll('mark')].map((mark) => mark.textContent);
+
+      it('marks the words of a verse that sit in a run it shares with another verse', () => {
+        const text = marking.texts!.Genesis['1'][1].he;
+        expect(
+          marked(
+            textAnalyticsOverlay.highlightItemText!(verse(1), text, HEBREW, echoSettings, marking),
+          ),
+        ).toEqual(['זחט יכל מנס עפצ קרש']);
+        expect(
+          marked(
+            textAnalyticsOverlay.highlightItemText!(verse(1), text, ENGLISH, echoSettings, marking),
+          ),
+        ).toEqual([]);
+        expect(
+          marked(
+            textAnalyticsOverlay.highlightItemText!(
+              verse(1),
+              text,
+              HEBREW,
+              { ...echoSettings, words: 6 },
+              marking,
+            ),
+          ),
+        ).toEqual([]);
+      });
+
+      it('marks the run each parallel in the list shares with the focused verse', () => {
+        const panel = document.createElement('div');
+        textAnalyticsOverlay.renderFocus!(panel, verse(1), null, echoSettings, marking, () => {});
+        expect([...panel.querySelectorAll('mark')].map((mark) => mark.textContent)).toEqual([
+          'זחט יכל מנס עפצ קרש',
+        ]);
+      });
     });
 
     it('names the words in a row in the link for this analysis only', () => {

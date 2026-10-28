@@ -32,6 +32,7 @@ import {
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { wordsRead } from '../search/dictionary.ts';
+import { sharedStretches, words as wordsOf } from './text-analytics/words.ts';
 
 // Cividis, slate blue through grey to yellow: even in lightness, made to read
 // the same with red-green colour blindness, and unlike any other overlay's
@@ -286,6 +287,8 @@ export const textAnalyticsOverlay: Overlay<
   renderFocus(container, hovered, pinned, settings, data, travelTo) {
     const found = focusEchoes(data, settings, hovered, pinned);
     if (!found) return;
+    const focus = hovered && echoesOf(data, settings, hovered) ? hovered : pinned;
+    const focusText = focus ? textOf(data, focus) : '';
     const note = document.createElement('div');
     note.className = 'parallel-verses';
     const heading = document.createElement('p');
@@ -301,7 +304,13 @@ export const textAnalyticsOverlay: Overlay<
       const quote = document.createElement('span');
       quote.className = 'parallel-quote';
       quote.dir = 'auto';
-      quote.textContent = data.texts?.[place.book]?.[place.chapter]?.[place.verse]?.he ?? '';
+      const he = textOf(data, place);
+      quote.append(
+        markStretches(
+          he,
+          focusText && he ? sharedStretches(wordsOf(he), [wordsOf(focusText)], settings.words) : [],
+        ),
+      );
       row.append(ref, quote);
       row.addEventListener('click', () => travelTo(place.id));
       list.appendChild(row);
@@ -388,29 +397,42 @@ export const textAnalyticsOverlay: Overlay<
 
   // One colour for every repeated word; the stretch is marked whole, spaces and all.
   highlightItemText(verse, text: string, language: TextLanguage, settings, data): DocumentFragment {
-    const fragment = document.createDocumentFragment();
-    const stretches =
-      settings.analysis === 'echoes'
-        ? []
-        : (data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? []);
-    if (language !== HEBREW || stretches.length === 0) {
-      fragment.appendChild(document.createTextNode(text));
-      return fragment;
+    if (language !== HEBREW) return markStretches(text, []);
+    if (settings.analysis !== 'echoes') {
+      return markStretches(
+        text,
+        data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? [],
+      );
     }
-    const words = wordsRead(text);
-    let at = 0;
-    for (let i = 0; i < stretches.length; i += 2) {
-      const first = words[stretches[i]];
-      const last = words[stretches[i + 1] - 1];
-      if (!first || !last) continue;
-      fragment.appendChild(document.createTextNode(text.slice(at, first.start)));
-      const mark = document.createElement('mark');
-      mark.className = 'repeated-words';
-      mark.textContent = text.slice(first.start, last.end);
-      fragment.appendChild(mark);
-      at = last.end;
-    }
-    fragment.appendChild(document.createTextNode(text.slice(at)));
-    return fragment;
+    const partners = (echoesOf(data, settings, verse)?.places ?? [])
+      .filter(({ id }) => id !== verse.id)
+      .map((place) => textOf(data, place));
+    return markStretches(
+      text,
+      sharedStretches(wordsOf(text), partners.filter(Boolean).map(wordsOf), settings.words),
+    );
   },
 };
+
+const textOf = (data: TextAnalyticsData, verse: TanakhIdentity): string =>
+  data.texts?.[verse.book]?.[verse.chapter]?.[verse.verse]?.he ?? '';
+
+/** The text with each stretch, as start, end pairs of word numbers, marked whole. */
+function markStretches(text: string, stretches: readonly number[]): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+  const read = stretches.length ? wordsRead(text) : [];
+  let at = 0;
+  for (let i = 0; i < stretches.length; i += 2) {
+    const first = read[stretches[i]];
+    const last = read[stretches[i + 1] - 1];
+    if (!first || !last) continue;
+    fragment.appendChild(document.createTextNode(text.slice(at, first.start)));
+    const mark = document.createElement('mark');
+    mark.className = 'repeated-words';
+    mark.textContent = text.slice(first.start, last.end);
+    fragment.appendChild(mark);
+    at = last.end;
+  }
+  fragment.appendChild(document.createTextNode(text.slice(at)));
+  return fragment;
+}
