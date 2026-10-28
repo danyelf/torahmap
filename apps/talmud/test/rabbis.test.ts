@@ -53,9 +53,14 @@ describe('the rabbis overlay colours', () => {
     expect(colours(picking(), 'A.2a.1', 'A.2a.4')).toEqual([base(), base()]);
   });
 
+  it('keeps a rabbi in his colour when an earlier pick is removed', () => {
+    const [lit] = colours(picking('', 'lakish'), 'A.2a.2');
+    expect(lit).toEqual(pickColors([1])[0]);
+  });
+
   it('lights the passages naming a picked rabbi and dims the rest', () => {
     const [lit, other, unlit] = colours(picking('lakish'), 'A.2a.2', 'A.2a.3', 'A.2a.4');
-    expect(lit).toEqual(pickColors(1)[0]);
+    expect(lit).toEqual(pickColors([0])[0]);
     expect(other).toEqual(unlitColour);
     expect(unlit).toEqual(unlitColour);
     expect(unlitColour).not.toEqual(base());
@@ -63,7 +68,7 @@ describe('the rabbis overlay colours', () => {
 
   it('splits a passage naming two picked rabbis between their colours', () => {
     const [both] = colours(picking('lakish', 'yochanan'), 'A.2a.1');
-    const expected = pickColors(2);
+    const expected = pickColors([0, 1]);
     expect(both).toEqual(expected);
     expect(expected[0]).not.toEqual(expected[1]);
   });
@@ -71,8 +76,8 @@ describe('the rabbis overlay colours', () => {
   it('fades a passage where a name only might be the rabbi', () => {
     const [sure] = colours(picking('gamliel-a', 'lakish'), 'A.2a.2');
     const [maybe] = colours(picking('gamliel-a'), 'A.2a.3');
-    const solid = pickColors(1)[0];
-    expect(sure).toEqual(pickColors(2)[1]);
+    const solid = pickColors([0])[0];
+    expect(sure).toEqual(pickColors([0, 1])[1]);
     expect(maybe).toEqual(fadeTo(solid, 0.8));
   });
 
@@ -99,7 +104,7 @@ describe('the rabbis link', () => {
   it('carries the picks and comes back as the same picks', () => {
     const settings = picking('lakish', 'gamliel-a');
     const written = overlay.settingsToUrl!(settings);
-    expect(overlay.settingsFromUrl!(written)).toEqual(settings);
+    expect(overlay.settingsFromUrl!(written, [])).toEqual(settings);
   });
 
   it('writes nothing when nothing is picked', () => {
@@ -173,7 +178,7 @@ describe('the finder', () => {
         container,
         current,
         (update) => {
-          current = update(current);
+          current = update(current, []);
           changes.push(current);
           draw();
         },
@@ -225,6 +230,14 @@ describe('the finder', () => {
     const finder = open(picking('lakish'));
     expect(finder.container.querySelectorAll('.pick-picked-row .swatch')).toHaveLength(1);
     finder.container.querySelector<HTMLButtonElement>('.pick-picked-row button')!.click();
+    expect(finder.changes).toEqual([picking()]);
+  });
+
+  it('unpicks a rabbi whose quick pick is clicked again', () => {
+    const finder = open(picking('lakish'));
+    const chip = [...finder.container.querySelectorAll<HTMLButtonElement>('.pick-chip.on')][0];
+    expect(chip.disabled).toBe(false);
+    chip.click();
     expect(finder.changes).toEqual([picking()]);
   });
 

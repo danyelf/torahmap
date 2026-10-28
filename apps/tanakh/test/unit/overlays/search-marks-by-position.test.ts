@@ -17,6 +17,7 @@ import { configure } from '../../../src/search/index.ts';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse } from '../../helpers/fixtures';
 import { realSearchData } from '../../helpers/searchData';
+import { placeOfMark } from '../../helpers/termMarks';
 
 const searchOverlay = hostOverlay(searchTool, realSearchData().files);
 
@@ -31,8 +32,8 @@ beforeEach(() => {
   configure({ verses: [createVerse({ book: 'Genesis', chapter: 8, verse: 20 })] });
 });
 
-/** Each mark in the highlighted verse, as [which term, the letters marked]. */
-function marks(): Array<[string, string]> {
+/** Each mark in the highlighted verse, as [its colour's place in the palette, the letters marked]. */
+function marks(): Array<[number, string]> {
   const fragment = searchOverlay.highlightItemText(
     createVerse({ book: 'Genesis', chapter: 8, verse: 20 }),
     hebrew,
@@ -42,7 +43,7 @@ function marks(): Array<[string, string]> {
   host.appendChild(fragment.cloneNode(true));
 
   return [...host.querySelectorAll('mark')].map((m) => [
-    m.className,
+    placeOfMark(m as HTMLElement),
     (m.textContent ?? '').replace(/[^א-ת]/g, ''),
   ]);
 }
@@ -60,21 +61,21 @@ describe('marking a verse that holds two words of one spelling', () => {
     // verse decides which is which. Matching on the spelling alone gives both
     // words to whichever term claims a position first.
     expect(marks()).toEqual([
-      ['term-0', 'ויעל'],
-      ['term-1', 'עלת'],
+      [0, 'ויעל'],
+      [1, 'עלת'],
     ]);
   });
 
   it('marks the verb alone when only the verb is searched for', () => {
     searchOverlay.restore({ search: 'עלה', m: ASCEND });
 
-    expect(marks()).toEqual([['term-0', 'ויעל']]);
+    expect(marks()).toEqual([[0, 'ויעל']]);
   });
 
   it('marks the offering alone when only the nouns are searched for', () => {
     searchOverlay.restore({ search: 'עלה', m: OFFERINGS });
 
-    expect(marks()).toEqual([['term-0', 'עלת']]);
+    expect(marks()).toEqual([[0, 'עלת']]);
   });
 
   it('still marks both when the term is not narrowed at all', () => {
@@ -94,8 +95,8 @@ describe('marking a verse without the per-word parse', () => {
     searchOverlay.restore({ search: 'עלה', m: ASCEND });
 
     expect(marks()).toEqual([
-      ['term-0', 'ויעל'],
-      ['term-0', 'עלת'],
+      [0, 'ויעל'],
+      [0, 'עלת'],
     ]);
   });
 });

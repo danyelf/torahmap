@@ -5,7 +5,7 @@
 // name a term by its position in the searched list. Those are the same number
 // until a term is removed, and then they are not.
 
-import { SEARCH_COLORS } from '@torahmap/search';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../src/search/index';
 import { configure } from '../../../src/search/index.ts';
@@ -14,6 +14,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { searchDataFor } from '../../helpers/searchData';
+import { placeOfMark } from '../../helpers/termMarks';
 
 const texts: VerseTexts = {
   Genesis: {
@@ -47,7 +48,7 @@ function rowInput(container: HTMLElement, index: number): HTMLInputElement {
 }
 
 function css(index: number): string {
-  const [r, g, b] = SEARCH_COLORS[index];
+  const [r, g, b] = PALETTE[index];
   return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
 }
 
@@ -77,7 +78,7 @@ describe('a surviving term keeps one colour', () => {
     expect(swatch.style.background).toBe(css(1));
 
     const mark = container.querySelector<HTMLElement>('.search-result .snippet mark')!;
-    expect(mark.className).toBe('term-1');
+    expect(placeOfMark(mark)).toBe(1);
   });
 
   it('marks the verse text in the same colour as the row', () => {
@@ -98,7 +99,7 @@ describe('a surviving term keeps one colour', () => {
 
     const mark = holder.querySelector('mark')!;
     expect(mark.textContent).toBe('spirit');
-    expect(mark.className).toBe('term-1');
+    expect(placeOfMark(mark)).toBe(1);
   });
 
   it('keeps the second colour on the map', () => {
@@ -111,7 +112,7 @@ describe('a surviving term keeps one colour', () => {
 
     // Genesis 1:2 holds "spirit". Settings rebuilt from the URL would give the
     // survivor colour 0 once it moves to the first position.
-    expect(searchOverlay.getItemColor(verses[1])).toEqual(SEARCH_COLORS[1]);
+    expect(searchOverlay.getItemColor(verses[1])).toEqual(PALETTE[1]);
   });
 });
 

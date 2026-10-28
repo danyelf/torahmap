@@ -13,8 +13,11 @@ export type LinkParams = URLSearchParams | Readonly<Record<string, string | unde
 export interface OverlaySettings {
   get<T, S>(overlay: Overlay<T, S>): S;
   set<T, S>(overlay: Overlay<T, S>, next: S): void;
-  /** Replace an overlay's settings with the ones a link or a story stop names. */
-  restore(overlay: Overlay<unknown>, raw: LinkParams): void;
+  /**
+   * Replace an overlay's settings with the ones a link or a story stop names, its colours
+   * chosen to avoid `taken`.
+   */
+  restore(overlay: Overlay<unknown>, raw: LinkParams, taken?: readonly number[]): void;
   /** An overlay's settings as link parameters, with values at their default left out. */
   toUrl(overlay: Overlay<unknown>): Record<string, string>;
 }
@@ -33,8 +36,8 @@ export function createOverlaySettings(): OverlaySettings {
       byId.set(overlay.id, next);
     },
 
-    restore(overlay, raw) {
-      store.set(overlay, settingsFromLink(overlay, raw));
+    restore(overlay, raw, taken) {
+      store.set(overlay, settingsFromLink(overlay, raw, taken));
     },
 
     toUrl(overlay) {
@@ -48,9 +51,13 @@ export function createOverlaySettings(): OverlaySettings {
  * The settings a link's parameters name for an overlay, once validated against
  * its urlParams. An empty link names its defaults.
  */
-export function settingsFromLink<T, S>(overlay: Overlay<T, S>, raw: LinkParams): S {
+export function settingsFromLink<T, S>(
+  overlay: Overlay<T, S>,
+  raw: LinkParams,
+  taken: readonly number[] = [],
+): S {
   // An overlay without settings is handed undefined, as its S says.
-  return overlay.settingsFromUrl?.(validateOverlayParams(overlay.urlParams, raw)) as S;
+  return overlay.settingsFromUrl?.(validateOverlayParams(overlay.urlParams, raw), taken) as S;
 }
 
 function withoutDefaults(

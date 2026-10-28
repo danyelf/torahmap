@@ -154,7 +154,7 @@ async function main(): Promise<void> {
       controlsContainer,
       settings.get(searchOverlay),
       (update) => {
-        settings.set(searchOverlay, update(settings.get(searchOverlay)));
+        settings.set(searchOverlay, update(settings.get(searchOverlay), []));
         draw();
       },
       data,

@@ -13,6 +13,11 @@ export function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;
 }
 
+/** A color as CSS, see-through by `alpha`: 0 shows nothing of it, 1 all. */
+export function colorToCssAlpha(color: Color, alpha: number): string {
+  return `rgba(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)}, ${alpha})`;
+}
+
 /** Each channel times `factor`, held at 1; a factor below 1 darkens. */
 export function brighten(color: Color, factor: number): Color {
   return [

@@ -42,7 +42,7 @@ function clickWord(text: string, meaningKeys: readonly string[] | null): boolean
   if (!canAddTerm(searchOverlay.settings as SearchSettings)) return false;
   searchOverlay.change(
     (current) =>
-      searchForMeaning(dictionary, current as SearchSettings, text, meaningKeys) ?? current,
+      searchForMeaning(dictionary, current as SearchSettings, text, meaningKeys, []) ?? current,
   );
   return true;
 }

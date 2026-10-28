@@ -3,8 +3,9 @@
 // Told what to show on every pass, so it holds no opinion about what the search
 // found — only how far down its own list it has drawn.
 import { colorToCss } from '@torahmap/utils';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import type { SearchResult, Snippet } from './textIndex.ts';
-import { SEARCH_COLORS, colorIndexAt, type SearchTerm } from './terms.ts';
+import { colorIndexAt, type SearchTerm } from './terms.ts';
 import { markRange } from './highlight.ts';
 
 /** Everything one pass of the list needs to know. */
@@ -36,7 +37,7 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
   for (const m of result.matchingTerms) {
     const dot = document.createElement('span');
     dot.className = 'term-dot';
-    dot.style.background = colorToCss(SEARCH_COLORS[colorIndexAt(view.terms, m.termIndex)]);
+    dot.style.background = colorToCss(PALETTE[colorIndexAt(view.terms, m.termIndex)]);
     termIndicators.appendChild(dot);
   }
   refDiv.appendChild(termIndicators);
