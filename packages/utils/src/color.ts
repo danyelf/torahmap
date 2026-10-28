@@ -1,6 +1,13 @@
 /** Red, green and blue, each 0 to 1. */
 export type Color = [number, number, number];
 
+/** A color from its hex digits, "#9aa3ad". */
+export const hex = (rgb: string): Color => [
+  parseInt(rgb.slice(1, 3), 16) / 255,
+  parseInt(rgb.slice(3, 5), 16) / 255,
+  parseInt(rgb.slice(5, 7), 16) / 255,
+];
+
 /** A color as CSS, for a swatch or a background the GPU is not drawing. */
 export function colorToCss(color: Color): string {
   return `rgb(${Math.round(color[0] * 255)}, ${Math.round(color[1] * 255)}, ${Math.round(color[2] * 255)})`;

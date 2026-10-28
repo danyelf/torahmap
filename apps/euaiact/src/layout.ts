@@ -1,7 +1,7 @@
 // Where every square of the Act stands: recitals over articles over annexes.
 
 import type { MapItem } from '@torahmap/engine';
-import { positionJitter } from '@torahmap/utils';
+import { idHash, positionJitter } from '@torahmap/utils';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
 import type { ActBlock, ActCell, ActGroup, ActStructure, Origin } from './data.ts';
 import type { Layer } from './ids.ts';
@@ -17,7 +17,6 @@ import {
   POSITION_JITTER,
   SQUARE_SIZE as S,
 } from './constants.ts';
-import { idHash } from './ids.ts';
 
 const jitterFor = (id: string) => positionJitter(idHash(id), POSITION_JITTER);
 

@@ -3,6 +3,13 @@
 import type { Color } from './color.ts';
 import { seededRandom } from './random.ts';
 
+/** A number from a square's id, the seed for its jitter. */
+export function idHash(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return h;
+}
+
 /** An offset of up to ±range on each axis. */
 export function positionJitter(seed: number, range: number): { x: number; y: number } {
   return {

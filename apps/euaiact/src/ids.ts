@@ -33,13 +33,6 @@ export function ownerOf(id: string): string {
   }
 }
 
-/** A number from a square's id, the seed for its jitter. */
-export function idHash(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
-  return h;
-}
-
 /** A square as readers cite it: "Recital 12", "Article 5(1)(h)", "Annex III". */
 export function actRef(id: string): string {
   switch (layerOf(id)) {

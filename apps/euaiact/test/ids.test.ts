@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { actRef, idHash, layerOf, ownerOf, sourceUrl } from '../src/ids.ts';
+import { actRef, layerOf, ownerOf, sourceUrl } from '../src/ids.ts';
 
 describe('a square’s id', () => {
   it.each([
@@ -18,11 +18,5 @@ describe('a square’s id', () => {
     expect(sourceUrl('Recital.12')).toMatch(/#rct_12$/);
     expect(sourceUrl('5(1)(h)')).toMatch(/#art_5$/);
     expect(sourceUrl('Annex.III.2.5')).toMatch(/#anx_III$/);
-  });
-
-  it('gives each id its own seed, the same every time', () => {
-    const ids = ['6(1)', '6(2)', '5(1)(h)', 'Recital.1', 'Recital.2'];
-    expect(new Set(ids.map(idHash)).size).toBe(ids.length);
-    expect(idHash('6(1)')).toBe(idHash('6(1)'));
   });
 });

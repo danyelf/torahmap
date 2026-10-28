@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  hex,
   rgbToHsl,
   hslToRgb,
   rgbToOklch,
@@ -396,5 +397,12 @@ describe('OKLCH', () => {
     const edge = oklchToRgb(0.6, c, 250);
     expect(Math.max(...edge) > 0.99 || Math.min(...edge) < 0.01).toBe(true);
     expect(rgbToOklch(edge).c).toBeCloseTo(c, 1);
+  });
+});
+
+describe('a color from hex digits', () => {
+  it('reads each pair as a channel from 0 to 1', () => {
+    expect(hex('#000000')).toEqual([0, 0, 0]);
+    expect(hex('#ff8000')).toEqual([1, 128 / 255, 0]);
   });
 });
