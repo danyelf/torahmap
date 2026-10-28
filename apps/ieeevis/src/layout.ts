@@ -17,15 +17,16 @@ const SHORT_PAPERS_PER_DAY = 8; // across a day's width, which longer papers sha
 // Papers of up to 48 pieces keep four columns; a longer one gains columns rather than height.
 const MAX_PAPER_ROWS = 12;
 const PAPER_GAP = SQUARE_SIZE;
-const LINE_GAP = 5 * SQUARE_SIZE; // between one line of papers and the next
-const LABEL_ROOM = 6 * SQUARE_SIZE; // above each session, for a one-line name
+const LINE_GAP = 2 * SQUARE_SIZE; // between one line of papers and the next
+const LABEL_ROOM = 4 * SQUARE_SIZE; // above each session, for a one-line name
 const LABEL_LINE = 3 * SQUARE_SIZE; // each further line of a name that wraps
 // Characters of a session's name that fit across a day at the label's size.
 const LABEL_LINE_CHARS = 32;
-const SLOT_GAP = 6 * SQUARE_SIZE; // between one time slot and the next
-const TIME_ROOM = 10 * SQUARE_SIZE; // at the top of a slot, for its time, before its first session
+const SLOT_GAP = 3 * SQUARE_SIZE; // between one time slot and the next
 export const PANEL_PAD = 8; // a slot's panel reaches this far past its squares, but not above its top
-const DAY_GAP = 10 * SQUARE_SIZE; // holds two panels' padding and the day label that stands to the left
+// Left of a slot's panel, for its time.
+export const TIME_STRIP = 7 * SQUARE_SIZE;
+const DAY_GAP = 2 * PANEL_PAD + TIME_STRIP;
 const DAY_WIDTH =
   SHORT_PAPERS_PER_DAY * MIN_PAPER_COLUMNS * SQUARE_SIZE + (SHORT_PAPERS_PER_DAY - 1) * PAPER_GAP;
 
@@ -93,9 +94,9 @@ export function computeLayout(structure: Structure): Layout {
     timeSlotsOf(day).forEach((slot, s) => {
       if (s > 0) y += SLOT_GAP;
       const top = y;
-      // A book with no name: the day's name stands level with the top of its first slot.
-      if (s === 0) books.push(label('', day, top + LABEL_ROOM));
-      y += TIME_ROOM;
+      // A book with no name: the day's name stands above the top of its first slot.
+      if (s === 0) books.push(label('', day, top));
+      y += PANEL_PAD;
       for (const session of slot.sessions) {
         y += LABEL_ROOM + (nameLines(session.name) - 1) * LABEL_LINE;
         books.push(label(session.name, day, y));
