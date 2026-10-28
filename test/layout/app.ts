@@ -481,3 +481,38 @@ export const TALMUD_STATES: State[] = [
     shown: [GO_TO_BOX, '.goto-none'],
   },
 ];
+
+/** The VIS map's page, at /ieeevis/ (ieeevis.spec.ts). */
+export const IEEEVIS_STATES: State[] = [
+  { name: 'vis-default', link: '', shown: ['#map-legend'] },
+  { name: 'vis-sections', link: 'overlay=sections', shown: ['#map-legend'] },
+  { name: 'vis-session-wrap', link: 'at=38.0&zoom=2', shown: ['#popup.visible'] },
+  { name: 'vis-references-popup', link: 'at=1.12&zoom=4', shown: ['#popup.visible'] },
+  {
+    name: 'vis-authors',
+    link: 'overlay=authors&authors=Bei Wang,Chaoli Wang',
+    shown: ['#map-legend'],
+  },
+  {
+    name: 'vis-authors-panel',
+    link: 'overlay=authors&authors=Bei Wang,Chaoli Wang',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['.pick-input', '.pick-picked-row'],
+  },
+  {
+    name: 'vis-keywords',
+    link: 'overlay=keywords&keywords=visual analytics,Uncertainty visualization',
+    shown: ['#map-legend'],
+  },
+  {
+    name: 'vis-keywords-panel',
+    link: 'overlay=keywords&keywords=visual analytics,Uncertainty visualization',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['.pick-input'],
+  },
+  {
+    name: 'vis-search-and-keywords',
+    link: 'search=drucker&overlay=keywords&keywords=visual analytics,Uncertainty visualization',
+    shown: ['#map-legend'],
+  },
+];
