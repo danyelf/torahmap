@@ -156,7 +156,12 @@ interface OverlayMembers<T, S, D> {
     onChange: (update: SettingsUpdate<S>) => void,
     data: D | null,
   ): void;
-  renderLegend?(container: HTMLElement, settings: S, data: D | null): void;
+  renderLegend?(
+    container: HTMLElement,
+    settings: S,
+    data: D | null,
+    items?: SpatialItem<T>[],
+  ): void;
 
   // Says in the panel what the overlay finds about the hovered or pinned square.
   // The container is emptied before each call; `travelTo` pins a square by id and

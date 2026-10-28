@@ -29,6 +29,8 @@ import {
   wheelStops,
   type Place,
 } from './text-analytics/wheel.ts';
+import { SECTION_NAMES } from '../labels.ts';
+import { getBookSection } from '../books.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { wordsRead } from '../search/dictionary.ts';
@@ -215,6 +217,35 @@ function matched(
   return items.map((item) => !!matches?.has(item.id));
 }
 
+// How many colours a section's strip in the echoes legend shows.
+const STRIP_CELLS = 24;
+
+/** Each section's verses in reading order, as a strip of their own wheel colours. */
+function sectionStrips(scores: ScoresFile, items: readonly TanakhLayout[]): string {
+  const wheel = wheelOf(items);
+  const { places } = readingOrder(scores);
+  return (Object.keys(SECTION_NAMES) as Array<keyof typeof SECTION_NAMES>)
+    .map((section) => {
+      const verses = places.filter((place) => getBookSection(place.book) === section);
+      if (verses.length === 0) return '';
+      const cells = Array.from({ length: STRIP_CELLS }, (_, i) => {
+        const verse = verses[Math.floor(((i + 0.5) * verses.length) / STRIP_CELLS)];
+        const color = wheel.colorAt(verse.id);
+        const rgb = color ? color.map((c) => Math.round(c * 255)).join(',') : '128,128,128';
+        const from = (i / STRIP_CELLS) * 100;
+        const to = ((i + 1) / STRIP_CELLS) * 100;
+        return `rgb(${rgb}) ${from}% ${to}%`;
+      });
+      return (
+        `<div class="echo-section"><div class="echo-section-name">${SECTION_NAMES[section].en}</div>` +
+        `<div class="echo-strip" style="background: linear-gradient(to right, ${cells.join(', ')})"></div>` +
+        `<div class="echo-strip-ends"><span>${verses[0].book}</span>` +
+        `<span>${verses[verses.length - 1].book}</span></div></div>`
+      );
+    })
+    .join('');
+}
+
 export const textAnalyticsOverlay: Overlay<
   TanakhIdentity,
   TextAnalyticsSettings,
@@ -328,17 +359,17 @@ export const textAnalyticsOverlay: Overlay<
     return echoKey(data, settings, before) !== echoKey(data, settings, after);
   },
 
-  renderLegend(container, settings, data) {
+  renderLegend(container, settings, data, items = []) {
     if (!data) {
       container.innerHTML = '';
       return;
     }
     if (settings.analysis === 'echoes') {
       container.innerHTML =
-        `<div class="echo-wheel" style="background: conic-gradient(${wheelStops().join(', ')})"></div>` +
+        sectionStrips(data.scores, items) +
         [
-          `A colour wheel over the map, centred near the end of II Kings: a verse that shares a ` +
-            `phrase with others takes the colour at the place of the echo farthest from it`,
+          `A verse that shares a phrase with others takes the colour of the place on the map of ` +
+            `the echo farthest from it`,
           `A verse with no echo is grey`,
           `Phrases that recur in many verses wherever they appear don't count`,
           `Hover or select a verse to light its parallels`,

@@ -3,6 +3,7 @@ import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overl
 import { NO_DATA } from '../../../src/overlays/colors';
 import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
+import { initBookData } from '../../../src/books';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { assertNamedEnds } from '../../helpers/assertions';
@@ -342,5 +343,35 @@ describe('Text Analytics overlay', () => {
         expect(textAnalyticsOverlay.backdrop!(items, wording, data)).toBeNull();
       });
     });
+  });
+
+  it('draws the echoes legend as a strip for each section, named by its first and last book', () => {
+    initBookData({
+      books: [
+        { name: 'Genesis', hebrewName: '', section: 'torah', chapters: [4] },
+        { name: 'Exodus', hebrewName: '', section: 'torah', chapters: [1] },
+        { name: 'Isaiah', hebrewName: '', section: 'neviim', chapters: [1] },
+      ],
+      layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+    });
+    const scores = {
+      ...data.scores,
+      repetition: { Genesis: { '1': [0, 0, 0, 0] }, Exodus: { '1': [0] }, Isaiah: { '1': [0] } },
+    };
+    const items = [
+      createVerse({ book: 'Genesis', verse: 1, x: 0, y: 0 }),
+      createVerse({ book: 'Exodus', verse: 1, x: 50, y: 0 }),
+      createVerse({ book: 'Isaiah', verse: 1, x: 100, y: 50 }),
+    ];
+    const container = document.createElement('div');
+    textAnalyticsOverlay.renderLegend!(container, echoSettings, { ...data, scores }, items);
+    const rows = [...container.querySelectorAll('.echo-section')];
+    expect(rows.map((r) => r.querySelector('.echo-section-name')!.textContent)).toEqual([
+      'Five Books',
+      'Prophets',
+    ]);
+    expect(
+      [...rows[0].querySelectorAll('.echo-strip-ends span')].map((e) => e.textContent),
+    ).toEqual(['Genesis', 'Exodus']);
   });
 });
