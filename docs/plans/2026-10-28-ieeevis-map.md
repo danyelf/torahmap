@@ -35,7 +35,7 @@ cleaned code found what was left over. Fixed:
   new layout equals the old on the real data (compared object for object).
 - `?fill=rows|columns|sections` was an experiment: it was read from the address once, was not a link
   parameter, so the first pan or zoom wrote a link without it, and nothing linked to it. It is gone;
-  pieces fill in rows, as the default did. The `columns` and `sections` fills are in #471's history.
+  the section fill is the layout, and the `rows` and `columns` fills are in #471's history.
 - `hex` (a colour from `#9aa3ad`) and `idHash` (a square id's jitter seed) were copied from the AI Act's
   code. Both now live in `packages/utils` (#498).
 - `covers.ts`, the tinted panel behind a group of squares, sat in `packages/shell` with a comment
@@ -71,7 +71,7 @@ Two real faults, both in the spike too:
   no end times.
 - **Sessions in each slot**, each with its name above it, wrapping to more lines when it is too long
   for its width (the workshop titles). Papers in rows of eight under the session.
-- **A paper is a block of squares**, four across, one for each piece of about 250 words in order. A paper
+- **A paper is a block of squares**, four across, one for each piece of about 250 words in order. Each section starts a new row, and a section longer than a row wraps onto the next. A paper
   with no text at all (18 of 488) is a block of dark squares with a dim ring, sized by its kind of paper.
 - **Opening colouring: Paper type.** The story's first stop names that overlay, so a first-time
   visitor sees it. A returning reader, who skips the story, opens with no overlay.

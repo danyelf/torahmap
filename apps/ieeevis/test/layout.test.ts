@@ -93,3 +93,22 @@ describe('a paper’s block', () => {
     expect(slots[6]).toEqual({ column: 0, row: 2 });
   });
 });
+
+describe('a block’s height', () => {
+  it('follows its rows, so the next session starts below the last row', () => {
+    const tall = computeLayout({
+      days: [
+        {
+          name: 'Mon',
+          sessions: [
+            { name: 'A', start: '08:00', papers: [paper(0, 'aaiem')] },
+            { name: 'B', start: '08:00', papers: [paper(1, 'a')] },
+          ],
+        },
+      ],
+    });
+    const byId = new Map(tall.items.map((item) => [item.id, item]));
+    const lastRow = byId.get(pieceId(0, 4))!;
+    expect(byId.get(pieceId(1, 0))!.y).toBeGreaterThan(lastRow.y + lastRow.size);
+  });
+});
