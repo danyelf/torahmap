@@ -3,11 +3,12 @@
 
 import { MAP_BACKGROUND } from '@torahmap/engine';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
-import { colorToCss, colorToCssAlpha, escapeHtml, hslToRgb, type Color } from '@torahmap/utils';
+import { colorToCss, colorToCssAlpha, hslToRgb, type Color } from '@torahmap/utils';
 import { DATING_FILE, isSure, UNDATED, type Generation, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR } from '../constants.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
+import { legendHeading, swatchRow } from '@torahmap/shell/overlays/swatchList.ts';
 import { wrapRuns } from '@torahmap/shell/textRuns.ts';
 
 export interface DatingData {
@@ -126,11 +127,6 @@ function rowLabel(code: string): string {
   return `${ORDINALS[Number(code.slice(1))]} ${code[0] === 'Z' ? 'pair' : 'generation'}`;
 }
 
-const swatch = (color: Color) =>
-  `<span class="swatch" style="background: ${colorToCss(color)}"></span>`;
-export const row = (color: Color, label: string, apart = false) =>
-  `<div class="legend-row${apart ? ' apart' : ''}">${swatch(color)}<span>${escapeHtml(label)}</span></div>`;
-
 /** Opens the Rabbis overlay at a rabbi. Set once the shell is running; names are plain text until then. */
 export interface RabbiLink {
   open?(id: string): void;
@@ -208,20 +204,22 @@ export function datingOverlay(
       const rowsOf = (include: (code: string) => boolean, apart = false) =>
         generations
           .filter((g) => include(g.code))
-          .map((g) => row(generationColor(g.code), `${rowLabel(g.code)} · ${yearsOf(g)}`, apart));
+          .map((g) =>
+            swatchRow(generationColor(g.code), `${rowLabel(g.code)} · ${yearsOf(g)}`, apart),
+          );
       const sections = ERAS.flatMap(({ name }) => {
         const rows = rowsOf((code) => eraOf(code) === name && code !== TRANSITION);
-        const heading = rows.length ? [`<div class="legend-heading">${name}</div>`, ...rows] : [];
+        const heading = rows.length ? [legendHeading(name), ...rows] : [];
         // The transitional generation stands between the Tannaim and the Amoraim, a row of its own.
         return name === 'Tannaim'
           ? [...heading, ...rowsOf((code) => code === TRANSITION, true)]
           : heading;
       });
-      container.innerHTML = [
+      container.replaceChildren(
         ...sections,
-        row(GREY, 'Uncertain: the name could be several rabbis'),
-        row(faint(GEMARA_BASE_COLOR), 'Names no rabbi with a known generation'),
-      ].join('');
+        swatchRow(GREY, 'Uncertain: the name could be several rabbis'),
+        swatchRow(faint(GEMARA_BASE_COLOR), 'Names no rabbi with a known generation'),
+      );
     },
 
     // One square for each colour band that occurs, in a group for each era.

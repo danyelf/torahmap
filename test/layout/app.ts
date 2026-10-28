@@ -202,6 +202,15 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
+    name: 'explore-trop-legend',
+    link: 'overlay=trop&trop=shalshelet',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
+  },
+  {
     name: 'explore-trop',
     link: 'overlay=trop&trop=tipcha',
     then: (page) => viaMenu(page, 'overlay'),
@@ -375,6 +384,24 @@ export const STATES: State[] = [
 export const ACT_STATES: State[] = [
   { name: 'act-opening', link: '' },
   { name: 'act-article-numbers', link: 'zoom=2&x=300&y=240' },
+  {
+    name: 'act-amendment-legend',
+    link: 'overlay=amendment',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
+  },
+  {
+    name: 'act-references-legend',
+    link: 'overlay=references&article=6',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
+  },
   { name: 'act-amendment', link: 'overlay=amendment&zoom=0.6', shown: ['#map-legend'] },
   {
     name: 'act-references',
@@ -446,6 +473,21 @@ export const TALMUD_STATES: State[] = [
     link: '',
     then: (page) => goTo(page, 'Berakhot 17a'),
     shown: [GO_TO_BOX, '.goto-offer'],
+  },
+  {
+    name: 'talmud-dating-legend',
+    link: 'overlay=dating',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
+    name: 'talmud-rabbis-legend',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
   },
   { name: 'talmud-dating', link: 'overlay=dating', shown: ['#map-legend'] },
   {
