@@ -319,8 +319,38 @@ describe('Text Analytics overlay', () => {
         })[0];
 
       it('colours a verse by the direction of its farthest echo from the centre, not the distance', () => {
-        expect(colourOfFirst(603, 408)).toEqual(colourOfFirst(653, 358));
-        expect(colourOfFirst(603, 408)).not.toEqual(colourOfFirst(403, 408));
+        expect(colourOfFirst(753, 258)).toEqual(colourOfFirst(803, 208));
+        expect(colourOfFirst(753, 258)).not.toEqual(colourOfFirst(253, 258));
+      });
+
+      // How far a colour is from grey: the spread of its channels.
+      const colourfulness = (color: unknown) => {
+        const channels = color as number[];
+        return Math.max(...channels) - Math.min(...channels);
+      };
+
+      it('fades a place near the wheel centre toward grey', () => {
+        expect(colourfulness(colourOfFirst(503, 508))).toBeLessThan(0.01);
+        expect(colourfulness(colourOfFirst(503, 508))).toBeLessThan(
+          colourfulness(colourOfFirst(803, 208)),
+        );
+      });
+
+      it('fades an echo near its verse toward grey, but stays brighter than an unmatched verse', () => {
+        const hop = (x: number, y: number) =>
+          textAnalyticsOverlay.colorsFor!(
+            [
+              createVerse({ verse: 1, x: x - 30, y: y - 30 }),
+              createVerse({ verse: 4, x: x - 3, y: y - 3 }),
+              anchor,
+            ],
+            echoSettings,
+            null,
+            { ...data, echoes: { 0: [3, 5] } },
+          )[0]!;
+        const near = hop(803, 208);
+        expect(colourfulness(near)).toBeLessThan(colourfulness(colourOfFirst(803, 208)));
+        expect(Math.min(...(near as number[]))).toBeGreaterThan(Math.max(...DIMMED_GREY));
       });
 
       it('colours a verse by the place of its farthest echo in reading order', () => {

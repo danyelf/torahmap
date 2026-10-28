@@ -112,6 +112,12 @@ function oklch(lightness: number, chroma: number, hue: number): Color {
 }
 
 const BRIGHT = { lightness: 0.78, chroma: 0.17 };
+// Within this many map units of the centre a small step in place is a large step in angle, so the
+// colour fades to grey there rather than jumping from verse to verse. Kings lies 200 to 570 out.
+const CENTRE_FADE_RADIUS = 250;
+// An echo this many map units away or more shows its full colour; nearer ones fade toward grey,
+// since neighbouring verses with a short hop between them would otherwise differ in hue.
+const ECHO_FADE_DISTANCE = 600;
 const BACKDROP_OPACITY = 0.12;
 const MARGIN = 400;
 
@@ -128,18 +134,33 @@ export const wheelOf = memoByValue((items: readonly TanakhLayout[]) => {
     at.set(id, { x: x + size / 2, y: y + size / 2 });
   }
   const centre = { x: CENTRE.x * width, y: CENTRE.y * height };
-  const bright = new Map<number, Color>();
+  const bright = new Map<string, Color>();
   return {
     centre,
     rect: { minX: -MARGIN, minY: -MARGIN, maxX: width + MARGIN, maxY: height + MARGIN },
-    /** The bright colour at the place of the verse with this id, or null for an unknown verse. */
-    colorAt(id: string): Color | null {
+    /** The map distance between the verses with these ids, or null if either is unknown. */
+    distance(a: string, b: string): number | null {
+      const from = at.get(a);
+      const to = at.get(b);
+      return from && to ? Math.hypot(from.x - to.x, from.y - to.y) : null;
+    },
+    /**
+     * The colour at the place of the verse with this id, or null for an unknown verse. It fades
+     * toward grey near the centre; given the map distance `reach` of an echo, it fades for a
+     * short one too.
+     */
+    colorAt(id: string, reach?: number): Color | null {
       const place = at.get(id);
       if (!place) return null;
       const angle = (Math.atan2(place.x - centre.x, centre.y - place.y) * 180) / Math.PI;
       const hue = hueAtAngle(angle);
-      if (!bright.has(hue)) bright.set(hue, oklch(BRIGHT.lightness, BRIGHT.chroma, hue));
-      return bright.get(hue)!;
+      const strength =
+        Math.min(1, Math.hypot(place.x - centre.x, place.y - centre.y) / CENTRE_FADE_RADIUS) *
+        (reach === undefined ? 1 : Math.min(1, reach / ECHO_FADE_DISTANCE));
+      const chroma = Math.round(BRIGHT.chroma * strength * 1000) / 1000;
+      const key = `${hue}:${chroma}`;
+      if (!bright.has(key)) bright.set(key, oklch(BRIGHT.lightness, chroma, hue));
+      return bright.get(key)!;
     },
   };
 });
@@ -155,5 +176,11 @@ export const wheelStops = (): string[] => stops(SLICES);
 /** The wheel as the field behind a map's squares. */
 export function backdropOf(items: readonly TanakhLayout[]) {
   const { centre, rect } = wheelOf(items);
-  return { rect, centre, stops: wheelStops(), opacity: BACKDROP_OPACITY };
+  return {
+    rect,
+    centre,
+    stops: wheelStops(),
+    opacity: BACKDROP_OPACITY,
+    fade: { radius: CENTRE_FADE_RADIUS, color: css(oklch(BRIGHT.lightness, 0, 0)) },
+  };
 }

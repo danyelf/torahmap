@@ -21,24 +21,34 @@ export function createBackdrop(parent: HTMLElement) {
 
   let shown: Backdrop | null = null;
   let placedAt = NaN;
+  let zoomNow = 1;
+
+  /** The hue field, and above it the grey of the fade, whose radius in pixels follows the zoom. */
+  function paint({ rect, centre, stops, fade }: Backdrop): void {
+    const x = ((centre.x - rect.minX) / (rect.maxX - rect.minX)) * 100;
+    const y = ((centre.y - rect.minY) / (rect.maxY - rect.minY)) * 100;
+    const hues = `conic-gradient(from 0deg at ${x}% ${y}%, ${stops
+      .map((colour, i) => `${colour} ${(i / stops.length) * 360}deg`)
+      .join(', ')}, ${stops[0]} 360deg)`;
+    field.style.background = fade
+      ? `radial-gradient(circle ${fade.radius * zoomNow}px at ${x}% ${y}%, ${fade.color}, transparent), ${hues}`
+      : hues;
+  }
   return {
     show(next: Backdrop | null): void {
       shown = next;
       placedAt = NaN;
       field.hidden = next === null;
       if (!next) return;
-      const { rect, centre, stops, opacity } = next;
-      const x = ((centre.x - rect.minX) / (rect.maxX - rect.minX)) * 100;
-      const y = ((centre.y - rect.minY) / (rect.maxY - rect.minY)) * 100;
-      field.style.background = `conic-gradient(from 0deg at ${x}% ${y}%, ${stops
-        .map((colour, i) => `${colour} ${(i / stops.length) * 360}deg`)
-        .join(', ')}, ${stops[0]} 360deg)`;
-      field.style.opacity = String(opacity);
+      field.style.opacity = String(next.opacity);
+      paint(next);
     },
     place(pan: Pan, zoom: number): void {
       layer.style.transform = `translate(${pan.x * zoom}px, ${pan.y * zoom}px)`;
       if (!shown || zoom === placedAt) return;
       placedAt = zoom;
+      zoomNow = zoom;
+      paint(shown);
       const { rect } = shown;
       field.style.left = `${rect.minX * zoom}px`;
       field.style.top = `${rect.minY * zoom}px`;

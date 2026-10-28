@@ -292,6 +292,12 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
+    // Kings, where the wheel's hue changes fast from verse to verse: nearby echoes fade to grey.
+    name: 'explore-text-analytics-echoes-kings-pinned',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.6&verse=I.Kings.16.27',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
     // Pinned, a verse keeps its reading and haftarah lit.
     name: 'explore-haftarah-pinned',
     link: 'overlay=haftarah&verse=Genesis.1.1',

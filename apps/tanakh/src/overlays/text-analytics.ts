@@ -171,7 +171,8 @@ function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: b
 }
 
 /**
- * A verse with echoes is the wheel's colour where its farthest echo lies; one without takes the
+ * A verse with echoes is the wheel's colour where its farthest echo lies, fading to grey the
+ * nearer that echo is; one without takes the
  * map's grey. Out of focus both dim: the grey to the dimmed grey, the colour toward it.
  */
 function echoColorAt(
@@ -188,7 +189,8 @@ function echoColorAt(
   const [farthest] = echoes.reduce((far, e) =>
     Math.abs(e[0] - position) > Math.abs(far[0] - position) ? e : far,
   );
-  const color = wheel.colorAt(places[farthest].id);
+  const reach = wheel.distance(verse.id, places[farthest].id) ?? undefined;
+  const color = wheel.colorAt(places[farthest].id, reach);
   if (!color) return dim ? DIMMED_GREY : null;
   return dim ? mixToward(color, DIMMED_GREY, DIM_SHARE) : color;
 }
