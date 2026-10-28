@@ -25,7 +25,7 @@ const search = createTermSearch<{ id: string }, Data>({
 });
 
 const fromLink = (params: Record<string, string>): TermSettings =>
-  search.tool.settingsFromUrl!(params);
+  search.tool.settingsFromUrl!(params, []);
 
 describe('a term search with no extra mode', () => {
   it('reads and writes its terms and their modes in the link', () => {

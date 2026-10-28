@@ -6,6 +6,9 @@ import type { SearchData } from '../../src/search/data.ts';
 import { tanakhSearch } from '../../src/search/index.ts';
 
 export function searchInMeaningsMode(data: SearchData, query: string): SearchResult[] {
-  const terms = parseSearchTerms(query).reduce(addTerm, [] as SearchTerm[]);
+  const terms = parseSearchTerms(query).reduce(
+    (list, text) => addTerm(list, text),
+    [] as SearchTerm[],
+  );
   return tanakhSearch.resultsFor(data, { terms });
 }

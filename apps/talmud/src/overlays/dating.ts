@@ -3,7 +3,7 @@
 
 import { MAP_BACKGROUND } from '@torahmap/engine';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
-import { colorToCss, escapeHtml, hslToRgb, type Color } from '@torahmap/utils';
+import { colorToCss, colorToCssAlpha, escapeHtml, hslToRgb, type Color } from '@torahmap/utils';
 import { DATING_FILE, isSure, UNDATED, type Generation, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR } from '../constants.ts';
@@ -165,9 +165,8 @@ export function markNames(
     return null;
   };
   return wrapRuns(fragment, text, spanAt, (i, run) => {
-    const [r, g, b] = colorOf(spans[i + 2])!.map((c) => Math.round(c * 255));
     const mark = document.createElement('mark');
-    mark.style.cssText = `background: rgba(${r}, ${g}, ${b}, 0.5); color: inherit; border-radius: 2px`;
+    mark.style.cssText = `background: ${colorToCssAlpha(colorOf(spans[i + 2])!, 0.5)}; color: inherit; border-radius: 2px`;
     mark.textContent = run;
     return mark;
   });

@@ -1,4 +1,4 @@
-import { SEARCH_COLORS } from '@torahmap/search';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { describe, it, expect } from 'vitest';
 import { buildDictionary, buildTextIndex, type LexiconFile } from '../../src/search/search';
 import { searchTool } from '../../src/search/index';
@@ -67,7 +67,7 @@ describe('one search over two dictionaries', () => {
     // Unknown to the dictionary the word finds nothing; known, it finds the
     // verses the dictionary files it under.
     expect(searchTool.colorsFor(verses, settings, null, unknown)).toEqual([null, null]);
-    expect(searchTool.colorsFor(verses, settings, null, known)).toEqual([null, SEARCH_COLORS[0]]);
+    expect(searchTool.colorsFor(verses, settings, null, known)).toEqual([null, PALETTE[0]]);
     expect(searchTool.colorsFor(verses, settings, null, unknown)).toEqual([null, null]);
   });
 });

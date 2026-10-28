@@ -6,6 +6,7 @@
 // host below, which is what keeps the term list in one place and makes the
 // direction of the dependency visible.
 import { colorToCss } from '@torahmap/utils';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { SEARCH_BOX_ID } from '@torahmap/shell/app/search.ts';
 import type { ExtraMode } from './extraMode.ts';
@@ -16,7 +17,6 @@ import {
   MAX_TERMS,
   modesOffered,
   removeTerm,
-  SEARCH_COLORS,
   setMode,
   setTermText,
   type SearchTerm,
@@ -34,8 +34,11 @@ export interface TermRowsHost<X> {
   modeOf(term: SearchTerm): string;
   /** What the extra mode works from, or null while search's data is missing or no word is typed. */
   extraData(): X | null;
-  /** Ask for a change to the term list, worked out from the list as it is when applied. */
-  edit(change: (terms: SearchTerm[]) => SearchTerm[]): void;
+  /**
+   * Ask for a change to the term list, worked out from the list as it is when applied and from
+   * the colours the picks hold, which a new term avoids.
+   */
+  edit(change: (terms: SearchTerm[], taken: readonly number[]) => SearchTerm[]): void;
   /** Work in this row from now on. */
   openRow(id: string): void;
   /** Add an empty row and work in that. */
@@ -62,7 +65,7 @@ function makeSwatch(): HTMLSpanElement {
 
 function paintSwatch(row: HTMLElement, term: SearchTerm): void {
   const swatch = row.querySelector<HTMLElement>('.term-swatch')!;
-  swatch.style.background = colorToCss(SEARCH_COLORS[term.colorIndex]);
+  swatch.style.background = colorToCss(PALETTE[term.colorIndex]);
   swatch.style.visibility = term.text.trim() ? 'visible' : 'hidden';
 }
 
@@ -174,7 +177,9 @@ export function mountTermRows<X>(
 
   /** Remove a word, or clear the box when it is the only one left. */
   function removeOrClear(id: string): void {
-    host.edit((terms) => (terms.length > 1 ? removeTerm(terms, id) : setTermText(terms, id, '')));
+    host.edit((terms, taken) =>
+      terms.length > 1 ? removeTerm(terms, id) : setTermText(terms, id, '', taken),
+    );
   }
 
   /** A row the reader is not working in: one line saying what it is doing. */
@@ -349,7 +354,7 @@ export function mountTermRows<X>(
       input.setSelectionRange(caret, caret);
     }
     const text = input.value;
-    host.edit((terms) => setTermText(terms, id, text));
+    host.edit((terms, taken) => setTermText(terms, id, text, taken));
   }
 
   /** Text arrives from a system keyboard or from a paste; clean what is pasted too. */

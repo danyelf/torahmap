@@ -470,6 +470,11 @@ export const TALMUD_STATES: State[] = [
     shown: ['.pick-input'],
   },
   {
+    name: 'talmud-rabbis-and-search',
+    link: `search=${encodeURIComponent('אמר')}&overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish`,
+    shown: ['#map-legend'],
+  },
+  {
     name: 'talmud-goto-not-found',
     link: '',
     then: (page) => goTo(page, 'Berakhot 99a'),
