@@ -60,10 +60,6 @@ canvas {
   flex-shrink: 0;
 }
 
-#overlay-legend .label {
-  line-height: 1.2;
-}
-
 /* Off screen but still read by a screen reader, for text a sighted reader
    gets some other way — a status update, a label an icon already carries. */
 .visually-hidden {

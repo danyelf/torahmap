@@ -140,8 +140,8 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void, TextDatingData> = 
     );
     const legend = document.createElement('div');
     legend.className = 'text-dating-legend';
-    legend.innerHTML = legendCaption('Darker shades = later within period');
-    legend.prepend(...rows);
+    legend.append(...rows);
+    legend.insertAdjacentHTML('beforeend', legendCaption('Darker shades = later within period'));
     container.replaceChildren(legend);
   },
 

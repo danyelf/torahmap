@@ -1,7 +1,7 @@
 // What one article cites, and what cites it: the article under the pointer, or else the one typed.
 
-import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import type { UrlParamSpec } from '@torahmap/link';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { hex, type Color } from '@torahmap/utils';
