@@ -204,9 +204,15 @@ export function datingOverlay(
       const rowsOf = (include: (code: string) => boolean, apart = false) =>
         generations
           .filter((g) => include(g.code))
-          .map((g) =>
-            swatchRow(generationColor(g.code), `${rowLabel(g.code)} · ${yearsOf(g)}`, apart),
-          );
+          .map((g) => {
+            const row = swatchRow(
+              generationColor(g.code),
+              `${rowLabel(g.code)} · ${yearsOf(g)}`,
+              apart,
+            );
+            row.classList.add('scale');
+            return row;
+          });
       const sections = ERAS.flatMap(({ name }) => {
         const rows = rowsOf((code) => eraOf(code) === name && code !== TRANSITION);
         const heading = rows.length ? [legendHeading(name), ...rows] : [];
