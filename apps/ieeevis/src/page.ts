@@ -12,6 +12,7 @@ const SUMMARY =
 export const IEEEVIS_PAGE: PageCopy = {
   name: 'VIS Map',
   tagline: 'A map of the IEEE VIS 2026 program.',
+  noindex: true,
   url: `${ORIGIN}${IEEEVIS_PATH}`,
   noScript: SUMMARY,
   noWebGl: SUMMARY,

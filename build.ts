@@ -17,7 +17,7 @@ export interface ExtraPage {
 export const EXTRA_PAGES: readonly ExtraPage[] = [
   { page: 'talmud', dataDir: TALMUD_DATA_DIR, live: true },
   { page: 'euaiact', dataDir: EUAIACT_DATA_DIR, live: true },
-  { page: 'ieeevis', dataDir: IEEEVIS_DATA_DIR, live: false },
+  { page: 'ieeevis', dataDir: IEEEVIS_DATA_DIR, live: true },
 ];
 
 export function isLiveBuild(command: 'build' | 'serve', branch: string): boolean {

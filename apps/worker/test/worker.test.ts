@@ -124,6 +124,13 @@ describe('telemetry worker', () => {
     });
   });
 
+  it('adds the VIS page to the host of an event sent from it', async () => {
+    const e = env();
+    await worker.fetch(post(valid, { Referer: 'https://torahmap.org/ieeevis/?search=x' }), e);
+    const point: DataPoint = e.TORAHMAP_EVENTS.writeDataPoint.mock.calls[0][0];
+    expect(point.blobs[columns('story_exit').blobs.indexOf('host')]).toBe('torahmap.org/ieeevis');
+  });
+
   it('writes nothing for an oversized body, bad JSON or an unknown event', async () => {
     const e = env();
     expect((await worker.fetch(post('x'.repeat(3000)), e)).status).toBe(413);

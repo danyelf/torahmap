@@ -46,6 +46,22 @@ function requestContext(request: Request, url: URL): RequestContext {
   return { country, device, host: url.hostname, browser: browserName(userAgent) };
 }
 
+/** The VIS map's page; the host column of its events says so, which keeps them out of the Tanakh's queries. */
+const IEEEVIS_PAGE_PATH = '/ieeevis/';
+
+/** The host column: the hostname, with the VIS page's path when the event came from that page. */
+function eventHost(request: Request, url: URL): string {
+  try {
+    const from = new URL(request.headers.get('Referer') ?? '');
+    if (from.origin === url.origin && from.pathname.startsWith(IEEEVIS_PAGE_PATH)) {
+      return `${url.hostname}${IEEEVIS_PAGE_PATH.slice(0, -1)}`;
+    }
+  } catch {
+    // No Referer, or not a URL: the event is the hostname's.
+  }
+  return url.hostname;
+}
+
 async function handleEvent(request: Request, url: URL, env: Env): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405 });
   if (request.headers.get('Origin') !== url.origin) return new Response(null, { status: 403 });
@@ -68,7 +84,8 @@ async function handleEvent(request: Request, url: URL, env: Env): Promise<Respon
     return new Response(null, { status: 400 });
   }
 
-  const point = toDataPoint(payload, requestContext(request, url));
+  const context = { ...requestContext(request, url), host: eventHost(request, url) };
+  const point = toDataPoint(payload, context);
   if (!point) return new Response(null, { status: 400 });
 
   env.TORAHMAP_EVENTS.writeDataPoint(point);

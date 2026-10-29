@@ -173,14 +173,18 @@ cmp /tmp/texts-remote.json public/data/ieeevis/texts.json && echo current
 
 `wrangler dev` reads a separate local bucket; put a copy there with the upload command and
 `--local` in place of `--remote`.
-
 **Keep the text behind Cloudflare Access while it is copyrighted.** Previews are open to the
-Cloudflare account's members only. On torahmap.org the Access app "torahmap private preview" must
-list `torahmap.org/ieeevis` and `torahmap.org/data/ieeevis`, as it lists the Talmud's and the AI
-Act's paths; without them the Worker serves the text to anyone. In the dashboard: Zero Trust,
-Access, Applications, "torahmap private preview", add the two public hostnames and leave its
-policy as is. By API (a token with Access Edit; `$ACCOUNT` is the account id, `$APP` the app's
-id): `GET /accounts/$ACCOUNT/access/apps/$APP`, add the two paths to `destinations`
-(`{"type":"public","uri":"torahmap.org/ieeevis"}`) and to `self_hosted_domains`, send the result
-back with `PUT` (dropping `id`, `uid`, `aud` and the dates, and listing policies by id). Check
-afterwards that `curl -I https://torahmap.org/data/ieeevis/texts.json` answers 302 to Access.
+Cloudflare account's members only. On torahmap.org the VIS map has an Access app of its own,
+"torahmap VIS", for `torahmap.org/ieeevis`, `torahmap.org/data/ieeevis` and `ieeevis.torahmap.org`,
+open to the group "torahmap VIS viewers", so a VIS viewer gets no Talmud or AI Act. Without the
+app the Worker serves the text to anyone. To add a viewer, add their email to that group (Zero
+Trust, Access, Access groups). Check after any change that
+`curl -I https://torahmap.org/data/ieeevis/texts.json` answers 302 to Access.
+
+**Going public.** Open the page and the text separately. The page and its program
+(`structure.json`) hold no paper text, so removing `torahmap.org/ieeevis` from the app, or
+changing its policy to Everyone, opens the map with its papers' text not loaded. Opening
+`/data/ieeevis` serves all of `texts.json` to anyone, which is the copyright decision. The page
+also asks search engines to skip it (`noindex` in `apps/ieeevis/src/page.ts`); drop that when it
+should be found. Its telemetry host is `torahmap.org/ieeevis`, which the saved queries leave out
+as they take `torahmap.org` alone.
