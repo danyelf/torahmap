@@ -975,7 +975,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     updateSidebar(
       sidebarElements,
       item,
-      (shown) => text.popupText(shown, loader.loaded(), tools.overlay),
+      (shown) => text.popupText(shown, loader.loaded(), tools.overlay, tools.search),
       {
         waiting: item ? viewFiles.waitingLanguages(item) : {},
         wordsClickable: dataFor(searchTool, loader.loaded()) !== null,

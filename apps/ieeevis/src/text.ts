@@ -12,10 +12,19 @@ import {
   sectionLabelReach,
 } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
+import type { ToolOnMap } from '@torahmap/shell/overlays/types.ts';
+import type { TextRange } from '@torahmap/utils';
 import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
 import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
 import { ieeevisFiles } from './files.ts';
 import { referenceLines } from './references.ts';
+import {
+  DEFAULT_METHODS,
+  defaultExcerpt,
+  hitExcerpt,
+  rarityOf,
+  type DefaultMethod,
+} from './excerpts.ts';
 import { computeLayout, PANEL_PAD, TIME_STRIP, type PieceItem } from './layout.ts';
 import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
@@ -55,6 +64,40 @@ const LINK_KEYS: LinkKeys = {
   overlayParams: visOverlayParams,
   zoom: { min: 0.08, max: 12, start: 1 },
 };
+
+
+/** The words search marks in `body`. */
+function hitRanges(
+  item: PieceItem,
+  body: string,
+  { tool, settings, data }: ToolOnMap<PieceItem>,
+): TextRange[] {
+  const marked = tool.highlightItemText?.(item, body, ENGLISH, settings, data);
+  const ranges: TextRange[] = [];
+  let at = 0;
+  for (const node of marked?.childNodes ?? []) {
+    const length = node.textContent?.length ?? 0;
+    if (node.nodeName === 'MARK') ranges.push({ start: at, end: at + length });
+    at += length;
+  }
+  return ranges;
+}
+
+/** Which default excerpt to try, chosen in the address as ?excerpt=first, rare or keywords. */
+const chosenMethod = (): DefaultMethod =>
+  DEFAULT_METHODS.find((m) => m === new URLSearchParams(location.search).get('excerpt')) ?? 'first';
+
+/** What a piece shows when nothing is searched in it: a paper's first piece begins with its authors. */
+function defaultBody(item: PieceItem, text = '', texts?: PaperTexts): string {
+  const { paper, piece, section } = item;
+  const method = section === 'f' || !texts ? 'first' : chosenMethod();
+  const excerpt = defaultExcerpt(text, {
+    method,
+    rarity: texts ? rarityOf(texts) : () => 0,
+    keywords: paper.keywords ?? [],
+  });
+  return squareBody({ paper, piece }, excerpt);
+}
 
 export const ieeevisText: MapText<PieceItem, TermSettings> = {
   site: ieeevisSite,
@@ -126,15 +169,20 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         };
       },
 
-      popupText(item, loadedFiles) {
+      popupText(item, loadedFiles, _overlay, search) {
         const texts = loadedFiles.get(TEXTS_FILE) as PaperTexts | undefined;
         const { title, pieces } = item.paper;
         const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
         const shown = text && item.section === 'f' ? referenceLines(text) : text;
+        const body = squareBody(item, shown);
+        const hits = search ? hitRanges(item, body, search) : [];
+        const excerpt = isPlaceholder(item)
+          ? body
+          : (hitExcerpt(body, hits) ?? defaultBody(item, shown, texts));
         return {
           ref: `${title}, piece\u00a0${item.piece + 1}\u00a0of\u00a0${pieces.length}`,
           hebrew: '',
-          english: squareBody(item, shown),
+          english: excerpt,
           link: IEEEVIS_PAGE.textUrl,
         };
       },
