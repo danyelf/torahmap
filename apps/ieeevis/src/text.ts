@@ -6,7 +6,11 @@ import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { coverElement, placeCover } from './covers.ts';
-import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
+import {
+  createMapLabels,
+  SECTION_LABEL_LINE_EM,
+  sectionLabelReach,
+} from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
 import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
 import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
@@ -25,7 +29,7 @@ const PANEL_OPACITY = 0.07;
 const PANEL_EDGE_OPACITY = 0.3;
 const SESSION_TAB = { fontSize: 12, above: 20, inset: 4, minPx: 3.5, wrap: true };
 // A slot's time keeps a size a reader can make out however far the map is zoomed out.
-const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, gap: 4, lineEm: 1.2 };
+const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, gap: 4 };
 const NO_TEXT = 'No text yet.';
 
 const WHOLE_MAP: Story = {
@@ -84,9 +88,8 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
           time.textContent = box.time;
           time.style.cssText =
             'position:absolute;top:0;color:#eee;font:700 1em system-ui,sans-serif;' +
-            `white-space:nowrap;line-height:${TIME_LABEL.lineEm}em;` +
+            `white-space:nowrap;line-height:${SECTION_LABEL_LINE_EM}em;` +
             'text-shadow:0 1px 3px rgba(0,0,0,0.8);' +
-            // Turned about its top-left corner, it reads upward and ends level with the panel's top.
             'transform-origin:0 0;transform:rotate(-90deg) translateX(-100%);';
           el.append(time);
           return { el, time, box, lengthEm: 0 };
@@ -109,7 +112,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
             const { el, time, box } = panel;
             placeCover(el, box, zoom);
             const fontPx = Math.max(TIME_LABEL.minPx, TIME_LABEL.fontSize * zoom);
-            const reach = TIME_LABEL.gap * zoom + fontPx * TIME_LABEL.lineEm;
+            const reach = TIME_LABEL.gap * zoom + fontPx * SECTION_LABEL_LINE_EM;
             time.style.left = `${-reach}px`;
             time.style.fontSize = `${fontPx}px`;
             panel.lengthEm ||= time.offsetWidth / fontPx;

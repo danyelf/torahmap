@@ -51,7 +51,7 @@ export interface SectionLabelSize {
 }
 
 const MAX_SECTION_FONT_SIZE = 64;
-const SECTION_LABEL_LINE_EM = 1.2;
+export const SECTION_LABEL_LINE_EM = 1.2;
 const BOOK_LABEL_LINE_EM = 1.2;
 
 /**
@@ -86,10 +86,9 @@ export interface MapLabelSettings {
   direction?: 'rtl' | 'ltr';
   /**
    * Where a section's name stands: right of its books, reading down, or above them, reading
-   * across. Right unless said. `sectionClear` keeps it that many map units further from the books.
+   * across. Right unless said.
    */
   sectionSide?: 'right' | 'top';
-  sectionClear?: number;
 }
 
 /** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
@@ -188,14 +187,7 @@ export function bookLabelSize(zoom: number): { fontSize: number; rise: number } 
 export function createMapLabels(
   books: readonly BookBox[],
   parent: HTMLElement,
-  {
-    sectionNames,
-    sectionSize,
-    tab,
-    direction = 'rtl',
-    sectionSide = 'right',
-    sectionClear = 0,
-  }: MapLabelSettings,
+  { sectionNames, sectionSize, tab, direction = 'rtl', sectionSide = 'right' }: MapLabelSettings,
 ): (pan: Pan, zoom: number) => void {
   const container = document.createElement('div');
   container.id = 'book-labels';
@@ -245,7 +237,7 @@ export function createMapLabels(
     }
     const sectionFontSize = Math.min(MAX_SECTION_FONT_SIZE, sectionSize.fontSize * zoom);
     for (const { el, box } of sectionLabels) {
-      const clear = sectionClear * zoom + sectionFontSize * sectionSize.gapEm;
+      const clear = sectionFontSize * sectionSize.gapEm;
       if (sectionSide === 'right') {
         el.style.left = (box.maxX + pan.x) * zoom + clear + 'px';
         el.style.top = (box.minY + pan.y) * zoom - rise + 'px';

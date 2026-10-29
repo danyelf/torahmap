@@ -14,7 +14,7 @@ export const BRIGHTNESS_JITTER = 0.18;
 
 const MIN_PAPER_COLUMNS = 4; // squares across a short paper
 const SHORT_PAPERS_PER_DAY = 8; // across a day's width, which longer papers share
-// Papers of up to 48 pieces keep four columns; a longer one gains columns rather than height.
+// A paper gains columns rather than height past this many rows.
 const MAX_PAPER_ROWS = 12;
 const PAPER_GAP = SQUARE_SIZE;
 const LINE_GAP = 2 * SQUARE_SIZE; // between one line of papers and the next
@@ -32,6 +32,7 @@ const DAY_WIDTH =
 
 const columnsOf = (paper: Paper): number =>
   Math.max(MIN_PAPER_COLUMNS, Math.ceil(paper.pieces.length / MAX_PAPER_ROWS));
+const rowsOf = (paper: Paper): number => Math.ceil(paper.pieces.length / columnsOf(paper));
 const widthOf = (paper: Paper): number => columnsOf(paper) * SQUARE_SIZE;
 
 /** A session's papers in lines that each fit across a day. */
@@ -121,10 +122,7 @@ export function computeLayout(structure: Structure): Layout {
             });
             left += widthOf(paper) + PAPER_GAP;
           });
-          const rows = Math.max(
-            ...line.map((paper) => Math.ceil(paper.pieces.length / columnsOf(paper))),
-          );
-          y += rows * SQUARE_SIZE + LINE_GAP;
+          y += Math.max(...line.map(rowsOf)) * SQUARE_SIZE + LINE_GAP;
         }
       }
       panels.push({
