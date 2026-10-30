@@ -1,12 +1,8 @@
 // Hebrew as search reads it. Shaped to @torahmap/search's SearchLanguage, which
 // this package does not import: the apps that pass it to search check the fit.
+import type { TextRange } from '@torahmap/utils';
 import { isHebrew, mapStrippedToOriginal, splitIntoWords, stripNikkud } from './letters.ts';
 import { normalizeHebrewForSearch } from './spelling.ts';
-
-interface TextRange {
-  start: number;
-  end: number;
-}
 
 const LETTER = /[א-ת]/;
 
@@ -82,4 +78,9 @@ export function hebrew(options: { prefixes?: string } = {}) {
     wholeWords: (haystack: string, needle: string, limit: number) =>
       wholeWords(haystack, needle, limit, prefixes),
   } as const;
+}
+
+/** The language `text` is written in, named as a text's languages are: 'he' with Hebrew letters, 'en' without. */
+export function hebrewOrEnglish(text: string): 'he' | 'en' {
+  return isHebrew(text) ? 'he' : 'en';
 }

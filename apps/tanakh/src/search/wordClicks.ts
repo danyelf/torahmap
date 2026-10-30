@@ -53,8 +53,8 @@ export function listenForWordClicks(host: WordClickHost): void {
           click.item.id,
         );
         host.changeSearch(
-          (current) =>
-            searchForMeaning(dictionary, current, word, meaning?.keys ?? null) ?? current,
+          (current, taken) =>
+            searchForMeaning(dictionary, current, word, meaning?.keys ?? null, taken) ?? current,
         );
       },
     });

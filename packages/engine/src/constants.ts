@@ -31,8 +31,8 @@ export const HIGHLIGHT_CONSTANTS = {
   BRIGHTNESS_FACTOR: 1.5,
 } as const;
 
-/** What the map is cleared to, before any square is drawn. */
-export const MAP_BACKGROUND: Color = [0.1, 0.1, 0.1];
+/** What the map is cleared to, before any square is drawn; the page behind it reads it too. */
+export const MAP_BACKGROUND: Color = [0.075, 0.075, 0.075];
 
 /** The ring a picture draws around a square, judged by eye on the map. */
 export const RINGS = {
@@ -44,6 +44,10 @@ export const RINGS = {
   // close, as the multi-colour growth already can.
   RING_MIN_SQUARE_PX: 8,
 } as const;
+
+/** Whether a square of this side, in map units, has room for a ring's hole at this zoom: the shader's `holes`. */
+export const hasRingRoom = (side: number, zoom: number): boolean =>
+  side * zoom >= RINGS.RING_MIN_SQUARE_PX;
 
 /**
  * Squares smaller than START_PX on screen start widening into bars, and reach
@@ -67,4 +71,14 @@ export const STANDOUT_GLOW = {
   CORE_PX: 2.7,
   SIDE_PX: 7.6,
   ALPHA: 0.45,
+} as const;
+
+/**
+ * A standout that has a halo and is at least STANDOUT_MIN_PX across is drawn
+ * as it is, in a soft glow of its own color that starts at ALPHA and fades out
+ * PX past its edge, in CSS pixels. Smaller, it is the glowing dot above.
+ */
+export const STANDOUT_HALO = {
+  PX: 6,
+  ALPHA: 0.5,
 } as const;

@@ -1,8 +1,9 @@
 // Custom assertions and matchers for Torah Map tests
 import { expect } from 'vitest';
+import type { OverlaySummary } from '@torahmap/shell/overlays/types.ts';
 
 // All channels must be in [0, 1]. Accepts Color | Color[] (overlay
-// getItemColor's return type).
+// colorsFor's return type).
 export function assertValidColor(
   color: number[] | [number, number, number] | (number[] | [number, number, number])[],
 ) {
@@ -35,6 +36,10 @@ export function assertColorEquals(
   }
 }
 
-export function assertApproximately(actual: number, expected: number, epsilon: number = 0.01) {
-  expect(Math.abs(actual - expected)).toBeLessThan(epsilon);
+/** A summary's strip names its low and high ends, and not alike. */
+export function assertNamedEnds(summary: OverlaySummary) {
+  const [low, high] = summary.strip?.ends ?? [];
+  expect(low).toBeTruthy();
+  expect(high).toBeTruthy();
+  expect(low).not.toBe(high);
 }

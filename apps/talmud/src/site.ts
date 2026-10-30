@@ -21,20 +21,20 @@ export const talmudSite: Site = {
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [
     {
-      source: 'Wikisource Talmud Bavli',
-      url: SEFARIA_TALMUD,
-      note: 'The Hebrew and Aramaic text, from Hebrew Wikisource, downloaded via Sefaria.',
-      collected: 'October 2026',
-    },
-    {
       ...KOREN,
       source: 'William Davidson Edition - Vocalized Aramaic',
-      note: 'The Aramaic text of the Koren Noé edition, downloaded via Sefaria. The search index is built from it.',
+      note: 'The Hebrew and Aramaic text of the Koren Noé edition, shown and searched, downloaded via Sefaria.',
     },
     {
       ...KOREN,
       source: 'William Davidson Edition - English',
       note: 'The English of the Koren Noé edition, its translation in bold, downloaded via Sefaria.',
+    },
+    {
+      source: 'Wikisource Talmud Bavli',
+      url: SEFARIA_TALMUD,
+      note: 'The Tanakh verse each quotation is from, read from the references in the Hebrew Wikisource text, downloaded via Sefaria.',
+      collected: 'October 2026',
     },
   ],
   title(link) {

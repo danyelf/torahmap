@@ -3,7 +3,7 @@
 Danyel Fisher
 January 2026
 
-I love the idea of being able to lay out an entire text as an interactive surface. Brad Paley's ["TextArc"](https://history.siggraph.org/artwork/w-bradford-paley-textarc/) was an early inspiration for me; so were Alexander's ["Serendip"](https://ieeexplore.ieee.org/abstract/document/7042493), McCurdy's ["Poemage"](https://www.sci.utah.edu/~nmccurdy/Poemage/), and Keim and Oelke's ["Literature Fingerprinting"](https://doi.org/10.1109/VAST.2007.4389004) (VAST '07).
+I love the idea of being able to lay out an entire text as an interactive surface. Brad Paley's ["TextArc"](https://history.siggraph.org/artwork/w-bradford-paley-textarc/) was an early inspiration for me; so were Alexander's ["Serendip"](https://ieeexplore.ieee.org/abstract/document/7042493), McCurdy's ["Poemage"](https://www.sci.utah.edu/~nmccurdy/Poemage/), and Keim and Oelke's ["Literature Fingerprinting"](https://doi.org/10.1109/VAST.2007.4389004) (VAST '07). There are similar projects in code: Eick et al's ["Seesoft"](https://www.cs.kent.edu/~jmaletic/cs63903/papers/Eick92.pdf) ([a video of it]("https://www.youtube.com/watch?v=oNeCXayvUvU")) is a fine example.
 
 The Tanakh -- the Jewish Bible -- is a rich and deep text, with years of study around it. This project visualizes the Tanakh across a number of different dimensions.
 
@@ -17,3 +17,4 @@ Overlays, in the order the map offers them:
 - **Trop** — the cantillation marks that say how the Hebrew is chanted. Pick one to see which verses carry it, and how often.
 - **Haftarah** — each weekly Torah portion and the passage from the Prophets read after it, in Ashkenazi or Sephardi custom.
 - **Verse Length** — how many Hebrew words each verse has.
+- **Text Analytics** — how much of each verse repeats wording from nearby, or which verses anywhere in the Tanakh share a phrase, coloured by where they are.

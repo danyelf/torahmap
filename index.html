@@ -21,7 +21,7 @@
     />
     <link rel="stylesheet" href="/packages/shell/src/styles/main.css" />
   </head>
-  <body data-mode="story">
+  <body data-mode="story" style="background: %MAP_BACKGROUND%">
     <noscript>
       <p>%NO_SCRIPT% It needs JavaScript and WebGL.</p>
     </noscript>
@@ -89,14 +89,8 @@
     </div>
 
     <div id="map-legend" hidden>
-      <button class="map-legend-row" type="button" data-panel="search" hidden>
-        <span class="map-legend-summary"></span>
-        <span class="chevron" aria-hidden="true"></span>
-      </button>
-      <button class="map-legend-row" type="button" data-panel="overlay" hidden>
-        <span class="map-legend-summary"></span>
-        <span class="chevron" aria-hidden="true"></span>
-      </button>
+      <div class="map-legend-row" data-panel="search" hidden></div>
+      <div class="map-legend-row" data-panel="overlay" hidden></div>
       <div class="map-legend-warning" hidden></div>
     </div>
 
@@ -132,6 +126,7 @@
           <button class="panel-close" type="button" aria-label="Close the panel">&times;</button>
         </div>
         <div id="panel-body">
+          <div id="goto-panel" class="tool"></div>
           <div id="search-panel" class="tool"></div>
           <div id="overlay-panel" class="tool"></div>
           <div id="stories-panel" class="tool"></div>

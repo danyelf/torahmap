@@ -1,15 +1,19 @@
 # Agent Instructions
 
+**Say each thing once.** Before you write a value, a list, a rule or a function, look for where it
+already exists and read it from there. The test is whether the two must change together: things
+that only happen to look alike can stay apart, and a test states its own expected values.
+
 This project tracks issues on **GitHub Issues**: https://github.com/danyelf/torahmap/issues
 
 ## How to Code
 
-**Always work in a worktree.** Issue work never happens in the primary checkout — branching there
-leaves Danyel's main directory sitting on a branch he didn't put it on. Create the worktree before
-your first edit: the `EnterWorktree` tool is the easy path, because it also installs dependencies,
-and `git worktree add <path> -b <branch>` works when the path matters. A `PreToolUse` hook enforces
-this, so a `git checkout -b` in the primary checkout will simply be refused. Once you are in a
-worktree, work there as autonomously as you can on the corresponding issue.
+**Always work in a worktree**, made before your first edit; a hook refuses new branches in the
+primary checkout. Once there, work as autonomously as you can on the issue.
+
+Claude Code sets `core.hooksPath` to the primary checkout's `.githooks` whenever it makes a
+worktree, so every worktree runs the primary checkout's hooks. A branch that changes `.githooks/`
+tests its copy by running it directly.
 
 **Mark the issue you take.** Once the worktree exists, label the issue and say where the work lives,
 so Danyel can see what is being worked on and find it:
@@ -22,17 +26,20 @@ gh issue comment <N> --body "🤖 Claude: working on this in branch \`$(git bran
 If you stop without opening a PR, remove the label (`gh issue edit <N> --remove-label in-progress`).
 
 **UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until
-Danyel has looked at it and agreed it's ready to close. Run `npm run test:layout` first, and embed in
-the PR the screenshots it writes to `layout-report/shots/` for the states the change touches: commit
-them and link them by commit-pinned URL, since relative image paths 404 until the PR merges.
+Danyel has looked at it and agreed it's ready to close. Run `npm run test:browser` first, then `npm run test:layout:shots` (about five minutes), and embed in
+the PR the screenshots of the states the change touches: `npm run shots:publish -- <state>...`
+pushes them to `refs/shots/<branch>` and prints their Markdown. Main does not track them. The run
+also redraws the share cards in `public/`; commit those when they change.
 Cloudflare builds every pull request and gives it a public `workers.dev` link, which is how he looks
 without checking the branch out — so say in the PR what to look at and where. The link arrives as
 a comment from `cloudflare-workers-and-pages` (`gh pr view <n> --json comments`), which is also
 where a failed build shows up.
 
 **Mark each review on the PR.** When a review of the whole branch is done, by a fresh reviewer or
-your own, comment on the PR with the commit it read up to and what it found, one line per finding
-and what became of it. The commits after that one are then plain to see as unreviewed.
+your own, comment on the PR with what it found, one line per finding and what became of it. The
+comment's first line is exactly ``Reviewed up to `<short sha>` ``, as in ``Reviewed up to `9ab33db` ``,
+naming the commit it read. The PR's "Review freshness" check counts the commits after it, and
+`scripts/status.sh` lists every open PR's state.
 
 **Shorter is better than longer.** Every word earns its place or goes. This
 applies to comments, docstrings, commit messages and documents alike.
@@ -67,7 +74,8 @@ of this codebase was written by an agent, so its habits are not a convention
 and carry no authority; judge each comment on whether a reader needs it.
 
 **Start from the simplest design.** When proposing one, lead with the simplest
-version that works, and say what each addition beyond it buys.
+version that works, and say what each addition beyond it buys. When a plan in
+`docs/plans/` is superseded, delete it; git history is the record.
 
 **Tests check behaviour.** A test fails when the code is wrong, not when the
 wording, the data or the machine changes: no assertions on text readers see, on

@@ -71,6 +71,9 @@ export function mergePictures(from: Picture, to: Picture, t: number): Picture {
       (_, i) => !!(from.standout?.[i] || to.standout?.[i]),
     );
   }
+  if (from.halo || to.halo) {
+    merged.halo = Array.from({ length: len }, (_, i) => !!(from.halo?.[i] || to.halo?.[i]));
+  }
   return merged;
 }
 

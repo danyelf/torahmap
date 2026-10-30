@@ -3,12 +3,10 @@
 
 import { isHebrewSeparator, isNikkud } from './letters.ts';
 
-// Shin and sin written as one character each, from the Hebrew presentation
-// forms. BHSA uses these where Sefaria writes the plain letter and a dot, and
-// the dot is stripped as a point, so the two sources would otherwise disagree
-// about how to spell the same word. Nothing in the text we display uses them;
-// the generator folds them for the same reason, and both fold both so that
-// neither has to be read to predict the other.
+// Shin and sin written as one character each, from the Hebrew presentation forms. BHSA uses these
+// where Sefaria writes the plain letter and a dot, and the dot is stripped as a point, so the two
+// sources would otherwise disagree about how to spell the same word. Both the generator and search
+// fold them. The displayed text has none: the bundle splits them with decomposePresentationForms.
 const PRESENTATION_FORM_MAP: Record<string, string> = {
   'שׁ': 'ש', // shin with shin dot (U+FB2A) → shin (U+05E9)
   'שׂ': 'ש', // shin with sin dot (U+FB2B) → shin (U+05E9)
@@ -21,6 +19,11 @@ const FINAL_FORM_MAP: Record<string, string> = {
   'ף': 'פ', // pe sofit (U+05E3) → pe (U+05E4)
   'ץ': 'צ', // tzadi sofit (U+05E5) → tzadi (U+05E6)
 };
+
+/** `text` with its final letters written as their plain ones. */
+export function foldFinalLetters(text: string): string {
+  return text.replace(/[ךםןףץ]/g, (char) => FINAL_FORM_MAP[char]);
+}
 
 /**
  * The spelling a word is indexed and searched under: points and accents gone,

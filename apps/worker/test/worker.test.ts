@@ -5,10 +5,13 @@ import * as pageModule from '../src/page.ts';
 import worker from '../src/index.ts';
 import { columns, type DataPoint } from '@torahmap/telemetry';
 
+type StoredText = { body: ReadableStream; httpEtag: string };
+
 function env() {
   return {
     TORAHMAP_EVENTS: { writeDataPoint: vi.fn() },
-    ASSETS: { fetch: vi.fn(async () => new Response('asset', { status: 404 })) },
+    IEEEVIS_TEXTS: { get: vi.fn(async (_key: string): Promise<StoredText | null> => null) },
+    ASSETS: { fetch: vi.fn(async (_request: Request) => new Response('asset', { status: 404 })) },
   };
 }
 
@@ -225,6 +228,20 @@ describe('the page at /', () => {
     expect(response.status).toBe(304);
   });
 
+  it("serves a text's page at the root of its own subdomain", async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://talmud.torahmap.org/?at=Berakhot.2a', slack), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[0][0].url).pathname).toBe('/talmud/');
+    await worker.fetch(page('https://talmud.torahmap.org/data/talmud/a.json'), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[1][0].url).pathname).toBe('/data/talmud/a.json');
+  });
+
+  it('serves the Tanakh at the root of a preview whose name has another text in it', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://talmud-fix-torahmap.example.workers.dev/'), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[0][0].url).pathname).toBe('/');
+  });
+
   it('leaves other paths to the static files', async () => {
     const e = envWithIndex();
     await worker.fetch(page('https://torahmap.org/og-image.jpg', slack), e);
@@ -311,5 +328,47 @@ describe('link_preview', () => {
     expect(response.status).toBe(200);
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
+  });
+});
+
+describe("the VIS papers' text", () => {
+  const stored = (): StoredText => ({
+    body: new Response('{"0.0":"words"}').body!,
+    httpEtag: '"abc"',
+  });
+  const texts = (headers: Record<string, string> = {}, method = 'GET') =>
+    new Request('https://torahmap.org/data/ieeevis/texts.json', { method, headers });
+
+  it('is sent from the bucket, to be revalidated each time', async () => {
+    const e = env();
+    e.IEEEVIS_TEXTS.get.mockResolvedValue(stored());
+    const response = await worker.fetch(texts(), e);
+    expect(await response.json()).toEqual({ '0.0': 'words' });
+    expect(response.headers.get('Content-Type')).toBe('application/json');
+    expect(response.headers.get('ETag')).toBe('"abc"');
+    expect(response.headers.get('Cache-Control')).toContain('must-revalidate');
+    expect(e.ASSETS.fetch).not.toHaveBeenCalled();
+  });
+
+  it('answers 304 to a reader that has the current copy', async () => {
+    const e = env();
+    e.IEEEVIS_TEXTS.get.mockResolvedValue(stored());
+    const response = await worker.fetch(texts({ 'If-None-Match': '"abc"' }), e);
+    expect(response.status).toBe(304);
+  });
+
+  it('answers 404 while the bucket holds nothing', async () => {
+    expect((await worker.fetch(texts(), env())).status).toBe(404);
+  });
+
+  it('is read only', async () => {
+    expect((await worker.fetch(texts({}, 'POST'), env())).status).toBe(405);
+  });
+
+  it('leaves every other path to the static files', async () => {
+    const e = env();
+    await worker.fetch(new Request('https://torahmap.org/data/ieeevis/structure.json'), e);
+    expect(e.IEEEVIS_TEXTS.get).not.toHaveBeenCalled();
+    expect(e.ASSETS.fetch).toHaveBeenCalled();
   });
 });

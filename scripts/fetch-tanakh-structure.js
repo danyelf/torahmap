@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 
-// Fetch Tanakh structure from Sefaria API
+// Write public/data/tanakh-structure.json: each book's chapter lengths, read
+// from the downloaded Hebrew texts (scripts/download-texts.sh), plus the layout.
+//
+// Usage: node scripts/fetch-tanakh-structure.js [texts-dir] > public/data/tanakh-structure.json
+
+import fs from 'node:fs';
+import path from 'node:path';
 
 const TANAKH_BOOKS = {
   torah: [
@@ -50,50 +56,36 @@ const TANAKH_BOOKS = {
   ],
 };
 
-async function fetchBookShape(bookName) {
-  const url = `https://www.sefaria.org/api/shape/${encodeURIComponent(bookName)}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${bookName}: ${response.status}`);
-  }
-  const data = await response.json();
-  // The shape API returns an array with one object containing chapters
-  return data[0].chapters;
+// How the map stacks and splits books. Kept by hand.
+const LAYOUT = {
+  minorProphetStacks: [
+    ['Hosea', 'Joel'],
+    ['Amos', 'Obadiah', 'Jonah'],
+    ['Micah', 'Nahum', 'Habakkuk', 'Zephaniah', 'Haggai'],
+    ['Zechariah', 'Malachi'],
+  ],
+  ketuvimStacks: [
+    { books: ['Song of Songs', 'Ruth', 'Lamentations'], insertAfter: 'Job' },
+    { books: ['Ecclesiastes', 'Esther'], insertAfter: 'Job' },
+    { books: ['Ezra', 'Nehemiah'], insertAfter: 'Daniel' },
+  ],
+  multiColumnBooks: { Psalms: { splitAtChapter: 72 } },
+};
+
+const textsDir = process.argv[2] ?? path.join(import.meta.dirname, '..', 'data', 'texts');
+
+function readChapters(bookName) {
+  const file = path.join(textsDir, `${bookName.toLowerCase().replaceAll(' ', '-')}-he.json`);
+  return JSON.parse(fs.readFileSync(file, 'utf8')).text.map((verses) => verses.length);
 }
 
-async function main() {
-  const allBooks = [...TANAKH_BOOKS.torah, ...TANAKH_BOOKS.neviim, ...TANAKH_BOOKS.ketuvim];
+const books = Object.entries(TANAKH_BOOKS).flatMap(([section, list]) =>
+  list.map((book) => ({
+    name: book.english,
+    hebrewName: book.hebrew,
+    chapters: readChapters(book.english),
+    section,
+  })),
+);
 
-  const books = [];
-  let totalVerses = 0;
-
-  for (const book of allBooks) {
-    console.error(`Fetching ${book.english}...`);
-    try {
-      const chapters = await fetchBookShape(book.english);
-
-      const verseCount = chapters.reduce((sum, c) => sum + c, 0);
-      totalVerses += verseCount;
-
-      books.push({
-        name: book.english,
-        hebrewName: book.hebrew,
-        chapters: chapters,
-      });
-
-      console.error(`  ${chapters.length} chapters, ${verseCount} verses`);
-    } catch (error) {
-      console.error(`  Error: ${error.message}`);
-    }
-
-    // Be nice to the API
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-
-  console.error(`\nTotal: ${books.length} books, ${totalVerses} verses`);
-
-  const output = { books };
-  console.log(JSON.stringify(output, null, 2));
-}
-
-main().catch(console.error);
+console.log(JSON.stringify({ books, layout: LAYOUT }, null, 2));

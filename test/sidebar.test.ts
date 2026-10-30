@@ -476,7 +476,6 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'test',
           name: 'Test Overlay',
-          getItemColor: () => null,
           getHoverInfo: vi.fn(() => 'Test hover info'),
         });
 
@@ -498,7 +497,6 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'test',
           name: 'Test Overlay',
-          getItemColor: () => null,
         });
 
         const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -536,7 +534,6 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'trop',
           name: 'Trop Overlay',
-          getItemColor: () => null,
           highlightItemText: vi.fn((_verse: unknown, text: string, language: 'he' | 'en') => {
             const fragment = document.createDocumentFragment();
             if (language === 'he') {
@@ -583,7 +580,6 @@ describe('sidebar', () => {
         const mockOverlay = testOverlay({
           id: 'search',
           name: 'Search Overlay',
-          getItemColor: () => null,
           highlightItemText: vi.fn((_verse: unknown, _text: string, language: 'he' | 'en') => {
             if (language === 'he') return hebrewFragment;
             return englishFragment;
@@ -636,7 +632,6 @@ describe('sidebar', () => {
             tool: {
               id: 'search',
               name: 'Search',
-              getItemColor: () => null,
               colorsFor: (items) => items.map(() => null),
               getHoverInfo: () => info,
               highlightItemText: vi.fn((_verse: unknown, text: string) => {
@@ -656,7 +651,6 @@ describe('sidebar', () => {
           const overlay = testOverlay({
             id: 'commentary',
             name: 'Commentary',
-            getItemColor: () => null,
             getHoverInfo: () => '680 references',
           });
           const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
@@ -693,14 +687,12 @@ describe('sidebar', () => {
           const overlay = testOverlay({
             id: 'trop',
             name: 'Trop',
-            getItemColor: () => null,
             highlightItemText: marking('trop-highlight', ...overlayMarks),
           });
           const search: TanakhTool = {
             tool: {
               id: 'search',
               name: 'Search',
-              getItemColor: () => null,
               colorsFor: (items) => items.map(() => null),
               highlightItemText: marking('term-0', ...searchMarks),
             },

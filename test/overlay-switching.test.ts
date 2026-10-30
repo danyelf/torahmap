@@ -78,7 +78,7 @@ describe('Overlay Switching Integration', () => {
     overlay.renderControls?.(
       mockControlsContainer,
       settings.get(overlay),
-      (update) => settings.set(overlay, update(settings.get(overlay))),
+      (update) => settings.set(overlay, update(settings.get(overlay), [])),
       data,
     );
 
@@ -86,7 +86,7 @@ describe('Overlay Switching Integration', () => {
     overlay.renderLegend?.(mockLegendContainer, settings.get(overlay), data);
 
     // Apply colors
-    lastColors = verses.map((v) => overlay.getItemColor(v, settings.get(overlay), data));
+    lastColors = overlay.colorsFor(verses, settings.get(overlay), null, data);
 
     currentOverlay = overlay;
     currentData = data;
@@ -164,9 +164,7 @@ describe('Overlay Switching Integration', () => {
   describe('Cleanup and Resource Management', () => {
     it('calls destroy() when switching away from overlay', () => {
       const destroy = vi.fn();
-      registerOverlay(
-        testOverlay({ id: 'test-destroy', name: 'Test', getItemColor: () => null, destroy }),
-      );
+      registerOverlay(testOverlay({ id: 'test-destroy', name: 'Test', destroy }));
       switchToOverlay('test-destroy');
 
       switchToOverlay('trop');
@@ -253,7 +251,7 @@ describe('Overlay Switching Integration', () => {
       overlay.renderControls?.(
         mockControlsContainer,
         settings.get(overlay),
-        (update) => settings.set(overlay, update(settings.get(overlay))),
+        (update) => settings.set(overlay, update(settings.get(overlay), [])),
         currentData,
       );
       const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
@@ -276,11 +274,12 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse) {
-        const color = currentOverlay!.getItemColor(
-          genesisVerse,
+        const color = currentOverlay!.colorsFor(
+          [genesisVerse],
           settings.get(currentOverlay!),
+          null,
           currentData,
-        );
+        )[0];
         expect(color).not.toBeNull();
       }
     });
@@ -370,7 +369,7 @@ describe('Overlay Switching Integration', () => {
       const overlayWithoutDestroy = testOverlay({
         id: 'test-overlay-2',
         name: 'Test Overlay 2',
-        getItemColor: () => [0, 1, 0],
+        colorsFor: (items) => items.map(() => [0, 1, 0] as [number, number, number]),
         // No destroy method
       });
 
@@ -383,9 +382,9 @@ describe('Overlay Switching Integration', () => {
     });
   });
 
-  it('only Haftarah says its colours depend on the hovered verse', () => {
+  it('only Haftarah and Text Analytics say their colours depend on the hovered verse', () => {
     const hoverSensitive = getAllOverlays().filter((o) => o.hoverChangesColors);
-    expect(hoverSensitive.map((o) => o.id)).toEqual(['haftarah']);
+    expect(hoverSensitive.map((o) => o.id)).toEqual(['haftarah', 'text-analytics']);
   });
 
   describe('URL State Persistence', () => {
@@ -447,16 +446,18 @@ describe('Overlay Switching Integration', () => {
       switchToOverlay('commentary');
 
       const verse = verses[0];
-      const color1 = currentOverlay!.getItemColor(
-        verse,
+      const color1 = currentOverlay!.colorsFor(
+        [verse],
         settings.get(currentOverlay!),
+        null,
         currentData,
-      );
-      const color2 = currentOverlay!.getItemColor(
-        verse,
+      )[0];
+      const color2 = currentOverlay!.colorsFor(
+        [verse],
         settings.get(currentOverlay!),
+        null,
         currentData,
-      );
+      )[0];
 
       // Same verse should return same color (reference equality not guaranteed, but values should match)
       expect(JSON.stringify(color1)).toBe(JSON.stringify(color2));
@@ -483,7 +484,7 @@ describe('Overlay Switching Integration', () => {
       };
 
       expect(() => {
-        verses.forEach((v) => overlay.getItemColor(v, settings.get(overlay), malformed));
+        overlay.colorsFor(verses, settings.get(overlay), null, malformed);
       }).not.toThrow();
     });
   });

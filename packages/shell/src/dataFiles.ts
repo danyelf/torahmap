@@ -1,7 +1,5 @@
-// The loader for the overlays' and search's data files, and main's own two
-// (structure and texts).
+// Downloading data files and reading them as each overlay and the search name them.
 // Paths are under public/data/.
-import { fetchData } from './constants.ts';
 import { reportError } from './analytics.ts';
 import type { Overlay, OptionalFile } from './overlays/types.ts';
 
@@ -39,6 +37,18 @@ export async function loadFiles(paths: Iterable<string>): Promise<Loaded> {
     failed: () => {},
   });
   return loaded;
+}
+
+/**
+ * Fetch a data file from public/data/.
+ * Uses Vite's BASE_URL so the app works when deployed to a subdirectory.
+ *
+ * Only Vite and vitest define import.meta.env, so a plain Node script importing
+ * this module gets undefined and falls back to the site root. The scripts under
+ * scripts/search/ run that way, serving public/ through their own fetch.
+ */
+function fetchData(filename: string): Promise<Response> {
+  return fetch(`${import.meta.env?.BASE_URL ?? '/'}data/${filename}`);
 }
 
 async function loadFile(path: string): Promise<unknown> {

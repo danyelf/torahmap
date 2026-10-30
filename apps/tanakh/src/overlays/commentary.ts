@@ -96,10 +96,6 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
   ],
   data: { counts: 'overlays/commentary/counts.json' },
 
-  getItemColor(verse, settings, data) {
-    return commentaryColorAt(data, verse, settings.category);
-  },
-
   colorsFor(items, settings, _hovered, data) {
     return items.map((item) => commentaryColorAt(data, item, settings.category));
   },
@@ -175,7 +171,10 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
   summary(settings, data) {
     return {
       detail: settings.category === 'total' ? undefined : settings.category,
-      colors: [axisGradient(scaleFor(data, settings.category).scale)],
+      strip: {
+        gradient: axisGradient(scaleFor(data, settings.category).scale),
+        ends: ['few', 'many'],
+      },
     };
   },
 

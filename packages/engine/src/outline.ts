@@ -6,14 +6,18 @@ import type { MapItem } from './types.ts';
 
 export type OutlineBounds = Pick<MapItem, 'x' | 'y' | 'size' | 'width' | 'jitter'>;
 
-/** Build outline geometry as 4 border rectangles (24 corners, x and y each) around a square. */
+/**
+ * Build outline geometry as 4 border rectangles (24 corners, x and y each) around a square. Round,
+ * it is the one rectangle that holds the band round a circle, 6 corners; the shader cuts the band.
+ */
 export function buildOutlineGeometry(
   bounds: OutlineBounds,
   thickness: number = HIGHLIGHT_CONSTANTS.OUTLINE_THICKNESS,
+  round = false,
 ): Float32Array {
   const verticesPerBorder = 6; // 2 triangles
   const borderCount = 4; // top, right, bottom, left
-  const data = new Float32Array(borderCount * verticesPerBorder * 2);
+  const data = new Float32Array((round ? 1 : borderCount) * verticesPerBorder * 2);
 
   // Calculate outline bounds - extend OUTSIDE the square by thickness
   // so the outline doesn't cover the square itself
@@ -41,6 +45,11 @@ export function buildOutlineGeometry(
     writeVertex(rx1, ry0);
     writeVertex(rx1, ry1);
   };
+
+  if (round) {
+    writeRect(x0, y0, x1, y1);
+    return data;
+  }
 
   // Top border (horizontal rectangle across top)
   writeRect(x0, y0, x1, y0 + thickness);

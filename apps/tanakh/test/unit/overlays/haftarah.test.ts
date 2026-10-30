@@ -355,11 +355,12 @@ describe('Haftarah Overlay', () => {
       expect(sum(haftarahOverlay.getItemColor(genesis) as Color)).toBeGreaterThan(sum(cold));
       expect(sum(haftarahOverlay.getItemColor(noach) as Color)).toBeLessThan(
         sum(
-          haftarahOverlay.overlay.getItemColor(
-            noach,
+          haftarahOverlay.overlay.colorsFor(
+            [noach],
             haftarahOverlay.fromUrl({}),
+            null,
             haftarahOverlay.data,
-          ) as Color,
+          )[0] as Color,
         ),
       );
     });
@@ -370,14 +371,15 @@ describe('Haftarah Overlay', () => {
         { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
       ]);
       const noachLit = () => {
-        const cold = haftarahOverlay.overlay.getItemColor(
-          noach,
+        const cold = haftarahOverlay.overlay.colorsFor(
+          [noach],
           {
             ...haftarahOverlay.settings,
             preview: null,
           },
+          null,
           haftarahOverlay.data,
-        ) as Color;
+        )[0] as Color;
         return sum(haftarahOverlay.getItemColor(noach) as Color) > sum(cold);
       };
 
@@ -462,6 +464,38 @@ describe('Haftarah Overlay', () => {
     it('gives way to a hovered verse of another reading on the map', () => {
       haftarahOverlay.restore({ reading: 'Bereshit' });
       expect(brightnessUnder(noach, noach)).toBeGreaterThan(brightnessUnder(genesis, noach));
+    });
+
+    it('keeps a chosen reading lit over a pinned verse of another, until the pin is the only choice', () => {
+      const under = (v: typeof genesis, pinned: typeof genesis | null) =>
+        sum(
+          haftarahOverlay.overlay.colorsFor!(
+            [v],
+            haftarahOverlay.settings,
+            null,
+            DATA,
+            pinned,
+          )[0] as Color,
+        );
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      expect(under(genesis, noach)).toBeGreaterThan(under(noach, noach));
+      haftarahOverlay.restore({});
+      expect(under(noach, noach)).toBeGreaterThan(under(genesis, noach));
+    });
+
+    it('answers a pin move only while no reading is lit', () => {
+      expect(
+        haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
+      ).toBe(true);
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      expect(
+        haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
+      ).toBe(false);
+      // A name no reading has lights nothing, so the pin shows.
+      haftarahOverlay.restore({ reading: 'Nonesuch' });
+      expect(
+        haftarahOverlay.overlay.pinChangesColors!(null, noach, haftarahOverlay.settings, DATA),
+      ).toBe(true);
     });
 
     it('stays lit while the map hover is on a verse outside every reading', () => {

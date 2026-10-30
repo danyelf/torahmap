@@ -37,10 +37,10 @@ export interface Lexeme {
 }
 
 /** Written form (nikkud stripped, finals folded) -> the lexemes it can be, likeliest reading first. */
-export type FormsFile = Record<string, LexemeId[]>;
+type FormsFile = Record<string, LexemeId[]>;
 
 /** Verse key -> the lexemes occurring in that verse. */
-export type VerseLexemesFile = Record<string, LexemeId[]>;
+type VerseLexemesFile = Record<string, LexemeId[]>;
 
 /** The three lexeme files, and what is worked out from them. */
 export interface Dictionary {

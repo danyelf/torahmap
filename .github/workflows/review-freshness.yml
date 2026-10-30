@@ -1,0 +1,35 @@
+# Records scripts/review-freshness.sh's line as a check on the PR's head commit.
+# Always neutral: approving is Danyel's alone.
+name: Review freshness
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  checks: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  record:
+    name: Record review freshness
+    if: github.event_name == 'pull_request' || github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number || github.event.issue.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/review-freshness.sh
+          sparse-checkout-cone-mode: false
+      - run: |
+          line=$(scripts/review-freshness.sh "$PR")
+          head=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
+          gh api "repos/$GH_REPO/check-runs" -f name="Review freshness" -f head_sha="$head" \
+            -f status=completed -f conclusion=neutral \
+            -f "output[title]=$line" -f "output[summary]=$line"

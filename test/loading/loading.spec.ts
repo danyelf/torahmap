@@ -1,0 +1,489 @@
+// The map draws before its data and fills in as each file lands. Each case
+// holds files back on a throttled connection, so "before the data" is a state
+// the case sets rather than a race it hopes to win.
+import { expect, test, type Page } from '@playwright/test';
+import {
+  allLoaded,
+  canvasShot,
+  desktopOnly,
+  DRAWN_FLOOR,
+  firstFrame,
+  hold,
+  openMap,
+  param,
+  pixelCounts,
+  recordEvents,
+  sentSearches,
+  viaMenu,
+} from '../browser/page.ts';
+import {
+  COMMENTARY,
+  DICTIONARY,
+  EVERYTHING,
+  LEXICON,
+  PARSE,
+  SEARCH_REQUIRED,
+  TEXTS_FILE,
+} from '../browser/files.ts';
+import { englishFile, SEARCH_ENGLISH_FILE, SEARCH_FILE, textsFile } from '@torahmap/talmud/data.ts';
+import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
+import { expectPlainMap, fail, mapChangesFrom, open, sentLoadTiming, stillShot } from './page.ts';
+
+const WORD = 'אלהים';
+const overlayRow = '.map-legend-row[data-panel="overlay"]';
+const searchRow = '.map-legend-row[data-panel="search"]';
+
+/** The requests for one data file, as they are made. */
+function requestsFor(page: Page, path: string): string[] {
+  const urls: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith(`/data/${path}`)) urls.push(r.url());
+  });
+  return urls;
+}
+
+test('the bare address draws the map and opens the story before any data', async ({ page }) => {
+  const { release, errors } = await open(page, '', EVERYTHING);
+  await expectPlainMap(page);
+  await expect(page.locator('body')).toHaveAttribute('data-mode', 'story');
+  await expect(page.locator('#story')).toBeVisible();
+  release();
+  await allLoaded(page);
+  expect(errors).toEqual([]);
+});
+
+test('an overlay link draws a plain map, says it is loading, and colours in when its file lands', async ({
+  page,
+}) => {
+  const { release, errors } = await open(page, 'overlay=commentary', [COMMENTARY]);
+  await expectPlainMap(page);
+  await expect(page.locator('#overlay-select')).toHaveValue('commentary');
+  await expect(page.locator(`${overlayRow}[data-loading]`)).toBeVisible();
+  const before = await stillShot(page);
+  release();
+  await mapChangesFrom(page, before);
+  await expect(page.locator(overlayRow)).toBeVisible();
+  await expect(page.locator(overlayRow)).not.toHaveAttribute('data-loading');
+  await allLoaded(page);
+  expect(param(page, 'overlay')).toBe('commentary');
+  expect(errors).toEqual([]);
+});
+
+test("a search link keeps its word in the box, and finds it once search's files land", async ({
+  page,
+}) => {
+  const { release, errors } = await open(
+    page,
+    `search=${encodeURIComponent(WORD)}`,
+    SEARCH_REQUIRED,
+  );
+  await expectPlainMap(page);
+  await expect(page.locator('#search-input')).toHaveValue(WORD);
+  await expect(
+    page.locator('#search-hit-caption .load-notice[data-state="loading"]'),
+  ).toBeAttached();
+  // On a phone the panel opens closed, so the legend is the one place that says so.
+  await expect(page.locator(`${searchRow}[data-loading]`)).toBeVisible();
+  const before = await stillShot(page);
+  release();
+  await mapChangesFrom(page, before);
+  await expect(page.locator(searchRow)).toBeVisible();
+  await expect(page.locator(searchRow)).not.toHaveAttribute('data-loading');
+  await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
+  await allLoaded(page);
+  expect(param(page, 'search')).toBe(WORD);
+  expect(errors).toEqual([]);
+});
+
+test('the search results are quoted again when the per-word parse lands, keeping their place', async ({
+  page,
+}) => {
+  // Genesis 19:28 has both עַל and עָלָה; only the parse tells them apart.
+  const { release, errors } = await open(page, `search=${encodeURIComponent('עלה')}`, [PARSE]);
+  await viaMenu(page, 'search');
+  const list = page.locator('#search-results');
+  const mark = list.locator('.search-result', { hasText: '19:28' }).locator('mark');
+  await expect(mark).toHaveText('עַל');
+  await list.evaluate((el) => (el.scrollTop = 60));
+  release();
+  await expect(mark).toHaveText('עָלָה');
+  expect(await list.evaluate((el) => el.scrollTop)).toBe(60);
+  await allLoaded(page);
+  expect(errors).toEqual([]);
+});
+
+test('a file landing leaves the popup alone under an open word menu', async ({ page }) => {
+  const { release, errors } = await open(page, 'verse=Genesis.30.11', [PARSE]);
+  const word = page.locator('#popup .popup-word', { hasText: 'בגד' });
+  // The menu opens once search's dictionary is in, which is not held.
+  await expect(async () => {
+    await word.click();
+    await expect(page.locator('.word-menu')).toBeVisible({ timeout: 500 });
+  }).toPass({ timeout: 60_000 });
+  const anchor = await word.elementHandle();
+  release();
+  await allLoaded(page);
+  expect(await anchor!.evaluate((el) => el.isConnected)).toBe(true);
+  await expect(page.locator('.word-menu')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('a narrowed search link keeps its meaning while the dictionary is on its way', async ({
+  page,
+}) => {
+  const meaning = '<LH/@heb';
+  const { release, errors } = await open(
+    page,
+    `search=${encodeURIComponent('עלה')}&m=${encodeURIComponent(meaning)}`,
+    DICTIONARY,
+  );
+  expect(param(page, 'm')).toBe(meaning);
+  release();
+  await allLoaded(page);
+  await viaMenu(page, 'search');
+  await expect(page.locator('.term-row[data-open="true"] .meaning-row input:checked')).toHaveCount(
+    1,
+  );
+  expect(param(page, 'm')).toBe(meaning);
+  expect(errors).toEqual([]);
+});
+
+test('a pinned verse is centred at once, and its popup fills in when the texts land', async ({
+  page,
+}) => {
+  const link = 'verse=Genesis.12.1';
+  const { release, errors } = await open(page, link, [TEXTS_FILE]);
+  await expect(page.locator('#popup.visible .load-notice[data-state="loading"]')).toBeVisible();
+  await expect(page.locator('#popup .popup-word')).toHaveCount(0);
+
+  // Centred where it is with every file in: the same plain map, the same pin.
+  const settled = await page.context().newPage();
+  await settled.goto(`/?${link}`);
+  await allLoaded(settled);
+  expect((await stillShot(page)).equals(await stillShot(settled))).toBe(true);
+  await settled.close();
+
+  release();
+  await allLoaded(page);
+  await expect(page.locator('#popup.visible .popup-word').first()).toBeVisible();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('the texts download once, however often the popup asks for them before they land', async ({
+  page,
+}) => {
+  const requests = requestsFor(page, TEXTS_FILE);
+  const { release, errors } = await open(page, 'overlay=commentary', [TEXTS_FILE]);
+  const map = (await page.locator('#canvas').boundingBox())!;
+  for (let i = 1; i < 10; i++) {
+    await page.mouse.move(map.x + (map.width * i) / 10, map.y + map.height / 2);
+  }
+  release();
+  await allLoaded(page);
+  expect(requests).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+
+/**
+ * The popup's notice on a story stop that pins a verse: the Hebrew and English
+ * are in one file, so one notice, in the Hebrew's place, stands for both.
+ */
+async function expectPopupNotice(page: Page, state: 'loading' | 'failed'): Promise<void> {
+  const notice = page.locator(
+    `#popup.visible .popup-notice[data-language="he"] .load-notice[data-state="${state}"]`,
+  );
+  await expect(notice).toBeVisible();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(1);
+  await expect(page.locator('#popup .popup-hebrew')).toBeHidden();
+  await expect(page.locator('#popup .popup-english')).toBeHidden();
+}
+
+test("a story stop's verse says its text is loading in the text's place", async ({ page }) => {
+  const { release, errors } = await open(page, 'story=tour&stop=verses', [TEXTS_FILE]);
+  await expectPopupNotice(page, 'loading');
+  release();
+  await allLoaded(page);
+  await expect(page.locator('#popup.visible .popup-word').first()).toBeVisible();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("a story stop's verse says its text failed in the text's place", async ({ page }) => {
+  await fail(page, [TEXTS_FILE]);
+  const { errors } = await open(page, 'story=tour&stop=verses', [], {
+    console: false,
+    until: 'loaded',
+  });
+  await expectPopupNotice(page, 'failed');
+  await page.locator('#popup .load-notice-close').click();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('an overlay picked before its file lands colours in when it does', async ({ page }) => {
+  const { release, errors } = await open(page, 'story=tour&stop=intro', [COMMENTARY]);
+  await page.keyboard.press('Escape');
+  await viaMenu(page, 'overlay');
+  await page.locator('#overlay-select').selectOption('commentary');
+  await expectPlainMap(page);
+  const before = await stillShot(page);
+  release();
+  await mapChangesFrom(page, before);
+  await expect(page.locator('#overlay-select')).toHaveValue('commentary');
+  await allLoaded(page);
+  expect(param(page, 'overlay')).toBe('commentary');
+  expect(errors).toEqual([]);
+});
+
+test('a search typed before its files land keeps the box and finds the word when they do', async ({
+  page,
+}) => {
+  const { release, errors } = await open(page, 'story=tour&stop=intro', SEARCH_REQUIRED);
+  await page.keyboard.press('Escape');
+  await viaMenu(page, 'search');
+  const box = page.locator('#search-input');
+  await box.fill('light');
+  await expect(box).toBeFocused();
+  await expectPlainMap(page);
+  release();
+  await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
+  await expect(box).toHaveValue('light');
+  await expect(box).toBeFocused();
+  await allLoaded(page);
+  expect(param(page, 'search')).toBe('light');
+  expect(errors).toEqual([]);
+});
+
+test('a story scrolled to a search before its files land shows the search when they do', async ({
+  page,
+}) => {
+  const { release, errors } = await open(page, 'story=tour&stop=intro', SEARCH_REQUIRED);
+  await page.locator('.story-stop[data-stop-id="abraham_zoom"]').scrollIntoViewIfNeeded();
+  await expect.poll(() => param(page, 'stop')).toBe('abraham_zoom');
+  const before = await stillShot(page);
+  release();
+  await mapChangesFrom(page, before);
+  await expect(page.locator(searchRow)).toBeVisible();
+  await expect(page.locator(searchRow)).not.toHaveAttribute('data-loading');
+  await allLoaded(page);
+  expect(errors).toEqual([]);
+});
+
+test('an overlay and a search fill in each as its own files land', async ({ page }) => {
+  const { release, errors } = await open(
+    page,
+    `search=${encodeURIComponent(WORD)}&overlay=commentary`,
+    [COMMENTARY],
+  );
+  // Search in first, so the change after release can only be the overlay's.
+  await expect(page.locator(searchRow)).toBeVisible();
+  await expect(page.locator(searchRow)).not.toHaveAttribute('data-loading');
+  await expect(page.locator(`${overlayRow}[data-loading]`)).toBeVisible();
+  const before = await stillShot(page);
+  release();
+  await mapChangesFrom(page, before);
+  await expect(page.locator(overlayRow)).toBeVisible();
+  await expect(page.locator(overlayRow)).not.toHaveAttribute('data-loading');
+  await allLoaded(page);
+  expect(errors).toEqual([]);
+});
+
+test('a failed download leaves its overlay plain and says so where it would show', async ({
+  page,
+}) => {
+  await fail(page, [COMMENTARY]);
+  // The browser and the app both log the failed download; only uncaught errors count here.
+  const { errors } = await open(page, 'overlay=commentary', [], {
+    console: false,
+    until: 'loaded',
+  });
+  await expectPlainMap(page);
+  const warning = page.locator('#map-legend .load-notice[data-state="failed"]');
+  await expect(warning).toBeVisible();
+  await warning.locator('.load-notice-close').click();
+  await expect(warning).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('a search typed before its files land is recorded once they do', async ({ page }) => {
+  desktopOnly('what is recorded does not depend on the screen');
+  const { release, errors } = await open(page, 'overlay=haftarah', SEARCH_REQUIRED);
+  await recordEvents(page);
+  await viaMenu(page, 'search');
+  await page.locator('#search-input').fill('light');
+  release();
+  await expect.poll(() => sentSearches(page)).toEqual(['light']);
+  await allLoaded(page);
+  expect(await sentSearches(page)).toEqual(['light']);
+  expect(errors).toEqual([]);
+});
+
+test('a lexicon search cannot build from fails its prebuild alone, and the rest still load', async ({
+  page,
+}) => {
+  desktopOnly('what loads does not depend on the screen');
+  const parseLanded = page.waitForResponse(`**/data/${PARSE}`, { timeout: 120_000 });
+  // A lexicon with no lexemes: building the dictionary from it throws.
+  const { release, errors } = await open(page, 'overlay=haftarah', [LEXICON], { body: '{}' });
+  await recordEvents(page);
+  release();
+  await allLoaded(page);
+  // The per-word parse is the last stage.
+  expect((await parseLanded).ok()).toBe(true);
+  await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
+  expect((await sentLoadTiming(page))[0].search_ready).toBe(0);
+  // With no search typed, nothing builds the dictionary as the lexicon lands:
+  // only search's idle prebuild does, and it throws uncaught, by design.
+  await expect.poll(() => errors.length).toBe(1);
+  expect(errors[0]).not.toMatch(/^console:/);
+  // The built page's stack names no function; its message names the missing field.
+  expect(errors[0]).toContain('lexemes');
+});
+
+test('load timing says when the texts landed, after the first frame', async ({ page }) => {
+  desktopOnly('what loads does not depend on the screen');
+  const { release, errors } = await open(page, '', [TEXTS_FILE]);
+  await recordEvents(page);
+  release();
+  await allLoaded(page);
+  await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
+  const [timing] = await sentLoadTiming(page);
+  expect(timing.texts_in).toBeGreaterThan(timing.first_frame as number);
+  expect(errors).toEqual([]);
+});
+
+test("the Talmud's English downloads only once English is shown, and its Hebrew does not wait for it", async ({
+  page,
+}) => {
+  const english = requestsFor(page, englishFile('Berakhot'));
+  await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'he'));
+  const release = await hold(page, [englishFile('Berakhot')]);
+  await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
+  await allLoaded(page);
+  await expect(page.locator('#popup.visible .popup-hebrew')).not.toBeEmpty();
+  expect(english).toEqual([]);
+
+  await viaMenu(page, 'about');
+  await page.locator('#language-choice [data-languages="both"]').click();
+  await expect.poll(() => english.length).toBe(1);
+  await expect(page.locator('#popup .popup-hebrew')).toBeVisible();
+  await expect(
+    page.locator('#popup .popup-notice[data-language="en"] .load-notice[data-state="loading"]'),
+  ).toBeVisible();
+  await expect(page.locator('#popup .popup-english')).toBeHidden();
+  release();
+  await expect(page.locator('#popup .popup-english')).not.toBeEmpty();
+  await expect(page.locator('#popup .load-notice')).toHaveCount(0);
+});
+
+test("the Talmud's English alone downloads no Hebrew, and a failed English says so in its place", async ({
+  page,
+}) => {
+  const hebrew = requestsFor(page, textsFile('Berakhot'));
+  await page.addInitScript(() => localStorage.setItem('torahMap.languages', 'en'));
+  await fail(page, [englishFile('Berakhot')]);
+  await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
+  await allLoaded(page);
+  await expect(
+    page.locator(
+      '#popup.visible .popup-notice[data-language="en"] .load-notice[data-state="failed"]',
+    ),
+  ).toBeVisible();
+  expect(hebrew).toEqual([]);
+
+  await viaMenu(page, 'about');
+  await page.locator('#language-choice [data-languages="both"]').click();
+  await expect(page.locator('#popup .popup-hebrew')).not.toBeEmpty();
+  await expect(page.locator('#popup .popup-notice[data-language="en"] .load-notice')).toBeVisible();
+});
+
+test("the Talmud's English search downloads once after the rest, though nothing searches English", async ({
+  page,
+}) => {
+  const english = requestsFor(page, SEARCH_ENGLISH_FILE);
+  await page.goto(TALMUD_PATH);
+  await allLoaded(page);
+  expect(english).toHaveLength(1);
+});
+
+test("an English term fetches the Talmud's English search at once, once, and finds it", async ({
+  page,
+}) => {
+  const english = requestsFor(page, SEARCH_ENGLISH_FILE);
+  // Held, the Hebrew keeps the downloads from reaching the English in their turn.
+  const release = await hold(page, [SEARCH_FILE]);
+  await page.goto(`${TALMUD_PATH}?search=${encodeURIComponent('רבי')}`);
+  await firstFrame(page, 90_000);
+  await viaMenu(page, 'search');
+  await page.locator('#search-input').fill('rabbi');
+  await expect.poll(() => english.length).toBe(1);
+  release();
+  await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
+  await allLoaded(page);
+  expect(english).toHaveLength(1);
+});
+
+test("a link with an English term fetches the Talmud's English search with the opening view", async ({
+  page,
+}) => {
+  const english = requestsFor(page, SEARCH_ENGLISH_FILE);
+  const release = await hold(page, [SEARCH_FILE]);
+  await page.goto(`${TALMUD_PATH}?search=rabbi`);
+  await firstFrame(page, 90_000);
+  await expect.poll(() => english.length).toBe(1);
+  release();
+  await allLoaded(page);
+  expect(english).toHaveLength(1);
+});
+
+test('a failed English search file says so for an English term, and Hebrew search still finds', async ({
+  page,
+}) => {
+  await fail(page, [SEARCH_ENGLISH_FILE]);
+  await page.goto(`${TALMUD_PATH}?search=rabbi`);
+  await allLoaded(page);
+  await viaMenu(page, 'search');
+  await expect(page.locator('#search-hit-caption .load-notice[data-state="failed"]')).toBeVisible();
+  await page.locator('#search-input').fill('רבי');
+  await expect.poll(() => page.locator('.search-result').count()).toBeGreaterThan(0);
+  await expect(page.locator('#search-hit-caption .load-notice')).toHaveCount(0);
+});
+
+test("a tractate file that fails says so, and isn't fetched again", async ({ page }) => {
+  let requests = 0;
+  await page.route(`**/data/${textsFile('Berakhot')}`, (route) => {
+    requests++;
+    return route.fulfill({ status: 404 });
+  });
+  // Not openMap: the failed download is reported, as a console error.
+  await page.goto(`${TALMUD_PATH}?at=Berakhot.2a.1`);
+  await allLoaded(page);
+  await expect(page.locator('#popup .popup-notice[data-language="he"]')).not.toBeEmpty();
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#popup .ref-text')).toHaveText('Berakhot 2a:1');
+  expect(requests).toBe(1);
+});
+
+test("a link's search reaches the Talmud's own search, not the Tanakh's", async ({ page }) => {
+  const searchFiles: string[] = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/data/search/')) searchFiles.push(request.url());
+  });
+  await openMap(page, 'search=משנה', TALMUD_PATH);
+  await expect(page.locator('#search-input')).toHaveValue('משנה');
+  expect(searchFiles).toEqual([]);
+});
+
+test('a returning reader on the bare address gets the map in its colours, not a plain grey', async ({
+  page,
+}) => {
+  await page.addInitScript(() => localStorage.setItem('torahMap.visited', 'true'));
+  await page.goto(TALMUD_PATH);
+  await allLoaded(page);
+  // The Talmud's tan and violet count as coloured; the plain grey does not.
+  await expect
+    .poll(async () => (await pixelCounts(page, await canvasShot(page))).coloured)
+    .toBeGreaterThan(DRAWN_FLOOR);
+});

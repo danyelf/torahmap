@@ -4,6 +4,7 @@ import {
   type CameraPosition,
   type ItemIndex,
   type ZoomRange,
+  boxAround,
   cameraToFit,
   centreForFocus,
   type ScreenPoint,
@@ -80,12 +81,8 @@ function placeBox(
     return found;
   });
   if (inside.length === 0) return null;
-  return {
-    minX: Math.min(...inside.map((v) => v.x)),
-    minY: Math.min(...inside.map((v) => v.y)),
-    maxX: Math.max(...inside.map((v) => v.x + v.size)) + sectionLabelReach(SECTION_SIZE),
-    maxY: Math.max(...inside.map((v) => v.y + v.size)),
-  };
+  const box = boxAround(inside);
+  return { ...box, maxX: box.maxX + sectionLabelReach(SECTION_SIZE) };
 }
 
 // "initial" uses the app's default camera position, unless the stop pins a

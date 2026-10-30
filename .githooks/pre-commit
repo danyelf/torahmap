@@ -7,8 +7,9 @@
 # they take about six seconds.
 #
 # This file is tracked in git. It runs because core.hooksPath points at
-# .githooks (see scripts/install-hooks.sh). Because that path is relative,
-# every git worktree runs the copy checked out on its own branch.
+# .githooks (git config core.hooksPath .githooks, once per clone). Claude Code
+# rewrites that to the primary checkout's absolute path, so its worktrees run
+# the primary checkout's copy.
 #
 # To skip deliberately:  git commit --no-verify
 

@@ -8,7 +8,13 @@ import {
   SHAPE_FLAGS,
   type ItemAttributeName,
 } from './geometry.ts';
-import { BARS, HIGHLIGHT_CONSTANTS, STANDOUT_GLOW, STANDOUT_MIN_PX } from './constants.ts';
+import {
+  BARS,
+  HIGHLIGHT_CONSTANTS,
+  STANDOUT_GLOW,
+  STANDOUT_HALO,
+  STANDOUT_MIN_PX,
+} from './constants.ts';
 
 export interface ShaderProgram {
   program: WebGLProgram;
@@ -71,6 +77,11 @@ const VERTEX_SHADER = `#version 300 es
   // 0 when the square is too small for a hole.
   flat out vec2 v_side;
   flat out float v_glow;
+  // How far the halo reaches past the square, as a share of its side; 0 for none.
+  flat out float v_halo;
+  // 1 for a square drawn as a circle: only where it has room for a ring's hole, since trimming
+  // tiny squares would add moiré.
+  flat out float v_round;
   out vec2 v_uv;
   out vec2 v_seed;
 
@@ -87,6 +98,14 @@ const VERTEX_SHADER = `#version 300 es
 
   float standout(vec4 shape) {
     return float((int(shape.w) & ${SHAPE_FLAGS.STANDOUT}) != 0);
+  }
+
+  float isRound(vec4 shape) {
+    return float((int(shape.w) & ${SHAPE_FLAGS.ROUND}) != 0);
+  }
+
+  float halo(vec4 shape) {
+    return float((int(shape.w) & ${SHAPE_FLAGS.HALO}) != 0);
   }
 
   void main() {
@@ -122,7 +141,14 @@ const VERTEX_SHADER = `#version 300 es
       rect = mix(rect, vec4(centre - halfSide, centre + halfSide), standsOut);
       v_glow = standsOut;
     }
-    float pad = max(bandReach(a_shape), bandReach(a_nextShape));
+    // A standout with a halo, once it is big enough to be drawn as itself, is
+    // surrounded by a soft glow: the quad reaches past it to hold the glow.
+    v_halo = 0.0;
+    if (v_glow == 0.0 && mix(halo(a_shape), halo(a_nextShape), u_fade) > 0.0) {
+      float cssPx = u_standoutSide / ${STANDOUT_MIN_PX.toFixed(4)};
+      v_halo = ${STANDOUT_HALO.PX.toFixed(4)} * cssPx / max(side, 1.0);
+    }
+    float pad = max(max(bandReach(a_shape), bandReach(a_nextShape)), v_halo);
     uv = mix(vec2(-pad), vec2(1.0 + pad), uv);
     vec2 world = mix(rect.xy, rect.zw, uv);
     vec2 pos = (world + u_pan) * u_zoom;
@@ -137,6 +163,7 @@ const VERTEX_SHADER = `#version 300 es
       ? 1 + (ivec2(a_shape.w, a_nextShape.w) & ${SHAPE_FLAGS.UNCOLOURED})
       : ivec2(0);
     v_side = holes ? (rect.zw - rect.xy) * u_zoom : vec2(0.0);
+    v_round = holes ? isRound(a_shape) : 0.0;
     v_uv = uv;
     // The square's own corner, which zooming does not move, seeds its dithering noise
     v_seed = a_rect.xy + a_jitter;
@@ -155,6 +182,8 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in ivec2 v_hover;
   flat in vec2 v_side;
   flat in float v_glow;
+  flat in float v_halo;
+  flat in float v_round;
   in vec2 v_uv;
   in vec2 v_seed;
   out vec4 fragColor;
@@ -174,11 +203,17 @@ const FRAGMENT_SHADER = `#version 300 es
     return all(greaterThanEqual(p, vec2(0))) && all(lessThan(p, vec2(1)));
   }
 
+  // The square, or the circle in it for a round square.
+  bool inShape(vec2 p) {
+    return inSquare(p) && (v_round == 0.0 || length(p - 0.5) < 0.5);
+  }
+
   // The ring is measured in from the drawn edge, so a grown square's ring is
   // as thick as any other's.
   bool inHole(vec2 p) {
     float inset = u_ring.x + u_ring.y;
     vec2 px = p * v_side;
+    if (v_round > 0.0) return length(px - v_side * 0.5) < v_side.x * 0.5 - inset;
     return v_side.x > 0.0 &&
       all(greaterThanEqual(px, vec2(inset))) &&
       all(lessThan(px, v_side - inset));
@@ -195,7 +230,7 @@ const FRAGMENT_SHADER = `#version 300 es
       if (k >= count && k > 0) break;
       float s = (float(k) - float(max(count, 1) - 1) * 0.5) * ${BAND_OFFSET.toFixed(4)};
       vec2 q = p - s * vec2(1.0, -1.0);
-      if (!inSquare(q)) continue;
+      if (!inShape(q)) continue;
       if (hole == 1 && inHole(q)) continue;
       if (hole == 2 && !inHole(q)) continue;
       if (count > 1 && int(floor(min((q.x + q.y) * 0.5, 0.999) * float(count))) != k) continue;
@@ -226,7 +261,16 @@ const FRAGMENT_SHADER = `#version 300 es
     // shows in one picture only, and the map does not blend, so it shows whole.
     vec4 a = picture(v_fill, v_ring, v_counts.x, v_counts.y, v_hover.x);
     vec4 b = picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w, v_hover.y);
-    if (a.a == 0.0 && b.a == 0.0) discard;
+    if (a.a == 0.0 && b.a == 0.0) {
+      if (v_halo <= 0.0) discard;
+      // Outside the square of a standout with a halo: its fill, fading out.
+      vec2 outside = max(max(-v_uv, v_uv - 1.0), 0.0);
+      float away = v_round > 0.0 ? max(length(v_uv - 0.5) - 0.5, 0.0) : length(outside);
+      float alpha = ${STANDOUT_HALO.ALPHA.toFixed(4)} * (1.0 - smoothstep(0.0, v_halo, away));
+      if (alpha <= 0.0) discard;
+      fragColor = vec4(mix(unpack(v_fill.x), unpack(v_nextFill.x), u_fade), alpha);
+      return;
+    }
     vec3 color = a.a == 0.0 ? b.rgb : b.a == 0.0 ? a.rgb : mix(a.rgb, b.rgb, u_fade);
 
     // Add subtle dithering noise to break up moiré patterns (UV-based for zoom stability)
@@ -249,8 +293,10 @@ const OUTLINE_VERTEX_SHADER = `#version 300 es
   uniform float u_zoom;
 
   in vec2 a_position;
+  out vec2 v_world;
 
   void main() {
+    v_world = a_position;
     vec2 pos = (a_position + u_pan) * u_zoom;
     vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
     gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
@@ -260,9 +306,14 @@ const OUTLINE_VERTEX_SHADER = `#version 300 es
 const OUTLINE_FRAGMENT_SHADER = `#version 300 es
   precision mediump float;
   uniform vec3 u_color;
+  // A round square's centre and its band's inner and outer radius; an outer radius of 0 for a square.
+  uniform vec4 u_disc;
+  in vec2 v_world;
   out vec4 fragColor;
 
   void main() {
+    float d = length(v_world - u_disc.xy);
+    if (u_disc.w > 0.0 && (d < u_disc.z || d > u_disc.w)) discard;
     fragColor = vec4(u_color, 1.0);
   }
 `;
@@ -331,6 +382,7 @@ export interface OutlineProgram {
     pan: WebGLUniformLocation | null;
     zoom: WebGLUniformLocation | null;
     color: WebGLUniformLocation | null;
+    disc: WebGLUniformLocation | null;
   };
 }
 
@@ -358,6 +410,7 @@ export function createOutlineProgram(gl: WebGL2RenderingContext): OutlineProgram
       pan: gl.getUniformLocation(program, 'u_pan'),
       zoom: gl.getUniformLocation(program, 'u_zoom'),
       color: gl.getUniformLocation(program, 'u_color'),
+      disc: gl.getUniformLocation(program, 'u_disc'),
     },
   };
 }

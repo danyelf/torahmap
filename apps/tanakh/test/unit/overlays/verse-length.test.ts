@@ -8,7 +8,7 @@ import {
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
 import { createVerse } from '../../helpers/fixtures';
-import { assertValidColor } from '../../helpers/assertions';
+import { assertNamedEnds, assertValidColor } from '../../helpers/assertions';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
 
@@ -80,7 +80,7 @@ describe('Verse Length Overlay', () => {
     });
 
     it('has required methods', () => {
-      expect(overlay.getItemColor).toBeDefined();
+      expect(overlay.colorsFor).toBeDefined();
       expect(overlay.renderLegend).toBeDefined();
       expect(overlay.getHoverInfo).toBeDefined();
       expect(overlay.renderSidebarInfo).toBeDefined();
@@ -153,6 +153,10 @@ describe('Verse Length Overlay', () => {
       const info = verseLengthOverlay.getHoverInfo(verse);
       expect(info).toBe('2 words');
     });
+  });
+
+  it('names the ends of its strip in the legend card', () => {
+    assertNamedEnds(verseLengthOverlay.summary());
   });
 
   describe('Legend layout', () => {
@@ -431,22 +435,16 @@ describe('Verse Length Overlay', () => {
       expect(html).toContain('16 words'); // Max
     });
 
-    it('includes explanatory text about cool colors', () => {
+    it('names its ends in the words the legend card uses', () => {
       const container = document.createElement('div');
       verseLengthOverlay.renderLegend(container);
+      const captions = [...container.querySelectorAll('.legend-caption')].map(
+        (caption) => caption.textContent,
+      );
 
-      const html = container.innerHTML;
-      expect(html).toMatch(/Purple\/blue|Purple/);
-      expect(html).toContain('shorter verses');
-    });
-
-    it('includes explanatory text about warm colors', () => {
-      const container = document.createElement('div');
-      verseLengthOverlay.renderLegend(container);
-
-      const html = container.innerHTML;
-      expect(html).toMatch(/Green\/yellow|Orange\/yellow/);
-      expect(html).toContain('longer verses');
+      for (const end of verseLengthOverlay.summary().strip!.ends) {
+        expect(captions.some((caption) => caption?.includes(end))).toBe(true);
+      }
     });
 
     it('mentions logarithmic scale in legend', () => {

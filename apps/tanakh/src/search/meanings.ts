@@ -2,14 +2,13 @@
 // could be, narrowed to the ones the reader leaves checked. The term list
 // itself is @torahmap/search's; this is what reads the dictionary.
 
-import { memoByValue } from '@torahmap/utils';
+import { memoByValue, type TextRange } from '@torahmap/utils';
 import {
   languageOf,
   type ExtraMode,
   type MatchMode,
   type SearchLanguage,
   type SearchTerm,
-  type TextRange,
 } from '@torahmap/search';
 import { onlySeparators, splitIntoWords, stripNikkud } from '@torahmap/hebrew';
 import {

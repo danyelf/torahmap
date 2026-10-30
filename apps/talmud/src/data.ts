@@ -1,6 +1,7 @@
 // The shapes of the Talmud data files in public/data/talmud/, and how to read them.
 
 import type { Loaded } from '@torahmap/shell/dataFiles.ts';
+import type { TextRange } from '@torahmap/utils';
 
 /** The Talmud's folder in public/data/. */
 export const TALMUD_DATA_DIR = 'talmud';
@@ -14,8 +15,11 @@ export const textsFile = (tractate: string): string => `${TALMUD_DATA_DIR}/texts
 export const englishFile = (tractate: string): string =>
   `${TALMUD_DATA_DIR}/english/${tractate}.json`;
 
-/** What search reads, a different edition from the popup's: each tractate's amudim of plain-letter segments. */
+/** What search reads: the popup's text without points, each tractate's amudim of segments. */
 export const SEARCH_FILE = `${TALMUD_DATA_DIR}/search.json`;
+
+/** What English search reads, laid out as `SEARCH_FILE`. */
+export const SEARCH_ENGLISH_FILE = `${TALMUD_DATA_DIR}/search-english.json`;
 
 export interface TalmudAmud {
   daf: number;
@@ -50,9 +54,14 @@ export interface TalmudStructure {
 export interface TalmudTractateText {
   name: string;
   amudim: string[][];
-  /** The Tanakh verses each segment cites, by its amud's place in `amudim` and its own. */
-  citations: Record<number, Record<number, Citation[]>>;
+  /** The Tanakh verses each segment cites. */
+  citations: CitationsByPlace;
+  /** The verses the English cites, in the segment's plain English. Each stretch is the whole reference, brackets included. */
+  englishCitations: CitationsByPlace;
 }
+
+/** Citations by their amud's place in `amudim`, then their segment's. */
+export type CitationsByPlace = Record<number, Record<number, Citation[]>>;
 
 /** The William Davidson English, shaped as a tractate's `amudim`, in the markers `englishText` reads. */
 export type TalmudTractateEnglish = string[][];
@@ -61,10 +70,10 @@ export type TalmudTractateEnglish = string[][];
 export type TalmudSearchText = Record<string, string[][]>;
 
 /** Where a segment cites a Tanakh verse: the cited words, by place in its text, and the verse's id. */
-export interface Citation {
-  start: number;
-  end: number;
+export interface Citation extends TextRange {
   verse: string;
+  /** Where no words of the segment quote the verse: the reference, shown at `start`, and `end` is `start`. */
+  reference?: string;
 }
 
 export function structureFrom(loaded: Loaded): TalmudStructure {
@@ -96,4 +105,14 @@ export function isSegmentMishnah(
   const amudEntry = tractate.amudim[amudIndex(daf, amud, tractate.amudim[0])];
   if (!amudEntry) return false;
   return amudEntry.mishnahMask[segment - 1] ?? false;
+}
+
+/** A tractate's hadran lines, the הדרן עלך that closes each perek: each perek's last segment. */
+export function hadranLines(
+  tractate: TalmudTractate,
+): { daf: number; amud: 'a' | 'b'; segment: number }[] {
+  return tractate.perakim.map((p) => {
+    const { daf, amud } = tractate.amudim[p.endAmudIdx];
+    return { daf, amud, segment: p.endSegmentInLastAmud };
+  });
 }

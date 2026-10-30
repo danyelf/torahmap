@@ -7,6 +7,8 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
+  boxAround,
+  cameraToFit,
   type Camera,
   type ScreenPoint,
   type Viewport,
@@ -31,7 +33,7 @@ import {
   lerpCamera,
 } from '@torahmap/engine';
 import { debounce } from '@torahmap/utils';
-import type { MapText, Site } from './app/text.ts';
+import type { MapText, Reference, Site } from './app/text.ts';
 import { SEARCH_BOX_ID } from './app/search.ts';
 import {
   DRAG_PX,
@@ -46,6 +48,8 @@ import {
   isPanel,
 } from './frame.ts';
 import { CONTINUE_STORY, SHARE, menuHtml } from './menu.ts';
+import { bindGoTo, goToPanelHtml } from './goTo.ts';
+import { GO_TO_BOX_ID } from './goToBox.ts';
 import { shareLink } from './share.ts';
 import { storiesHtml, storyChosen, type StoryCard } from './storiesPanel.ts';
 import { aboutHtml } from './aboutPanel.ts';
@@ -53,13 +57,11 @@ import { startingPointsHtml, startChosen, type StartChoice } from './startingPoi
 import { hasVisited, rememberVisit } from './visits.ts';
 import { overlayPanelHtml, searchPanelHtml } from './toolPanels.ts';
 import { applyLanguageChoice, bindLanguageChoice, shownLanguages } from './languageChoice.ts';
-import type { TextLanguage } from './language.ts';
+import { ENGLISH, type TextLanguage } from './language.ts';
 import {
   arrivedWith,
   configureAnalytics,
   driverChangeEvent,
-  downloadKbps,
-  trackLoadTiming,
   reportError,
   trackOverlaySwitch,
   trackPageView,
@@ -68,6 +70,7 @@ import {
   trackStoryExit,
   trackStoryReturn,
   trackStoryStop,
+  trackGoTo,
   trackSquareClick,
   trackViewSettled,
   trackWebGLMissing,
@@ -81,21 +84,22 @@ import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
+import { createBackdrop } from './backdrop.ts';
+import { restingHover } from './restingHover.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
-import { createOverlaySettings } from './overlays/settings.ts';
-import { NO_OVERLAY, type Overlay, type Tools } from './overlays/types.ts';
-import { prebuildCompleted } from './overlays/prebuild.ts';
-import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
-import { dataFor, downloadFiles, loadFiles, requiredFiles, type Loaded } from './dataFiles.ts';
+import { createOverlaySettings, settingsFromLink, type LinkParams } from './overlays/settings.ts';
 import {
-  downloadStages,
-  filesFirst,
-  staleAfterLanding,
-  waitingOn,
-  type LandingView,
-  type OpeningView,
-} from './downloads.ts';
-import { LOADING, loadNotice } from './loadNotice.ts';
+  NO_OVERLAY,
+  type Focus,
+  type Overlay,
+  type SettingsUpdate,
+  type Tools,
+} from './overlays/types.ts';
+import { toolsPicked, toolsShown, togglesSearch } from './tools.ts';
+import { dataFor, loadFiles, type Loaded } from './dataFiles.ts';
+import { filesFirst, staleAfterLanding, type LandingView, type OpeningView } from './downloads.ts';
+import { createLoader } from './loader.ts';
+import { createViewFiles } from './viewFiles.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
 import { URL_UPDATE_DEBOUNCE_MS, SEARCH_NON_MATCH_DIM, MAP_FADE } from './constants.ts';
@@ -166,7 +170,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return;
   }
   // Everything but the text's first files loads behind the first frame (fileLanded).
-  const firstFiles = loadFiles(source.firstFiles);
+  const firstFiles = loadFiles(source.files.first);
   // Compiled while the first files download. Some browsers with WebGL 2 still
   // fail to compile the shaders.
   let renderContext: RenderContext;
@@ -178,8 +182,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return;
   }
 
-  let loaded: Loaded = await firstFiles;
-  const text = source.open(loaded);
+  const first = await firstFiles;
+  const text = source.open(first);
   const items = text.items;
   const searchTool = text.search;
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
@@ -187,34 +191,34 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     text.overlays.find((overlay) => overlay.id === id);
   // What a story stop may name.
   const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
-  // Filled from the download stages once the opening view is known, before the first frame.
-  const downloads = {
-    pending: new Set<string>(),
-    failed: new Set<string>(),
-    closed: new Set<string>(),
-  };
-
-  // For load_timing (sendLoadTiming).
-  let firstFrame = 0;
-  let timedIn = 0;
-  let searchReady = 0;
-  let searchPrebuilt = false;
-  let downloadsSettled = false;
-  let downloadsStarted = false;
-  let timingSent = false;
+  // What main.ts asks of the loader and viewFiles is the loading suite's to
+  // check: creating them, starting the downloads, asking for a fetch, what
+  // showLoadState redraws, and what the map does as a file lands or fails.
+  // npm run test:browser sees a change to this file as the interface's, so run
+  // npm run test:loading after changing one of them.
+  const loader = createLoader({
+    loaded: first,
+    overlays: allOverlays,
+    search: searchTool,
+    timed: source.files.timed,
+    landed: fileLanded,
+    failed: fileFailed,
+  });
 
   const squares = indexItems(items);
   const baseColors = items.map((item, i) => text.baseColor(item, i));
   const base = (i: number): ItemColor => baseColors[i];
-  // A picture with its holes filled with each square's base colour.
+  const baseRings = text.baseRing && items.map((item, i) => text.baseRing!(item, i));
+  // A picture with its holes filled with each square's base colour, and its base ring.
   const fill = (picture: Picture<ItemColor | null>): Picture<ItemColor> =>
-    fillDefaultColors(picture, base);
+    fillDefaultColors(picture, base, baseRings && ((i) => baseRings[i]));
 
   // Placed over the map; render() moves them with it.
   const labelLayer = document.createElement('div');
   labelLayer.id = 'map-labels';
   document.body.appendChild(labelLayer);
   const moveLabels = text.labels(labelLayer);
+  const backdrop = createBackdrop(labelLayer);
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -285,6 +289,21 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     composite();
   }
 
+  /**
+   * The colours each of the two holds, which the other keeps out of: a word and a pick are never
+   * in the same colour.
+   */
+  const searchColors = (): readonly number[] =>
+    searchTool.colorsInUse?.(overlaySettings.get(searchTool)) ?? [];
+  const overlayColors = (): readonly number[] =>
+    currentOverlay?.colorsInUse?.(overlaySettings.get(currentOverlay)) ?? [];
+
+  /** Restore both from a link or a story stop: the search's colours first, then the overlay's. */
+  function restoreTools(overlayParams: LinkParams, searchParams: LinkParams): void {
+    overlaySettings.restore(searchTool, searchParams);
+    if (currentOverlay) overlaySettings.restore(currentOverlay, overlayParams, searchColors());
+  }
+
   /** The overlay and the search as they stand, each null while off. */
   function toolsNow(): Tools<I> {
     return toolsShown(
@@ -292,7 +311,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       currentSettings(),
       searchTool,
       overlaySettings.get(searchTool),
-      loaded,
+      loader.loaded(),
     );
   }
 
@@ -338,17 +357,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
           summary: on.tool.summary?.(on.settings, on.data) ?? {},
         });
       } else if (tool) {
-        // A picked tool without its data: its files are on their way, or one failed.
-        const files = requiredFiles(tool);
-        if (waitingOn(files, downloads) === 'loading') {
-          rows.push({ panel, name: tool.name, summary: { detail: LOADING }, loading: true });
-        } else {
-          const notice = noticeFor(files);
-          if (notice) warnings.push(notice);
-        }
+        const waiting = viewFiles.waitingTool(panel, tool);
+        if (waiting && 'row' in waiting) rows.push(waiting.row);
+        else if (waiting) warnings.push(waiting.warning);
       }
     }
     showLegend(mapLegend, rows, warnings);
+    backdrop.show(
+      tools.overlay?.tool.backdrop?.(items, tools.overlay.settings, tools.overlay.data) ?? null,
+    );
   }
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
@@ -356,10 +373,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return toolsPicture(
       toolsNow(),
       items,
-      hoveredItem,
+      litHoverItem,
       base,
       dimFor(frontTool),
       text.searchKeepsBase,
+      pinnedItem,
     );
   }
 
@@ -428,8 +446,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       to,
       t,
       items,
-      hoveredItem,
-      loaded,
+      litHoverItem,
+      loader.loaded(),
       base,
       textTools,
       text.searchKeepsBase,
@@ -442,18 +460,22 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (colors) setColorLayer(colors);
   }
 
+  function focusNow(): Focus<I> {
+    return { hovered: litHoverItem, pinned: pinnedItem };
+  }
+
   /**
-   * Repaint after the hovered or pinned square changes. `hoveredBefore` is the
-   * hover the colour layer was drawn for; a pin leaves the hover alone, so it
-   * passes nothing and only composites.
+   * Repaint after the hovered or pinned square changes. `focusBefore` is the
+   * focus the colour layer was drawn for.
    */
-  function repaint(hoveredBefore: I | null = hoveredItem): void {
+  function repaint(focusBefore: Focus<I>): void {
     const layer = layerToRecompute(
       colorSource(driver),
       toolsNow().overlay,
-      hoveredBefore,
-      hoveredItem,
+      focusBefore,
+      focusNow(),
     );
+    renderOverlayFocus();
     if (layer === 'blend') blendTransition();
     else if (layer === 'overlay') applyTools();
     else composite();
@@ -481,8 +503,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       activateOverlay(wantedOverlay);
     }
 
-    if (currentOverlay) overlaySettings.restore(currentOverlay, stop.overlayParams ?? {});
-    overlaySettings.restore(searchTool, stop.searchParams ?? {});
+    restoreTools(stop.overlayParams ?? {}, stop.searchParams ?? {});
+    // The pin is set before the panel is drawn, which draws what the pin has.
+    const unpinned = pinnedItem !== null && !stop.pin;
+    if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
+    else pinnedItem = null;
     searchChanged(true);
     overlayChanged(true);
 
@@ -490,17 +515,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // reader has a panel open to see it (stops don't open panels).
     if (searching()) frontTool = 'search';
 
-    // Sync pinnedItem from stop (without going through pinItem, which writes URL/telemetry)
-    if (stop.pin) {
-      const item = squares.find(stop.pin);
-      if (item && !sameItem(pinnedItem, item)) {
-        pinnedItem = item;
-        updateSidebarWrapper(item, true);
-      }
-    } else if (pinnedItem) {
-      pinnedItem = null;
-      updateSidebarWrapper(null);
-    }
+    // The panel's redraw shows a pin but cannot clear one; pinItem would write URL/telemetry.
+    if (unpinned) updateSidebarWrapper(null);
   }
 
   const camera = text.startCamera(mapViewport());
@@ -508,6 +524,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let pinnedItem: I | null = null;
 
   let hoveredItem: I | null = null;
+  // The hovered square the map's colours follow: it trails hoveredItem, which the highlight and
+  // the panels follow at once.
+  let litHoverItem: I | null = null;
 
   const storyContent = document.getElementById('story-content')!;
 
@@ -520,6 +539,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const panelBody = document.getElementById('panel-body')!;
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
+  document.getElementById('goto-panel')!.innerHTML = goToPanelHtml(text.goTo.examples);
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
@@ -571,8 +591,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();
+    if (opened && frame.open === 'goto') goToPanel.redraw();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages);
+      aboutPanel.innerHTML = aboutHtml(
+        source.site,
+        allOverlays,
+        twoLanguages,
+        text.goTo.examples[0],
+      );
       bindLanguageChoice(aboutPanel, refreshPopup);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
@@ -588,7 +614,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (!phone || frame.full) return;
     document.documentElement.style.setProperty('--sheet-shown', `${panel.offsetHeight}px`);
   }
-  new ResizeObserver(measureSheet).observe(panel);
+  // Watching the sheet alone misses a change: when a panel opens shorter than
+  // the one before and grows back to its height within a frame, the observer
+  // sees no change, though measureSheet has already recorded the shorter one.
+  const sheetWatch = new ResizeObserver(measureSheet);
+  for (const watched of [panel, ...panelBody.children]) sheetWatch.observe(watched);
 
   // On a phone the popup stacks above the legend, which grows a row for
   // each thing on the map.
@@ -622,6 +652,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (event.type === 'menu' && frame.menu) {
       droppedMenu.querySelector<HTMLElement>('.menu-item')?.focus();
     }
+    // On a phone it would raise the keyboard over the examples before they are read.
+    if (event.type === 'choose' && frame.open === 'goto' && !phone) goToPanel.focus();
   }
 
   // Off until the page view is sent: who drives when the page opens is part of it.
@@ -679,6 +711,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function render(): void {
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
+    backdrop.place(offset, camera.zoom);
     moveLabels(offset, camera.zoom);
   }
 
@@ -706,42 +739,94 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * has said what they want to see, and being pulled back would undo it.
    */
   function glideToItem(item: I): void {
-    cancelCameraGlide();
-
-    const target = viewFocusedOn(
-      item,
-      camera.zoom,
-      RESULT_CLICK_ZOOM,
-      mapFocus(),
-      mapViewport(),
-      zoomRange,
+    glideTo(
+      viewFocusedOn(item, camera.zoom, RESULT_CLICK_ZOOM, mapFocus(), mapViewport(), zoomRange),
     );
+  }
 
+  /**
+   * Fit `list` into the map above and below the focus, since its first square is
+   * pinned and on a phone the popup covers the map below. No closer than a single
+   * square is gone to, or a short chapter would be a few squares filling the map.
+   */
+  function glideToFit(list: readonly I[]): void {
+    const view = mapViewport();
+    const focus = mapFocus();
+    const range = { ...zoomRange, max: Math.min(zoomRange.max, RESULT_CLICK_ZOOM) };
+    const { zoom, x, y } = cameraToFit(boxAround(list), view.width, 2 * focus.y, range);
+    glideTo({ zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) });
+  }
+
+  function glideTo(target: Camera): void {
+    cancelCameraGlide();
     stopCameraGlide = animateCameraTo(camera, target, () => {
       render();
       debouncedCameraSettled();
     });
   }
 
+  /** The squares of a place, in reading order. */
+  const squaresOf = (found: Reference): I[] =>
+    found.ids.map((id) => squares.find(id)).filter((item) => item !== null);
+
+  /**
+   * A square's text in the first shown language whose file is in, fetching its files, or
+   * null while none is in; the language the reference was typed in comes first.
+   */
+  function quoteOf(item: I, typed: string): string | null {
+    viewFiles.fetchPopup(item);
+    const said = text.popupText(item, loader.loaded(), null);
+    const typedIn = text.goTo.languageOf(typed);
+    const first = (language: TextLanguage) => Number(language === typedIn);
+    // A language whose file is not in has no words yet.
+    const languages = [...shownLanguages()].sort((a, b) => first(b) - first(a));
+    for (const language of languages) {
+      const words = language === ENGLISH ? said.english : said.hebrew;
+      if (words) return words;
+    }
+    return null;
+  }
+
+  const goToPanel = bindGoTo(document.getElementById('goto-panel')!, text.goTo, {
+    quote(found, typed) {
+      const [first] = squaresOf(found);
+      return first ? quoteOf(first, typed) : null;
+    },
+    // Pin the place's first square, and show all of it.
+    take(found, typed) {
+      const place = squaresOf(found);
+      if (place.length === 0) return;
+      trackGoTo(typed, found.ref, text.area(place[0]).area);
+      // A full-height sheet would hide the glide.
+      if (frame.full) setFrame({ ...frame, full: false });
+      pinItem(place[0]);
+      if (place.length === 1) glideToItem(place[0]);
+      else glideToFit(place);
+    },
+    miss: (typed) => trackGoTo(typed, '', ''),
+  });
+
   // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
   function pinItem(item: I, centerCamera: boolean = false): void {
     takeOver('takeover');
     trackSquareClick(item.id, text.area(item).area);
+    const focusBefore = focusNow();
     pinnedItem = item;
     updateSidebarWrapper(item, true);
     if (centerCamera) {
       centerOnItem(item);
     }
-    repaint();
+    repaint(focusBefore);
     syncUrl(true);
   }
 
   function unpinItem(): void {
     takeOver('takeover');
+    const focusBefore = focusNow();
     pinnedItem = null;
     updateSidebarWrapper(null);
-    repaint();
+    repaint(focusBefore);
     syncUrl(true);
   }
 
@@ -756,10 +841,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   render();
 
+  const restHover = restingHover<I>((square) => {
+    const focusBefore = focusNow();
+    litHoverItem = square;
+    if (!sameItem(focusBefore.hovered, square)) repaint(focusBefore);
+  });
+
   function setHover(square: I | null): void {
-    const before = hoveredItem;
+    if (sameItem(hoveredItem, square)) return;
     hoveredItem = square;
-    if (!sameItem(before, square)) repaint(before);
+    restHover.move(square);
+    renderOverlayFocus();
+    render();
   }
 
   const gestures = createMapGestures<I>({
@@ -876,48 +969,20 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     trackViewSettled(where.area, where.section, camera.zoom);
   }, URL_UPDATE_DEBOUNCE_MS);
 
-  /** The files `item`'s popup needs for the languages shown; none without an item. */
-  function popupFilesOf(item: I | null): string[] {
-    return item
-      ? [...new Set(shownLanguages().map((language) => text.popupFile(item, language)))]
-      : [];
-  }
-
-  /** The shown languages of `item`'s popup whose file is not in, with one notice for each file. */
-  function waitingLanguages(item: I): Partial<Record<TextLanguage, Node | null>> {
-    const waiting: Partial<Record<TextLanguage, Node | null>> = {};
-    const told = new Set<string>();
-    for (const language of shownLanguages()) {
-      const file = text.popupFile(item, language);
-      if (waitingOn([file], downloads) === null) continue;
-      waiting[language] = told.has(file) ? null : noticeFor([file]);
-      told.add(file);
-    }
-    return waiting;
-  }
-
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
-    const files = popupFilesOf(item);
-    for (const file of files) fetchPopupFile(file);
+    viewFiles.fetchPopup(item);
     const tools = toolsNow();
-    updateSidebar(sidebarElements, item, (shown) => text.popupText(shown, loaded, tools.overlay), {
-      waiting: item ? waitingLanguages(item) : {},
-      wordsClickable: dataFor(searchTool, loaded) !== null,
-      ...tools,
-      pinned: isPinned,
-    });
-  }
-
-  /**
-   * A square's text downloads when its popup first shows, unless it is in, on
-   * its way or failed. Until the downloads start, the opening view's popup
-   * file is left to their first stage (filesFirst).
-   */
-  function fetchPopupFile(path: string): void {
-    if (!downloadsStarted) return;
-    if (loaded.has(path) || downloads.pending.has(path) || downloads.failed.has(path)) return;
-    downloads.pending.add(path);
-    void downloadFiles([path], { landed: fileLanded, failed: fileFailed });
+    updateSidebar(
+      sidebarElements,
+      item,
+      (shown) => text.popupText(shown, loader.loaded(), tools.overlay, tools.search),
+      {
+        waiting: item ? viewFiles.waitingLanguages(item) : {},
+        wordsClickable: dataFor(searchTool, loader.loaded()) !== null,
+        ...tools,
+        pinned: isPinned,
+      },
+    );
   }
 
   /**
@@ -930,32 +995,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     else if (hoveredItem) updateSidebarWrapper(hoveredItem, false);
   }
 
-  /** Say in the search caption that search's files are loading or failed; search fills it once they are in. */
-  function showSearchNotice(): void {
-    const caption = searchControls.querySelector('#search-hit-caption');
-    if (!caption) return;
-    const notice = noticeFor(requiredFiles(searchTool));
-    if (notice) caption.replaceChildren(notice);
-    else caption.querySelector('.load-notice')?.remove();
-  }
-
-  /** What a place waiting on `paths` shows: a loading notice, a closable warning, or nothing. */
-  function noticeFor(paths: readonly string[]): HTMLElement | null {
-    const state = waitingOn(paths, downloads);
-    return state && loadNotice(state, () => closeWarning(paths));
-  }
-
   /** Redraw every place that says a file is loading or failed. */
   function showLoadState(): void {
     updateLegend();
-    showSearchNotice();
+    viewFiles.showSearchNotice();
     refreshPopup();
-  }
-
-  /** The reader closed a warning: it stays closed for those files. */
-  function closeWarning(paths: readonly string[]): void {
-    for (const path of paths) if (downloads.failed.has(path)) downloads.closed.add(path);
-    showLoadState();
   }
 
   sidebarElements.closeBtn?.addEventListener('click', () => {
@@ -975,13 +1019,23 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   const overlayControlsContainer = document.getElementById('overlay-controls');
   const searchControls = document.getElementById('search-controls')!;
+  const viewFiles = createViewFiles({
+    loader,
+    files: source.files,
+    search: searchTool,
+    searchSettings: () => overlaySettings.get(searchTool),
+    searchControls,
+    closed: showLoadState,
+  });
   const overlayLegendContainer = document.getElementById('overlay-legend');
+  const overlayFocusContainer = document.getElementById('overlay-focus');
   const overlayStarts = document.getElementById('overlay-starts')!;
 
   /** Switch the active overlay without drawing its UI, painting or writing the URL. */
   function activateOverlay(id: string): void {
     currentOverlay?.destroy?.();
     currentOverlay = getOverlay(id) ?? null;
+    document.body.dataset.overlay = currentOverlay?.id ?? NO_OVERLAY;
   }
 
   function renderOverlayLegend(): void {
@@ -989,9 +1043,43 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       overlayLegendContainer.innerHTML = '';
       const overlay = currentOverlay;
       if (overlay) {
-        overlay.renderLegend?.(overlayLegendContainer, currentSettings(), dataFor(overlay, loaded));
+        overlay.renderLegend?.(
+          overlayLegendContainer,
+          currentSettings(),
+          dataFor(overlay, loader.loaded()),
+          items,
+        );
       }
     }
+  }
+
+  function pinAndGlide(item: I): void {
+    // A full-height sheet would hide the glide.
+    if (frame.full) setFrame({ ...frame, full: false });
+    pinItem(item);
+    glideToItem(item);
+  }
+
+  /** Draw what the active overlay says about the square in focus. */
+  function renderOverlayFocus(): void {
+    if (!overlayFocusContainer) return;
+    overlayFocusContainer.innerHTML = '';
+    const overlay = currentOverlay;
+    if (!overlay?.renderFocus) return;
+    const data = dataFor(overlay, loader.loaded());
+    if (!data) return;
+    const travelTo = (id: string) => {
+      const item = squares.find(id);
+      if (item) pinAndGlide(item);
+    };
+    overlay.renderFocus(
+      overlayFocusContainer,
+      hoveredItem,
+      pinnedItem,
+      currentSettings(),
+      data,
+      travelTo,
+    );
   }
 
   /** Draw the active overlay's controls into what is already there. */
@@ -1002,7 +1090,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       overlayControlsContainer,
       overlaySettings.get(overlay),
       (update) => changeSettings(overlay, update),
-      dataFor(overlay, loaded),
+      dataFor(overlay, loader.loaded()),
     );
   }
 
@@ -1026,6 +1114,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         : startingPointsHtml(searchTool, text.overlays, storyColumn.listed());
     }
     renderOverlayControls();
+    renderOverlayFocus();
     renderOverlayLegend();
     overlayDescription.textContent = currentOverlay?.description ?? '';
   }
@@ -1035,8 +1124,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * control left over from an overlay that is no longer showing still changes
    * that overlay's settings, but paints nothing.
    */
-  function changeSettings<S>(overlay: Overlay<I, S>, update: (current: S) => S): void {
-    overlaySettings.set(overlay, update(overlaySettings.get(overlay)));
+  function changeSettings<S>(overlay: Overlay<I, S>, update: SettingsUpdate<S>): void {
+    overlaySettings.set(overlay, update(overlaySettings.get(overlay), searchColors()));
     if (overlay !== currentOverlay) return;
 
     applyTools();
@@ -1051,6 +1140,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * them, keeping their focus.
    */
   function searchChanged(fresh: boolean): void {
+    viewFiles.fetchSearch();
     drawSearchPanel(fresh);
     updateLegend();
     refreshPopup();
@@ -1060,22 +1150,25 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
-      searchTool.telemetry.replaced(overlaySettings.get(searchTool), dataFor(searchTool, loaded));
+      searchTool.telemetry.replaced(
+        overlaySettings.get(searchTool),
+        dataFor(searchTool, loader.loaded()),
+      );
     }
     searchTool.renderControls?.(
       searchControls,
       overlaySettings.get(searchTool),
       changeSearch,
-      dataFor(searchTool, loaded),
+      dataFor(searchTool, loader.loaded()),
     );
-    showSearchNotice();
+    viewFiles.showSearchNotice();
   }
 
-  function changeSearch(update: (current: S) => S): void {
+  function changeSearch(update: SettingsUpdate<S>): void {
     const before = overlaySettings.get(searchTool);
-    const after = update(before);
+    const after = update(before, overlayColors());
     overlaySettings.set(searchTool, after);
-    searchTool.telemetry.readerChanged(after, dataFor(searchTool, loaded));
+    searchTool.telemetry.readerChanged(after, dataFor(searchTool, loader.loaded()));
     applyTools();
     searchChanged(false);
     render();
@@ -1123,13 +1216,19 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   text.start?.({
-    loaded: () => loaded,
+    loaded: loader.loaded,
     holdPopup: popupHold.hold,
-    pinAndGlide: (item) => {
-      // A full-height sheet would hide the glide.
-      if (frame.full) setFrame({ ...frame, full: false });
-      pinItem(item);
-      glideToItem(item);
+    pinAndGlide,
+    openOverlay: (overlay, update) => {
+      takeOver('takeover');
+      if (currentOverlay?.id !== overlay.id) {
+        overlaySettings.restore(overlay, {}, searchColors());
+        setOverlay(overlay.id);
+      }
+      changeSettings(overlay, update);
+      if (frame.mode === 'explore' && frame.open !== 'overlay') {
+        dispatch({ type: 'choose', panel: 'overlay' });
+      }
     },
     searchSettings: () => overlaySettings.get(searchTool),
     changeSearch: (update) => {
@@ -1199,7 +1298,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     takeOver('fold');
     // Exploring keeps only what a link carries, so a stop's highlight stays behind.
     if (currentOverlay) {
-      overlaySettings.restore(currentOverlay, overlaySettings.toUrl(currentOverlay));
+      overlaySettings.restore(
+        currentOverlay,
+        overlaySettings.toUrl(currentOverlay),
+        searchColors(),
+      );
       applyTools();
     }
     closeStory(exploring);
@@ -1300,11 +1403,25 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
       return;
     }
+    const closing = target.closest('.map-legend-close')?.closest<HTMLElement>('.map-legend-row')
+      ?.dataset.panel;
+    if (closing === 'search' || closing === 'overlay') return turnOff(closing);
     // Menu items and the legend choose a panel; nothing else inside an open
     // panel does.
-    const chooser = target.closest<HTMLElement>('.map-legend-row');
+    const chooser = target.closest('.map-legend-open')?.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
+  }
+
+  /** A legend card's ×: what the search panel's Clear, or the overlay's None, does. */
+  function turnOff(tool: FrontTool): void {
+    takeOver('takeover');
+    if (tool === 'search') changeSearch(() => settingsFromLink(searchTool, {}));
+    else setOverlay(NO_OVERLAY);
+    // The × went with its row, so focus moves to the row left, or else to the menu.
+    (
+      mapLegend.querySelector<HTMLElement>('.map-legend-row:not([hidden]) button') ?? menuToggle
+    ).focus();
   }
 
   /** A pan's debounced address write may not have landed yet, so it is brought current first. */
@@ -1376,10 +1493,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     dispatch({ type: 'drag', dy: frame.full ? DRAG_PX : -DRAG_PX });
   });
 
-  // Typing wants room for the words and their results.
+  // Typing wants room for the words and their results. Go to's answer is one line, and
+  // the map above it shows where it leads.
   panel.addEventListener('focusin', (e) => {
     const t = e.target;
     if (t instanceof HTMLInputElement && (t.type === 'text' || t.type === 'search')) {
+      if (t.id === GO_TO_BOX_ID) return;
       dispatch({ type: 'typing' });
     }
   });
@@ -1439,7 +1558,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         state.t,
         items,
         null,
-        loaded,
+        loader.loaded(),
         base,
         textTools,
         text.searchKeepsBase,
@@ -1500,7 +1619,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
     // Not setHover: the render below draws the highlight.
-    hoveredItem = gestures.squareUnderMouse();
+    hoveredItem = litHoverItem = gestures.squareUnderMouse();
+    restHover.cancel();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.
@@ -1522,10 +1642,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView<I> {
-    if (frame.mode !== 'story') return { tools: pickedTools(), popup: popupFilesOf(pinnedItem) };
+    if (frame.mode !== 'story') return viewFiles.opening(pickedTools(), pinnedItem);
     const { stop } = storyColumn.where();
     const item = stop.pin ? squares.find(stop.pin) : null;
-    return { tools: stopTools(stop, textTools), popup: popupFilesOf(item) };
+    return viewFiles.opening(stopTools(stop, textTools), item);
   }
 
   function landingView(): LandingView<I> {
@@ -1537,13 +1657,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       const state = storyColumn.view();
       map = [...stopTools(state.fromStop, textTools), ...stopTools(state.toStop, textTools)];
     }
-    return {
-      source: colorSource(driver),
-      map,
-      panel: currentOverlay,
-      search: searchTool,
-      popup: popupFilesOf(shown),
-    };
+    return viewFiles.landing(colorSource(driver), map, currentOverlay, shown);
   }
 
   /** Bring the map up to date with data that just landed, the way it is being drawn. */
@@ -1560,60 +1674,28 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  function fileLanded(path: string, content: unknown): void {
-    if (path === source.timedFile) timedIn = performance.now();
-    downloads.pending.delete(path);
-    const before = loaded;
-    loaded = new Map(before).set(path, content);
-    // Before the redraws, so one that throws cannot hold back load timing.
-    prebuildCompleted(allOverlays, before, loaded, prebuilt);
-    const search = dataFor(searchTool, loaded);
-    if (search && search !== dataFor(searchTool, before)) searchTool.telemetry.dataLoaded(search);
-    const stale = staleAfterLanding(before, loaded, landingView());
+  function fileLanded(before: Loaded, after: Loaded): void {
+    const stale = staleAfterLanding(before, after, landingView());
     if (stale.map) redrawMap(stale.map);
     if (stale.overlayPanel) drawOverlayPanel(false);
     if (stale.searchPanel) drawSearchPanel(false);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
-    if (stale.popup) refreshPopupAfterDownload();
+    if (stale.popup) {
+      refreshPopupAfterDownload();
+      // What the overlay says about the focused square may quote the texts.
+      renderOverlayFocus();
+    }
+    if (frame.open === 'goto') goToPanel.redraw();
   }
 
-  function fileFailed(path: string): void {
-    downloads.pending.delete(path);
-    downloads.failed.add(path);
+  function fileFailed(): void {
     updateLegend();
-    showSearchNotice();
+    viewFiles.showSearchNotice();
     refreshPopupAfterDownload();
   }
 
   function refreshPopupAfterDownload(): void {
     if (!popupHold.held()) refreshPopup();
-  }
-
-  function prebuilt(overlay: Overlay<I>, built: boolean): void {
-    if (overlay !== searchTool) return;
-    searchPrebuilt = true;
-    if (built) searchReady = performance.now();
-    sendLoadTiming();
-  }
-
-  /** Sends load_timing once its fields are known; @torahmap/telemetry says what each marks. */
-  function sendLoadTiming(): void {
-    if (timingSent || !downloadsSettled) return;
-    if (dataFor(searchTool, loaded) && !searchPrebuilt) return;
-    timingSent = true;
-    const { timedFile } = source;
-    const resources = performance.getEntriesByType('resource') as PerformanceResourceTiming[];
-    const timedEntry = timedFile
-      ? resources.find((e) => e.name.endsWith(`/${timedFile}`))
-      : undefined;
-    const connection = (navigator as { connection?: { effectiveType?: string } }).connection;
-    trackLoadTiming({
-      first_frame: Math.round(firstFrame),
-      texts_in: Math.round(timedIn),
-      search_ready: Math.round(searchReady),
-      texts_kbps: downloadKbps(timedEntry),
-      connection: connection?.effectiveType ?? '',
-    });
   }
 
   // Everything this does came out of the URL, so nothing it does may write to
@@ -1648,14 +1730,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
 
     activateOverlay(next.overlay);
-    if (currentOverlay) overlaySettings.restore(currentOverlay, next.overlayParams);
-    overlaySettings.restore(searchTool, next.searchParams);
-    searchChanged(true);
-    overlayChanged(true);
-
+    restoreTools(next.overlayParams, next.searchParams);
     const item = next.square ? squares.find(next.square) : null;
     pinnedItem = item;
-    updateSidebarWrapper(item, item !== null);
+    searchChanged(true);
+    overlayChanged(true);
+    if (!item) updateSidebarWrapper(null);
 
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));
@@ -1679,6 +1759,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     closeStory(landingFrame(phone, 'overlay', true));
     // No stop has drawn the overlay panel, so None's places to start are not in it yet.
     drawOverlayPanel(true);
+    // Nor its colours: a link that names no view never reaches restoreFromUrl, and
+    // without an overlay no file landing repaints the map.
+    applyTools();
   }
 
   const referrer = document.referrer ? new URL(document.referrer).hostname : '';
@@ -1702,21 +1785,5 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   scheduleStoryFrame();
 
-  const stages = downloadStages(filesFirst(openingView()), allOverlays, loaded);
-  for (const path of stages.flat()) downloads.pending.add(path);
-  downloadsStarted = true;
-
-  // The loading tests wait on this; nothing in the app reads it.
-  document.documentElement.dataset.firstFrame = '';
-  firstFrame = performance.now();
-  showLoadState();
-
-  for (const stage of stages) {
-    await downloadFiles(stage, { landed: fileLanded, failed: fileFailed });
-  }
-  // The layout tests, the video harness and the loading tests wait on this;
-  // nothing in the app reads it.
-  document.documentElement.dataset.loaded = '';
-  downloadsSettled = true;
-  sendLoadTiming();
+  await loader.run(filesFirst(openingView()), showLoadState);
 }

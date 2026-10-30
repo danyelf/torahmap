@@ -25,7 +25,7 @@ const search = createTermSearch<{ id: string }, Data>({
 });
 
 const fromLink = (params: Record<string, string>): TermSettings =>
-  search.tool.settingsFromUrl!(params);
+  search.tool.settingsFromUrl!(params, []);
 
 describe('a term search with no extra mode', () => {
   it('reads and writes its terms and their modes in the link', () => {
@@ -60,5 +60,55 @@ describe('a term search with no extra mode', () => {
     container.querySelector<HTMLElement>('.search-result')!.click();
     expect(picked).toBe('b');
     search.tool.destroy!();
+  });
+});
+
+describe('a term search counting wholes', () => {
+  const wholes = createTermSearch<{ id: string }, Data>({
+    languages: [english],
+    data: { lines: 'lines.json' },
+    index: () =>
+      buildTextIndex(
+        [
+          { id: 'x.0', ref: 'x0', text: { en: 'gamma' } },
+          { id: 'x.1', ref: 'x1', text: { en: 'gamma' } },
+          { id: 'y.0', ref: 'y0', text: { en: 'gamma' } },
+        ],
+        [english],
+      ),
+    noun: { one: 'piece', many: 'pieces' },
+    countedAs: { noun: { one: 'poem', many: 'poems' }, of: (id) => id.split('.')[0] },
+    placeholder: 'Search…',
+    description: 'Any word.',
+    urlParams: TERM_SEARCH_PARAMS,
+  });
+
+  it('says how many wholes match, by their noun', () => {
+    const container = document.createElement('div');
+    const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
+    wholes.tool.renderControls!(container, settings, () => {}, data);
+    expect(container.querySelector('#search-hit-caption')!.textContent).toBe('2 matching poems');
+    expect(wholes.hitCount(data, settings, settings.terms[0])).toBe(2);
+    wholes.tool.destroy!();
+  });
+
+  it('lists each whole once, at its first match', () => {
+    const container = document.createElement('div');
+    const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
+    wholes.tool.renderControls!(container, settings, () => {}, data);
+    const rows = [...container.querySelectorAll('.search-result')].map((r) => r.textContent);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('x0');
+    expect(rows[1]).toContain('y0');
+    wholes.tool.destroy!();
+  });
+});
+
+describe('where a term falls in a text', () => {
+  it('gives each match with the term that made it, longest first when they overlap', () => {
+    const settings = fromLink({ search: 'gamma,gam' });
+    const [first, second] = search.tool.textMatches!(items[2], 'a gammas', 'en', settings, data);
+    expect(first).toMatchObject({ start: 2, end: 7, termIndex: 0 });
+    expect(second).toBeUndefined();
   });
 });

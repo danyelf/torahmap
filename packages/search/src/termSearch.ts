@@ -6,16 +6,18 @@
 // in is presentation, not a setting, so each search holds its own.
 import { colorToCss, isSearchableWord, memoByValue, type Color } from '@torahmap/utils';
 import type { SearchTelemetry, SearchTool } from '@torahmap/shell/app/search.ts';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import type {
   Credit,
   FileNames,
+  SettingsUpdate,
   UrlParamSpec,
   UrlParamValues,
 } from '@torahmap/shell/overlays/types.ts';
 import type { TextLanguage } from '@torahmap/shell/language.ts';
 import type { ExtraMode } from './extraMode.ts';
 import './search.css';
-import { highlightTerms } from './highlight.ts';
+import { highlightTerms, termMatches, type TermMatcher } from './highlight.ts';
 import type { SearchLanguage } from './language.ts';
 import { createResultsList, type ResultsView } from './resultsList.ts';
 import { mountTermRows, type TermRows } from './termRows.ts';
@@ -33,10 +35,10 @@ import {
   applyModes,
   colorIndexAt,
   encodeModes,
+  heldColors,
   languageOf,
   MAX_TERMS,
   parseSearchTerms,
-  SEARCH_COLORS,
   setMode,
   setTermText,
   type SearchTerm,
@@ -65,6 +67,8 @@ export interface TermSearchSpec<D, X> {
   index(data: D): TextIndex;
   /** What a result is called: 'verse', 'verses'. */
   noun: { one: string; many: string };
+  /** The whole an item belongs to, by key and name, when counts should say how many wholes match. */
+  countedAs?: { noun: { one: string; many: string }; of(id: string): string };
   placeholder: string;
   description: string;
   credits?: readonly Credit[];
@@ -73,6 +77,8 @@ export interface TermSearchSpec<D, X> {
   extra?: ExtraMode<X, D>;
   /** How a term is matched while the reader has not said and the extra mode does not claim it: substring unless given. */
   defaultMode?: MatchMode;
+  /** As SearchTool's `filesNow`. */
+  filesNow?(settings: TermSettings): readonly string[];
   /** Whether going from `before` to `after` changes only what result rows quote, so they are quoted again in place. */
   onlyQuotesChange?(before: D, after: D): boolean;
   /** What records the search, built from what it counts. */
@@ -81,7 +87,7 @@ export interface TermSearchSpec<D, X> {
 
 /** What a search says of each of its terms. */
 export interface SearchCounts<D> {
-  /** How many items one term accounts for on its own, or null when it is not being searched. */
+  /** How many items (or wholes, when the search counts those) one term accounts for on its own, or null when it is not being searched. */
   hitCount(data: D, settings: TermSettings, term: SearchTerm): number | null;
   /** A term's mode, the extra mode clamped where it cannot apply. */
   modeOf(data: D | null, term: SearchTerm): string;
@@ -118,6 +124,9 @@ export function canAddTerm(settings: TermSettings): boolean {
   return typedTerms(settings).length < MAX_TERMS;
 }
 
+/** Terms that search on nothing: one empty box to type in. */
+const noTerms = (): SearchTerm[] => addTerm([], '');
+
 /** Whether the search has a term it searches on. */
 export function isSearching(settings: TermSettings): boolean {
   return activeTerms(settings).length > 0;
@@ -134,14 +143,16 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
   excerptFor(data: D, result: SearchResult, term: SearchTerm): Snippet | null;
   /**
    * The search with `text` added as a term matched as `mode`, with `chosen`
-   * for the extra mode, or null when the palette is full. Fills the empty row
-   * if there is one, and opens the row it fills.
+   * for the extra mode, in a colour `taken` is not using, or null when the
+   * palette is full. Fills the empty row if there is one, and opens the row it
+   * fills.
    */
   addTermOrFill(
     settings: TermSettings,
     text: string,
     mode: string,
     chosen: readonly string[] | null,
+    taken: readonly number[],
   ): TermSettings | null;
   /** What the extra mode works from, built from search's files. */
   extraOf(data: D): X | null;
@@ -150,7 +161,20 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
 export function createTermSearch<I extends { id: string }, D, X = never>(
   spec: TermSearchSpec<D, X>,
 ): TermSearch<I, D, X> {
-  const { languages, extra, noun } = spec;
+  const { languages, extra, countedAs } = spec;
+  const noun = countedAs?.noun ?? spec.noun;
+  /** The first result of each whole, when the search counts wholes; else every result. */
+  const onePerWhole = (results: SearchResult[]): SearchResult[] => {
+    if (!countedAs) return results;
+    const seen = new Set<string>();
+    return results.filter((r) => {
+      const whole = countedAs.of(r.id);
+      if (seen.has(whole)) return false;
+      seen.add(whole);
+      return true;
+    });
+  };
+  const countOf = (results: SearchResult[]): number => onePerWhole(results).length;
   const extraOf = (data: D): X | null => extra?.build?.(data) ?? null;
   const contextOf = (x: X | null): SearchContext<X> => ({
     languages,
@@ -183,6 +207,17 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   );
 
   /** The search these settings run; with no word typed, the empty one, building nothing. */
+  /** What highlightTerms and termMatches take after the text: the language, the active terms and the item's matcher. */
+  function searched(
+    item: I,
+    language: TextLanguage,
+    settings: TermSettings,
+    data: D,
+  ): [SearchLanguage, SearchTerm[], TermMatcher] {
+    const textLanguage = languages.find((l) => l.id === language) ?? languages[0];
+    return [textLanguage, searchFor(data, settings).active, matcherOf(contextFor(data), item.id)];
+  }
+
   function searchFor(data: D, settings: TermSettings): Search {
     if (typedTerms(settings).length === 0) return NO_SEARCH;
     const x = extraOf(data);
@@ -238,18 +273,14 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     const index = active.indexOf(term);
     if (index === -1) return null;
 
-    let count = 0;
-    for (const result of results) {
-      if (result.matchingTerms.some((m) => m.termIndex === index)) count++;
-    }
-    return count;
+    return countOf(results.filter((r) => r.matchingTerms.some((m) => m.termIndex === index)));
   }
 
   // The controls on screen: their elements, where they send a change, and the
   // settings they show. `shown` is display state, for redrawing the rows when the
   // reader opens one; a change is always worked out from the settings the app
   // holds when it applies it, never from `shown`.
-  type SettingsChange = (update: (current: TermSettings) => TermSettings) => void;
+  type SettingsChange = (update: SettingsUpdate<TermSettings>) => void;
   let searchResults: HTMLDivElement | null = null;
   let searchHitCaption: HTMLDivElement | null = null;
   let searchClear: HTMLButtonElement | null = null;
@@ -270,7 +301,8 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       return;
     }
     const { active, results } = searchFor(data, settings);
-    const listed = resultsForOpenRow(data, settings).length;
+    const listed = countOf(resultsForOpenRow(data, settings));
+    const total = countOf(results);
 
     let message: string;
     if (active.length > 0 && results.length > 0) {
@@ -279,9 +311,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       // between them is still somewhere. With one term the two are the same
       // number and saying it twice would be noise.
       message =
-        listed === results.length
-          ? `${results.length} matching ${noun.many}`
-          : `${listed} of ${results.length} matching ${noun.many}`;
+        listed === total
+          ? `${total} matching ${noun.many}`
+          : `${listed} of ${total} matching ${noun.many}`;
     } else if (active.length > 0) {
       message = `No matching ${noun.many}`;
     } else if (typedTerms(settings).length > 0) {
@@ -312,7 +344,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     }
 
     resultsList.render(searchResults, {
-      results: resultsForOpenRow(data, settings),
+      results: onePerWhole(resultsForOpenRow(data, settings)),
       terms: searchFor(data, settings).active,
       focus: openTermIndex(settings),
       onSelect: showItem,
@@ -353,14 +385,17 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     const termIndices = search.matchingTerms.get(item.id);
     if (!termIndices || termIndices.length === 0) return null;
 
-    const colors = termIndices.map((i) => SEARCH_COLORS[colorIndexAt(search.active, i)]);
+    const colors = termIndices.map((i) => PALETTE[colorIndexAt(search.active, i)]);
     return colors.length === 1 ? colors[0] : colors;
   }
 
   /** The term list a link describes, with its modes and the extra mode's choices laid over it. */
   function settingsFromUrl(params: UrlParamValues): TermSettings {
-    let terms = parseSearchTerms(params.search ?? '').reduce(addTerm, [] as SearchTerm[]);
-    if (terms.length === 0) terms = addTerm([], '');
+    let terms = parseSearchTerms(params.search ?? '').reduce(
+      (list, text) => addTerm(list, text),
+      [] as SearchTerm[],
+    );
+    if (terms.length === 0) terms = noTerms();
     if (params.mode) terms = applyModes(terms, params.mode, extra);
     const chosen = extra?.param && params[extra.param.key];
     if (extra?.param && chosen) terms = extra.param.read(terms, chosen);
@@ -376,15 +411,12 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     data: spec.data,
 
     isSearching,
+    ...(spec.filesNow ? { filesNow: spec.filesNow } : {}),
     telemetry: spec.telemetry?.({ hitCount, modeOf }) ?? NO_TELEMETRY,
 
     prebuild(data) {
       spec.index(data);
       extraOf(data);
-    },
-
-    getItemColor(item, settings, data) {
-      return searchColorAt(item, searchFor(data, settings));
     },
 
     colorsFor(list, settings, _hovered, data) {
@@ -396,11 +428,13 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
 
     settingsFromUrl,
 
+    colorsInUse: (settings) => heldColors(settings.terms),
+
     summary(settings) {
       return {
         terms: activeTerms(settings).map((t) => ({
           text: t.text.trim(),
-          color: colorToCss(SEARCH_COLORS[t.colorIndex]),
+          color: colorToCss(PALETTE[t.colorIndex]),
         })),
       };
     },
@@ -441,9 +475,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         searchHitCaption = container.querySelector('#search-hit-caption');
         searchResults = container.querySelector('#search-results');
         searchClear = container.querySelector('#search-clear-all');
-        searchClear?.addEventListener('click', () =>
-          requestChange?.(() => ({ terms: addTerm([], '') })),
-        );
+        searchClear?.addEventListener('click', () => requestChange?.(() => ({ terms: noTerms() })));
 
         rows?.unmount();
         // Nothing is built while no word is typed.
@@ -461,12 +493,12 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
             modeOf: (term) => modeIn(contextOf(rowsExtra()), term),
             hitCount: (term) => (shown && shownData ? hitCount(shownData, shown, term) : null),
             edit(change) {
-              requestChange?.((current) => ({ terms: change(current.terms) }));
+              requestChange?.((current, taken) => ({ terms: change(current.terms, taken) }));
             },
             openRow,
             addRow() {
-              requestChange?.((current) => {
-                const terms = addTerm(current.terms, '');
+              requestChange?.((current, taken) => {
+                const terms = addTerm(current.terms, '', taken);
                 openTermId = terms[terms.length - 1].id;
                 return { terms };
               });
@@ -523,14 +555,12 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       requestChange = null;
     },
 
-    highlightItemText(item, text, language: TextLanguage, settings, data) {
-      const textLanguage = languages.find((l) => l.id === language) ?? languages[0];
-      return highlightTerms(
-        text,
-        textLanguage,
-        searchFor(data, settings).active,
-        matcherOf(contextFor(data), item.id),
-      );
+    textMatches(item, text, language: TextLanguage, settings, data) {
+      return termMatches(text, ...searched(item, language, settings, data));
+    },
+
+    highlightItemText(item, text, language: TextLanguage, settings, data, within) {
+      return highlightTerms(text, ...searched(item, language, settings, data), within);
     },
   };
 
@@ -545,7 +575,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     extraOf,
     resultsFor: (data, settings) => searchFor(data, settings).results,
     excerptFor: (data, result, term) => snippetFor(data)(result, term),
-    addTermOrFill(settings, text, mode, chosen) {
+    addTermOrFill(settings, text, mode, chosen, taken) {
       if (!canAddTerm(settings)) return null;
 
       // Fill the empty row, wherever it is, rather than leave it above the new
@@ -555,9 +585,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       let id: string;
       if (empty) {
         id = empty.id;
-        terms = setTermText(terms, id, text);
+        terms = setTermText(terms, id, text, taken);
       } else {
-        terms = addTerm(terms, text);
+        terms = addTerm(terms, text, taken);
         id = terms[terms.length - 1].id;
       }
 

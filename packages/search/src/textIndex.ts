@@ -2,7 +2,8 @@
 // among them.
 
 import { SEARCH_SNIPPET_CONTEXT_BEFORE, SEARCH_SNIPPET_MAX_LENGTH } from './constants.ts';
-import type { SearchLanguage, TextRange } from './language.ts';
+import type { TextRange } from '@torahmap/utils';
+import type { SearchLanguage } from './language.ts';
 import { matchRanges, type MatchMode } from './matching.ts';
 
 /** One item as search reads it: its id, the reference a result is listed by, and its text by language id. */
@@ -70,7 +71,7 @@ export function displayedText(
   return index.byId.get(id)?.text[language.id] ?? null;
 }
 
-export interface TermMatch {
+interface TermMatch {
   termIndex: number;
 }
 
@@ -134,22 +135,21 @@ export interface Snippet {
 }
 
 /** A text quoted around a stretch of it, or its opening when there is nothing to mark. */
-export function quoteText(text: string, range: TextRange | null): Snippet {
+export function quoteText(text: string, quoted: TextRange | null): Snippet {
   const maxLen = SEARCH_SNIPPET_MAX_LENGTH;
-  if (!range) {
-    return {
-      snippet: text.length > maxLen ? `${text.slice(0, maxLen)}...` : text,
-      matchStart: 0,
-      matchEnd: 0,
-    };
-  }
+  const range = quoted ?? { start: 0, end: 0 };
   const matchEnd = Math.min(range.end, text.length);
 
   let start = Math.max(0, range.start - SEARCH_SNIPPET_CONTEXT_BEFORE);
-  const end = Math.min(text.length, start + maxLen);
+  let end = Math.min(text.length, start + maxLen);
   if (end === text.length && end - start < maxLen) {
     start = Math.max(0, end - maxLen);
   }
+  // A cut beside the text's own ellipsis shows one, the cut's.
+  const lead = start > 0 ? /^\s*(?:[.…]+\s*)+/.exec(text.slice(start, range.start)) : null;
+  if (lead) start += lead[0].length;
+  const trail = end < text.length ? /(?:\s*[.…]+)+\s*$/.exec(text.slice(matchEnd, end)) : null;
+  if (trail) end -= trail[0].length;
 
   let snippet = text.slice(start, end);
   let prefixLen = 0;

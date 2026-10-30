@@ -3,9 +3,9 @@ import { describe, it, expect } from 'vitest';
 import {
   combineLayers,
   fillDefaultColors,
-  getDefaultColor,
   toolsPicture,
 } from '../packages/shell/src/itemColoring.ts';
+import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
 import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 
@@ -141,6 +141,47 @@ describe('combineLayers', () => {
     it('makes nothing stand out with no search', () => {
       expect(combineLayers(1, null, [RED], getDefaultColor).standout).toBeUndefined();
     });
+
+    it('makes the squares the overlay marks stand out', () => {
+      const { standout } = combineLayers(
+        2,
+        null,
+        [RED, RED],
+        getDefaultColor,
+        undefined,
+        undefined,
+        [false, true],
+      );
+      expect(standout).toEqual([false, true]);
+    });
+
+    it('makes a search match and an overlay standout both stand out', () => {
+      const { standout } = combineLayers(
+        3,
+        [CYAN, null, null],
+        [RED, RED, RED],
+        getDefaultColor,
+        undefined,
+        undefined,
+        [false, true, false],
+      );
+      expect(standout).toEqual([true, true, false]);
+    });
+
+    it('carries the overlay’s halos, and none when it asks for none', () => {
+      const withHalo = combineLayers(
+        2,
+        null,
+        [RED, RED],
+        getDefaultColor,
+        undefined,
+        undefined,
+        [true, true],
+        [false, true],
+      );
+      expect(withHalo.halo).toEqual([false, true]);
+      expect(combineLayers(1, null, [RED], getDefaultColor).halo).toBeUndefined();
+    });
   });
 });
 
@@ -171,15 +212,29 @@ describe('fillDefaultColors', () => {
     expect(picture.growth).toEqual([0.5]);
     expect(picture.rings).toEqual([CYAN]);
   });
+
+  it("rings a square in the text's base ring where the picture gives it none", () => {
+    const picture = fillDefaultColors(
+      { colors: [null, RED, null], rings: [null, null, CYAN] },
+      getDefaultColor,
+      (i) => (i === 1 ? null : ORANGE),
+    );
+    expect(picture.rings).toEqual([ORANGE, null, CYAN]);
+  });
+
+  it('gives a picture with no rings the base rings', () => {
+    const picture = fillDefaultColors({ colors: [null, RED] }, getDefaultColor, () => ORANGE);
+    expect(picture.rings).toEqual([ORANGE, ORANGE]);
+  });
 });
 
 describe('toolsPicture', () => {
   it('asks each tool for its colours and combines them, search over overlay', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', getItemColor: () => RED });
+    const overlay = testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) });
     const search = testOverlay({
       id: 's',
       name: 'S',
-      getItemColor: (v) => (v.verse === 1 ? CYAN : null),
+      colorsFor: (items) => items.map((v) => (v.verse === 1 ? CYAN : null)),
     });
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
@@ -197,9 +252,26 @@ describe('toolsPicture', () => {
     expect(picture.rings).toEqual([CYAN, null]);
   });
 
+  it('asks the overlay which of its squares stand out', () => {
+    const overlay = {
+      ...testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) }),
+      standoutsFor: (items: { verse: number }[]) => items.map((v) => v.verse === 2),
+    };
+    const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
+
+    const picture = toolsPicture(
+      { overlay: { tool: overlay, settings: undefined, data: undefined }, search: null },
+      items,
+      null,
+      getDefaultColor,
+    );
+
+    expect(picture.standout).toEqual([false, true]);
+  });
+
   it('passes a non-match dim through to combineLayers', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', getItemColor: () => RED });
-    const search = testOverlay({ id: 's', name: 'S', getItemColor: () => null });
+    const overlay = testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) });
+    const search = testOverlay({ id: 's', name: 'S' });
     const items = [createVerse({ verse: 1 })];
 
     const picture = toolsPicture(

@@ -1,20 +1,10 @@
 // Colour computation for spatial items
 
 import { type SpatialItem, type ItemColor, type Picture, sameItem } from '@torahmap/engine';
-import { type Color, seededRandom, brighten } from '@torahmap/utils';
-import type { Overlay, ToolOnMap, Tools } from './overlays/types';
+import { type Color, brighten } from '@torahmap/utils';
+import type { Focus, Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { ColorSource } from './scrollytelling/driver';
-import { DEFAULT_BRIGHTNESS, SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
-
-/**
- * Default gray for a square with no overlay color, brightness-varied by a
- * seeded random to reduce moiré.
- */
-export function getDefaultColor(itemIndex: number): Color {
-  const brightness =
-    DEFAULT_BRIGHTNESS.MIN + seededRandom(itemIndex * 3) * DEFAULT_BRIGHTNESS.RANGE;
-  return [brightness, brightness, brightness];
-}
+import { SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
 
 function brightenBands(color: ItemColor, factor: number): ItemColor {
   const one = (c: Color): Color => brighten(c, factor);
@@ -32,7 +22,8 @@ function brightenBands(color: ItemColor, factor: number): ItemColor {
  * With both on, a square neither colours dims from its `base` colour. With
  * search alone, a square it does not find keeps `keepsBase` of its base
  * colour, or goes grey without it. Every match stands out, so it shows at any
- * zoom.
+ * zoom, and so does every square `overlayStandout` marks; `overlayHalo` keeps a
+ * faint glow on some of those at every zoom.
  */
 export function combineLayers(
   count: number,
@@ -41,15 +32,17 @@ export function combineLayers(
   base: (index: number) => ItemColor,
   nonMatchDim: number = SEARCH_NON_MATCH_DIM,
   keepsBase?: number,
+  overlayStandout?: readonly boolean[] | null,
+  overlayHalo?: readonly boolean[] | null,
 ): Picture<ItemColor | null> {
   const colors: (ItemColor | null)[] = new Array(count);
   const rings: (ItemColor | null)[] = new Array(count).fill(null);
-  const standout: boolean[] | undefined = search ? new Array(count) : undefined;
+  const standout: boolean[] | undefined = search || overlayStandout ? new Array(count) : undefined;
 
   for (let i = 0; i < count; i++) {
     const under = overlay?.[i] ?? null;
     const match = search?.[i] ?? null;
-    if (standout) standout[i] = !!match;
+    if (standout) standout[i] = !!match || !!overlayStandout?.[i];
     if (!search) {
       colors[i] = under;
     } else if (!overlay) {
@@ -65,6 +58,7 @@ export function combineLayers(
 
   const picture: Picture<ItemColor | null> = search && overlay ? { colors, rings } : { colors };
   if (standout) picture.standout = standout;
+  if (overlayHalo) picture.halo = [...overlayHalo];
   return picture;
 }
 
@@ -72,13 +66,18 @@ export function combineLayers(
  * `picture` with every null colour replaced by its square's base colour, and
  * marked `uncoloured` for the hover. A cross-fade needs them so a still-uncoloured square blends from its
  * own colour rather than mergePictures's placeholder for "nothing here".
+ * With `baseRing`, a square the picture gives no ring takes its base ring.
  */
 export function fillDefaultColors(
   picture: Picture<ItemColor | null>,
   base: (index: number) => ItemColor,
+  baseRing?: (index: number) => ItemColor | null,
 ): Picture<ItemColor> {
   return {
     ...picture,
+    ...(baseRing && {
+      rings: picture.colors.map((_, i) => picture.rings?.[i] ?? baseRing(i)),
+    }),
     colors: picture.colors.map((c, i) => c ?? base(i)),
     uncoloured: picture.colors.map((c) => c === null),
   };
@@ -91,8 +90,11 @@ export function overlayColorsFor<T, S, D>(
   settings: S,
   hovered: SpatialItem<T> | null,
   data: D,
+  pinned: SpatialItem<T> | null = null,
 ): (ItemColor | null)[] {
-  return overlay ? overlay.colorsFor(items, settings, hovered, data) : items.map(() => null);
+  return overlay
+    ? overlay.colorsFor(items, settings, hovered, data, pinned)
+    : items.map(() => null);
 }
 
 /** The map's colours for the tools a view shows. The colour arguments pass through to combineLayers. */
@@ -103,34 +105,43 @@ export function toolsPicture<T>(
   base: (index: number) => ItemColor,
   nonMatchDim?: number,
   keepsBase?: number,
+  pinned: SpatialItem<T> | null = null,
 ): Picture<ItemColor | null> {
   const colorsOf = (on: ToolOnMap<T> | null) =>
-    on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data);
+    on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data, pinned);
+  const { overlay } = tools;
   return combineLayers(
     items.length,
     colorsOf(tools.search),
-    colorsOf(tools.overlay),
+    colorsOf(overlay),
     base,
     nonMatchDim,
     keepsBase,
+    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data, hovered, pinned),
+    overlay?.tool.halosFor?.(items, overlay.settings, overlay.data, hovered, pinned),
   );
 }
 
 /**
- * Which colour layer a move of the hovered square makes stale: a story
- * transition's blend, the settled overlay's colours if they depend on the
- * hover, or neither. A timed ease blends colours captured when it began,
- * and a pin leaves the hover where it was, so neither recomputes anything.
+ * Which colour layer a move of the hovered or pinned square makes stale: a story
+ * transition's blend (which ignores the pin), the settled overlay's colours if
+ * they depend on what moved, or neither. A timed ease blends colours captured
+ * when it began, so it recomputes nothing.
  */
 export function layerToRecompute<T>(
   source: ColorSource,
   overlay: ToolOnMap<T> | null,
-  before: SpatialItem<T> | null,
-  after: SpatialItem<T> | null,
+  before: Focus<T>,
+  after: Focus<T>,
 ): 'blend' | 'overlay' | null {
-  if (sameItem(before, after) || source === 'ease') return null;
-  if (source === 'blend') return 'blend';
-  return overlay?.tool.hoverChangesColors?.(before, after, overlay.settings, overlay.data)
-    ? 'overlay'
-    : null;
+  if (source === 'ease') return null;
+  const hoverMoved = !sameItem(before.hovered, after.hovered);
+  const pinMoved = !sameItem(before.pinned, after.pinned);
+  if (source === 'blend') return hoverMoved ? 'blend' : null;
+  if (!overlay) return null;
+  const { tool, settings, data } = overlay;
+  const stale =
+    (hoverMoved && tool.hoverChangesColors?.(before.hovered, after.hovered, settings, data)) ||
+    (pinMoved && tool.pinChangesColors?.(before.pinned, after.pinned, settings, data));
+  return stale ? 'overlay' : null;
 }

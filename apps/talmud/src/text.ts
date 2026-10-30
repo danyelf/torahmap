@@ -1,27 +1,46 @@
 // The Babylonian Talmud as a text for the app shell.
 
-import { FIT_MARGIN, cameraToFit } from '@torahmap/engine';
+import { FIT_MARGIN, MAP_BACKGROUND, cameraToFit } from '@torahmap/engine';
 import { sefariaUrl } from '@torahmap/utils';
 import type { MapText } from '@torahmap/shell/app/text.ts';
+import { EXAMPLES, segmentReader } from './references.ts';
 import type { Story } from '@torahmap/stories';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
 import { commentaryLink } from '@torahmap/overlay-catalog';
-import { computeTalmudLayout, talmudRef, type TalmudLayoutItem } from './layout.ts';
+import {
+  amudName,
+  computeTalmudLayout,
+  talmudId,
+  talmudRef,
+  type TalmudLayoutItem,
+} from './layout.ts';
 import { talmudSite } from './site.ts';
+import { talmudFiles } from './files.ts';
 import { ENGLISH, HEBREW } from '@torahmap/shell/language.ts';
 import { createTalmudLabels } from './talmudLabels.ts';
+import { createMishnahLetters } from './mishnahMarks.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
-import { SEARCH_KEEPS_BASE, SEDARIM, SEDER_LABEL_SIZE, TRACTATE_TAB } from './constants.ts';
+import {
+  HADRAN_RING_COLOR,
+  SEARCH_KEEPS_BASE,
+  SEDARIM,
+  SEDER_LABEL_SIZE,
+  TRACTATE_TAB,
+} from './constants.ts';
 import { mishnahOrGemaraColor } from './baseColor.ts';
-import { englishText } from './english.ts';
+import { datingOverlay, type RabbiLink } from './overlays/dating.ts';
+import { addPick } from '@torahmap/shell/overlays/picks.ts';
+import { RABBIS_ID, RABBIS_URL_PARAMS, rabbisOverlay } from './overlays/rabbis.ts';
+import { englishText, searchedStretches } from './english.ts';
 import { configureSearch, talmudSearch } from './search.ts';
 import {
-  STRUCTURE_FILE,
   amudIndex,
   englishFile,
+  hadranLines,
   structureFrom,
   textsFile,
+  type Citation,
   type TalmudTractateEnglish,
   type TalmudTractateText,
 } from './data.ts';
@@ -48,7 +67,7 @@ const WHOLE_MAP: Story = {
 const TALMUD_LINK_KEYS: LinkKeys = {
   square: 'at',
   search: TERM_SEARCH_PARAMS,
-  overlayParams: () => undefined,
+  overlayParams: (id) => (id === RABBIS_ID ? RABBIS_URL_PARAMS : undefined),
   // Low enough for the whole Talmud to fit across a phone.
   zoom: { min: 0.05, max: 10, start: 1 },
 };
@@ -56,16 +75,34 @@ const TALMUD_LINK_KEYS: LinkKeys = {
 // The commentary overlay's category for the Talmud, as public/data/overlays/commentary/ names it.
 export const TALMUD_CATEGORY = 'Talmud';
 
+const verseLink = (verse: string) => commentaryLink(verse, TALMUD_CATEGORY);
+
+const linkTo = ({ start, end, verse }: Citation) => ({
+  start,
+  end,
+  href: verseLink(verse),
+});
+
 export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
   site: talmudSite,
   link: TALMUD_LINK_KEYS,
   languages: [HEBREW, ENGLISH],
-  firstFiles: [STRUCTURE_FILE],
+  files: talmudFiles,
 
   open(loaded) {
     const structure = structureFrom(loaded);
     const tractates = new Map(structure.tractates.map((t) => [t.name, t]));
     const laid = computeTalmudLayout(structure);
+    const hadrans = new Set(
+      structure.tractates.flatMap((t) =>
+        hadranLines(t).map((line) => talmudId({ tractate: t.name, ...line })),
+      ),
+    );
+    const colorOf = (item: TalmudLayoutItem, quiet: boolean) =>
+      hadrans.has(item.id) ? MAP_BACKGROUND : mishnahOrGemaraColor(structure, item, quiet);
+    const baseColor = (item: TalmudLayoutItem) => colorOf(item, false);
+    const link: RabbiLink = {};
+    const rabbis = rabbisOverlay((item) => colorOf(item, true), link);
     const sederOf = (s: TalmudLayoutItem) => tractates.get(s.tractate)?.seder ?? '';
 
     /** Where a segment is in its tractate's files, which list segments by amud. */
@@ -88,7 +125,8 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         return overhang > 0 ? { ...camera, x: camera.x + overhang } : camera;
       },
 
-      baseColor: (item) => mishnahOrGemaraColor(structure, item),
+      baseColor,
+      baseRing: (item) => (hadrans.has(item.id) ? HADRAN_RING_COLOR : null),
       searchKeepsBase: SEARCH_KEEPS_BASE,
 
       labels(container) {
@@ -103,14 +141,13 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           sectionSize: SEDER_LABEL_SIZE,
           tab: TRACTATE_TAB,
         });
+        const moveLetters = createMishnahLetters(laid.items, container);
         return (offset, zoom) => {
           moveMarks(offset, zoom);
+          moveLetters(offset, zoom);
           moveNames(offset, zoom);
         };
       },
-
-      popupFile: (item, language) =>
-        language === ENGLISH ? englishFile(item.tractate) : textsFile(item.tractate),
 
       popupText(item, loaded) {
         const file = loaded.get(textsFile(item.tractate)) as TalmudTractateText | undefined;
@@ -118,25 +155,31 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
           TalmudTractateEnglish | undefined;
         const { ai, si } = placeOf(item);
         const english = englishText(translation?.[ai]?.[si] ?? '');
+        const citations = file?.citations[ai]?.[si] ?? [];
+        const cited = file?.englishCitations[ai]?.[si] ?? [];
         return {
           ref: talmudRef(item),
           hebrew: file?.amudim[ai]?.[si] ?? '',
           english: english.text,
           englishStyles: english.styles,
-          link: sefariaUrl(item.tractate, [`${item.daf}${item.amud}`, item.segment]),
-          hebrewLinks: (file?.citations[ai]?.[si] ?? []).map(({ start, end, verse }) => ({
-            start,
-            end,
-            href: commentaryLink(verse, TALMUD_CATEGORY),
-          })),
+          englishSearched: searchedStretches(english.text, english.styles),
+          englishLinks: cited.map(linkTo),
+          link: sefariaUrl(item.tractate, [amudName(item), item.segment]),
+          hebrewLinks: citations.filter((c) => c.reference === undefined).map(linkTo),
+          hebrewReferences: citations.flatMap(({ start, verse, reference }) =>
+            reference === undefined
+              ? []
+              : [{ at: start, href: verseLink(verse), label: reference }],
+          ),
         };
       },
 
-      overlays: [],
+      overlays: [datingOverlay(baseColor, link), rabbis],
 
       search: talmudSearch,
 
       start(shell) {
+        link.open = (id) => shell.openOverlay(rabbis, addPick(id));
         // Most hits are off screen, so a result travels to its segment as well as pinning it.
         configureSearch(laid.items, shell.pinAndGlide);
       },
@@ -145,6 +188,8 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
         list: [WHOLE_MAP],
         resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
       },
+
+      goTo: { examples: EXAMPLES, ...segmentReader(structure.tractates) },
 
       area: (s) => ({ area: s.tractate, section: sederOf(s) }),
     };

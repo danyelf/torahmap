@@ -1,3 +1,4 @@
+import { MAP_BACKGROUND } from '@torahmap/engine';
 import { colorToCss, type Color } from '@torahmap/utils';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
@@ -8,7 +9,7 @@ import {
 } from '../../../src/overlays/commentary';
 
 import { createVerse } from '../../helpers/fixtures';
-import { assertValidColor, assertColorEquals } from '../../helpers/assertions';
+import { assertNamedEnds, assertValidColor, assertColorEquals } from '../../helpers/assertions';
 import type { TanakhLayout } from '../../../src/types';
 import { hostOverlay, type OverlayHost } from '../../helpers/overlayHost';
 
@@ -207,8 +208,8 @@ describe('Commentary Overlay', () => {
       const verse = testVerses[0]; // Genesis 1:1, no Kabbalah
       const color = commentaryOverlay.getItemColor(verse) as [number, number, number];
 
-      // Should be dark (zero value)
-      expect(color[0]).toBeCloseTo(0.15, 1);
+      // Dark (zero value): one shade above the background.
+      expect(color[0]).toBeCloseTo(MAP_BACKGROUND[0] + 0.01, 3);
     });
 
     it('handles multiple category switches', () => {
@@ -349,6 +350,12 @@ describe('Commentary Overlay', () => {
 
       expect(listener).toHaveBeenCalled();
     });
+  });
+
+  it('names the ends of its strip in the legend card', () => {
+    assertNamedEnds(commentaryOverlay.summary());
+    commentaryOverlay.change((s) => ({ ...s, category: 'Midrash' }));
+    assertNamedEnds(commentaryOverlay.summary());
   });
 
   describe('Render Legend', () => {

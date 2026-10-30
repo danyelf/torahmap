@@ -2,12 +2,13 @@ import { defineConfig, type Plugin } from 'vite';
 import { execSync } from 'child_process';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
+import { pathToFileURL } from 'url';
 import { storiesPlugin } from '@torahmap/stories/vite-plugin';
 import { fillPage } from '@torahmap/shell/app/page.ts';
 import { TALMUD_PATH } from '@torahmap/talmud/page.ts';
 import { EUAIACT_PATH } from '@torahmap/euaiact/page.ts';
+import { IEEEVIS_PATH } from '@torahmap/ieeevis/page.ts';
 import { builtPages, isLiveBuild, unpublished, type BuiltPage } from './build.ts';
-import { pageAt } from './pages.ts';
 
 // Get the current git branch name
 function getGitBranch(): string {
@@ -24,6 +25,12 @@ function getGitBranch(): string {
   }
 }
 
+// pages.ts reaches the stories, which storiesPlugin writes once Vite has started, so it is
+// imported then, and by URL: esbuild bundles a path into the config, importing it at once.
+const PAGES = pathToFileURL(resolve(__dirname, 'pages.ts')).href;
+const pageAt = async (path: string) =>
+  ((await import(PAGES)) as typeof import('./pages.ts')).pageAt(path);
+
 // index.html is every text's page, filled from its copy by address (pages.ts).
 // Runs first, so Vite sees the filled-in entry script.
 function pagePlugin(): Plugin {
@@ -31,8 +38,8 @@ function pagePlugin(): Plugin {
     name: 'page',
     transformIndexHtml: {
       order: 'pre',
-      handler: (html, { path }) => {
-        const { copy, entry } = pageAt(path);
+      handler: async (html, { path }) => {
+        const { copy, entry } = await pageAt(path);
         return fillPage(html, copy, entry);
       },
     },
@@ -41,7 +48,11 @@ function pagePlugin(): Plugin {
 
 const TEMPLATE = resolve(__dirname, 'index.html');
 type ExtraPage = Exclude<BuiltPage, 'main'>;
-const PAGE_PATHS: Record<ExtraPage, string> = { talmud: TALMUD_PATH, euaiact: EUAIACT_PATH };
+const PAGE_PATHS: Record<ExtraPage, string> = {
+  talmud: TALMUD_PATH,
+  euaiact: EUAIACT_PATH,
+  ieeevis: IEEEVIS_PATH,
+};
 const htmlPath = (page: ExtraPage) => `${PAGE_PATHS[page]}index.html`;
 // No such file: pageAddressPlugin gives the build index.html under this name.
 const htmlFile = (page: ExtraPage) => resolve(__dirname, `.${htmlPath(page)}`);
@@ -49,6 +60,7 @@ const PAGE_FILES: Record<BuiltPage, string> = {
   main: TEMPLATE,
   talmud: htmlFile('talmud'),
   euaiact: htmlFile('euaiact'),
+  ieeevis: htmlFile('ieeevis'),
 };
 
 // A page beside the Tanakh's is index.html at its own address: the dev server
@@ -70,7 +82,7 @@ function pageAddressPlugin(page: ExtraPage): Plugin {
           res.end();
           return;
         }
-        if (pageAt(path).path !== address) return next();
+        if ((await pageAt(path)).path !== address) return next();
         try {
           const template = await readFile(TEMPLATE, 'utf8');
           const html = await server.transformIndexHtml(htmlPath(page), template, req.originalUrl);
@@ -99,15 +111,16 @@ function assetsIgnorePlugin(live: boolean): Plugin {
   };
 }
 
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command, mode }) => {
   const branch = getGitBranch();
-  const live = isLiveBuild(command, branch);
+  const live = mode === 'production' && isLiveBuild(command, branch);
   return {
     plugins: [
       storiesPlugin(),
       pagePlugin(),
       pageAddressPlugin('talmud'),
       pageAddressPlugin('euaiact'),
+      pageAddressPlugin('ieeevis'),
       assetsIgnorePlugin(live),
     ],
     // Declared in packages/shell/src/env.d.ts.

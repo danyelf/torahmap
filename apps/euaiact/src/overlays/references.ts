@@ -1,10 +1,10 @@
 // What one article cites, and what cites it: the article under the pointer, or else the one typed.
 
 import type { UrlParamSpec } from '@torahmap/link';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
-import { colorToCss, type Color } from '@torahmap/utils';
-import { hex } from '../baseColor.ts';
+import { hex, type Color } from '@torahmap/utils';
 import { REFS_FILE, type ActRef } from '../data.ts';
 import { layerOf, ownerOf } from '../ids.ts';
 import type { ActItem } from '../layout.ts';
@@ -44,7 +44,6 @@ export const referencesOverlay: Overlay<ActItem, ReferenceSettings, ReferenceDat
   settingsFromUrl: (params) => ({ article: params.article ?? '6' }),
   settingsToUrl: ({ article }): Record<string, string> => (article === '6' ? {} : { article }),
 
-  getItemColor: (item, settings, data) => colorsOf([item], settings, null, data)[0],
   colorsFor: (items, settings, hovered, data) => colorsOf(items, settings, hovered, data),
   hoverChangesColors: (before, after) => hoverTarget(before) !== hoverTarget(after),
 
@@ -59,12 +58,13 @@ export const referencesOverlay: Overlay<ActItem, ReferenceSettings, ReferenceDat
   },
 
   renderLegend(container) {
-    const swatch = (c: Color) =>
-      `<span class="swatch" style="background: ${colorToCss(c)}"></span>`;
-    container.innerHTML = `
-      <div class="legend-row">${swatch(FOCUS)}<span>The article pointed at</span></div>
-      <div class="legend-row">${swatch(CITES)}<span>What it cites</span></div>
-      <div class="legend-row">${swatch(CITED_BY)}<span>What cites it</span></div>`;
+    container.replaceChildren(
+      ...swatchList([
+        { color: FOCUS, name: 'The article pointed at' },
+        { color: CITES, name: 'What it cites' },
+        { color: CITED_BY, name: 'What cites it' },
+      ]),
+    );
   },
 };
 

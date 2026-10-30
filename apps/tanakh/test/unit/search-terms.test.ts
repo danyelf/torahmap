@@ -10,6 +10,7 @@ import { parseSearchTerms } from '@torahmap/search';
 import { meaningsInVerse, sameMeaning, versesFor } from '../../src/search/dictionary.ts';
 import {
   addTerm,
+  heldColors,
   removeTerm,
   setTermText,
   MAX_TERMS,
@@ -56,17 +57,54 @@ describe('adding a term', () => {
   });
 
   it('gives each term a colour no other term is using', () => {
-    const terms = ['עלה', 'מלך', 'דבר'].reduce(addTerm, []);
+    const terms = ['עלה', 'מלך', 'דבר'].reduce(
+      (list, text) => addTerm(list, text),
+      [] as SearchTerm[],
+    );
     const colors = terms.map((t) => t.colorIndex);
 
     expect(new Set(colors).size).toBe(3);
   });
 
-  it('refuses a sixth term, because a sixth colour repeats the first', () => {
-    const five = ['עלה', 'מלך', 'דבר', 'ארץ', 'שמים'].reduce(addTerm, []);
+  it('refuses a term past the limit, which would leave the picks without a colour', () => {
+    const five = ['עלה', 'מלך', 'דבר', 'ארץ', 'שמים'].reduce(
+      (list, text) => addTerm(list, text),
+      [] as SearchTerm[],
+    );
     expect(five).toHaveLength(MAX_TERMS);
 
     expect(addTerm(five, 'אלהים')).toHaveLength(MAX_TERMS);
+  });
+});
+
+describe('colours shared with picks', () => {
+  it('gives a new term the first colour the picks are not using', () => {
+    const terms = addTerm([], 'עלה', [0, 1]);
+
+    expect(terms[0].colorIndex).toBe(2);
+  });
+
+  it('holds a colour only once a word is in the term', () => {
+    const blank = addTerm([], '');
+
+    expect(heldColors(blank)).toEqual([]);
+    expect(heldColors(setTermText(blank, blank[0].id, 'עלה'))).toHaveLength(1);
+  });
+
+  it('settles an empty term colour when its first word is typed, round the picks', () => {
+    const blank = addTerm([], '', []);
+
+    const typed = setTermText(blank, blank[0].id, 'עלה', [0]);
+
+    expect(typed[0].colorIndex).toBe(1);
+  });
+
+  it('gives the terms a comma makes colours the picks are not using', () => {
+    const blank = addTerm([], '');
+
+    const typed = setTermText(blank, blank[0].id, 'עלה, מלך', [0, 2]);
+
+    expect(typed.map((t) => t.colorIndex)).toEqual([1, 3]);
   });
 });
 
@@ -103,7 +141,10 @@ describe('editing one term', () => {
 
 describe('removing a term', () => {
   it('does not recolour the terms that remain', () => {
-    const terms = ['עלה', 'מלך', 'דבר'].reduce(addTerm, []);
+    const terms = ['עלה', 'מלך', 'דבר'].reduce(
+      (list, text) => addTerm(list, text),
+      [] as SearchTerm[],
+    );
     const before = new Map(terms.map((t) => [t.text, t.colorIndex]));
 
     const after = removeTerm(terms, terms[0].id);
@@ -112,7 +153,10 @@ describe('removing a term', () => {
   });
 
   it('frees its colour for the next term added', () => {
-    const three = ['עלה', 'מלך', 'דבר'].reduce(addTerm, []);
+    const three = ['עלה', 'מלך', 'דבר'].reduce(
+      (list, text) => addTerm(list, text),
+      [] as SearchTerm[],
+    );
     const freed = three[0].colorIndex;
 
     const next = addTerm(removeTerm(three, three[0].id), 'ארץ');
@@ -471,7 +515,7 @@ describe('typing and parsing agree on what separates two terms', () => {
 
     const query = terms.map((t) => t.text).join(', ');
     const restored = applyModes(
-      parseSearchTerms(query).reduce(addTerm, [] as SearchTerm[]),
+      parseSearchTerms(query).reduce((list, text) => addTerm(list, text), [] as SearchTerm[]),
       encodeModes(terms),
     );
 

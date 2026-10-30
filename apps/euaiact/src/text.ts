@@ -1,8 +1,10 @@
 // The EU AI Act as a text for the app shell.
 
 import { cameraToFit } from '@torahmap/engine';
-import type { LinkKeys } from '@torahmap/link';
+import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
+import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
+import { EXAMPLES, provisionReader } from './references.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
@@ -15,12 +17,13 @@ import {
   LAYER_LABEL_SIZE,
   LAYER_NAMES,
 } from './constants.ts';
-import { TEXTS_FILE, STRUCTURE_FILE, structureFrom, type ActTexts } from './data.ts';
+import { TEXTS_FILE, structureFrom, type ActTexts } from './data.ts';
 import { actRef, sourceUrl } from './ids.ts';
 import { computeActLayout, type ActItem } from './layout.ts';
-import { ACT_SEARCH_PARAMS, actSearch, type ActSearchSettings } from './search.ts';
+import { actSearch, configureSearch } from './search.ts';
 import { ACT_OVERLAYS, actOverlayParams } from './overlays/index.ts';
 import { euaiactSite } from './site.ts';
+import { euaiactFiles } from './files.ts';
 
 // Shortcut: the Act's one story is a single stop showing the whole map, until its first real
 // story is written.
@@ -43,17 +46,17 @@ const WHOLE_MAP: Story = {
 
 const ACT_LINK_KEYS: LinkKeys = {
   square: 'at',
-  search: ACT_SEARCH_PARAMS,
+  search: TERM_SEARCH_PARAMS,
   overlayParams: actOverlayParams,
   // Low enough for the whole Act to fit across a phone.
   zoom: { min: 0.1, max: 12, start: 1 },
 };
 
-export const euaiactText: MapText<ActItem, ActSearchSettings> = {
+export const euaiactText: MapText<ActItem, TermSettings> = {
   site: euaiactSite,
   link: ACT_LINK_KEYS,
   languages: [ENGLISH],
-  firstFiles: [STRUCTURE_FILE],
+  files: euaiactFiles,
 
   open(loaded) {
     const laid = computeActLayout(structureFrom(loaded));
@@ -94,8 +97,6 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
         };
       },
 
-      popupFile: () => TEXTS_FILE,
-
       popupText(item, loadedFiles) {
         const texts = loadedFiles.get(TEXTS_FILE) as ActTexts | undefined;
         return {
@@ -110,10 +111,16 @@ export const euaiactText: MapText<ActItem, ActSearchSettings> = {
 
       search: actSearch,
 
+      start(shell) {
+        configureSearch(laid.items, shell.pinAndGlide);
+      },
+
       stories: {
         list: [WHOLE_MAP],
         resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
       },
+
+      goTo: { examples: EXAMPLES, ...provisionReader(laid.items.map((item) => item.id)) },
 
       area: (item) => ({
         area: item.layer === 'article' ? `Chapter ${item.chapter}` : actRef(item.id),

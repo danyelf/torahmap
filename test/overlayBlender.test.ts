@@ -1,5 +1,5 @@
 import { type Color } from '@torahmap/utils';
-import { SEARCH_COLORS } from '@torahmap/search';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   pictureForStop,
@@ -19,7 +19,7 @@ import {
   SAMPLE_LOADED,
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
-import { getDefaultColor } from '../packages/shell/src/itemColoring.ts';
+import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
 import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 
 // The tools a stop can name, as a text hands them over: the overlays these
@@ -40,19 +40,17 @@ beforeEach(() => {
 const multiColorOverlay: TanakhOverlay = {
   id: 'test-multi-color',
   name: 'Test Multi-color',
-  getItemColor: (verse) => {
-    if (verse.verse === 1) {
-      // Multi-color: red + blue
-      return [
-        [1, 0, 0],
-        [0, 0, 1],
-      ] as [number, number, number][];
-    }
-    return [0.5, 0.5, 0.5] as [number, number, number];
-  },
-  colorsFor(items, settings, _hovered, data) {
-    return items.map((item) => multiColorOverlay.getItemColor(item, settings, data));
-  },
+  colorsFor: (items) =>
+    items.map((verse) => {
+      if (verse.verse === 1) {
+        // Multi-color: red + blue
+        return [
+          [1, 0, 0],
+          [0, 0, 1],
+        ] as [number, number, number][];
+      }
+      return [0.5, 0.5, 0.5] as [number, number, number];
+    }),
 };
 
 describe('computeBlendedColors multi-color preservation', () => {
@@ -177,7 +175,6 @@ describe('story stop settings reach the overlay', () => {
     urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
     settingsFromUrl: (params) => params,
     settingsToUrl: () => ({}),
-    getItemColor: () => [0.5, 0.5, 0.5] as [number, number, number],
     colorsFor(items, settings: UrlParamValues) {
       received = { ...settings };
       return items.map(() => [0.5, 0.5, 0.5] as [number, number, number]);
@@ -227,7 +224,6 @@ describe('story stop settings reach the overlay', () => {
       urlParams: [{ key: 'state', kind: 'token', allowed: ['on', 'off'] }],
       settingsFromUrl: (params) => ({ on: params.state === 'on' }),
       settingsToUrl: () => ({}),
-      getItemColor: () => [0.5, 0.5, 0.5] as [number, number, number],
       colorsFor(items, settings) {
         handed = settings;
         return items.map(() => [0.5, 0.5, 0.5] as [number, number, number]);
@@ -238,6 +234,33 @@ describe('story stop settings reach the overlay', () => {
     const stop = { ...stopWith({ state: 'on' }), overlay: 'test-typed-settings' };
     computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor, textTools);
     expect(handed).toEqual({ on: true });
+  });
+});
+
+describe('a stop with search words and an overlay that colours', () => {
+  it('keeps the overlay out of the colours the words hold', () => {
+    let taken: readonly number[] | null = null;
+    const overlay: Overlay<TanakhLayout, object> = {
+      id: 'test-taking',
+      name: 'Test Taking',
+      urlParams: [],
+      settingsFromUrl: (_params, held) => {
+        taken = held;
+        return {};
+      },
+      settingsToUrl: () => ({}),
+      colorsFor: (items) => items.map(() => [0.5, 0.5, 0.5] as [number, number, number]),
+    };
+    registerOverlay(overlay);
+    const stop: ResolvedStoryStop = {
+      id: 's',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: 'test-taking',
+      searchParams: { search: 'God' },
+    };
+    pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools);
+    expect(taken).toEqual([0]);
   });
 });
 
@@ -256,9 +279,9 @@ describe('the blender evaluates without disturbing the overlay', () => {
     settings.restore(commentaryOverlay, { category: 'Midrash' });
     const held = settings.get(commentaryOverlay);
     const verse = verses[0];
-    const before = commentaryOverlay.getItemColor(verse, held, {
+    const before = commentaryOverlay.colorsFor([verse], held, null, {
       counts: SAMPLE_COMMENTARY_COUNTS,
-    });
+    })[0];
 
     const fromStop: ResolvedStoryStop = {
       id: 'a',
@@ -288,9 +311,9 @@ describe('the blender evaluates without disturbing the overlay', () => {
     );
 
     expect(
-      commentaryOverlay.getItemColor(verse, settings.get(commentaryOverlay), {
+      commentaryOverlay.colorsFor([verse], settings.get(commentaryOverlay), null, {
         counts: SAMPLE_COMMENTARY_COUNTS,
-      }),
+      })[0],
     ).toEqual(before);
   });
 });
@@ -306,7 +329,6 @@ describe('the blender memoises colours by settings', () => {
       urlParams: [{ key: 'state', kind: 'token' }],
       settingsFromUrl: (params) => params,
       settingsToUrl: () => ({}),
-      getItemColor: () => [0.2, 0.2, 0.2] as [number, number, number],
       colorsFor: colorsForSpy,
     };
     registerOverlay(memoOverlay);
@@ -346,7 +368,6 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const hoverOverlay: TanakhOverlay = {
       id: 'test-hover',
       name: 'Test Hover',
-      getItemColor: () => [0.3, 0.3, 0.3] as [number, number, number],
       colorsFor: hoverColorsFor,
       hoverChangesColors: () => false,
     };
@@ -358,7 +379,6 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
     const noHoverOverlay: TanakhOverlay = {
       id: 'test-no-hover',
       name: 'Test No Hover',
-      getItemColor: () => [0.4, 0.4, 0.4] as [number, number, number],
       colorsFor: noHoverColorsFor,
     };
     registerOverlay(noHoverOverlay);
@@ -453,7 +473,7 @@ describe('a stop whose overlay data is missing', () => {
     id: 'test-late-data',
     name: 'Late',
     data: { marks: 'late.json' },
-    getItemColor: () => RED,
+    colorsFor: (items) => items.map(() => RED),
   });
   const stop: ResolvedStoryStop = {
     id: 'late',
@@ -514,7 +534,7 @@ describe('a stop that searches', () => {
       textTools,
     );
 
-    expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
+    expect(picture.colors[0]).toEqual(PALETTE[0]);
     expect(picture.colors[1]).toEqual([grey, grey, grey]);
     expect(picture.rings).toBeUndefined();
   });
@@ -527,7 +547,7 @@ describe('a stop that searches', () => {
       [1, 0, 0],
       [0, 0, 1],
     ]);
-    expect(picture.rings![0]).toEqual(SEARCH_COLORS[0]);
+    expect(picture.rings![0]).toEqual(PALETTE[0]);
     expect(picture.colors[1]).toEqual([0.5 * DIM, 0.5 * DIM, 0.5 * DIM]);
     expect(picture.rings![1]).toBeNull();
   });
@@ -547,7 +567,7 @@ describe('a stop that searches', () => {
     );
     expect(
       pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools).colors[0],
-    ).toEqual(SEARCH_COLORS[0]);
+    ).toEqual(PALETTE[0]);
   });
 });
 

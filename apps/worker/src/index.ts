@@ -2,7 +2,8 @@
 // data point, and the page at /. A known chat app's preview fetcher gets that
 // page with its tags naming the link asked for; anyone else gets the static
 // page untouched, since a browser sets its own title and this keeps the page
-// cacheable. Every other path is served as a static file.
+// cacheable. The IEEE VIS papers' text, which stays out of git, comes from an R2 bucket at one
+// path. Every other path is served as a static file.
 
 import {
   errorMessage,
@@ -25,8 +26,15 @@ interface EventsDataset {
   writeDataPoint(point: DataPoint): void;
 }
 
-export interface Env {
+/** The part of an R2 object the Worker sends on. */
+interface StoredText {
+  body: ReadableStream;
+  httpEtag: string;
+}
+
+interface Env {
   TORAHMAP_EVENTS: EventsDataset;
+  IEEEVIS_TEXTS: { get(key: string): Promise<StoredText | null> };
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -117,10 +125,46 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
   }
 }
 
+/** Where the VIS map asks for the papers' text; the bucket holds it under TEXTS_KEY. */
+const IEEEVIS_TEXTS_PATH = '/data/ieeevis/texts.json';
+const TEXTS_KEY = 'texts.json';
+
+/** The papers' text from the bucket, revalidated on every use as the static files are. */
+async function ieeevisTexts(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'GET' && request.method !== 'HEAD')
+    return new Response(null, { status: 405 });
+  const stored = await env.IEEEVIS_TEXTS.get(TEXTS_KEY);
+  if (!stored) return new Response(null, { status: 404 });
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    ETag: stored.httpEtag,
+    'Cache-Control': 'public, max-age=0, must-revalidate',
+  });
+  if (request.headers.get('If-None-Match') === stored.httpEtag) {
+    await stored.body.cancel();
+    return new Response(null, { status: 304, headers });
+  }
+  return new Response(request.method === 'HEAD' ? null : stored.body, { headers });
+}
+
+// Each named page is also served at the root of a subdomain of its own name, as
+// talmud.torahmap.org for /talmud/; its other files come from the same paths on
+// every host.
+const SUBDOMAIN_PAGES = ['talmud', 'euaiact'];
+
+/** The page a subdomain serves at its root, or null for any other host. */
+function subdomainPage(url: URL): string | null {
+  const name = url.hostname.split('.')[0];
+  return SUBDOMAIN_PAGES.includes(name) ? `/${name}/` : null;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === '/api/event') return handleEvent(request, url, env);
+    if (url.pathname === IEEEVIS_TEXTS_PATH) return ieeevisTexts(request, env);
+    const subdomain = url.pathname === '/' ? subdomainPage(url) : null;
+    if (subdomain) return env.ASSETS.fetch(new Request(new URL(subdomain, url), request));
     if (url.pathname === '/' && request.method === 'GET') return linkPage(request, url, env);
     return env.ASSETS.fetch(request);
   },

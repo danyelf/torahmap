@@ -9,6 +9,7 @@ import {
   ITEM_ATTRIBUTES,
   ITEM_OFFSETS,
   SHAPE_FLAGS,
+  hasRingRoom,
   type ItemAttributeName,
 } from '../src/index.ts';
 import { createItem, createItems, RED, GREEN, BLUE, WHITE } from './fixtures.ts';
@@ -215,6 +216,34 @@ describe('buildItemGeometry', () => {
       expect(flags(1, 'a_shape')).toBe(0);
       expect(flags(1, 'a_nextShape')).toBe(SHAPE_FLAGS.STANDOUT);
     });
+
+    it('marks a halo on the picture that has it, beside standing out', () => {
+      const buffer = buildItemGeometry(
+        createItems(1),
+        { colors: [WHITE], standout: [true], halo: [true] },
+        { colors: [RED], standout: [true] },
+      );
+      expect(field(buffer, 0, 'a_shape')[3]).toBe(SHAPE_FLAGS.STANDOUT | SHAPE_FLAGS.HALO);
+      expect(field(buffer, 0, 'a_nextShape')[3]).toBe(SHAPE_FLAGS.STANDOUT);
+    });
+
+    it('marks a round square in both pictures, beside its other flags', () => {
+      const buffer = buildItemGeometry(
+        [createItem({ round: true }), createItem()],
+        { colors: [WHITE, WHITE], standout: [true, false] },
+        { colors: [RED, RED] },
+      );
+      expect(field(buffer, 0, 'a_shape')[3]).toBe(SHAPE_FLAGS.STANDOUT | SHAPE_FLAGS.ROUND);
+      expect(field(buffer, 0, 'a_nextShape')[3]).toBe(SHAPE_FLAGS.ROUND);
+      expect(field(buffer, 1, 'a_shape')[3]).toBe(0);
+    });
+  });
+});
+
+describe('hasRingRoom', () => {
+  it('is true from a drawn side of 8 pixels', () => {
+    expect(hasRingRoom(4, 2)).toBe(true);
+    expect(hasRingRoom(4, 1.99)).toBe(false);
   });
 });
 

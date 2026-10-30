@@ -4,10 +4,11 @@ import { computeLayout, getLayoutBounds } from './layout.ts';
 import { createMapLabels } from '@torahmap/shell/mapLabels.ts';
 import { SECTION_NAMES, SECTION_SIZE, bookBoxes } from './labels.ts';
 import { createMapTitle, updateMapTitlePosition } from './mapTitle.ts';
-import { STRUCTURE_FILE, TEXTS_FILE, structureFrom } from './verseTexts.ts';
+import { structureFrom } from './verseTexts.ts';
 import { initBookData } from './books.ts';
-import { getDefaultColor } from '@torahmap/shell/itemColoring.ts';
+import { getDefaultColor } from './baseColor.ts';
 import { popupText } from './popup.ts';
+import { EXAMPLES, verseReader } from './references.ts';
 import { createCamera } from './camera.ts';
 import { reportError } from '@torahmap/shell/analytics.ts';
 import { STORIES } from '@torahmap/stories/tanakh';
@@ -16,6 +17,7 @@ import { registerAllOverlays, getAllOverlays } from './overlays/index.ts';
 import { configure as configureSearch, searchTool, type SearchSettings } from './search/index.ts';
 import { listenForWordClicks } from './search/wordClicks.ts';
 import type { TanakhLayout } from './types.ts';
+import { tanakhFiles } from './files.ts';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { tanakhSite } from './site.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
@@ -25,8 +27,7 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
   site: tanakhSite,
   link: LINK_KEYS,
   languages: [HEBREW, ENGLISH],
-  firstFiles: [STRUCTURE_FILE],
-  timedFile: TEXTS_FILE,
+  files: tanakhFiles,
 
   open(loaded) {
     registerAllOverlays();
@@ -55,8 +56,6 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
         };
       },
 
-      popupFile: () => TEXTS_FILE,
-
       popupText,
 
       overlays: getAllOverlays(),
@@ -67,6 +66,8 @@ export const tanakhText: MapText<TanakhLayout, SearchSettings> = {
         list: STORIES,
         resolve: (...args) => resolveStops(...args, LINK_KEYS.zoom),
       },
+
+      goTo: { examples: EXAMPLES, ...verseReader(data.books) },
 
       area: (v) => ({ area: v.book, section: sections.get(v.book) ?? '' }),
 

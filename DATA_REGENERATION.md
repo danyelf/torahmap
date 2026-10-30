@@ -3,7 +3,7 @@
 Most data comes from [Sefaria](https://www.sefaria.org/):
 
 - **Verse texts**: the Sefaria export bucket, `gs://sefaria-export`
-- **Structure data**: Sefaria `/api/shape/` endpoint
+- **Structure data**: chapter lengths counted from the downloaded Hebrew texts; the layout block is kept by hand in `scripts/fetch-tanakh-structure.js`
 - **Commentary links**: Sefaria Links CSV exports, from the same bucket
 
 Everything below reads from the bucket, which needs no credentials. The
@@ -65,7 +65,7 @@ thing afterwards.
 ## Structure Data
 
 ```bash
-# Regenerate structure from Sefaria API
+# Regenerate structure from the downloaded Hebrew texts (run the Verse Texts step first)
 node scripts/fetch-tanakh-structure.js > public/data/tanakh-structure.json
 ```
 
@@ -133,6 +133,21 @@ Expect the tests to speak up. `apps/tanakh/test/unit/overlays/haftarah-data.test
 several readings by name, so if hebcal has changed its mind about one of them
 the test fails and tells you which. That is the intended way to find out;
 decide whether to follow the change before editing the test to match.
+
+## Text Analytics Scores
+
+```bash
+npm run generate:text-analytics   # writes scores.json and echoes.json in public/data/overlays/text-analytics/
+npm run report:text-analytics     # what the scores show across the whole Tanakh
+```
+
+The scores are computed from the bundled verse texts, so rerun the generator
+whenever `all-texts.json` changes; it fetches nothing and has no `collected`
+date. How the measure works, and every value it depends on, is in
+`scripts/overlays/text-analytics/measures.ts`. Read the report after changing
+the measure. The echoes between verses anywhere are in
+`scripts/overlays/text-analytics/echoes.ts`; `echoes-report.ts` there compares
+cut-offs for a phrase that recurs too often and checks the famous parallels.
 
 ## Text Dating Data
 
@@ -236,13 +251,13 @@ Midrash grew 22%. The shape of the heatmap moves, not just its scale.
 
 ## Talmud Texts
 
-The Talmud's text is the Wikisource edition of the Bavli, from the same Sefaria
-bucket. Its source lives in `data/talmud/`, gitignored apart from
-`coverage-report.json`, which says which tractates passed and so which the
-bundle builds.
+The Talmud's text is Sefaria's William Davidson Edition of the Bavli (the Koren
+Noé edition's Aramaic, `merged.json`), from the same Sefaria bucket. Its source
+lives in `data/talmud/`, gitignored apart from `coverage-report.json`, which
+says which tractates passed and so which the bundle builds.
 
 ```bash
-# Download each tractate's text, English and chapter boundaries (~99MB), and check them
+# Download each tractate's text, English, chapter boundaries and cited verses (~99MB), and check them
 npx tsx scripts/talmud/verify-coverage.ts
 # Build public/data/talmud/
 npx tsx scripts/talmud/bundle.ts
@@ -250,14 +265,26 @@ npx tsx scripts/talmud/bundle.ts
 
 The download keeps what is already on disk; `--force` fetches it again.
 
-Which segments are Mishnah comes from the bold מתני׳ and גמ׳ markers, read from
-both editions Sefaria has, Wikisource and the William Davidson Edition (`merged.json`), since
-each misses markers the other has.
+The popup shows Davidson's text with its points and punctuation and without its
+tags (`texts/`, one file per tractate). Search reads the same text without
+points (`search.json`), one file for every tractate, which only a search
+downloads. The two files carry the same words; they are apart because a reader
+opening one tractate needs a fifth of a megabyte, compressed, and search needs
+every tractate at once.
 
-The popup shows Wikisource, and search reads Davidson (`search.json`), which
-spells abbreviations out: רבי for ר׳, קל וחומר for ק״ו. The two editions line up
-segment for segment, and `search.json` is Davidson's text with its points and
-tags removed, laid out as `texts/`'s amudim.
+Which segments are Mishnah comes from Davidson's markers
+(`scripts/talmud/markers.ts`): a segment opening on מתני׳ or on bold words
+starts a Mishnah, as does the one after a chapter's closing line, and one
+opening on גמ׳ starts the Gemara.
+
+One thing still comes from the Wikisource edition of the Bavli: which Tanakh
+verse a quotation is from. Davidson quotes a verse in ״…״ but never names it;
+Wikisource names it in brackets, (תהלים לו, ז), and divides the text segment
+for segment as Davidson does. The bundle reads the verses each Wikisource
+segment names and places each on the words of the same Davidson segment that
+quote it, or else shows Wikisource's reference there, small (`quoteFinder`,
+`scripts/talmud/citations.ts`, says how). The bundle prints how many were placed
+each way.
 
 The popup's English is the William Davidson English (`english.json`), segment
 for segment with the Hebrew; the bundle fails if its shape differs. It ships

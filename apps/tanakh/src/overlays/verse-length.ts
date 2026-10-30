@@ -4,7 +4,7 @@ import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { verseId } from '@torahmap/link/tanakh';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
-import { textWords } from '@torahmap/shell/textWords.ts';
+import { wordsRead } from '../search/dictionary.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { VERSE_LENGTH } from '@torahmap/overlay-catalog';
 import { NO_DATA } from './colors.ts';
@@ -17,6 +17,9 @@ const PLASMA_STOPS: ColorStop[] = [
   { t: 0.75, color: [248 / 255, 149 / 255, 64 / 255] }, // orange
   { t: 1.0, color: [240 / 255, 249 / 255, 33 / 255] }, // yellow
 ];
+
+// The words for the low and high ends, on the legend card and in the legend.
+const ENDS: [low: string, high: string] = ['short', 'long'];
 
 export interface VerseLengthData {
   texts: VerseTexts;
@@ -41,7 +44,7 @@ const wordCountsOf = memoByValue(({ texts }: VerseLengthData): WordCounts => {
   for (const book in texts) {
     for (const chapter in texts[book]) {
       for (const verse in texts[book][chapter]) {
-        const wordCount = textWords(texts[book][chapter][verse].he).length;
+        const wordCount = wordsRead(texts[book][chapter][verse].he).length;
         byVerse.set(verseId(book, parseInt(chapter), parseInt(verse)), wordCount);
         if (wordCount > 0) {
           min = Math.min(min, wordCount);
@@ -72,10 +75,6 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> 
     wordCountsOf(data);
   },
 
-  getItemColor(verse, _settings, data) {
-    return verseColorAt(data, verse);
-  },
-
   colorsFor(items, _settings, _hovered, data) {
     return items.map((item) => verseColorAt(data, item));
   },
@@ -92,14 +91,14 @@ export const verseLengthOverlay: Overlay<TanakhIdentity, void, VerseLengthData> 
 
     container.innerHTML = `
       ${renderAxis(counts.scale, [counts.min, counts.max], (n) => `${n} words`)}
-      ${legendCaption(`${lowColor} = shorter verses`)}
-      ${legendCaption(`${highColor} = longer verses`)}
+      ${legendCaption(`${lowColor} = ${ENDS[0]} verses`)}
+      ${legendCaption(`${highColor} = ${ENDS[1]} verses`)}
       ${legendCaption(`Square root scale · ${paletteName} palette`)}
     `;
   },
 
   summary(_settings, data) {
-    return { colors: [axisGradient(wordCountsOf(data).scale)] };
+    return { strip: { gradient: axisGradient(wordCountsOf(data).scale), ends: ENDS } };
   },
 
   getHoverInfo(verse, _settings, data) {

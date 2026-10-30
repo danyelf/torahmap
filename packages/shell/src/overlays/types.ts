@@ -3,18 +3,29 @@ import type { Color } from '@torahmap/utils';
 import type { TextLanguage } from '../language.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 import type { Credit } from '../credits.ts';
+import type { TextRange } from '@torahmap/utils';
 
-export type { UrlParamSpec, UrlParamKind, UrlParamValues } from '@torahmap/link';
+export type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
 export type { Credit } from '../credits.ts';
 
 /** The overlay id that stands for none: the picker's first option, and what telemetry records. */
 export const NO_OVERLAY = 'none';
 
+/** The squares the reader has the pointer on and has pinned. */
+export interface Focus<T> {
+  hovered: SpatialItem<T> | null;
+  pinned: SpatialItem<T> | null;
+}
+
 // A change to an overlay's settings: the next settings, worked out from the
-// current ones. Typed through a method so that its parameter is checked
-// bivariantly, like the Overlay members below; as a plain function type, S would
-// sit in both directions and no Overlay<T, SomeSettings> would be an Overlay.
-export type SettingsUpdate<S> = { bivarianceHack(current: S): S }['bivarianceHack'];
+// current ones and from `taken`, the PALETTE colours the other tool (the search,
+// or the overlay) holds, which a new colour must avoid. Typed through a method so
+// that its parameter is checked bivariantly, like the Overlay members below; as a
+// plain function type, S would sit in both directions and no Overlay<T,
+// SomeSettings> would be an Overlay.
+export type SettingsUpdate<S> = {
+  bivarianceHack(current: S, taken: readonly number[]): S;
+}['bivarianceHack'];
 
 // Generic over T, a text's own fields on a square; over the settings type S,
 // which each overlay defines for itself; and over the data type D, the files it
@@ -73,8 +84,9 @@ interface OverlayWithSettings<S> {
   // settingsFromUrl receives only declared keys, with declared defaults filled
   // in; an empty link gives the settings the overlay starts with. A value
   // settingsToUrl writes at its declared default stays out of the link.
+  // `taken` is as for SettingsUpdate.
   urlParams: readonly UrlParamSpec[];
-  settingsFromUrl(params: UrlParamValues): S;
+  settingsFromUrl(params: UrlParamValues, taken: readonly number[]): S;
   settingsToUrl(settings: S): Record<string, string>;
 }
 
@@ -97,18 +109,45 @@ interface OverlayMembers<T, S, D> {
 
   destroy?(): void;
 
-  // null renders default gray; Color[] splits the square corner to corner, one band per color.
-  getItemColor(item: SpatialItem<T>, settings: S, data: D): Color | Color[] | null;
+  // The PALETTE colours these settings use, as places in it. Absent for a tool
+  // that draws in none of them.
+  colorsInUse?(settings: S): readonly number[];
 
-  // The same colours for many items at once, as the map and the story's blend
-  // ask for them. `hovered` is the item under the cursor; only Haftarah's
-  // colours depend on it.
+  // One colour per item, as the map and the story's blend ask for them: null
+  // renders default gray; Color[] splits the square corner to corner, one band
+  // per color. `hovered` is the item under the cursor and `pinned` the
+  // pinned one; only some overlays' colours depend on either, and each decides which wins.
   colorsFor(
     items: SpatialItem<T>[],
     settings: S,
     hovered: SpatialItem<T> | null,
     data: D,
+    pinned?: SpatialItem<T> | null,
   ): (Color | Color[] | null)[];
+
+  // Which of `items` stand out, as a search match does: drawn over the rest and
+  // never too small to see. For an overlay that can light only a few squares.
+  // `hovered` and `pinned` are as for colorsFor.
+  standoutsFor?(
+    items: SpatialItem<T>[],
+    settings: S,
+    data: D,
+    hovered?: SpatialItem<T> | null,
+    pinned?: SpatialItem<T> | null,
+  ): boolean[];
+
+  // Which of the standouts also keep a faint halo when zoomed in, where a
+  // standout is otherwise a plain square.
+  halosFor?(
+    items: SpatialItem<T>[],
+    settings: S,
+    data: D,
+    hovered?: SpatialItem<T> | null,
+    pinned?: SpatialItem<T> | null,
+  ): boolean[];
+
+  // A field behind the squares; null for none.
+  backdrop?(items: SpatialItem<T>[], settings: S, data: D): Backdrop | null;
 
   // The panel may be drawn without the overlay's data; then data is null.
   //
@@ -126,7 +165,24 @@ interface OverlayMembers<T, S, D> {
     onChange: (update: SettingsUpdate<S>) => void,
     data: D | null,
   ): void;
-  renderLegend?(container: HTMLElement, settings: S, data: D | null): void;
+  renderLegend?(
+    container: HTMLElement,
+    settings: S,
+    data: D | null,
+    items?: SpatialItem<T>[],
+  ): void;
+
+  // Says in the panel what the overlay finds about the hovered or pinned square.
+  // The container is emptied before each call; `travelTo` pins a square by id and
+  // brings it into view.
+  renderFocus?(
+    container: HTMLElement,
+    hovered: SpatialItem<T> | null,
+    pinned: SpatialItem<T> | null,
+    settings: S,
+    data: D,
+    travelTo: (id: string) => void,
+  ): void;
 
   // What the panel's one-line summary shows after the overlay's name; colours
   // are CSS values. Absent, the line is the name alone.
@@ -144,6 +200,14 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): boolean;
 
+  // The same for the pinned square.
+  pinChangesColors?(
+    before: SpatialItem<T> | null,
+    after: SpatialItem<T> | null,
+    settings: S,
+    data: D,
+  ): boolean;
+
   renderSidebarInfo?(
     item: SpatialItem<T>,
     isPinned: boolean,
@@ -151,13 +215,24 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): HTMLElement | null;
 
-  // Marks words by their place in the item's text, so it is handed the item as well as its text.
+  // Where the tool's words fall in an item's text, as highlightItemText would mark them.
+  textMatches?(
+    item: SpatialItem<T>,
+    text: string,
+    language: TextLanguage,
+    settings: S,
+    data: D,
+  ): TextRange[];
+
+  // Marks words by their place in the item's text, so it is handed the item as well as its text;
+  // only inside `within`, when given.
   highlightItemText?(
     item: SpatialItem<T>,
     text: string,
     language: TextLanguage,
     settings: S,
     data: D,
+    within?: readonly TextRange[],
   ): DocumentFragment;
 
   // The Sefaria `?with=` value this overlay wants an item's link to open to
@@ -170,11 +245,31 @@ interface OverlayMembers<T, S, D> {
   credits?: readonly Credit[];
 }
 
+/**
+ * A faint colour field behind the map: `stops` are CSS colours spread evenly round a circle,
+ * clockwise from straight up, around `centre`; it covers `rect`, all in map units. `fade`, if
+ * given, greys the field out to `radius` around the centre, fully at the centre.
+ */
+export interface Backdrop {
+  rect: { minX: number; minY: number; maxX: number; maxY: number };
+  centre: { x: number; y: number };
+  stops: string[];
+  opacity: number;
+  fade?: { radius: number; color: string };
+}
+
 export interface OverlaySummary {
   /** Words, each in its own colour, as search shows its terms. */
   terms?: { text: string; color: string }[];
   detail?: string;
+  /** Colours shown as squares. */
   colors?: string[];
+  /** Colours shown as squares in groups, a small gap between the groups and none within. */
+  groups?: string[][];
+  /** Colours shown as squares, each labeled. */
+  steps?: { color: string; label: string; glows?: boolean }[];
+  /** A continuous scale: its CSS gradient, between words for its low and high ends. */
+  strip?: { gradient: string; ends: [low: string, high: string] };
 }
 
 /** A tool on the map, with the settings the app holds for it and its data. */

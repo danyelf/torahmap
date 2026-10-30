@@ -1,6 +1,7 @@
 // Talmud-specific layout and color constants.
 
 import type { BookTab, SectionLabelSize, SectionName } from '@torahmap/shell/mapLabels.ts';
+import type { Color } from '@torahmap/utils';
 
 export const SEGMENT_SIZE = 6; // px per segment square
 
@@ -10,6 +11,9 @@ export const SEGMENT_SIZE = 6; // px per segment square
 // DAF_LABEL_ZOOM_ALL.
 export const PEREK_LABEL_ZOOM = 0.7;
 export const DAF_LABEL_ZOOM_ALL = 1.5;
+
+// The Mishnah's letters show from this zoom, about where its squares become circles (zoom 2).
+export const MISHNAH_LETTER_ZOOM = 2.5;
 
 // A perek name's size at zoom 1, and the bounds it is held between, in pixels.
 export const PEREK_SIZE = { base: 9, min: 7, max: 18 };
@@ -30,6 +34,8 @@ export const DAF_LABEL_ROOM = {
 export const PEREK_GAP = 30; // vertical gap between perakim within a tractate
 // A cover's room left of its tractate's squares, and the gap between covers on a shelf.
 export const BOOK_PADDING = 12;
+// A cover's room above its tractate's name.
+export const BOOK_HEADROOM = 10;
 export const BOOK_GAP = 24;
 export const SEDER_GAP = 120; // vertical gap between shelves (sedarim)
 // A tractate's name, a tab above its first row that scales with the map. It fades out below the
@@ -82,9 +88,17 @@ export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.64, 0.5, 0.84];
 export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.66, 0.57, 0.42];
 
+// A hadran line, which closes each perek, is a hollow square: a ring in this ivory round a hole of
+// the map's background. A square too small for the hole is solid ivory.
+export const HADRAN_RING_COLOR: Color = [0.95, 0.93, 0.86];
+
 // What a segment a search does not find keeps of its base colour, so Mishnah
 // still shows from Gemara.
 export const SEARCH_KEEPS_BASE = 0.6;
+
+// What the Rabbis overlay leaves of a passage that names none of the picks. Less than a search
+// leaves, so the picks stand out.
+export const RABBIS_UNLIT_KEEPS = 0.35;
 
 // --- Per-segment brightness jitter ---
 // Each segment is a deterministic ±BRIGHTNESS_JITTER brighter or darker
@@ -102,4 +116,4 @@ export const BRIGHTNESS_JITTER = 0.18;
 export const POSITION_JITTER = 0.7;
 
 // The covers are drawn over the canvas in their seder's tint at this opacity.
-export const COVER_OPACITY = 0.1;
+export const COVER_OPACITY = 0.08;

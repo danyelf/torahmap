@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EVERYTHING } from '../loading/files';
+import { EVERYTHING } from './browser/files.ts';
 import { registerAllOverlays } from '@torahmap/tanakh/overlays/index.ts';
 import { getAllOverlays } from '@torahmap/tanakh/overlays/registry.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';

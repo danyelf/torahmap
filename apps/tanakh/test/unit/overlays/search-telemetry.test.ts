@@ -85,7 +85,9 @@ describe('searchTelemetry', () => {
   let sent: [string, number][];
   let telemetry: ReturnType<ReturnType<typeof searchTelemetry>>;
 
-  const search = (...words: string[]): SearchSettings => ({ terms: words.reduce(addTerm, []) });
+  const search = (...words: string[]): SearchSettings => ({
+    terms: words.reduce((list, text) => addTerm(list, text), [] as SearchTerm[]),
+  });
 
   beforeEach(() => {
     vi.useFakeTimers();

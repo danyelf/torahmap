@@ -51,9 +51,3 @@ describe('any other branch’s build', () => {
     expect(unpublished(false, TALMUD_LIVE)).toEqual(['.assetsignore']);
   });
 });
-
-describe('the Act’s page', () => {
-  it('is not live', () => {
-    expect(EXTRA_PAGES.find((p) => p.page === 'euaiact')?.live).toBe(false);
-  });
-});

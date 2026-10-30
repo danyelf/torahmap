@@ -10,7 +10,7 @@
 
 import type { SpatialItem } from '@torahmap/engine';
 import type { BookBox } from '@torahmap/shell/mapLabels.ts';
-import { seededRandom } from '@torahmap/utils';
+import { positionJitter } from '@torahmap/utils';
 import type { TalmudIdentity } from './types.ts';
 import type { TalmudStructure, TalmudTractate } from './data.ts';
 import { segmentHashId } from './segmentHash.ts';
@@ -26,6 +26,7 @@ import {
   POSITION_JITTER,
   SEDARIM,
   DAF_LABEL_ROOM,
+  BOOK_HEADROOM,
   BOOK_PADDING,
 } from './constants.ts';
 
@@ -33,7 +34,12 @@ export type TalmudLayoutItem = SpatialItem<TalmudIdentity>;
 
 /** A segment's id: Bava Kamma 2a:1 is "Bava.Kamma.2a.1". */
 export function talmudId(s: TalmudIdentity): string {
-  return `${bookToUrl(s.tractate)}.${s.daf}${s.amud}.${s.segment}`;
+  return `${bookToUrl(s.tractate)}.${amudName(s)}.${s.segment}`;
+}
+
+/** A daf as numbered, "2", or one side of it, "2a". */
+export function amudName(s: { daf: number; amud?: string }): string {
+  return `${s.daf}${s.amud ?? ''}`;
 }
 
 /** Read a segment's id: "Bava.Kamma.2a.1" is Bava Kamma 2a:1; null for anything else. */
@@ -53,7 +59,12 @@ export function parseTalmudId(id: string): TalmudIdentity | null {
 
 /** A segment as readers write it: "Bava Kamma 2a:1". */
 export function talmudRef(s: TalmudIdentity): string {
-  return `${s.tractate} ${s.daf}${s.amud}:${s.segment}`;
+  return `${dafRef(s)}:${s.segment}`;
+}
+
+/** A daf, or one side of it, as readers write it: "Bava Kamma 2" or "Bava Kamma 2a". */
+export function dafRef(s: { tractate: string; daf: number; amud?: string }): string {
+  return `${s.tractate} ${amudName(s)}`;
 }
 
 /** The box round a tractate's squares; its section is its seder. */
@@ -282,7 +293,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           topY: y,
         });
       }
-      const amud = `${row.daf}${row.amud}`;
+      const amud = amudName(row);
       if (!amudimSeen.has(amud)) {
         amudimSeen.add(amud);
         colDafs.push({ daf: row.daf, amud: row.amud, rightX: 0, topY: y });
@@ -308,10 +319,8 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           x: baseX,
           y,
           size: SEGMENT_SIZE,
-          jitter: {
-            x: (seededRandom(seed * 2) - 0.5) * 2 * POSITION_JITTER,
-            y: (seededRandom(seed * 2 + 1) - 0.5) * 2 * POSITION_JITTER,
-          },
+          round: seg.isMishnah,
+          jitter: positionJitter(seed, POSITION_JITTER),
         });
       }
       y += SEGMENT_SIZE;
@@ -404,7 +413,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
     );
   }
 
-  let shelfY = 0;
+  let shelfY = BOOK_HEADROOM;
   for (const tractates of bySeder.values()) {
     if (tractates.length === 0) continue;
     const shelfHeight = TRACTATE_LABEL_HEIGHT + Math.max(...tractates.map((t) => t.height));
@@ -418,7 +427,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
       const tractateBottom = tractateTop + t.height;
       const cover = {
         minX: tractateLeftEdge - BOOK_PADDING,
-        minY: shelfY,
+        minY: shelfY - BOOK_HEADROOM,
         maxX: tractateRightEdge + DAF_LABEL_ROOM.right,
         maxY: shelfY + shelfHeight + DAF_LABEL_ROOM.below,
       };

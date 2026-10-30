@@ -5,6 +5,7 @@ import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { CommentaryCounts } from '../../src/overlays/commentary.ts';
 import { HAFTARAH_FILES, type HaftarahMappings } from '../../src/overlays/haftarah/readings.ts';
 import { commentaryOverlay } from '../../src/overlays/commentary.ts';
+import { textAnalyticsOverlay, type TextAnalyticsData } from '../../src/overlays/text-analytics.ts';
 import type { Loaded } from '@torahmap/shell/dataFiles.ts';
 import { STRUCTURE_FILE, TEXTS_FILE } from '../../src/verseTexts.ts';
 import { DICTIONARY_FILES, type DictionaryFiles } from '../../src/search/data.ts';
@@ -245,11 +246,25 @@ export const EMPTY_DICTIONARY_FILES: DictionaryFiles = {
   verseLexemes: {},
 };
 
+export const SAMPLE_TEXT_ANALYTICS_SCORES: TextAnalyticsData['scores'] = {
+  parameters: {
+    minWords: 7,
+    runWords: 5,
+    reachVerses: 50,
+    formulaBooks: 5,
+  },
+  repetition: { Genesis: { '1': [0.1, 0.4, null] } },
+  repeated: {},
+  echoes: {},
+};
+
 /** The sample files, under the paths the overlays name. */
 export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
   [commentaryOverlay.data.counts, SAMPLE_COMMENTARY_COUNTS],
   [TEXTS_FILE, SAMPLE_VERSE_TEXTS],
   [HAFTARAH_FILES.mappings, SAMPLE_HAFTARAH_MAPPINGS],
+  [textAnalyticsOverlay.data.scores, SAMPLE_TEXT_ANALYTICS_SCORES],
+  [textAnalyticsOverlay.data.echoes, {}],
   [STRUCTURE_FILE, SAMPLE_STRUCTURE],
   ...(Object.keys(DICTIONARY_FILES) as (keyof DictionaryFiles)[]).map(
     (name) => [DICTIONARY_FILES[name], EMPTY_DICTIONARY_FILES[name]] as const,
@@ -264,13 +279,12 @@ export const SAMPLE_TROP_MARKS = {
   ZAQEF_QATAN: '\u0594',
 };
 
-/** A test overlay that colours each item by `getItemColor`. */
+/** A test overlay; with no `colorsFor` of its own it leaves every item grey. */
 export function testOverlay<T = TanakhIdentity, S = unknown, D = unknown>(
-  fields: Omit<Overlay<T, S, D>, 'colorsFor'>,
+  fields: Omit<Overlay<T, S, D>, 'colorsFor'> & Partial<Pick<Overlay<T, S, D>, 'colorsFor'>>,
 ): Overlay<T, S, D> {
   return {
+    colorsFor: (items) => items.map(() => null),
     ...fields,
-    colorsFor: (items, settings, _hovered, data) =>
-      items.map((item) => fields.getItemColor(item, settings, data)),
   } as Overlay<T, S, D>;
 }

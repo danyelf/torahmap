@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { englishText } from '../src/english.ts';
+import { english, matchRanges } from '@torahmap/search';
+import { englishSearchText, englishText, searchedStretches } from '../src/english.ts';
 
 describe('englishText', () => {
   it('reads bold and italic stretches, and drops the markers', () => {
@@ -32,5 +33,53 @@ describe('englishText', () => {
 
   it('reads empty text as nothing', () => {
     expect(englishText('')).toEqual({ text: '', styles: [] });
+  });
+});
+
+describe('what search reads of the English', () => {
+  const phrase = (text: string, needle: string) =>
+    matchRanges(english.fold(text), english.fold(needle), { mode: 'word', language: english });
+
+  it('is the bold, without the explanation around it', () => {
+    const searched = englishSearchText('*The Rabbis say:* the _Shema_ *until midnight.*');
+    expect(phrase(searched, 'rabbis')).toHaveLength(1);
+    expect(phrase(searched, 'midnight')).toHaveLength(1);
+    expect(phrase(searched, 'shema')).toHaveLength(0);
+  });
+
+  it('runs a phrase across bold split only by a space, and not across the explanation', () => {
+    expect(phrase(englishSearchText('*From when* *does one recite*'), 'when does')).toHaveLength(1);
+    expect(phrase(englishSearchText('*From when,* that is, *does one*'), 'when does')).toHaveLength(
+      0,
+    );
+    expect(phrase(englishSearchText('*From when,* that is, *does one*'), 'when that')).toHaveLength(
+      0,
+    );
+  });
+
+  it('shows one ellipsis where a stretch already ends or begins with one', () => {
+    for (const marked of [
+      '*Your maidservant…* and *not forget*',
+      '*Your maidservant...* and *not forget*',
+      '*Your maidservant* and *…not forget*',
+      '*Your maidservant …* and *... not forget*',
+      '*Blessed…* and *…* and *Who*',
+    ]) {
+      expect(englishSearchText(marked)).not.toMatch(/(\.\.\.|…)\s*(\.\.\.|…)/);
+    }
+    expect(englishSearchText('*…Your maidservant* and *not forget…*')).toBe(
+      '…Your maidservant … not forget…',
+    );
+  });
+
+  it('is nothing for English with no bold', () => {
+    expect(englishSearchText('only _explanation_')).toBe('');
+  });
+
+  it('stretches over the bold of the plain text, joined where only a space parts them', () => {
+    const { text, styles } = englishText('*a* *b* c *d* _e_');
+    expect(searchedStretches(text, styles).map(({ start, end }) => text.slice(start, end))).toEqual(
+      ['a b', 'd'],
+    );
   });
 });

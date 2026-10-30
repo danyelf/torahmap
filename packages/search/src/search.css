@@ -240,11 +240,6 @@
   text-align: right;
 }
 
-.search-result .snippet mark {
-  background: rgba(255, 220, 100, 0.3);
-  color: #fff;
-}
-
 .term-indicators {
   display: inline-flex;
   gap: 3px;
@@ -257,50 +252,6 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-}
-
-/* Multi-term coloring */
-.search-result .snippet mark.term-0 {
-  background: rgba(51, 230, 255, 0.4);
-  color: #fff;
-}
-.search-result .snippet mark.term-1 {
-  background: rgba(255, 128, 0, 0.4);
-  color: #fff;
-}
-.search-result .snippet mark.term-2 {
-  background: rgba(128, 255, 51, 0.4);
-  color: #fff;
-}
-.search-result .snippet mark.term-3 {
-  background: rgba(255, 51, 204, 0.4);
-  color: #fff;
-}
-.search-result .snippet mark.term-4 {
-  background: rgba(255, 255, 51, 0.4);
-  color: #000;
-}
-
-/* Sidebar search term highlighting */
-#popup mark.term-0 {
-  background: rgba(51, 230, 255, 0.4);
-  color: #fff;
-}
-#popup mark.term-1 {
-  background: rgba(255, 128, 0, 0.4);
-  color: #fff;
-}
-#popup mark.term-2 {
-  background: rgba(128, 255, 51, 0.4);
-  color: #fff;
-}
-#popup mark.term-3 {
-  background: rgba(255, 51, 204, 0.4);
-  color: #fff;
-}
-#popup mark.term-4 {
-  background: rgba(255, 255, 51, 0.4);
-  color: #000;
 }
 
 #search-hit-caption {

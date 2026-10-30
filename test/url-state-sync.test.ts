@@ -126,11 +126,11 @@ describe('URL State Sync Integration', () => {
         overlay?.renderControls?.(
           container,
           settings.get(overlay),
-          (update) => settings.set(overlay, update(settings.get(overlay))),
+          (update) => settings.set(overlay, update(settings.get(overlay), [])),
           dataFor(overlay, SAMPLE_LOADED),
         );
       draw();
-      (container.querySelector('button') as HTMLButtonElement).click();
+      (container.querySelector('.trop-grid button') as HTMLButtonElement).click();
       const chosen = settings.toUrl(overlay!).trop;
       expect(chosen, 'the trop overlay reported no selection').toBeTruthy();
 
@@ -156,7 +156,7 @@ describe('URL State Sync Integration', () => {
       // overlay happened to be carrying already.
       container.innerHTML = '';
       draw();
-      (container.querySelector('button') as HTMLButtonElement).click();
+      (container.querySelector('.trop-grid button') as HTMLButtonElement).click();
       expect(settings.toUrl(overlay!).trop, 'failed to clear the selection').toBeUndefined();
 
       settings.restore(overlay!, restored.overlayParams);

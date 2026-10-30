@@ -1,9 +1,9 @@
 // Two tools each hand back an item's text with some stretches wrapped in a
 // mark; this lays both sets of marks over the one text.
 
-interface Marked {
-  start: number;
-  end: number;
+import type { TextRange } from '@torahmap/utils';
+
+interface Marked extends TextRange {
   element: Element;
 }
 

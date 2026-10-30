@@ -41,6 +41,9 @@ export const EVENTS = {
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
   square_click: { blobs: ['id', 'area'], doubles: [] },
+  // What was typed in Go to and pressed Enter on, the place it read to and that place's area:
+  // both empty when it names no place. A place's pin is a square_click too.
+  go_to: { blobs: ['typed', 'ref', 'area'], doubles: [] },
   word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
   sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },
@@ -78,7 +81,7 @@ export type WorkerEvent = {
 }[EventName];
 
 /** Events only the Worker writes; toDataPoint refuses them from the page. */
-export const WORKER_EVENTS: ReadonlySet<EventName> = new Set(
+const WORKER_EVENTS: ReadonlySet<EventName> = new Set(
   (Object.keys(EVENTS) as EventName[]).filter((e) => 'by' in EVENTS[e]),
 );
 

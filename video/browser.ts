@@ -5,7 +5,7 @@ import type { Script, ViewScene } from './script.ts';
 import { cameraOf, type Camera } from './timeline.ts';
 import { showView } from './inPage.ts';
 
-/** As layout/playwright.config.ts: headless Chromium has no WebGL2 without software rendering. */
+/** As test/layout/playwright.config.ts: headless Chromium has no WebGL2 without software rendering. */
 export const LAUNCH_ARGS = [
   '--use-gl=angle',
   '--use-angle=swiftshader',

@@ -88,7 +88,7 @@ describe('Text Dating Overlay', () => {
     });
 
     it('has required methods', () => {
-      expect(textDatingOverlay.overlay.getItemColor).toBeDefined();
+      expect(textDatingOverlay.overlay.colorsFor).toBeDefined();
       expect(textDatingOverlay.overlay.renderLegend).toBeDefined();
       expect(textDatingOverlay.overlay.getHoverInfo).toBeDefined();
     });

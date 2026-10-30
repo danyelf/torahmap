@@ -12,7 +12,6 @@
   box-sizing: border-box;
 }
 body {
-  background: #1a1a1a;
   overflow: hidden;
 }
 canvas {
@@ -34,15 +33,31 @@ canvas {
   color: #ccc;
 }
 
+/* A heading over a run of rows, and a row set apart from the one above. */
+#overlay-legend .legend-heading {
+  margin-top: 8px;
+  font-weight: 600;
+  color: #ddd;
+}
+
+#overlay-legend .legend-row.apart {
+  margin-top: 8px;
+}
+
+/* Rows of a scale read as a run, with a little air between them. */
+#overlay-legend .legend-row.scale {
+  margin-top: 3px;
+}
+
+#overlay-legend .legend-row.scale.apart {
+  margin-top: 8px;
+}
+
 #overlay-legend .swatch {
   width: 16px;
   height: 16px;
   border-radius: 2px;
   flex-shrink: 0;
-}
-
-#overlay-legend .label {
-  line-height: 1.2;
 }
 
 /* Off screen but still read by a screen reader, for text a sighted reader

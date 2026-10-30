@@ -12,7 +12,7 @@
 // not decoration: 461 ETCBC ids are shared by a Hebrew word and an Aramaic one,
 // and `<LH/` is both burnt-offering and pretext.
 
-import { memoByValue, memoByValueAndKey } from '@torahmap/utils';
+import { memoByValue, memoByValueAndKey, type TextRange } from '@torahmap/utils';
 import {
   findLexemesForWord,
   printedSpelling,
@@ -346,8 +346,19 @@ export function wordIsNamed(words: VerseWords | null, wordIndex: number): boolea
  * scripts/search/generate-lexeme-index.py, which the file was aligned against.
  */
 export function wordsBhsaParsed(hebrew: string): TextWord[] {
-  const blanked = hebrew.replace(KETIV, (m) => ' '.repeat(m.length));
-  return splitIntoWords(blanked).filter(({ word }) => !isSectionMarker(word) && isHebrew(word));
+  return splitIntoWords(withoutKetiv(hebrew)).filter(
+    ({ word }) => !isSectionMarker(word) && isHebrew(word),
+  );
+}
+
+/** A verse's words as read aloud: no ketiv, and never a single letter. What a verse's length counts. */
+export function wordsRead(hebrew: string): TextWord[] {
+  return textWords(withoutKetiv(hebrew));
+}
+
+/** The verse text with each ketiv blanked, so every offset still points where it did. */
+function withoutKetiv(hebrew: string): string {
+  return hebrew.replace(KETIV, (m) => ' '.repeat(m.length));
 }
 
 /**
@@ -412,7 +423,7 @@ function nameKetiv(hebrew: string, named: Map<number, LexemeId[]>, words: TextWo
     end: m.index + m[0].length,
     ketiv: m[0].startsWith('('),
   }));
-  const within = (group: { start: number; end: number }) =>
+  const within = (group: TextRange) =>
     words.filter((w) => w.start >= group.start && w.start < group.end);
   // A qere belongs to one ketiv, with nothing but word breaks between them. In
   // (K1) [Q1] (K2) [Q2], Q1 is beside K2 too.

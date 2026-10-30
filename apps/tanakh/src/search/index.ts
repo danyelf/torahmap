@@ -1,7 +1,6 @@
 // The Tanakh's search: @torahmap/search's term search over its verses, in
 // Hebrew and English, with meanings mode beside substring and whole word.
 import {
-  activeTerms,
   canAddTerm,
   createTermSearch,
   isSearching,
@@ -34,7 +33,7 @@ import { TANAKH_LANGUAGES } from './languages.ts';
 import { searchTelemetry } from './telemetry.ts';
 
 export type SearchSettings = TermSettings;
-export { activeTerms, canAddTerm, isSearching };
+export { canAddTerm, isSearching };
 
 /** Whether two sets of search's files differ only in the per-word parse. */
 function onlyParseDiffers(a: SearchData, b: SearchData): boolean {
@@ -130,8 +129,15 @@ export function searchForMeaning(
   settings: SearchSettings,
   text: string,
   meaningKeys: readonly string[] | null,
+  taken: readonly number[],
 ): SearchSettings | null {
   const chosen = meaningKeys && meaningKeys.length > 0 ? meaningKeys : null;
   const spelling = chosen ? (spellingFor(dictionary, chosen, text) ?? text) : text;
-  return tanakhSearch.addTermOrFill(settings, spelling, chosen ? meaningsMode.id : 'word', chosen);
+  return tanakhSearch.addTermOrFill(
+    settings,
+    spelling,
+    chosen ? meaningsMode.id : 'word',
+    chosen,
+    taken,
+  );
 }

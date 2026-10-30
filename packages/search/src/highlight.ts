@@ -3,7 +3,9 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import type { SearchLanguage, TextRange } from './language.ts';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { colorToCssAlpha, type TextRange } from '@torahmap/utils';
+import type { SearchLanguage } from './language.ts';
 import { matchRanges, type MatchMode } from './matching.ts';
 import { colorIndexAt, type SearchTerm } from './terms.ts';
 import { quoteText, type Snippet } from './textIndex.ts';
@@ -15,14 +17,13 @@ export interface TermMatcher {
   rangesOf?(term: SearchTerm, text: string, language: SearchLanguage): TextRange[] | null;
 }
 
-/**
- * A term's colour is carried on the mark's class, and the stylesheet holds one
- * rule per colour slot. Both highlighters in this file go through here, so the
- * class name is written once.
- */
+const MARK_ALPHA = 0.4;
+
+/** A term's mark, in the term's colour. Both highlighters in this file go through here. */
 function mark(text: string, colorIndex: number): HTMLElement {
   const element = document.createElement('mark');
-  element.className = `term-${colorIndex}`;
+  element.style.background = colorToCssAlpha(PALETTE[colorIndex], MARK_ALPHA);
+  element.style.color = '#fff';
   element.textContent = text;
   return element;
 }
@@ -54,7 +55,7 @@ export function markRange(
  * text's own positions. A term is matched against whatever text it is given:
  * its own language decides how it is searched, the text's how it is marked.
  */
-export function termRanges(
+function termRanges(
   text: string,
   language: SearchLanguage,
   term: SearchTerm,
@@ -129,30 +130,41 @@ function buildHighlightedDomFragment(
 }
 
 /**
- * Mark every stretch of `text` that one of `terms` claims.
- *
- * Builds the DOM directly rather than through innerHTML. The terms are the ones
- * being searched, in search order, because a match names its term by position
- * in that list.
+ * Every stretch of `text` that one of `terms` claims, and that lies inside one
+ * of `within` when given. The terms are the ones being searched, in search
+ * order, because a match names its term by position in that list.
  */
+export function termMatches(
+  text: string,
+  language: SearchLanguage,
+  terms: SearchTerm[],
+  matcher: TermMatcher,
+  within?: readonly TextRange[],
+): Match[] {
+  const inside = (range: TextRange) =>
+    !within || within.some((w) => w.start <= range.start && range.end <= w.end);
+  const matches: Match[] = terms.flatMap((term, termIndex) =>
+    termRanges(text, language, term, matcher)
+      .filter(inside)
+      .map((range) => ({ ...range, termIndex })),
+  );
+
+  // Longest match first, so removeOverlappingMatches keeps it over a shorter one.
+  matches.sort((a, b) => a.start - b.start || b.end - a.end);
+  return removeOverlappingMatches(matches);
+}
+
+/** Marks the matches, building the DOM directly rather than through innerHTML. */
 export function highlightTerms(
   text: string,
   language: SearchLanguage,
   terms: SearchTerm[],
   matcher: TermMatcher,
+  within?: readonly TextRange[],
 ): DocumentFragment {
-  const matches: Match[] = terms.flatMap((term, termIndex) =>
-    termRanges(text, language, term, matcher).map((range) => ({ ...range, termIndex })),
+  return buildHighlightedDomFragment(
+    text,
+    termMatches(text, language, terms, matcher, within),
+    terms,
   );
-
-  if (matches.length === 0) {
-    const fragment = document.createDocumentFragment();
-    fragment.appendChild(document.createTextNode(text));
-    return fragment;
-  }
-
-  // Longest match first, so removeOverlappingMatches keeps it over a shorter one.
-  matches.sort((a, b) => a.start - b.start || b.end - a.end);
-
-  return buildHighlightedDomFragment(text, removeOverlappingMatches(matches), terms);
 }
