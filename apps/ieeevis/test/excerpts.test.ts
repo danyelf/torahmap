@@ -55,11 +55,21 @@ describe('the excerpt shown with no search', () => {
   });
 
   it('can choose the sentence with the rarest words', () => {
-    expect(defaultExcerpt(text, input('rare')).startsWith('Unusual')).toBe(true);
+    expect(defaultExcerpt(text, input('rare')).startsWith('…Unusual')).toBe(true);
   });
 
   it('can choose the sentence that uses the paper’s keywords', () => {
-    expect(defaultExcerpt(text, input('keywords', ['sampling'])).startsWith('Sampling')).toBe(true);
+    expect(defaultExcerpt(text, input('keywords', ['sampling'])).startsWith('…Sampling')).toBe(
+      true,
+    );
+  });
+
+  it('marks an excerpt that starts or stops partway into the text', () => {
+    const cut = defaultExcerpt(text, input('rare'));
+    expect(cut.startsWith('…Unusual')).toBe(true);
+    expect(cut.endsWith('…')).toBe(true);
+    const whole = defaultExcerpt(sentence(12, 'Only'), input('first'));
+    expect(whole).toBe(sentence(12, 'Only'));
   });
 
   it('cuts a long sentence to about twenty words', () => {

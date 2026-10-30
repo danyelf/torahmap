@@ -65,7 +65,6 @@ const LINK_KEYS: LinkKeys = {
   zoom: { min: 0.08, max: 12, start: 1 },
 };
 
-
 /** The words search marks in `body`. */
 function hitRanges(
   item: PieceItem,
@@ -83,14 +82,28 @@ function hitRanges(
   return ranges;
 }
 
-/** Which default excerpt to try, chosen in the address as ?excerpt=first, rare or keywords. */
-const chosenMethod = (): DefaultMethod =>
-  DEFAULT_METHODS.find((m) => m === new URLSearchParams(location.search).get('excerpt')) ?? 'first';
+/**
+ * Which default excerpt to try, chosen in the address as ?excerpt=first, rare or keywords. The
+ * address is rewritten with only the link's own parameters, so the choice is kept for the tab.
+ */
+const EXCERPT_KEY = 'ieeevis-excerpt';
+function readMethod(): DefaultMethod {
+  const asked = new URLSearchParams(location.search).get('excerpt');
+  try {
+    if (asked) sessionStorage.setItem(EXCERPT_KEY, asked);
+    return (
+      DEFAULT_METHODS.find((m) => m === (asked ?? sessionStorage.getItem(EXCERPT_KEY))) ?? 'first'
+    );
+  } catch {
+    return DEFAULT_METHODS.find((m) => m === asked) ?? 'first';
+  }
+}
+const chosenMethod = readMethod();
 
 /** What a piece shows when nothing is searched in it: a paper's first piece begins with its authors. */
 function defaultBody(item: PieceItem, text = '', texts?: PaperTexts): string {
   const { paper, piece, section } = item;
-  const method = section === 'f' || !texts ? 'first' : chosenMethod();
+  const method = section === 'f' || !texts ? 'first' : chosenMethod;
   const excerpt = defaultExcerpt(text, {
     method,
     rarity: texts ? rarityOf(texts) : () => 0,

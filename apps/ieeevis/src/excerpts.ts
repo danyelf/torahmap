@@ -32,8 +32,9 @@ function cut(
   open = [true, true],
 ): string {
   const lead = open[0] && from > 0 ? ELLIPSIS : '';
-  const trail = open[1] && to < spans.length - 1 ? ELLIPSIS : '';
-  return lead + text.slice(spans[from].start, spans[to].end) + trail;
+  const words = text.slice(spans[from].start, spans[to].end);
+  const trail = open[1] && to < spans.length - 1 && !words.endsWith(ELLIPSIS) ? ELLIPSIS : '';
+  return lead + words + trail;
 }
 
 /**
@@ -179,8 +180,6 @@ export function defaultExcerpt(text: string, input: DefaultInput): string {
     if (all[n][1] - from + 1 > DEFAULT_WORDS_MAX) break;
     to = all[n][1];
   }
-  const truncated = to - from + 1 > DEFAULT_WORDS_MAX;
-  if (truncated) to = from + DEFAULT_WORDS - 1;
-  // It starts and ends on sentence boundaries, so only a cut sentence gets an ellipsis.
-  return cut(text, spans, from, to, [false, truncated]);
+  if (to - from + 1 > DEFAULT_WORDS_MAX) to = from + DEFAULT_WORDS - 1;
+  return cut(text, spans, from, to);
 }
