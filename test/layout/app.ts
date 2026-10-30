@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
 import { viaMenu } from '../browser/page.ts';
+import { SEARCHED } from './visTexts.ts';
 import { GO_TO_BOX_ID } from '../../packages/shell/src/goToBox.ts';
 
 const GO_TO_BOX = `#${GO_TO_BOX_ID}`;
@@ -596,7 +597,7 @@ export const IEEEVIS_STATES: State[] = [
   },
   {
     name: 'vis-search-and-keywords',
-    link: 'search=drucker&overlay=keywords&keywords=visual analytics,Uncertainty visualization',
+    link: `search=${SEARCHED}&overlay=keywords&keywords=visual analytics,Uncertainty visualization`,
     shown: ['#map-legend'],
   },
 ];
