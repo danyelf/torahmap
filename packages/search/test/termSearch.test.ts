@@ -91,4 +91,12 @@ describe('a term search counting wholes', () => {
     expect(wholes.hitCount(data, settings, settings.terms[0])).toBe(2);
     wholes.tool.destroy!();
   });
+
+  it('lists each whole once, at its first match', () => {
+    const container = document.createElement('div');
+    const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
+    wholes.tool.renderControls!(container, settings, () => {}, data);
+    expect(container.querySelectorAll('.search-result')).toHaveLength(2);
+    wholes.tool.destroy!();
+  });
 });

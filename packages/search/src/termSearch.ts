@@ -163,8 +163,16 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
 ): TermSearch<I, D, X> {
   const { languages, extra, countedAs } = spec;
   const noun = countedAs?.noun ?? spec.noun;
-  const countOf = (results: readonly SearchResult[]): number =>
-    countedAs ? new Set(results.map((r) => countedAs.of(r.id))).size : results.length;
+  /** The first result of each whole, when the search counts wholes; else every result. */
+  const onePerWhole = (results: SearchResult[]): SearchResult[] => {
+    if (!countedAs) return results;
+    const seen = new Set<string>();
+    return results.filter((r) => {
+      const whole = countedAs.of(r.id);
+      return !seen.has(whole) && !!seen.add(whole);
+    });
+  };
+  const countOf = (results: SearchResult[]): number => onePerWhole(results).length;
   const extraOf = (data: D): X | null => extra?.build?.(data) ?? null;
   const contextOf = (x: X | null): SearchContext<X> => ({
     languages,
@@ -323,7 +331,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     }
 
     resultsList.render(searchResults, {
-      results: resultsForOpenRow(data, settings),
+      results: onePerWhole(resultsForOpenRow(data, settings)),
       terms: searchFor(data, settings).active,
       focus: openTermIndex(settings),
       onSelect: showItem,
