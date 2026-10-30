@@ -22,6 +22,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { gzipSync } from 'node:zlib';
 import { normalizeHebrewForSearch } from '@torahmap/hebrew';
 import { documents } from './bson.ts';
 
@@ -371,6 +372,30 @@ function main() {
   console.log(`- every headword's entry says, and they agree: ${pct(t.languageOne, covered)}`);
   console.log(
     `- the headwords agree, reading an entry with no note as Hebrew: ${pct(t.languageUnmarkedHebrew, covered)}`,
+  );
+
+  console.log('\n## Size of a form-to-headword file (forms found as written)');
+  const asWrittenForms = [...seen].filter(([, s]) => s.entry && s.strip === 0);
+  const fileSize = (headwordsOf: (entry: FormEntry) => string[]) => {
+    const ids = new Map<string, number>();
+    const mapping: Record<string, number[]> = {};
+    for (const [form, s] of asWrittenForms) {
+      mapping[form] = headwordsOf(s.entry!).map(
+        (w) => ids.get(w) ?? (ids.set(w, ids.size), ids.size - 1),
+      );
+    }
+    const json = JSON.stringify({ headwords: [...ids.keys()], forms: mapping });
+    return `${count(Buffer.byteLength(json))} bytes, ${count(gzipSync(json).length)} gzipped; ${count(ids.size)} headwords`;
+  };
+  const chosenOrDirect = (entry: FormEntry) => {
+    const chosen = [...entry].filter(([, h]) => h.sources.has(CHOSEN)).map(([w]) => w);
+    return chosen.length ? chosen : direct(entry);
+  };
+  console.log(
+    `${count(asWrittenForms.length)} forms. Every headword of a form: ${fileSize((e) => [...e.keys()])}`,
+  );
+  console.log(
+    `Sefaria's choice, else the headwords not reached only through an occurrence list: ${fileSize(chosenOrDirect)}`,
   );
 
   const misses = [...seen].filter(([, s]) => !s.entry).sort((a, b) => b[1].tokens - a[1].tokens);

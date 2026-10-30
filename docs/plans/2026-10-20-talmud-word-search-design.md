@@ -20,13 +20,13 @@ says how to get the dump. Measured on the dump of 2026-10-19 (2.6 GB, MD5
 `ade3745efc93aedcbf9660412f0226d3`); Sefaria rebuilds it every day.
 
 A token is one word in the text; a form is a distinct spelling. The text has
-1,853,469 tokens of two letters or more in 92,018 forms. Single letters (2,490)
+1,849,397 tokens of two letters or more in 92,015 forms. Single letters (2,488)
 are left out, as search leaves them out.
 
 | | tokens | forms |
 |---|---|---|
-| Found in the table as written | **77.5%** | 40.0% |
-| …or after taking off up to three prefix letters (ו ד ב ל מ ש ה כ) | 82.6% | 50.4% |
+| Found in the table as written | **77.6%** | 40.0% |
+| …or after taking off up to three prefix letters (ו ד ב ל מ ש ה כ) | 82.8% | 50.4% |
 
 Of the covered tokens:
 
@@ -41,9 +41,9 @@ Forms to add by hand, commonest first, to reach a share of tokens:
 
 | share | from the table as written | with prefix letters taken off |
 |---|---|---|
-| 85% | 315 | 17 |
-| 90% | 1,861 | 582 |
-| 95% | 8,745 | 4,859 |
+| 85% | 317 | 15 |
+| 90% | 1,872 | 586 |
+| 95% | 8,773 | 4,877 |
 
 ## What the table is
 
@@ -74,7 +74,7 @@ which headword it is there, and a form's lists are nearly always identical
 across its headwords. Jastrow himself quotes the form at that segment for 1.6%
 of covered tokens, and at that amud for 2.6%.
 
-Of the 1,061,873 covered tokens with several headwords, each of these picks
+Of the 1,061,810 covered tokens with several headwords, each of these picks
 out one:
 
 | | |
@@ -137,7 +137,7 @@ that guess catches a third of the gap but also matches different words (תניא
 only that way, by tokens about 54% are right (משום as שום, במקום, לעולם, בתוך)
 and the rest are not (לומר as ומר, דברים as ברים, כהנא as הנא, בנים as נים).
 The table's occurrence lists already hold the text's prefixed forms, so the
-77.5% found as written is the figure to trust; the extra 5.2 points are about
+77.6% found as written is the figure to trust; the extra 5.2 points are about
 half real.
 
 ## Options for the search
@@ -150,16 +150,17 @@ one.
 
 1. **The table as it stands, no stripping.** The reader types a form; the
    chooser lists its headwords; picking one finds every token whose form can
-   be that headword. 77.5% of tokens are reachable. Tokens still ambiguous
+   be that headword. 77.6% of tokens are reachable. Tokens still ambiguous
    (44% of covered ones) appear under each of their headwords, so a pick
    narrows less than it seems to. Cost: building a form-to-headword file from
-   the dump, for the 36,800 of the text's forms it covers (its size not yet
-   measured), and the license.
+   the dump, for the 36,773 of the text's forms it covers (1.2 MB as JSON, 0.38 MB
+   gzipped, with headwords as numbers and no definitions; the text itself is
+   17.6 MB, 4.1 MB gzipped), and the license.
 2. **Option 1 with Sefaria's choices and the other rules above**, so that 56%
    of covered tokens count under one headword. Cost: small. The choice is a
    default, so it is sometimes wrong in context, and nothing in the data shows
    how often.
-3. **Option 2 plus hand entries.** 315 forms to reach 85% of tokens, 1,861 for
+3. **Option 2 plus hand entries.** 317 forms to reach 85% of tokens, 1,872 for
    90%. Each entry maps an inflected form to headwords the table already has,
    which is quick for a reader of the Talmud but is still hundreds of decisions.
 4. **Option 2 plus generated inflections**: take known endings (ו, ה, יו, ים,
@@ -177,5 +178,13 @@ here.
 ## Open questions
 
 - The license: Sefaria's table states none. Danyel is asking.
-- How often Sefaria's choice is wrong in context. Needs a sample read by hand.
+- How often Sefaria's choice is wrong in context. A random sample of 100 tokens
+  that rely on it (`scripts/talmud/choice-sample.ts`), judged by Claude and not
+  by a reader of the Talmud: one clearly wrong (דמי in שפיר דמי read as "to be
+  dumb"), one probably wrong (אבא in אבא שאול), and three where הא read as
+  "this" could instead be the interjection "behold". So 1 to 5 in 100. Common
+  forms dominate the sample (52 distinct forms; ליה, רבי, הא, בר, יהודה, לאו are
+  36 of the 100), so the rarer hand-picked forms are barely tested, and the
+  words with no pick (אמר, לא, רב, על, את, הוא, אין) not at all. A draw by form,
+  and a reader of the Talmud, would firm it up.
 - Whether an entry with no language note in Jastrow is Hebrew.
