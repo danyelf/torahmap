@@ -36,7 +36,8 @@ import {
   type TropMark,
 } from './trop/marks.ts';
 import { hebrewSpan } from '@torahmap/shell/mapLabels.ts';
-import { legendCaption, legendRow } from './legend.ts';
+import { legendCaption } from './legend.ts';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import { TROP } from '@torahmap/overlay-catalog';
 
 /**
@@ -89,9 +90,9 @@ function stepFor(count: number): Color {
 // A mark drawn as present or absent, and the verse highlight, are the brightest step.
 export const RARE_MATCH_COLOR: Color = COUNT_STEPS[COUNT_STEPS.length - 1].color;
 
-/** The key's colours, as CSS: "contains" and "does not" swatches, or the count steps. */
+/** The key: "contains" and "does not" swatches in colours, or the count steps with CSS colours. */
 type TropLegend =
-  | { kind: 'swatches'; contains: string; without: string }
+  | { kind: 'swatches'; contains: Color; without: Color }
   | { kind: 'steps'; steps: { color: string; label: string; glows?: boolean }[] };
 
 /** The most of a mark's verses that glow for an unusually high count, and the least count that can. */
@@ -137,8 +138,8 @@ function deriveTrop(data: TropData, mark: string | null): TropDerivation | null 
       colorOf: (count) => (count ? match : NO_MATCH_COLOR),
       legend: {
         kind: 'swatches',
-        contains: colorToCss(match),
-        without: colorToCss(NO_MATCH_COLOR),
+        contains: match,
+        without: NO_MATCH_COLOR,
       },
     };
   }
@@ -330,9 +331,12 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
 
     const { legend } = derived;
     if (legend.kind === 'swatches') {
-      container.innerHTML =
-        legendRow(legend.contains, `Contains ${shownName(derived, settings)}`) +
-        legendRow(legend.without, 'Does not contain');
+      container.replaceChildren(
+        ...swatchList([
+          { color: legend.contains, name: `Contains ${shownName(derived, settings)}` },
+          { color: legend.without, name: 'Does not contain' },
+        ]),
+      );
     } else {
       container.innerHTML = `
         <div class="trop-steps">${legend.steps
@@ -352,7 +356,7 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     const detail = shownName(derived, settings);
     const { legend } = derived;
     return legend.kind === 'swatches'
-      ? { detail, colors: [legend.contains] }
+      ? { detail, colors: [colorToCss(legend.contains)] }
       : { detail, steps: legend.steps };
   },
 

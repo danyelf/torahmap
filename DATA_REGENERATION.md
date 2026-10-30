@@ -137,7 +137,7 @@ decide whether to follow the change before editing the test to match.
 ## Text Analytics Scores
 
 ```bash
-npm run generate:text-analytics   # writes public/data/overlays/text-analytics/scores.json
+npm run generate:text-analytics   # writes scores.json and echoes.json in public/data/overlays/text-analytics/
 npm run report:text-analytics     # what the scores show across the whole Tanakh
 ```
 
@@ -145,7 +145,9 @@ The scores are computed from the bundled verse texts, so rerun the generator
 whenever `all-texts.json` changes; it fetches nothing and has no `collected`
 date. How the measure works, and every value it depends on, is in
 `scripts/overlays/text-analytics/measures.ts`. Read the report after changing
-the measure.
+the measure. The echoes between verses anywhere are in
+`scripts/overlays/text-analytics/echoes.ts`; `echoes-report.ts` there compares
+cut-offs for a phrase that recurs too often and checks the famous parallels.
 
 ## Text Dating Data
 

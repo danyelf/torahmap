@@ -4,7 +4,7 @@ import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { hex, type Color } from '@torahmap/utils';
 import { jittered } from '../baseColor.ts';
 import type { PieceItem } from '../layout.ts';
-import { swatchRow } from './legend.ts';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 
 const FAMILIES = [
   { name: 'Full VIS paper', color: hex('#4aa3df'), has: (k: string) => k === 'Full VIS Paper' },
@@ -39,6 +39,6 @@ export const kindsOverlay: Overlay<PieceItem> = {
   description: 'Colors every square by the kind of paper it belongs to.',
   colorsFor: (items) => items.map(colorOf),
   renderLegend(container) {
-    container.replaceChildren(...FAMILIES.map(({ color, name }) => swatchRow(color, name)));
+    container.replaceChildren(...swatchList(FAMILIES));
   },
 };

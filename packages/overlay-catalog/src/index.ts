@@ -76,17 +76,22 @@ export const VERSE_LENGTH = {
 } as const satisfies OverlayEntry;
 
 /** The analyses the Text Analytics overlay offers; the first is the one it starts with. */
-export const TEXT_ANALYSES = ['repetitive-wording'] as const;
+export const TEXT_ANALYSES = ['repetitive-wording', 'echoes'] as const;
 
-// No default, so the link always names the analysis.
+/** The shortest runs of words, as the words in a row two verses must share to be echoes. */
+export const ECHO_WORDS = ['4', '5', '6', '7', '8', '9', '10'] as const;
+
+// No default for the analysis, so the link always names it.
 const TEXT_ANALYTICS_PARAMS = [
   { key: 'analysis', kind: 'token', allowed: TEXT_ANALYSES },
+  { key: 'words', kind: 'token', allowed: ECHO_WORDS, default: '5' },
 ] as const satisfies readonly UrlParamSpec[];
 
 export const TEXT_ANALYTICS = {
   id: 'text-analytics',
   name: 'Text Analytics',
-  description: 'How much of each verse repeats wording from nearby.',
+  description:
+    'How much of each verse repeats wording from nearby, or which verses anywhere in the Tanakh share a phrase.',
   urlParams: TEXT_ANALYTICS_PARAMS,
 } as const satisfies OverlayEntry;
 

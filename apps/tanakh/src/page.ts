@@ -10,7 +10,7 @@ export const TANAKH_PAGE: PageCopy = {
   url: `${ORIGIN}${TANAKH_PATH}`,
   image: {
     url: `${ORIGIN}/og-image.jpg`,
-    alt: 'The five books of the Torah above the first books of the Prophets, each verse a small square colored by how much commentary it has.',
+    alt: 'The whole Hebrew Bible, Torah, Prophets and Writings, each verse a small square colored by how much commentary it has.',
   },
   noScript:
     'Torahmap lays out all 23,000 verses of the Hebrew Bible — Torah, Prophets and Writings — as colored squares, each in a fixed place, so that search results, commentary and haftarah readings show their patterns across the whole text.',
