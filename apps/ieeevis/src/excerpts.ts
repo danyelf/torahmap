@@ -78,7 +78,11 @@ const stemOf = (word: string): string =>
 export function defaultExcerpt(text: string, keywords: readonly string[]): string {
   const spans = wordSpans(text);
   if (spans.length === 0) return '';
-  const wanted = new Set(keywords.flatMap((k) => k.match(/\p{L}{4,}/gu) ?? []).map(stemOf));
+  const wanted = new Set(
+    keywords
+      .flatMap((k) => k.match(new RegExp(`\\p{L}{${STEM_LETTERS},}`, 'gu')) ?? [])
+      .map(stemOf),
+  );
   const held = spans.map((s) => Number(wanted.has(stemOf(text.slice(s.start, s.end)))));
   let count = held.slice(0, DEFAULT_WORDS).reduce((a, b) => a + b, 0);
   let best = { count, from: 0 };
