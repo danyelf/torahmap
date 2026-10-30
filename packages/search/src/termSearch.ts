@@ -169,7 +169,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     const seen = new Set<string>();
     return results.filter((r) => {
       const whole = countedAs.of(r.id);
-      return !seen.has(whole) && !!seen.add(whole);
+      if (seen.has(whole)) return false;
+      seen.add(whole);
+      return true;
     });
   };
   const countOf = (results: SearchResult[]): number => onePerWhole(results).length;

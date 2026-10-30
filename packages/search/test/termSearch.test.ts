@@ -96,7 +96,10 @@ describe('a term search counting wholes', () => {
     const container = document.createElement('div');
     const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
     wholes.tool.renderControls!(container, settings, () => {}, data);
-    expect(container.querySelectorAll('.search-result')).toHaveLength(2);
+    const rows = [...container.querySelectorAll('.search-result')].map((r) => r.textContent);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('x0');
+    expect(rows[1]).toContain('y0');
     wholes.tool.destroy!();
   });
 });
