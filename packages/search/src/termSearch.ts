@@ -17,7 +17,7 @@ import type {
 import type { TextLanguage } from '@torahmap/shell/language.ts';
 import type { ExtraMode } from './extraMode.ts';
 import './search.css';
-import { highlightTerms, termMatches } from './highlight.ts';
+import { highlightTerms, termMatches, type TermMatcher } from './highlight.ts';
 import type { SearchLanguage } from './language.ts';
 import { createResultsList, type ResultsView } from './resultsList.ts';
 import { mountTermRows, type TermRows } from './termRows.ts';
@@ -192,6 +192,17 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   );
 
   /** The search these settings run; with no word typed, the empty one, building nothing. */
+  /** What highlightTerms and termMatches take after the text: the language, the active terms and the item's matcher. */
+  function searched(
+    item: I,
+    language: TextLanguage,
+    settings: TermSettings,
+    data: D,
+  ): [SearchLanguage, SearchTerm[], TermMatcher] {
+    const textLanguage = languages.find((l) => l.id === language) ?? languages[0];
+    return [textLanguage, searchFor(data, settings).active, matcherOf(contextFor(data), item.id)];
+  }
+
   function searchFor(data: D, settings: TermSettings): Search {
     if (typedTerms(settings).length === 0) return NO_SEARCH;
     const x = extraOf(data);
@@ -533,24 +544,11 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     },
 
     textMatches(item, text, language: TextLanguage, settings, data) {
-      const textLanguage = languages.find((l) => l.id === language) ?? languages[0];
-      return termMatches(
-        text,
-        textLanguage,
-        searchFor(data, settings).active,
-        matcherOf(contextFor(data), item.id),
-      );
+      return termMatches(text, ...searched(item, language, settings, data));
     },
 
     highlightItemText(item, text, language: TextLanguage, settings, data, within) {
-      const textLanguage = languages.find((l) => l.id === language) ?? languages[0];
-      return highlightTerms(
-        text,
-        textLanguage,
-        searchFor(data, settings).active,
-        matcherOf(contextFor(data), item.id),
-        within,
-      );
+      return highlightTerms(text, ...searched(item, language, settings, data), within);
     },
   };
 

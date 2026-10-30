@@ -62,12 +62,14 @@ export function hitExcerpt(
 /** About how long a default excerpt is. */
 const DEFAULT_WORDS = 30;
 
-/** Words are compared by their first letters, so "visualization" meets "visualizations". */
+/** Keywords shorter than this are ignored; words are compared by their first letters, so "text" meets "texts". */
+const STEM_LETTERS = 4;
+
 const stemOf = (word: string): string =>
   word
     .toLowerCase()
     .replace(/[^\p{L}]/gu, '')
-    .slice(0, 5);
+    .slice(0, STEM_LETTERS);
 
 /**
  * The excerpt to show when nothing is searched: the thirty words that hold the most of the

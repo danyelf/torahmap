@@ -89,7 +89,7 @@ export function quoteTerm(
   return quoteText(text, quoted ? quoted(ranges) : ranges[0]);
 }
 
-export interface Match extends TextRange {
+interface Match extends TextRange {
   termIndex: number;
 }
 
@@ -130,12 +130,9 @@ function buildHighlightedDomFragment(
 }
 
 /**
- * Mark every stretch of `text` that one of `terms` claims, and that lies
- * inside one of `within` when given.
- *
- * Builds the DOM directly rather than through innerHTML. The terms are the ones
- * being searched, in search order, because a match names its term by position
- * in that list.
+ * Every stretch of `text` that one of `terms` claims, and that lies inside one
+ * of `within` when given. The terms are the ones being searched, in search
+ * order, because a match names its term by position in that list.
  */
 export function termMatches(
   text: string,
@@ -157,6 +154,7 @@ export function termMatches(
   return removeOverlappingMatches(matches);
 }
 
+/** Marks the matches, building the DOM directly rather than through innerHTML. */
 export function highlightTerms(
   text: string,
   language: SearchLanguage,

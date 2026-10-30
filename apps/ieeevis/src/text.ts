@@ -136,7 +136,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         const { title, pieces } = item.paper;
         const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
         const shown = text && item.section === 'f' ? referenceLines(text) : text;
-        // The authors always head a first piece; the shell marks search hits in them too.
+        // Hits are found in `shown`, which has no authors line; a hit only there gives the default.
         const hits = search?.tool.textMatches?.(
           item,
           shown ?? '',
