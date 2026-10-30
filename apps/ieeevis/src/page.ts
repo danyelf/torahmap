@@ -18,7 +18,7 @@ export const IEEEVIS_PAGE: PageCopy = {
   url: `${ORIGIN}${IEEEVIS_PATH}`,
   image: {
     url: `${IEEEVIS_ORIGIN}/ieeevis-og-image.jpg`,
-    alt: 'Four days of the IEEE VIS 2026 program laid out in columns, each paper a block of small squares colored by its kind.',
+    alt: 'The IEEE VIS 2026 program laid out in columns by day, each paper a block of small squares colored by its kind.',
   },
   noScript: SUMMARY,
   noWebGl: SUMMARY,
