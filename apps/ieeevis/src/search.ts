@@ -3,16 +3,13 @@ import { memoByValue } from '@torahmap/utils';
 import { TERM_SEARCH_PARAMS } from '@torahmap/link';
 import { buildTextIndex, createTermSearch, english, type SearchEntry } from '@torahmap/search';
 import { papersOf, STRUCTURE_FILE, TEXTS_FILE, type PaperTexts, type Structure } from './data.ts';
-import { pieceId } from './layout.ts';
+import { paperOf, pieceId } from './layout.ts';
 import type { PieceItem } from './layout.ts';
 
 interface VisSearchData {
   structure: Structure;
   texts: PaperTexts;
 }
-
-/** A piece's id is its paper's number, a dot and its place in the paper. */
-export const paperOf = (pieceId: string) => pieceId.slice(0, pieceId.indexOf('.'));
 
 const LANGUAGES = [english];
 

@@ -67,10 +67,7 @@ export interface TermSearchSpec<D, X> {
   index(data: D): TextIndex;
   /** What a result is called: 'verse', 'verses'. */
   noun: { one: string; many: string };
-  /**
-   * When what the reader wants counted is bigger than an item, the key of the whole an item
-   * belongs to and its name: counts then say how many distinct wholes the matches fall in.
-   */
+  /** The whole an item belongs to, by key and name, when counts should say how many wholes match. */
   countedAs?: { noun: { one: string; many: string }; of(id: string): string };
   placeholder: string;
   description: string;
@@ -90,7 +87,7 @@ export interface TermSearchSpec<D, X> {
 
 /** What a search says of each of its terms. */
 export interface SearchCounts<D> {
-  /** How many items one term accounts for on its own, or null when it is not being searched. */
+  /** How many items (or wholes, when the search counts those) one term accounts for on its own, or null when it is not being searched. */
   hitCount(data: D, settings: TermSettings, term: SearchTerm): number | null;
   /** A term's mode, the extra mode clamped where it cannot apply. */
   modeOf(data: D | null, term: SearchTerm): string;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Paper, Structure } from '../src/data.ts';
-import { paperOf, pieceEntries } from '../src/search.ts';
+import { paperOf } from '../src/layout.ts';
+import { pieceEntries } from '../src/search.ts';
 
 const paper = (index: number, pieces: string): Paper => ({
   index,
