@@ -38,8 +38,6 @@ export type Picked = Entry & { slot: number };
 
 /** The ways to find papers by what they list, for one kind of name. */
 export interface Picks<D extends ListData> {
-  /** Papers that list at least one name. */
-  listing(data: D): { papers: number; total: number };
   /** The picked entries in the order picked; names no paper lists are dropped. */
   picked(settings: ListSettings, data: D): Picked[];
   /** The entries with the most papers, to start from. */
@@ -67,13 +65,6 @@ export function picksOf<D extends ListData>(source: PickSource<D>): Picks<D> {
     (data: D) => new Map(entries(data).map((entry) => [entry.name, entry])),
   );
   return {
-    listing: (data) => {
-      const all = papersOf(data.structure);
-      return {
-        papers: all.filter((paper) => namesOf(paper, data).length > 0).length,
-        total: all.length,
-      };
-    },
     picked: (settings, data) =>
       pickSlots(settings, (name) => byName(data).has(name)).map(({ id, slot }) => ({
         ...byName(data).get(id)!,

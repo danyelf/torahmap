@@ -26,7 +26,7 @@ import { brighten, colorToCss, type Color } from '@torahmap/utils';
 import { baseColor } from '../baseColor.ts';
 import type { Paper } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
-import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
   listedBy,
   picksOf,
@@ -67,8 +67,6 @@ export interface ListKind<D extends ListData> extends PickSource<D> {
   description?: string;
   /** The files it reads. */
   data: FileNames<D>;
-  /** Under the legend: what the picks do not cover. */
-  legendNote?(listing: { papers: number; total: number }): string;
   /** Said before the picked names in the popup: "cites". */
   popupLead?: string;
   /** Lines under the popup's names, for one picked name that `paper` is listed under. */
@@ -198,22 +196,15 @@ export function listOverlay<D extends ListData>(
     renderLegend(container, settings, data) {
       if (!data) return;
       const picked = picks.picked(settings, data);
-      const rows: HTMLElement[] = [];
-      if (!picked.length) rows.push(legendRow(`Pick ${aNoun} to light its papers.`));
-      else {
-        const colors = colorsOf(picked);
-        rows.push(
-          ...swatchList([...picked.map((entry, i) => ({ color: colors[i], name: entry.label }))]),
-        );
-      }
-      const note = kind.legendNote?.(picks.listing(data));
-      if (note) rows.push(legendRow(note));
-      container.replaceChildren(...rows);
+      const colors = colorsOf(picked);
+      container.replaceChildren(
+        ...swatchList(picked.map((entry, i) => ({ color: colors[i], name: entry.label }))),
+      );
     },
 
     summary(settings, data) {
       const picked = picks.picked(settings, data);
-      if (!picked.length) return { detail: `pick ${aNoun}` };
+      if (!picked.length) return {};
       return {
         detail: picked.length === 1 ? short(picked[0].label) : `${picked.length} ${noun.many}`,
         colors: colorsOf(picked).map(colorToCss),

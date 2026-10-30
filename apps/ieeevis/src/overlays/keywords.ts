@@ -14,5 +14,4 @@ export const keywordsOverlay = listOverlay({
   data: { structure: STRUCTURE_FILE },
   namesOf: (paper) => paper.keywords ?? [],
   label: titleCase,
-  legendNote: ({ papers, total }) => `${papers} of ${total} papers list keywords`,
 });
