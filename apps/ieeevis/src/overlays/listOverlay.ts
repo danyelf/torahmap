@@ -64,7 +64,7 @@ export interface ListKind<D extends ListData> extends PickSource<D> {
   /** What a pick is called, in the singular and the plural: "author", "authors". */
   noun: { one: string; many: string };
   /** What the overlay does, said in the picker. */
-  description: string;
+  description?: string;
   /** The files it reads. */
   data: FileNames<D>;
   /** Under the legend: what the picks do not cover. */

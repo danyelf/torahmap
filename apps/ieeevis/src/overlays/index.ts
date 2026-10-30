@@ -2,8 +2,7 @@ import type { UrlParamSpec } from '@torahmap/link';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { PieceItem } from '../layout.ts';
 import { authorsOverlay } from './authors.ts';
-import { citedPeopleOverlay } from './citedPeople.ts';
-import { citedWorksOverlay } from './citedWorks.ts';
+import { citationsOverlay } from './citations.ts';
 import { keywordsOverlay } from './keywords.ts';
 import { kindsOverlay } from './kinds.ts';
 import { sectionsOverlay } from './sections.ts';
@@ -13,8 +12,7 @@ export const VIS_OVERLAYS: Overlay<PieceItem>[] = [
   kindsOverlay,
   authorsOverlay,
   keywordsOverlay,
-  citedPeopleOverlay,
-  citedWorksOverlay,
+  citationsOverlay,
 ];
 
 /** The link parameters of the overlay with this id, if it has any. */

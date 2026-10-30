@@ -3,6 +3,7 @@ import { pickColors } from '@torahmap/shell/overlays/picks.ts';
 import { peopleByPaper, worksByPaper, workId, type CitedData } from '../src/citations.ts';
 import type { CitedWork, Structure } from '../src/data.ts';
 import type { PieceItem } from '../src/layout.ts';
+import { citationsOverlay } from '../src/overlays/citations.ts';
 import { citedPeopleOverlay } from '../src/overlays/citedPeople.ts';
 import { citedWorksOverlay } from '../src/overlays/citedWorks.ts';
 import { picksOf } from '../src/overlays/listPicks.ts';
@@ -135,5 +136,47 @@ describe('the popup of a cited person', () => {
 
   it('says nothing for a paper that cites none of the picked people', () => {
     expect(popup(['Tamara Munzner'], 2)).toBeNull();
+  });
+});
+
+describe('the citations overlay', () => {
+  const link = (params: Record<string, string>) => citationsOverlay.settingsFromUrl!(params, []);
+
+  it('opens on people, and a link can open it on works', () => {
+    expect(link({}).view).toBe('people');
+    expect(link({ cite: 'works' }).view).toBe('works');
+  });
+
+  it('keeps each list’s own picks through a link', () => {
+    const settings = link({ cite: 'works', people: 'Jeffrey Heer', works: workId(0) });
+    expect(settings.lists.people.picked).toEqual(['Jeffrey Heer']);
+    expect(settings.lists.works.picked).toEqual([workId(0)]);
+    expect(citationsOverlay.settingsToUrl!(settings)).toEqual({
+      cite: 'works',
+      people: 'Jeffrey Heer',
+      works: workId(0),
+    });
+  });
+
+  it('colours the papers by the list the toggle shows', () => {
+    const settings = link({ people: 'Tamara Munzner', works: workId(0) });
+    const colour = (view: 'people' | 'works') =>
+      citationsOverlay.colorsFor(squares(2) as never, { ...settings, view }, null, data)[0];
+    expect(colour('works')).toEqual(pickColors([0])[0]);
+    expect(colour('people')).not.toEqual(colour('works'));
+  });
+
+  it('switches list when its toggle is clicked, leaving both lists’ picks', () => {
+    const container = document.createElement('div');
+    const settings = link({ people: 'Tamara Munzner' });
+    const changes: unknown[] = [];
+    citationsOverlay.renderControls!(
+      container,
+      settings,
+      (update) => changes.push(update(settings, [])),
+      data,
+    );
+    container.querySelector<HTMLButtonElement>('[data-view="works"]')!.click();
+    expect(changes).toEqual([{ ...settings, view: 'works' }]);
   });
 });

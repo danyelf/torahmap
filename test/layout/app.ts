@@ -596,28 +596,28 @@ export const IEEEVIS_STATES: State[] = [
   },
   {
     name: 'vis-cited-people',
-    link: 'overlay=citedpeople&people=Tamara Munzner,Jeffrey Heer',
+    link: 'overlay=citations&people=Tamara Munzner,Jeffrey Heer',
     shown: ['#map-legend'],
   },
   {
     name: 'vis-cited-people-panel',
-    link: 'overlay=citedpeople&people=Tamara Munzner,Jeffrey Heer',
+    link: 'overlay=citations&people=Tamara Munzner,Jeffrey Heer',
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['.pick-input'],
   },
   {
     name: 'vis-cited-people-popup',
-    link: 'overlay=citedpeople&people=Dominik Moritz&at=252.0&zoom=2',
+    link: 'overlay=citations&people=Dominik Moritz&at=252.0&zoom=2',
     shown: ['#popup.visible'],
   },
   {
     name: 'vis-cited-works',
-    link: 'overlay=citedworks&works=460',
+    link: 'overlay=citations&cite=works&works=460',
     shown: ['#map-legend'],
   },
   {
     name: 'vis-cited-works-panel',
-    link: 'overlay=citedworks&works=460',
+    link: 'overlay=citations&cite=works&works=460',
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['.pick-input'],
   },
