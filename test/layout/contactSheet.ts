@@ -36,8 +36,8 @@ export default class ContactSheet implements Reporter {
   }
 
   onBegin(config: FullConfig, suite: Suite): void {
-    // A run's report is its own: a run without screenshots leaves no earlier one to pass for it.
-    rmSync(this.dir, { recursive: true, force: true });
+    // The sheet is the run's own; the shots beside it are committed, and a run rewrites only those it takes.
+    rmSync(join(this.dir, 'index.html'), { force: true });
     this.order = config.projects.map((p) => p.name);
     for (const t of suite.allTests()) {
       if (!this.rank.has(t.title)) this.rank.set(t.title, this.rank.size);
