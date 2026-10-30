@@ -12,6 +12,7 @@ import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
 import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
 import { ieeevisFiles } from './files.ts';
 import { referenceLines } from './references.ts';
+import { defaultExcerpt, hitExcerpt } from './excerpts.ts';
 import { computeLayout, DAY_LABEL_SIZE, programBox, TIME_STRIP, type PieceItem } from './layout.ts';
 import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
@@ -50,6 +51,10 @@ const LINK_KEYS: LinkKeys = {
   overlayParams: visOverlayParams,
   zoom: { min: 0.08, max: 12, start: 1 },
 };
+
+/** What a piece shows when nothing is searched in it: its opening in a reference list, else the keywords' passage. */
+const defaultOf = ({ paper, section }: PieceItem, text: string): string =>
+  defaultExcerpt(text, section === 'f' ? [] : (paper.keywords ?? []));
 
 export const ieeevisText: MapText<PieceItem, TermSettings> = {
   site: ieeevisSite,
@@ -115,15 +120,26 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         };
       },
 
-      popupText(item, loadedFiles) {
+      popupText(item, loadedFiles, _overlay, search) {
         const texts = loadedFiles.get(TEXTS_FILE) as PaperTexts | undefined;
         const { title, pieces } = item.paper;
         const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
         const shown = text && item.section === 'f' ? referenceLines(text) : text;
+        // Hits are found in `shown`, which has no authors line; a hit only there gives the default.
+        const hits = search?.tool.textMatches?.(
+          item,
+          shown ?? '',
+          ENGLISH,
+          search.settings,
+          search.data,
+        );
+        const excerpt = isPlaceholder(item)
+          ? shown
+          : (hitExcerpt(shown ?? '', hits ?? []) ?? defaultOf(item, shown ?? ''));
         return {
           ref: `${title}, piece\u00a0${item.piece + 1}\u00a0of\u00a0${pieces.length}`,
           hebrew: '',
-          english: squareBody(item, shown),
+          english: squareBody(item, excerpt),
           link: IEEEVIS_PAGE.textUrl,
         };
       },

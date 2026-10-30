@@ -103,3 +103,12 @@ describe('a term search counting wholes', () => {
     wholes.tool.destroy!();
   });
 });
+
+describe('where a term falls in a text', () => {
+  it('gives each match with the term that made it, longest first when they overlap', () => {
+    const settings = fromLink({ search: 'gamma,gam' });
+    const [first, second] = search.tool.textMatches!(items[2], 'a gammas', 'en', settings, data);
+    expect(first).toMatchObject({ start: 2, end: 7, termIndex: 0 });
+    expect(second).toBeUndefined();
+  });
+});
