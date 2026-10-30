@@ -4,7 +4,7 @@
 
 import type { MapItem } from '@torahmap/engine';
 import { idHash, positionJitter } from '@torahmap/utils';
-import type { BookBox } from '@torahmap/shell/mapLabels.ts';
+import { sectionLabelReach, type BookBox } from '@torahmap/shell/mapLabels.ts';
 import type { CoverBox } from './covers.ts';
 import { timeSlotsOf, type Day, type Paper, type Section, type Structure } from './data.ts';
 
@@ -72,6 +72,18 @@ export interface Layout {
 }
 
 const nameLines = (name: string): number => Math.max(1, Math.ceil(name.length / LABEL_LINE_CHARS));
+
+export const DAY_LABEL_SIZE = { fontSize: 14, gapEm: 0.5 };
+
+/** The whole program with its day labels, time strip and panels' padding: the box the map opens fitted to. */
+export function programBox({ bounds }: Layout) {
+  return {
+    minX: -PANEL_PAD - TIME_STRIP,
+    minY: -sectionLabelReach(DAY_LABEL_SIZE),
+    maxX: bounds.width + PANEL_PAD,
+    maxY: bounds.height + PANEL_PAD,
+  };
+}
 
 export const pieceId = (paper: number, piece: number): string => `${paper}.${piece}`;
 

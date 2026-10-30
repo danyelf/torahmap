@@ -6,24 +6,19 @@ import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { coverElement, placeCover } from './covers.ts';
-import {
-  createMapLabels,
-  SECTION_LABEL_LINE_EM,
-  sectionLabelReach,
-} from '@torahmap/shell/mapLabels.ts';
+import { createMapLabels, SECTION_LABEL_LINE_EM } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
 import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
 import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
 import { ieeevisFiles } from './files.ts';
 import { referenceLines } from './references.ts';
-import { computeLayout, PANEL_PAD, TIME_STRIP, type PieceItem } from './layout.ts';
+import { computeLayout, DAY_LABEL_SIZE, programBox, TIME_STRIP, type PieceItem } from './layout.ts';
 import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
 import { IEEEVIS_PAGE } from './page.ts';
 import { ieeevisSite } from './site.ts';
 
-const DAY_LABEL_SIZE = { fontSize: 14, gapEm: 0.5 };
 const PANEL_TINT = [150, 170, 220] as const;
 const PANEL_OPACITY = 0.07;
 const PANEL_EDGE_OPACITY = 0.3;
@@ -69,13 +64,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       items: laid.items,
 
       startCamera(viewport) {
-        const box = {
-          minX: -PANEL_PAD - TIME_STRIP,
-          minY: -sectionLabelReach(DAY_LABEL_SIZE),
-          maxX: laid.bounds.width + PANEL_PAD,
-          maxY: laid.bounds.height + PANEL_PAD,
-        };
-        return cameraToFit(box, viewport.width, viewport.height, LINK_KEYS.zoom);
+        return cameraToFit(programBox(laid), viewport.width, viewport.height, LINK_KEYS.zoom);
       },
 
       baseColor,
