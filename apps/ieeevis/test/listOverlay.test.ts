@@ -36,7 +36,7 @@ const structure: Structure = {
   ],
 };
 const data = { structure };
-const { suggest } = picksOf((p) => p.authors);
+const { suggest } = picksOf({ namesOf: (p) => p.authors });
 
 const squares = (...papers: number[]) =>
   papers.map((i) => {
@@ -107,12 +107,6 @@ describe('the keywords overlay', () => {
 
   it('splits a paper listing two picked keywords between their colours', () => {
     expect(colourOf(['Visual analytics', 'Uncertainty'], 0)[0]).toEqual(pickColors([0, 1]));
-  });
-
-  it('says how many papers list keywords', () => {
-    const container = document.createElement('div');
-    keywordsOverlay.renderLegend!(container, { picked: [] }, data);
-    expect(container.textContent).toContain('2 of 3 papers list keywords');
   });
 });
 

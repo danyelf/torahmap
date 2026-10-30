@@ -140,10 +140,11 @@ readings come from [hebcal's leyning tables](https://github.com/hebcal/hebcal-le
 
 ### IEEE VIS data
 
-The VIS map reads two files in `public/data/ieeevis/`. Both come from the
+The VIS map reads three files in `public/data/ieeevis/`, all from the
 [ieeevis-scrape](https://github.com/danyelf/ieeevis-scrape) project's `scripts/build.py`:
 
 - `structure.json`: the program (titles, authors, sessions, times, keywords). Committed.
+- `cited.json`: every work the 2026 papers cite, with the papers citing it (titles, authors and years only). Committed.
 - `texts.json`: the papers' text, 21 MB. **Never committed** (gitignored): copyright varies and the
   repository is public. The deployed site serves it from the private R2 bucket `torahmap-ieeevis`,
   through the Worker, at the same path (`apps/worker`).
@@ -154,7 +155,7 @@ To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-sc
 uv run --no-project python -I scripts/build.py data <torahmap checkout>/public/data/ieeevis
 ```
 
-It writes both files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw downloads, so the checkout's `texts.json` is the copy to upload. Commit `structure.json` only. Then upload the text, from
+It writes the files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw downloads, so the checkout's `texts.json` is the copy to upload. Commit `structure.json` and `cited.json`. Then upload the text, from
 the torahmap checkout (needs `wrangler login`):
 
 ```bash

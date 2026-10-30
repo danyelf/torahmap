@@ -3,6 +3,9 @@
 
 import type { TextRange } from '@torahmap/utils';
 
+/** A stretch of text to show: the words around it, or all of it and no more when `whole`. */
+export type Hit = TextRange & { whole?: boolean };
+
 /** Words kept on each side of the hits. */
 export const HIT_CONTEXT_WORDS = 10;
 /** The most words between two hits that are still shown. */
@@ -22,12 +25,13 @@ function cut(text: string, spans: TextRange[], from: number, to: number): string
 
 /**
  * The words around the hits, `context` words either side. Hits no more than `gap` words apart
- * read as one passage, with the words between them; further apart, the middle is left out.
+ * read as one passage, with the words between them; further apart, the middle is left out. A `whole`
+ * hit is shown as it is, and joins another whole hit only when they touch.
  * Null when there are no hits.
  */
 export function hitExcerpt(
   text: string,
-  hits: readonly TextRange[],
+  hits: readonly Hit[],
   context = HIT_CONTEXT_WORDS,
   gap = HIT_GAP_WORDS,
 ): string | null {
@@ -36,20 +40,28 @@ export function hitExcerpt(
     .map((h) => ({
       from: spans.findIndex((s) => s.end > h.start),
       to: spans.filter((s) => s.start < h.end).length - 1,
+      pad: h.whole ? 0 : context,
+      whole: !!h.whole,
     }))
     .filter((h) => h.from >= 0 && h.to >= h.from)
     .sort((a, b) => a.from - b.from);
   if (found.length === 0) return null;
 
-  const passages = [{ ...found[0] }];
+  const passages = [
+    { ...found[0], reachFrom: found[0].from - found[0].pad, reachTo: found[0].to + found[0].pad },
+  ];
   for (const hit of found.slice(1)) {
     const last = passages[passages.length - 1];
-    if (hit.from - last.to - 1 <= gap) last.to = Math.max(last.to, hit.to);
-    else passages.push({ ...hit });
+    if (hit.from - last.to - 1 <= (hit.whole && last.whole ? 0 : gap)) {
+      last.to = Math.max(last.to, hit.to);
+      last.whole &&= hit.whole;
+      last.reachFrom = Math.min(last.reachFrom, hit.from - hit.pad);
+      last.reachTo = Math.max(last.reachTo, hit.to + hit.pad);
+    } else passages.push({ ...hit, reachFrom: hit.from - hit.pad, reachTo: hit.to + hit.pad });
   }
-  const reach = passages.map(({ from, to }) => ({
-    from: Math.max(0, from - context),
-    to: Math.min(spans.length - 1, to + context),
+  const reach = passages.map(({ reachFrom, reachTo }) => ({
+    from: Math.max(0, reachFrom),
+    to: Math.min(spans.length - 1, reachTo),
   }));
   const read = reach
     .map((r) => text.slice(spans[r.from].start, spans[r.to].end))
