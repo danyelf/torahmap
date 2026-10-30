@@ -27,6 +27,8 @@ export interface Paper {
   when: string;
   /** One section letter per piece. */
   pieces: string;
+  /** The paper's own page on the VIS site. */
+  page: string;
 }
 
 export interface Session {

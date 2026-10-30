@@ -17,7 +17,6 @@ import { computeLayout, DAY_LABEL_SIZE, programBox, TIME_STRIP, type PieceItem }
 import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
-import { IEEEVIS_PAGE } from './page.ts';
 import { ieeevisSite } from './site.ts';
 
 const PANEL_TINT = [150, 170, 220] as const;
@@ -140,7 +139,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
           ref: `${title}, piece\u00a0${item.piece + 1}\u00a0of\u00a0${pieces.length}`,
           hebrew: '',
           english: squareBody(item, excerpt),
-          link: IEEEVIS_PAGE.textUrl,
+          link: item.paper.page,
         };
       },
 

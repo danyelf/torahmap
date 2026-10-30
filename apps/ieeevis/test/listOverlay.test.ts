@@ -14,6 +14,7 @@ const paper = (index: number, authors: string[], pieces = 'ai', keywords?: strin
   kind: 'Full VIS Paper',
   when: '',
   pieces,
+  page: `https://ieeevis.org/year/2026/paper/${index}`,
 });
 
 const structure: Structure = {
