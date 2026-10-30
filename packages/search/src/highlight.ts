@@ -130,20 +130,17 @@ function buildHighlightedDomFragment(
 }
 
 /**
- * Mark every stretch of `text` that one of `terms` claims, and that lies
- * inside one of `within` when given.
- *
- * Builds the DOM directly rather than through innerHTML. The terms are the ones
- * being searched, in search order, because a match names its term by position
- * in that list.
+ * Every stretch of `text` that one of `terms` claims, and that lies inside one
+ * of `within` when given. The terms are the ones being searched, in search
+ * order, because a match names its term by position in that list.
  */
-export function highlightTerms(
+export function termMatches(
   text: string,
   language: SearchLanguage,
   terms: SearchTerm[],
   matcher: TermMatcher,
   within?: readonly TextRange[],
-): DocumentFragment {
+): Match[] {
   const inside = (range: TextRange) =>
     !within || within.some((w) => w.start <= range.start && range.end <= w.end);
   const matches: Match[] = terms.flatMap((term, termIndex) =>
@@ -152,14 +149,22 @@ export function highlightTerms(
       .map((range) => ({ ...range, termIndex })),
   );
 
-  if (matches.length === 0) {
-    const fragment = document.createDocumentFragment();
-    fragment.appendChild(document.createTextNode(text));
-    return fragment;
-  }
-
   // Longest match first, so removeOverlappingMatches keeps it over a shorter one.
   matches.sort((a, b) => a.start - b.start || b.end - a.end);
+  return removeOverlappingMatches(matches);
+}
 
-  return buildHighlightedDomFragment(text, removeOverlappingMatches(matches), terms);
+/** Marks the matches, building the DOM directly rather than through innerHTML. */
+export function highlightTerms(
+  text: string,
+  language: SearchLanguage,
+  terms: SearchTerm[],
+  matcher: TermMatcher,
+  within?: readonly TextRange[],
+): DocumentFragment {
+  return buildHighlightedDomFragment(
+    text,
+    termMatches(text, language, terms, matcher, within),
+    terms,
+  );
 }
