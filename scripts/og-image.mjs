@@ -1,20 +1,20 @@
 // Renders the picture link previews show, from a running dev server:
 // node scripts/og-image.mjs [tanakh|ieeevis] [http://localhost:5173/]
 //
-// Each camera frames its map large enough that a square reads as a square;
-// adjust it if the layout moves.
+// The Tanakh's card is the whole map; the VIS card is a close view of the
+// program, titled, and its camera needs adjusting if the layout moves.
 import { chromium } from 'playwright';
 
 const TARGETS = {
-  // The five books of the Torah above the Former Prophets.
   tanakh: {
     path: '',
-    camera: '#overlay=commentary&zoom=0.7&x=-1716&y=66.6',
+    camera: '?overlay=commentary&zoom=0.3&x=1700&y=780',
     out: 'public/og-image.jpg',
   },
   ieeevis: {
     path: 'ieeevis/',
-    camera: '?overlay=kinds&zoom=0.7&x=715&y=385',
+    camera: '?overlay=kinds&zoom=0.7&x=715&y=300',
+    title: 'IEEE VIS 2026',
     out: 'public/ieeevis-og-image.jpg',
   },
 };
@@ -28,6 +28,11 @@ const PAGE_URL = `${BASE}${target.path}`;
 const HIDE_UI =
   '<style>#panel,#menu-toggle,#map-legend,#zoom-controls,#popup{display:none!important}:root{--map-left:0px!important}' +
   '#canvas{width:100vw!important;height:100vh!important}</style>';
+
+// A card's title, over the band the camera leaves above the map.
+const titleHtml = (text) =>
+  '<div style="position:fixed;left:48px;top:14px;z-index:9;color:#fff;font:700 40px system-ui,sans-serif">' +
+  `${text}</div>`;
 
 const browser = await chromium.launch({
   // Headless Chromium has no WebGL2 without software rendering.
@@ -49,7 +54,9 @@ await page.route(
   (url) => url.pathname === new URL(PAGE_URL).pathname,
   async (route) => {
     const response = await route.fetch();
-    const html = (await response.text()).replace('</head>', HIDE_UI + '</head>');
+    const html = (await response.text())
+      .replace('</head>', HIDE_UI + '</head>')
+      .replace('</body>', (target.title ? titleHtml(target.title) : '') + '</body>');
     await route.fulfill({ response, body: html });
   },
 );
