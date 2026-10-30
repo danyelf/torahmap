@@ -215,6 +215,15 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): HTMLElement | null;
 
+  // Where the tool's words fall in an item's text, as highlightItemText would mark them.
+  textMatches?(
+    item: SpatialItem<T>,
+    text: string,
+    language: TextLanguage,
+    settings: S,
+    data: D,
+  ): TextRange[];
+
   // Marks words by their place in the item's text, so it is handed the item as well as its text;
   // only inside `within`, when given.
   highlightItemText?(

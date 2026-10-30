@@ -71,8 +71,13 @@ interface OpenText<I extends MapItem, S = unknown> {
   searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
-  /** What a square's popup says; the shell marks it and makes its words clickable. */
-  popupText(item: I, loaded: Loaded, overlay: ToolOnMap<I> | null): PopupText;
+  /** What a square's popup says; the shell marks it and makes its words clickable. `search` is what is searched, for a text whose popup shows only the words around a hit. */
+  popupText(
+    item: I,
+    loaded: Loaded,
+    overlay: ToolOnMap<I> | null,
+    search?: ToolOnMap<I> | null,
+  ): PopupText;
   overlays: Overlay<I>[];
   search: SearchTool<I, S>;
   stories: {
