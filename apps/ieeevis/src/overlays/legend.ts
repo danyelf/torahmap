@@ -11,5 +11,13 @@ export function legendRow(...content: (Node | string)[]): HTMLElement {
 }
 
 /** A row of a colour and what it stands for. */
-export const swatchRow = (color: Color, name: string): HTMLElement =>
-  legendRow(pickSwatch(color), name);
+const swatchRow = (color: Color, name: string): HTMLElement => legendRow(pickSwatch(color), name);
+
+/** Swatch rows of colours and names, set apart from one another the same way in every legend. */
+export function swatchList(entries: readonly { color: Color; name: string }[]): HTMLElement[] {
+  return entries.map(({ color, name }, i) => {
+    const row = swatchRow(color, name);
+    row.classList.toggle('apart', i > 0);
+    return row;
+  });
+}

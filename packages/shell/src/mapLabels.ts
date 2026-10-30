@@ -51,11 +51,11 @@ export interface SectionLabelSize {
 }
 
 const MAX_SECTION_FONT_SIZE = 64;
-const SECTION_LABEL_LINE_EM = 1.2;
+export const SECTION_LABEL_LINE_EM = 1.2;
 const BOOK_LABEL_LINE_EM = 1.2;
 
 /**
- * How far right of its section a section label reaches, in map units, while
+ * How far from its section a section label reaches, in map units, while
  * its font is still growing with the zoom.
  */
 export function sectionLabelReach(size: SectionLabelSize): number {
@@ -85,11 +85,10 @@ export interface MapLabelSettings {
   /** Which way the text reads: a book's label starts at its right edge, or its left. Right to left unless said. */
   direction?: 'rtl' | 'ltr';
   /**
-   * Which side of its books a section's name stands: right, reading down, or left, reading up.
-   * Right unless said. `sectionClear` keeps it that many map units further from the books.
+   * Where a section's name stands: right of its books, reading down, or above them, reading
+   * across. Right unless said.
    */
-  sectionSide?: 'right' | 'left';
-  sectionClear?: number;
+  sectionSide?: 'right' | 'top';
 }
 
 /** Only the Hebrew is scaled: the English beside it is a sans face and needs no correction. */
@@ -147,7 +146,7 @@ function bookLabel(book: BookBox): HTMLDivElement {
 function sectionLabel(
   section: string,
   name: SectionName | undefined,
-  side: 'right' | 'left',
+  side: 'right' | 'top',
 ): HTMLDivElement {
   const label = document.createElement('div');
   label.style.cssText = `
@@ -158,13 +157,10 @@ function sectionLabel(
     white-space:nowrap;
     line-height:${SECTION_LABEL_LINE_EM}em;
     transform-origin:0 0;
-    transform:${
-      side === 'right' ? 'rotate(90deg) translateY(-100%)' : 'rotate(-90deg) translateX(-100%)'
-    };
+    transform:${side === 'right' ? 'rotate(90deg) translateY(-100%)' : 'none'};
   `;
   // On the right it turns clockwise about its own top-left corner, so the text reads downward
-  // from the top of the book labels and its line box sits right of the anchor; on the left it
-  // turns the other way and reads upward.
+  // from the top of the book labels and its line box sits right of the anchor.
   label.dataset.section = section;
   label.appendChild(hebrewSpan(name?.he ?? section, 'section-label-he'));
   const enSpan = document.createElement('span');
@@ -191,14 +187,7 @@ export function bookLabelSize(zoom: number): { fontSize: number; rise: number } 
 export function createMapLabels(
   books: readonly BookBox[],
   parent: HTMLElement,
-  {
-    sectionNames,
-    sectionSize,
-    tab,
-    direction = 'rtl',
-    sectionSide = 'right',
-    sectionClear = 0,
-  }: MapLabelSettings,
+  { sectionNames, sectionSize, tab, direction = 'rtl', sectionSide = 'right' }: MapLabelSettings,
 ): (pan: Pan, zoom: number) => void {
   const container = document.createElement('div');
   container.id = 'book-labels';
@@ -248,12 +237,15 @@ export function createMapLabels(
     }
     const sectionFontSize = Math.min(MAX_SECTION_FONT_SIZE, sectionSize.fontSize * zoom);
     for (const { el, box } of sectionLabels) {
-      const clear = sectionClear * zoom + sectionFontSize * sectionSize.gapEm;
-      el.style.left =
-        sectionSide === 'right'
-          ? (box.maxX + pan.x) * zoom + clear + 'px'
-          : (box.minX + pan.x) * zoom - clear - sectionFontSize * SECTION_LABEL_LINE_EM + 'px';
-      el.style.top = (box.minY + pan.y) * zoom - rise + 'px';
+      const clear = sectionFontSize * sectionSize.gapEm;
+      if (sectionSide === 'right') {
+        el.style.left = (box.maxX + pan.x) * zoom + clear + 'px';
+        el.style.top = (box.minY + pan.y) * zoom - rise + 'px';
+      } else {
+        el.style.left = (box.minX + pan.x) * zoom + 'px';
+        el.style.top =
+          (box.minY + pan.y) * zoom - clear - sectionFontSize * SECTION_LABEL_LINE_EM + 'px';
+      }
       el.style.fontSize = sectionFontSize + 'px';
     }
   };

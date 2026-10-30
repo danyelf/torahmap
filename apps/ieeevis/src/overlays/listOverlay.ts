@@ -26,7 +26,7 @@ import { brighten, colorToCss, type Color } from '@torahmap/utils';
 import { baseColor, TEXT } from '../baseColor.ts';
 import { STRUCTURE_FILE, type Paper } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
-import { legendRow, swatchRow } from './legend.ts';
+import { legendRow, swatchList } from './legend.ts';
 import {
   listedBy,
   picksOf,
@@ -182,8 +182,12 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
       if (!picked.length) rows.push(legendRow(`Pick ${aNoun} to light its papers.`));
       else {
         const colors = colorsOf(picked);
-        rows.push(...picked.map((entry, i) => swatchRow(colors[i], show(entry.name))));
-        rows.push(swatchRow(brighten(TEXT, UNLIT_KEEPS), 'Papers under none of them'));
+        rows.push(
+          ...swatchList([
+            ...picked.map((entry, i) => ({ color: colors[i], name: show(entry.name) })),
+            { color: brighten(TEXT, UNLIT_KEEPS), name: 'Papers under none of them' },
+          ]),
+        );
       }
       const note = kind.legendNote?.(picks.listing(data));
       if (note) rows.push(legendRow(note));

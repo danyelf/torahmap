@@ -5,7 +5,7 @@ import { hex, type Color } from '@torahmap/utils';
 import { PLACEHOLDER, isPlaceholder, jittered } from '../baseColor.ts';
 import type { Section } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
-import { swatchRow } from './legend.ts';
+import { swatchList } from './legend.ts';
 
 export const SECTIONS: Readonly<Record<Exclude<Section, 'x'>, { color: Color; name: string }>> = {
   a: { color: hex('#e6c229'), name: 'Abstract' },
@@ -31,8 +31,6 @@ export const sectionsOverlay: Overlay<PieceItem> = {
     'Colors each piece by the section of its paper it falls in, so the shape of every paper shows. Dark squares have no text yet.',
   colorsFor: (items) => items.map(colorOf),
   renderLegend(container) {
-    container.replaceChildren(
-      ...Object.values(SECTIONS).map(({ color, name }) => swatchRow(color, name)),
-    );
+    container.replaceChildren(...swatchList(Object.values(SECTIONS)));
   },
 };

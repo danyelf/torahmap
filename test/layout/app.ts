@@ -487,6 +487,19 @@ export const IEEEVIS_STATES: State[] = [
   { name: 'vis-default', link: '', shown: ['#map-legend'] },
   { name: 'vis-sections', link: 'overlay=sections', shown: ['#map-legend'] },
   { name: 'vis-session-wrap', link: 'at=38.0&zoom=2', shown: ['#popup.visible'] },
+  {
+    name: 'vis-kinds-legend',
+    link: 'overlay=kinds',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
+    name: 'vis-sections-legend',
+    link: 'overlay=sections',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  { name: 'vis-long-paper', link: 'at=394.0&zoom=1.5', shown: ['#popup.visible'] },
   { name: 'vis-references-popup', link: 'at=1.12&zoom=4', shown: ['#popup.visible'] },
   {
     name: 'vis-authors',
