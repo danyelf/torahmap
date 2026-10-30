@@ -84,6 +84,7 @@ function attachWordClicks(
 export interface SidebarElements {
   sidebar: HTMLElement | null;
   ref: Element | null;
+  refDetail: Element | null;
   overlayInfo: Element | null;
   hebrew: Element | null;
   /** Where the popup says a language's text is loading or failed, in that text's place. */
@@ -100,6 +101,7 @@ export function getSidebarElements(): SidebarElements {
   return {
     sidebar,
     ref: sidebar?.querySelector('.ref-text') ?? null,
+    refDetail: sidebar?.querySelector('.ref-detail') ?? null,
     overlayInfo: sidebar?.querySelector('.overlay-info') ?? null,
     hebrew: sidebar?.querySelector('.popup-hebrew') ?? null,
     hebrewNotice: sidebar?.querySelector(`.popup-notice[data-language="${HEBREW}"]`) ?? null,
@@ -113,6 +115,8 @@ export function getSidebarElements(): SidebarElements {
 /** What a square's popup says, from its text. The Hebrew and English are empty while its file is not in, or does not hold it. */
 export interface PopupText {
   ref: string;
+  /** Drawn under the heading. */
+  refDetail?: Node;
   hebrew: string;
   english: string;
   link: string;
@@ -149,8 +153,17 @@ export function updateSidebar<I extends MapItem>(
   say: (item: I) => PopupText,
   view: PopupView<I>,
 ): void {
-  const { sidebar, ref, overlayInfo, hebrew, hebrewNotice, english, englishNotice, link } =
-    elements;
+  const {
+    sidebar,
+    ref,
+    refDetail,
+    overlayInfo,
+    hebrew,
+    hebrewNotice,
+    english,
+    englishNotice,
+    link,
+  } = elements;
   const { waiting = {}, search, pinned: isPinned } = view;
   // Words are clickable only while something listens for them.
   const heard = view.wordsClickable ? wordClickHandler : null;
@@ -171,6 +184,7 @@ export function updateSidebar<I extends MapItem>(
   if (ref) {
     ref.textContent = text.ref;
   }
+  refDetail?.replaceChildren(...(text.refDetail ? [text.refDetail] : []));
   if (overlayInfo) {
     const lines = [
       currentOverlay?.renderSidebarInfo?.(item, isPinned, overlaySettings, overlayData) ??
