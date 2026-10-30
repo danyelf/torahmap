@@ -264,6 +264,7 @@ export const SAMPLE_LOADED: Loaded = new Map<string, unknown>([
   [TEXTS_FILE, SAMPLE_VERSE_TEXTS],
   [HAFTARAH_FILES.mappings, SAMPLE_HAFTARAH_MAPPINGS],
   [textAnalyticsOverlay.data.scores, SAMPLE_TEXT_ANALYTICS_SCORES],
+  [textAnalyticsOverlay.data.echoes, {}],
   [STRUCTURE_FILE, SAMPLE_STRUCTURE],
   ...(Object.keys(DICTIONARY_FILES) as (keyof DictionaryFiles)[]).map(
     (name) => [DICTIONARY_FILES[name], EMPTY_DICTIONARY_FILES[name]] as const,

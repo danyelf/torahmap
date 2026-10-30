@@ -44,15 +44,20 @@ canvas {
   margin-top: 8px;
 }
 
+/* Rows of a scale read as a run, with a little air between them. */
+#overlay-legend .legend-row.scale {
+  margin-top: 3px;
+}
+
+#overlay-legend .legend-row.scale.apart {
+  margin-top: 8px;
+}
+
 #overlay-legend .swatch {
   width: 16px;
   height: 16px;
   border-radius: 2px;
   flex-shrink: 0;
-}
-
-#overlay-legend .label {
-  line-height: 1.2;
 }
 
 /* Off screen but still read by a screen reader, for text a sighted reader

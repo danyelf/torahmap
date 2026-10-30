@@ -84,6 +84,8 @@ import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
+import { createBackdrop } from './backdrop.ts';
+import { restingHover } from './restingHover.ts';
 import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
 import { createOverlaySettings, settingsFromLink, type LinkParams } from './overlays/settings.ts';
 import {
@@ -216,6 +218,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   labelLayer.id = 'map-labels';
   document.body.appendChild(labelLayer);
   const moveLabels = text.labels(labelLayer);
+  const backdrop = createBackdrop(labelLayer);
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -360,6 +363,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     }
     showLegend(mapLegend, rows, warnings);
+    backdrop.show(
+      tools.overlay?.tool.backdrop?.(items, tools.overlay.settings, tools.overlay.data) ?? null,
+    );
   }
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
@@ -367,7 +373,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return toolsPicture(
       toolsNow(),
       items,
-      hoveredItem,
+      litHoverItem,
       base,
       dimFor(frontTool),
       text.searchKeepsBase,
@@ -440,7 +446,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       to,
       t,
       items,
-      hoveredItem,
+      litHoverItem,
       loader.loaded(),
       base,
       textTools,
@@ -455,7 +461,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function focusNow(): Focus<I> {
-    return { hovered: hoveredItem, pinned: pinnedItem };
+    return { hovered: litHoverItem, pinned: pinnedItem };
   }
 
   /**
@@ -518,6 +524,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let pinnedItem: I | null = null;
 
   let hoveredItem: I | null = null;
+  // The hovered square the map's colours follow: it trails hoveredItem, which the highlight and
+  // the panels follow at once.
+  let litHoverItem: I | null = null;
 
   const storyContent = document.getElementById('story-content')!;
 
@@ -702,6 +711,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function render(): void {
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
+    backdrop.place(offset, camera.zoom);
     moveLabels(offset, camera.zoom);
   }
 
@@ -831,11 +841,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   render();
 
-  function setHover(square: I | null): void {
-    const before = hoveredItem;
+  const restHover = restingHover<I>((square) => {
     const focusBefore = focusNow();
+    litHoverItem = square;
+    if (!sameItem(focusBefore.hovered, square)) repaint(focusBefore);
+  });
+
+  function setHover(square: I | null): void {
+    if (sameItem(hoveredItem, square)) return;
     hoveredItem = square;
-    if (!sameItem(before, square)) repaint(focusBefore);
+    restHover.move(square);
+    renderOverlayFocus();
+    render();
   }
 
   const gestures = createMapGestures<I>({
@@ -958,7 +975,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     updateSidebar(
       sidebarElements,
       item,
-      (shown) => text.popupText(shown, loader.loaded(), tools.overlay),
+      (shown) => text.popupText(shown, loader.loaded(), tools.overlay, tools.search),
       {
         waiting: item ? viewFiles.waitingLanguages(item) : {},
         wordsClickable: dataFor(searchTool, loader.loaded()) !== null,
@@ -1030,6 +1047,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
           overlayLegendContainer,
           currentSettings(),
           dataFor(overlay, loader.loaded()),
+          items,
         );
       }
     }
@@ -1601,7 +1619,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
     // Not setHover: the render below draws the highlight.
-    hoveredItem = gestures.squareUnderMouse();
+    hoveredItem = litHoverItem = gestures.squareUnderMouse();
+    restHover.cancel();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.
@@ -1661,7 +1680,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (stale.overlayPanel) drawOverlayPanel(false);
     if (stale.searchPanel) drawSearchPanel(false);
     if (stale.overlayPanel || stale.searchPanel) updateLegend();
-    if (stale.popup) refreshPopupAfterDownload();
+    if (stale.popup) {
+      refreshPopupAfterDownload();
+      // What the overlay says about the focused square may quote the texts.
+      renderOverlayFocus();
+    }
     if (frame.open === 'goto') goToPanel.redraw();
   }
 

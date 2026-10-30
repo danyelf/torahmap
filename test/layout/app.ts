@@ -202,6 +202,15 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
+    name: 'explore-trop-legend',
+    link: 'overlay=trop&trop=shalshelet',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
+  },
+  {
     name: 'explore-trop',
     link: 'overlay=trop&trop=tipcha',
     then: (page) => viaMenu(page, 'overlay'),
@@ -266,6 +275,35 @@ export const STATES: State[] = [
     // Pinned, a verse keeps its echoes lit with the pointer elsewhere.
     name: 'explore-text-analytics-echoes-pinned',
     link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67&verse=Numbers.7.37',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    name: 'explore-text-analytics-echoes-view',
+    link: 'overlay=text-analytics&analysis=echoes',
+    shown: ['#map-legend'],
+  },
+  {
+    // The whole Tanakh at once: the spectrum reads as sections of colour.
+    name: 'explore-text-analytics-echoes-view-zoomed-out',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.1',
+    shown: ['#map-legend'],
+  },
+  {
+    // The slider at eight words: only the long shared passages remain.
+    name: 'explore-text-analytics-echoes-view-long-phrase',
+    link: 'overlay=text-analytics&analysis=echoes&words=8&zoom=0.1',
+    shown: ['#map-legend'],
+  },
+  {
+    // 2 Kings 22:1 is retold in 1 Kings 15:10 and 2 Chronicles 34:1.
+    name: 'explore-text-analytics-echoes-view-pinned',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.1&verse=II.Kings.22.1',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // Kings, where the wheel's hue changes fast from verse to verse: nearby echoes fade to grey.
+    name: 'explore-text-analytics-echoes-kings-pinned',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.6&verse=I.Kings.16.27',
     shown: ['#popup', '#map-legend'],
   },
   {
@@ -375,6 +413,24 @@ export const STATES: State[] = [
 export const ACT_STATES: State[] = [
   { name: 'act-opening', link: '' },
   { name: 'act-article-numbers', link: 'zoom=2&x=300&y=240' },
+  {
+    name: 'act-amendment-legend',
+    link: 'overlay=amendment',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
+  },
+  {
+    name: 'act-references-legend',
+    link: 'overlay=references&article=6',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
+  },
   { name: 'act-amendment', link: 'overlay=amendment&zoom=0.6', shown: ['#map-legend'] },
   {
     name: 'act-references',
@@ -447,6 +503,21 @@ export const TALMUD_STATES: State[] = [
     then: (page) => goTo(page, 'Berakhot 17a'),
     shown: [GO_TO_BOX, '.goto-offer'],
   },
+  {
+    name: 'talmud-dating-legend',
+    link: 'overlay=dating',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
+    name: 'talmud-rabbis-legend',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('#overlay-legend').scrollIntoViewIfNeeded();
+    },
+    shown: ['#overlay-legend'],
+  },
   { name: 'talmud-dating', link: 'overlay=dating', shown: ['#map-legend'] },
   {
     name: 'talmud-dating-pinned',
@@ -487,6 +558,19 @@ export const IEEEVIS_STATES: State[] = [
   { name: 'vis-default', link: '', shown: ['#map-legend'] },
   { name: 'vis-sections', link: 'overlay=sections', shown: ['#map-legend'] },
   { name: 'vis-session-wrap', link: 'at=38.0&zoom=2', shown: ['#popup.visible'] },
+  {
+    name: 'vis-kinds-legend',
+    link: 'overlay=kinds',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
+    name: 'vis-sections-legend',
+    link: 'overlay=sections',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  { name: 'vis-long-paper', link: 'at=394.0&zoom=1.5', shown: ['#popup.visible'] },
   { name: 'vis-references-popup', link: 'at=1.12&zoom=4', shown: ['#popup.visible'] },
   {
     name: 'vis-authors',

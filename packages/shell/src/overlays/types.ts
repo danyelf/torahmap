@@ -146,6 +146,9 @@ interface OverlayMembers<T, S, D> {
     pinned?: SpatialItem<T> | null,
   ): boolean[];
 
+  // A field behind the squares; null for none.
+  backdrop?(items: SpatialItem<T>[], settings: S, data: D): Backdrop | null;
+
   // The panel may be drawn without the overlay's data; then data is null.
   //
   // Draw the controls for `settings`. The app calls this again with the same
@@ -162,7 +165,12 @@ interface OverlayMembers<T, S, D> {
     onChange: (update: SettingsUpdate<S>) => void,
     data: D | null,
   ): void;
-  renderLegend?(container: HTMLElement, settings: S, data: D | null): void;
+  renderLegend?(
+    container: HTMLElement,
+    settings: S,
+    data: D | null,
+    items?: SpatialItem<T>[],
+  ): void;
 
   // Says in the panel what the overlay finds about the hovered or pinned square.
   // The container is emptied before each call; `travelTo` pins a square by id and
@@ -207,6 +215,15 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): HTMLElement | null;
 
+  // Where the tool's words fall in an item's text, as highlightItemText would mark them.
+  textMatches?(
+    item: SpatialItem<T>,
+    text: string,
+    language: TextLanguage,
+    settings: S,
+    data: D,
+  ): TextRange[];
+
   // Marks words by their place in the item's text, so it is handed the item as well as its text;
   // only inside `within`, when given.
   highlightItemText?(
@@ -226,6 +243,19 @@ interface OverlayMembers<T, S, D> {
   // panel. Omit when the overlay derives everything from already-credited text;
   // a test enforces this for everything else.
   credits?: readonly Credit[];
+}
+
+/**
+ * A faint colour field behind the map: `stops` are CSS colours spread evenly round a circle,
+ * clockwise from straight up, around `centre`; it covers `rect`, all in map units. `fade`, if
+ * given, greys the field out to `radius` around the centre, fully at the centre.
+ */
+export interface Backdrop {
+  rect: { minX: number; minY: number; maxX: number; maxY: number };
+  centre: { x: number; y: number };
+  stops: string[];
+  opacity: number;
+  fade?: { radius: number; color: string };
 }
 
 export interface OverlaySummary {

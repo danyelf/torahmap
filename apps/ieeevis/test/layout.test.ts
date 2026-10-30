@@ -68,3 +68,27 @@ describe('the layout', () => {
     expect(new Set(laid.items.map((item) => item.id)).size).toBe(laid.items.length);
   });
 });
+
+describe('a long paper', () => {
+  const long = paper(0, 'a'.repeat(84));
+  const others = Array.from({ length: 9 }, (_, i) => paper(i + 1, 'a'.repeat(30)));
+  const laid = computeLayout({
+    days: [{ name: 'Mon', sessions: [{ name: 'A', start: '08:00', papers: [long, ...others] }] }],
+  });
+  const mine = laid.items.filter((item) => item.paper === long);
+  const spread = (values: number[]) => Math.max(...values) - Math.min(...values);
+
+  it('grows wider rather than taller than its neighbours', () => {
+    const neighbour = laid.items.filter((item) => item.paper === others[0]);
+    expect(spread(mine.map((i) => i.y))).toBeLessThanOrEqual(spread(neighbour.map((i) => i.y)) * 2);
+    expect(spread(mine.map((i) => i.x))).toBeGreaterThan(spread(neighbour.map((i) => i.x)));
+  });
+
+  it('keeps every line of papers inside its panel', () => {
+    const [panel] = laid.panels;
+    for (const item of laid.items) {
+      expect(item.x).toBeGreaterThanOrEqual(panel.minX);
+      expect(item.x + item.size).toBeLessThanOrEqual(panel.maxX);
+    }
+  });
+});

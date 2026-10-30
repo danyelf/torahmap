@@ -6,9 +6,10 @@
  * disappear.
  */
 
-import { wordsRead } from '@torahmap/tanakh/search/dictionary.ts';
 import type { ScoreParameters } from '@torahmap/tanakh/overlays/text-analytics/scores.ts';
-import { stripNikkud } from '@torahmap/hebrew';
+import { words, repeatedStretches } from '@torahmap/tanakh/overlays/text-analytics/words.ts';
+
+export { words, repeatedStretches };
 
 /** Every value the measure depends on; the scores file records them for the legend. */
 export const PARAMETERS = {
@@ -46,17 +47,12 @@ export interface ParsedBook {
 /** A verse's scores, parallel to its book's verses; null where a verse has none. */
 export type BookScores = (number | null)[];
 
-/** A verse's words without points or accents, so that two spellings with different points match. */
-export function words(he: string): string[] {
-  return wordsRead(he).map(({ word }) => stripNikkud(word));
-}
-
 export function parse(book: Book): ParsedBook {
   return { name: book.name, verses: book.verses.map(words) };
 }
 
 /** The runs a verse holds, in order. */
-const runsIn = (verse: string[]): string[] =>
+export const runsIn = (verse: string[]): string[] =>
   Array.from({ length: Math.max(0, verse.length - PARAMETERS.runWords + 1) }, (_, p) =>
     verse.slice(p, p + PARAMETERS.runWords).join(' '),
   );
@@ -145,14 +141,4 @@ export function repetitionScores(books: ParsedBook[], stock = formulas(books)): 
       marks.length >= PARAMETERS.minWords ? marks.filter(Boolean).length / marks.length : null,
     ),
   );
-}
-
-/** The flagged stretches of a verse's words, as start, end pairs (end excluded) in one list. */
-export function repeatedStretches(marks: boolean[]): number[] {
-  const stretches: number[] = [];
-  marks.forEach((marked, i) => {
-    if (marked && !marks[i - 1]) stretches.push(i);
-    if (marked && !marks[i + 1]) stretches.push(i + 1);
-  });
-  return stretches;
 }
