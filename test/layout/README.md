@@ -12,6 +12,9 @@ npm run test:layout
 It is not part of the pre-commit hook. Run it before opening a pull request that changes
 the interface.
 
+The VIS states read made-up paper text from `visTexts.ts`, served in place of `texts.json`, so they pass
+without the real papers and their screenshots show none.
+
 ## What a run does
 
 For every state in `app.ts` (a URL, plus optionally a click), at every screen size, it opens the
