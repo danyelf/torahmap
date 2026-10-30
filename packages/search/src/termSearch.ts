@@ -67,6 +67,8 @@ export interface TermSearchSpec<D, X> {
   index(data: D): TextIndex;
   /** What a result is called: 'verse', 'verses'. */
   noun: { one: string; many: string };
+  /** The whole an item belongs to, by key and name, when counts should say how many wholes match. */
+  countedAs?: { noun: { one: string; many: string }; of(id: string): string };
   placeholder: string;
   description: string;
   credits?: readonly Credit[];
@@ -85,7 +87,7 @@ export interface TermSearchSpec<D, X> {
 
 /** What a search says of each of its terms. */
 export interface SearchCounts<D> {
-  /** How many items one term accounts for on its own, or null when it is not being searched. */
+  /** How many items (or wholes, when the search counts those) one term accounts for on its own, or null when it is not being searched. */
   hitCount(data: D, settings: TermSettings, term: SearchTerm): number | null;
   /** A term's mode, the extra mode clamped where it cannot apply. */
   modeOf(data: D | null, term: SearchTerm): string;
@@ -159,7 +161,20 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
 export function createTermSearch<I extends { id: string }, D, X = never>(
   spec: TermSearchSpec<D, X>,
 ): TermSearch<I, D, X> {
-  const { languages, extra, noun } = spec;
+  const { languages, extra, countedAs } = spec;
+  const noun = countedAs?.noun ?? spec.noun;
+  /** The first result of each whole, when the search counts wholes; else every result. */
+  const onePerWhole = (results: SearchResult[]): SearchResult[] => {
+    if (!countedAs) return results;
+    const seen = new Set<string>();
+    return results.filter((r) => {
+      const whole = countedAs.of(r.id);
+      if (seen.has(whole)) return false;
+      seen.add(whole);
+      return true;
+    });
+  };
+  const countOf = (results: SearchResult[]): number => onePerWhole(results).length;
   const extraOf = (data: D): X | null => extra?.build?.(data) ?? null;
   const contextOf = (x: X | null): SearchContext<X> => ({
     languages,
@@ -258,11 +273,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     const index = active.indexOf(term);
     if (index === -1) return null;
 
-    let count = 0;
-    for (const result of results) {
-      if (result.matchingTerms.some((m) => m.termIndex === index)) count++;
-    }
-    return count;
+    return countOf(results.filter((r) => r.matchingTerms.some((m) => m.termIndex === index)));
   }
 
   // The controls on screen: their elements, where they send a change, and the
@@ -290,7 +301,8 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       return;
     }
     const { active, results } = searchFor(data, settings);
-    const listed = resultsForOpenRow(data, settings).length;
+    const listed = countOf(resultsForOpenRow(data, settings));
+    const total = countOf(results);
 
     let message: string;
     if (active.length > 0 && results.length > 0) {
@@ -299,9 +311,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       // between them is still somewhere. With one term the two are the same
       // number and saying it twice would be noise.
       message =
-        listed === results.length
-          ? `${results.length} matching ${noun.many}`
-          : `${listed} of ${results.length} matching ${noun.many}`;
+        listed === total
+          ? `${total} matching ${noun.many}`
+          : `${listed} of ${total} matching ${noun.many}`;
     } else if (active.length > 0) {
       message = `No matching ${noun.many}`;
     } else if (typedTerms(settings).length > 0) {
@@ -332,7 +344,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     }
 
     resultsList.render(searchResults, {
-      results: resultsForOpenRow(data, settings),
+      results: onePerWhole(resultsForOpenRow(data, settings)),
       terms: searchFor(data, settings).active,
       focus: openTermIndex(settings),
       onSelect: showItem,
