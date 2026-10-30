@@ -125,8 +125,8 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
     const { overlay, settings: picks } = shown(settings);
     return overlay.getHoverInfo!(item, picks, data);
   },
-  renderSidebarInfo(item, isPinned, settings, data) {
+  highlightItemText(item, text, language, settings, data, within) {
     const { overlay, settings: picks } = shown(settings);
-    return overlay.renderSidebarInfo!(item, isPinned, picks, data);
+    return overlay.highlightItemText!(item, text, language, picks, data, within);
   },
 };

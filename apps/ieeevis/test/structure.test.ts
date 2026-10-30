@@ -27,9 +27,15 @@ describe('the shipped program', () => {
   it('lists as citing only papers it holds, each once per work', () => {
     const cited = JSON.parse(readFileSync(`public/data/${CITED_FILE}`, 'utf8')) as CitedWork[];
     const indexes = new Set(papers.map((p) => p.index));
+    const lengths = new Map(papers.map((p) => [p.index, p.pieces.length]));
     for (const work of cited) {
       expect(new Set(work.papers).size).toBe(work.papers.length);
+      expect(work.pieces.length, work.title).toBe(work.papers.length);
       for (const paper of work.papers) expect(indexes.has(paper), work.title).toBe(true);
+      work.papers.forEach((paper, i) => {
+        for (const piece of work.pieces[i])
+          expect(piece, work.title).toBeLessThan(lengths.get(paper)!);
+      });
     }
   });
 

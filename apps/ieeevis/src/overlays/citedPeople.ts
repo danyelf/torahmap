@@ -1,11 +1,8 @@
-// The citations view of people: lights every paper whose references name the people a reader picks.
+// The citations view of people: lights the squares whose text cites works by the people a reader picks.
 
-import { peopleByPaper, worksOfPerson, type CitedData } from '../citations.ts';
+import { peopleAt, peopleByPaper, titlesByPerson, type CitedData } from '../citations.ts';
 import { CITED_FILE, STRUCTURE_FILE } from '../data.ts';
 import { listOverlay } from './listOverlay.ts';
-
-/** Most of a person's works the popup lists before it says how many more. */
-const LISTED = 4;
 
 export const citedPeopleOverlay = listOverlay<CitedData>({
   id: 'citedpeople',
@@ -14,11 +11,7 @@ export const citedPeopleOverlay = listOverlay<CitedData>({
   noun: { one: 'cited person', many: 'cited people' },
   data: { structure: STRUCTURE_FILE, cited: CITED_FILE },
   namesOf: (paper, data) => peopleByPaper(data).get(paper.index) ?? [],
+  namesAt: (item, data) => peopleAt(data).get(item.id) ?? [],
+  titlesOf: (person, data) => titlesByPerson(data).get(person) ?? [],
   popupLead: 'cites',
-  popupDetail(paper, person, data) {
-    const works = worksOfPerson(data, person, paper.index);
-    return works.length > LISTED
-      ? [...works.slice(0, LISTED), `and ${works.length - LISTED} more`]
-      : works;
-  },
 });

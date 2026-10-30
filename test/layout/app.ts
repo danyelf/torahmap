@@ -607,7 +607,7 @@ export const IEEEVIS_STATES: State[] = [
   },
   {
     name: 'vis-cited-people-popup',
-    link: 'overlay=citations&people=Dominik Moritz&at=252.0&zoom=2',
+    link: 'overlay=citations&people=Dominik Moritz&at=252.40&zoom=2',
     shown: ['#popup.visible'],
   },
   {

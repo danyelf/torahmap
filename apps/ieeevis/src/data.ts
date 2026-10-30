@@ -40,6 +40,8 @@ export interface CitedWork {
   authors: string[];
   /** The `index` of each paper that cites it. */
   papers: number[];
+  /** Parallel to `papers`: which pieces of that paper hold the work; none when it was not found in the text. */
+  pieces: number[][];
 }
 
 export interface Session {

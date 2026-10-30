@@ -1,12 +1,19 @@
 import { describe, it, expect } from 'vitest';
 import { pickColors } from '@torahmap/shell/overlays/picks.ts';
-import { peopleByPaper, worksByPaper, workId, type CitedData } from '../src/citations.ts';
+import {
+  entriesOf,
+  peopleAt,
+  peopleByPaper,
+  workId,
+  worksAt,
+  worksByPaper,
+  type CitedData,
+} from '../src/citations.ts';
 import type { CitedWork, Structure } from '../src/data.ts';
 import type { PieceItem } from '../src/layout.ts';
 import { citationsOverlay } from '../src/overlays/citations.ts';
 import { citedPeopleOverlay } from '../src/overlays/citedPeople.ts';
 import { citedWorksOverlay } from '../src/overlays/citedWorks.ts';
-import { picksOf } from '../src/overlays/listPicks.ts';
 
 const paper = (index: number) => ({
   index,
@@ -14,30 +21,34 @@ const paper = (index: number) => ({
   authors: [],
   kind: 'Full VIS Paper',
   when: '',
-  pieces: 'ai',
+  pieces: 'afff',
 });
 const structure: Structure = {
   days: [{ name: 'Mon', sessions: [{ name: 'S', start: '', papers: [0, 1, 2, 3].map(paper) }] }],
 };
-const work = (title: string, authors: string[], papers: number[], year: number | null = 2020) =>
-  ({ title, year, authors, papers }) satisfies CitedWork;
+/** A work, cited by `papers`, found in piece 1 of each unless `pieces` says where. */
+const work = (
+  title: string,
+  authors: string[],
+  papers: number[],
+  year: number | null = 2020,
+  pieces: number[][] = papers.map(() => [1]),
+) => ({ title, year, authors, papers, pieces }) satisfies CitedWork;
 const cited = [
   work('Vega-Lite', ['Arvind Satyanarayan', 'Jeffrey Heer'], [0, 1, 2]),
   work('Visualization Analysis and Design', ['Tamara Munzner'], [0, 1]),
-  work('Interactive dynamics', ['Jeffrey Heer'], [1]),
-  work('Anonymous note', [], [0], null),
+  work('Interactive dynamics', ['Jeffrey Heer'], [1], 2020, [[2]]),
+  work('Anonymous note', [], [0], null, [[]]),
 ];
 const data: CitedData = { structure, cited };
 
-const squares = (...papers: number[]) =>
-  papers.map(
-    (i) =>
-      ({
-        id: `${i}.0`,
-        paper: structure.days[0].sessions[0].papers[i],
-        section: 'a',
-      }) as unknown as PieceItem,
-  );
+const square = (paperIndex: number, piece = 1) =>
+  ({
+    id: `${paperIndex}.${piece}`,
+    paper: structure.days[0].sessions[0].papers[paperIndex],
+    piece,
+    section: 'f',
+  }) as unknown as PieceItem;
 
 describe('what each paper cites', () => {
   it('names the people of every work a paper cites, once', () => {
@@ -52,34 +63,63 @@ describe('what each paper cites', () => {
     expect(peopleByPaper(data).has(3)).toBe(false);
     expect(worksByPaper(data).has(3)).toBe(false);
   });
+
+  it('names the people and works whose entries a square holds', () => {
+    expect(peopleAt(data).get('1.1')?.sort()).toEqual([
+      'Arvind Satyanarayan',
+      'Jeffrey Heer',
+      'Tamara Munzner',
+    ]);
+    expect(peopleAt(data).get('1.2')).toEqual(['Jeffrey Heer']);
+    expect(worksAt(data).get('1.2')).toEqual([workId(2)]);
+    expect(peopleAt(data).has('1.0')).toBe(false);
+  });
 });
 
 describe('the cited people overlay', () => {
-  it('lights the papers that cite a person and dims the rest', () => {
-    const [munzner, other] = citedPeopleOverlay.colorsFor(
-      squares(0, 2) as never,
-      { picked: ['Tamara Munzner'] },
-      null,
-      data,
+  const colours = (picked: string[], ...squares: PieceItem[]) =>
+    citedPeopleOverlay.colorsFor(squares as never, { picked }, null, data);
+
+  it('lights the squares that hold a person’s works and dims the rest of the paper', () => {
+    const [holds, otherPiece, otherPaper] = colours(
+      ['Tamara Munzner'],
+      square(0, 1),
+      square(0, 2),
+      square(2, 1),
     );
-    expect(munzner).toEqual(pickColors([0])[0]);
-    expect(other).not.toEqual(munzner);
+    expect(holds).toEqual(pickColors([0])[0]);
+    expect(otherPiece).not.toEqual(holds);
+    expect(otherPaper).not.toEqual(holds);
+  });
+
+  it('stands out only those squares', () => {
+    expect(
+      citedPeopleOverlay.standoutsFor!(
+        [square(1, 1), square(1, 2), square(1, 0)] as never,
+        { picked: ['Jeffrey Heer'] },
+        data,
+      ),
+    ).toEqual([true, true, false]);
+  });
+
+  it('says in the popup which picked people the square cites', () => {
+    const info = (piece: number) =>
+      citedPeopleOverlay.getHoverInfo!(square(1, piece), { picked: ['Jeffrey Heer'] }, data);
+    expect(info(1)).toBe('cites: Jeffrey Heer');
+    expect(info(0)).toBeNull();
   });
 });
 
 describe('the cited works overlay', () => {
-  const heer = picksOf({ namesOf: (p, d: CitedData) => worksByPaper(d).get(p.index) ?? [] });
-
-  it('lights the papers that cite a work, picked by its id', () => {
-    const [cites, doesNot] = citedWorksOverlay.colorsFor(
-      squares(2, 3) as never,
+  it('lights the squares that hold a work, picked by its id', () => {
+    const [holds, other] = citedWorksOverlay.colorsFor(
+      [square(2, 1), square(3, 1)] as never,
       { picked: [workId(0)] },
       null,
       data,
     );
-    expect(cites).toEqual(pickColors([0])[0]);
-    expect(doesNot).not.toEqual(cites);
-    expect(heer.picked({ picked: [workId(0)] }, data)).toHaveLength(1);
+    expect(holds).toEqual(pickColors([0])[0]);
+    expect(other).not.toEqual(holds);
   });
 
   it('finds a work by its title or its authors', () => {
@@ -98,44 +138,47 @@ describe('the cited works overlay', () => {
   });
 });
 
-describe('the popup of a cited person', () => {
-  const popup = (picked: string[], paper: number) =>
-    citedPeopleOverlay.renderSidebarInfo!(squares(paper)[0] as never, true, { picked }, data);
+describe('the entries of cited works in a text', () => {
+  const text = [
+    'pp. 1–10. External Links: Document',
+    '[2] A. Satyanarayan and J. Heer (2014) Lyra: an interactive visualization design environment. CGF.',
+    '[3] A. Satyanarayan, D. Moritz (2017) Vega-Lite: A grammar of interactive graphics. TVCG 23.',
+    '[4] Someone Else (2020) Another title.',
+  ].join('\n');
+  const marked = (titles: string[]) =>
+    entriesOf(text, titles).map(({ start, end }) => text.slice(start, end));
 
-  it('says the paper cites the person, and which of their works it cites', () => {
-    const info = popup(['Jeffrey Heer'], 1)!;
-    expect(info.firstChild?.textContent).toBe('cites: Jeffrey Heer');
-    expect([...info.querySelectorAll('.pick-meta div')].map((l) => l.textContent)).toEqual([
-      'Vega-Lite (2020)',
-      'Interactive dynamics (2020)',
+  it('takes the whole entry the title is in, however the title is cased or punctuated', () => {
+    expect(marked(['Vega-lite: a grammar of interactive graphics'])).toEqual([
+      '[3] A. Satyanarayan, D. Moritz (2017) Vega-Lite: A grammar of interactive graphics. TVCG 23.',
     ]);
   });
 
-  it('lists only the works that paper cites', () => {
-    const info = popup(['Jeffrey Heer'], 2)!;
-    expect([...info.querySelectorAll('.pick-meta div')].map((l) => l.textContent)).toEqual([
-      'Vega-Lite (2020)',
-    ]);
+  it('takes an entry running on from the piece before, from the start of its line', () => {
+    expect(marked(['External Links Document'])).toEqual(['pp. 1–10. External Links: Document']);
   });
 
-  it('says how many more when a person has many works in a paper', () => {
-    const many: CitedData = {
-      structure,
-      cited: Array.from({ length: 7 }, (_, i) => work(`Work ${i}`, ['Ana Silva'], [0])),
-    };
-    const info = citedPeopleOverlay.renderSidebarInfo!(
-      squares(0)[0] as never,
-      true,
-      { picked: ['Ana Silva'] },
-      many,
-    )!;
-    const lines = [...info.querySelectorAll('.pick-meta div')].map((l) => l.textContent);
-    expect(lines).toHaveLength(5);
-    expect(lines[4]).toBe('and 3 more');
+  it('takes entries run together on one line, each from its number', () => {
+    const run = '[7] First (2001) One title. Venue. [8] Second (2002) Two title. Venue.';
+    const [entry] = entriesOf(run, ['Two title']);
+    expect(run.slice(entry.start, entry.end)).toBe('[8] Second (2002) Two title. Venue.');
   });
 
-  it('says nothing for a paper that cites none of the picked people', () => {
-    expect(popup(['Tamara Munzner'], 2)).toBeNull();
+  it('finds nothing for a title the text does not hold', () => {
+    expect(marked(['Not cited here'])).toEqual([]);
+  });
+
+  it('marks the entry in the popup text, in the pick’s colour', () => {
+    const fragment = citedWorksOverlay.highlightItemText!(
+      square(1, 1),
+      'x\n[2] A. B. (2020) Vega-Lite. Venue.\ny',
+      'english' as never,
+      { picked: [workId(0)] },
+      data,
+    );
+    const [mark] = [...fragment.querySelectorAll('mark')];
+    expect(mark.textContent).toBe('[2] A. B. (2020) Vega-Lite. Venue.');
+    expect(fragment.textContent).toBe('x\n[2] A. B. (2020) Vega-Lite. Venue.\ny');
   });
 });
 
@@ -161,7 +204,7 @@ describe('the citations overlay', () => {
   it('colours the papers by the list the toggle shows', () => {
     const settings = link({ people: 'Tamara Munzner', works: workId(0) });
     const colour = (view: 'people' | 'works') =>
-      citationsOverlay.colorsFor(squares(2) as never, { ...settings, view }, null, data)[0];
+      citationsOverlay.colorsFor([square(2)] as never, { ...settings, view }, null, data)[0];
     expect(colour('works')).toEqual(pickColors([0])[0]);
     expect(colour('people')).not.toEqual(colour('works'));
   });

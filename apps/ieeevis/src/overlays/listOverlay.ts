@@ -23,8 +23,9 @@ import {
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
+import { mark } from '@torahmap/search';
 import { baseColor } from '../baseColor.ts';
-import type { Paper } from '../data.ts';
+import { entriesOf } from '../citations.ts';
 import type { PieceItem } from '../layout.ts';
 import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
@@ -69,8 +70,8 @@ export interface ListKind<D extends ListData> extends PickSource<D> {
   data: FileNames<D>;
   /** Said before the picked names in the popup: "cites". */
   popupLead?: string;
-  /** Lines under the popup's names, for one picked name that `paper` is listed under. */
-  popupDetail?(paper: Paper, name: string, data: D): string[];
+  /** The titles in a square's text that a picked name stands for; the popup marks their entries. */
+  titlesOf?(name: string, data: D): readonly string[];
 }
 
 interface Finder<D> extends PickFinder {
@@ -86,10 +87,39 @@ export function listOverlay<D extends ListData>(
   const aNoun = `${/^[aeiou]/.test(noun.one) ? 'an' : 'a'} ${noun.one}`;
   const picks = picksOf(kind);
   const lead = kind.popupLead ? `${kind.popupLead}: ` : '';
-  const listedUnder = (paper: Paper, settings: ListSettings, data: D) => {
+  const namesAt = kind.namesAt ?? ((item: PieceItem, data: D) => kind.namesOf(item.paper, data));
+  const listedUnder = (item: PieceItem, settings: ListSettings, data: D) => {
     const picked = picks.picked(settings, data);
-    return listedBy(picked, kind.namesOf(paper, data)).map((i) => picked[i]);
+    return listedBy(picked, namesAt(item, data)).map((i) => picked[i]);
   };
+
+  /** The text with the entries of the picked names' works marked, each in its pick's colour. */
+  function markEntries(
+    item: PieceItem,
+    text: string,
+    _language: unknown,
+    settings: ListSettings,
+    data: D,
+  ): DocumentFragment {
+    const picked = picks.picked(settings, data);
+    const spans = listedBy(picked, namesAt(item, data))
+      .flatMap((i) =>
+        entriesOf(text, kind.titlesOf!(picked[i].name, data)).map((span) => ({
+          ...span,
+          slot: picked[i].slot,
+        })),
+      )
+      .sort((a, b) => a.start - b.start);
+    const fragment = document.createDocumentFragment();
+    let at = 0;
+    for (const { start, end, slot } of spans) {
+      if (start < at) continue;
+      fragment.append(text.slice(at, start), mark(text.slice(start, end), slot));
+      at = end;
+    }
+    fragment.append(text.slice(at));
+    return fragment;
+  }
 
   function drawFinder({ settings, data, onChange, input, lists }: Finder<D>): void {
     lists.replaceChildren();
@@ -176,7 +206,7 @@ export function listOverlay<D extends ListData>(
       if (!picked.length) return items.map(baseColor);
       const colors = colorsOf(picked);
       return items.map((item) => {
-        const lit = listedBy(picked, kind.namesOf(item.paper, data)).map((i) => colors[i]);
+        const lit = listedBy(picked, namesAt(item, data)).map((i) => colors[i]);
         if (!lit.length) return unlit(item);
         return lit.length === 1 ? lit[0] : lit;
       });
@@ -184,7 +214,7 @@ export function listOverlay<D extends ListData>(
 
     standoutsFor(items, settings, data) {
       const picked = picks.picked(settings, data);
-      return items.map((item) => listedBy(picked, kind.namesOf(item.paper, data)).length > 0);
+      return items.map((item) => listedBy(picked, namesAt(item, data)).length > 0);
     },
 
     renderControls(container, settings, onChange, data) {
@@ -214,29 +244,10 @@ export function listOverlay<D extends ListData>(
     },
 
     getHoverInfo(item, settings, data) {
-      const names = listedUnder(item.paper, settings, data).map((entry) => entry.label);
+      const names = listedUnder(item, settings, data).map((entry) => entry.label);
       return names.length ? `${lead}${names.join(', ')}` : null;
     },
 
-    renderSidebarInfo(item, _isPinned, settings, data) {
-      const { popupDetail } = kind;
-      const listed = listedUnder(item.paper, settings, data);
-      if (!popupDetail || !listed.length) return null;
-      const info = document.createElement('div');
-      info.append(`${lead}${listed.map((entry) => entry.label).join(', ')}`);
-      for (const entry of listed) {
-        const lines = popupDetail(item.paper, entry.name, data);
-        if (!lines.length) continue;
-        const list = document.createElement('div');
-        list.className = 'pick-meta';
-        list.append(
-          ...lines.map((line) =>
-            Object.assign(document.createElement('div'), { textContent: line }),
-          ),
-        );
-        info.append(list);
-      }
-      return info;
-    },
+    highlightItemText: kind.titlesOf ? markEntries : undefined,
   };
 }

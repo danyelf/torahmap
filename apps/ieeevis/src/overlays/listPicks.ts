@@ -4,6 +4,7 @@
 import { memoByValue } from '@torahmap/utils';
 import { pickSlots, plainName, type PickSettings } from '@torahmap/shell/overlays/picks.ts';
 import { papersOf, type Paper, type Structure } from '../data.ts';
+import type { PieceItem } from '../layout.ts';
 
 export interface ListData {
   structure: Structure;
@@ -11,7 +12,10 @@ export interface ListData {
 
 /** What names a kind of pick lists, and how each is shown. */
 export interface PickSource<D extends ListData> {
+  /** The names a paper lists, which count its papers under each name. */
   namesOf(paper: Paper, data: D): readonly string[];
+  /** The names a square lights under; the paper's names where absent. */
+  namesAt?(item: PieceItem, data: D): readonly string[];
   /** How a name is shown and matched; the name itself, as written, is still what is picked and linked. */
   label?(name: string, data: D): string;
   /** A line under the label: what else says which one it is. */
