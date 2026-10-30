@@ -23,6 +23,8 @@
 
 #popup .popup-ref {
   padding: 12px 14px;
+  /* Holds the floated link, which drops below a strip drawn under the heading. */
+  display: flow-root;
   padding-right: 36px;
   background: rgba(255, 255, 255, 0.05);
   font-size: 14px;
