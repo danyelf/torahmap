@@ -606,6 +606,11 @@ export const IEEEVIS_STATES: State[] = [
     shown: ['.pick-input'],
   },
   {
+    name: 'vis-cited-people-popup',
+    link: 'overlay=citedpeople&people=Dominik Moritz&at=252.0&zoom=2',
+    shown: ['#popup.visible'],
+  },
+  {
     name: 'vis-cited-works',
     link: 'overlay=citedworks&works=460',
     shown: ['#map-legend'],
@@ -615,17 +620,6 @@ export const IEEEVIS_STATES: State[] = [
     link: 'overlay=citedworks&works=460',
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['.pick-input'],
-  },
-  {
-    name: 'vis-shared-citations-pinned',
-    link: 'overlay=sharedcitations&at=94.0&zoom=0.5',
-    shown: ['#map-legend', '#popup.visible'],
-  },
-  {
-    name: 'vis-shared-citations-panel',
-    link: 'overlay=sharedcitations&at=94.0&zoom=0.5',
-    then: (page) => viaMenu(page, 'overlay'),
-    shown: ['#overlay-select'],
   },
   {
     name: 'vis-search-and-keywords',

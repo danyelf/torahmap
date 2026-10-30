@@ -7,7 +7,6 @@ import { citedWorksOverlay } from './citedWorks.ts';
 import { keywordsOverlay } from './keywords.ts';
 import { kindsOverlay } from './kinds.ts';
 import { sectionsOverlay } from './sections.ts';
-import { sharedCitationsOverlay } from './sharedCitations.ts';
 
 export const VIS_OVERLAYS: Overlay<PieceItem>[] = [
   sectionsOverlay,
@@ -16,7 +15,6 @@ export const VIS_OVERLAYS: Overlay<PieceItem>[] = [
   keywordsOverlay,
   citedPeopleOverlay,
   citedWorksOverlay,
-  sharedCitationsOverlay,
 ];
 
 /** The link parameters of the overlay with this id, if it has any. */

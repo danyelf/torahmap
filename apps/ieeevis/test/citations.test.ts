@@ -1,19 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { baseColor } from '../src/baseColor.ts';
 import { pickColors } from '@torahmap/shell/overlays/picks.ts';
-import {
-  peopleByPaper,
-  sharedCitations,
-  worksByPaper,
-  workId,
-  type CitedData,
-} from '../src/citations.ts';
+import { peopleByPaper, worksByPaper, workId, type CitedData } from '../src/citations.ts';
 import type { CitedWork, Structure } from '../src/data.ts';
 import type { PieceItem } from '../src/layout.ts';
 import { citedPeopleOverlay } from '../src/overlays/citedPeople.ts';
 import { citedWorksOverlay } from '../src/overlays/citedWorks.ts';
 import { picksOf } from '../src/overlays/listPicks.ts';
-import { sharedCitationsOverlay } from '../src/overlays/sharedCitations.ts';
 
 const paper = (index: number) => ({
   index,
@@ -58,14 +50,6 @@ describe('what each paper cites', () => {
   it('gives a paper that cites nothing no entry', () => {
     expect(peopleByPaper(data).has(3)).toBe(false);
     expect(worksByPaper(data).has(3)).toBe(false);
-  });
-
-  it('counts the works two papers both cite', () => {
-    const shared = sharedCitations(data);
-    expect(shared.get(0)?.get(1)).toBe(2);
-    expect(shared.get(0)?.get(2)).toBe(1);
-    expect(shared.get(2)?.get(0)).toBe(1);
-    expect(shared.get(0)?.has(0)).toBe(false);
   });
 });
 
@@ -113,49 +97,43 @@ describe('the cited works overlay', () => {
   });
 });
 
-describe('the shared citations overlay', () => {
-  const colours = (pinned: number | null, ...papers: number[]) =>
-    sharedCitationsOverlay.colorsFor(
-      squares(...papers) as never,
-      {},
-      null,
-      data,
-      pinned === null ? null : (squares(pinned)[0] as never),
-    );
+describe('the popup of a cited person', () => {
+  const popup = (picked: string[], paper: number) =>
+    citedPeopleOverlay.renderSidebarInfo!(squares(paper)[0] as never, true, { picked }, data);
 
-  it('leaves the map as it is with nothing focused', () => {
-    expect(colours(null, 3)[0]).toEqual(baseColor(squares(3)[0]));
-    expect(colours(3, 3)[0]).not.toEqual(baseColor(squares(3)[0]));
+  it('says the paper cites the person, and which of their works it cites', () => {
+    const info = popup(['Jeffrey Heer'], 1)!;
+    expect(info.firstChild?.textContent).toBe('cites: Jeffrey Heer');
+    expect([...info.querySelectorAll('.pick-meta div')].map((l) => l.textContent)).toEqual([
+      'Vega-Lite (2020)',
+      'Interactive dynamics (2020)',
+    ]);
   });
 
-  it('colours a paper more strongly the more works it shares with the pinned one', () => {
-    const [two, one, none] = colours(0, 1, 2, 3);
-    expect(two).not.toEqual(one);
-    expect(none).not.toEqual(one);
-    expect(colours(0, 1)[0]).toEqual(two);
+  it('lists only the works that paper cites', () => {
+    const info = popup(['Jeffrey Heer'], 2)!;
+    expect([...info.querySelectorAll('.pick-meta div')].map((l) => l.textContent)).toEqual([
+      'Vega-Lite (2020)',
+    ]);
   });
 
-  it('stands out the pinned paper and the papers sharing with it', () => {
-    expect(
-      sharedCitationsOverlay.standoutsFor!(
-        squares(0, 1, 2, 3) as never,
-        {},
-        data,
-        null,
-        squares(0)[0] as never,
-      ),
-    ).toEqual([true, true, true, false]);
+  it('says how many more when a person has many works in a paper', () => {
+    const many: CitedData = {
+      structure,
+      cited: Array.from({ length: 7 }, (_, i) => work(`Work ${i}`, ['Ana Silva'], [0])),
+    };
+    const info = citedPeopleOverlay.renderSidebarInfo!(
+      squares(0)[0] as never,
+      true,
+      { picked: ['Ana Silva'] },
+      many,
+    )!;
+    const lines = [...info.querySelectorAll('.pick-meta div')].map((l) => l.textContent);
+    expect(lines).toHaveLength(5);
+    expect(lines[4]).toBe('and 3 more');
   });
 
-  it('lists the sharing papers, strongest first, each a way to travel to it', () => {
-    const container = document.createElement('div');
-    const traveled: string[] = [];
-    sharedCitationsOverlay.renderFocus!(container, null, squares(0)[0] as never, {}, data, (id) =>
-      traveled.push(id),
-    );
-    const rows = [...container.querySelectorAll<HTMLButtonElement>('button')];
-    expect(rows.map((r) => r.textContent)).toEqual(['Paper 12 works', 'Paper 21 work']);
-    rows[0].click();
-    expect(traveled).toEqual(['1.0']);
+  it('says nothing for a paper that cites none of the picked people', () => {
+    expect(popup(['Tamara Munzner'], 2)).toBeNull();
   });
 });

@@ -13,8 +13,7 @@ export const citedWorksOverlay = listOverlay<CitedData>({
     'Lights every paper that cites the works you pick, each work in a color of its own; the rest of the map dims. A paper citing two of them is split between their colors.',
   data: { structure: STRUCTURE_FILE, cited: CITED_FILE },
   namesOf: (paper, data) => worksByPaper(data).get(paper.index) ?? [],
+  popupLead: 'cites',
   label: (id, { cited }) => workTitle(cited[Number(id)]),
   detail: (id, { cited }) => workAuthors(cited[Number(id)]),
-  legendNote: ({ papers, total }) =>
-    `${papers} of ${total} papers have a reference list we could read`,
 });

@@ -23,7 +23,8 @@ import {
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
-import { baseColor, TEXT } from '../baseColor.ts';
+import { baseColor } from '../baseColor.ts';
+import type { Paper } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
 import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
@@ -68,6 +69,10 @@ export interface ListKind<D extends ListData> extends PickSource<D> {
   data: FileNames<D>;
   /** Under the legend: what the picks do not cover. */
   legendNote?(listing: { papers: number; total: number }): string;
+  /** Said before the picked names in the popup: "cites". */
+  popupLead?: string;
+  /** Lines under the popup's names, for one picked name that `paper` is listed under. */
+  popupDetail?(paper: Paper, name: string, data: D): string[];
 }
 
 interface Finder<D> extends PickFinder {
@@ -82,6 +87,11 @@ export function listOverlay<D extends ListData>(
   const { noun } = kind;
   const aNoun = `${/^[aeiou]/.test(noun.one) ? 'an' : 'a'} ${noun.one}`;
   const picks = picksOf(kind);
+  const lead = kind.popupLead ? `${kind.popupLead}: ` : '';
+  const listedUnder = (paper: Paper, settings: ListSettings, data: D) => {
+    const picked = picks.picked(settings, data);
+    return listedBy(picked, kind.namesOf(paper, data)).map((i) => picked[i]);
+  };
 
   function drawFinder({ settings, data, onChange, input, lists }: Finder<D>): void {
     lists.replaceChildren();
@@ -193,10 +203,7 @@ export function listOverlay<D extends ListData>(
       else {
         const colors = colorsOf(picked);
         rows.push(
-          ...swatchList([
-            ...picked.map((entry, i) => ({ color: colors[i], name: entry.label })),
-            { color: brighten(TEXT, UNLIT_KEEPS), name: 'Papers under none of them' },
-          ]),
+          ...swatchList([...picked.map((entry, i) => ({ color: colors[i], name: entry.label }))]),
         );
       }
       const note = kind.legendNote?.(picks.listing(data));
@@ -214,9 +221,29 @@ export function listOverlay<D extends ListData>(
     },
 
     getHoverInfo(item, settings, data) {
-      const picked = picks.picked(settings, data);
-      const names = listedBy(picked, kind.namesOf(item.paper, data)).map((i) => picked[i].label);
-      return names.length ? names.join(', ') : null;
+      const names = listedUnder(item.paper, settings, data).map((entry) => entry.label);
+      return names.length ? `${lead}${names.join(', ')}` : null;
+    },
+
+    renderSidebarInfo(item, _isPinned, settings, data) {
+      const { popupDetail } = kind;
+      const listed = listedUnder(item.paper, settings, data);
+      if (!popupDetail || !listed.length) return null;
+      const info = document.createElement('div');
+      info.append(`${lead}${listed.map((entry) => entry.label).join(', ')}`);
+      for (const entry of listed) {
+        const lines = popupDetail(item.paper, entry.name, data);
+        if (!lines.length) continue;
+        const list = document.createElement('div');
+        list.className = 'pick-meta';
+        list.append(
+          ...lines.map((line) =>
+            Object.assign(document.createElement('div'), { textContent: line }),
+          ),
+        );
+        info.append(list);
+      }
+      return info;
     },
   };
 }

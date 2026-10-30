@@ -40,19 +40,12 @@ export const worksByPaper = memoByValue(({ cited }: CitedData) =>
   byPaper(cited, (_, place) => [workId(place)]),
 );
 
-/** For each paper, the other papers that cite a work it cites, and how many such works they share. */
-export const sharedCitations = memoByValue(({ cited }: CitedData) => {
-  const shared = new Map<number, Map<number, number>>();
-  for (const { papers } of cited)
-    for (const paper of papers) {
-      const row = shared.get(paper) ?? shared.set(paper, new Map()).get(paper)!;
-      for (const other of papers) if (other !== paper) row.set(other, (row.get(other) ?? 0) + 1);
-    }
-  return shared;
-});
-
 export const workTitle = ({ title, year }: CitedWork): string => `${title} (${year ?? 'n.d.'})`;
 
 /** Who wrote a work: up to three names, then "et al." */
 export const workAuthors = ({ authors }: CitedWork): string =>
   authors.length > 3 ? `${authors.slice(0, 3).join(', ')} et al.` : authors.join(', ');
+
+/** The works by `person` that the paper with this `index` cites, as titles with their years. */
+export const worksOfPerson = ({ cited }: CitedData, person: string, paper: number): string[] =>
+  cited.filter((w) => w.authors.includes(person) && w.papers.includes(paper)).map(workTitle);
