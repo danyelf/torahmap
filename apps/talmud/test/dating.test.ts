@@ -114,13 +114,13 @@ describe('the dating overlay', () => {
     );
   });
 
-  it('gives its key one row for each generation that occurs, and two more', () => {
+  it('gives its key one row for each generation that occurs, and one more', () => {
     const box = document.createElement('div');
     overlay.renderLegend?.(box, undefined as never, { dating });
     const swatches = [...box.querySelectorAll<HTMLElement>('.swatch')].map(
       (e) => e.style.background,
     );
-    expect(swatches).toHaveLength(dating.generations.length + 2);
+    expect(swatches).toHaveLength(dating.generations.length + 1);
     expect(new Set(swatches).size).toBe(swatches.length);
   });
 

@@ -29,7 +29,7 @@ import {
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { DATING_FILE, type Rabbi, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
-import { GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS } from '../constants.ts';
+import { RABBIS_UNLIT_KEEPS } from '../constants.ts';
 import { fadeTo, markNames, nameFor, type RabbiLink } from './dating.ts';
 import { legendRow, swatchRow } from '@torahmap/shell/overlays/swatchList.ts';
 import {
@@ -302,7 +302,6 @@ export function rabbisOverlay(
           swatchRow(colors[i], rabbiLine(data.dating.rabbis[place], data.dating)),
         ),
         swatchRow(faded(colors[0]), 'Faded: a name that might be him'),
-        swatchRow(fadeTo(GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS), 'Names none of them'),
       );
     },
 
