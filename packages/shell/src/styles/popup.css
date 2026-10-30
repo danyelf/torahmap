@@ -31,6 +31,14 @@
   position: relative;
 }
 
+#popup .ref-detail {
+  margin-top: 8px;
+}
+
+#popup .ref-detail:empty {
+  display: none;
+}
+
 #popup .close-btn {
   position: absolute;
   right: 10px;
