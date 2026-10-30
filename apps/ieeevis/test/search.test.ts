@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Paper, Structure } from '../src/data.ts';
+import { paperOf } from '../src/layout.ts';
 import { pieceEntries } from '../src/search.ts';
 
 const paper = (index: number, pieces: string): Paper => ({
@@ -33,5 +34,12 @@ describe('what search reads', () => {
   it('leaves out a piece with no text, however the popup puts it', () => {
     expect(text('1.1')).toBeUndefined();
     expect(entries.map((e) => e.text.en).join(' ')).not.toMatch(/no text yet/i);
+  });
+});
+
+describe('counting by paper', () => {
+  it('puts a paper’s pieces together and keeps papers apart', () => {
+    expect(paperOf('12.0')).toBe(paperOf('12.7'));
+    expect(paperOf('1.10')).not.toBe(paperOf('11.0'));
   });
 });

@@ -87,6 +87,9 @@ export function programBox({ bounds }: Layout) {
 
 export const pieceId = (paper: number, piece: number): string => `${paper}.${piece}`;
 
+/** The number of the paper a piece belongs to. */
+export const paperOf = (id: string): string => id.slice(0, id.indexOf('.'));
+
 export function computeLayout(structure: Structure): Layout {
   const items: PieceItem[] = [];
   const books: BookBox[] = [];
