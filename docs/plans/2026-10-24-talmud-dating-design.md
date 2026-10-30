@@ -56,8 +56,8 @@ These are Danyel's, from #25 and from conversation.
 
 Worked out while checking accuracy for #25; those scripts are scratch, so the builder rewrites them.
 
-- **Where.** The topic data is inside `data/talmud/raw/sefaria-dump/dump_small.tar.gz` (2.6 GB,
-  gitignored; in the primary checkout, not in worktrees). Extract `./dump/sefaria/topic_links.bson`,
+- **Where.** The topic data is inside `~/data/torahmap/talmud/raw/sefaria-dump/dump_small.tar.gz` (2.6 GB,
+  outside the checkout). Extract `./dump/sefaria/topic_links.bson`,
   `topics.bson` and `time_period.bson` (about 7 seconds). They are MongoDB BSON files: Python's
   `bson` (from `pymongo`) or a Node BSON reader can read them.
 - **A mention** is a `topic_links` row with `linkType: "mention"` and `class: "refTopic"`. Its `ref`
