@@ -30,7 +30,8 @@ import {
 import { DATING_FILE, type Rabbi, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
 import { GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS } from '../constants.ts';
-import { fadeTo, markNames, nameFor, row, type RabbiLink } from './dating.ts';
+import { fadeTo, markNames, nameFor, type RabbiLink } from './dating.ts';
+import { legendRow, swatchRow } from '@torahmap/shell/overlays/swatchList.ts';
 import {
   eraLine,
   namedIn,
@@ -292,21 +293,16 @@ export function rabbisOverlay(
       if (!data) return;
       const places = pickedPlaces(settings, data);
       if (!places.length) {
-        container.innerHTML = `<div class="legend-row">Pick a rabbi to light the passages that name him.</div>`;
+        container.replaceChildren(legendRow('Pick a rabbi to light the passages that name him.'));
         return;
       }
       const colors = pickedColors(settings, data);
-      container.innerHTML = [
-        row(faded(colors[0]), 'Faded: a name that might be him'),
-        row(fadeTo(GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS), 'Names none of them'),
-      ].join('');
-      container.prepend(
-        ...places.map((place, i) => {
-          const line = document.createElement('div');
-          line.className = 'legend-row';
-          line.append(pickSwatch(colors[i]), rabbiLine(data.dating.rabbis[place], data.dating));
-          return line;
-        }),
+      container.replaceChildren(
+        ...places.map((place, i) =>
+          swatchRow(colors[i], rabbiLine(data.dating.rabbis[place], data.dating)),
+        ),
+        swatchRow(faded(colors[0]), 'Faded: a name that might be him'),
+        swatchRow(fadeTo(GEMARA_BASE_COLOR, RABBIS_UNLIT_KEEPS), 'Names none of them'),
       );
     },
 

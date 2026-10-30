@@ -18,6 +18,7 @@
     "./overlays/pickFinder.ts": "./src/overlays/pickFinder.ts",
     "./overlays/picks.ts": "./src/overlays/picks.ts",
     "./overlays/settings.ts": "./src/overlays/settings.ts",
+    "./overlays/swatchList.ts": "./src/overlays/swatchList.ts",
     "./overlays/types.ts": "./src/overlays/types.ts",
     "./panel.ts": "./src/panel.ts",
     "./rowNumbers.ts": "./src/rowNumbers.ts",

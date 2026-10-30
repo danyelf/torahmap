@@ -2,7 +2,8 @@ import { type Color, colorToCss } from '@torahmap/utils';
 import './text-dating.css';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity } from '../types.ts';
-import { legendCaption, legendRow } from './legend.ts';
+import { legendCaption } from './legend.ts';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 
 interface TextDatingFile {
   notes: string[];
@@ -131,20 +132,17 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void, TextDatingData> = 
   },
 
   renderLegend(container: HTMLElement) {
-    const rows = ERAS.map((era) => {
-      return legendRow(
-        colorToCss(era.baseColor),
-        `${era.name} (${era.dateRange[0]}-${era.dateRange[1]} BCE)`,
-        'label',
-      );
-    }).join('');
-
-    container.innerHTML = `
-      <div class="text-dating-legend">
-        ${rows}
-        ${legendCaption('Darker shades = later within period')}
-      </div>
-    `;
+    const rows = swatchList(
+      ERAS.map((era) => ({
+        color: era.baseColor,
+        name: `${era.name} (${era.dateRange[0]}-${era.dateRange[1]} BCE)`,
+      })),
+    );
+    const legend = document.createElement('div');
+    legend.className = 'text-dating-legend';
+    legend.append(...rows);
+    legend.insertAdjacentHTML('beforeend', legendCaption('Darker shades = later within period'));
+    container.replaceChildren(legend);
   },
 
   summary() {

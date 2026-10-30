@@ -5,7 +5,7 @@ import { hex, type Color } from '@torahmap/utils';
 import { PLACEHOLDER, isPlaceholder, jittered } from '../baseColor.ts';
 import type { Section } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
-import { swatchList } from './legend.ts';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 
 export const SECTIONS: Readonly<Record<Exclude<Section, 'x'>, { color: Color; name: string }>> = {
   a: { color: hex('#e6c229'), name: 'Abstract' },

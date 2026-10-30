@@ -26,7 +26,7 @@ import { brighten, colorToCss, type Color } from '@torahmap/utils';
 import { baseColor, TEXT } from '../baseColor.ts';
 import { STRUCTURE_FILE, type Paper } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
-import { legendRow, swatchList } from './legend.ts';
+import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
   listedBy,
   picksOf,

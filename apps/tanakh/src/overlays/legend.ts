@@ -81,12 +81,6 @@ function spaceOut(ticks: PlacedTick[]): PlacedTick[] {
   return kept.reverse();
 }
 
-/** A `.legend-row`: a colour swatch and its label, with `labelClass` on the label if given. */
-export function legendRow(swatchBackground: string, label: string, labelClass?: string): string {
-  const labelAttr = labelClass ? ` class="${labelClass}"` : '';
-  return `<div class="legend-row"><span class="swatch" style="background: ${swatchBackground}"></span><span${labelAttr}>${label}</span></div>`;
-}
-
 /** A line of small grey text under a legend. */
 export function legendCaption(text: string): string {
   return `<div class="legend-caption">${text}</div>`;

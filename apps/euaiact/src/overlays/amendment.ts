@@ -1,7 +1,8 @@
 // Colours each article square by whether the 2026 amendment inserted or replaced its text.
 
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
-import { colorToCss, escapeHtml, hex, type Color } from '@torahmap/utils';
+import { hex, type Color } from '@torahmap/utils';
 import { ANNEX, RECITAL } from '../baseColor.ts';
 import type { Origin } from '../data.ts';
 import type { ActItem } from '../layout.ts';
@@ -26,11 +27,8 @@ export const amendmentOverlay: Overlay<ActItem> = {
     'Shows which paragraphs the 2026 amendment inserted or replaced. Orange is new, yellow is reworded.',
   colorsFor: (items) => items.map(colorOf),
   renderLegend(container) {
-    container.innerHTML = Object.values(AMENDED)
-      .map(
-        ({ plain, name }) =>
-          `<div class="legend-row"><span class="swatch" style="background: ${colorToCss(plain)}"></span><span>${escapeHtml(name)}</span></div>`,
-      )
-      .join('');
+    container.replaceChildren(
+      ...swatchList(Object.values(AMENDED).map(({ plain, name }) => ({ color: plain, name }))),
+    );
   },
 };

@@ -4,7 +4,7 @@ import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { hex, type Color } from '@torahmap/utils';
 import { jittered } from '../baseColor.ts';
 import type { PieceItem } from '../layout.ts';
-import { swatchList } from './legend.ts';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 
 const FAMILIES = [
   { name: 'Full VIS paper', color: hex('#4aa3df'), has: (k: string) => k === 'Full VIS Paper' },
