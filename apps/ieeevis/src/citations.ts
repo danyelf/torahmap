@@ -1,7 +1,7 @@
 // What the 2026 papers cite, read from the list of cited works. No page in here.
 
 import { memoByValue } from '@torahmap/utils';
-import type { CitedWork, Structure } from './data.ts';
+import { papersOf, type CitedWork, type Structure } from './data.ts';
 import { pieceId } from './layout.ts';
 
 export interface CitedData {
@@ -47,16 +47,23 @@ export const workTitle = ({ title, year }: CitedWork): string => `${title} (${ye
 export const workAuthors = ({ authors }: CitedWork): string =>
   authors.length > 3 ? `${authors.slice(0, 3).join(', ')} et al.` : authors.join(', ');
 
-/** What names the squares: for each square id, the names of the cited works found in its text. */
+/**
+ * What names the squares: for each square id, the names of the cited works found in its text. A
+ * paper whose text the work was not found in has it on every square.
+ */
 function bySquare(
-  cited: readonly CitedWork[],
+  { cited, structure }: CitedData,
   namesOf: (work: CitedWork, place: number) => readonly string[],
 ): Map<string, string[]> {
   const found = new Map<string, Set<string>>();
+  const lengths = new Map(papersOf(structure).map((p) => [p.index, p.pieces.length]));
+  const piecesOfPaper = (paper: number) =>
+    Array.from({ length: lengths.get(paper) ?? 0 }, (_, n) => n);
   cited.forEach((work, place) => {
     const names = namesOf(work, place);
     work.papers.forEach((paper, i) => {
-      for (const piece of work.pieces[i] ?? []) {
+      const holding = work.pieces[i] ?? [];
+      for (const piece of holding.length ? holding : piecesOfPaper(paper)) {
         const id = pieceId(paper, piece);
         const set = found.get(id) ?? found.set(id, new Set()).get(id)!;
         for (const name of names) set.add(name);
@@ -67,13 +74,11 @@ function bySquare(
 }
 
 /** The people whose works each square's text cites, by square id. */
-export const peopleAt = memoByValue(({ cited }: CitedData) =>
-  bySquare(cited, (work) => work.authors),
-);
+export const peopleAt = memoByValue((data: CitedData) => bySquare(data, (work) => work.authors));
 
 /** The works each square's text cites, as ids, by square id. */
-export const worksAt = memoByValue(({ cited }: CitedData) =>
-  bySquare(cited, (_, place) => [workId(place)]),
+export const worksAt = memoByValue((data: CitedData) =>
+  bySquare(data, (_, place) => [workId(place)]),
 );
 
 /** The titles of the works by each person. */
@@ -85,21 +90,28 @@ export const titlesByPerson = memoByValue(({ cited }: CitedData) => {
   return titles;
 });
 
-const wordsOf = (title: string): string[] => title.match(/[\p{L}\p{N}]+/gu) ?? [];
+const wordsOf = (title: string): string[] => title.normalize('NFKC').match(/[\p{L}\p{N}]+/gu) ?? [];
 
 /**
  * The reference entries in `text` that are one of `titles`: each from its "[n]" or its line to the
- * next entry. Titles are matched by their words alone, in any case and punctuation.
+ * next entry. A title is matched as the scrape matches it: whole words, in any case and punctuation,
+ * after NFKC normalisation.
  */
 export function entriesOf(
   text: string,
   titles: readonly string[],
 ): { start: number; end: number }[] {
+  // Normalising keeps each letter's place unless a character expands, then the text is read as it is.
+  const normal = text.normalize('NFKC');
+  const haystack = normal.length === text.length ? normal : text;
   const found: { start: number; end: number }[] = [];
   for (const title of titles) {
     const words = wordsOf(title);
     if (!words.length) continue;
-    const hit = new RegExp(words.join('[^\\p{L}\\p{N}]+'), 'iu').exec(text);
+    const hit = new RegExp(
+      `(?<![\\p{L}\\p{N}])${words.join('[^\\p{L}\\p{N}]+')}(?![\\p{L}\\p{N}])`,
+      'iu',
+    ).exec(haystack);
     if (!hit) continue;
     const before = text.slice(0, hit.index);
     const lineStart = before.lastIndexOf('\n') + 1;

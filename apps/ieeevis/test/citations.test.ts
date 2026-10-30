@@ -38,7 +38,7 @@ const cited = [
   work('Vega-Lite', ['Arvind Satyanarayan', 'Jeffrey Heer'], [0, 1, 2]),
   work('Visualization Analysis and Design', ['Tamara Munzner'], [0, 1]),
   work('Interactive dynamics', ['Jeffrey Heer'], [1], 2020, [[2]]),
-  work('Anonymous note', [], [0], null, [[]]),
+  work('Anonymous note', ['Ana Silva'], [0], null, [[]]),
 ];
 const data: CitedData = { structure, cited };
 
@@ -73,6 +73,11 @@ describe('what each paper cites', () => {
     expect(peopleAt(data).get('1.2')).toEqual(['Jeffrey Heer']);
     expect(worksAt(data).get('1.2')).toEqual([workId(2)]);
     expect(peopleAt(data).has('1.0')).toBe(false);
+  });
+
+  it('puts a work on every square of a paper whose text it was not found in', () => {
+    expect(worksAt(data).get('0.0')).toEqual([workId(3)]);
+    expect(worksAt(data).get('0.3')).toEqual([workId(3)]);
   });
 });
 
@@ -162,6 +167,10 @@ describe('the entries of cited works in a text', () => {
     const run = '[7] First (2001) One title. Venue. [8] Second (2002) Two title. Venue.';
     const [entry] = entriesOf(run, ['Two title']);
     expect(run.slice(entry.start, entry.end)).toBe('[8] Second (2002) Two title. Venue.');
+  });
+
+  it('matches whole words only', () => {
+    expect(marked(['Another titl'])).toEqual([]);
   });
 
   it('finds nothing for a title the text does not hold', () => {
