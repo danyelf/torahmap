@@ -160,7 +160,7 @@ export function param(page: Page, name: string): string | null {
 export async function hold(
   page: Page,
   paths: readonly string[],
-  body?: string,
+  body?: string | Buffer,
 ): Promise<() => void> {
   let release!: () => void;
   const released = new Promise<void>((resolve) => (release = resolve));
@@ -171,7 +171,11 @@ export async function hold(
       await (
         body === undefined
           ? route.continue()
-          : route.fulfill({ contentType: 'application/json', body })
+          : route.fulfill({
+              contentType:
+                typeof body === 'string' ? 'application/json' : 'application/octet-stream',
+              body,
+            })
       ).catch(() => {});
     });
   }
