@@ -26,7 +26,7 @@ import { brighten, colorToCss, type Color } from '@torahmap/utils';
 import { baseColor } from '../baseColor.ts';
 import type { Paper } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
-import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
+import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
   listedBy,
   picksOf,
@@ -198,13 +198,15 @@ export function listOverlay<D extends ListData>(
       const picked = picks.picked(settings, data);
       const colors = colorsOf(picked);
       container.replaceChildren(
-        ...swatchList(picked.map((entry, i) => ({ color: colors[i], name: entry.label }))),
+        ...(picked.length
+          ? swatchList(picked.map((entry, i) => ({ color: colors[i], name: entry.label })))
+          : [legendRow(`Pick ${aNoun} to light its papers.`)]),
       );
     },
 
     summary(settings, data) {
       const picked = picks.picked(settings, data);
-      if (!picked.length) return {};
+      if (!picked.length) return { detail: `pick ${aNoun}` };
       return {
         detail: picked.length === 1 ? short(picked[0].label) : `${picked.length} ${noun.many}`,
         colors: colorsOf(picked).map(colorToCss),
