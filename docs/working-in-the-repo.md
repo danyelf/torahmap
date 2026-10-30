@@ -142,10 +142,11 @@ readings come from [hebcal's leyning tables](https://github.com/hebcal/hebcal-le
 
 The VIS map, at https://ieeevis.danyelfisher.info (its page is `/ieeevis/` in the build; the Worker
 serves it at that host's root and sends the Talmud's and AI Act's pages to torahmap.org), reads
-two files in `public/data/ieeevis/`. Both come from the
+three files in `public/data/ieeevis/`, all from the
 [ieeevis-scrape](https://github.com/danyelf/ieeevis-scrape) project's `scripts/build.py`:
 
 - `structure.json`: the program (titles, authors, sessions, times, keywords). Committed.
+- `cited.json`: every work the 2026 papers cite, with the papers citing it (titles, authors and years only). Committed.
 - `texts.json`: the papers' text, 21 MB. **Never committed** (gitignored): copyright varies and the
   repository is public. The page does not read it; it reads `p.bin`, the same text gzipped and
   scrambled by `scripts/ieeevis/pack-texts.ts` (also gitignored), which `loadFile` unpacks
@@ -160,8 +161,8 @@ To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-sc
 uv run --no-project python -I scripts/build.py data <torahmap checkout>/public/data/ieeevis
 ```
 
-It writes both files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw
-downloads. Commit `structure.json` only. Then, from the torahmap checkout, pack the text and upload
+It writes the files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw
+downloads. Commit `structure.json` and `cited.json`. Then, from the torahmap checkout, pack the text and upload
 it (needs `wrangler login`):
 
 ```bash

@@ -17,9 +17,6 @@ data/overlays/commentary/sefaria-index.json
 .claude/worktrees
 __pycache__/
 
-# The Talmud source as downloaded from Sefaria; see DATA_REGENERATION.md.
-data/talmud/raw/
-
 # Visual brainstorming companion scratch
 .superpowers/
 
@@ -47,3 +44,6 @@ telemetry-report/
 public/data/ieeevis/texts.json
 # The same text packed for serving by scripts/ieeevis/pack-texts.ts.
 public/data/ieeevis/p.bin
+
+# The IEEE VIS papers' figures, written by the ieeevis-scrape project; their copyright varies.
+public/data/ieeevis/figures/

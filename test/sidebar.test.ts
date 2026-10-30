@@ -229,6 +229,7 @@ describe('sidebar', () => {
       elements = {
         sidebar,
         ref,
+        refDetail: null,
         overlayInfo,
         hebrew,
         hebrewNotice,
@@ -450,6 +451,7 @@ describe('sidebar', () => {
         const nullElements: SidebarElements = {
           sidebar: null,
           ref: null,
+          refDetail: null,
           overlayInfo: null,
           hebrew: null,
           english: null,

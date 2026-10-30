@@ -10,6 +10,7 @@ const paper = (index: number, pieces: string): Paper => ({
   kind: 'Full VIS Paper',
   when: '',
   pieces,
+  page: `https://ieeevis.org/year/2026/paper/${index}`,
 });
 const structure: Structure = {
   days: [

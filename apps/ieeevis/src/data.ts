@@ -9,12 +9,18 @@ export const IEEEVIS_DATA_DIR = 'ieeevis';
 export const STRUCTURE_FILE = `${IEEEVIS_DATA_DIR}/structure.json`;
 /** The papers' text by square id, packed (utils/packed.ts). Not in git. */
 export const TEXTS_FILE = `${IEEEVIS_DATA_DIR}/p.bin`;
+/** The works the 2026 papers cite, each with the papers that cite it. */
+export const CITED_FILE = `${IEEEVIS_DATA_DIR}/cited.json`;
+/** The files the citations views read. */
+export const CITED_DATA = { structure: STRUCTURE_FILE, cited: CITED_FILE };
 
 /**
  * What a piece of a paper is, by letter: abstract, introduction, related work, method,
  * evaluation, discussion, conclusion, references, other, or x for no text at all.
  */
 export type Section = 'a' | 'i' | 'r' | 'm' | 'e' | 'd' | 'c' | 'f' | 'o' | 'x';
+/** The section holding a paper's reference list. */
+export const REFERENCES_SECTION: Section = 'f';
 
 export interface Paper {
   index: number;
@@ -27,6 +33,21 @@ export interface Paper {
   when: string;
   /** One section letter per piece. */
   pieces: string;
+  /** The paper's own page on the VIS site. */
+  page: string;
+}
+
+/** A work cited by one or more 2026 papers. */
+export interface CitedWork {
+  title: string;
+  /** Null when the reference gives none. */
+  year: number | null;
+  /** Empty when the reference names none. */
+  authors: string[];
+  /** The `index` of each paper that cites it. */
+  papers: number[];
+  /** Parallel to `papers`: which pieces of that paper hold the work; none when it was not found in the text. */
+  pieces: number[][];
 }
 
 export interface Session {

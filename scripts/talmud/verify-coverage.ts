@@ -12,6 +12,7 @@
 
 import { readFileSync } from 'node:fs';
 import { mkdir, readFile, writeFile, access } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { markersOf } from './markers.ts';
 
@@ -71,7 +72,7 @@ export const BAVLI_TRACTATES: ReadonlyArray<TractateRef> = [
 ];
 // 1 + 11 + 7 + 8 + 9 + 1 = 37
 
-export const CACHE_ROOT = 'data/talmud/raw';
+export const CACHE_ROOT = join(homedir(), 'data/torahmap/talmud/raw');
 export const REPORT_PATH = 'data/talmud/coverage-report.json';
 
 const SEFARIA_EXPORT = readFileSync('scripts/sefaria-export.env', 'utf-8').match(

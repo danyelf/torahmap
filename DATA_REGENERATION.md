@@ -253,8 +253,8 @@ Midrash grew 22%. The shape of the heatmap moves, not just its scale.
 
 The Talmud's text is Sefaria's William Davidson Edition of the Bavli (the Koren
 Noé edition's Aramaic, `merged.json`), from the same Sefaria bucket. Its source
-lives in `data/talmud/`, gitignored apart from `coverage-report.json`, which
-says which tractates passed and so which the bundle builds.
+lives outside the checkout, in `~/data/torahmap/talmud/raw/`.
+`data/talmud/coverage-report.json` says which tractates passed and so which the bundle builds.
 
 ```bash
 # Download each tractate's text, English, chapter boundaries and cited verses (~99MB), and check them

@@ -1,7 +1,7 @@
-// An overlay that lights the papers listed under the authors, or the keywords, a reader picks,
+// An overlay that lights the papers listed under the authors, keywords, cited people or cited works a reader picks,
 // each pick in a colour of its own.
 
-import type { Overlay, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
+import type { FileNames, Overlay, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
 import {
   addPick,
   MAX_PICKS,
@@ -23,8 +23,10 @@ import {
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
-import { baseColor, TEXT } from '../baseColor.ts';
-import { STRUCTURE_FILE, type Paper } from '../data.ts';
+import { mark } from '@torahmap/search';
+import { baseColor } from '../baseColor.ts';
+import { entriesOf } from '../citations.ts';
+import { REFERENCES_SECTION } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
 import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
@@ -32,6 +34,7 @@ import {
   picksOf,
   type Entry,
   type ListData,
+  type PickSource,
   type ListSettings,
   type Picked,
 } from './listPicks.ts';
@@ -41,9 +44,21 @@ const UNLIT_KEEPS = 0.35;
 
 const colorsOf = (picked: readonly Picked[]) => pickColors(picked.map((p) => p.slot));
 
+/** Longest a pick may be in the one-line summary. */
+const SUMMARY_LENGTH = 24;
+const short = (label: string) =>
+  label.length > SUMMARY_LENGTH ? `${label.slice(0, SUMMARY_LENGTH - 1)}…` : label;
+
 const papers = (n: number) => `${n} paper${n === 1 ? '' : 's'}`;
 
-export interface ListKind {
+/** A pick's lines: what it is called, what says which one it is, and how many papers list it. */
+const linesOf = (entry: Entry) => [
+  entry.label,
+  ...(entry.detail ? [pickMeta(entry.detail)] : []),
+  pickMeta(papers(entry.papers)),
+];
+
+export interface ListKind<D extends ListData> extends PickSource<D> {
   id: string;
   name: string;
   /** The link's parameter for the picks. */
@@ -51,27 +66,67 @@ export interface ListKind {
   /** What a pick is called, in the singular and the plural: "author", "authors". */
   noun: { one: string; many: string };
   /** What the overlay does, said in the picker. */
-  description: string;
-  namesOf(paper: Paper): readonly string[];
-  /** How a name is shown; the name itself, as written, is still what is picked and linked. */
-  display?(name: string): string;
-  /** Under the legend: what the picks do not cover. */
-  legendNote?(listing: { papers: number; total: number }): string;
+  description?: string;
+  /** The files it reads. */
+  data: FileNames<D>;
+  /** Said before the picked names in the popup: "cites". */
+  popupLead?: string;
+  /** The titles in a square's text that a picked name stands for; the popup marks their entries. */
+  titlesOf?(name: string, data: D): readonly string[];
 }
 
-interface Finder extends PickFinder {
+interface Finder<D> extends PickFinder {
   settings: ListSettings;
-  data: ListData | null;
+  data: D | null;
   onChange(update: SettingsUpdate<ListSettings>): void;
 }
 
-export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, ListData> {
+export function listOverlay<D extends ListData>(
+  kind: ListKind<D>,
+): Overlay<PieceItem, ListSettings, D> {
   const { noun } = kind;
   const aNoun = `${/^[aeiou]/.test(noun.one) ? 'an' : 'a'} ${noun.one}`;
-  const picks = picksOf(kind.namesOf);
-  const show = kind.display ?? ((name: string) => name);
+  const picks = picksOf(kind);
+  const lead = kind.popupLead ? `${kind.popupLead}: ` : '';
+  const namesAt = kind.namesAt ?? ((item: PieceItem, data: D) => kind.namesOf(item.paper, data));
+  const listedUnder = (item: PieceItem, settings: ListSettings, data: D) => {
+    const picked = picks.picked(settings, data);
+    return listedBy(picked, namesAt(item, data)).map((i) => picked[i]);
+  };
 
-  function drawFinder({ settings, data, onChange, input, lists }: Finder): void {
+  /** The entries of the picked names' works in a reference list's `text`, in order, each with its pick's colour. */
+  function entrySpans(item: PieceItem, text: string, settings: ListSettings, data: D) {
+    if (item.section !== REFERENCES_SECTION) return [];
+    const picked = picks.picked(settings, data);
+    return listedBy(picked, namesAt(item, data))
+      .flatMap((i) =>
+        entriesOf(text, kind.titlesOf!(picked[i].name, data)).map((span) => ({
+          ...span,
+          slot: picked[i].slot,
+        })),
+      )
+      .sort((a, b) => a.start - b.start);
+  }
+
+  function markEntries(
+    item: PieceItem,
+    text: string,
+    _language: unknown,
+    settings: ListSettings,
+    data: D,
+  ): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+    let at = 0;
+    for (const { start, end, slot } of entrySpans(item, text, settings, data)) {
+      if (start < at) continue;
+      fragment.append(text.slice(at, start), mark(text.slice(start, end), slot));
+      at = end;
+    }
+    fragment.append(text.slice(at));
+    return fragment;
+  }
+
+  function drawFinder({ settings, data, onChange, input, lists }: Finder<D>): void {
     lists.replaceChildren();
     if (!data) {
       lists.append(pickNote(`Loading the ${noun.many}…`));
@@ -93,9 +148,7 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
           full
             ? [pickNote(`${MAX_PICKS} at most: unpick one first.`)]
             : found.length
-              ? found.map((entry) =>
-                  pickRow([show(entry.name), pickMeta(papers(entry.papers))], () => choose(entry)),
-                )
+              ? found.map((entry) => pickRow(linesOf(entry), () => choose(entry)))
               : [pickNote(`No ${noun.one} by that name.`)],
         ),
       );
@@ -106,8 +159,8 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
         pickedList(
           picked.map((entry, i) => ({
             color: colors[i],
-            text: [show(entry.name), pickMeta(papers(entry.papers))],
-            removeTitle: `Unpick ${show(entry.name)}`,
+            text: linesOf(entry),
+            removeTitle: `Unpick ${entry.label}`,
             onRemove: () => onChange(removePick(entry.name)),
           })),
         ),
@@ -118,7 +171,7 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
     heading.textContent = 'Most papers';
     const chips = pickChips(
       picks.quick(data).map((entry) =>
-        pickChip(show(entry.name), {
+        pickChip(entry.label, {
           title: papers(entry.papers),
           on: isPicked(entry),
           disabled: full && !isPicked(entry),
@@ -131,8 +184,8 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
     lists.append(quick);
   }
 
-  const finderIn = (container: HTMLElement): Finder =>
-    pickFinderIn<Finder>(container, {
+  const finderIn = (container: HTMLElement): Finder<D> =>
+    pickFinderIn<Finder<D>>(container, {
       placeholder: `Find ${aNoun} by name…`,
       label: `Find ${aNoun}`,
       extend: (parts) => ({ ...parts, settings: { picked: [] }, data: null, onChange: () => {} }),
@@ -145,7 +198,7 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
     id: kind.id,
     name: kind.name,
     description: kind.description,
-    data: { structure: STRUCTURE_FILE },
+    data: kind.data,
 
     urlParams: [{ key: kind.urlKey, kind: 'text' }],
     settingsFromUrl: (params, taken) => ({ picked: picksFromUrl(params[kind.urlKey], taken) }),
@@ -158,7 +211,7 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
       if (!picked.length) return items.map(baseColor);
       const colors = colorsOf(picked);
       return items.map((item) => {
-        const lit = listedBy(picked, kind.namesOf(item.paper)).map((i) => colors[i]);
+        const lit = listedBy(picked, namesAt(item, data)).map((i) => colors[i]);
         if (!lit.length) return unlit(item);
         return lit.length === 1 ? lit[0] : lit;
       });
@@ -166,7 +219,7 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
 
     standoutsFor(items, settings, data) {
       const picked = picks.picked(settings, data);
-      return items.map((item) => listedBy(picked, kind.namesOf(item.paper)).length > 0);
+      return items.map((item) => listedBy(picked, namesAt(item, data)).length > 0);
     },
 
     renderControls(container, settings, onChange, data) {
@@ -178,35 +231,31 @@ export function listOverlay(kind: ListKind): Overlay<PieceItem, ListSettings, Li
     renderLegend(container, settings, data) {
       if (!data) return;
       const picked = picks.picked(settings, data);
-      const rows: HTMLElement[] = [];
-      if (!picked.length) rows.push(legendRow(`Pick ${aNoun} to light its papers.`));
-      else {
-        const colors = colorsOf(picked);
-        rows.push(
-          ...swatchList([
-            ...picked.map((entry, i) => ({ color: colors[i], name: show(entry.name) })),
-            { color: brighten(TEXT, UNLIT_KEEPS), name: 'Papers under none of them' },
-          ]),
-        );
-      }
-      const note = kind.legendNote?.(picks.listing(data));
-      if (note) rows.push(legendRow(note));
-      container.replaceChildren(...rows);
+      const colors = colorsOf(picked);
+      container.replaceChildren(
+        ...(picked.length
+          ? swatchList(picked.map((entry, i) => ({ color: colors[i], name: entry.label })))
+          : [legendRow(`Pick ${aNoun} to light its papers.`)]),
+      );
     },
 
     summary(settings, data) {
       const picked = picks.picked(settings, data);
       if (!picked.length) return { detail: `pick ${aNoun}` };
       return {
-        detail: picked.length === 1 ? show(picked[0].name) : `${picked.length} ${noun.many}`,
+        detail: picked.length === 1 ? short(picked[0].label) : `${picked.length} ${noun.many}`,
         colors: colorsOf(picked).map(colorToCss),
       };
     },
 
     getHoverInfo(item, settings, data) {
-      const picked = picks.picked(settings, data);
-      const names = listedBy(picked, kind.namesOf(item.paper)).map((i) => show(picked[i].name));
-      return names.length ? names.join(', ') : null;
+      const names = listedUnder(item, settings, data).map((entry) => entry.label);
+      return names.length ? `${lead}${names.join(', ')}` : null;
     },
+
+    highlightItemText: kind.titlesOf ? markEntries : undefined,
+    textMatches: kind.titlesOf
+      ? (item, text, _language, settings, data) => entrySpans(item, text, settings, data)
+      : undefined,
   };
 }
