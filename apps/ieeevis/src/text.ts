@@ -18,13 +18,7 @@ import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
 import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
 import { ieeevisFiles } from './files.ts';
 import { referenceLines } from './references.ts';
-import {
-  DEFAULT_METHODS,
-  defaultExcerpt,
-  hitExcerpt,
-  rarityOf,
-  type DefaultMethod,
-} from './excerpts.ts';
+import { defaultExcerpt, hitExcerpt, rarityOf } from './excerpts.ts';
 import { computeLayout, PANEL_PAD, TIME_STRIP, type PieceItem } from './layout.ts';
 import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
@@ -82,32 +76,13 @@ function hitRanges(
   return ranges;
 }
 
-/**
- * Which default excerpt to try, chosen in the address as ?excerpt=first, rare or keywords. The
- * address is rewritten with only the link's own parameters, so the choice is kept for the tab.
- */
-const EXCERPT_KEY = 'ieeevis-excerpt';
-function readMethod(): DefaultMethod {
-  const asked = new URLSearchParams(location.search).get('excerpt');
-  try {
-    if (asked) sessionStorage.setItem(EXCERPT_KEY, asked);
-    return (
-      DEFAULT_METHODS.find((m) => m === (asked ?? sessionStorage.getItem(EXCERPT_KEY))) ?? 'first'
-    );
-  } catch {
-    return DEFAULT_METHODS.find((m) => m === asked) ?? 'first';
-  }
-}
-const chosenMethod = readMethod();
-
 /** What a piece shows when nothing is searched in it: a paper's first piece begins with its authors. */
 function defaultBody(item: PieceItem, text = '', texts?: PaperTexts): string {
   const { paper, piece, section } = item;
-  const method = section === 'f' || !texts ? 'first' : chosenMethod;
   const excerpt = defaultExcerpt(text, {
-    method,
     rarity: texts ? rarityOf(texts) : () => 0,
     keywords: paper.keywords ?? [],
+    opening: section === 'f',
   });
   return squareBody({ paper, piece }, excerpt);
 }

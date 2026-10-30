@@ -43,48 +43,45 @@ describe('the excerpt shown with no search', () => {
   const filler = (n: number) => Array.from({ length: n }, () => 'ordinary').join(' ');
   const sentence = (n: number, word: string) => `${word} ${filler(n - 2)} words.`;
   const rarity = (word: string) => (word === 'unusual' ? 5 : 1);
-  const input = (method: 'first' | 'rare' | 'keywords', keywords: string[] = []) => ({
-    method,
-    rarity,
-    keywords,
-  });
-  const text = [sentence(12, 'Plain'), sentence(12, 'Unusual'), sentence(12, 'Sampling')].join(' ');
+  const input = (keywords: string[] = []) => ({ rarity, keywords });
+  const text = [sentence(20, 'Plain'), sentence(20, 'Unusual'), sentence(20, 'Sampling')].join(' ');
 
-  it('begins at the first sentence', () => {
-    expect(defaultExcerpt(text, input('first')).startsWith('Plain')).toBe(true);
+  it('chooses the sentence that uses the paper’s keywords', () => {
+    expect(defaultExcerpt(text, input(['sampling'])).startsWith('…Sampling')).toBe(true);
   });
 
-  it('can choose the sentence with the rarest words', () => {
-    expect(defaultExcerpt(text, input('rare')).startsWith('…Unusual')).toBe(true);
+  it('without keywords chooses the sentence with the rarest words', () => {
+    expect(defaultExcerpt(text, input()).startsWith('…Unusual')).toBe(true);
   });
 
-  it('can choose the sentence that uses the paper’s keywords', () => {
-    expect(defaultExcerpt(text, input('keywords', ['sampling'])).startsWith('…Sampling')).toBe(
-      true,
-    );
+  it('can take the opening instead', () => {
+    expect(defaultExcerpt(text, { ...input(['sampling']), opening: true })).toMatch(/^Plain/);
   });
 
-  it('marks an excerpt that starts or stops partway into the text', () => {
-    const cut = defaultExcerpt(text, input('rare'));
-    expect(cut.startsWith('…Unusual')).toBe(true);
-    expect(cut.endsWith('…')).toBe(true);
-    const whole = defaultExcerpt(sentence(12, 'Only'), input('first'));
-    expect(whole).toBe(sentence(12, 'Only'));
+  it('marks an excerpt that stops before the text ends, and one that starts partway', () => {
+    expect(defaultExcerpt(text, input()).endsWith('…')).toBe(true);
+    const whole = sentence(20, 'Only');
+    expect(defaultExcerpt(whole, input())).toBe(whole);
   });
 
-  it('cuts a long sentence to about twenty words', () => {
-    const cut = defaultExcerpt(sentence(60, 'Long'), input('first'));
-    expect(cut.split(' ')).toHaveLength(20);
+  it('runs a short sentence on into the next', () => {
+    const short = `${sentence(10, 'Short')} ${sentence(10, 'Next')}`;
+    expect(defaultExcerpt(short, input())).toBe(short);
+  });
+
+  it('cuts a long sentence to about thirty words', () => {
+    const cut = defaultExcerpt(sentence(60, 'Long'), input());
+    expect(cut.split(' ')).toHaveLength(30);
     expect(cut.endsWith('…')).toBe(true);
   });
 
   it('does not end a sentence at an abbreviation', () => {
-    const quoted = `Smith et al. showed ${filler(10)} words. Next ${filler(10)} words.`;
-    expect(defaultExcerpt(quoted, input('first')).startsWith('Smith et al. showed')).toBe(true);
-    expect(defaultExcerpt(quoted, input('first'))).not.toContain('Next');
+    const quoted = `Smith et al. showed ${filler(20)} words. Next ${filler(20)} words.`;
+    expect(defaultExcerpt(quoted, input()).startsWith('Smith et al. showed')).toBe(true);
+    expect(defaultExcerpt(quoted, input())).not.toContain('Next');
   });
 
   it('is empty for an empty text', () => {
-    expect(defaultExcerpt('', input('first'))).toBe('');
+    expect(defaultExcerpt('', input())).toBe('');
   });
 });

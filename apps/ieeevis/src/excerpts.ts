@@ -10,13 +10,9 @@ export const HIT_CONTEXT_WORDS = 10;
 /** The most words between two hits that are still shown. */
 export const HIT_GAP_WORDS = 60;
 /** About how long a default excerpt is; a sentence runs on to a whole one up to the longer limit. */
-const DEFAULT_WORDS = 20;
-const DEFAULT_WORDS_MAX = 26;
+const DEFAULT_WORDS = 30;
+const DEFAULT_WORDS_MAX = 38;
 const SENTENCE_MIN_WORDS = 8;
-
-/** How the default excerpt is chosen: the piece's opening, its most unusual sentence, or the sentence about the paper's keywords. */
-export const DEFAULT_METHODS = ['first', 'rare', 'keywords'] as const;
-export type DefaultMethod = (typeof DEFAULT_METHODS)[number];
 
 const ELLIPSIS = '…';
 
@@ -136,14 +132,15 @@ function mean(values: number[]): number {
 }
 
 export interface DefaultInput {
-  method: DefaultMethod;
   rarity: Rarity;
   /** The paper's keywords. */
   keywords: readonly string[];
+  /** Take the text's opening, where no sentence is worth picking, as in a reference list. */
+  opening?: boolean;
 }
 
 /** A sentence's score, higher the better chosen; null if it is not a candidate. */
-function score(sentence: string, { method, rarity, keywords }: DefaultInput): number | null {
+function score(sentence: string, { rarity, keywords }: DefaultInput): number | null {
   const words = alphabetic(sentence);
   const tokens = sentence.split(/\s+/).length;
   // A table, a formula, a list of numbers or an author's address has few words in it.
@@ -151,20 +148,20 @@ function score(sentence: string, { method, rarity, keywords }: DefaultInput): nu
     return null;
   const distinct = [...new Set(words)];
   const unusual = mean(distinct.map(rarity));
-  if (method === 'rare') return unusual;
   const wanted = new Set(keywords.flatMap(alphabetic).map(stemOf));
   const matched = distinct.filter((w) => wanted.has(stemOf(w)));
-  // The keywords decide; how unusual the rest is only separates sentences that tie.
+  // The keywords decide; how unusual the words are separates sentences that tie, and picks
+  // alone when the paper lists no keywords.
   return matched.length + unusual / 100;
 }
 
-/** The excerpt to show when nothing is searched: about twenty words. */
+/** The excerpt to show when nothing is searched: about thirty words, from the sentence that best matches the paper's keywords. */
 export function defaultExcerpt(text: string, input: DefaultInput): string {
   const spans = wordSpans(text);
   if (spans.length === 0) return '';
   const all = sentences(text, spans);
   let pick = all[0];
-  if (input.method !== 'first') {
+  if (!input.opening) {
     let best: number | null = null;
     for (const range of all) {
       const s = score(text.slice(spans[range[0]].start, spans[range[1]].end), input);
