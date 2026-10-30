@@ -175,10 +175,17 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
         const shown = text && item.section === 'f' ? referenceLines(text) : text;
         const body = squareBody(item, shown);
-        const hits = search ? hitRanges(item, body, search) : [];
+        // A paper's first piece always keeps its authors, which come before the text in `body`.
+        const authorsLength = body.length - (shown?.length ?? 0);
+        const hits = (search ? hitRanges(item, body, search) : [])
+          .filter((h) => h.start >= authorsLength)
+          .map((h) => ({ start: h.start - authorsLength, end: h.end - authorsLength }));
+        const hit = shown && !isPlaceholder(item) ? hitExcerpt(shown, hits) : null;
         const excerpt = isPlaceholder(item)
           ? body
-          : (hitExcerpt(body, hits) ?? defaultBody(item, shown, texts));
+          : hit !== null
+            ? squareBody(item, hit)
+            : defaultBody(item, shown, texts);
         return {
           ref: `${title}, piece\u00a0${item.piece + 1}\u00a0of\u00a0${pieces.length}`,
           hebrew: '',

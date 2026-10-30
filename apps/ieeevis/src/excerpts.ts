@@ -7,6 +7,8 @@ import type { PaperTexts } from './data.ts';
 
 /** Words kept on each side of the hits. */
 export const HIT_CONTEXT_WORDS = 10;
+/** The most words between two hits that are still shown. */
+export const HIT_GAP_WORDS = 60;
 /** About how long a default excerpt is; a sentence runs on to a whole one up to the longer limit. */
 const DEFAULT_WORDS = 20;
 const DEFAULT_WORDS_MAX = 26;
@@ -35,22 +37,42 @@ function cut(
 }
 
 /**
- * The words around the hits, from `context` words before the first to `context` after the
- * last, so several hits read as one passage; null when there are none.
+ * The words around the hits, `context` words either side. Hits no more than `gap` words apart
+ * read as one passage, with the words between them; further apart, the middle is left out.
+ * Null when there are no hits.
  */
 export function hitExcerpt(
   text: string,
   hits: readonly TextRange[],
   context = HIT_CONTEXT_WORDS,
+  gap = HIT_GAP_WORDS,
 ): string | null {
-  if (hits.length === 0) return null;
   const spans = wordSpans(text);
-  const hitStart = Math.min(...hits.map((h) => h.start));
-  const hitEnd = Math.max(...hits.map((h) => h.end));
-  const first = spans.findIndex((s) => s.end > hitStart);
-  const last = spans.filter((s) => s.start < hitEnd).length - 1;
-  if (first < 0 || last < first) return null;
-  return cut(text, spans, Math.max(0, first - context), Math.min(spans.length - 1, last + context));
+  const found = hits
+    .map((h) => ({
+      from: spans.findIndex((s) => s.end > h.start),
+      to: spans.filter((s) => s.start < h.end).length - 1,
+    }))
+    .filter((h) => h.from >= 0 && h.to >= h.from)
+    .sort((a, b) => a.from - b.from);
+  if (found.length === 0) return null;
+
+  const passages = [{ ...found[0] }];
+  for (const hit of found.slice(1)) {
+    const last = passages[passages.length - 1];
+    if (hit.from - last.to - 1 <= gap) last.to = Math.max(last.to, hit.to);
+    else passages.push({ ...hit });
+  }
+  const reach = passages.map(({ from, to }) => ({
+    from: Math.max(0, from - context),
+    to: Math.min(spans.length - 1, to + context),
+  }));
+  const read = reach
+    .map((r) => text.slice(spans[r.from].start, spans[r.to].end))
+    .join(` ${ELLIPSIS} `);
+  const lead = reach[0].from > 0 ? ELLIPSIS : '';
+  const trail = reach[reach.length - 1].to < spans.length - 1 ? ELLIPSIS : '';
+  return lead + read + trail;
 }
 
 const NOT_AN_END = new Set([

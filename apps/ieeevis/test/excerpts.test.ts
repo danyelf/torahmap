@@ -24,6 +24,12 @@ describe('the words around a hit', () => {
     expect(hitExcerpt(text, [at(text, 'w38')])).toBe(`…${numbered(13, 28)}`);
   });
 
+  it('leaves out the middle when hits are far apart', () => {
+    expect(hitExcerpt(text, [at(text, 'w5'), at(text, 'w35')], 2, 10)).toBe(
+      '…' + numbered(5, 3) + ' … ' + numbered(5, 33) + '…',
+    );
+  });
+
   it('takes a whole word when the hit is part of one', () => {
     expect(hitExcerpt('alpha beta gamma', [{ start: 7, end: 9 }], 0)).toBe('…beta…');
   });
