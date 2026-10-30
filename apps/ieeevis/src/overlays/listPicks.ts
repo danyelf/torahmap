@@ -1,4 +1,4 @@
-// Which papers the picked authors or keywords belong to, and how to find one by typing part of
+// Which papers the picked authors, keywords, cited people or cited works belong to, and how to find one by typing part of
 // its name. No page in here.
 
 import { memoByValue } from '@torahmap/utils';
@@ -9,15 +9,26 @@ export interface ListData {
   structure: Structure;
 }
 
+/** What names a kind of pick lists, and how each is shown. */
+export interface PickSource<D extends ListData> {
+  namesOf(paper: Paper, data: D): readonly string[];
+  /** How a name is shown and matched; the name itself, as written, is still what is picked and linked. */
+  label?(name: string, data: D): string;
+  /** A line under the label: what else says which one it is. */
+  detail?(name: string, data: D): string;
+}
+
 export type ListSettings = PickSettings;
 
 const QUICK_PICKS = 18;
 const SUGGESTIONS = 6;
 
-/** What papers are listed under: one author, or one keyword. */
+/** What papers are listed under: one author, one keyword, one cited person or one cited work. */
 export interface Entry {
   name: string;
-  /** The name as compared with what is typed. */
+  label: string;
+  detail?: string;
+  /** The label and detail as compared with what is typed. */
   plain: string;
   papers: number;
 }
@@ -26,33 +37,42 @@ export interface Entry {
 export type Picked = Entry & { slot: number };
 
 /** The ways to find papers by what they list, for one kind of name. */
-export interface Picks {
+export interface Picks<D extends ListData> {
   /** Papers that list at least one name. */
-  listing(data: ListData): { papers: number; total: number };
+  listing(data: D): { papers: number; total: number };
   /** The picked entries in the order picked; names no paper lists are dropped. */
-  picked(settings: ListSettings, data: ListData): Picked[];
+  picked(settings: ListSettings, data: D): Picked[];
   /** The entries with the most papers, to start from. */
-  quick(data: ListData): Entry[];
-  /** Entries whose name holds every word typed, those starting with the typing first. */
-  suggest(data: ListData, typed: string, skip?: readonly Entry[]): Entry[];
+  quick(data: D): Entry[];
+  /** Entries whose label or detail holds every word typed, those starting with the typing first. */
+  suggest(data: D, typed: string, skip?: readonly Entry[]): Entry[];
 }
 
-export function picksOf(namesOf: (paper: Paper) => readonly string[]): Picks {
-  const entries = memoByValue((data: ListData): Entry[] => {
+export function picksOf<D extends ListData>(source: PickSource<D>): Picks<D> {
+  const { namesOf } = source;
+  const entries = memoByValue((data: D): Entry[] => {
     const counts = new Map<string, number>();
     for (const paper of papersOf(data.structure))
-      for (const name of new Set(namesOf(paper))) counts.set(name, (counts.get(name) ?? 0) + 1);
+      for (const name of new Set(namesOf(paper, data)))
+        counts.set(name, (counts.get(name) ?? 0) + 1);
     return [...counts]
-      .map(([name, papers]) => ({ name, plain: plainName(name), papers }))
-      .sort((a, b) => b.papers - a.papers || a.name.localeCompare(b.name));
+      .map(([name, papers]) => {
+        const label = source.label?.(name, data) ?? name;
+        const detail = source.detail?.(name, data);
+        return { name, label, detail, plain: plainName(`${label} ${detail ?? ''}`), papers };
+      })
+      .sort((a, b) => b.papers - a.papers || a.label.localeCompare(b.label));
   });
   const byName = memoByValue(
-    (data: ListData) => new Map(entries(data).map((entry) => [entry.name, entry])),
+    (data: D) => new Map(entries(data).map((entry) => [entry.name, entry])),
   );
   return {
     listing: (data) => {
       const all = papersOf(data.structure);
-      return { papers: all.filter((paper) => namesOf(paper).length > 0).length, total: all.length };
+      return {
+        papers: all.filter((paper) => namesOf(paper, data).length > 0).length,
+        total: all.length,
+      };
     },
     picked: (settings, data) =>
       pickSlots(settings, (name) => byName(data).has(name)).map(({ id, slot }) => ({

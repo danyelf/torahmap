@@ -595,6 +595,39 @@ export const IEEEVIS_STATES: State[] = [
     shown: ['.pick-input'],
   },
   {
+    name: 'vis-cited-people',
+    link: 'overlay=citedpeople&people=Tamara Munzner,Jeffrey Heer',
+    shown: ['#map-legend'],
+  },
+  {
+    name: 'vis-cited-people-panel',
+    link: 'overlay=citedpeople&people=Tamara Munzner,Jeffrey Heer',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['.pick-input'],
+  },
+  {
+    name: 'vis-cited-works',
+    link: 'overlay=citedworks&works=460',
+    shown: ['#map-legend'],
+  },
+  {
+    name: 'vis-cited-works-panel',
+    link: 'overlay=citedworks&works=460',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['.pick-input'],
+  },
+  {
+    name: 'vis-shared-citations-pinned',
+    link: 'overlay=sharedcitations&at=94.0&zoom=0.5',
+    shown: ['#map-legend', '#popup.visible'],
+  },
+  {
+    name: 'vis-shared-citations-panel',
+    link: 'overlay=sharedcitations&at=94.0&zoom=0.5',
+    then: (page) => viaMenu(page, 'overlay'),
+    shown: ['#overlay-select'],
+  },
+  {
     name: 'vis-search-and-keywords',
     link: 'search=drucker&overlay=keywords&keywords=visual analytics,Uncertainty visualization',
     shown: ['#map-legend'],

@@ -35,7 +35,7 @@ const structure: Structure = {
   ],
 };
 const data = { structure };
-const { suggest } = picksOf((p) => p.authors);
+const { suggest } = picksOf({ namesOf: (p) => p.authors });
 
 const squares = (...papers: number[]) =>
   papers.map((i) => {

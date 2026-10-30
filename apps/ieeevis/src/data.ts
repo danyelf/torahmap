@@ -9,6 +9,8 @@ export const IEEEVIS_DATA_DIR = 'ieeevis';
 export const STRUCTURE_FILE = `${IEEEVIS_DATA_DIR}/structure.json`;
 /** The papers' text by square id. Not in git: the papers' copyright varies. */
 export const TEXTS_FILE = `${IEEEVIS_DATA_DIR}/texts.json`;
+/** The works the 2026 papers cite, each with the papers that cite it. */
+export const CITED_FILE = `${IEEEVIS_DATA_DIR}/cited.json`;
 
 /**
  * What a piece of a paper is, by letter: abstract, introduction, related work, method,
@@ -27,6 +29,17 @@ export interface Paper {
   when: string;
   /** One section letter per piece. */
   pieces: string;
+}
+
+/** A work cited by one or more 2026 papers. */
+export interface CitedWork {
+  title: string;
+  /** Null when the reference gives none. */
+  year: number | null;
+  /** Empty when the reference names none. */
+  authors: string[];
+  /** The `index` of each paper that cites it. */
+  papers: number[];
 }
 
 export interface Session {
