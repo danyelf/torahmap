@@ -17,9 +17,6 @@ data/overlays/commentary/sefaria-index.json
 .claude/worktrees
 __pycache__/
 
-# The Talmud source as downloaded from Sefaria; see DATA_REGENERATION.md.
-data/talmud/raw/
-
 # Visual brainstorming companion scratch
 .superpowers/
 
