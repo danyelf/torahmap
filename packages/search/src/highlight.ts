@@ -89,7 +89,7 @@ export function quoteTerm(
   return quoteText(text, quoted ? quoted(ranges) : ranges[0]);
 }
 
-interface Match extends TextRange {
+export interface Match extends TextRange {
   termIndex: number;
 }
 
@@ -137,13 +137,13 @@ function buildHighlightedDomFragment(
  * being searched, in search order, because a match names its term by position
  * in that list.
  */
-export function highlightTerms(
+export function termMatches(
   text: string,
   language: SearchLanguage,
   terms: SearchTerm[],
   matcher: TermMatcher,
   within?: readonly TextRange[],
-): DocumentFragment {
+): Match[] {
   const inside = (range: TextRange) =>
     !within || within.some((w) => w.start <= range.start && range.end <= w.end);
   const matches: Match[] = terms.flatMap((term, termIndex) =>
@@ -152,14 +152,21 @@ export function highlightTerms(
       .map((range) => ({ ...range, termIndex })),
   );
 
-  if (matches.length === 0) {
-    const fragment = document.createDocumentFragment();
-    fragment.appendChild(document.createTextNode(text));
-    return fragment;
-  }
-
   // Longest match first, so removeOverlappingMatches keeps it over a shorter one.
   matches.sort((a, b) => a.start - b.start || b.end - a.end);
+  return removeOverlappingMatches(matches);
+}
 
-  return buildHighlightedDomFragment(text, removeOverlappingMatches(matches), terms);
+export function highlightTerms(
+  text: string,
+  language: SearchLanguage,
+  terms: SearchTerm[],
+  matcher: TermMatcher,
+  within?: readonly TextRange[],
+): DocumentFragment {
+  return buildHighlightedDomFragment(
+    text,
+    termMatches(text, language, terms, matcher, within),
+    terms,
+  );
 }

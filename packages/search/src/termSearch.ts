@@ -17,7 +17,7 @@ import type {
 import type { TextLanguage } from '@torahmap/shell/language.ts';
 import type { ExtraMode } from './extraMode.ts';
 import './search.css';
-import { highlightTerms } from './highlight.ts';
+import { highlightTerms, termMatches } from './highlight.ts';
 import type { SearchLanguage } from './language.ts';
 import { createResultsList, type ResultsView } from './resultsList.ts';
 import { mountTermRows, type TermRows } from './termRows.ts';
@@ -530,6 +530,16 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       shown = null;
       shownData = null;
       requestChange = null;
+    },
+
+    textMatches(item, text, language: TextLanguage, settings, data) {
+      const textLanguage = languages.find((l) => l.id === language) ?? languages[0];
+      return termMatches(
+        text,
+        textLanguage,
+        searchFor(data, settings).active,
+        matcherOf(contextFor(data), item.id),
+      );
     },
 
     highlightItemText(item, text, language: TextLanguage, settings, data, within) {
