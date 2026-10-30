@@ -11,6 +11,9 @@ interface VisSearchData {
   texts: PaperTexts;
 }
 
+/** A piece's id is its paper's number, a dot and its place in the paper. */
+export const paperOf = (pieceId: string) => pieceId.slice(0, pieceId.indexOf('.'));
+
 const LANGUAGES = [english];
 
 /** What a square shows and search reads: its text, after the authors on a paper's first piece. */
@@ -41,6 +44,7 @@ const search = createTermSearch<PieceItem, VisSearchData>({
   data: { structure: STRUCTURE_FILE, texts: TEXTS_FILE },
   index: (data) => indexes(data),
   noun: { one: 'piece', many: 'pieces' },
+  countedAs: { noun: { one: 'paper', many: 'papers' }, of: paperOf },
   placeholder: 'Search the papers…',
   description: 'Finds a word or phrase in any paper’s title, authors or text.',
   urlParams: TERM_SEARCH_PARAMS,

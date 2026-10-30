@@ -67,6 +67,11 @@ export interface TermSearchSpec<D, X> {
   index(data: D): TextIndex;
   /** What a result is called: 'verse', 'verses'. */
   noun: { one: string; many: string };
+  /**
+   * When what the reader wants counted is bigger than an item, the key of the whole an item
+   * belongs to and its name: counts then say how many distinct wholes the matches fall in.
+   */
+  countedAs?: { noun: { one: string; many: string }; of(id: string): string };
   placeholder: string;
   description: string;
   credits?: readonly Credit[];
@@ -159,7 +164,10 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
 export function createTermSearch<I extends { id: string }, D, X = never>(
   spec: TermSearchSpec<D, X>,
 ): TermSearch<I, D, X> {
-  const { languages, extra, noun } = spec;
+  const { languages, extra, countedAs } = spec;
+  const noun = countedAs?.noun ?? spec.noun;
+  const countOf = (results: readonly SearchResult[]): number =>
+    countedAs ? new Set(results.map((r) => countedAs.of(r.id))).size : results.length;
   const extraOf = (data: D): X | null => extra?.build?.(data) ?? null;
   const contextOf = (x: X | null): SearchContext<X> => ({
     languages,
@@ -247,11 +255,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     const index = active.indexOf(term);
     if (index === -1) return null;
 
-    let count = 0;
-    for (const result of results) {
-      if (result.matchingTerms.some((m) => m.termIndex === index)) count++;
-    }
-    return count;
+    return countOf(results.filter((r) => r.matchingTerms.some((m) => m.termIndex === index)));
   }
 
   // The controls on screen: their elements, where they send a change, and the
@@ -279,7 +283,8 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       return;
     }
     const { active, results } = searchFor(data, settings);
-    const listed = resultsForOpenRow(data, settings).length;
+    const listed = countOf(resultsForOpenRow(data, settings));
+    const total = countOf(results);
 
     let message: string;
     if (active.length > 0 && results.length > 0) {
@@ -288,9 +293,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       // between them is still somewhere. With one term the two are the same
       // number and saying it twice would be noise.
       message =
-        listed === results.length
-          ? `${results.length} matching ${noun.many}`
-          : `${listed} of ${results.length} matching ${noun.many}`;
+        listed === total
+          ? `${total} matching ${noun.many}`
+          : `${listed} of ${total} matching ${noun.many}`;
     } else if (active.length > 0) {
       message = `No matching ${noun.many}`;
     } else if (typedTerms(settings).length > 0) {
