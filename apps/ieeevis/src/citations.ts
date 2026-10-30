@@ -49,21 +49,21 @@ export const workAuthors = ({ authors }: CitedWork): string =>
 
 /**
  * What names the squares: for each square id, the names of the cited works found in its text. A
- * paper whose text the work was not found in has it on every square.
+ * paper whose text the work was not found in has it on the squares of its reference list.
  */
 function bySquare(
   { cited, structure }: CitedData,
   namesOf: (work: CitedWork, place: number) => readonly string[],
 ): Map<string, string[]> {
   const found = new Map<string, Set<string>>();
-  const lengths = new Map(papersOf(structure).map((p) => [p.index, p.pieces.length]));
-  const piecesOfPaper = (paper: number) =>
-    Array.from({ length: lengths.get(paper) ?? 0 }, (_, n) => n);
+  const letters = new Map(papersOf(structure).map((p) => [p.index, p.pieces]));
+  const referencePieces = (paper: number) =>
+    [...(letters.get(paper) ?? '')].flatMap((letter, n) => (letter === 'f' ? [n] : []));
   cited.forEach((work, place) => {
     const names = namesOf(work, place);
     work.papers.forEach((paper, i) => {
       const holding = work.pieces[i] ?? [];
-      for (const piece of holding.length ? holding : piecesOfPaper(paper)) {
+      for (const piece of holding.length ? holding : referencePieces(paper)) {
         const id = pieceId(paper, piece);
         const set = found.get(id) ?? found.set(id, new Set()).get(id)!;
         for (const name of names) set.add(name);
@@ -117,7 +117,7 @@ export function entriesOf(
     const lineStart = before.lastIndexOf('\n') + 1;
     const numbered = [...before.matchAll(/\[\d+\]\s/g)].pop()?.index ?? -1;
     const after = text.slice(hit.index + hit[0].length);
-    const next = after.search(/\n|\s\[\d+\]\s/);
+    const next = after.search(/\n|\s…|\s\[\d+\]\s/);
     found.push({
       start: Math.max(lineStart, numbered),
       end: hit.index + hit[0].length + (next < 0 ? after.length : next),

@@ -63,3 +63,31 @@ describe('the excerpt shown with no search', () => {
     expect(defaultExcerpt('', [])).toBe('');
   });
 });
+
+describe('a whole hit', () => {
+  const text = numbered(60);
+  const range = (from: string, to: string) => ({
+    start: text.indexOf(from),
+    end: text.indexOf(to) + to.length,
+    whole: true,
+  });
+
+  it('is shown as it is, with no words around it', () => {
+    expect(hitExcerpt(text, [range('w20', 'w22')])).toBe('…w20 w21 w22…');
+  });
+
+  it('is joined to another whole hit only when they touch', () => {
+    expect(hitExcerpt(text, [range('w20', 'w22'), range('w23', 'w25')])).toBe(
+      '…w20 w21 w22 w23 w24 w25…',
+    );
+    expect(hitExcerpt(text, [range('w20', 'w22'), range('w30', 'w31')])).toBe(
+      '…w20 w21 w22 … w30 w31…',
+    );
+  });
+
+  it('leaves the words around a hit that is not whole as they were', () => {
+    expect(hitExcerpt(text, [at(text, 'w40'), range('w50', 'w50')], 1, 5)).toBe(
+      '…w39 w40 w41 … w50…',
+    );
+  });
+});

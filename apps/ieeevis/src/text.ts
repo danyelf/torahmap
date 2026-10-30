@@ -120,7 +120,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         };
       },
 
-      popupText(item, loadedFiles, _overlay, search) {
+      popupText(item, loadedFiles, overlay, search) {
         const texts = loadedFiles.get(TEXTS_FILE) as PaperTexts | undefined;
         const { title, pieces } = item.paper;
         const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
@@ -133,9 +133,20 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
           search.settings,
           search.data,
         );
+        // What the overlay points at, such as a cited reference, is shown whole.
+        const marked = overlay?.tool.textMatches?.(
+          item,
+          shown ?? '',
+          ENGLISH,
+          overlay.settings,
+          overlay.data,
+        );
         const excerpt = isPlaceholder(item)
           ? shown
-          : (hitExcerpt(shown ?? '', hits ?? []) ?? defaultOf(item, shown ?? ''));
+          : (hitExcerpt(shown ?? '', [
+              ...(hits ?? []),
+              ...(marked ?? []).map((range) => ({ ...range, whole: true })),
+            ]) ?? defaultOf(item, shown ?? ''));
         return {
           ref: `${title}, piece\u00a0${item.piece + 1}\u00a0of\u00a0${pieces.length}`,
           hebrew: '',

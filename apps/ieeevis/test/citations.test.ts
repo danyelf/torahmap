@@ -75,8 +75,8 @@ describe('what each paper cites', () => {
     expect(peopleAt(data).has('1.0')).toBe(false);
   });
 
-  it('puts a work on every square of a paper whose text it was not found in', () => {
-    expect(worksAt(data).get('0.0')).toEqual([workId(3)]);
+  it('puts a work on the reference squares of a paper whose text it was not found in', () => {
+    expect(worksAt(data).has('0.0')).toBe(false);
     expect(worksAt(data).get('0.3')).toEqual([workId(3)]);
   });
 });
@@ -230,5 +230,22 @@ describe('the citations overlay', () => {
     );
     container.querySelector<HTMLButtonElement>('[data-view="works"]')!.click();
     expect(changes).toEqual([{ ...settings, view: 'works' }]);
+  });
+});
+
+describe('the entries a square’s popup shows whole', () => {
+  it('are the entries of the picked works in its text', () => {
+    const text =
+      '[1] X (2019) Other. V.\n[2] A. B. (2020) Vega-Lite. Venue.\n[3] Y (2018) More. V.';
+    const found = citedWorksOverlay.textMatches!(
+      square(1, 1),
+      text,
+      'english' as never,
+      { picked: [workId(0)] },
+      data,
+    );
+    expect(found.map(({ start, end }) => text.slice(start, end))).toEqual([
+      '[2] A. B. (2020) Vega-Lite. Venue.',
+    ]);
   });
 });

@@ -93,16 +93,10 @@ export function listOverlay<D extends ListData>(
     return listedBy(picked, namesAt(item, data)).map((i) => picked[i]);
   };
 
-  /** The text with the entries of the picked names' works marked, each in its pick's colour. */
-  function markEntries(
-    item: PieceItem,
-    text: string,
-    _language: unknown,
-    settings: ListSettings,
-    data: D,
-  ): DocumentFragment {
+  /** The entries of the picked names' works in `text`, in order, each with its pick's colour. */
+  function entrySpans(item: PieceItem, text: string, settings: ListSettings, data: D) {
     const picked = picks.picked(settings, data);
-    const spans = listedBy(picked, namesAt(item, data))
+    return listedBy(picked, namesAt(item, data))
       .flatMap((i) =>
         entriesOf(text, kind.titlesOf!(picked[i].name, data)).map((span) => ({
           ...span,
@@ -110,9 +104,18 @@ export function listOverlay<D extends ListData>(
         })),
       )
       .sort((a, b) => a.start - b.start);
+  }
+
+  function markEntries(
+    item: PieceItem,
+    text: string,
+    _language: unknown,
+    settings: ListSettings,
+    data: D,
+  ): DocumentFragment {
     const fragment = document.createDocumentFragment();
     let at = 0;
-    for (const { start, end, slot } of spans) {
+    for (const { start, end, slot } of entrySpans(item, text, settings, data)) {
       if (start < at) continue;
       fragment.append(text.slice(at, start), mark(text.slice(start, end), slot));
       at = end;
@@ -249,5 +252,8 @@ export function listOverlay<D extends ListData>(
     },
 
     highlightItemText: kind.titlesOf ? markEntries : undefined,
+    textMatches: kind.titlesOf
+      ? (item, text, _language, settings, data) => entrySpans(item, text, settings, data)
+      : undefined,
   };
 }
