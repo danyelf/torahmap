@@ -301,7 +301,7 @@ shipped is built from it yet; `scripts/talmud/word-forms-report.ts` measures
 how much of `search.json` it covers.
 
 ```bash
-mkdir -p data/talmud/raw/sefaria-dump && cd data/talmud/raw/sefaria-dump
+mkdir -p ~/data/torahmap/talmud/raw/sefaria-dump && cd ~/data/torahmap/talmud/raw/sefaria-dump
 curl -O https://storage.googleapis.com/sefaria-mongo-backup/dump_small.tar.gz
 tar -xzf dump_small.tar.gz ./dump/sefaria/word_form.bson ./dump/sefaria/lexicon_entry.bson
 cd - && npx tsx scripts/talmud/word-forms-report.ts

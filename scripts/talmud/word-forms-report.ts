@@ -21,12 +21,14 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { normalizeHebrewForSearch } from '@torahmap/hebrew';
 import { documents } from './bson.ts';
 
-const DUMP = process.argv[2] ?? 'data/talmud/raw/sefaria-dump/dump/sefaria';
+const DUMP =
+  process.argv[2] ?? join(homedir(), 'data/torahmap/talmud/raw/sefaria-dump/dump/sefaria');
 const JASTROW = 'Jastrow Dictionary';
 /** The letters the Talmud's whole-word search lets a word carry in front. */
 const PREFIXES = new Set('דולבכשמה');
