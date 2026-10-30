@@ -1,12 +1,27 @@
-// Renders public/og-image.jpg, the picture link previews show, from a running
-// dev server: node scripts/og-image.mjs [http://localhost:5173/]
+// Renders the picture link previews show, from a running dev server:
+// node scripts/og-image.mjs [tanakh|ieeevis] [http://localhost:5173/]
 //
-// The camera frames the five books of the Torah above the Former Prophets,
-// large enough that each verse reads as a square; adjust it if the layout moves.
+// Each camera frames its map large enough that a square reads as a square;
+// adjust it if the layout moves.
 import { chromium } from 'playwright';
 
-const BASE = process.argv[2] ?? 'http://localhost:5173/';
-const CAMERA = 'overlay=commentary&zoom=0.7&x=-1716&y=66.6';
+const TARGETS = {
+  // The five books of the Torah above the Former Prophets.
+  tanakh: {
+    path: '',
+    camera: '#overlay=commentary&zoom=0.7&x=-1716&y=66.6',
+    out: 'public/og-image.jpg',
+  },
+  ieeevis: {
+    path: 'ieeevis/',
+    camera: '?overlay=kinds&zoom=0.7&x=715&y=385',
+    out: 'public/ieeevis-og-image.jpg',
+  },
+};
+const target = TARGETS[process.argv[2] ?? 'tanakh'];
+if (!target) throw new Error(`unknown target; one of ${Object.keys(TARGETS).join(', ')}`);
+const BASE = process.argv[3] ?? 'http://localhost:5173/';
+const PAGE_URL = `${BASE}${target.path}`;
 
 // The canvas leaves room for the panel, and measures itself once at
 // startup, so the panel has to be gone before the page loads, not after.
@@ -30,18 +45,21 @@ const page = await browser.newPage({
   deviceScaleFactor: 2,
 });
 page.on('pageerror', (e) => console.error('page error:', e.message));
-await page.route(BASE, async (route) => {
-  const response = await route.fetch();
-  const html = (await response.text()).replace('</head>', HIDE_UI + '</head>');
-  await route.fulfill({ response, body: html });
-});
-await page.goto(`${BASE}#${CAMERA}`);
+await page.route(
+  (url) => url.pathname === new URL(PAGE_URL).pathname,
+  async (route) => {
+    const response = await route.fetch();
+    const html = (await response.text()).replace('</head>', HIDE_UI + '</head>');
+    await route.fulfill({ response, body: html });
+  },
+);
+await page.goto(`${PAGE_URL}${target.camera}`);
 await page.waitForTimeout(5000);
 await page.screenshot({
-  path: 'public/og-image.jpg',
+  path: target.out,
   type: 'jpeg',
   quality: 85,
   scale: 'css',
 });
 await browser.close();
-console.log('wrote public/og-image.jpg');
+console.log(`wrote ${target.out}`);
