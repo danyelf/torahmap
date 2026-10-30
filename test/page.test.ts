@@ -76,8 +76,4 @@ describe.each(PAGES)('the page at $path', ({ copy, entry }) => {
     expect(meta('og:image') ?? null).toBe(copy.image?.url ?? null);
     expect(meta('twitter:card')).toBe(copy.image ? 'summary_large_image' : 'summary');
   });
-
-  it('asks search engines to skip the page only when its copy says so', () => {
-    expect(doc.querySelector('meta[name="robots"]') !== null).toBe(copy.noindex === true);
-  });
 });

@@ -140,13 +140,19 @@ readings come from [hebcal's leyning tables](https://github.com/hebcal/hebcal-le
 
 ### IEEE VIS data
 
-The VIS map reads two files in `public/data/ieeevis/`. Both come from the
+The VIS map, at https://ieeevis.danyelfisher.info (its page is `/ieeevis/` in the build; the Worker
+serves it at that host's root and sends the Talmud's and AI Act's pages to torahmap.org), reads
+two files in `public/data/ieeevis/`. Both come from the
 [ieeevis-scrape](https://github.com/danyelf/ieeevis-scrape) project's `scripts/build.py`:
 
 - `structure.json`: the program (titles, authors, sessions, times, keywords). Committed.
 - `texts.json`: the papers' text, 21 MB. **Never committed** (gitignored): copyright varies and the
-  repository is public. The deployed site serves it from the private R2 bucket `torahmap-ieeevis`,
-  through the Worker, at the same path (`apps/worker`).
+  repository is public. The page does not read it; it reads `p.bin`, the same text gzipped and
+  scrambled by `scripts/ieeevis/pack-texts.ts` (also gitignored), which `loadFile` unpacks
+  (`packages/utils/src/packed.ts`). The deployed site serves `p.bin` from the R2 bucket
+  `torahmap-ieeevis`, through the Worker, at the same path (`apps/worker`). The scrambling only
+  keeps it from reading as a plain JSON file; it protects nothing, and `robots.txt` asks search
+  engines to stay out of `/data/`.
 
 To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-scrape/`):
 
@@ -154,12 +160,14 @@ To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-sc
 uv run --no-project python -I scripts/build.py data <torahmap checkout>/public/data/ieeevis
 ```
 
-It writes both files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw downloads, so the checkout's `texts.json` is the copy to upload. Commit `structure.json` only. Then upload the text, from
-the torahmap checkout (needs `wrangler login`):
+It writes both files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw
+downloads. Commit `structure.json` only. Then, from the torahmap checkout, pack the text and upload
+it (needs `wrangler login`):
 
 ```bash
-npx wrangler r2 object put torahmap-ieeevis/texts.json \
-  --file public/data/ieeevis/texts.json --content-type application/json --remote
+npx tsx scripts/ieeevis/pack-texts.ts
+npx wrangler r2 object put torahmap-ieeevis/p.bin \
+  --file public/data/ieeevis/p.bin --content-type application/octet-stream --remote
 ```
 
 The bucket is the one copy: the live site and every preview build read it, so there is nothing
@@ -167,24 +175,13 @@ to redeploy. A browser keeps its copy only until it next asks, since the Worker 
 ETag. To check the bucket is current, fetch it and compare:
 
 ```bash
-npx wrangler r2 object get torahmap-ieeevis/texts.json --remote --file /tmp/texts-remote.json
-cmp /tmp/texts-remote.json public/data/ieeevis/texts.json && echo current
+npx wrangler r2 object get torahmap-ieeevis/p.bin --remote --file /tmp/p-remote.bin
+cmp /tmp/p-remote.bin public/data/ieeevis/p.bin && echo current
 ```
 
 `wrangler dev` reads a separate local bucket; put a copy there with the upload command and
-`--local` in place of `--remote`.
-**Keep the text behind Cloudflare Access while it is copyrighted.** Previews are open to the
-Cloudflare account's members only. On torahmap.org the VIS map has an Access app of its own,
-"torahmap VIS", for `torahmap.org/ieeevis`, `torahmap.org/data/ieeevis` and `ieeevis.torahmap.org`,
-open to the group "torahmap VIS viewers", so a VIS viewer gets no Talmud or AI Act. Without the
-app the Worker serves the text to anyone. To add a viewer, add their email to that group (Zero
-Trust, Access, Access groups). Check after any change that
-`curl -I https://torahmap.org/data/ieeevis/texts.json` answers 302 to Access.
+`--local` in place of `--remote`. The dev server and the browser suites read `p.bin` from
+`public/data/ieeevis/`, so pack it in each checkout that runs them.
 
-**Going public.** Open the page and the text separately. The page and its program
-(`structure.json`) hold no paper text, so removing `torahmap.org/ieeevis` from the app, or
-changing its policy to Everyone, opens the map with its papers' text not loaded. Opening
-`/data/ieeevis` serves all of `texts.json` to anyone, which is the copyright decision. The page
-also asks search engines to skip it (`noindex` in `apps/ieeevis/src/page.ts`); drop that when it
-should be found. Its telemetry host is `torahmap.org/ieeevis`, which the saved queries leave out
-as they take `torahmap.org` alone.
+Its telemetry rows have the host `ieeevis.danyelfisher.info`; the saved queries take
+`torahmap.org`, so run them with `SITE_HOST=ieeevis.danyelfisher.info` to read the VIS map's.

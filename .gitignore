@@ -45,3 +45,5 @@ telemetry-report/
 
 # The IEEE VIS papers' text, written by the ieeevis-scrape project's build.py; its copyright varies.
 public/data/ieeevis/texts.json
+# The same text packed for serving by scripts/ieeevis/pack-texts.ts.
+public/data/ieeevis/p.bin

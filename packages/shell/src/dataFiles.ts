@@ -1,5 +1,6 @@
 // Downloading data files and reading them as each overlay and the search name them.
 // Paths are under public/data/.
+import { unpack } from '@torahmap/utils';
 import { reportError } from './analytics.ts';
 import type { Overlay, OptionalFile } from './overlays/types.ts';
 
@@ -58,7 +59,9 @@ async function loadFile(path: string): Promise<unknown> {
       reportError('loadFiles', response.status, `Failed to load ${path}`);
       return undefined;
     }
-    return await response.json();
+    return path.endsWith('.bin')
+      ? await unpack(await response.arrayBuffer())
+      : await response.json();
   } catch (e) {
     reportError('loadFiles', e, `Failed to load ${path}`);
     return undefined;

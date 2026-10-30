@@ -6,17 +6,28 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/", "/data/ieeevis/texts.json"],
+    // The Worker sees the pages that move between hosts, and serves the papers' text from the bucket.
+    "run_worker_first": [
+      "/",
+      "/data/ieeevis/p.bin",
+      "/talmud",
+      "/talmud/*",
+      "/euaiact",
+      "/euaiact/*",
+      "/ieeevis",
+      "/ieeevis/*",
+    ],
   },
-  // The VIS papers' text, which stays out of git. Kept private: only the Worker reads it.
+  // The VIS papers' text, packed by scripts/ieeevis/pack-texts.ts, which stays out of git.
   "r2_buckets": [{ "binding": "IEEEVIS_TEXTS", "bucket_name": "torahmap-ieeevis" }],
   "analytics_engine_datasets": [{ "binding": "TORAHMAP_EVENTS", "dataset": "torahmap_events" }],
   // The Talmud's and the AI Act's pages each have a subdomain too; Cloudflare Access
-  // keeps them, and their paths on torahmap.org, private.
+  // keeps them, and their paths on torahmap.org, private. The VIS map has a host of its own.
   "routes": [
     { "pattern": "torahmap.org", "custom_domain": true },
     { "pattern": "talmud.torahmap.org", "custom_domain": true },
     { "pattern": "euaiact.torahmap.org", "custom_domain": true },
+    { "pattern": "ieeevis.danyelfisher.info", "custom_domain": true },
   ],
   // Each pull request's build gets a public workers.dev link to try it at.
   "preview_urls": true,

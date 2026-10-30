@@ -11,8 +11,6 @@ export interface PageCopy {
   url: string;
   /** The link preview's picture. */
   image?: { url: string; alt: string };
-  /** Asks search engines to leave the page out of their results. */
-  noindex?: boolean;
   /** What the map is, to a browser that runs no script. */
   noScript: string;
   /** What the map is, ahead of why this browser cannot draw it. */
@@ -39,7 +37,6 @@ export function fillPage(html: string, copy: PageCopy, entry: string): string {
     TAGLINE: escapeHtml(copy.tagline),
     URL: escapeHtml(copy.url),
     PREVIEW: preview.join(''),
-    ROBOTS: copy.noindex ? '<meta name="robots" content="noindex" />' : '',
     NO_SCRIPT: escapeHtml(copy.noScript),
     NO_WEBGL: escapeHtml(copy.noWebGl),
     TEXT_URL: escapeHtml(copy.textUrl),

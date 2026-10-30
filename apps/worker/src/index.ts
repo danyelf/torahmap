@@ -46,22 +46,6 @@ function requestContext(request: Request, url: URL): RequestContext {
   return { country, device, host: url.hostname, browser: browserName(userAgent) };
 }
 
-/** The VIS map's page; the host column of its events says so, which keeps them out of the Tanakh's queries. */
-const IEEEVIS_PAGE_PATH = '/ieeevis/';
-
-/** The host column: the hostname, with the VIS page's path when the event came from that page. */
-function eventHost(request: Request, url: URL): string {
-  try {
-    const from = new URL(request.headers.get('Referer') ?? '');
-    if (from.origin === url.origin && from.pathname.startsWith(IEEEVIS_PAGE_PATH)) {
-      return `${url.hostname}${IEEEVIS_PAGE_PATH.slice(0, -1)}`;
-    }
-  } catch {
-    // No Referer, or not a URL: the event is the hostname's.
-  }
-  return url.hostname;
-}
-
 async function handleEvent(request: Request, url: URL, env: Env): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405 });
   if (request.headers.get('Origin') !== url.origin) return new Response(null, { status: 403 });
@@ -84,8 +68,7 @@ async function handleEvent(request: Request, url: URL, env: Env): Promise<Respon
     return new Response(null, { status: 400 });
   }
 
-  const context = { ...requestContext(request, url), host: eventHost(request, url) };
-  const point = toDataPoint(payload, context);
+  const point = toDataPoint(payload, requestContext(request, url));
   if (!point) return new Response(null, { status: 400 });
 
   env.TORAHMAP_EVENTS.writeDataPoint(point);
@@ -143,8 +126,8 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
 }
 
 /** Where the VIS map asks for the papers' text; the bucket holds it under TEXTS_KEY. */
-const IEEEVIS_TEXTS_PATH = '/data/ieeevis/texts.json';
-const TEXTS_KEY = 'texts.json';
+const IEEEVIS_TEXTS_PATH = '/data/ieeevis/p.bin';
+const TEXTS_KEY = 'p.bin';
 
 /** The papers' text from the bucket, revalidated on every use as the static files are. */
 async function ieeevisTexts(request: Request, env: Env): Promise<Response> {
@@ -153,7 +136,7 @@ async function ieeevisTexts(request: Request, env: Env): Promise<Response> {
   const stored = await env.IEEEVIS_TEXTS.get(TEXTS_KEY);
   if (!stored) return new Response(null, { status: 404 });
   const headers = new Headers({
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/octet-stream',
     ETag: stored.httpEtag,
     'Cache-Control': 'public, max-age=0, must-revalidate',
   });
@@ -164,13 +147,36 @@ async function ieeevisTexts(request: Request, env: Env): Promise<Response> {
   return new Response(request.method === 'HEAD' ? null : stored.body, { headers });
 }
 
+// The VIS map has a host of its own, where it is served at the root. The other texts' pages
+// belong to torahmap.org, and the VIS page's own address there leads to its host.
+const VIS_HOST = 'ieeevis.danyelfisher.info';
+const SITE_HOST = 'torahmap.org';
+const OTHER_PAGES = ['/talmud', '/euaiact'];
+const VIS_PAGE = '/ieeevis';
+
+const within = (pathname: string, folder: string) =>
+  pathname === folder || pathname.startsWith(`${folder}/`);
+
+/** Where a page of the wrong host belongs, or null. Data, assets and the endpoint stay on every host. */
+function movedTo(url: URL): string | null {
+  const { hostname, pathname, search } = url;
+  if (hostname === VIS_HOST) {
+    if (OTHER_PAGES.some((folder) => within(pathname, folder)))
+      return `https://${SITE_HOST}${pathname}${search}`;
+    if (within(pathname, VIS_PAGE)) return `https://${VIS_HOST}/${search}`;
+  }
+  if (hostname === SITE_HOST && within(pathname, VIS_PAGE)) return `https://${VIS_HOST}/${search}`;
+  return null;
+}
+
 // Each named page is also served at the root of a subdomain of its own name, as
 // talmud.torahmap.org for /talmud/; its other files come from the same paths on
 // every host.
 const SUBDOMAIN_PAGES = ['talmud', 'euaiact'];
 
-/** The page a subdomain serves at its root, or null for any other host. */
-function subdomainPage(url: URL): string | null {
+/** The page a host serves at its root, or null for any other host. */
+function rootPage(url: URL): string | null {
+  if (url.hostname === VIS_HOST) return `${VIS_PAGE}/`;
   const name = url.hostname.split('.')[0];
   return SUBDOMAIN_PAGES.includes(name) ? `/${name}/` : null;
 }
@@ -180,8 +186,10 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/api/event') return handleEvent(request, url, env);
     if (url.pathname === IEEEVIS_TEXTS_PATH) return ieeevisTexts(request, env);
-    const subdomain = url.pathname === '/' ? subdomainPage(url) : null;
-    if (subdomain) return env.ASSETS.fetch(new Request(new URL(subdomain, url), request));
+    const moved = movedTo(url);
+    if (moved) return Response.redirect(moved, 302);
+    const page = url.pathname === '/' ? rootPage(url) : null;
+    if (page) return env.ASSETS.fetch(new Request(new URL(page, url), request));
     if (url.pathname === '/' && request.method === 'GET') return linkPage(request, url, env);
     return env.ASSETS.fetch(request);
   },

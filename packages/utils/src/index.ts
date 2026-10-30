@@ -11,3 +11,4 @@ export * from './sefaria.ts';
 export * from './textRange.ts';
 export * from './words.ts';
 export * from './roman.ts';
+export * from './packed.ts';

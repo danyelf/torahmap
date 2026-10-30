@@ -124,13 +124,6 @@ describe('telemetry worker', () => {
     });
   });
 
-  it('adds the VIS page to the host of an event sent from it', async () => {
-    const e = env();
-    await worker.fetch(post(valid, { Referer: 'https://torahmap.org/ieeevis/?search=x' }), e);
-    const point: DataPoint = e.TORAHMAP_EVENTS.writeDataPoint.mock.calls[0][0];
-    expect(point.blobs[columns('story_exit').blobs.indexOf('host')]).toBe('torahmap.org/ieeevis');
-  });
-
   it('writes nothing for an oversized body, bad JSON or an unknown event', async () => {
     const e = env();
     expect((await worker.fetch(post('x'.repeat(3000)), e)).status).toBe(413);
@@ -243,6 +236,43 @@ describe('the page at /', () => {
     expect(new URL(e.ASSETS.fetch.mock.calls[1][0].url).pathname).toBe('/data/talmud/a.json');
   });
 
+  it('serves the VIS map at the root of its own host, and leaves its files and the endpoint alone', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://ieeevis.danyelfisher.info/?search=graph', slack), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[0][0].url).pathname).toBe('/ieeevis/');
+    await worker.fetch(page('https://ieeevis.danyelfisher.info/data/ieeevis/structure.json'), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[1][0].url).pathname).toBe(
+      '/data/ieeevis/structure.json',
+    );
+    const event = post(valid, { Origin: 'https://ieeevis.danyelfisher.info' });
+    const sent = new Request('https://ieeevis.danyelfisher.info/api/event', event);
+    expect((await worker.fetch(sent, e)).status).toBe(204);
+  });
+
+  it("sends the other texts' pages to torahmap.org from the VIS host", async () => {
+    for (const path of ['/talmud/', '/talmud/?at=Berakhot.2a', '/euaiact/']) {
+      const response = await worker.fetch(page(`https://ieeevis.danyelfisher.info${path}`), env());
+      expect(response.status).toBe(302);
+      expect(response.headers.get('Location')).toBe(`https://torahmap.org${path}`);
+    }
+  });
+
+  it("sends the VIS page's old address to its host", async () => {
+    for (const from of [
+      'https://torahmap.org/ieeevis/?search=x',
+      'https://ieeevis.danyelfisher.info/ieeevis/?search=x',
+    ]) {
+      const response = await worker.fetch(page(from), env());
+      expect(response.headers.get('Location')).toBe('https://ieeevis.danyelfisher.info/?search=x');
+    }
+  });
+
+  it('leaves a preview’s /ieeevis/ page to the static files', async () => {
+    const e = envWithIndex();
+    await worker.fetch(page('https://pr-1-torahmap.example.workers.dev/ieeevis/'), e);
+    expect(e.ASSETS.fetch).toHaveBeenCalledOnce();
+  });
+
   it('serves the Tanakh at the root of a preview whose name has another text in it', async () => {
     const e = envWithIndex();
     await worker.fetch(page('https://talmud-fix-torahmap.example.workers.dev/'), e);
@@ -340,18 +370,18 @@ describe('link_preview', () => {
 
 describe("the VIS papers' text", () => {
   const stored = (): StoredText => ({
-    body: new Response('{"0.0":"words"}').body!,
+    body: new Response('bytes').body!,
     httpEtag: '"abc"',
   });
   const texts = (headers: Record<string, string> = {}, method = 'GET') =>
-    new Request('https://torahmap.org/data/ieeevis/texts.json', { method, headers });
+    new Request('https://torahmap.org/data/ieeevis/p.bin', { method, headers });
 
   it('is sent from the bucket, to be revalidated each time', async () => {
     const e = env();
     e.IEEEVIS_TEXTS.get.mockResolvedValue(stored());
     const response = await worker.fetch(texts(), e);
-    expect(await response.json()).toEqual({ '0.0': 'words' });
-    expect(response.headers.get('Content-Type')).toBe('application/json');
+    expect(await response.text()).toBe('bytes');
+    expect(response.headers.get('Content-Type')).toBe('application/octet-stream');
     expect(response.headers.get('ETag')).toBe('"abc"');
     expect(response.headers.get('Cache-Control')).toContain('must-revalidate');
     expect(e.ASSETS.fetch).not.toHaveBeenCalled();
