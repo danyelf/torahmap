@@ -703,6 +703,51 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function render(): void {
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
     moveLabels(offset, camera.zoom);
+    sketchArcs(offset);
+  }
+
+  // SKETCH ONLY: arcs from the pinned paper to the papers it shares references with.
+  function sketchArcs(offset: { x: number; y: number }): void {
+    const svgNs = "http://www.w3.org/2000/svg";
+    let svg = document.getElementById("sketch-arcs") as SVGSVGElement | null;
+    if (!svg) {
+      svg = document.createElementNS(svgNs, "svg") as SVGSVGElement;
+      svg.id = "sketch-arcs";
+      svg.setAttribute("style", "position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:5");
+      document.body.append(svg);
+    }
+    svg.replaceChildren();
+    const arcsOn = (window as unknown as { __arcs?: boolean }).__arcs;
+    const focus = (pinnedItem ?? hoveredItem) as unknown as { paper?: { index: number; shared?: [number, number][] } } | null;
+    if (!arcsOn || !focus?.paper?.shared) return;
+    const box = canvas.getBoundingClientRect();
+    const sums = new Map<number, { x: number; y: number; n: number }>();
+    for (const it of items as unknown as { x: number; y: number; paper?: { index: number } }[]) {
+      if (!it.paper) continue;
+      const s = sums.get(it.paper.index) ?? { x: 0, y: 0, n: 0 };
+      s.x += it.x; s.y += it.y; s.n++;
+      sums.set(it.paper.index, s);
+    }
+    const at = (i: number) => {
+      const s = sums.get(i);
+      if (!s) return null;
+      return { x: box.left + (s.x / s.n + offset.x) * camera.zoom, y: box.top + (s.y / s.n + offset.y) * camera.zoom };
+    };
+    const from = at(focus.paper.index);
+    if (!from) return;
+    const max = Math.max(1, ...focus.paper.shared.map((s) => s[1]));
+    for (const [i, n] of focus.paper.shared) {
+      const to = at(i);
+      if (!to) continue;
+      const mx = (from.x + to.x) / 2, my = (from.y + to.y) / 2 - Math.hypot(to.x - from.x, to.y - from.y) * 0.25;
+      const p = document.createElementNS(svgNs, "path");
+      p.setAttribute("d", `M${from.x},${from.y} Q${mx},${my} ${to.x},${to.y}`);
+      p.setAttribute("fill", "none");
+      p.setAttribute("stroke", "#ff7a59");
+      p.setAttribute("stroke-opacity", String(0.25 + 0.6 * (n / max)));
+      p.setAttribute("stroke-width", String(0.8 + 3 * (n / max)));
+      svg.append(p);
+    }
   }
 
   function centerOnItem(item: I): void {

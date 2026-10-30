@@ -25,6 +25,9 @@ export interface Paper {
   kind: string;
   /** "Wed, Nov 11, 13:00", or empty when the program gives no time. */
   when: string;
+  cited?: string[];
+  works?: string[];
+  shared?: [number, number][];
   /** One section letter per piece. */
   pieces: string;
 }

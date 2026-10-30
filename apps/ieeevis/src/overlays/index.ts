@@ -5,12 +5,16 @@ import { authorsOverlay } from './authors.ts';
 import { keywordsOverlay } from './keywords.ts';
 import { kindsOverlay } from './kinds.ts';
 import { sectionsOverlay } from './sections.ts';
+import { citedPeopleOverlay, citedWorksOverlay, sharedCitationsOverlay } from './citeSketch.ts';
 
 export const VIS_OVERLAYS: Overlay<PieceItem>[] = [
   sectionsOverlay,
   kindsOverlay,
   authorsOverlay,
   keywordsOverlay,
+  citedPeopleOverlay,
+  citedWorksOverlay,
+  sharedCitationsOverlay as unknown as Overlay<PieceItem>,
 ];
 
 /** The link parameters of the overlay with this id, if it has any. */
