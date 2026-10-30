@@ -26,6 +26,7 @@ import { brighten, colorToCss, type Color } from '@torahmap/utils';
 import { mark } from '@torahmap/search';
 import { baseColor } from '../baseColor.ts';
 import { entriesOf } from '../citations.ts';
+import { REFERENCES_SECTION } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
 import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
@@ -93,8 +94,9 @@ export function listOverlay<D extends ListData>(
     return listedBy(picked, namesAt(item, data)).map((i) => picked[i]);
   };
 
-  /** The entries of the picked names' works in `text`, in order, each with its pick's colour. */
+  /** The entries of the picked names' works in a reference list's `text`, in order, each with its pick's colour. */
   function entrySpans(item: PieceItem, text: string, settings: ListSettings, data: D) {
+    if (item.section !== REFERENCES_SECTION) return [];
     const picked = picks.picked(settings, data);
     return listedBy(picked, namesAt(item, data))
       .flatMap((i) =>

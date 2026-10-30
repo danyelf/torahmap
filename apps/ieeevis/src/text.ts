@@ -9,7 +9,7 @@ import { coverElement, placeCover } from './covers.ts';
 import { createMapLabels, SECTION_LABEL_LINE_EM } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
 import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';
-import { TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
+import { REFERENCES_SECTION, TEXTS_FILE, structureFrom, type PaperTexts } from './data.ts';
 import { ieeevisFiles } from './files.ts';
 import { referenceLines } from './references.ts';
 import { defaultExcerpt, hitExcerpt } from './excerpts.ts';
@@ -54,7 +54,7 @@ const LINK_KEYS: LinkKeys = {
 
 /** What a piece shows when nothing is searched in it: its opening in a reference list, else the keywords' passage. */
 const defaultOf = ({ paper, section }: PieceItem, text: string): string =>
-  defaultExcerpt(text, section === 'f' ? [] : (paper.keywords ?? []));
+  defaultExcerpt(text, section === REFERENCES_SECTION ? [] : (paper.keywords ?? []));
 
 export const ieeevisText: MapText<PieceItem, TermSettings> = {
   site: ieeevisSite,
@@ -124,7 +124,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         const texts = loadedFiles.get(TEXTS_FILE) as PaperTexts | undefined;
         const { title, pieces } = item.paper;
         const text = isPlaceholder(item) ? NO_TEXT : texts?.[item.id];
-        const shown = text && item.section === 'f' ? referenceLines(text) : text;
+        const shown = text && item.section === REFERENCES_SECTION ? referenceLines(text) : text;
         // Hits are found in `shown`, which has no authors line; a hit only there gives the default.
         const hits = search?.tool.textMatches?.(
           item,

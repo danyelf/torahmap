@@ -1,8 +1,9 @@
 // What the 2026 papers cite, read from the list of cited works. No page in here.
 
 import { memoByValue } from '@torahmap/utils';
-import { papersOf, type CitedWork, type Structure } from './data.ts';
+import { papersOf, REFERENCES_SECTION, type CitedWork, type Structure } from './data.ts';
 import { pieceId } from './layout.ts';
+import { NUMBER } from './references.ts';
 
 export interface CitedData {
   structure: Structure;
@@ -58,7 +59,9 @@ function bySquare(
   const found = new Map<string, Set<string>>();
   const letters = new Map(papersOf(structure).map((p) => [p.index, p.pieces]));
   const referencePieces = (paper: number) =>
-    [...(letters.get(paper) ?? '')].flatMap((letter, n) => (letter === 'f' ? [n] : []));
+    [...(letters.get(paper) ?? '')].flatMap((letter, n) =>
+      letter === REFERENCES_SECTION ? [n] : [],
+    );
   cited.forEach((work, place) => {
     const names = namesOf(work, place);
     work.papers.forEach((paper, i) => {
@@ -90,6 +93,15 @@ export const titlesByPerson = memoByValue(({ cited }: CitedData) => {
   return titles;
 });
 
+const NUMBERED_ENTRY = new RegExp(`${NUMBER}\\s`, 'g');
+const YEAR_STOP = /(?:(?:19|20)\d\d[a-z]?|\bn\.d)\.\s/g;
+/** A full stop that ends a part of an entry, not an initial or "et al." */
+const ENTRY_STOP = /(?<!\b\p{Lu}|\bal)\.\s+/gu;
+const NEXT_ENTRY = new RegExp(
+  `\\n|\\s…|\\s${NUMBER}\\s|(?<=(?<!\\b\\p{Lu}|\\bal)\\.)\\s+(?=\\p{Lu}[\\p{L}'’-]+,\\s)`,
+  'u',
+);
+
 const wordsOf = (title: string): string[] => title.normalize('NFKC').match(/[\p{L}\p{N}]+/gu) ?? [];
 
 /**
@@ -114,12 +126,18 @@ export function entriesOf(
     ).exec(haystack);
     if (!hit) continue;
     const before = text.slice(0, hit.index);
-    const lineStart = before.lastIndexOf('\n') + 1;
-    const numbered = [...before.matchAll(/\[\d+\]\s/g)].pop()?.index ?? -1;
     const after = text.slice(hit.index + hit[0].length);
-    const next = after.search(/\n|\s…|\s\[\d+\]\s/);
+    const base = Math.max(
+      before.lastIndexOf('\n') + 1,
+      [...before.matchAll(NUMBERED_ENTRY)].pop()?.index ?? -1,
+    );
+    // Without numbers an entry runs "Surname, Given. 2020. Title.": it starts after the full stop before its authors.
+    const year = [...before.slice(base).matchAll(YEAR_STOP)].pop();
+    const stops = year ? [...before.slice(base, base + year.index).matchAll(ENTRY_STOP)] : [];
+    const stop = stops.length > 1 ? stops[stops.length - 2] : undefined;
+    const next = after.search(NEXT_ENTRY);
     found.push({
-      start: Math.max(lineStart, numbered),
+      start: stop ? base + stop.index + stop[0].length : base,
       end: hit.index + hit[0].length + (next < 0 ? after.length : next),
     });
   }

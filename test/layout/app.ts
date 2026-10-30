@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import type { Chrome } from './check.ts';
 import { viaMenu } from '../browser/page.ts';
-import { SEARCHED } from './visTexts.ts';
+import { CITING, SEARCHED } from './visTexts.ts';
 import { GO_TO_BOX_ID } from '../../packages/shell/src/goToBox.ts';
 
 const GO_TO_BOX = `#${GO_TO_BOX_ID}`;
@@ -608,7 +608,7 @@ export const IEEEVIS_STATES: State[] = [
   },
   {
     name: 'vis-cited-people-popup',
-    link: 'overlay=citations&people=Dominik Moritz&at=252.40&zoom=2',
+    link: `overlay=citations&people=Dominik Moritz&at=${CITING.id}&zoom=2`,
     shown: ['#popup.visible'],
   },
   {

@@ -5,6 +5,7 @@ import type { UrlParamSpec } from '@torahmap/link';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { CitedData } from '../citations.ts';
+import { CITED_DATA } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
 import { citedPeopleOverlay } from './citedPeople.ts';
 import { citedWorksOverlay } from './citedWorks.ts';
@@ -38,7 +39,7 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
   name: 'Citations',
   description:
     'Lights every paper by what its references cite, each pick in a color of its own; the rest of the map dims. Choose people or works. Names as written in references can stand for more than one person.',
-  data: citedPeopleOverlay.data,
+  data: CITED_DATA,
 
   urlParams: URL_PARAMS,
   settingsFromUrl(params, taken) {

@@ -11,12 +11,16 @@ export const STRUCTURE_FILE = `${IEEEVIS_DATA_DIR}/structure.json`;
 export const TEXTS_FILE = `${IEEEVIS_DATA_DIR}/texts.json`;
 /** The works the 2026 papers cite, each with the papers that cite it. */
 export const CITED_FILE = `${IEEEVIS_DATA_DIR}/cited.json`;
+/** The files the citations views read. */
+export const CITED_DATA = { structure: STRUCTURE_FILE, cited: CITED_FILE };
 
 /**
  * What a piece of a paper is, by letter: abstract, introduction, related work, method,
  * evaluation, discussion, conclusion, references, other, or x for no text at all.
  */
 export type Section = 'a' | 'i' | 'r' | 'm' | 'e' | 'd' | 'c' | 'f' | 'o' | 'x';
+/** The section holding a paper's reference list. */
+export const REFERENCES_SECTION: Section = 'f';
 
 export interface Paper {
   index: number;

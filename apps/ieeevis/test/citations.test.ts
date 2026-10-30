@@ -169,6 +169,16 @@ describe('the entries of cited works in a text', () => {
     expect(run.slice(entry.start, entry.end)).toBe('[8] Second (2002) Two title. Venue.');
   });
 
+  it('takes one entry of a list without numbers, from its author to its end', () => {
+    const run =
+      'Able, Ann, and Bo C. Baker et al. 2019. “First title.” Venue One, 1–12. https://doi.org/10.1/1. ' +
+      'Cole, Cy, and Di Dunn. 2020a. Second title: with a subtitle. Venue Two, 3(4). Eve, Ed. 2021. Third title.';
+    const [entry] = entriesOf(run, ['Second title with a subtitle']);
+    expect(run.slice(entry.start, entry.end)).toBe(
+      'Cole, Cy, and Di Dunn. 2020a. Second title: with a subtitle. Venue Two, 3(4).',
+    );
+  });
+
   it('matches whole words only', () => {
     expect(marked(['Another titl'])).toEqual([]);
   });
