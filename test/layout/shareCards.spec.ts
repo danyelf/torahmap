@@ -1,6 +1,5 @@
 // Redraws the pictures link previews show, on the run that takes screenshots
-// (npm run test:layout:shots), so a map whose look changes gets its cards
-// refreshed beside the shots. Each camera is worked out from the layout.
+// (npm run test:layout:shots). Each camera is worked out from the layout.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from '../browser/fakeMap.ts';
 import { desktopOnly, openMap } from '../browser/page.ts';
@@ -22,8 +21,7 @@ const HIDE_UI =
   ':root{--map-left:0px!important}#canvas{width:100vw!important;height:100vh!important}</style>';
 
 const titleHtml = (text: string): string =>
-  '<div style="position:fixed;left:48px;top:14px;z-index:9;color:#fff;font:700 40px system-ui,sans-serif">' +
-  `${text}</div>`;
+  `<div style="position:fixed;left:${MARGIN}px;top:14px;z-index:9;color:#fff;font:700 40px system-ui,sans-serif">${text}</div>`;
 
 const readJson = (file: string): unknown => JSON.parse(readFileSync(`public/data/${file}`, 'utf8'));
 
