@@ -59,7 +59,7 @@ const WHOLE_MAP: Story = {
         camera: 'initial',
         overlay: 'sections',
         pin: '181.0',
-        zoom: 3,
+        zoom: 1.5,
       },
       {
         id: 'person',
