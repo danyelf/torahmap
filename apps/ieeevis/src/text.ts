@@ -49,6 +49,13 @@ const swatch = (color: Color, outlined = false): string =>
   `<span class="story-swatch${outlined ? ' outlined' : ''}" style="background:${colorToCss(color)}"></span>`;
 // Picked in this order, so each takes the palette's colour at its place.
 const STORY_KEYWORDS = ['Large Language Models', 'Uncertainty visualization'];
+// Searched in this order, so each term takes the palette's colour at its place; mode w is a whole word.
+const STORY_SEARCH = [
+  { term: 'AI', mode: 'w' },
+  { term: 'LLM', mode: 'w' },
+  { term: 'parrot', mode: '' },
+];
+const searchedTerm = (i: number): string => `${swatch(PALETTE[i])} ${STORY_SEARCH[i].term}`;
 
 const WHOLE_MAP: Story = {
   id: 'ieeevis',
@@ -72,11 +79,14 @@ const WHOLE_MAP: Story = {
         zoom: 1.5,
       },
       {
-        id: 'person',
-        text: 'Search for an author, or for anyone the papers cite.',
+        id: 'search',
+        text: `Search for a word, name, or string. This search finds the papers that use the term ${searchedTerm(1)} and those that use the word ${searchedTerm(0)}.`,
         camera: 'initial',
         overlay: null,
-        searchParams: { search: 'Munzner' },
+        searchParams: {
+          search: STORY_SEARCH.map((t) => t.term).join(', '),
+          mode: STORY_SEARCH.map((t) => t.mode).join(','),
+        },
       },
       {
         id: 'keywords',
