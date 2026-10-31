@@ -1,6 +1,6 @@
 // What the AI Act's site calls itself.
 
-import { viewTitle } from '@torahmap/site';
+import { MAKER_EMAIL, viewTitle } from '@torahmap/site';
 import type { Site } from '@torahmap/shell/app/text.ts';
 import { actRef } from './ids.ts';
 import { EUAIACT_PAGE, EUR_LEX } from './page.ts';
@@ -9,6 +9,7 @@ export const euaiactSite: Site = {
   page: EUAIACT_PAGE,
   direction: 'ltr',
   squareName: 'paragraph',
+  email: MAKER_EMAIL,
   aboutHtml:
     '<p>An interactive visualization of the EU Artificial Intelligence Act, as amended in 2026. Every paragraph has a fixed position: recitals above, articles in the middle, annexes below.</p>',
   credits: [

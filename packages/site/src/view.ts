@@ -3,6 +3,8 @@
 import type { UrlState } from '@torahmap/link';
 
 export const ORIGIN = 'https://torahmap.org';
+/** Where a reader writes to the maps' maker. */
+export const MAKER_EMAIL = 'danyel@torahmap.org';
 /** Where the Tanakh's map is served, under the site's address. */
 export const TANAKH_PATH = '/';
 export const SEPARATOR = ' · ';

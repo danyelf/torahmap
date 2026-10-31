@@ -1,6 +1,6 @@
 // What the Talmud's site calls itself.
 
-import { viewTitle } from '@torahmap/site';
+import { MAKER_EMAIL, viewTitle } from '@torahmap/site';
 import type { Site } from '@torahmap/shell/app/text.ts';
 import { parseTalmudId, talmudRef } from './layout.ts';
 import { KOREN_TALMUD, SEFARIA_TALMUD, TALMUD_PAGE } from './page.ts';
@@ -17,6 +17,7 @@ export const talmudSite: Site = {
   page: TALMUD_PAGE,
   direction: 'rtl',
   squareName: 'segment',
+  email: MAKER_EMAIL,
   aboutHtml:
     '<p>An interactive visualization of the Babylonian Talmud. Every segment has a fixed position.</p>',
   credits: [

@@ -1,5 +1,6 @@
 // What the Tanakh's site calls itself: torahmap.org.
 
+import { MAKER_EMAIL } from '@torahmap/site';
 import { describeLink } from '@torahmap/site/tanakh';
 import type { Site } from '@torahmap/shell/app/text.ts';
 import { TANAKH_PAGE } from './page.ts';
@@ -8,6 +9,7 @@ export const tanakhSite: Site = {
   page: TANAKH_PAGE,
   direction: 'rtl',
   squareName: 'verse',
+  email: MAKER_EMAIL,
   aboutHtml:
     '<p>An interactive visualization of the entire Tanakh (Hebrew Bible). Every verse has a fixed position.</p>',
   credits: [

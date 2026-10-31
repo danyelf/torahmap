@@ -8,8 +8,9 @@ export const ieeevisSite: Site = {
   page: IEEEVIS_PAGE,
   direction: 'ltr',
   squareName: 'piece',
+  email: 'danyel@danyelfisher.info',
   aboutHtml:
-    '<p>An interactive map of the IEEE VIS 2026 program. Each square is a piece of a paper, about 250 words or a quarter page. Papers sit in their sessions, sessions in their days. Outlined squares are papers whose text is not loaded; their length is estimated from the kind of paper.</p>',
+    '<p>An interactive map of the IEEE VIS 2026 program. Each square represents about 250 words from a paper. Papers sit in their sessions, sessions in their days. Outlined squares are papers whose text is not loaded; their length is estimated from the kind of paper.</p>',
   credits: [
     {
       source: 'IEEE VIS 2026 program',
