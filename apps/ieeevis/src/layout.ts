@@ -20,9 +20,13 @@ const LABEL_ROOM = 4 * SQUARE_SIZE; // above each session, for a one-line name
 const LABEL_LINE = 3 * SQUARE_SIZE; // each further line of a name that wraps
 const SLOT_GAP = 3 * SQUARE_SIZE; // between one time slot and the next
 export const PANEL_PAD = 8; // a slot's panel reaches this far past its squares, but not above its top
+// Above a slot's first name, so its capitals stand as far below the panel's top as its first squares
+// stand in from its left: the name's line keeps about 7 units of space above them.
+const FIRST_NAME_PAD = PANEL_PAD - 7;
 // Left of a slot's panel, for its time.
 export const TIME_STRIP = 7 * SQUARE_SIZE;
 const DAY_GAP = 2 * PANEL_PAD + TIME_STRIP;
+const UNDER_GAP = 3 * SQUARE_SIZE; // above the name of a day that stands under another
 const DAY_WIDTH = PAPERS_PER_DAY * PAPER_COLUMNS * SQUARE_SIZE + (PAPERS_PER_DAY - 1) * PAPER_GAP;
 // Characters of a session's name that fit across a day: one is about 7.3 units wide at the label's size.
 const LABEL_LINE_CHARS = Math.floor(DAY_WIDTH / 7.3);
@@ -91,14 +95,19 @@ export function computeLayout(structure: Structure): Layout {
     minY,
   });
 
+  let under = 0; // where a day under the last one would start
   for (const day of structure.days) {
-    let y = 0;
-    timeSlotsOf(day).forEach((slot, s) => {
+    const slots = timeSlotsOf(day);
+    // A day with no times, as for the papers not yet scheduled, stands under the day before.
+    const stacked = x > 0 && slots.every((slot) => !slot.start);
+    if (stacked) x -= DAY_WIDTH + DAY_GAP;
+    let y = stacked ? under : 0;
+    slots.forEach((slot, s) => {
       if (s > 0) y += SLOT_GAP;
       const top = y;
       // A book with no name: the day's name stands above the top of its first slot.
       if (s === 0) books.push(label('', day, top));
-      y += PANEL_PAD;
+      y += FIRST_NAME_PAD;
       for (const session of slot.sessions) {
         y += LABEL_ROOM + (nameLines(session.name) - 1) * LABEL_LINE;
         books.push(label(session.name, day, y));
@@ -134,6 +143,7 @@ export function computeLayout(structure: Structure): Layout {
       });
     });
     height = Math.max(height, y);
+    under = y - LINE_GAP + PANEL_PAD + UNDER_GAP + sectionLabelReach(DAY_LABEL_SIZE);
     x += DAY_WIDTH + DAY_GAP;
   }
   return { items, books, panels, bounds: { width: x - DAY_GAP, height } };

@@ -93,3 +93,19 @@ describe('a long paper', () => {
     }
   });
 });
+
+describe('a day with no times', () => {
+  const laid = computeLayout({
+    days: [
+      { name: 'Fri', sessions: [{ name: 'A', start: '08:00', papers: [paper(0, 'aiem')] }] },
+      { name: 'Not scheduled', sessions: [{ name: 'B', start: '', papers: [paper(1, 'ai')] }] },
+    ],
+  });
+  const [friday, unscheduled] = laid.panels;
+
+  it('stands under the day before, with room for its name between them', () => {
+    expect(unscheduled.minX).toBe(friday.minX);
+    const name = laid.books.find((book) => book.section === 'Not scheduled')!;
+    expect(name.minY).toBeGreaterThan(friday.maxY);
+  });
+});
