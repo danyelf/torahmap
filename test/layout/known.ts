@@ -30,7 +30,7 @@ const ACT_POPUP_KNOWN: Known = {
 // The same popup on the VIS map's page, its link naming the conference site.
 const VIS_POPUP_KNOWN: Known = {
   reason: POPUP_KNOWN.reason,
-  violations: ['a.sefaria-link is 110×15px, under 24', 'button.close-btn is 20×20px, under 24'],
+  violations: ['a.sefaria-link is 105×14px, under 24', 'button.close-btn is 20×20px, under 24'],
 };
 
 /**
