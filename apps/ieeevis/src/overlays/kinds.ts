@@ -41,6 +41,6 @@ export const kindsOverlay: Overlay<PieceItem> = {
   renderLegend(container) {
     container.replaceChildren(...swatchList(FAMILIES));
   },
-  // One group: a plain list of colours stops at six.
+  // A group is not cut at six swatches, as the plain colours list is.
   summary: () => ({ groups: [FAMILIES.map(({ color }) => colorToCss(color))] }),
 };
