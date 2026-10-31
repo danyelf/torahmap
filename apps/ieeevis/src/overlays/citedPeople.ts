@@ -2,7 +2,7 @@
 
 import { peopleAt, peopleByPaper, titlesByPerson, type CitedData } from '../citations.ts';
 import { CITED_DATA } from '../data.ts';
-import { listOverlay } from './listOverlay.ts';
+import { CITED_WORDING, listOverlay } from './listOverlay.ts';
 
 export const citedPeopleOverlay = listOverlay<CitedData>({
   id: 'citedpeople',
@@ -13,7 +13,5 @@ export const citedPeopleOverlay = listOverlay<CitedData>({
   namesOf: (paper, data) => peopleByPaper(data).get(paper.index) ?? [],
   namesAt: (item, data) => peopleAt(data).get(item.id) ?? [],
   titlesOf: (person, data) => titlesByPerson(data).get(person) ?? [],
-  popupLead: 'cites',
-  countLead: 'cited by',
-  quickHeading: 'Most cited',
+  ...CITED_WORDING,
 });

@@ -70,6 +70,13 @@ export interface ListKind<D extends ListData> extends PickSource<D> {
   titlesOf?(name: string, data: D): readonly string[];
 }
 
+/** How the citation overlays word their picks. */
+export const CITED_WORDING = {
+  popupLead: 'cites',
+  countLead: 'cited by',
+  quickHeading: 'Most cited',
+};
+
 interface Finder<D> extends PickFinder {
   settings: ListSettings;
   data: D | null;
