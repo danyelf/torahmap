@@ -6,7 +6,6 @@ import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { colorToCss, colorToCssAlpha, hslToRgb, type Color } from '@torahmap/utils';
 import { DATING_FILE, isSure, UNDATED, type Generation, type TalmudDating } from '../dating.ts';
 import type { TalmudLayoutItem } from '../layout.ts';
-import { GEMARA_BASE_COLOR } from '../constants.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { legendHeading, swatchRow } from '@torahmap/shell/overlays/swatchList.ts';
 import { wrapRuns } from '@torahmap/shell/textRuns.ts';
@@ -224,7 +223,6 @@ export function datingOverlay(
       container.replaceChildren(
         ...sections,
         swatchRow(GREY, 'Uncertain: the name could be several rabbis'),
-        swatchRow(faint(GEMARA_BASE_COLOR), 'Names no rabbi with a known generation'),
       );
     },
 
