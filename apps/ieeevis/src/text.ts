@@ -28,6 +28,10 @@ import { configureSearch, squareBody, visSearch } from './search.ts';
 import { createMapCredit } from './mapCredit.ts';
 import { createMapTitle } from './mapTitle.ts';
 import './ieeevis.css';
+import { SECTIONS } from './overlays/sections.ts';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { picksToUrl } from '@torahmap/shell/overlays/picks.ts';
+import { colorToCss, type Color } from '@torahmap/utils';
 import { ieeevisSite } from './site.ts';
 
 const PANEL_TINT = [150, 170, 220] as const;
@@ -39,6 +43,12 @@ const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, gap: 4 };
 // Screen pixels clear above the program as it opens: the legend reaches 58 down on a wide screen.
 const LEGEND_CLEARANCE = 70;
 const NO_TEXT = 'No text yet.';
+
+// A colour in a story's text, as the map shows it.
+const swatch = (color: Color, outlined = false): string =>
+  `<span class="story-swatch${outlined ? ' outlined' : ''}" style="background:${colorToCss(color)}"></span>`;
+// Picked in this order, so each takes the palette's colour at its place.
+const STORY_KEYWORDS = ['Large Language Models', 'Uncertainty visualization'];
 
 const WHOLE_MAP: Story = {
   id: 'ieeevis',
@@ -55,7 +65,7 @@ const WHOLE_MAP: Story = {
       },
       {
         id: 'paper',
-        text: 'A paper reads front to back: the abstract and introduction first, the references last.',
+        text: `A paper reads front to back: the ${swatch(SECTIONS.a.color)} abstract and ${swatch(SECTIONS.i.color)} introduction first, the ${swatch(SECTIONS.f.color, true)} references last.`,
         camera: 'initial',
         overlay: 'sections',
         pin: '181.0',
@@ -70,10 +80,10 @@ const WHOLE_MAP: Story = {
       },
       {
         id: 'keywords',
-        text: 'The Keywords overlay shows which topics turn up across the week.',
+        text: `The Keywords overlay shows where topics turn up across the week: ${STORY_KEYWORDS.map((keyword, i) => `${swatch(PALETTE[i])} ${keyword}`).join(' and ')}.`,
         camera: 'initial',
         overlay: 'keywords',
-        overlayParams: { keywords: 'Large Language Models,Uncertainty visualization' },
+        overlayParams: { keywords: picksToUrl(STORY_KEYWORDS) },
       },
       {
         id: 'citations',

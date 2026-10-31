@@ -17,3 +17,15 @@
   color: #bbb;
   pointer-events: auto;
 }
+
+.story-swatch {
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 2px;
+  vertical-align: -0.05em;
+}
+
+.story-swatch.outlined {
+  box-shadow: 0 0 0 1px #fff;
+}
