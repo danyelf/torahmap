@@ -18,6 +18,8 @@ import {
   type TalmudTractateText,
 } from '@torahmap/talmud/data.ts';
 import type { TorahData } from '@torahmap/tanakh/types.ts';
+import { offers } from '@torahmap/tanakh/overlays/trop/marks.ts';
+import { TROP_TABS } from '@torahmap/overlay-catalog';
 import { talmudFixture } from '../apps/talmud/test/helpers/talmudFixture.ts';
 
 const torahData: TorahData = {
@@ -72,6 +74,19 @@ describe('the shipped data', () => {
     expect(
       named.filter(({ name }) => !namesPlace(verses, squares, name)).map((n) => n.where),
     ).toEqual([]);
+  });
+
+  it('has every trop story stop show a mark its tab offers', () => {
+    const unshown = STORIES.flatMap(({ id, data }) =>
+      data.stops.flatMap((stop) => {
+        const mark = stop.overlayParams?.trop;
+        const tab = stop.overlayParams?.tab ?? TROP_TABS[0];
+        return stop.overlay === 'trop' && mark && !offers(tab as (typeof TROP_TABS)[number], mark)
+          ? [`${id}/${stop.id}: ${mark} on ${tab}`]
+          : [];
+      }),
+    );
+    expect(unshown).toEqual([]);
   });
 
   it('lays out the Talmud with no two squares sharing an id', () => {

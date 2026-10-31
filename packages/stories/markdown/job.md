@@ -41,11 +41,11 @@ There are two distinct systems of cantillation symbols. The pashta (<span lang="
 
 The poetic books — Psalms, Proverbs, and the poetic core of Job — never use the Pashta. 
 
-<!-- stop: dehi | camera: Ketuvim | overlay: trop | trop: dehi -->
+<!-- stop: dehi | camera: Ketuvim | overlay: trop | trop: dehi | tab: poetic -->
 
 There is a different system of cantillation for poetry. Dehi (<span lang="he" style="font-family: 'SBL Hebrew', serif; font-size: 1.6em">ב֭</span>), for example, appears *only* in poetry.
 
-<!-- stop: dehi_gone | camera: Job.42.7 | zoom: 1.5 | pin: Job.42.7 | overlay: trop | trop: dehi -->
+<!-- stop: dehi_gone | camera: Job.42.7 | zoom: 1.5 | pin: Job.42.7 | overlay: trop | trop: dehi | tab: poetic -->
 
 In the last lines of Job, the Dehi disappears
 
