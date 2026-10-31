@@ -64,6 +64,8 @@ export interface ListKind<D extends ListData> extends PickSource<D> {
   popupLead?: string;
   /** Said before how many papers list a name: "cited by". */
   countLead?: string;
+  /** The heading over the names most papers list: "Most cited". */
+  quickHeading?: string;
   /** The titles in a square's text that a picked name stands for; the popup marks their entries. */
   titlesOf?(name: string, data: D): readonly string[];
 }
@@ -169,7 +171,7 @@ export function listOverlay<D extends ListData>(
 
     const heading = document.createElement('div');
     heading.className = 'panel-section-heading';
-    heading.textContent = 'Most papers';
+    heading.textContent = kind.quickHeading ?? 'Most papers';
     const chips = pickChips(
       picks.quick(data).map((entry) =>
         pickChip(entry.label, {

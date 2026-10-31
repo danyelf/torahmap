@@ -15,6 +15,7 @@ export const citedWorksOverlay = listOverlay<CitedData>({
   titlesOf: (id, { cited }) => [cited[Number(id)].title],
   popupLead: 'cites',
   countLead: 'cited by',
+  quickHeading: 'Most cited',
   label: (id, { cited }) => workTitle(cited[Number(id)]),
   detail: (id, { cited }) => workAuthors(cited[Number(id)]),
 });
