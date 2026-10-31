@@ -49,15 +49,6 @@ const SUMMARY_LENGTH = 24;
 const short = (label: string) =>
   label.length > SUMMARY_LENGTH ? `${label.slice(0, SUMMARY_LENGTH - 1)}…` : label;
 
-const papers = (n: number) => `${n} paper${n === 1 ? '' : 's'}`;
-
-/** A pick's lines: what it is called, what says which one it is, and how many papers list it. */
-const linesOf = (entry: Entry) => [
-  entry.label,
-  ...(entry.detail ? [pickMeta(entry.detail)] : []),
-  pickMeta(papers(entry.papers)),
-];
-
 export interface ListKind<D extends ListData> extends PickSource<D> {
   id: string;
   name: string;
@@ -71,9 +62,20 @@ export interface ListKind<D extends ListData> extends PickSource<D> {
   data: FileNames<D>;
   /** Said before the picked names in the popup: "cites". */
   popupLead?: string;
+  /** Said before how many papers list a name: "cited by". */
+  countLead?: string;
+  /** The heading over the names most papers list: "Most cited". */
+  quickHeading?: string;
   /** The titles in a square's text that a picked name stands for; the popup marks their entries. */
   titlesOf?(name: string, data: D): readonly string[];
 }
+
+/** How the citation overlays word their picks. */
+export const CITED_WORDING = {
+  popupLead: 'cites',
+  countLead: 'cited by',
+  quickHeading: 'Most cited',
+};
 
 interface Finder<D> extends PickFinder {
   settings: ListSettings;
@@ -88,6 +90,14 @@ export function listOverlay<D extends ListData>(
   const aNoun = `${/^[aeiou]/.test(noun.one) ? 'an' : 'a'} ${noun.one}`;
   const picks = picksOf(kind);
   const lead = kind.popupLead ? `${kind.popupLead}: ` : '';
+  const papers = (n: number) =>
+    `${kind.countLead ? `${kind.countLead} ` : ''}${n} paper${n === 1 ? '' : 's'}`;
+  /** A pick's lines: what it is called, what says which one it is, and how many papers list it. */
+  const linesOf = (entry: Entry) => [
+    entry.label,
+    ...(entry.detail ? [pickMeta(entry.detail)] : []),
+    pickMeta(papers(entry.papers)),
+  ];
   const namesAt = kind.namesAt ?? ((item: PieceItem, data: D) => kind.namesOf(item.paper, data));
   const listedUnder = (item: PieceItem, settings: ListSettings, data: D) => {
     const picked = picks.picked(settings, data);
@@ -168,11 +178,11 @@ export function listOverlay<D extends ListData>(
 
     const heading = document.createElement('div');
     heading.className = 'panel-section-heading';
-    heading.textContent = 'Most papers';
+    heading.textContent = kind.quickHeading ?? 'Most papers';
     const chips = pickChips(
       picks.quick(data).map((entry) =>
         pickChip(entry.label, {
-          title: papers(entry.papers),
+          title: `${entry.label} · ${papers(entry.papers)}`,
           on: isPicked(entry),
           disabled: full && !isPicked(entry),
           onClick: () => (isPicked(entry) ? onChange(removePick(entry.name)) : choose(entry)),
