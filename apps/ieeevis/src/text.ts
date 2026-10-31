@@ -23,7 +23,7 @@ import { ieeevisSite } from './site.ts';
 const PANEL_TINT = [150, 170, 220] as const;
 const PANEL_OPACITY = 0.07;
 const PANEL_EDGE_OPACITY = 0.3;
-const SESSION_TAB = { fontSize: 12, above: 20, inset: 4, minPx: 3.5, wrap: true };
+const SESSION_TAB = { fontSize: 12, above: 20, inset: 0, minPx: 3.5, wrap: true };
 // A slot's time keeps a size a reader can make out however far the map is zoomed out.
 const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, gap: 4 };
 const NO_TEXT = 'No text yet.';
