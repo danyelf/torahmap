@@ -9,6 +9,7 @@ export const euaiactSite: Site = {
   page: EUAIACT_PAGE,
   direction: 'ltr',
   squareName: 'paragraph',
+  email: 'danyel@torahmap.org',
   aboutHtml:
     '<p>An interactive visualization of the EU Artificial Intelligence Act, as amended in 2026. Every paragraph has a fixed position: recitals above, articles in the middle, annexes below.</p>',
   credits: [

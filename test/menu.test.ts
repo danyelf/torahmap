@@ -30,6 +30,13 @@ describe('menuHtml', () => {
     expect(actions).toEqual(['story', 'share', 'goto', 'search', 'overlay', 'stories', 'about']);
   });
 
+  it('offers only the panels the text has', () => {
+    const actions = items(
+      menuHtml(tanakhSite, { number: 1, total: 2, title: 'x' }, ['search', 'about']),
+    ).map((b) => b.dataset.action);
+    expect(actions).toEqual(['story', 'share', 'search', 'about']);
+  });
+
   it('makes every item a real button', () => {
     for (const b of items(menuHtml(tanakhSite, { number: 1, total: 2, title: 'x' })))
       expect(b.type).toBe('button');

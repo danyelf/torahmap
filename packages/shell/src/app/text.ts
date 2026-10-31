@@ -28,6 +28,8 @@ export interface Site {
   direction: 'rtl' | 'ltr';
   /** What a reader calls one square, in plain text: "verse", "segment". */
   squareName: string;
+  /** Where a reader writes to the map's maker. */
+  email: string;
   /** What the map is, as the About panel's opening paragraph. */
   aboutHtml: string;
   /** What the map itself rests on, credited above each tool's sources. */

@@ -3,7 +3,8 @@ import { test } from '../browser/fakeMap.ts';
 import { CHROME, type State } from './app.ts';
 import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
 import { KNOWN } from './known.ts';
-import { openMap } from '../browser/page.ts';
+import { openMap, viaMenu } from '../browser/page.ts';
+import { PANELS } from '@torahmap/shell/frame.ts';
 import { asReturningReader, attachScreenshot, boxes, clippedText, shown } from './page.ts';
 
 /** The selectors the rules measure, which belong to the interface being tested. */
@@ -105,4 +106,24 @@ export function testStates(states: readonly State[], path = '/'): void {
       expect(errors, 'page errors while measuring').toEqual([]);
     });
   }
+}
+
+/** A test that every panel in the menu of the page at `path` opens with something in it. */
+export function testPanelsOpen(path = '/'): void {
+  test('every panel in the menu opens with something in it', async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop', 'what a panel holds does not depend on the screen');
+    const errors = await openMap(page, '', path);
+    await page.locator('#menu-toggle').click();
+    const actions = await page
+      .locator('.menu-item:visible')
+      .evaluateAll((items) => items.map((item) => (item as HTMLElement).dataset.action));
+    await page.locator('#menu-toggle').click();
+    const panels = PANELS.filter((panel) => actions.includes(panel));
+    expect(panels.length, 'panels in the menu').toBeGreaterThan(0);
+    for (const panel of panels) {
+      await viaMenu(page, panel);
+      await expect(page.locator(`#${panel}-panel`), panel).toHaveText(/\S/);
+      expect(errors, `page errors after opening ${panel}`).toEqual([]);
+    }
+  });
 }

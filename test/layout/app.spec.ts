@@ -1,7 +1,7 @@
 import { expect } from '@playwright/test';
 import { test } from '../browser/fakeMap.ts';
 import { ABRAHAM, CHROME, STATES } from './app.ts';
-import { measureLayout, testStates } from './check.ts';
+import { measureLayout, testPanelsOpen, testStates } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
 import {
   canvasShot,
@@ -53,6 +53,7 @@ test('the rules report a layout broken on purpose', async ({ page }) => {
 });
 
 testStates(STATES);
+testPanelsOpen();
 
 test("a returning reader's Search button opens search, ready to type", async ({ page }) => {
   await asReturningReader(page);

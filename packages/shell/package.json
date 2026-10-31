@@ -10,6 +10,7 @@
     "./backdrop.ts": "./src/backdrop.ts",
     "./constants.ts": "./src/constants.ts",
     "./dataFiles.ts": "./src/dataFiles.ts",
+    "./frame.ts": "./src/frame.ts",
     "./itemColoring.ts": "./src/itemColoring.ts",
     "./labelTypography.ts": "./src/labelTypography.ts",
     "./language.ts": "./src/language.ts",

@@ -40,7 +40,7 @@ export function aboutHtml(
       <p class="byline">
         By <a href="https://danyelfisher.info" target="_blank" rel="noopener noreferrer">Danyel Fisher</a>
         <a class="byline-icon" href="https://github.com/danyelf/torahmap" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">${GITHUB_ICON}</a>
-        <a class="byline-icon" href="mailto:danyel@torahmap.org" aria-label="Email" title="Email">${EMAIL_ICON}</a>
+        <a class="byline-icon" href="mailto:${escapeHtml(site.email)}" aria-label="Email" title="Email">${EMAIL_ICON}</a>
       </p>
     </section>
     <section class="about-section">

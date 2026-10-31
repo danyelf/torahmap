@@ -3,7 +3,7 @@ import { expect } from '@playwright/test';
 import { test } from '../browser/fakeMap.ts';
 import { hold, openMap } from '../browser/page.ts';
 import { IEEEVIS_STATES } from './app.ts';
-import { testStates } from './check.ts';
+import { testPanelsOpen, testStates } from './check.ts';
 import { standInTexts } from './visTexts.ts';
 import { pack } from '../../scripts/ieeevis/pack.ts';
 import { IEEEVIS_PATH } from '@torahmap/ieeevis/page.ts';
@@ -22,3 +22,11 @@ test('the page reads the made-up texts', async ({ page }) => {
 });
 
 testStates(IEEEVIS_STATES, IEEEVIS_PATH);
+testPanelsOpen(IEEEVIS_PATH);
+
+test('the menu offers no Go to, since a paper has no reference to type', async ({ page }) => {
+  await openMap(page, '', IEEEVIS_PATH);
+  await page.locator('#menu-toggle').click();
+  await expect(page.locator('.menu-item[data-action="search"]')).toBeVisible();
+  await expect(page.locator('.menu-item[data-action="goto"]')).toHaveCount(0);
+});

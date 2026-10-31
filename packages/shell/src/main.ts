@@ -44,6 +44,7 @@ import {
   type Frame,
   type FrameEvent,
   type FrontTool,
+  PANELS,
   PANEL_TITLES,
   isPanel,
 } from './frame.ts';
@@ -540,6 +541,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
   document.getElementById('goto-panel')!.innerHTML = goToPanelHtml(text.goTo.examples);
+  // A text with no examples has no references to go to, so the menu leaves Go to out.
+  const menuPanels = text.goTo.examples.length ? PANELS : PANELS.filter((p) => p !== 'goto');
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
@@ -587,7 +590,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
-      droppedMenu.innerHTML = menuHtml(source.site, { ...place, title: story.data.title });
+      droppedMenu.innerHTML = menuHtml(
+        source.site,
+        { ...place, title: story.data.title },
+        menuPanels,
+      );
     }
     const opened = frame.open !== previous?.open;
     if (opened && frame.open === 'stories') drawStories();

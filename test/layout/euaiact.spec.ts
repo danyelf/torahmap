@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import { test } from '../browser/fakeMap.ts';
 import { ACT_STATES } from './app.ts';
-import { testStates } from './check.ts';
+import { testPanelsOpen, testStates } from './check.ts';
 import { apart, outsideOf, overlapping, type Box } from './geometry.ts';
 import { canvasShot, desktopOnly, openMap, viaMenu } from '../browser/page.ts';
 import {
@@ -32,6 +32,7 @@ const laid = computeActLayout(
 );
 
 testStates(ACT_STATES, ACT);
+testPanelsOpen(ACT);
 
 test("a pinned square's popup shows its text, in English, linked to EUR-Lex", async ({ page }) => {
   desktopAndPhoneOnly();
