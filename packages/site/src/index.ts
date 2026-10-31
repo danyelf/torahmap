@@ -1,1 +1,1 @@
-export { ORIGIN, TANAKH_PATH, viewTitle } from './view.ts';
+export { MAKER_EMAIL, ORIGIN, TANAKH_PATH, viewTitle } from './view.ts';

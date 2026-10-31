@@ -65,9 +65,9 @@ describe('the About panel', () => {
 
   it('leaves Go to out of the controls of a text with no place to go to', async () => {
     const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
-    const { talmudSite } = await import('@torahmap/talmud/site.ts');
+    const { tanakhSite } = await import('@torahmap/tanakh/site.ts');
     const div = document.createElement('div');
-    div.innerHTML = aboutHtml(talmudSite, [], false, undefined);
+    div.innerHTML = aboutHtml(tanakhSite, [], false, undefined);
     expect(div.querySelectorAll('.controls-table tr')).toHaveLength(
       (await about()).querySelectorAll('.controls-table tr').length - 1,
     );

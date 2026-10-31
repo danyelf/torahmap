@@ -1,5 +1,5 @@
 import { escapeHtml } from '@torahmap/utils';
-import { PANELS, PANEL_TITLES, type Panel } from './frame.ts';
+import { PANEL_TITLES, type Panel } from './frame.ts';
 import type { Site } from './app/text.ts';
 
 /** Where the story is: its stop, counted from one, and how many it has. */
@@ -23,11 +23,11 @@ const item = (action: string, label: string, detail = ''): string =>
   (detail ? ` <span class="menu-detail">${detail}</span>` : '') +
   `</button>`;
 
-/** The menu: the site's name, then its items, with the panels the text offers. Each item carries the action it takes; the click handler reads it. */
+/** The menu: the site's name, then its items. Each item carries the action it takes; the click handler reads it. */
 export function menuHtml(
   site: Site,
   place: StoryPlace & { title: string },
-  panels: readonly Panel[] = PANELS,
+  panels: readonly Panel[],
 ): string {
   return [
     `<h2 class="menu-title">${escapeHtml(site.page.name)}</h2>`,

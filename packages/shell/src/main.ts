@@ -541,8 +541,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const storiesPanel = document.getElementById('stories-panel')!;
   const aboutPanel = document.getElementById('about-panel')!;
   document.getElementById('goto-panel')!.innerHTML = goToPanelHtml(text.goTo.examples);
-  // A text with no examples has no references to go to, so the menu leaves Go to out.
-  const menuPanels = text.goTo.examples.length ? PANELS : PANELS.filter((p) => p !== 'goto');
+  // A text with no examples has no references to go to, so the menu and About leave Go to out.
+  const goToExample = text.goTo.examples[0];
+  const menuPanels = goToExample ? PANELS : PANELS.filter((p) => p !== 'goto');
   document.getElementById('overlay-panel')!.innerHTML = overlayPanelHtml();
   document.getElementById('search-panel')!.innerHTML = searchPanelHtml();
   const mapLegend = document.getElementById('map-legend')!;
@@ -600,12 +601,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (opened && frame.open === 'stories') drawStories();
     if (opened && frame.open === 'goto') goToPanel.redraw();
     if (opened && frame.open === 'about') {
-      aboutPanel.innerHTML = aboutHtml(
-        source.site,
-        allOverlays,
-        twoLanguages,
-        text.goTo.examples[0],
-      );
+      aboutPanel.innerHTML = aboutHtml(source.site, allOverlays, twoLanguages, goToExample);
       bindLanguageChoice(aboutPanel, refreshPopup);
     }
     setFrontTool(frontToolAfter(frontTool, frame.open));
