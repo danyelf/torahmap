@@ -74,7 +74,7 @@ const WHOLE_MAP: Story = {
       },
       {
         id: 'paper',
-        text: `A paper reads front to back: the ${swatch(SECTIONS.a.color)} abstract and ${swatch(SECTIONS.i.color)} introduction first, the ${swatch(SECTIONS.f.color, true)} references last.`,
+        text: `A paper reads front to back: the ${swatch(SECTIONS.a.color)} abstract and ${swatch(SECTIONS.i.color)} introduction first, the ${swatch(SECTIONS.f.color, true)} references last.\n\nClick the legend box at the top to jump to the overlay. The ☰ menu can bring you back to the tour.`,
         camera: 'initial',
         overlay: 'sections',
         pin: '181.0',
