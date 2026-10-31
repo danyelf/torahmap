@@ -69,6 +69,13 @@ describe('cameraToFit', () => {
     expect(c.zoom).toBe(0.5);
     expect(onScreen(300, 150, c, 832, 1000).x).toBeCloseTo(416);
   });
+
+  it('keeps a given room clear above a tall box', () => {
+    const c = cameraToFit(box, 4000, 286, ZOOM, undefined, 70);
+    expect(c.zoom).toBeCloseTo(1);
+    expect(onScreen(box.minX, box.minY, c, 4000, 286).y).toBeCloseTo(70);
+    expect(onScreen(box.maxX, box.maxY, c, 4000, 286).y).toBeCloseTo(270);
+  });
 });
 
 describe('map and screen', () => {

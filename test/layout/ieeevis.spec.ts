@@ -4,12 +4,11 @@ import { test } from '../browser/fakeMap.ts';
 import { hold, openMap } from '../browser/page.ts';
 import { IEEEVIS_STATES } from './app.ts';
 import { testPanelsOpen, testStates } from './check.ts';
-import { standInTexts } from './visTexts.ts';
-import { pack } from '../../scripts/ieeevis/pack.ts';
+import { standInTextsFile } from './visTexts.ts';
 import { IEEEVIS_PATH } from '@torahmap/ieeevis/page.ts';
 import { TEXTS_FILE } from '@torahmap/ieeevis/data.ts';
 
-const texts = Buffer.from(pack(JSON.stringify(standInTexts())));
+const texts = standInTextsFile();
 
 test.beforeEach(async ({ page }) => {
   (await hold(page, [TEXTS_FILE], texts))();

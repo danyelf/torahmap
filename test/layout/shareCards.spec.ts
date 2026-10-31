@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from '../browser/fakeMap.ts';
 import { desktopOnly, hold, openMap } from '../browser/page.ts';
-import { standInTexts } from './visTexts.ts';
+import { standInTextsFile } from './visTexts.ts';
 import { computeLayout as computeTanakhLayout, getLayoutBounds } from '@torahmap/tanakh/layout.ts';
 import { computeLayout as computeVisLayout, programBox } from '@torahmap/ieeevis/layout.ts';
 import { IEEEVIS_PATH } from '@torahmap/ieeevis/page.ts';
@@ -14,18 +14,14 @@ import {
 } from '@torahmap/ieeevis/data.ts';
 
 const CARD = { width: 1200, height: 630 };
-/** Screen pixels left clear around the map, and above it for a title. */
+/** Screen pixels left clear around the map. */
 const MARGIN = 48;
-const TITLE_BAND = 96;
 
 // The canvas leaves room for the panel and measures itself once at startup,
 // so the panel has to be gone before the page loads, not after.
 const HIDE_UI =
   '<style>#panel,#menu-toggle,#map-legend,#zoom-controls,#popup{display:none!important}' +
   ':root{--map-left:0px!important}#canvas{width:100vw!important;height:100vh!important}</style>';
-
-const titleHtml = (text: string): string =>
-  `<div style="position:fixed;left:${MARGIN}px;top:14px;z-index:9;color:#fff;font:700 40px system-ui,sans-serif">${text}</div>`;
 
 const readJson = (file: string): unknown => JSON.parse(readFileSync(`public/data/${file}`, 'utf8'));
 
@@ -51,16 +47,14 @@ test.describe('share cards', () => {
 
   const draw = async (
     page: import('@playwright/test').Page,
-    { path, link, title, out }: { path: string; link: string; title?: string; out: string },
+    { path, link, out }: { path: string; link: string; out: string },
   ) => {
     desktopOnly('the card is drawn once, at its own size');
     await page.route(
       (url) => url.pathname === path,
       async (route) => {
         const response = await route.fetch();
-        const html = (await response.text())
-          .replace('</head>', HIDE_UI + '</head>')
-          .replace('</body>', (title ? titleHtml(title) : '') + '</body>');
+        const html = (await response.text()).replace('</head>', HIDE_UI + '</head>');
         await route.fulfill({ response, body: html });
       },
     );
@@ -79,12 +73,11 @@ test.describe('share cards', () => {
   });
 
   test('the VIS card shows the days across and the top of each', async ({ page }) => {
-    (await hold(page, [VIS_TEXTS], JSON.stringify(standInTexts())))();
+    (await hold(page, [VIS_TEXTS], standInTextsFile()))();
     const laid = computeVisLayout(readJson(VIS_STRUCTURE) as never);
     await draw(page, {
       path: IEEEVIS_PATH,
-      link: `overlay=kinds&${cardCamera(programBox(laid), TITLE_BAND, false)}`,
-      title: 'IEEE VIS 2026',
+      link: `overlay=kinds&${cardCamera(programBox(laid), MARGIN, false)}`,
       out: 'public/ieeevis-og-image.jpg',
     });
   });

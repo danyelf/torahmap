@@ -115,7 +115,7 @@ export const FIT_MARGIN = 16;
 
 /**
  * The camera that centres `box` on a `width` × `height` canvas, at the largest
- * zoom that fits it inside the margins, unless `zoom` is given.
+ * zoom that fits it inside the margins, unless `zoom` is given, with `top` pixels clear above it.
  */
 export function cameraToFit(
   box: WorldBox,
@@ -123,15 +123,16 @@ export function cameraToFit(
   height: number,
   range: ZoomRange,
   zoom?: number,
+  top = LABEL_MARGIN,
 ): Camera {
   const boxWidth = box.maxX - box.minX;
   const boxHeight = box.maxY - box.minY;
   const fitted = Math.min(
     (width - 2 * FIT_MARGIN) / boxWidth,
-    (height - FIT_MARGIN - LABEL_MARGIN) / boxHeight,
+    (height - FIT_MARGIN - top) / boxHeight,
   );
   const z = clampZoom(zoom ?? fitted, range);
-  const centreY = LABEL_MARGIN + (height - FIT_MARGIN - LABEL_MARGIN) / 2;
+  const centreY = top + (height - FIT_MARGIN - top) / 2;
   return {
     x: box.minX + boxWidth / 2,
     y: box.minY + boxHeight / 2 - (centreY - height / 2) / z,

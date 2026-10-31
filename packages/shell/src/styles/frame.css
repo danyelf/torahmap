@@ -55,8 +55,14 @@
   inset: 0;
 }
 
+/* A text's own stylesheet may set these. */
+:root {
+  --text-font: system-ui, sans-serif;
+  --heading-font: system-ui, sans-serif;
+}
+
 body {
-  font-family: system-ui, sans-serif;
+  font-family: var(--text-font);
 }
 
 #panel {
@@ -190,9 +196,7 @@ body[data-mode='explore'] #tools {
   position: absolute;
   inset: 0;
   padding: 0 8px;
-  font:
-    12px/20px system-ui,
-    sans-serif;
+  font: 12px/20px var(--heading-font);
   color: #ddd;
   white-space: nowrap;
   overflow: hidden;
@@ -229,6 +233,7 @@ body[data-menu] #panel-body {
 
 .column-title {
   margin: 0;
+  font-family: var(--heading-font);
   font-size: 16px;
   font-weight: 600;
 }

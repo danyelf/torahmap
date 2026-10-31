@@ -138,7 +138,7 @@ function bookLabel(book: BookBox): HTMLDivElement {
   const enSpan = document.createElement('span');
   enSpan.className = 'book-label-en';
   enSpan.textContent = ` ${book.name}`;
-  enSpan.style.cssText = 'font-family:system-ui,sans-serif;';
+  enSpan.style.fontFamily = 'var(--heading-font)';
   label.appendChild(enSpan);
   return label;
 }
@@ -165,7 +165,7 @@ function sectionLabel(
   label.appendChild(hebrewSpan(name?.he ?? section, 'section-label-he'));
   const enSpan = document.createElement('span');
   enSpan.className = 'section-label-en';
-  enSpan.style.fontFamily = 'system-ui,sans-serif';
+  enSpan.style.fontFamily = 'var(--heading-font)';
   enSpan.textContent = ` ${name?.en ?? ''}`;
   label.appendChild(enSpan);
   return label;

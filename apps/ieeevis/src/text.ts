@@ -18,6 +18,8 @@ import { computeLayout, DAY_LABEL_SIZE, programBox, TIME_STRIP, type PieceItem }
 import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
+import { createMapTitle } from './mapTitle.ts';
+import './ieeevis.css';
 import { ieeevisSite } from './site.ts';
 
 const PANEL_TINT = [150, 170, 220] as const;
@@ -26,6 +28,8 @@ const PANEL_EDGE_OPACITY = 0.3;
 const SESSION_TAB = { fontSize: 12, above: 20, inset: 0, minPx: 3.5, wrap: true };
 // A slot's time keeps a size a reader can make out however far the map is zoomed out.
 const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, gap: 4 };
+// Screen pixels clear above the program as it opens: the legend reaches 58 down on a wide screen.
+const LEGEND_CLEARANCE = 70;
 const NO_TEXT = 'No text yet.';
 
 const WHOLE_MAP: Story = {
@@ -69,7 +73,14 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       items: laid.items,
 
       startCamera(viewport) {
-        return cameraToFit(programBox(laid), viewport.width, viewport.height, LINK_KEYS.zoom);
+        return cameraToFit(
+          programBox(laid),
+          viewport.width,
+          viewport.height,
+          LINK_KEYS.zoom,
+          undefined,
+          LEGEND_CLEARANCE,
+        );
       },
 
       baseColor,
@@ -81,7 +92,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
           const time = document.createElement('div');
           time.textContent = box.time;
           time.style.cssText =
-            'position:absolute;top:0;color:#eee;font:700 1em system-ui,sans-serif;' +
+            'position:absolute;top:0;color:#eee;font:700 1em var(--heading-font);' +
             `white-space:nowrap;line-height:${SECTION_LABEL_LINE_EM}em;` +
             'text-shadow:0 1px 3px rgba(0,0,0,0.8);' +
             'transform-origin:0 0;transform:rotate(-90deg) translateX(-100%);';
@@ -91,6 +102,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         const panelLayer = document.createElement('div');
         panelLayer.append(...panels.map((p) => p.el));
         container.appendChild(panelLayer);
+        const moveTitle = createMapTitle(WHOLE_MAP.data.title, container);
         const moveLabels = createMapLabels(laid.books, container, {
           sectionNames: Object.fromEntries(
             laid.books.map((b) => [b.section, { he: '', en: b.section }]),
@@ -117,6 +129,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
             time.style.opacity = fits ? '' : '0';
           }
           moveLabels(pan, zoom);
+          moveTitle(pan, zoom);
         };
       },
 

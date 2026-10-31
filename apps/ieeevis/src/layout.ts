@@ -65,11 +65,19 @@ const nameLines = (name: string): number => Math.max(1, Math.ceil(name.length / 
 
 export const DAY_LABEL_SIZE = { fontSize: 14, gapEm: 0.5 };
 
-/** The whole program with its day labels, time strip and panels' padding: the box the map opens fitted to. */
+// The map's title stands this tall above the days' names, this far clear of them.
+export const TITLE_HEIGHT = 12 * SQUARE_SIZE;
+const TITLE_GAP = 2 * SQUARE_SIZE;
+export const TITLE_CORNER = {
+  x: -PANEL_PAD,
+  y: -sectionLabelReach(DAY_LABEL_SIZE) - TITLE_GAP - TITLE_HEIGHT,
+};
+
+/** The whole program with its title, day labels, time strip and panels' padding: the box the map opens fitted to. */
 export function programBox({ bounds }: Layout) {
   return {
     minX: -PANEL_PAD - TIME_STRIP,
-    minY: -sectionLabelReach(DAY_LABEL_SIZE),
+    minY: TITLE_CORNER.y,
     maxX: bounds.width + PANEL_PAD,
     maxY: bounds.height + PANEL_PAD,
   };
