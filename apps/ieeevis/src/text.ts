@@ -43,6 +43,7 @@ const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, gap: 4 };
 // Screen pixels clear above the program as it opens: the legend reaches 58 down on a wide screen.
 const LEGEND_CLEARANCE = 70;
 const NO_TEXT = 'No text yet.';
+const MAP_TITLE = 'IEEE VIS 2026';
 
 // A colour in a story's text, as the map shows it.
 const swatch = (color: Color, outlined = false): string =>
@@ -61,7 +62,7 @@ const STORY_CITED = ['Danyel Fisher'];
 const WHOLE_MAP: Story = {
   id: 'ieeevis',
   data: {
-    title: 'IEEE VIS 2026',
+    title: 'Introduction to the IEEE VIS Map',
     description: '',
     draft: false,
     stops: [
@@ -165,7 +166,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         document.fonts.addEventListener('loadingdone', () =>
           panels.forEach((panel) => (panel.lengthEm = 0)),
         );
-        const moveTitle = createMapTitle(WHOLE_MAP.data.title, container);
+        const moveTitle = createMapTitle(MAP_TITLE, container);
         const moveCredit = createMapCredit(creditCorner(laid), container);
         const moveLabels = createMapLabels(laid.books, container, {
           sectionNames: Object.fromEntries(
