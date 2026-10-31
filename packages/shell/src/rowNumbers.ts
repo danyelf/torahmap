@@ -74,7 +74,7 @@ export function createRowNumbers(
     el.style.cssText = `
       position:absolute;
       color:#888;
-      font-family:system-ui, sans-serif;
+      font-family:var(--text-font);
       font-size:${style.fontSize}px;
       white-space:nowrap;
       line-height:1;

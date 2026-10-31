@@ -86,7 +86,7 @@
   grid-row: 1;
   grid-column: 2;
   color: #999;
-  font: 11px system-ui;
+  font: 11px var(--text-font);
 }
 
 @media (pointer: coarse) {

@@ -65,13 +65,13 @@ describe('cameraToFit', () => {
   });
 
   it('keeps the box centred at a given zoom', () => {
-    const c = cameraToFit(box, 832, 1000, ZOOM, 0.5);
+    const c = cameraToFit(box, 832, 1000, ZOOM, { zoom: 0.5 });
     expect(c.zoom).toBe(0.5);
     expect(onScreen(300, 150, c, 832, 1000).x).toBeCloseTo(416);
   });
 
   it('keeps a given room clear above a tall box', () => {
-    const c = cameraToFit(box, 4000, 286, ZOOM, undefined, 70);
+    const c = cameraToFit(box, 4000, 286, ZOOM, { top: 70 });
     expect(c.zoom).toBeCloseTo(1);
     expect(onScreen(box.minX, box.minY, c, 4000, 286).y).toBeCloseTo(70);
     expect(onScreen(box.maxX, box.maxY, c, 4000, 286).y).toBeCloseTo(270);

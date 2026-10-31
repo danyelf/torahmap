@@ -73,14 +73,9 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
       items: laid.items,
 
       startCamera(viewport) {
-        return cameraToFit(
-          programBox(laid),
-          viewport.width,
-          viewport.height,
-          LINK_KEYS.zoom,
-          undefined,
-          LEGEND_CLEARANCE,
-        );
+        return cameraToFit(programBox(laid), viewport.width, viewport.height, LINK_KEYS.zoom, {
+          top: LEGEND_CLEARANCE,
+        });
       },
 
       baseColor,
@@ -102,6 +97,10 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         const panelLayer = document.createElement('div');
         panelLayer.append(...panels.map((p) => p.el));
         container.appendChild(panelLayer);
+        // A time measured in the fallback face is the wrong length once the heading font arrives.
+        document.fonts.addEventListener('loadingdone', () =>
+          panels.forEach((panel) => (panel.lengthEm = 0)),
+        );
         const moveTitle = createMapTitle(WHOLE_MAP.data.title, container);
         const moveLabels = createMapLabels(laid.books, container, {
           sectionNames: Object.fromEntries(

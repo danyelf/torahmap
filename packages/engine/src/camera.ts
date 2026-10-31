@@ -110,20 +110,19 @@ export function boxAround(items: readonly ItemBox[]): WorldBox {
   };
 }
 
-// Screen pixels kept clear around a fitted box, and LABEL_MARGIN above it.
+// Screen pixels kept clear around a fitted box, and below whatever is kept clear above it.
 export const FIT_MARGIN = 16;
 
 /**
- * The camera that centres `box` on a `width` × `height` canvas, at the largest
- * zoom that fits it inside the margins, unless `zoom` is given, with `top` pixels clear above it.
+ * The camera that centres `box` on a `width` × `height` canvas, `top` pixels clear above it, at
+ * `zoom` or else the largest zoom that fits it inside the margins.
  */
 export function cameraToFit(
   box: WorldBox,
   width: number,
   height: number,
   range: ZoomRange,
-  zoom?: number,
-  top = LABEL_MARGIN,
+  { zoom, top = LABEL_MARGIN }: { zoom?: number; top?: number } = {},
 ): Camera {
   const boxWidth = box.maxX - box.minX;
   const boxHeight = box.maxY - box.minY;
