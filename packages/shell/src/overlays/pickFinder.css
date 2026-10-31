@@ -77,6 +77,10 @@
 
 .pick-chip {
   padding: 2px 8px;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   text-align: left;
   border: 1px solid #444;
   border-radius: 10px;
