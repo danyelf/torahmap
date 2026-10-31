@@ -7,8 +7,8 @@ import type { Loaded } from '@torahmap/shell/dataFiles.ts';
 export const IEEEVIS_DATA_DIR = 'ieeevis';
 
 export const STRUCTURE_FILE = `${IEEEVIS_DATA_DIR}/structure.json`;
-/** The papers' text by square id. Not in git: the papers' copyright varies. */
-export const TEXTS_FILE = `${IEEEVIS_DATA_DIR}/texts.json`;
+/** The papers' text by square id, packed (utils/packed.ts). Not in git. */
+export const TEXTS_FILE = `${IEEEVIS_DATA_DIR}/p.bin`;
 /** The works the 2026 papers cite, each with the papers that cite it. */
 export const CITED_FILE = `${IEEEVIS_DATA_DIR}/cited.json`;
 /** The files the citations views read. */

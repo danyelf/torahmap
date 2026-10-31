@@ -37,7 +37,7 @@ const prose = (id: string, piece: number, seed: number): string => {
   return `Stand-in text for piece ${piece + 1} (${id}). ${words.join(' ')}.`;
 };
 
-/** A text for every piece of the shipped program that has any, keyed as texts.json is. */
+/** A text for every piece of the shipped program that has any, keyed as texts.json is, before packing. */
 export function standInTexts(): Record<string, string> {
   const structure = JSON.parse(readFileSync(STRUCTURE, 'utf8')) as Structure;
   const texts: Record<string, string> = {};

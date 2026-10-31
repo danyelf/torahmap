@@ -140,14 +140,20 @@ readings come from [hebcal's leyning tables](https://github.com/hebcal/hebcal-le
 
 ### IEEE VIS data
 
-The VIS map reads three files in `public/data/ieeevis/`, all from the
+The VIS map, at https://ieeevis.danyelfisher.info (its page is `/ieeevis/` in the build; the Worker
+serves it at that host's root and sends the Talmud's and AI Act's pages to torahmap.org), reads
+three files in `public/data/ieeevis/`, all from the
 [ieeevis-scrape](https://github.com/danyelf/ieeevis-scrape) project's `scripts/build.py`:
 
 - `structure.json`: the program (titles, authors, sessions, times, keywords). Committed.
 - `cited.json`: every work the 2026 papers cite, with the papers citing it (titles, authors and years only). Committed.
 - `texts.json`: the papers' text, 21 MB. **Never committed** (gitignored): copyright varies and the
-  repository is public. The deployed site serves it from the private R2 bucket `torahmap-ieeevis`,
-  through the Worker, at the same path (`apps/worker`).
+  repository is public. The page does not read it; it reads `p.bin`, the same text gzipped and
+  scrambled by `scripts/ieeevis/pack-texts.ts` (also gitignored), which `loadFile` unpacks
+  (`packages/utils/src/packed.ts`). The deployed site serves `p.bin` from the R2 bucket
+  `torahmap-ieeevis`, through the Worker, at the same path (`apps/worker`). The scrambling only
+  keeps it from reading as a plain JSON file; it protects nothing, and `robots.txt` asks search
+  engines to stay out of `/data/`.
 
 To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-scrape/`):
 
@@ -155,12 +161,14 @@ To update, in the scrape's checkout (its raw downloads are in `~/data/ieeevis-sc
 uv run --no-project python -I scripts/build.py data <torahmap checkout>/public/data/ieeevis
 ```
 
-It writes the files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw downloads, so the checkout's `texts.json` is the copy to upload. Commit `structure.json` and `cited.json`. Then upload the text, from
-the torahmap checkout (needs `wrangler login`):
+It writes the files into the checkout, not under `~/data/ieeevis-scrape/`, which holds only the raw
+downloads. Commit `structure.json` and `cited.json`. Then, from the torahmap checkout, pack the text and upload
+it (needs `wrangler login`):
 
 ```bash
-npx wrangler r2 object put torahmap-ieeevis/texts.json \
-  --file public/data/ieeevis/texts.json --content-type application/json --remote
+npx tsx scripts/ieeevis/pack-texts.ts
+npx wrangler r2 object put torahmap-ieeevis/p.bin \
+  --file public/data/ieeevis/p.bin --content-type application/octet-stream --remote
 ```
 
 The bucket is the one copy: the live site and every preview build read it, so there is nothing
@@ -168,20 +176,13 @@ to redeploy. A browser keeps its copy only until it next asks, since the Worker 
 ETag. To check the bucket is current, fetch it and compare:
 
 ```bash
-npx wrangler r2 object get torahmap-ieeevis/texts.json --remote --file /tmp/texts-remote.json
-cmp /tmp/texts-remote.json public/data/ieeevis/texts.json && echo current
+npx wrangler r2 object get torahmap-ieeevis/p.bin --remote --file /tmp/p-remote.bin
+cmp /tmp/p-remote.bin public/data/ieeevis/p.bin && echo current
 ```
 
 `wrangler dev` reads a separate local bucket; put a copy there with the upload command and
-`--local` in place of `--remote`.
+`--local` in place of `--remote`. The dev server and the browser suites read `p.bin` from
+`public/data/ieeevis/`, so pack it in each checkout that runs them.
 
-**Keep the text behind Cloudflare Access while it is copyrighted.** Previews are open to the
-Cloudflare account's members only. On torahmap.org the Access app "torahmap private preview" must
-list `torahmap.org/ieeevis` and `torahmap.org/data/ieeevis`, as it lists the Talmud's and the AI
-Act's paths; without them the Worker serves the text to anyone. In the dashboard: Zero Trust,
-Access, Applications, "torahmap private preview", add the two public hostnames and leave its
-policy as is. By API (a token with Access Edit; `$ACCOUNT` is the account id, `$APP` the app's
-id): `GET /accounts/$ACCOUNT/access/apps/$APP`, add the two paths to `destinations`
-(`{"type":"public","uri":"torahmap.org/ieeevis"}`) and to `self_hosted_domains`, send the result
-back with `PUT` (dropping `id`, `uid`, `aud` and the dates, and listing policies by id). Check
-afterwards that `curl -I https://torahmap.org/data/ieeevis/texts.json` answers 302 to Access.
+Its telemetry rows have the host `ieeevis.danyelfisher.info`; the saved queries take
+`torahmap.org`, so run them with `SITE_HOST=ieeevis.danyelfisher.info` to read the VIS map's.
