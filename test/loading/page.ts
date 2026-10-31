@@ -36,6 +36,15 @@ async function throttle(page: Page): Promise<void> {
   });
 }
 
+/** The requests for one data file, as they are made. */
+export function requestsFor(page: Page, path: string): string[] {
+  const urls: string[] = [];
+  page.on('request', (r) => {
+    if (r.url().endsWith(`/data/${path}`)) urls.push(r.url());
+  });
+  return urls;
+}
+
 /** Makes each data file in `paths` fail to download. */
 export async function fail(page: Page, paths: readonly string[]): Promise<void> {
   for (const path of paths) await page.route(`**/data/${path}`, (route) => route.abort());

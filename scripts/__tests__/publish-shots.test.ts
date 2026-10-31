@@ -4,21 +4,27 @@ import { markdown, repoOf, shotsOf } from '../publish-shots.ts';
 const FILES = [
   'vis-default--phone.png',
   'vis-default--desktop.png',
+  'vis-default--laptop.png',
   'act-amendment-legend--desktop.png',
+  'act-amendment-legend--phone.png',
   'act-amendment-legend-before--desktop.png',
 ];
 
 describe('shotsOf', () => {
-  it('takes every size of each named state, and only that state', () => {
-    expect(shotsOf(['vis-default', 'act-amendment-legend'], FILES)).toEqual([
+  it('takes each named state on each named screen, and nothing else', () => {
+    expect(shotsOf(['vis-default', 'act-amendment-legend'], ['desktop', 'phone'], FILES)).toEqual([
       'act-amendment-legend--desktop.png',
+      'act-amendment-legend--phone.png',
       'vis-default--desktop.png',
       'vis-default--phone.png',
     ]);
   });
 
-  it('refuses a state with no screenshots', () => {
-    expect(() => shotsOf(['vis-default', 'nowhere'], FILES)).toThrow(/nowhere/);
+  it('refuses a state missing on a screen', () => {
+    expect(() => shotsOf(['vis-default', 'nowhere'], ['desktop'], FILES)).toThrow(/nowhere/);
+    expect(() => shotsOf(['act-amendment-legend-before'], ['phone'], FILES)).toThrow(
+      /act-amendment-legend-before--phone/,
+    );
   });
 });
 
@@ -34,6 +40,9 @@ describe('markdown', () => {
   it('links each picture by commit', () => {
     expect(markdown('o/r', 'abc', ['s--phone.png'])).toBe(
       '![s--phone](https://github.com/o/r/blob/abc/s--phone.png?raw=true)',
+    );
+    expect(markdown('o/r', 'abc', ['og-image.jpg'])).toBe(
+      '![og-image](https://github.com/o/r/blob/abc/og-image.jpg?raw=true)',
     );
   });
 });

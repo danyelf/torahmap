@@ -34,6 +34,8 @@ renames an element, they find nothing and have nothing to report; `shown` turns 
 `npm run test:layout:shots` also draws the real map and, at the end, writes
 `layout-report/index.html`: every state at every size, side by side,
 with failures marked in red. Look at it; the rules catch overlaps and clipping, not ugliness.
+It takes several minutes, so it is run by hand; a pull request shows only the states it touches,
+drawn by `npm run shots -- <state>...`.
 
 ## Why it waits for the map to draw
 
@@ -58,9 +60,10 @@ drawing off to prove the real map's wait can't pass on a blank canvas.
   names a real state, screen and rule. Both run with `npm test`, not in this suite.
 - `test/browser/screens.ts`: the four screen sizes, shared with the loading suite.
 - `contactSheet.ts`: the reporter that writes `layout-report/`.
-- `analytics.spec.ts`: what the reader's actions record.
-- `app.spec.ts`: the tests. One per state, plus checks that the rules can fail at all: a layout
-  broken on purpose, and a map that drew nothing.
+- `tanakh-analytics.spec.ts`: what the reader's actions record.
+- `tanakh.spec.ts`: the Tanakh's tests. One per state, plus checks that the rules can fail at all:
+  a layout broken on purpose, and a map that drew nothing. Each other text's are in its own
+  `<text>.spec.ts`; `npm run test:browser` runs a text's tests by these names.
 
 ## When a run fails
 
