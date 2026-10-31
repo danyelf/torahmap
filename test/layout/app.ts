@@ -557,6 +557,12 @@ export const TALMUD_STATES: State[] = [
 /** The VIS map's page, at /ieeevis/ (ieeevis.spec.ts). */
 export const IEEEVIS_STATES: State[] = [
   { name: 'vis-default', link: '', shown: ['#map-legend'] },
+  {
+    name: 'vis-about',
+    link: '',
+    then: (page) => viaMenu(page, 'about'),
+    shown: ['#about-panel .about-section:first-of-type .panel-section-heading'],
+  },
   { name: 'vis-sections', link: 'overlay=sections', shown: ['#map-legend'] },
   { name: 'vis-session-wrap', link: 'at=38.0&zoom=2', shown: ['#popup.visible'] },
   {

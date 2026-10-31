@@ -63,6 +63,16 @@ describe('the About panel', () => {
     expect((await about()).querySelectorAll('.controls-table tr').length).toBeGreaterThan(0);
   });
 
+  it('leaves Go to out of the controls of a text with no place to go to', async () => {
+    const { aboutHtml } = await import('../packages/shell/src/aboutPanel.ts');
+    const { talmudSite } = await import('@torahmap/talmud/site.ts');
+    const div = document.createElement('div');
+    div.innerHTML = aboutHtml(talmudSite, [], false, undefined);
+    expect(div.querySelectorAll('.controls-table tr')).toHaveLength(
+      (await about()).querySelectorAll('.controls-table tr').length - 1,
+    );
+  });
+
   it('carries the credits, the map first', async () => {
     const titles = [...(await about()).querySelectorAll('.credit-block-title')].map(
       (h) => h.textContent,

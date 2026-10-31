@@ -21,6 +21,6 @@ export const IEEEVIS_PAGE: PageCopy = {
   },
   noScript: SUMMARY,
   noWebGl: SUMMARY,
-  textUrl: 'https://ieeevis.org/',
+  textUrl: 'https://ieeevis.org/year/2026/',
   textSource: 'IEEE VIS',
 };
