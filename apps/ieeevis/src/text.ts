@@ -1,6 +1,6 @@
 // The IEEE VIS 2026 program as a text for the app shell.
 
-import { cameraToFit } from '@torahmap/engine';
+import { cameraToFit, centreForFocus } from '@torahmap/engine';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
@@ -49,7 +49,42 @@ const WHOLE_MAP: Story = {
     stops: [
       {
         id: 'start',
-        text: 'The IEEE VIS 2026 program, one square per quarter page of a paper.',
+        text: 'The IEEE VIS 2026 program. Each day is a column, and each session is a box. Each square is about 250 words of a paper, so a taller paper is a longer one.',
+        camera: 'initial',
+        overlay: KINDS_ID,
+      },
+      {
+        id: 'paper',
+        text: 'A paper reads front to back: the abstract and introduction first, the references last.',
+        camera: 'initial',
+        overlay: 'sections',
+        pin: '181.0',
+        zoom: 3,
+      },
+      {
+        id: 'person',
+        text: 'Search for an author, or for anyone the papers cite.',
+        camera: 'initial',
+        overlay: null,
+        searchParams: { search: 'Munzner' },
+      },
+      {
+        id: 'keywords',
+        text: 'The Keywords overlay shows which topics turn up across the week.',
+        camera: 'initial',
+        overlay: 'keywords',
+        overlayParams: { keywords: 'Large Language Models,Uncertainty visualization' },
+      },
+      {
+        id: 'citations',
+        text: 'The Citations overlay shows which papers cite papers by an author.',
+        camera: 'initial',
+        overlay: 'citations',
+        overlayParams: { cite: 'people', people: 'Jeffrey Heer' },
+      },
+      {
+        id: 'yours',
+        text: 'Search for your own name, or open the menu for more ways to color the map.',
         camera: 'initial',
         overlay: KINDS_ID,
       },
@@ -188,7 +223,18 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
 
       stories: {
         list: [WHOLE_MAP],
-        resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
+        // A stop that pins a piece centres on it; every other stop shows the whole program.
+        resolve: (stops, camera, _items, squares, focus, viewport) =>
+          stops.map((stop) => {
+            const pinned = stop.pin ? squares.find(stop.pin) : undefined;
+            const zoom = stop.zoom ?? camera.zoom;
+            return {
+              ...stop,
+              camera: pinned
+                ? { ...centreForFocus(pinned, zoom, focus, viewport), zoom }
+                : { ...camera },
+            };
+          }),
       },
 
       goTo: { examples: [], read: () => null, complete: () => [], languageOf: () => ENGLISH },

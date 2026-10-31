@@ -67,7 +67,7 @@ export const DAY_LABEL_SIZE = { fontSize: 14, gapEm: 0.5 };
 
 // The map's title stands this tall above the days' names, this far clear of them.
 export const TITLE_HEIGHT = 12 * SQUARE_SIZE;
-const TITLE_GAP = 2 * SQUARE_SIZE;
+const TITLE_GAP = 4 * SQUARE_SIZE;
 export const TITLE_CORNER = {
   x: -PANEL_PAD,
   y: -sectionLabelReach(DAY_LABEL_SIZE) - TITLE_GAP - TITLE_HEIGHT,
