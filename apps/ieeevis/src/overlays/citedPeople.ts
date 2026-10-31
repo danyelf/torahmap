@@ -14,4 +14,5 @@ export const citedPeopleOverlay = listOverlay<CitedData>({
   namesAt: (item, data) => peopleAt(data).get(item.id) ?? [],
   titlesOf: (person, data) => titlesByPerson(data).get(person) ?? [],
   popupLead: 'cites',
+  countLead: 'cited by',
 });

@@ -14,6 +14,7 @@ export const citedWorksOverlay = listOverlay<CitedData>({
   namesAt: (item, data) => worksAt(data).get(item.id) ?? [],
   titlesOf: (id, { cited }) => [cited[Number(id)].title],
   popupLead: 'cites',
+  countLead: 'cited by',
   label: (id, { cited }) => workTitle(cited[Number(id)]),
   detail: (id, { cited }) => workAuthors(cited[Number(id)]),
 });
