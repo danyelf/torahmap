@@ -2,12 +2,16 @@
 // (npm run test:layout:shots). Each camera is worked out from the layout.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from '../browser/fakeMap.ts';
-import { desktopOnly, openMap } from '../browser/page.ts';
+import { desktopOnly, hold, openMap } from '../browser/page.ts';
+import { standInTexts } from './visTexts.ts';
 import { computeLayout as computeTanakhLayout, getLayoutBounds } from '@torahmap/tanakh/layout.ts';
 import { computeLayout as computeVisLayout, programBox } from '@torahmap/ieeevis/layout.ts';
 import { IEEEVIS_PATH } from '@torahmap/ieeevis/page.ts';
 import { STRUCTURE_FILE as TANAKH_STRUCTURE } from '@torahmap/tanakh/verseTexts.ts';
-import { STRUCTURE_FILE as VIS_STRUCTURE } from '@torahmap/ieeevis/data.ts';
+import {
+  STRUCTURE_FILE as VIS_STRUCTURE,
+  TEXTS_FILE as VIS_TEXTS,
+} from '@torahmap/ieeevis/data.ts';
 
 const CARD = { width: 1200, height: 630 };
 /** Screen pixels left clear around the map, and above it for a title. */
@@ -75,6 +79,7 @@ test.describe('share cards', () => {
   });
 
   test('the VIS card shows the days across and the top of each', async ({ page }) => {
+    (await hold(page, [VIS_TEXTS], JSON.stringify(standInTexts())))();
     const laid = computeVisLayout(readJson(VIS_STRUCTURE) as never);
     await draw(page, {
       path: IEEEVIS_PATH,

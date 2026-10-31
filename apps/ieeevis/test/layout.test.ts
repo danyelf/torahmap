@@ -79,10 +79,10 @@ describe('a long paper', () => {
   const mine = laid.items.filter((item) => item.paper === long);
   const spread = (values: number[]) => Math.max(...values) - Math.min(...values);
 
-  it('grows wider rather than taller than its neighbours', () => {
+  it('is as wide as its neighbours and taller', () => {
     const neighbour = laid.items.filter((item) => item.paper === others[0]);
-    expect(spread(mine.map((i) => i.y))).toBeLessThanOrEqual(spread(neighbour.map((i) => i.y)) * 2);
-    expect(spread(mine.map((i) => i.x))).toBeGreaterThan(spread(neighbour.map((i) => i.x)));
+    expect(spread(mine.map((i) => i.x))).toBe(spread(neighbour.map((i) => i.x)));
+    expect(spread(mine.map((i) => i.y))).toBeGreaterThan(spread(neighbour.map((i) => i.y)));
   });
 
   it('keeps every line of papers inside its panel', () => {
