@@ -56,6 +56,7 @@ const STORY_SEARCH = [
   { term: 'parrot', mode: '' },
 ];
 const searchedTerm = (i: number): string => `${swatch(PALETTE[i])} ${STORY_SEARCH[i].term}`;
+const STORY_CITED = ['Danyel Fisher'];
 
 const WHOLE_MAP: Story = {
   id: 'ieeevis',
@@ -97,10 +98,10 @@ const WHOLE_MAP: Story = {
       },
       {
         id: 'citations',
-        text: 'The Citations overlay shows which papers cite papers by an author.',
+        text: `The Citations overlay shows which papers cite papers by an author, such as ${swatch(PALETTE[0])} ${STORY_CITED[0]}.`,
         camera: 'initial',
         overlay: 'citations',
-        overlayParams: { cite: 'people', people: 'Jeffrey Heer' },
+        overlayParams: { cite: 'people', people: picksToUrl(STORY_CITED) },
       },
       {
         id: 'yours',
