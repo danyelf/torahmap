@@ -175,7 +175,7 @@ export function listOverlay<D extends ListData>(
     const chips = pickChips(
       picks.quick(data).map((entry) =>
         pickChip(entry.label, {
-          title: papers(entry.papers),
+          title: `${entry.label} · ${papers(entry.papers)}`,
           on: isPicked(entry),
           disabled: full && !isPicked(entry),
           onClick: () => (isPicked(entry) ? onChange(removePick(entry.name)) : choose(entry)),
