@@ -6,7 +6,8 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    // The Worker sees the pages that move between hosts, and serves the papers' text from the bucket.
+    // The Worker serves the papers' text from the bucket, and sees the pages that move between hosts:
+    // on torahmap.org and previews those requests pass straight on to the static files.
     "run_worker_first": [
       "/",
       "/data/ieeevis/p.bin",

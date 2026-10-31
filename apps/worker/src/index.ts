@@ -2,7 +2,7 @@
 // data point, and the page at /. A known chat app's preview fetcher gets that
 // page with its tags naming the link asked for; anyone else gets the static
 // page untouched, since a browser sets its own title and this keeps the page
-// cacheable. The IEEE VIS papers' text, which stays out of git, comes from an R2 bucket at one
+// cacheable. The VIS map is served at the root of its own host, and the pages that belong to another host redirect to it. The IEEE VIS papers' text, which stays out of git, comes from an R2 bucket at one
 // path. Every other path is served as a static file.
 
 import {
@@ -17,6 +17,7 @@ import {
 } from '@torahmap/telemetry';
 import { readLink, writeLink, linkKind } from '@torahmap/link';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
+import { ORIGIN } from '@torahmap/site';
 import { describeLink } from '@torahmap/site/tanakh';
 import { rewritePage } from './page.ts';
 import { previewFetcher } from './fetchers.ts';
@@ -127,7 +128,7 @@ async function linkPage(request: Request, url: URL, env: Env): Promise<Response>
 
 /** Where the VIS map asks for the papers' text; the bucket holds it under TEXTS_KEY. */
 const IEEEVIS_TEXTS_PATH = '/data/ieeevis/p.bin';
-const TEXTS_KEY = 'p.bin';
+const TEXTS_KEY = IEEEVIS_TEXTS_PATH.slice(IEEEVIS_TEXTS_PATH.lastIndexOf('/') + 1);
 
 /** The papers' text from the bucket, revalidated on every use as the static files are. */
 async function ieeevisTexts(request: Request, env: Env): Promise<Response> {
@@ -144,13 +145,17 @@ async function ieeevisTexts(request: Request, env: Env): Promise<Response> {
     await stored.body.cancel();
     return new Response(null, { status: 304, headers });
   }
-  return new Response(request.method === 'HEAD' ? null : stored.body, { headers });
+  if (request.method === 'HEAD') {
+    await stored.body.cancel();
+    return new Response(null, { headers });
+  }
+  return new Response(stored.body, { headers });
 }
 
 // The VIS map has a host of its own, where it is served at the root. The other texts' pages
 // belong to torahmap.org, and the VIS page's own address there leads to its host.
 const VIS_HOST = 'ieeevis.danyelfisher.info';
-const SITE_HOST = 'torahmap.org';
+const SITE_HOST = new URL(ORIGIN).hostname;
 const OTHER_PAGES = ['/talmud', '/euaiact'];
 const VIS_PAGE = '/ieeevis';
 

@@ -267,6 +267,12 @@ describe('the page at /', () => {
     }
   });
 
+  it('keeps a whole shared link when it moves a page', async () => {
+    const query = '?overlay=people&at=3.1&people=Ann%20Lee&x=a%2Bb';
+    const response = await worker.fetch(page(`https://torahmap.org/ieeevis/${query}`), env());
+    expect(response.headers.get('Location')).toBe(`https://ieeevis.danyelfisher.info/${query}`);
+  });
+
   it('leaves a preview’s /ieeevis/ page to the static files', async () => {
     const e = envWithIndex();
     await worker.fetch(page('https://pr-1-torahmap.example.workers.dev/ieeevis/'), e);
