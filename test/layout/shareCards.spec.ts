@@ -1,5 +1,5 @@
-// Redraws the pictures link previews show, on the run that takes screenshots
-// (npm run test:layout:shots). Each camera is worked out from the layout.
+// Redraws the pictures link previews show, on the runs that take screenshots
+// (npm run shots, npm run test:layout:shots). Each camera is worked out from the layout.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from '../browser/fakeMap.ts';
 import { desktopOnly, hold, openMap } from '../browser/page.ts';

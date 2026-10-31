@@ -26,10 +26,12 @@ gh issue comment <N> --body "🤖 Claude: working on this in branch \`$(git bran
 If you stop without opening a PR, remove the label (`gh issue edit <N> --remove-label in-progress`).
 
 **UI Changes:** If you make a change that affects the UI, you MAY NOT consider it complete until
-Danyel has looked at it and agreed it's ready to close. Run `npm run test:browser` first, then `npm run test:layout:shots` (about five minutes), and embed in
-the PR the screenshots of the states the change touches: `npm run shots:publish -- <state>...`
-pushes them to `refs/shots/<branch>` and prints their Markdown. Main does not track them. The run
-also redraws the share cards in `public/`; commit those when they change.
+Danyel has looked at it and agreed it's ready to close. Run `npm run test:browser`, then
+`npm run shots -- <state>...` with the states the change touches, and embed the Markdown it prints
+in the PR. It draws those states on a desktop and a phone, pushes the pictures to
+`refs/shots/<branch>` (main does not track them), and redraws the share cards in `public/`: commit
+those when they change; it says when. Every state on every screen is `npm run test:layout:shots`,
+for Danyel to run by hand.
 Cloudflare builds every pull request and gives it a public `workers.dev` link, which is how he looks
 without checking the branch out — so say in the PR what to look at and where. The link arrives as
 a comment from `cloudflare-workers-and-pages` (`gh pr view <n> --json comments`), which is also

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { plan, suitesFor } from '../test-browser.ts';
+import { plan, specsOf, suitesFor, textOf } from '../test-browser.ts';
 
 const suites = (path: string) => suitesFor(path).suites;
 
@@ -14,7 +14,7 @@ describe('suitesFor', () => {
       'packages/shell/src/dataFiles.ts',
       'packages/shell/src/loadNotice.ts',
       'apps/talmud/src/files.ts',
-      'test/loading/loading.spec.ts',
+      'test/loading/tanakh.spec.ts',
     ])
       expect(suites(path), path).toEqual(['loading']);
   });
@@ -30,6 +30,7 @@ describe('suitesFor', () => {
       'test/layout/page.ts',
       'index.html',
       'public/favicon.png',
+      'scripts/ieeevis/pack.ts',
     ])
       expect(suites(path), path).toEqual(['layout']);
   });
@@ -71,10 +72,63 @@ describe('suitesFor', () => {
   });
 });
 
+describe('textOf', () => {
+  it('names the text whose app, data or tests a file is', () => {
+    expect(textOf('apps/talmud/src/text.ts')).toBe('talmud');
+    expect(textOf('public/data/euaiact/structure.json')).toBe('euaiact');
+    expect(textOf('test/layout/ieeevis.spec.ts')).toBe('ieeevis');
+    expect(textOf('test/layout/tanakh-analytics.spec.ts')).toBe('tanakh');
+    expect(textOf('test/loading/talmud.spec.ts')).toBe('talmud');
+  });
+
+  it('gives the Tanakh the rest of the data, and the stories', () => {
+    expect(textOf('public/data/all-texts.json')).toBe('tanakh');
+    expect(textOf('public/data/search/lexicon.json')).toBe('tanakh');
+    expect(textOf('packages/stories/markdown/tour.md')).toBe('tanakh');
+  });
+
+  it('names no text for what the texts share', () => {
+    for (const path of [
+      'packages/shell/src/main.ts',
+      'test/layout/check.ts',
+      'test/layout/shareCards.spec.ts',
+      'index.html',
+    ])
+      expect(textOf(path), path).toBeUndefined();
+  });
+});
+
 describe('plan', () => {
   it('lists each suite with the files that call for it, and leaves out a suite none does', () => {
-    expect(plan(['packages/shell/src/main.ts', 'docs/x.md'])).toEqual(
-      new Map([['layout', ['packages/shell/src/main.ts']]]),
+    expect(plan(['apps/talmud/src/text.ts', 'docs/x.md'])).toEqual(
+      new Map([['layout', { files: ['apps/talmud/src/text.ts'], texts: new Set(['talmud']) }]]),
     );
+  });
+
+  it("runs only the texts the files are each one's own", () => {
+    const runs = plan(['apps/talmud/src/text.ts', 'apps/euaiact/src/text.ts']);
+    expect(runs.get('layout')!.texts).toEqual(new Set(['talmud', 'euaiact']));
+  });
+
+  it('runs every text once any file is shared', () => {
+    const runs = plan(['apps/talmud/src/text.ts', 'packages/shell/src/main.ts']);
+    expect(runs.get('layout')!.texts).toBe('every');
+  });
+});
+
+describe('specsOf', () => {
+  it("takes each text's spec files by their names, and nothing else", () => {
+    const files = [
+      'tanakh.spec.ts',
+      'tanakh-analytics.spec.ts',
+      'talmud.spec.ts',
+      'shareCards.spec.ts',
+      'page.ts',
+    ];
+    expect(specsOf(new Set(['tanakh']), files)).toEqual([
+      'tanakh.spec.ts',
+      'tanakh-analytics.spec.ts',
+    ]);
+    expect(specsOf(new Set(['euaiact']), files)).toEqual([]);
   });
 });
