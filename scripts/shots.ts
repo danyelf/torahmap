@@ -1,6 +1,6 @@
 // Draws the named layout states on the real map, on a desktop and a phone, redraws the share
 // cards, and publishes the pictures for the pull request, printing their Markdown. A share card
-// is published only when its picture changed.
+// is published when the branch changes it.
 //
 //   npm run shots -- explore-search act-search
 //
@@ -41,19 +41,19 @@ function main(states: string[]): void {
   if (run.status !== 0) throw new Error('The drawing run failed, so nothing was published.');
 
   const shots = shotsOf(states, DESKTOP_AND_PHONE, readdirSync(SHOTS_DIR));
-  const cards = execFileSync('git', ['status', '--porcelain', '--', 'public/*og-image.jpg'], {
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => line.slice(3));
+  // The cards this branch changes, committed or not.
+  const git = (...args: string[]) =>
+    execFileSync('git', args, { encoding: 'utf8' }).split('\n').filter(Boolean);
+  const [base] = git('merge-base', 'HEAD', 'origin/main');
+  const cards = git('diff', '--name-only', base, '--', 'public/*og-image.jpg');
   console.log(
     publish(
       [...shots.map((f) => join(SHOTS_DIR, f)), ...cards],
       `Screenshots: ${[...states, ...cards].join(', ')}`,
     ),
   );
-  if (cards.length) console.log(`\nThe share cards changed: commit ${cards.join(' and ')}.`);
+  if (cards.length)
+    console.log(`\nThis branch changes the share cards: commit ${cards.join(' and ')}.`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

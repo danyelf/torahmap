@@ -148,7 +148,9 @@ function planChanges(): Map<Suite, Run> {
 }
 
 function main(args: string[]): void {
-  const runs: Map<Suite, Run> = args.includes('--all')
+  const all = args.includes('--all');
+  if (all) console.log('Every test in both suites.');
+  const runs: Map<Suite, Run> = all
     ? new Map(BOTH.map((suite) => [suite, { files: [], texts: 'every' }]))
     : planChanges();
   // Playwright's arguments for each suite: none for every test, else the spec files to run.
@@ -163,10 +165,12 @@ function main(args: string[]): void {
     else console.log(`  The ${suite} suite has no tests of ${[...texts].join(' or ')}.`);
   }
   if (args.includes('--list')) return;
-  if (filters.size > 0)
+  if (!all && filters.size > 0)
     console.log(
-      'This is the run a pull request needs. While working, check one layout state at a time: ' +
-        'npm run test:layout -- -g <state>',
+      'This is the run a pull request needs.' +
+        (filters.has('layout')
+          ? ' While working, check one layout state at a time: npm run test:layout -- -g <state>'
+          : ''),
     );
 
   const failed = [...filters].filter(
@@ -177,7 +181,7 @@ function main(args: string[]): void {
     console.error(`Failed: ${failed.map(([suite]) => suite).join(', ')}.`);
     process.exit(1);
   }
-  if (filters.has('layout'))
+  if (!all && filters.has('layout'))
     console.log(
       'Passed. To show the change in its pull request, draw the states it touches, named in ' +
         'test/layout/app.ts: npm run shots -- <state>...',

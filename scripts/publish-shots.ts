@@ -1,5 +1,5 @@
-// Publishes pictures for a pull request to embed, and gives their Markdown. Main does not track
-// the screenshots: two branches that redraw the same picture cannot be merged.
+// Publishes pictures for a pull request to embed, and gives their Markdown, for scripts/shots.ts.
+// Main does not track the screenshots: two branches that redraw the same picture cannot be merged.
 //
 // The pictures go to `refs/shots/<branch>`, a commit holding only them. A clone fetches branches
 // and tags only, so they cost no one a download, and the ref keeps every commit the links name.

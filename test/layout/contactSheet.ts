@@ -36,7 +36,7 @@ export default class ContactSheet implements Reporter {
   }
 
   onBegin(config: FullConfig, suite: Suite): void {
-    // The sheet is the run's own; the shots beside it are committed, and a run rewrites only those it takes.
+    // The sheet is the run's own; the shots beside it stay, and a run rewrites only those it takes.
     rmSync(join(this.dir, 'index.html'), { force: true });
     this.order = config.projects.map((p) => p.name);
     for (const t of suite.allTests()) {
