@@ -18,7 +18,6 @@ import { citedWorksOverlay } from '../src/overlays/citedWorks.ts';
 const paper = (index: number) => ({
   index,
   title: `Paper ${index}`,
-  page: `https://ieeevis.org/year/2026/paper/${index}`,
   authors: [],
   kind: 'Full VIS Paper',
   when: '',
