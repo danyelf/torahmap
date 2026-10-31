@@ -22,6 +22,7 @@ const paper = (index: number) => ({
   kind: 'Full VIS Paper',
   when: '',
   pieces: 'afff',
+  page: `https://ieeevis.org/year/2026/paper/${index}`,
 });
 const structure: Structure = {
   days: [{ name: 'Mon', sessions: [{ name: 'S', start: '', papers: [0, 1, 2, 3].map(paper) }] }],
