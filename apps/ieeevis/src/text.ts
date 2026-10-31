@@ -84,7 +84,7 @@ const WHOLE_MAP: Story = {
       },
       {
         id: 'search',
-        text: `Search for a word, name, or string. This search finds the papers that use the term ${searched('LLM')} and those that use the word ${searched('AI')}.`,
+        text: `Search for a word, name, or string. This search finds the papers that use the term ${searched('LLM')} and those that use the word ${searched('AI')}. The excerpt highlights search words.`,
         camera: 'initial',
         overlay: null,
         // AgentPulse: Visual Analytics of Communication and Activity in LLM-Based Multi-Agent Systems
