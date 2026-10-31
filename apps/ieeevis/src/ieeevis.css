@@ -5,3 +5,15 @@
   --text-font: 'Fira Sans', sans-serif;
   --heading-font: 'Zilla Slab', serif;
 }
+
+/* The credit under the program; #map-labels > * would stretch it across the map. */
+#map-labels > .map-credit {
+  inset: auto;
+  color: #999;
+  white-space: nowrap;
+}
+
+.map-credit a {
+  color: #bbb;
+  pointer-events: auto;
+}
