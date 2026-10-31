@@ -11,6 +11,8 @@ export interface PageCopy {
   url: string;
   /** The link preview's picture. */
   image?: { url: string; alt: string };
+  /** The tab's icon, if not the Torahmap's. */
+  icon?: string;
   /** What the map is, to a browser that runs no script. */
   noScript: string;
   /** What the map is, ahead of why this browser cannot draw it. */
@@ -36,6 +38,7 @@ export function fillPage(html: string, copy: PageCopy, entry: string): string {
     SITE_NAME: escapeHtml(copy.name),
     TAGLINE: escapeHtml(copy.tagline),
     URL: escapeHtml(copy.url),
+    ICON: escapeHtml(copy.icon ?? '/favicon.png'),
     PREVIEW: preview.join(''),
     NO_SCRIPT: escapeHtml(copy.noScript),
     NO_WEBGL: escapeHtml(copy.noWebGl),

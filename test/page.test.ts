@@ -72,6 +72,12 @@ describe.each(PAGES)('the page at $path', ({ copy, entry }) => {
     );
   });
 
+  it('shows its own icon in the tab, or else the Torahmap’s', () => {
+    expect(doc.querySelector('link[rel="icon"]')?.getAttribute('href')).toBe(
+      copy.icon ?? '/favicon.png',
+    );
+  });
+
   it('promises a large preview only with a picture to show', () => {
     expect(meta('og:image') ?? null).toBe(copy.image?.url ?? null);
     expect(meta('twitter:card')).toBe(copy.image ? 'summary_large_image' : 'summary');

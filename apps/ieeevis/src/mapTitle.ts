@@ -1,7 +1,7 @@
 // The map's title, painted on the map above the days: it grows and moves exactly as the squares do.
 
 import { TITLE_CORNER, TITLE_HEIGHT } from './layout.ts';
-import iconUrl from './vis2026_icon.svg?url';
+import { IEEEVIS_ICON } from './page.ts';
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -33,7 +33,7 @@ export function createMapTitle(
   });
   text.style.fontFamily = 'var(--heading-font)';
   text.textContent = name;
-  svg.append(svgElement('image', { href: iconUrl, width: '100', height: '100' }), text);
+  svg.append(svgElement('image', { href: IEEEVIS_ICON, width: '100', height: '100' }), text);
   container.append(svg);
 
   return (offset, zoom) => {

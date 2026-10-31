@@ -8,11 +8,15 @@ export const IEEEVIS_PATH = '/ieeevis/';
 /** Where the VIS map lives, at the root; its link preview's picture is served from here. */
 export const IEEEVIS_ORIGIN = 'https://ieeevis.danyelfisher.info';
 
+/** IEEE VIS's own icon, in the tab and beside the map's title. */
+export const IEEEVIS_ICON = '/ieeevis-icon.svg';
+
 const SUMMARY =
   'VIS Map lays out the IEEE VIS 2026 program as colored squares, one for each quarter page of a paper, each in a fixed place.';
 
 export const IEEEVIS_PAGE: PageCopy = {
   name: 'VIS Map',
+  icon: IEEEVIS_ICON,
   tagline: 'A map of the IEEE VIS 2026 program.',
   url: `${IEEEVIS_ORIGIN}/`,
   image: {
