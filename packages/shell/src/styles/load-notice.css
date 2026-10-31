@@ -1,6 +1,6 @@
 .load-notice {
   color: #999;
-  font-family: system-ui, sans-serif;
+  font-family: var(--text-font);
   font-size: 13px;
 }
 

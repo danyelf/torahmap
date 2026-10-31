@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import type { Structure } from '@torahmap/ieeevis/data.ts';
 import { computeLayout } from '@torahmap/ieeevis/layout.ts';
 import { isPlaceholder } from '@torahmap/ieeevis/baseColor.ts';
+import { pack } from '../../scripts/ieeevis/pack.ts';
 
 const STRUCTURE = new URL('../../public/data/ieeevis/structure.json', import.meta.url);
 const WORDS = ['chart', 'colour', 'axis', 'glyph', 'mark', 'scale', 'layout', 'filter', 'trend'];
@@ -47,3 +48,6 @@ export function standInTexts(): Record<string, string> {
   });
   return texts;
 }
+
+/** The stand-in texts as the page reads them, packed. */
+export const standInTextsFile = (): Buffer => Buffer.from(pack(JSON.stringify(standInTexts())));

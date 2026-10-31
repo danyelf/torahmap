@@ -107,7 +107,7 @@ export function resolveStops(
       camera = verse
         ? cameraForVerse(verse, stop.zoom ?? 3, focus, mapSize)
         : box
-          ? cameraToFit(box, mapSize.width, mapSize.height, zoom, stop.zoom)
+          ? cameraToFit(box, mapSize.width, mapSize.height, zoom, { zoom: stop.zoom })
           : { ...initialCamera };
     } else if (cam !== 'initial') {
       camera = cam;

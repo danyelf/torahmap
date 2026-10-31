@@ -77,7 +77,7 @@ describe('resolveStops with a camera naming places', () => {
   it('fits everything, at a given zoom', () => {
     const box = { minX: 0, minY: 0, maxX: 200 + sectionLabelReach(SECTION_SIZE), maxY: 210 };
     expect(resolve({ camera: { kind: 'places', names: ['everything'] }, zoom: 0.5 })).toEqual(
-      cameraToFit(box, 400, 300, LINK_KEYS.zoom, 0.5),
+      cameraToFit(box, 400, 300, LINK_KEYS.zoom, { zoom: 0.5 }),
     );
   });
 
