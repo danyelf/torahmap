@@ -148,7 +148,7 @@ export const TROP_MARKS: readonly TropMark[] = [
     signs: [GERESH_MUQDAM],
     groups: { poetic: 'dividers' },
   },
-  { name: 'Dechi', hebrewName: 'דחי', signs: ['֭'], groups: { poetic: 'dividers' } },
+  { name: 'Dehi', hebrewName: 'דחי', signs: ['֭'], groups: { poetic: 'dividers' } },
   { name: 'Tevir', hebrewName: 'תביר', signs: ['֛'], groups: { prose: 'dukes' } },
   { name: 'Yetiv', hebrewName: 'יתיב', signs: ['֚'], groups: { prose: 'dukes' } },
   {
