@@ -60,7 +60,7 @@ const searched = (term: string): string =>
   `${swatch(PALETTE[STORY_SEARCH.findIndex((t) => t.term === term)])} ${term}`;
 const STORY_CITED = ['Danyel Fisher'];
 
-const WHOLE_MAP: Story = {
+export const WHOLE_MAP: Story = {
   id: 'ieeevis',
   data: {
     title: 'Introduction to the IEEE VIS Map',
