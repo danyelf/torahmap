@@ -30,6 +30,7 @@ describe('suitesFor', () => {
       'test/layout/page.ts',
       'index.html',
       'public/favicon.png',
+      'scripts/ieeevis/pack.ts',
     ])
       expect(suites(path), path).toEqual(['layout']);
   });

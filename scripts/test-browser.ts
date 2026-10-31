@@ -45,6 +45,8 @@ const RULES: [RegExp, Suite[]][] = [
   // package-lock.json; package.json alone is scripts and settings.
   [/^index\.html$/, LAYOUT],
   [/^(vite\.config\.ts|pages\.ts|build\.ts|package-lock\.json)$/, BOTH],
+  // The VIS layout tests pack their stand-in text with it.
+  [/^scripts\/ieeevis\/pack\.ts$/, LAYOUT],
   // Unit tests' helpers, the Worker, tooling and configuration.
   [/(^|\/)test\//, NEITHER],
   [/^apps\/worker\//, NEITHER],
@@ -59,15 +61,21 @@ export function suitesFor(path: string): { suites: Suite[]; named: boolean } {
   return rule ? { suites: rule[1], named: true } : { suites: BOTH, named: false };
 }
 
-/** The texts: each folder in apps/ is one. */
+/** The folders in apps/: each text's, and the Worker's, which no rule gives a suite. */
 const TEXTS = readdirSync(new URL('../apps/', import.meta.url));
+
+/** The text a spec file is named for, as in tanakh-analytics.spec.ts. */
+function textOfSpec(file: string): string | undefined {
+  const text = file.match(/^([^/.-]+)[^/]*\.spec\.ts$/)?.[1];
+  return text && TEXTS.includes(text) ? text : undefined;
+}
 
 /** The text whose own code, data or tests `path` is; undefined for what every text shares. */
 export function textOf(path: string): string | undefined {
-  const own =
-    path.match(/^(?:apps|public\/data)\/([^/]+)\//)?.[1] ??
-    path.match(/^test\/(?:layout|loading)\/([^/.-]+)[^/]*\.spec\.ts$/)?.[1];
+  const own = path.match(/^(?:apps|public\/data)\/([^/]+)\//)?.[1];
   if (own && TEXTS.includes(own)) return own;
+  const spec = textOfSpec(path.match(/^test\/(?:layout|loading)\/(.+)$/)?.[1] ?? '');
+  if (spec) return spec;
   // The rest of public/data is the Tanakh's, and so are the stories.
   if (/^public\/data\/|^packages\/stories\/markdown\//.test(path)) return 'tanakh';
   return undefined;
@@ -95,9 +103,9 @@ export function plan(paths: readonly string[]): Map<Suite, Run> {
   return runs;
 }
 
-/** The spec files in `files` that are one of `texts`' own, each named for its text: tanakh-analytics.spec.ts. */
+/** The spec files in `files` named for one of `texts`. */
 export function specsOf(texts: ReadonlySet<string>, files: readonly string[]): string[] {
-  return files.filter((file) => file.endsWith('.spec.ts') && texts.has(file.split(/[-.]/)[0]));
+  return files.filter((file) => texts.has(textOfSpec(file) ?? ''));
 }
 
 function git(...args: string[]): string[] {
@@ -110,7 +118,7 @@ function git(...args: string[]): string[] {
  * The files changed since this branch left origin/main, committed or not. A
  * renamed file counts under its old path as well as its new one.
  */
-function changedFiles(): string[] {
+export function changedFiles(): string[] {
   const [base] = git('merge-base', 'HEAD', 'origin/main');
   return [
     ...new Set([
@@ -150,12 +158,9 @@ function planChanges(): Map<Suite, Run> {
 function main(args: string[]): void {
   const all = args.includes('--all');
   if (all) console.log('Every test in both suites.');
-  const runs: Map<Suite, Run> = all
-    ? new Map(BOTH.map((suite) => [suite, { files: [], texts: 'every' }]))
-    : planChanges();
   // Playwright's arguments for each suite: none for every test, else the spec files to run.
-  const filters = new Map<Suite, string[]>();
-  for (const [suite, { texts }] of runs) {
+  const filters = new Map<Suite, string[]>(all ? BOTH.map((suite) => [suite, []]) : []);
+  for (const [suite, { texts }] of all ? [] : planChanges()) {
     if (texts === 'every') {
       filters.set(suite, []);
       continue;
