@@ -75,18 +75,21 @@ const WHOLE_MAP: Story = {
       },
       {
         id: 'paper',
-        text: `A paper reads front to back: the ${swatch(SECTIONS.a.color)} abstract and ${swatch(SECTIONS.i.color)} introduction first, the ${swatch(SECTIONS.f.color, true)} references last.\n\nClick the legend box at the top to jump to the overlay. The ☰ menu can bring you back to the tour.`,
+        text: `A paper reads front to back: the ${swatch(SECTIONS.a.color)} abstract and ${swatch(SECTIONS.i.color)} introduction first, the ${swatch(SECTIONS.f.color, true)} references last. Click a square to read an excerpt of its text.\n\nClick the legend box at the top to jump to the overlay. The ☰ menu can bring you back to the tour.`,
         camera: 'initial',
         overlay: 'sections',
-        // Beyond One Output: Visualizing and Comparing Distributions of Language Model Generations
-        pin: '181.0',
-        zoom: 1.5,
+        // Playing the Archive: Audiovisual Latent Space Exploration with The Ocular Harpsichord 2.0
+        pin: '350.0',
+        zoom: 2.66,
       },
       {
         id: 'search',
         text: `Search for a word, name, or string. This search finds the papers that use the term ${searched('LLM')} and those that use the word ${searched('AI')}.`,
         camera: 'initial',
         overlay: null,
+        // AgentPulse: Visual Analytics of Communication and Activity in LLM-Based Multi-Agent Systems
+        pin: '29.0',
+        zoom: 1.15,
         searchParams: {
           search: STORY_SEARCH.map((t) => t.term).join(', '),
           mode: STORY_SEARCH.map((t) => t.mode).join(','),
