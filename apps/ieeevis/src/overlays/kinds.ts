@@ -1,7 +1,7 @@
 // Colours every square by the kind of its paper, placeholders included.
 
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
-import { hex, type Color } from '@torahmap/utils';
+import { colorToCss, hex, type Color } from '@torahmap/utils';
 import { jittered } from '../baseColor.ts';
 import type { PieceItem } from '../layout.ts';
 import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
@@ -41,4 +41,6 @@ export const kindsOverlay: Overlay<PieceItem> = {
   renderLegend(container) {
     container.replaceChildren(...swatchList(FAMILIES));
   },
+  // One group: a plain list of colours stops at six.
+  summary: () => ({ groups: [FAMILIES.map(({ color }) => colorToCss(color))] }),
 };
