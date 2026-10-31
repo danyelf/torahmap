@@ -14,10 +14,18 @@ import { ieeevisFiles } from './files.ts';
 import { pieceStrip } from './pieceStrip.ts';
 import { referenceLines } from './references.ts';
 import { defaultExcerpt, hitExcerpt } from './excerpts.ts';
-import { computeLayout, DAY_LABEL_SIZE, programBox, TIME_STRIP, type PieceItem } from './layout.ts';
+import {
+  computeLayout,
+  creditCorner,
+  DAY_LABEL_SIZE,
+  programBox,
+  TIME_STRIP,
+  type PieceItem,
+} from './layout.ts';
 import { KINDS_ID } from './overlays/kinds.ts';
 import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
+import { createMapCredit } from './mapCredit.ts';
 import { createMapTitle } from './mapTitle.ts';
 import './ieeevis.css';
 import { ieeevisSite } from './site.ts';
@@ -102,6 +110,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
           panels.forEach((panel) => (panel.lengthEm = 0)),
         );
         const moveTitle = createMapTitle(WHOLE_MAP.data.title, container);
+        const moveCredit = createMapCredit(creditCorner(laid), container);
         const moveLabels = createMapLabels(laid.books, container, {
           sectionNames: Object.fromEntries(
             laid.books.map((b) => [b.section, { he: '', en: b.section }]),
@@ -129,6 +138,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
           }
           moveLabels(pan, zoom);
           moveTitle(pan, zoom);
+          moveCredit(pan, zoom);
         };
       },
 

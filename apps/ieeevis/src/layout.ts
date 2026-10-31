@@ -73,13 +73,25 @@ export const TITLE_CORNER = {
   y: -sectionLabelReach(DAY_LABEL_SIZE) - TITLE_GAP - TITLE_HEIGHT,
 };
 
-/** The whole program with its title, day labels, time strip and panels' padding: the box the map opens fitted to. */
-export function programBox({ bounds }: Layout) {
+// The credit's two lines, under the last panel drawn: the papers not yet scheduled.
+export const CREDIT_SIZE = { fontSize: 9, lineEm: 1.3 };
+const CREDIT_GAP = 2 * SQUARE_SIZE;
+
+export function creditCorner({ panels }: Layout) {
+  const last = panels[panels.length - 1];
+  return { x: last.minX + PANEL_PAD, y: last.maxY + CREDIT_GAP };
+}
+
+/** The whole program with its title, day labels, time strip, panels' padding and credit: the box the map opens fitted to. */
+export function programBox(laid: Layout) {
   return {
     minX: -PANEL_PAD - TIME_STRIP,
     minY: TITLE_CORNER.y,
-    maxX: bounds.width + PANEL_PAD,
-    maxY: bounds.height + PANEL_PAD,
+    maxX: laid.bounds.width + PANEL_PAD,
+    maxY: Math.max(
+      laid.bounds.height + PANEL_PAD,
+      creditCorner(laid).y + 2 * CREDIT_SIZE.fontSize * CREDIT_SIZE.lineEm,
+    ),
   };
 }
 
