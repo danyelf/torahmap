@@ -2,15 +2,14 @@
 
 import { viewTitle } from '@torahmap/site';
 import type { Site } from '@torahmap/shell/app/text.ts';
-import { IEEEVIS_PAGE } from './page.ts';
+import { IEEEVIS_PAGE, WORDS_PER_SQUARE } from './page.ts';
 
 export const ieeevisSite: Site = {
   page: IEEEVIS_PAGE,
   direction: 'ltr',
   squareName: 'piece',
   email: 'danyel@danyelfisher.info',
-  aboutHtml:
-    '<p>An interactive map of the IEEE VIS 2026 program. Each square represents about 250 words from a paper. Papers sit in their sessions, sessions in their days. Outlined squares are papers whose text is not loaded; their length is estimated from the kind of paper.</p>',
+  aboutHtml: `<p>An interactive map of the IEEE VIS 2026 program. Each square represents about ${WORDS_PER_SQUARE} words from a paper. Papers sit in their sessions, sessions in their days. Outlined squares are papers whose text is not loaded; their length is estimated from the kind of paper.</p>`,
   credits: [
     {
       source: 'IEEE VIS 2026 program',

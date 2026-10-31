@@ -27,11 +27,12 @@ import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
 import { createMapCredit } from './mapCredit.ts';
 import { createMapTitle } from './mapTitle.ts';
-import './ieeevis.css';
 import { SECTIONS } from './overlays/sections.ts';
 import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { picksToUrl } from '@torahmap/shell/overlays/picks.ts';
 import { colorToCss, type Color } from '@torahmap/utils';
+import { WORDS_PER_SQUARE } from './page.ts';
+import './ieeevis.css';
 import { ieeevisSite } from './site.ts';
 
 const PANEL_TINT = [150, 170, 220] as const;
@@ -45,18 +46,18 @@ const LEGEND_CLEARANCE = 70;
 const NO_TEXT = 'No text yet.';
 const MAP_TITLE = 'IEEE VIS 2026';
 
-// A colour in a story's text, as the map shows it.
 const swatch = (color: Color, outlined = false): string =>
   `<span class="story-swatch${outlined ? ' outlined' : ''}" style="background:${colorToCss(color)}"></span>`;
-// Picked in this order, so each takes the palette's colour at its place.
+// The story picks and searches these in order, so each takes the palette's colour at its place.
 const STORY_KEYWORDS = ['Large Language Models', 'Uncertainty visualization'];
-// Searched in this order, so each term takes the palette's colour at its place; mode w is a whole word.
+// Mode w: a whole word.
 const STORY_SEARCH = [
   { term: 'AI', mode: 'w' },
   { term: 'LLM', mode: 'w' },
   { term: 'parrot', mode: '' },
 ];
-const searchedTerm = (i: number): string => `${swatch(PALETTE[i])} ${STORY_SEARCH[i].term}`;
+const searched = (term: string): string =>
+  `${swatch(PALETTE[STORY_SEARCH.findIndex((t) => t.term === term)])} ${term}`;
 const STORY_CITED = ['Danyel Fisher'];
 
 const WHOLE_MAP: Story = {
@@ -68,7 +69,7 @@ const WHOLE_MAP: Story = {
     stops: [
       {
         id: 'start',
-        text: 'The IEEE VIS 2026 program. Each day is a column, and each session is a box. Each square is about 250 words of a paper, so a taller paper is a longer one.',
+        text: `The IEEE VIS 2026 program. Each day is a column, and each session is a box. Each square is about ${WORDS_PER_SQUARE} words of a paper, so a taller paper is a longer one.`,
         camera: 'initial',
         overlay: KINDS_ID,
       },
@@ -77,12 +78,13 @@ const WHOLE_MAP: Story = {
         text: `A paper reads front to back: the ${swatch(SECTIONS.a.color)} abstract and ${swatch(SECTIONS.i.color)} introduction first, the ${swatch(SECTIONS.f.color, true)} references last.\n\nClick the legend box at the top to jump to the overlay. The ☰ menu can bring you back to the tour.`,
         camera: 'initial',
         overlay: 'sections',
+        // Beyond One Output: Visualizing and Comparing Distributions of Language Model Generations
         pin: '181.0',
         zoom: 1.5,
       },
       {
         id: 'search',
-        text: `Search for a word, name, or string. This search finds the papers that use the term ${searchedTerm(1)} and those that use the word ${searchedTerm(0)}.`,
+        text: `Search for a word, name, or string. This search finds the papers that use the term ${searched('LLM')} and those that use the word ${searched('AI')}.`,
         camera: 'initial',
         overlay: null,
         searchParams: {
