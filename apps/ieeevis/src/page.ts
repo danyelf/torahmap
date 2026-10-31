@@ -11,8 +11,10 @@ export const IEEEVIS_ORIGIN = 'https://ieeevis.danyelfisher.info';
 /** IEEE VIS's own icon, in the tab and beside the map's title. */
 export const IEEEVIS_ICON = '/ieeevis-icon.svg';
 
-const SUMMARY =
-  'VIS Map lays out the IEEE VIS 2026 program as colored squares, one for each quarter page of a paper, each in a fixed place.';
+/** About how many words of a paper one square holds, as the scrape cuts them. */
+export const WORDS_PER_SQUARE = 250;
+
+const SUMMARY = `VIS Map lays out the IEEE VIS 2026 program as colored squares, each about ${WORDS_PER_SQUARE} words of a paper, each in a fixed place.`;
 
 export const IEEEVIS_PAGE: PageCopy = {
   name: 'VIS Map',

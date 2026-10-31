@@ -1,6 +1,6 @@
 // The IEEE VIS 2026 program as a text for the app shell.
 
-import { cameraToFit } from '@torahmap/engine';
+import { cameraToFit, centreForFocus } from '@torahmap/engine';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
@@ -27,6 +27,11 @@ import { VIS_OVERLAYS, visOverlayParams } from './overlays/index.ts';
 import { configureSearch, squareBody, visSearch } from './search.ts';
 import { createMapCredit } from './mapCredit.ts';
 import { createMapTitle } from './mapTitle.ts';
+import { SECTIONS } from './overlays/sections.ts';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { picksToUrl } from '@torahmap/shell/overlays/picks.ts';
+import { colorToCss, type Color } from '@torahmap/utils';
+import { WORDS_PER_SQUARE } from './page.ts';
 import './ieeevis.css';
 import { ieeevisSite } from './site.ts';
 
@@ -39,17 +44,74 @@ const TIME_LABEL = { fontSize: DAY_LABEL_SIZE.fontSize, minPx: 9, gap: 4 };
 // Screen pixels clear above the program as it opens: the legend reaches 58 down on a wide screen.
 const LEGEND_CLEARANCE = 70;
 const NO_TEXT = 'No text yet.';
+const MAP_TITLE = 'IEEE VIS 2026';
 
-const WHOLE_MAP: Story = {
+const swatch = (color: Color, outlined = false): string =>
+  `<span class="story-swatch${outlined ? ' outlined' : ''}" style="background:${colorToCss(color)}"></span>`;
+// The story picks and searches these in order, so each takes the palette's colour at its place.
+const STORY_KEYWORDS = ['Large Language Models', 'Uncertainty visualization'];
+// Mode w: a whole word.
+const STORY_SEARCH = [
+  { term: 'AI', mode: 'w' },
+  { term: 'LLM', mode: 'w' },
+  { term: 'parrot', mode: '' },
+];
+const searched = (term: string): string =>
+  `${swatch(PALETTE[STORY_SEARCH.findIndex((t) => t.term === term)])} ${term}`;
+const STORY_CITED = ['Danyel Fisher'];
+
+export const WHOLE_MAP: Story = {
   id: 'ieeevis',
   data: {
-    title: 'IEEE VIS 2026',
+    title: 'Introduction to the IEEE VIS Map',
     description: '',
     draft: false,
     stops: [
       {
         id: 'start',
-        text: 'The IEEE VIS 2026 program, one square per quarter page of a paper.',
+        text: `The IEEE VIS 2026 program. Each day is a column, and each session is a box. Each square is about ${WORDS_PER_SQUARE} words of a paper, so a taller paper is a longer one.`,
+        camera: 'initial',
+        overlay: KINDS_ID,
+      },
+      {
+        id: 'paper',
+        text: `A paper reads front to back: the ${swatch(SECTIONS.a.color)} abstract and ${swatch(SECTIONS.i.color)} introduction first, the ${swatch(SECTIONS.f.color, true)} references last. Click a square to read an excerpt of its text.\n\nClick the legend box at the top to jump to the overlay. The ☰ menu can bring you back to the tour.`,
+        camera: 'initial',
+        overlay: 'sections',
+        // Playing the Archive: Audiovisual Latent Space Exploration with The Ocular Harpsichord 2.0
+        pin: '350.0',
+        zoom: 2.66,
+      },
+      {
+        id: 'search',
+        text: `Search for a word, name, or string. This search finds the papers that use the term ${searched('LLM')} and those that use the word ${searched('AI')}. The excerpt highlights search words.`,
+        camera: 'initial',
+        overlay: null,
+        // AgentPulse: Visual Analytics of Communication and Activity in LLM-Based Multi-Agent Systems
+        pin: '29.0',
+        zoom: 1.15,
+        searchParams: {
+          search: STORY_SEARCH.map((t) => t.term).join(', '),
+          mode: STORY_SEARCH.map((t) => t.mode).join(','),
+        },
+      },
+      {
+        id: 'keywords',
+        text: `The Keywords overlay shows where topics turn up across the week: ${STORY_KEYWORDS.map((keyword, i) => `${swatch(PALETTE[i])} ${keyword}`).join(' and ')}.`,
+        camera: 'initial',
+        overlay: 'keywords',
+        overlayParams: { keywords: picksToUrl(STORY_KEYWORDS) },
+      },
+      {
+        id: 'citations',
+        text: `The Citations overlay shows which papers cite papers by an author, such as ${swatch(PALETTE[0])} ${STORY_CITED[0]}.`,
+        camera: 'initial',
+        overlay: 'citations',
+        overlayParams: { cite: 'people', people: picksToUrl(STORY_CITED) },
+      },
+      {
+        id: 'yours',
+        text: 'Search for your own name, or open the menu for more ways to color the map.',
         camera: 'initial',
         overlay: KINDS_ID,
       },
@@ -109,7 +171,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
         document.fonts.addEventListener('loadingdone', () =>
           panels.forEach((panel) => (panel.lengthEm = 0)),
         );
-        const moveTitle = createMapTitle(WHOLE_MAP.data.title, container);
+        const moveTitle = createMapTitle(MAP_TITLE, container);
         const moveCredit = createMapCredit(creditCorner(laid), container);
         const moveLabels = createMapLabels(laid.books, container, {
           sectionNames: Object.fromEntries(
@@ -188,7 +250,18 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
 
       stories: {
         list: [WHOLE_MAP],
-        resolve: (stops, camera) => stops.map((stop) => ({ ...stop, camera: { ...camera } })),
+        // A stop that pins a piece centres on it; every other stop shows the whole program.
+        resolve: (stops, camera, _items, squares, focus, viewport) =>
+          stops.map((stop) => {
+            const pinned = stop.pin ? squares.find(stop.pin) : undefined;
+            const zoom = stop.zoom ?? camera.zoom;
+            return {
+              ...stop,
+              camera: pinned
+                ? { ...centreForFocus(pinned, zoom, focus, viewport), zoom }
+                : { ...camera },
+            };
+          }),
       },
 
       goTo: { examples: [], read: () => null, complete: () => [], languageOf: () => ENGLISH },

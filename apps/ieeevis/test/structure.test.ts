@@ -10,11 +10,13 @@ import {
 } from '../src/data.ts';
 import { pieceId } from '../src/layout.ts';
 import { SECTIONS } from '../src/overlays/sections.ts';
+import { WHOLE_MAP } from '../src/text.ts';
 
 const structure = JSON.parse(readFileSync(`public/data/${STRUCTURE_FILE}`, 'utf8')) as Structure;
 
 describe('the shipped program', () => {
   const papers = papersOf(structure);
+  const ids = papers.flatMap((p) => [...p.pieces].map((_, n) => pieceId(p.index, n)));
 
   it('names every piece by a section the map knows, or x for no text', () => {
     const known = new Set([...Object.keys(SECTIONS), 'x']);
@@ -40,7 +42,10 @@ describe('the shipped program', () => {
   });
 
   it('gives no two papers one index, so no two squares share an id', () => {
-    const ids = papers.flatMap((p) => [...p.pieces].map((_, n) => pieceId(p.index, n)));
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('holds every piece a story pins', () => {
+    for (const stop of WHOLE_MAP.data.stops) if (stop.pin) expect(ids, stop.id).toContain(stop.pin);
   });
 });
