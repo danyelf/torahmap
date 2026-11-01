@@ -133,6 +133,13 @@ export function trackOverlaySwitch(overlay: string, previousOverlay: string): vo
   track('overlay_switch', { overlay, previous_overlay: previousOverlay });
 }
 
+/** How a reader changed an overlay's picks. */
+export type PickHow = 'typed' | 'quick' | 'unpick';
+
+export function trackOverlayPick(overlay: string, pick: string, how: PickHow): void {
+  track('overlay_pick', { overlay, pick, how });
+}
+
 export function trackSearchExecute(
   term: string,
   language: TextLanguage,

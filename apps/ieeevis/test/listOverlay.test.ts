@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { configureAnalytics } from '@torahmap/shell/analytics.ts';
 import { pickColors } from '@torahmap/shell/overlays/picks.ts';
 import type { Structure } from '../src/data.ts';
 import type { PieceItem } from '../src/layout.ts';
@@ -43,6 +44,15 @@ const squares = (...papers: number[]) =>
     const p = structure.days[0].sessions[0].papers[i];
     return { id: `${i}.0`, paper: p, section: p.pieces[0] } as unknown as PieceItem;
   });
+/** Switches analytics on; the result reads the fields of each event sent, and switches it off. */
+const recording = () => {
+  const send = vi.fn<(body: string) => void>();
+  configureAnalytics({ enabled: true, send, visitId: 'v' });
+  return () => {
+    configureAnalytics({ enabled: false });
+    return send.mock.calls.map(([body]) => JSON.parse(body).fields);
+  };
+};
 const colours = (picked: string[], ...papers: number[]) =>
   authorsOverlay.colorsFor(squares(...papers) as never, { picked }, null, data);
 
@@ -137,5 +147,32 @@ describe('the quick picks', () => {
     expect(chip.disabled).toBe(false);
     chip.click();
     expect(changes).toEqual([{ picked: [] }]);
+  });
+
+  it('record each pick and unpick with the overlay and the name as shown', () => {
+    const sent = recording();
+    open({ picked: [] })
+      .chips.find((c) => c.textContent === 'Visual Analytics')!
+      .click();
+    open({ picked: ['Uncertainty'] })
+      .chips.find((c) => c.textContent === 'Uncertainty')!
+      .click();
+    expect(sent()).toEqual([
+      { overlay: 'keywords', pick: 'Visual Analytics', how: 'quick' },
+      { overlay: 'keywords', pick: 'Uncertainty', how: 'unpick' },
+    ]);
+  });
+});
+
+describe('a typed pick', () => {
+  it('is recorded as typed', () => {
+    const sent = recording();
+    const container = document.createElement('div');
+    authorsOverlay.renderControls!(container, { picked: [] }, () => {}, data);
+    const input = container.querySelector('input')!;
+    input.value = 'nunez';
+    input.dispatchEvent(new Event('input'));
+    container.querySelector<HTMLButtonElement>('.pick-row')!.click();
+    expect(sent()).toEqual([{ overlay: 'authors', pick: 'José Núñez', how: 'typed' }]);
   });
 });

@@ -39,6 +39,8 @@ export const EVENTS = {
   // id is its square's.
   view_settled: { blobs: ['area', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
+  // A reader picking or unpicking one of an overlay's names, such as an author, as it is shown.
+  overlay_pick: { blobs: ['overlay', 'pick', 'how'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
   square_click: { blobs: ['id', 'area'], doubles: [] },
   // What was typed in Go to and pressed Enter on, the place it read to and that place's area:
