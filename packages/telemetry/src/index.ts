@@ -48,6 +48,7 @@ export const EVENTS = {
   go_to: { blobs: ['typed', 'ref', 'area'], doubles: [] },
   word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
+  // The link out of a square's popup: Sefaria, or on the VIS map the paper's page.
   sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },
   // A browser with WebGL 2 whose shaders fail to compile records an error from
   // 'main' instead: both show the same notice, but the causes differ.
