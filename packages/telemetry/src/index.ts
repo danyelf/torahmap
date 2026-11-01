@@ -39,6 +39,8 @@ export const EVENTS = {
   // id is its square's.
   view_settled: { blobs: ['area', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
+  // A reader picking or unpicking one of an overlay's names, such as an author, as it is shown.
+  overlay_pick: { blobs: ['overlay', 'pick', 'how'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
   square_click: { blobs: ['id', 'area'], doubles: [] },
   // What was typed in Go to and pressed Enter on, the place it read to and that place's area:
@@ -46,6 +48,7 @@ export const EVENTS = {
   go_to: { blobs: ['typed', 'ref', 'area'], doubles: [] },
   word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
+  // The link out of a square's popup: Sefaria, or on the VIS map the paper's page.
   sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },
   // A browser with WebGL 2 whose shaders fail to compile records an error from
   // 'main' instead: both show the same notice, but the causes differ.

@@ -22,6 +22,7 @@ import {
   pickSuggestions,
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
+import { trackOverlayPick, type PickHow } from '@torahmap/shell/analytics.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
 import { mark } from '@torahmap/search';
 import { baseColor } from '../baseColor.ts';
@@ -146,9 +147,14 @@ export function listOverlay<D extends ListData>(
     const colors = colorsOf(picked);
     const isPicked = (entry: Entry) => picked.some((p) => p.name === entry.name);
     const full = picked.length >= MAX_PICKS;
-    const choose = (entry: Entry) => {
+    const choose = (entry: Entry, how: Exclude<PickHow, 'unpick'>) => {
       input.value = '';
+      trackOverlayPick(kind.id, entry.label, how);
       onChange(addPick(entry.name));
+    };
+    const unpick = (entry: Entry) => {
+      trackOverlayPick(kind.id, entry.label, 'unpick');
+      onChange(removePick(entry.name));
     };
 
     if (input.value.trim()) {
@@ -158,7 +164,7 @@ export function listOverlay<D extends ListData>(
           full
             ? [pickNote(`${MAX_PICKS} at most: unpick one first.`)]
             : found.length
-              ? found.map((entry) => pickRow(linesOf(entry), () => choose(entry)))
+              ? found.map((entry) => pickRow(linesOf(entry), () => choose(entry, 'typed')))
               : [pickNote(`No ${noun.one} by that name.`)],
         ),
       );
@@ -171,7 +177,7 @@ export function listOverlay<D extends ListData>(
             color: colors[i],
             text: linesOf(entry),
             removeTitle: `Unpick ${entry.label}`,
-            onRemove: () => onChange(removePick(entry.name)),
+            onRemove: () => unpick(entry),
           })),
         ),
       );
@@ -185,7 +191,7 @@ export function listOverlay<D extends ListData>(
           title: `${entry.label} · ${papers(entry.papers)}`,
           on: isPicked(entry),
           disabled: full && !isPicked(entry),
-          onClick: () => (isPicked(entry) ? onChange(removePick(entry.name)) : choose(entry)),
+          onClick: () => (isPicked(entry) ? unpick(entry) : choose(entry, 'quick')),
         }),
       ),
     );
