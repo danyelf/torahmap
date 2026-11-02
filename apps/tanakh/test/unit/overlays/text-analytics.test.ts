@@ -54,7 +54,12 @@ describe('Text Analytics overlay', () => {
   it("keeps a focused verse and its echoes in the scale's colours and mutes the rest", () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
-    const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(4), data);
+    const colors = textAnalyticsOverlay.colorsFor!({
+      items,
+      settings,
+      data,
+      focus: { hovered: verse(4), pinned: null },
+    });
     expect(colors[0]).toEqual(host().getItemColor(verse(1)));
     expect(colors[3]).toEqual(host().getItemColor(verse(4)));
     // The verse at the top of the scale turns red; one without a score is left as it was.
@@ -77,18 +82,22 @@ describe('Text Analytics overlay', () => {
   it('makes the focused verse and its echoes stand out, and nothing else', () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
-    expect(textAnalyticsOverlay.standoutsFor!(items, settings, data, verse(1))).toEqual([
-      true,
-      false,
-      false,
-      true,
-    ]);
-    expect(textAnalyticsOverlay.standoutsFor!(items, settings, data, verse(2))).toEqual([
-      false,
-      false,
-      false,
-      false,
-    ]);
+    expect(
+      textAnalyticsOverlay.standoutsFor!({
+        items,
+        settings,
+        data,
+        focus: { hovered: verse(1), pinned: null },
+      }),
+    ).toEqual([true, false, false, true]);
+    expect(
+      textAnalyticsOverlay.standoutsFor!({
+        items,
+        settings,
+        data,
+        focus: { hovered: verse(2), pinned: null },
+      }),
+    ).toEqual([false, false, false, false]);
   });
 
   it('travels to a parallel verse from its link in the panel', () => {
@@ -104,7 +113,12 @@ describe('Text Analytics overlay', () => {
   it('colours the map as usual when neither the hovered nor the pinned verse has echoes', () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
-    const colors = textAnalyticsOverlay.colorsFor!(items, settings, verse(2), data, verse(3));
+    const colors = textAnalyticsOverlay.colorsFor!({
+      items,
+      settings,
+      data,
+      focus: { hovered: verse(2), pinned: verse(3) },
+    });
     expect(colors).toEqual(items.map((item) => host().getItemColor(item)));
   });
 
@@ -112,18 +126,30 @@ describe('Text Analytics overlay', () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
     const plain = items.map((item) => host().getItemColor(item));
-    const pinOnly = textAnalyticsOverlay.colorsFor!(items, settings, null, data, verse(1));
+    const pinOnly = textAnalyticsOverlay.colorsFor!({
+      items,
+      settings,
+      data,
+      focus: { hovered: null, pinned: verse(1) },
+    });
     expect(pinOnly[1]).not.toEqual(plain[1]);
     // A hover on a verse with none leaves the pin's showing.
-    expect(textAnalyticsOverlay.colorsFor!(items, settings, verse(2), data, verse(1))).toEqual(
-      pinOnly,
-    );
-    expect(textAnalyticsOverlay.standoutsFor!(items, settings, data, null, verse(1))).toEqual([
-      true,
-      false,
-      false,
-      true,
-    ]);
+    expect(
+      textAnalyticsOverlay.colorsFor!({
+        items,
+        settings,
+        data,
+        focus: { hovered: verse(2), pinned: verse(1) },
+      }),
+    ).toEqual(pinOnly);
+    expect(
+      textAnalyticsOverlay.standoutsFor!({
+        items,
+        settings,
+        data,
+        focus: { hovered: null, pinned: verse(1) },
+      }),
+    ).toEqual([true, false, false, true]);
   });
 
   it('repaints on a pin only when it starts or ends on a verse with echoes', () => {
@@ -180,9 +206,14 @@ describe('Text Analytics overlay', () => {
       hovered: ReturnType<typeof verse> | null,
       words = 5,
     ) =>
-      textAnalyticsOverlay.colorsFor!(items, { ...echoSettings, words }, hovered, {
-        ...data,
-        echoes,
+      textAnalyticsOverlay.colorsFor!({
+        items,
+        settings: { ...echoSettings, words },
+        data: {
+          ...data,
+          echoes,
+        },
+        focus: { hovered, pinned: null },
       });
 
     it("colours a verse with echoes and leaves one without in the map's grey", () => {
@@ -313,9 +344,14 @@ describe('Text Analytics overlay', () => {
         anchor,
       ];
       const colourOfFirst = (x: number, y: number) =>
-        textAnalyticsOverlay.colorsFor!(partnerAt(x, y), echoSettings, null, {
-          ...data,
-          echoes: { 0: [3, 5] },
+        textAnalyticsOverlay.colorsFor!({
+          items: partnerAt(x, y),
+          settings: echoSettings,
+          data: {
+            ...data,
+            echoes: { 0: [3, 5] },
+          },
+          focus: { hovered: null, pinned: null },
         })[0];
 
       it('colours a verse by the direction of its farthest echo from the centre, not the distance', () => {
@@ -338,16 +374,16 @@ describe('Text Analytics overlay', () => {
 
       it('fades an echo near its verse toward grey, but stays brighter than an unmatched verse', () => {
         const hop = (x: number, y: number) =>
-          textAnalyticsOverlay.colorsFor!(
-            [
+          textAnalyticsOverlay.colorsFor!({
+            items: [
               createVerse({ verse: 1, x: x - 30, y: y - 30 }),
               createVerse({ verse: 4, x: x - 3, y: y - 3 }),
               anchor,
             ],
-            echoSettings,
-            null,
-            { ...data, echoes: { 0: [3, 5] } },
-          )[0]!;
+            settings: echoSettings,
+            data: { ...data, echoes: { 0: [3, 5] } },
+            focus: { hovered: null, pinned: null },
+          })[0]!;
         const near = hop(803, 208);
         expect(colourfulness(near)).toBeLessThan(colourfulness(colourOfFirst(803, 208)));
         expect(Math.min(...(near as number[]))).toBeGreaterThan(Math.max(...DIMMED_GREY));
@@ -356,7 +392,12 @@ describe('Text Analytics overlay', () => {
       it('colours a verse by the place of its farthest echo in reading order', () => {
         const items = partnerAt(603, 408);
         const first = (echoes: TextAnalyticsData['echoes']) =>
-          textAnalyticsOverlay.colorsFor!(items, echoSettings, null, { ...data, echoes })[0];
+          textAnalyticsOverlay.colorsFor!({
+            items,
+            settings: echoSettings,
+            data: { ...data, echoes },
+            focus: { hovered: null, pinned: null },
+          })[0];
         // Verse 2 lies at the left of the centre, verse 4 at the upper right; 4 is the farther.
         expect(first({ 0: [1, 5, 3, 5] })).toEqual(first({ 0: [3, 5] }));
         expect(first({ 0: [1, 5, 3, 5] })).not.toEqual(first({ 0: [1, 5] }));
@@ -364,13 +405,13 @@ describe('Text Analytics overlay', () => {
 
       it('draws a field behind the squares for this analysis only', () => {
         const items = partnerAt(603, 408);
-        const field = textAnalyticsOverlay.backdrop!(items, echoSettings, data)!;
+        const field = textAnalyticsOverlay.backdrop!({ items, settings: echoSettings, data })!;
         expect(field.stops).toHaveLength(360);
         expect(field.rect.minX).toBeLessThan(0);
         expect(field.rect.maxX).toBeGreaterThan(1000);
         expect(field.centre.x).toBeGreaterThan(450);
         expect(field.centre.x).toBeLessThan(550);
-        expect(textAnalyticsOverlay.backdrop!(items, wording, data)).toBeNull();
+        expect(textAnalyticsOverlay.backdrop!({ items, settings: wording, data })).toBeNull();
       });
     });
   });

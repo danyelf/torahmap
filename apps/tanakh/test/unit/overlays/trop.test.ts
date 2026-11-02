@@ -388,7 +388,12 @@ describe('Trop Overlay', () => {
       const host = makeHost();
       selectFirstMark(host);
 
-      const fromColorsFor = tropOverlay.colorsFor!(testVerses, host.settings, null, host.data);
+      const fromColorsFor = tropOverlay.colorsFor!({
+        items: testVerses,
+        settings: host.settings,
+        data: host.data,
+        focus: { hovered: null, pinned: null },
+      });
       const alone = testVerses.map((v) => host.getItemColor(v));
       expect(fromColorsFor).toEqual(alone);
     });
@@ -400,7 +405,12 @@ describe('Trop Overlay', () => {
       const urlBefore = host.toUrl();
 
       const otherSettings: TropSettings = { tab: 'prose', mark: null, preview: null };
-      tropOverlay.colorsFor!(testVerses, otherSettings, null, host.data);
+      tropOverlay.colorsFor!({
+        items: testVerses,
+        settings: otherSettings,
+        data: host.data,
+        focus: { hovered: null, pinned: null },
+      });
 
       expect(host.settings).toBe(held);
       expect(host.toUrl()).toEqual(urlBefore);
@@ -665,12 +675,24 @@ describe('Trop Overlay', () => {
   describe('data', () => {
     it('colours the same whether or not prebuild ran first', () => {
       const settings: TropSettings = { tab: 'prose', mark: 'tipcha', preview: null };
-      const onDemand = tropOverlay.colorsFor!(testVerses, settings, null, {
-        texts: structuredClone(testVerseTexts),
+      const onDemand = tropOverlay.colorsFor!({
+        items: testVerses,
+        settings,
+        data: {
+          texts: structuredClone(testVerseTexts),
+        },
+        focus: { hovered: null, pinned: null },
       });
       const fresh = { texts: structuredClone(testVerseTexts) };
       tropOverlay.prebuild!(fresh);
-      expect(tropOverlay.colorsFor!(testVerses, settings, null, fresh)).toEqual(onDemand);
+      expect(
+        tropOverlay.colorsFor!({
+          items: testVerses,
+          settings,
+          data: fresh,
+          focus: { hovered: null, pinned: null },
+        }),
+      ).toEqual(onDemand);
     });
 
     it('draws the chart once the data arrives, into controls first drawn without it', () => {
@@ -751,7 +773,12 @@ describe('Trop Overlay', () => {
       },
     });
     const standouts = (mark: string | null, texts: VerseTexts) =>
-      tropOverlay.standoutsFor!(verses, { tab: 'prose', mark, preview: null }, { texts }, null);
+      tropOverlay.standoutsFor!({
+        items: verses,
+        settings: { tab: 'prose', mark, preview: null },
+        data: { texts },
+        focus: { hovered: null, pinned: null },
+      });
 
     it('makes the verses holding a rare mark stand out, and no others', () => {
       expect(standouts('shalshelet', textsWith(1))).toEqual([true, false]);
@@ -766,12 +793,12 @@ describe('Trop Overlay', () => {
       return { 'Genesis': { '1': chapter } };
     };
     const glowing = (high: number) =>
-      tropOverlay.standoutsFor!(
-        [1, 2, 300].map((verse) => createVerse({ chapter: 1, verse })),
-        { tab: 'prose', mark: 'tipcha', preview: null },
-        { texts: crowd(high) },
-        null,
-      ).map(Boolean);
+      tropOverlay.standoutsFor!({
+        items: [1, 2, 300].map((verse) => createVerse({ chapter: 1, verse })),
+        settings: { tab: 'prose', mark: 'tipcha', preview: null },
+        data: { texts: crowd(high) },
+        focus: { hovered: null, pinned: null },
+      }).map(Boolean);
 
     it('makes only a verse with an unusually high count stand out for a mark drawn by count', () => {
       expect(glowing(20)).toEqual([false, false, true]);

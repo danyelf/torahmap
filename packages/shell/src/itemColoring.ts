@@ -2,7 +2,7 @@
 
 import { type SpatialItem, type ItemColor, type Picture, sameItem } from '@torahmap/engine';
 import { type Color, brighten } from '@torahmap/utils';
-import type { Focus, Overlay, ToolOnMap, Tools } from './overlays/types';
+import type { ColorArgs, Focus, Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { ColorSource } from './scrollytelling/driver';
 import { SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
 
@@ -86,29 +86,22 @@ export function fillDefaultColors(
 /** A settled overlay's colours, one entry per item. */
 export function overlayColorsFor<T, S, D>(
   overlay: Overlay<T, S, D> | null,
-  items: SpatialItem<T>[],
-  settings: S,
-  hovered: SpatialItem<T> | null,
-  data: D,
-  pinned: SpatialItem<T> | null = null,
+  args: ColorArgs<T, S, D>,
 ): (ItemColor | null)[] {
-  return overlay
-    ? overlay.colorsFor(items, settings, hovered, data, pinned)
-    : items.map(() => null);
+  return overlay ? overlay.colorsFor(args) : args.items.map(() => null);
 }
 
 /** The map's colours for the tools a view shows. The colour arguments pass through to combineLayers. */
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
-  hovered: SpatialItem<T> | null,
+  focus: Focus<T>,
   base: (index: number) => ItemColor,
   nonMatchDim?: number,
   keepsBase?: number,
-  pinned: SpatialItem<T> | null = null,
 ): Picture<ItemColor | null> {
-  const colorsOf = (on: ToolOnMap<T> | null) =>
-    on && overlayColorsFor(on.tool, items, on.settings, hovered, on.data, pinned);
+  const argsOf = ({ settings, data }: ToolOnMap<T>) => ({ items, settings, data, focus });
+  const colorsOf = (on: ToolOnMap<T> | null) => on && overlayColorsFor(on.tool, argsOf(on));
   const { overlay } = tools;
   return combineLayers(
     items.length,
@@ -117,8 +110,8 @@ export function toolsPicture<T>(
     base,
     nonMatchDim,
     keepsBase,
-    overlay?.tool.standoutsFor?.(items, overlay.settings, overlay.data, hovered, pinned),
-    overlay?.tool.halosFor?.(items, overlay.settings, overlay.data, hovered, pinned),
+    overlay && overlay.tool.standoutsFor?.(argsOf(overlay)),
+    overlay && overlay.tool.halosFor?.(argsOf(overlay)),
   );
 }
 

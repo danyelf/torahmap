@@ -284,7 +284,7 @@ export function testOverlay<T = TanakhIdentity, S = unknown, D = unknown>(
   fields: Omit<Overlay<T, S, D>, 'colorsFor'> & Partial<Pick<Overlay<T, S, D>, 'colorsFor'>>,
 ): Overlay<T, S, D> {
   return {
-    colorsFor: (items) => items.map(() => null),
+    colorsFor: ({ items }) => items.map(() => null),
     ...fields,
   } as Overlay<T, S, D>;
 }

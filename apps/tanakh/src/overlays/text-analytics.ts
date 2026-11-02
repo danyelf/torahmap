@@ -302,19 +302,19 @@ export const textAnalyticsOverlay: Overlay<
   },
 
   // The focused verse with echoes keeps them and itself in full colour; the rest are muted.
-  colorsFor(items, settings, hovered, data, pinned) {
-    const lit = focusEchoes(data, settings, hovered, pinned ?? null)?.matches;
+  colorsFor({ items, settings, data, focus }) {
+    const lit = focusEchoes(data, settings, focus.hovered, focus.pinned)?.matches;
     const wheel = wheelOf(items);
     return items.map((item) => colorAt(data, settings, wheel, item, !!lit && !lit.has(item.id)));
   },
 
   // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
-  standoutsFor(items, settings, data, hovered, pinned) {
-    return matched(items, data, settings, hovered, pinned);
+  standoutsFor({ items, settings, data, focus }) {
+    return matched(items, data, settings, focus.hovered, focus.pinned);
   },
 
-  halosFor(items, settings, data, hovered, pinned) {
-    return matched(items, data, settings, hovered, pinned);
+  halosFor({ items, settings, data, focus }) {
+    return matched(items, data, settings, focus.hovered, focus.pinned);
   },
 
   renderFocus(container, hovered, pinned, settings, data, travelTo) {
@@ -398,7 +398,7 @@ export const textAnalyticsOverlay: Overlay<
         .join('');
   },
 
-  backdrop(items, settings) {
+  backdrop({ items, settings }) {
     return settings.analysis === 'echoes' ? backdropOf(items) : null;
   },
 

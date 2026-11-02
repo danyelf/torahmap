@@ -419,7 +419,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       extraOf(data);
     },
 
-    colorsFor(list, settings, _hovered, data) {
+    colorsFor({ items: list, settings, data }) {
       const search = searchFor(data, settings);
       return list.map((item) => searchColorAt(item, search));
     },

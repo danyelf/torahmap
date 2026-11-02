@@ -94,7 +94,12 @@ export function hostOverlay<S, D>(
       return store.toUrl(overlay);
     },
     getItemColor(verse) {
-      return overlay.colorsFor([verse], store.get(overlay), null, held)[0];
+      return overlay.colorsFor({
+        items: [verse],
+        settings: store.get(overlay),
+        data: held,
+        focus: { hovered: null, pinned: null },
+      })[0];
     },
     hoverChangesColors(before, after) {
       return overlay.hoverChangesColors?.(before, after, store.get(overlay), held) ?? false;

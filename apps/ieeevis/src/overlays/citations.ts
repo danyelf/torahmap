@@ -60,13 +60,13 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
     return overlay.colorsInUse!(picks);
   },
 
-  colorsFor(items, settings, hovered, data, pinned) {
-    const { overlay, settings: picks } = shown(settings);
-    return overlay.colorsFor(items, picks, hovered, data, pinned);
+  colorsFor(args) {
+    const { overlay, settings } = shown(args.settings);
+    return overlay.colorsFor({ ...args, settings });
   },
-  standoutsFor(items, settings, data, hovered, pinned) {
-    const { overlay, settings: picks } = shown(settings);
-    return overlay.standoutsFor!(items, picks, data, hovered, pinned);
+  standoutsFor(args) {
+    const { overlay, settings } = shown(args.settings);
+    return overlay.standoutsFor!({ ...args, settings });
   },
 
   renderControls(container, settings, onChange, data) {

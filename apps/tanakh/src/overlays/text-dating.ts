@@ -124,7 +124,7 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void, TextDatingData> = 
 
   data: { dates: 'text-dating.json' },
 
-  colorsFor(items, _settings, _hovered, data) {
+  colorsFor({ items, data }) {
     return items.map((item) => {
       const verseData = getVerseData(data, item);
       return verseData ? getVerseColorFromDate(midpointBCE(verseData.d)) : null;

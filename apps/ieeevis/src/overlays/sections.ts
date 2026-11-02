@@ -29,7 +29,7 @@ export const sectionsOverlay: Overlay<PieceItem> = {
   name: 'Sections',
   description:
     'Colors each piece by the section of its paper it falls in, so the shape of every paper shows. Dark squares have no text yet.',
-  colorsFor: (items) => items.map(colorOf),
+  colorsFor: ({ items }) => items.map(colorOf),
   renderLegend(container) {
     container.replaceChildren(...swatchList(Object.values(SECTIONS)));
   },

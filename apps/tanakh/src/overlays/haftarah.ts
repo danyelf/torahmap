@@ -252,9 +252,9 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     return relevantId(before, settings, data) !== relevantId(after, settings, data);
   },
 
-  colorsFor(items, settings, hovered, data, pinned) {
+  colorsFor({ items, settings, data, focus }) {
     const derived = deriveHaftarah(data, settings.custom);
-    const lit = litFor(data, settings, hovered, pinned);
+    const lit = litFor(data, settings, focus.hovered, focus.pinned);
     return items.map((item) => colorAt(item, derived, lit));
   },
 

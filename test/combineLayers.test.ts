@@ -1,5 +1,5 @@
 import type { Color } from '@torahmap/utils';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   combineLayers,
   fillDefaultColors,
@@ -229,12 +229,37 @@ describe('fillDefaultColors', () => {
 });
 
 describe('toolsPicture', () => {
+  it('hands each colour hook the hovered and the pinned square', () => {
+    const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
+    const focus = { hovered: items[0], pinned: items[1] };
+    const colorsFor = vi.fn(() => [RED, RED]);
+    const standoutsFor = vi.fn(() => [false, false]);
+    const halosFor = vi.fn(() => [false, false]);
+    const overlay = { ...testOverlay({ id: 'o', name: 'O', colorsFor }), standoutsFor, halosFor };
+
+    toolsPicture(
+      { overlay: { tool: overlay, settings: 'settings', data: 'data' }, search: null },
+      items,
+      focus,
+      getDefaultColor,
+    );
+
+    const args = { items, settings: 'settings', data: 'data', focus };
+    expect(colorsFor).toHaveBeenCalledWith(args);
+    expect(standoutsFor).toHaveBeenCalledWith(args);
+    expect(halosFor).toHaveBeenCalledWith(args);
+  });
+
   it('asks each tool for its colours and combines them, search over overlay', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) });
+    const overlay = testOverlay({
+      id: 'o',
+      name: 'O',
+      colorsFor: ({ items }) => items.map(() => RED),
+    });
     const search = testOverlay({
       id: 's',
       name: 'S',
-      colorsFor: (items) => items.map((v) => (v.verse === 1 ? CYAN : null)),
+      colorsFor: ({ items }) => items.map((v) => (v.verse === 1 ? CYAN : null)),
     });
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
@@ -244,7 +269,7 @@ describe('toolsPicture', () => {
         search: { tool: search, settings: undefined, data: undefined },
       },
       items,
-      null,
+      { hovered: null, pinned: null },
       getDefaultColor,
     );
 
@@ -254,15 +279,15 @@ describe('toolsPicture', () => {
 
   it('asks the overlay which of its squares stand out', () => {
     const overlay = {
-      ...testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) }),
-      standoutsFor: (items: { verse: number }[]) => items.map((v) => v.verse === 2),
+      ...testOverlay({ id: 'o', name: 'O', colorsFor: ({ items }) => items.map(() => RED) }),
+      standoutsFor: ({ items }: { items: { verse: number }[] }) => items.map((v) => v.verse === 2),
     };
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
     const picture = toolsPicture(
       { overlay: { tool: overlay, settings: undefined, data: undefined }, search: null },
       items,
-      null,
+      { hovered: null, pinned: null },
       getDefaultColor,
     );
 
@@ -270,7 +295,11 @@ describe('toolsPicture', () => {
   });
 
   it('passes a non-match dim through to combineLayers', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) });
+    const overlay = testOverlay({
+      id: 'o',
+      name: 'O',
+      colorsFor: ({ items }) => items.map(() => RED),
+    });
     const search = testOverlay({ id: 's', name: 'S' });
     const items = [createVerse({ verse: 1 })];
 
@@ -280,7 +309,7 @@ describe('toolsPicture', () => {
         search: { tool: search, settings: undefined, data: undefined },
       },
       items,
-      null,
+      { hovered: null, pinned: null },
       getDefaultColor,
       1,
     );

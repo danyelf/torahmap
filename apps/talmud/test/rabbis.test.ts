@@ -45,7 +45,12 @@ const link: { open?: (id: string) => void } = {};
 const overlay = rabbisOverlay(base, link);
 const picking = (...picked: string[]): PickSettings => ({ picked });
 const colours = (settings: PickSettings, ...ids: string[]) =>
-  overlay.colorsFor(ids.map(item), settings, null, data);
+  overlay.colorsFor({
+    items: ids.map(item),
+    settings,
+    data,
+    focus: { hovered: null, pinned: null },
+  });
 const unlitColour = colours(picking('lakish'), 'A.2a.4')[0];
 
 describe('the rabbis overlay colours', () => {
@@ -82,12 +87,12 @@ describe('the rabbis overlay colours', () => {
   });
 
   it('marks lit passages to stand out', () => {
-    const lit = overlay.standoutsFor!(
-      ['A.2a.1', 'A.2a.3', 'A.2a.4'].map(item),
-      picking('lakish', 'gamliel-a'),
+    const lit = overlay.standoutsFor!({
+      items: ['A.2a.1', 'A.2a.3', 'A.2a.4'].map(item),
+      settings: picking('lakish', 'gamliel-a'),
       data,
-      null,
-    );
+      focus: { hovered: null, pinned: null },
+    });
     expect(lit).toEqual([true, true, false]);
   });
 

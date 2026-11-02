@@ -6,7 +6,7 @@ import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.t
 
 describe('itemColoring', () => {
   describe('overlayColorsFor', () => {
-    it('hands colorsFor the hovered and the pinned verse', () => {
+    it('hands colorsFor the squares, settings, data and focus as given', () => {
       const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
       const colorsFor = vi.fn().mockReturnValue([[1, 0, 0], null]);
       const overlay: TanakhOverlay = {
@@ -15,16 +15,29 @@ describe('itemColoring', () => {
         colorsFor,
       };
 
-      const colors = overlayColorsFor(overlay, verses, 'settings', verses[1], 'data', verses[0]);
+      const args = {
+        items: verses,
+        settings: 'settings',
+        data: 'data',
+        focus: { hovered: verses[1], pinned: verses[0] },
+      };
+      const colors = overlayColorsFor(overlay, args);
 
       expect(colors).toEqual([[1, 0, 0], null]);
-      expect(colorsFor).toHaveBeenCalledWith(verses, 'settings', verses[1], 'data', verses[0]);
+      expect(colorsFor).toHaveBeenCalledWith(args);
     });
 
     it('gives no colour to any item when there is no overlay', () => {
       const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
-      expect(overlayColorsFor(null, verses, undefined, null, undefined)).toEqual([null, null]);
+      expect(
+        overlayColorsFor(null, {
+          items: verses,
+          settings: undefined,
+          data: undefined,
+          focus: { hovered: null, pinned: null },
+        }),
+      ).toEqual([null, null]);
     });
   });
 

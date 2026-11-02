@@ -66,8 +66,29 @@ describe('one search over two dictionaries', () => {
 
     // Unknown to the dictionary the word finds nothing; known, it finds the
     // verses the dictionary files it under.
-    expect(searchTool.colorsFor(verses, settings, null, unknown)).toEqual([null, null]);
-    expect(searchTool.colorsFor(verses, settings, null, known)).toEqual([null, PALETTE[0]]);
-    expect(searchTool.colorsFor(verses, settings, null, unknown)).toEqual([null, null]);
+    expect(
+      searchTool.colorsFor({
+        items: verses,
+        settings,
+        data: unknown,
+        focus: { hovered: null, pinned: null },
+      }),
+    ).toEqual([null, null]);
+    expect(
+      searchTool.colorsFor({
+        items: verses,
+        settings,
+        data: known,
+        focus: { hovered: null, pinned: null },
+      }),
+    ).toEqual([null, PALETTE[0]]);
+    expect(
+      searchTool.colorsFor({
+        items: verses,
+        settings,
+        data: unknown,
+        focus: { hovered: null, pinned: null },
+      }),
+    ).toEqual([null, null]);
   });
 });

@@ -44,7 +44,7 @@ export const referencesOverlay: Overlay<ActItem, ReferenceSettings, ReferenceDat
   settingsFromUrl: (params) => ({ article: params.article ?? '6' }),
   settingsToUrl: ({ article }): Record<string, string> => (article === '6' ? {} : { article }),
 
-  colorsFor: (items, settings, hovered, data) => colorsOf(items, settings, hovered, data),
+  colorsFor: ({ items, settings, data, focus }) => colorsOf(items, settings, focus.hovered, data),
   hoverChangesColors: (before, after) => hoverTarget(before) !== hoverTarget(after),
 
   renderControls(container, settings, onChange) {
