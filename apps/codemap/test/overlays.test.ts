@@ -59,8 +59,10 @@ describe('the pull request overlay', () => {
     ]);
   });
 
-  it('draws a deleted file red', () => {
+  it('draws a deleted file red, in the commit that deleted it and no other', () => {
     expect(all('src/old.ts', 1)).toEqual(REMOVED);
+    expect(prColours({ commit: 2 })('src/old.ts', 1)).toEqual(REMOVED);
+    expect(prColours({ commit: 1 })('src/old.ts', 1)).toBeNull();
   });
 
   it('shows one commit’s marks alone', () => {

@@ -169,6 +169,20 @@ function onHead(found: HeadMarks | undefined, lineCount: number): Marks {
 }
 
 const NO_MARKS: Marks = { marks: '', deletedBefore: [] };
+// A deleted file is one removal, above its stub's one line.
+const FILE_REMOVED: Marks = { marks: '', deletedBefore: [1] };
+
+/** The commit that deleted the file at `path` in the base, following its renames; -1 for none. */
+function deletingCommit(diffs: readonly FileDiff[][], path: string): number {
+  let at = path;
+  for (const [i, files] of diffs.entries()) {
+    const step = files.find((f) => f.oldPath === at);
+    if (!step) continue;
+    if (step.newPath === null) return i;
+    at = step.newPath;
+  }
+  return -1;
+}
 
 export function collect(
   repo: string,
@@ -219,6 +233,7 @@ export function collect(
   });
   for (const f of prDiff) {
     if (f.newPath !== null || f.oldPath === null || isExcluded(f.oldPath)) continue;
+    const deletedBy = deletingCommit(commitDiffs, f.oldPath);
     entries.push({
       lines: [],
       file: {
@@ -228,8 +243,8 @@ export function collect(
         kind: '',
         lastChanged: [],
         timesChanged: [],
-        pr: NO_MARKS,
-        commits: commits.map(() => NO_MARKS),
+        pr: FILE_REMOVED,
+        commits: commits.map((_, i) => (i === deletedBy ? FILE_REMOVED : NO_MARKS)),
         deleted: true,
       },
     });

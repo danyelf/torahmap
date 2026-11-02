@@ -99,6 +99,12 @@ describe('collect', () => {
     expect(gone.commits).toHaveLength(2);
   });
 
+  it('marks a deleted file as removed in the pull request and in the commit that deleted it alone', () => {
+    const gone = fileAt(collect(repo, 'main', 'branch', URL).structure, 'gone.ts');
+    expect(gone.pr.deletedBefore).toEqual([1]);
+    expect(gone.commits.map((c) => c.deletedBefore)).toEqual([[], [1]]);
+  });
+
   it('counts and dates each line over the whole history', () => {
     const { structure } = collect(repo, 'main', 'branch', URL);
     const a = fileAt(structure, 'a.ts');

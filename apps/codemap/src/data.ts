@@ -36,7 +36,7 @@ export interface CodeFile {
   /** The pull request as a whole, then each of its commits in order. */
   pr: Marks;
   commits: Marks[];
-  /** A file the pull request deleted: no lines, drawn as a stub. */
+  /** A file the pull request deleted: no lines, drawn as a stub, its deletion a removal before line 1. */
   deleted?: true;
 }
 

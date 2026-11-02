@@ -26,7 +26,6 @@ function marksOf(structure: CodeStructure, file: number, commit: number | null):
 }
 
 function colorOf(item: CodeItem, structure: CodeStructure, commit: number | null) {
-  if (item.deletedFile) return REMOVED;
   const marks = marksOf(structure, item.file, commit);
   if (!marks) return null;
   const mark = marks.marks[item.line - 1];
@@ -34,7 +33,9 @@ function colorOf(item: CodeItem, structure: CodeStructure, commit: number | null
   // A removal after the last line is marked on the last line.
   const last = item.line === marks.marks.length;
   const below = marks.deletedBefore.some((n) => n === item.line || (last && n === item.line + 1));
-  return below ? [REMOVED, own ?? baseColor(item)] : own;
+  if (!below) return own;
+  // A deleted file's stub has no line of its own to share the bar with.
+  return item.deletedFile ? REMOVED : [REMOVED, own ?? baseColor(item)];
 }
 
 export const pullRequestOverlay: Overlay<CodeItem, PullRequestSettings, StructureData> = {

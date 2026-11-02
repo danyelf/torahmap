@@ -3,6 +3,7 @@
 import type { CodeFile, CodeStructure, CodeTexts } from '../../src/data.ts';
 
 const noMarks = { marks: '', deletedBefore: [] };
+const removed = { marks: '', deletedBefore: [1] };
 
 const main: CodeFile = {
   path: 'src/main.ts',
@@ -41,8 +42,8 @@ const old: CodeFile = {
   kind: '',
   lastChanged: [],
   timesChanged: [],
-  pr: noMarks,
-  commits: [noMarks, noMarks],
+  pr: removed,
+  commits: [noMarks, removed],
   deleted: true,
 };
 
