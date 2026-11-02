@@ -51,7 +51,7 @@ export function mockHistory(initialUrl: string = 'http://localhost:5173/') {
     }
   });
 
-  globalThis.history = { pushState, replaceState } as unknown as History;
+  vi.stubGlobal('history', { pushState, replaceState });
 
   return { pushState, replaceState, historyStates };
 }
