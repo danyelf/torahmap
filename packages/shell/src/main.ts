@@ -798,11 +798,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       const place = squaresOf(found);
       if (place.length === 0) return;
       trackGoTo(typed, found.ref, text.area(place[0]).area);
+      if (place.length === 1) {
+        pinAndGlide(place[0]);
+        return;
+      }
       // A full-height sheet would hide the glide.
       if (frame.full) setFrame({ ...frame, full: false });
       pinItem(place[0]);
-      if (place.length === 1) glideToItem(place[0]);
-      else glideToFit(place);
+      glideToFit(place);
     },
     miss: (typed) => trackGoTo(typed, '', ''),
   });
