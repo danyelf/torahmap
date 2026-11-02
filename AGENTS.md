@@ -11,6 +11,11 @@ This project tracks issues on **GitHub Issues**: https://github.com/danyelf/tora
 **Always work in a worktree**, made before your first edit; a hook refuses new branches in the
 primary checkout. Once there, work as autonomously as you can on the issue.
 
+A session in the primary checkout never `cd`s into a worktree under `.claude/worktrees`; the `cd`
+would move the whole session there, and a hook blocks it. Run commands there in a subshell,
+`(cd /abs/worktree && npm test)`, or name the worktree: `git -C /abs/worktree`,
+`npm --prefix /abs/worktree`, absolute file paths.
+
 Claude Code sets `core.hooksPath` to the primary checkout's `.githooks` whenever it makes a
 worktree, so every worktree runs the primary checkout's hooks. A branch that changes `.githooks/`
 tests its copy by running it directly.
