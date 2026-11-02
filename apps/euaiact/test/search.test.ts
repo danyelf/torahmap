@@ -23,7 +23,12 @@ const data: ActSearchData = {
 };
 const ITEMS = [item('Recital.1', 'recital'), item('9(2)'), item('9(3)')];
 const colours = (params: Record<string, string>) =>
-  actSearch.colorsFor(ITEMS, actSearch.settingsFromUrl!(params, []), null, data);
+  actSearch.colorsFor({
+    items: ITEMS,
+    settings: actSearch.settingsFromUrl!(params, []),
+    data,
+    focus: { hovered: null, pinned: null },
+  });
 const found = (params: Record<string, string>) =>
   colours(params).flatMap((c, i) => (c ? [ITEMS[i].id] : []));
 

@@ -794,11 +794,23 @@ describe('Verse Length Overlay', () => {
         createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
         createVerse({ book: 'Exodus', chapter: 1, verse: 2 }),
       ];
-      const onDemand = overlay.colorsFor(verses, undefined, null, {
-        texts: structuredClone(testVerseTexts),
+      const onDemand = overlay.colorsFor({
+        items: verses,
+        settings: undefined,
+        data: {
+          texts: structuredClone(testVerseTexts),
+        },
+        focus: { hovered: null, pinned: null },
       });
       overlay.prebuild!(fresh);
-      expect(overlay.colorsFor(verses, undefined, null, fresh)).toEqual(onDemand);
+      expect(
+        overlay.colorsFor({
+          items: verses,
+          settings: undefined,
+          data: fresh,
+          focus: { hovered: null, pinned: null },
+        }),
+      ).toEqual(onDemand);
     });
 
     it('draws no legend before the data is in', () => {

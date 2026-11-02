@@ -19,12 +19,12 @@ const item = (id: string, over: Partial<ActItem> = {}): ActItem => ({
 describe('the amendment overlay', () => {
   it('colours text inserted and replaced in 2026 differently from the rest', () => {
     const colour = (origin: ActItem['origin']) =>
-      amendmentOverlay.colorsFor(
-        [item('1', { origin })],
-        undefined as never,
-        null,
-        undefined as never,
-      )[0];
+      amendmentOverlay.colorsFor({
+        items: [item('1', { origin })],
+        settings: undefined as never,
+        data: undefined as never,
+        focus: { hovered: null, pinned: null },
+      })[0];
     expect(colour('M1 inserted')).not.toEqual(colour('B'));
     expect(colour('M1 replaced')).not.toEqual(colour('B'));
     expect(colour('M1 replaced')).not.toEqual(colour('M1 inserted'));
@@ -32,12 +32,12 @@ describe('the amendment overlay', () => {
 
   it('draws a list’s lead-in darker than its points', () => {
     const colour = (lead: boolean) =>
-      amendmentOverlay.colorsFor(
-        [item('1', { lead })],
-        undefined as never,
-        null,
-        undefined as never,
-      )[0];
+      amendmentOverlay.colorsFor({
+        items: [item('1', { lead })],
+        settings: undefined as never,
+        data: undefined as never,
+        focus: { hovered: null, pinned: null },
+      })[0];
     expect(colour(true)).not.toEqual(colour(false));
   });
 });
@@ -52,7 +52,12 @@ describe('the what-points-here overlay', () => {
     ['6(1)', '6(2)'],
   ];
   const colours = (squares: ActItem[], article = '6') =>
-    referencesOverlay.colorsFor(squares, { article }, null, { refs });
+    referencesOverlay.colorsFor({
+      items: squares,
+      settings: { article },
+      data: { refs },
+      focus: { hovered: null, pinned: null },
+    });
 
   it('marks the article itself', () => {
     expect(colours([item('6(2)')])[0]).toEqual(FOCUS);
@@ -85,7 +90,12 @@ describe('the what-points-here overlay', () => {
 
   describe('while the pointer is on a square', () => {
     const hover = (squares: ActItem[], on: ActItem, article = '') =>
-      referencesOverlay.colorsFor(squares, { article }, on, { refs });
+      referencesOverlay.colorsFor({
+        items: squares,
+        settings: { article },
+        data: { refs },
+        focus: { hovered: on, pinned: null },
+      });
 
     it('shows the references of the article the square is in', () => {
       const shown = hover([item('9(1)'), item('6(1)'), item('6(2)')], item('9(3)'));

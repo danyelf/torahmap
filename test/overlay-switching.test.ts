@@ -86,7 +86,12 @@ describe('Overlay Switching Integration', () => {
     overlay.renderLegend?.(mockLegendContainer, settings.get(overlay), data);
 
     // Apply colors
-    lastColors = overlay.colorsFor(verses, settings.get(overlay), null, data);
+    lastColors = overlay.colorsFor({
+      items: verses,
+      settings: settings.get(overlay),
+      data,
+      focus: { hovered: null, pinned: null },
+    });
 
     currentOverlay = overlay;
     currentData = data;
@@ -274,12 +279,12 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse) {
-        const color = currentOverlay!.colorsFor(
-          [genesisVerse],
-          settings.get(currentOverlay!),
-          null,
-          currentData,
-        )[0];
+        const color = currentOverlay!.colorsFor({
+          items: [genesisVerse],
+          settings: settings.get(currentOverlay!),
+          data: currentData,
+          focus: { hovered: null, pinned: null },
+        })[0];
         expect(color).not.toBeNull();
       }
     });
@@ -369,7 +374,7 @@ describe('Overlay Switching Integration', () => {
       const overlayWithoutDestroy = testOverlay({
         id: 'test-overlay-2',
         name: 'Test Overlay 2',
-        colorsFor: (items) => items.map(() => [0, 1, 0] as [number, number, number]),
+        colorsFor: ({ items }) => items.map(() => [0, 1, 0] as [number, number, number]),
         // No destroy method
       });
 
@@ -446,18 +451,18 @@ describe('Overlay Switching Integration', () => {
       switchToOverlay('commentary');
 
       const verse = verses[0];
-      const color1 = currentOverlay!.colorsFor(
-        [verse],
-        settings.get(currentOverlay!),
-        null,
-        currentData,
-      )[0];
-      const color2 = currentOverlay!.colorsFor(
-        [verse],
-        settings.get(currentOverlay!),
-        null,
-        currentData,
-      )[0];
+      const color1 = currentOverlay!.colorsFor({
+        items: [verse],
+        settings: settings.get(currentOverlay!),
+        data: currentData,
+        focus: { hovered: null, pinned: null },
+      })[0];
+      const color2 = currentOverlay!.colorsFor({
+        items: [verse],
+        settings: settings.get(currentOverlay!),
+        data: currentData,
+        focus: { hovered: null, pinned: null },
+      })[0];
 
       // Same verse should return same color (reference equality not guaranteed, but values should match)
       expect(JSON.stringify(color1)).toBe(JSON.stringify(color2));
@@ -484,7 +489,12 @@ describe('Overlay Switching Integration', () => {
       };
 
       expect(() => {
-        overlay.colorsFor(verses, settings.get(overlay), null, malformed);
+        overlay.colorsFor({
+          items: verses,
+          settings: settings.get(overlay),
+          data: malformed,
+          focus: { hovered: null, pinned: null },
+        });
       }).not.toThrow();
     });
   });

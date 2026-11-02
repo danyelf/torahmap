@@ -634,7 +634,7 @@ describe('sidebar', () => {
             tool: {
               id: 'search',
               name: 'Search',
-              colorsFor: (items) => items.map(() => null),
+              colorsFor: ({ items }) => items.map(() => null),
               getHoverInfo: () => info,
               highlightItemText: vi.fn((_verse: unknown, text: string) => {
                 const fragment = document.createDocumentFragment();
@@ -695,7 +695,7 @@ describe('sidebar', () => {
             tool: {
               id: 'search',
               name: 'Search',
-              colorsFor: (items) => items.map(() => null),
+              colorsFor: ({ items }) => items.map(() => null),
               highlightItemText: marking('term-0', ...searchMarks),
             },
             settings: {},

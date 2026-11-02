@@ -287,18 +287,18 @@ export const tropOverlay: Overlay<TanakhIdentity, TropSettings, TropData> = {
     marksOf(data);
   },
 
-  colorsFor(items, settings, _hovered, data) {
+  colorsFor({ items, settings, data }) {
     const derived = derivationFor(data, settings);
     return items.map((item) => tropColorAt(item, derived));
   },
 
-  standoutsFor(items, settings, data) {
+  standoutsFor({ items, settings, data }) {
     const derived = derivationFor(data, settings);
     if (!derived) return items.map(() => false);
     return items.map((item) => countAt(item, derived) >= derived.glowFrom);
   },
 
-  halosFor(items, settings, data) {
+  halosFor({ items, settings, data }) {
     const derived = derivationFor(data, settings);
     return items.map((item) => !!derived && countAt(item, derived) >= derived.haloFrom);
   },

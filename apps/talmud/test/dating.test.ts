@@ -46,7 +46,12 @@ const item = (id: string) => ({ id, x: 0, y: 0, size: 6 }) as never;
 const base = () => [0.6, 0.5, 0.4] as [number, number, number];
 const overlay = datingOverlay(base);
 const colour = (id: string) =>
-  overlay.colorsFor([item(id)], undefined as never, null, { dating })[0] as number[];
+  overlay.colorsFor({
+    items: [item(id)],
+    settings: undefined as never,
+    data: { dating },
+    focus: { hovered: null, pinned: null },
+  })[0] as number[];
 
 describe('the dating overlay', () => {
   it('links a shared name that can mean one person to that person', () => {
@@ -109,9 +114,14 @@ describe('the dating overlay', () => {
 
   it('colours many segments as it colours one', () => {
     const ids = ['A.2a.1', 'A.2a.3', 'A.2a.9'];
-    expect(overlay.colorsFor(ids.map(item), undefined as never, null, { dating })).toEqual(
-      ids.map(colour),
-    );
+    expect(
+      overlay.colorsFor({
+        items: ids.map(item),
+        settings: undefined as never,
+        data: { dating },
+        focus: { hovered: null, pinned: null },
+      }),
+    ).toEqual(ids.map(colour));
   });
 
   it('gives its key one row for each generation that occurs, and one more', () => {

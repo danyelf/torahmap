@@ -37,7 +37,7 @@ export const kindsOverlay: Overlay<PieceItem> = {
   id: KINDS_ID,
   name: 'Paper type',
   description: 'Colors every square by the kind of paper it belongs to.',
-  colorsFor: (items) => items.map(colorOf),
+  colorsFor: ({ items }) => items.map(colorOf),
   renderLegend(container) {
     container.replaceChildren(...swatchList(FAMILIES));
   },

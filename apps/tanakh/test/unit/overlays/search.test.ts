@@ -1410,12 +1410,12 @@ describe('Search Overlay', () => {
   describe('Colours for settings it is handed', () => {
     /** The colours for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
-      return searchOverlay.overlay.colorsFor!(
+      return searchOverlay.overlay.colorsFor!({
         items,
-        searchOverlay.fromUrl({ search: q }),
-        null,
-        searchOverlay.data,
-      );
+        settings: searchOverlay.fromUrl({ search: q }),
+        data: searchOverlay.data,
+        focus: { hovered: null, pinned: null },
+      });
     }
 
     // A failing assertion below must not skip this and leave later tests
@@ -1536,12 +1536,12 @@ describe('Search Overlay', () => {
 
     /** The colours for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
-      return searchOverlay.overlay.colorsFor!(
+      return searchOverlay.overlay.colorsFor!({
         items,
-        searchOverlay.fromUrl({ search: q }),
-        null,
-        searchOverlay.data,
-      );
+        settings: searchOverlay.fromUrl({ search: q }),
+        data: searchOverlay.data,
+        focus: { hovered: null, pinned: null },
+      });
     }
   });
 

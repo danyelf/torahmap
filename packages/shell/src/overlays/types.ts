@@ -17,6 +17,14 @@ export interface Focus<T> {
   pinned: SpatialItem<T> | null;
 }
 
+/** What each of an overlay's colour hooks is given. */
+export interface ColorArgs<T, S = unknown, D = unknown> {
+  items: SpatialItem<T>[];
+  settings: S;
+  data: D;
+  focus: Focus<T>;
+}
+
 // A change to an overlay's settings: the next settings, worked out from the
 // current ones and from `taken`, the PALETTE colours the other tool (the search,
 // or the overlay) holds, which a new colour must avoid. Typed through a method so
@@ -115,39 +123,21 @@ interface OverlayMembers<T, S, D> {
 
   // One colour per item, as the map and the story's blend ask for them: null
   // renders default gray; Color[] splits the square corner to corner, one band
-  // per color. `hovered` is the item under the cursor and `pinned` the
-  // pinned one; only some overlays' colours depend on either, and each decides which wins.
-  colorsFor(
-    items: SpatialItem<T>[],
-    settings: S,
-    hovered: SpatialItem<T> | null,
-    data: D,
-    pinned?: SpatialItem<T> | null,
-  ): (Color | Color[] | null)[];
+  // per color. Only some overlays' colours depend on the focus, and each decides
+  // whether the hovered or the pinned square wins.
+  colorsFor(args: ColorArgs<T, S, D>): (Color | Color[] | null)[];
 
-  // Which of `items` stand out, as a search match does: drawn over the rest and
+  // Which of the items stand out, as a search match does: drawn over the rest and
   // never too small to see. For an overlay that can light only a few squares.
-  // `hovered` and `pinned` are as for colorsFor.
-  standoutsFor?(
-    items: SpatialItem<T>[],
-    settings: S,
-    data: D,
-    hovered?: SpatialItem<T> | null,
-    pinned?: SpatialItem<T> | null,
-  ): boolean[];
+  standoutsFor?(args: ColorArgs<T, S, D>): boolean[];
 
   // Which of the standouts also keep a faint halo when zoomed in, where a
   // standout is otherwise a plain square.
-  halosFor?(
-    items: SpatialItem<T>[],
-    settings: S,
-    data: D,
-    hovered?: SpatialItem<T> | null,
-    pinned?: SpatialItem<T> | null,
-  ): boolean[];
+  halosFor?(args: ColorArgs<T, S, D>): boolean[];
 
-  // A field behind the squares; null for none.
-  backdrop?(items: SpatialItem<T>[], settings: S, data: D): Backdrop | null;
+  // A field behind the squares; null for none. It is redrawn when the tools change, not when
+  // the focus moves, so it is given none.
+  backdrop?(args: Omit<ColorArgs<T, S, D>, 'focus'>): Backdrop | null;
 
   // The panel may be drawn without the overlay's data; then data is null.
   //

@@ -666,22 +666,22 @@ describe('Commentary Overlay', () => {
       const items = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })];
 
       // Asking about another category must not move the overlay off Midrash.
-      commentaryOverlay.overlay.colorsFor!(
+      commentaryOverlay.overlay.colorsFor!({
         items,
-        commentaryOverlay.fromUrl({ category: 'total' }),
-        null,
-        commentaryOverlay.data,
-      );
+        settings: commentaryOverlay.fromUrl({ category: 'total' }),
+        data: commentaryOverlay.data,
+        focus: { hovered: null, pinned: null },
+      });
       expect(commentaryOverlay.toUrl()).toEqual({ category: 'Midrash' });
 
       // And asking about the category it is on must agree with what it paints.
       expect(
-        commentaryOverlay.overlay.colorsFor!(
+        commentaryOverlay.overlay.colorsFor!({
           items,
-          commentaryOverlay.fromUrl({ category: 'Midrash' }),
-          null,
-          commentaryOverlay.data,
-        ),
+          settings: commentaryOverlay.fromUrl({ category: 'Midrash' }),
+          data: commentaryOverlay.data,
+          focus: { hovered: null, pinned: null },
+        }),
       ).toEqual([commentaryOverlay.getItemColor(items[0])]);
     });
   });

@@ -31,7 +31,12 @@ const ITEMS = ['TractA.2a.1', 'TractA.2a.2', 'TractA.2a.3', 'TractA.3b.1'].map(s
 
 const found = (params: Record<string, string>): string[] => {
   const settings = talmudSearch.settingsFromUrl!(params, []);
-  const colors = talmudSearch.colorsFor(ITEMS, settings, null, data);
+  const colors = talmudSearch.colorsFor({
+    items: ITEMS,
+    settings,
+    data,
+    focus: { hovered: null, pinned: null },
+  });
   return ITEMS.filter((_, i) => colors[i] !== null).map((item) => item.id);
 };
 
@@ -89,7 +94,12 @@ describe('the Talmud’s search in English', () => {
   const withEnglish: TalmudSearchData = { ...data, english };
   const foundIn = (d: TalmudSearchData, params: Record<string, string>): string[] => {
     const settings = talmudSearch.settingsFromUrl!(params, []);
-    const colors = talmudSearch.colorsFor(ITEMS, settings, null, d);
+    const colors = talmudSearch.colorsFor({
+      items: ITEMS,
+      settings,
+      data: d,
+      focus: { hovered: null, pinned: null },
+    });
     return ITEMS.filter((_, i) => colors[i] !== null).map((item) => item.id);
   };
 
@@ -108,7 +118,12 @@ describe('the Talmud’s search in English', () => {
 
   it('searches Hebrew and English terms side by side', () => {
     const settings = talmudSearch.settingsFromUrl!({ search: 'קל וחומר,ami' }, []);
-    const colors = talmudSearch.colorsFor(ITEMS, settings, null, withEnglish);
+    const colors = talmudSearch.colorsFor({
+      items: ITEMS,
+      settings,
+      data: withEnglish,
+      focus: { hovered: null, pinned: null },
+    });
     expect(ITEMS.filter((_, i) => colors[i] !== null).map((item) => item.id)).toEqual([
       'TractA.2a.2',
       'TractA.3b.1',

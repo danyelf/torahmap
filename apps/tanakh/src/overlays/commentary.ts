@@ -96,7 +96,7 @@ export const commentaryOverlay: Overlay<TanakhIdentity, CommentarySettings, Comm
   ],
   data: { counts: 'overlays/commentary/counts.json' },
 
-  colorsFor(items, settings, _hovered, data) {
+  colorsFor({ items, settings, data }) {
     return items.map((item) => commentaryColorAt(data, item, settings.category));
   },
 

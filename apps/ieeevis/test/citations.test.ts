@@ -84,7 +84,12 @@ describe('what each paper cites', () => {
 
 describe('the cited people overlay', () => {
   const colours = (picked: string[], ...squares: PieceItem[]) =>
-    citedPeopleOverlay.colorsFor(squares as never, { picked }, null, data);
+    citedPeopleOverlay.colorsFor({
+      items: squares as never,
+      settings: { picked },
+      data,
+      focus: { hovered: null, pinned: null },
+    });
 
   it('lights the squares that hold a person’s works and dims the rest of the paper', () => {
     const [holds, otherPiece, otherPaper] = colours(
@@ -100,11 +105,12 @@ describe('the cited people overlay', () => {
 
   it('stands out only those squares', () => {
     expect(
-      citedPeopleOverlay.standoutsFor!(
-        [square(1, 1), square(1, 2), square(1, 0)] as never,
-        { picked: ['Jeffrey Heer'] },
+      citedPeopleOverlay.standoutsFor!({
+        items: [square(1, 1), square(1, 2), square(1, 0)] as never,
+        settings: { picked: ['Jeffrey Heer'] },
         data,
-      ),
+        focus: { hovered: null, pinned: null },
+      }),
     ).toEqual([true, true, false]);
   });
 
@@ -118,12 +124,12 @@ describe('the cited people overlay', () => {
 
 describe('the cited works overlay', () => {
   it('lights the squares that hold a work, picked by its id', () => {
-    const [holds, other] = citedWorksOverlay.colorsFor(
-      [square(2, 1), square(3, 1)] as never,
-      { picked: [workId(0)] },
-      null,
+    const [holds, other] = citedWorksOverlay.colorsFor({
+      items: [square(2, 1), square(3, 1)] as never,
+      settings: { picked: [workId(0)] },
       data,
-    );
+      focus: { hovered: null, pinned: null },
+    });
     expect(holds).toEqual(pickColors([0])[0]);
     expect(other).not.toEqual(holds);
   });
@@ -224,7 +230,12 @@ describe('the citations overlay', () => {
   it('colours the papers by the list the toggle shows', () => {
     const settings = link({ people: 'Tamara Munzner', works: workId(0) });
     const colour = (view: 'people' | 'works') =>
-      citationsOverlay.colorsFor([square(2)] as never, { ...settings, view }, null, data)[0];
+      citationsOverlay.colorsFor({
+        items: [square(2)] as never,
+        settings: { ...settings, view },
+        data,
+        focus: { hovered: null, pinned: null },
+      })[0];
     expect(colour('works')).toEqual(pickColors([0])[0]);
     expect(colour('people')).not.toEqual(colour('works'));
   });

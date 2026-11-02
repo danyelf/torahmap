@@ -277,8 +277,8 @@ export function rabbisOverlay(
     settingsToUrl: ({ picked }) =>
       Object.fromEntries(picked.length ? [['rabbis', picksToUrl(picked)]] : []),
 
-    colorsFor: (items, settings, _hovered, data) => colorsOf(items, settings, data),
-    standoutsFor(items, settings, data) {
+    colorsFor: ({ items, settings, data }) => colorsOf(items, settings, data),
+    standoutsFor({ items, settings, data }) {
       const places = pickedPlaces(settings, data);
       return items.map((item) => namedIn(data, item.id, places).size > 0);
     },

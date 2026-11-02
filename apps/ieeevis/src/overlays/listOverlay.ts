@@ -222,7 +222,7 @@ export function listOverlay<D extends ListData>(
     settingsToUrl: ({ picked }) =>
       Object.fromEntries(picked.length ? [[kind.urlKey, picksToUrl(picked)]] : []),
 
-    colorsFor(items, settings, _hovered, data) {
+    colorsFor({ items, settings, data }) {
       const picked = picks.picked(settings, data);
       if (!picked.length) return items.map(baseColor);
       const colors = colorsOf(picked);
@@ -233,7 +233,7 @@ export function listOverlay<D extends ListData>(
       });
     },
 
-    standoutsFor(items, settings, data) {
+    standoutsFor({ items, settings, data }) {
       const picked = picks.picked(settings, data);
       return items.map((item) => listedBy(picked, namesAt(item, data)).length > 0);
     },

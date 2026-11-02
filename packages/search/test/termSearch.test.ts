@@ -35,13 +35,23 @@ describe('a term search with no extra mode', () => {
 
   it('colours the items a whole word finds, and only those', () => {
     const settings = fromLink({ search: 'gamma', mode: 'w' });
-    const colors = search.tool.colorsFor(items, settings, null, data);
+    const colors = search.tool.colorsFor({
+      items,
+      settings,
+      data,
+      focus: { hovered: null, pinned: null },
+    });
     expect(colors.map((c) => c !== null)).toEqual([false, true, false]);
   });
 
   it('finds a substring inside longer words by default', () => {
     const settings = fromLink({ search: 'gamma' });
-    const colors = search.tool.colorsFor(items, settings, null, data);
+    const colors = search.tool.colorsFor({
+      items,
+      settings,
+      data,
+      focus: { hovered: null, pinned: null },
+    });
     expect(colors.map((c) => c !== null)).toEqual([false, true, true]);
   });
 

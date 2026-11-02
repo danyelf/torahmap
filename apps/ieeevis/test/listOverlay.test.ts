@@ -54,7 +54,12 @@ const recording = () => {
   };
 };
 const colours = (picked: string[], ...papers: number[]) =>
-  authorsOverlay.colorsFor(squares(...papers) as never, { picked }, null, data);
+  authorsOverlay.colorsFor({
+    items: squares(...papers) as never,
+    settings: { picked },
+    data,
+    focus: { hovered: null, pinned: null },
+  });
 
 describe('the authors overlay', () => {
   it('lights an author’s papers and dims the rest', () => {
@@ -70,7 +75,12 @@ describe('the authors overlay', () => {
 
   it('stands out only the picked authors’ papers', () => {
     expect(
-      authorsOverlay.standoutsFor!(squares(0, 1, 2) as never, { picked: ['Ana Silva'] }, data),
+      authorsOverlay.standoutsFor!({
+        items: squares(0, 1, 2) as never,
+        settings: { picked: ['Ana Silva'] },
+        data,
+        focus: { hovered: null, pinned: null },
+      }),
     ).toEqual([true, false, false]);
   });
 
@@ -107,7 +117,12 @@ describe('finding an author', () => {
 
 describe('the keywords overlay', () => {
   const colourOf = (picked: string[], ...papers: number[]) =>
-    keywordsOverlay.colorsFor(squares(...papers) as never, { picked }, null, data);
+    keywordsOverlay.colorsFor({
+      items: squares(...papers) as never,
+      settings: { picked },
+      data,
+      focus: { hovered: null, pinned: null },
+    });
 
   it('lights the papers that list a keyword, and dims the ones that list none', () => {
     const [listed, none] = colourOf(['Visual analytics'], 1, 2);

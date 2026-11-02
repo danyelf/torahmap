@@ -355,12 +355,12 @@ describe('Haftarah Overlay', () => {
       expect(sum(haftarahOverlay.getItemColor(genesis) as Color)).toBeGreaterThan(sum(cold));
       expect(sum(haftarahOverlay.getItemColor(noach) as Color)).toBeLessThan(
         sum(
-          haftarahOverlay.overlay.colorsFor(
-            [noach],
-            haftarahOverlay.fromUrl({}),
-            null,
-            haftarahOverlay.data,
-          )[0] as Color,
+          haftarahOverlay.overlay.colorsFor({
+            items: [noach],
+            settings: haftarahOverlay.fromUrl({}),
+            data: haftarahOverlay.data,
+            focus: { hovered: null, pinned: null },
+          })[0] as Color,
         ),
       );
     });
@@ -371,15 +371,15 @@ describe('Haftarah Overlay', () => {
         { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
       ]);
       const noachLit = () => {
-        const cold = haftarahOverlay.overlay.colorsFor(
-          [noach],
-          {
+        const cold = haftarahOverlay.overlay.colorsFor({
+          items: [noach],
+          settings: {
             ...haftarahOverlay.settings,
             preview: null,
           },
-          null,
-          haftarahOverlay.data,
-        )[0] as Color;
+          data: haftarahOverlay.data,
+          focus: { hovered: null, pinned: null },
+        })[0] as Color;
         return sum(haftarahOverlay.getItemColor(noach) as Color) > sum(cold);
       };
 
@@ -407,12 +407,12 @@ describe('Haftarah Overlay', () => {
     const brightness = (v: typeof genesis) => sum(haftarahOverlay.getItemColor(v) as Color);
     const brightnessUnder = (v: typeof genesis, hovered: typeof genesis | null) =>
       sum(
-        haftarahOverlay.overlay.colorsFor!(
-          [v],
-          haftarahOverlay.settings,
-          hovered,
-          DATA,
-        )[0] as Color,
+        haftarahOverlay.overlay.colorsFor!({
+          items: [v],
+          settings: haftarahOverlay.settings,
+          data: DATA,
+          focus: { hovered: hovered, pinned: null },
+        })[0] as Color,
       );
 
     it('reads a name with spaces and punctuation, and never writes it into a link', () => {
@@ -469,13 +469,12 @@ describe('Haftarah Overlay', () => {
     it('keeps a chosen reading lit over a pinned verse of another, until the pin is the only choice', () => {
       const under = (v: typeof genesis, pinned: typeof genesis | null) =>
         sum(
-          haftarahOverlay.overlay.colorsFor!(
-            [v],
-            haftarahOverlay.settings,
-            null,
-            DATA,
-            pinned,
-          )[0] as Color,
+          haftarahOverlay.overlay.colorsFor!({
+            items: [v],
+            settings: haftarahOverlay.settings,
+            data: DATA,
+            focus: { hovered: null, pinned: pinned },
+          })[0] as Color,
         );
       haftarahOverlay.restore({ reading: 'Bereshit' });
       expect(under(genesis, noach)).toBeGreaterThan(under(noach, noach));
@@ -613,12 +612,12 @@ describe('Haftarah Overlay', () => {
       haftarahOverlay.restore({ custom: 'sephardi' });
 
       const items = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 })];
-      haftarahOverlay.overlay.colorsFor!(
+      haftarahOverlay.overlay.colorsFor!({
         items,
-        haftarahOverlay.fromUrl({ custom: 'ashkenazi' }),
-        null,
-        DATA,
-      );
+        settings: haftarahOverlay.fromUrl({ custom: 'ashkenazi' }),
+        data: DATA,
+        focus: { hovered: null, pinned: null },
+      });
 
       expect(haftarahOverlay.toUrl()).toEqual({ custom: 'sephardi' });
     });
@@ -631,13 +630,18 @@ describe('Haftarah Overlay', () => {
       const items = [torah, itsHaftarah, otherParsha, noReading];
       const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
-      const cold = haftarahOverlay.overlay.colorsFor!(
+      const cold = haftarahOverlay.overlay.colorsFor!({
         items,
         settings,
-        null,
-        DATA,
-      ) as (Color | null)[];
-      const hot = haftarahOverlay.overlay.colorsFor!(items, settings, torah, DATA) as Color[];
+        data: DATA,
+        focus: { hovered: null, pinned: null },
+      }) as (Color | null)[];
+      const hot = haftarahOverlay.overlay.colorsFor!({
+        items,
+        settings,
+        data: DATA,
+        focus: { hovered: torah, pinned: null },
+      }) as Color[];
 
       for (const i of [0, 1]) {
         hot[i].forEach((channel, c) => expect(channel).toBeGreaterThanOrEqual(cold[i]![c]));
@@ -663,13 +667,28 @@ describe('Haftarah Overlay', () => {
       ];
       const settings = haftarahOverlay.settings;
 
-      const settled = overlayColorsFor(haftarahOverlay.overlay, verses, settings, verses[0], DATA);
+      const settled = overlayColorsFor(haftarahOverlay.overlay, {
+        items: verses,
+        settings,
+        data: DATA,
+        focus: { hovered: verses[0], pinned: null },
+      });
 
       expect(settled).toEqual(
-        haftarahOverlay.overlay.colorsFor!(verses, settings, verses[0], DATA),
+        haftarahOverlay.overlay.colorsFor!({
+          items: verses,
+          settings,
+          data: DATA,
+          focus: { hovered: verses[0], pinned: null },
+        }),
       );
       expect(settled).not.toEqual(
-        overlayColorsFor(haftarahOverlay.overlay, verses, settings, null, DATA),
+        overlayColorsFor(haftarahOverlay.overlay, {
+          items: verses,
+          settings,
+          data: DATA,
+          focus: { hovered: null, pinned: null },
+        }),
       );
     });
 
@@ -678,13 +697,18 @@ describe('Haftarah Overlay', () => {
       const outsideEveryReading = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
       const settings = haftarahOverlay.fromUrl({ custom: 'ashkenazi' });
 
-      const noHover = haftarahOverlay.overlay.colorsFor!(items, settings, null, DATA);
-      const irrelevantHover = haftarahOverlay.overlay.colorsFor!(
+      const noHover = haftarahOverlay.overlay.colorsFor!({
         items,
         settings,
-        outsideEveryReading,
-        DATA,
-      );
+        data: DATA,
+        focus: { hovered: null, pinned: null },
+      });
+      const irrelevantHover = haftarahOverlay.overlay.colorsFor!({
+        items,
+        settings,
+        data: DATA,
+        focus: { hovered: outsideEveryReading, pinned: null },
+      });
 
       expect(irrelevantHover).toEqual(noHover);
     });

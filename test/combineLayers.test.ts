@@ -230,11 +230,15 @@ describe('fillDefaultColors', () => {
 
 describe('toolsPicture', () => {
   it('asks each tool for its colours and combines them, search over overlay', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) });
+    const overlay = testOverlay({
+      id: 'o',
+      name: 'O',
+      colorsFor: ({ items }) => items.map(() => RED),
+    });
     const search = testOverlay({
       id: 's',
       name: 'S',
-      colorsFor: (items) => items.map((v) => (v.verse === 1 ? CYAN : null)),
+      colorsFor: ({ items }) => items.map((v) => (v.verse === 1 ? CYAN : null)),
     });
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
@@ -254,8 +258,8 @@ describe('toolsPicture', () => {
 
   it('asks the overlay which of its squares stand out', () => {
     const overlay = {
-      ...testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) }),
-      standoutsFor: (items: { verse: number }[]) => items.map((v) => v.verse === 2),
+      ...testOverlay({ id: 'o', name: 'O', colorsFor: ({ items }) => items.map(() => RED) }),
+      standoutsFor: ({ items }: { items: { verse: number }[] }) => items.map((v) => v.verse === 2),
     };
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
@@ -270,7 +274,11 @@ describe('toolsPicture', () => {
   });
 
   it('passes a non-match dim through to combineLayers', () => {
-    const overlay = testOverlay({ id: 'o', name: 'O', colorsFor: (items) => items.map(() => RED) });
+    const overlay = testOverlay({
+      id: 'o',
+      name: 'O',
+      colorsFor: ({ items }) => items.map(() => RED),
+    });
     const search = testOverlay({ id: 's', name: 'S' });
     const items = [createVerse({ verse: 1 })];
 

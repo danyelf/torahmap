@@ -364,9 +364,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     }
     showLegend(mapLegend, rows, warnings);
-    backdrop.show(
-      tools.overlay?.tool.backdrop?.(items, tools.overlay.settings, tools.overlay.data) ?? null,
-    );
+    const on = tools.overlay;
+    backdrop.show(on?.tool.backdrop?.({ items, settings: on.settings, data: on.data }) ?? null);
   }
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
