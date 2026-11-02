@@ -100,8 +100,9 @@ GitHub Action) and reach the build some other way.
   new.
 - **Preview only**, like the VIS map: not on the live site. The repo is public, so the code text in
   the data is no exposure.
-- **It joins the repo's checks** like any text: an entry in `pages.ts`, its states in the layout
-  suite, and its overlays in the catalog.
+- **It joins the repo's checks** like any text: an entry in `pages.ts` and `build.ts`, and its
+  states in the layout suite. Its overlays are defined in its own folder, as the AI Act's are; the
+  overlay catalog is the Tanakh's.
 
 ## Left to the builder
 
