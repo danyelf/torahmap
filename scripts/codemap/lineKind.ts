@@ -18,7 +18,7 @@ function isScript(path: string): boolean {
   return SCRIPT_FILE.test(path);
 }
 
-/** One LineKind character per line. A block comment span lines, so it takes the whole file. */
+/** One LineKind character per line. A block comment spans lines, so it takes the whole file. */
 export function lineKinds(path: string, lines: readonly string[]): string {
   const script = isScript(path);
   const python = PYTHON_FILE.test(path);

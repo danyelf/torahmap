@@ -99,8 +99,15 @@ export const codemapText: MapText<CodeItem, TermSettings> = {
         const texts = loadedFiles.get(TEXTS_FILE) as CodeTexts | undefined;
         const path = pathOf(item);
         // A deleted file is not in the head, so its link is to the base.
+        const changed = structure.files[item.file].lastChanged[item.line - 1];
         return {
           ref: item.deletedFile ? path : lineId(path, item.line),
+          refDetail:
+            changed === undefined
+              ? undefined
+              : document.createTextNode(
+                  `changed ${new Date(changed * 1000).toISOString().slice(0, 10)}`,
+                ),
           hebrew: '',
           english: texts?.[item.file]?.[item.line - 1] ?? '',
           link: item.deletedFile

@@ -74,6 +74,12 @@ describe('the pull request overlay', () => {
     expect(prColours({ commit: 1 })('src/main.ts', 3)).toEqual(ADDED);
   });
 
+  it('treats a commit past the last as all commits', () => {
+    const beyond = prColours({ commit: 99 });
+    expect(beyond('src/main.ts', 3)).toEqual(ADDED);
+    expect(beyond('src/old.ts', 1)).toEqual(REMOVED);
+  });
+
   it('reads its commit from a link and writes it back, all commits leaving it out', () => {
     const { settingsFromUrl, settingsToUrl } = pullRequestOverlay;
     expect(settingsFromUrl!({}, [])).toEqual({ commit: null });

@@ -13,7 +13,7 @@ export const LINE_KINDS = {
   b: 'blank',
   c: 'comment',
   i: 'import',
-  h: 'header',
+  h: 'function or class opening',
   x: 'code',
 } as const;
 export type LineKind = keyof typeof LINE_KINDS;

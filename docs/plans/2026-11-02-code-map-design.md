@@ -1,6 +1,6 @@
 # The code map
 
-**Status:** Design, awaiting Danyel's approval. Nothing built.
+**Status:** Built, awaiting Danyel's review (PR #564). Preview only.
 
 A map of a codebase in the manner of SeeSoft (Eick, Steffen and Sumner, 1992): every line of code
 drawn as a thin bar in a fixed place, coloured by what a pull request did to it and by how much it
@@ -15,8 +15,8 @@ spread across the repo, whether it is mostly tests, logic or boilerplate, and wh
 code that is already churning.
 
 The engine fits because SeeSoft's idea is torahmap's: a fixed position per line, with analyses as
-colour on the same ground. The Talmud map already draws 81,793 squares; this repo is about 70,000
-lines of TypeScript, so its size needs no new engine work.
+colour on the same ground. The Talmud map already draws 81,793 squares; the map of this repo is about
+139,000 lines, more than that, and it needs no new engine work.
 
 ## Goals
 

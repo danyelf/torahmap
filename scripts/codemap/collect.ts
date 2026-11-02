@@ -16,6 +16,9 @@ export function envWithoutGit(): NodeJS.ProcessEnv {
   return Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')));
 }
 
+/** Keeps the user's git config from changing the diff text `parseDiff` reads. */
+const DIFF_FLAGS = ['--no-color', '--no-ext-diff', '--src-prefix=a/', '--dst-prefix=b/'];
+
 function git(repo: string, args: string[]): string {
   return execFileSync('git', ['-c', 'core.quotePath=false', ...args], {
     cwd: repo,
@@ -67,6 +70,7 @@ function lastChanged(repo: string, head: string, path: string): number[] {
 function timesChanged(repo: string, head: string, path: string, lineCount: number): number[] {
   const log = git(repo, [
     'log',
+    ...DIFF_FLAGS,
     '--follow',
     '--first-parent',
     '--diff-merges=first-parent',
@@ -206,9 +210,9 @@ export function collect(
       return { sha: line.slice(0, space), subject: line.slice(space + 1) };
     });
 
-  const prDiff = parseDiff(git(repo, ['diff', '-U0', '-M', baseSha, headSha]));
+  const prDiff = parseDiff(git(repo, ['diff', ...DIFF_FLAGS, '-U0', '-M', baseSha, headSha]));
   const commitDiffs = commits.map(({ sha }) =>
-    parseDiff(git(repo, ['diff', '-U0', '-M', `${sha}^`, sha])),
+    parseDiff(git(repo, ['diff', ...DIFF_FLAGS, '-U0', '-M', `${sha}^`, sha])),
   );
   const perCommit = commits.map((_, i) => commitMarks(commitDiffs, i));
   const prByPath = new Map(prDiff.flatMap((f) => (f.newPath === null ? [] : [[f.newPath, f]])));

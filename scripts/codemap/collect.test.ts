@@ -144,6 +144,8 @@ describe('isExcluded', () => {
     expect(isExcluded('data/texts/genesis-he.json')).toBe(true);
     expect(isExcluded('experiments/eu-ai-act/downloads/law.xhtml')).toBe(true);
     expect(isExcluded('experiments/eu-ai-act/build.ts')).toBe(false);
+    expect(isExcluded('experiments/eu-ai-act/ai-act.json')).toBe(true);
+    expect(isExcluded('experiments/eu-ai-act/refs.json')).toBe(true);
     expect(isExcluded('docs/shot.PNG')).toBe(true);
     expect(isExcluded('apps/codemap/src/data.ts')).toBe(false);
   });

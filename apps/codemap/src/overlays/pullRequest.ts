@@ -22,7 +22,9 @@ const PARAMS = [{ key: 'commit', kind: 'token' }] as const satisfies readonly Ur
 
 function marksOf(structure: CodeStructure, file: number, commit: number | null): Marks | null {
   const f = structure.files[file];
-  return commit === null ? f.pr : (f.commits[commit - 1] ?? null);
+  return commit === null || commit > structure.commits.length
+    ? f.pr
+    : (f.commits[commit - 1] ?? null);
 }
 
 function colorOf(item: CodeItem, structure: CodeStructure, commit: number | null) {
@@ -81,12 +83,13 @@ export const pullRequestOverlay: Overlay<CodeItem, PullRequestSettings, Structur
     }
     const button = (step: string) =>
       container.querySelector<HTMLButtonElement>(`[data-step="${step}"]`)!;
-    button('all').classList.toggle('on', commit === null);
-    button('all').setAttribute('aria-pressed', String(commit === null));
-    button('-1').disabled = commit === null;
-    button('1').disabled = commit !== null && commit >= commits.length;
+    const all = commit === null || commit > commits.length;
+    button('all').classList.toggle('on', all);
+    button('all').setAttribute('aria-pressed', String(all));
+    button('-1').disabled = all;
+    button('1').disabled = !all && commit >= commits.length;
     container.querySelector('.pr-subject')!.textContent =
-      commit === null
+      commit === null || commit > commits.length
         ? `${commits.length} commit${commits.length === 1 ? '' : 's'}`
         : `${commit} of ${commits.length}: ${commits[commit - 1]?.subject ?? ''}`;
   },
@@ -102,7 +105,10 @@ export const pullRequestOverlay: Overlay<CodeItem, PullRequestSettings, Structur
   },
 
   summary: ({ commit }, { structure }) => ({
-    detail: commit === null ? undefined : `commit ${commit} of ${structure.commits.length}`,
+    detail:
+      commit === null || commit > structure.commits.length
+        ? undefined
+        : `commit ${commit} of ${structure.commits.length}`,
     colors: [ADDED, CHANGED, REMOVED].map((c: Color) => colorToCss(c)),
   }),
 };
