@@ -10,11 +10,11 @@ const parseColors = (value: string | undefined): Colors =>
   value ? value.split(',').map(Number) : [];
 
 /** A tool that draws in the colours it is set to; an edit to it moves off `taken`. */
-function paletteTool(id: string): Overlay<object, Colors> {
+function paletteTool(id: string, defaultColors = ''): Overlay<object, Colors> {
   return {
     id,
     name: id,
-    urlParams: [{ key: `${id}Colors`, kind: 'text', default: '' }],
+    urlParams: [{ key: `${id}Colors`, kind: 'text', default: defaultColors }],
     settingsFromUrl: (params, taken) => {
       const wanted = parseColors(params[`${id}Colors`]);
       return wanted.filter((place) => !taken.includes(place));
@@ -32,8 +32,9 @@ const search: SearchTool<object, Colors> = {
 };
 const picks = paletteTool('picks');
 const other = paletteTool('other');
+const defaulted = paletteTool('defaulted', '3');
 
-const overlays = new Map([picks, other].map((overlay) => [overlay.id, overlay]));
+const overlays = new Map([picks, other, defaulted].map((overlay) => [overlay.id, overlay]));
 const newState = () => createToolsState<object, Colors>(search, (id) => overlays.get(id));
 
 /** An edit that adds `place` unless `taken` has it, as a tool's controls would. */
@@ -64,8 +65,9 @@ describe('the colour rule', () => {
   it('keeps a reset overlay out of the search colours', () => {
     const state = newState();
     state.changeSearch(add(3));
-    state.reset(picks);
-    expect(state.settingsOf(picks)).toEqual([]);
+    expect(state.settingsOf(defaulted)).toEqual([3]);
+    state.reset(defaulted);
+    expect(state.settingsOf(defaulted)).toEqual([]);
   });
 });
 
@@ -115,11 +117,12 @@ describe('leaving a story', () => {
     expect(state.settingsOf(highlighter)).toEqual({ shade: 'cool', highlight: false });
   });
 
-  it('keeps the colours the overlay kept out of the search', () => {
+  it("keeps the overlay out of the search's colours", () => {
     const state = newState();
     state.switchTo('picks');
-    state.changeOverlay(picks, add(1));
     state.changeSearch(add(2));
+    // A story stop may set a colour the search holds; a link's overlay would avoid it.
+    state.changeOverlay(picks, () => [1, 2]);
     state.keepOnlyLinked();
     expect(state.settingsOf(picks)).toEqual([1]);
     expect(state.searchSettings()).toEqual([2]);
@@ -150,7 +153,7 @@ describe('switching overlays', () => {
     state.switchTo('none');
     expect(state.overlay()).toBeNull();
     expect(state.overlayId()).toBe('none');
-    expect(state.overlaySettings()).toBeUndefined();
+    expect(state.settingsOfOverlayOn()).toBeUndefined();
   });
 
   it('still takes a reader’s edit to an overlay that is not on', () => {

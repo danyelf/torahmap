@@ -10,6 +10,7 @@ import { NO_OVERLAY } from './overlays/types.ts';
 import { toolsPicked, toolsShown } from './tools.ts';
 
 /** What a link carries of the tools. */
+// Not UrlState's own: its search parameters may hold undefined, which settings never write.
 export interface ToolsLink {
   overlay?: string;
   overlayParams: Record<string, string>;
@@ -22,7 +23,7 @@ export interface ToolsState<T, S> {
   /** Its id, or NO_OVERLAY. */
   overlayId(): string;
   /** The on overlay's settings; undefined while none is on. */
-  overlaySettings(): unknown;
+  settingsOfOverlayOn(): unknown;
   searchSettings(): S;
   /** The settings held for `overlay`, on or not. */
   settingsOf<U>(overlay: Overlay<T, U>): U;
@@ -63,7 +64,7 @@ export function createToolsState<T, S>(
   return {
     overlay: () => current,
     overlayId: () => current?.id ?? NO_OVERLAY,
-    overlaySettings: () => (current ? settings.get(current) : undefined),
+    settingsOfOverlayOn: () => (current ? settings.get(current) : undefined),
     searchSettings: () => settings.get(search),
     settingsOf: (overlay) => settings.get(overlay),
     shown: (loaded) =>
