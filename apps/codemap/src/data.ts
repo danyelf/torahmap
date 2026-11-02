@@ -29,7 +29,7 @@ export interface CodeFile {
   path: string;
   /** Per head line, parallel arrays. */
   indent: number[];
-  length: number[];
+  length: number[]; // columns to the end of the text, indent included, a tab counting 4
   kind: string; // LineKind per line
   lastChanged: number[]; // unix seconds, from git blame
   timesChanged: number[]; // over the file's whole history

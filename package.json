@@ -35,7 +35,8 @@
     "report:english-letters": "tsx scripts/search/english-letters-report.ts",
     "print": "node scripts/print/print.ts",
     "generate:text-analytics": "tsx scripts/overlays/text-analytics/generate.ts",
-    "report:text-analytics": "tsx scripts/overlays/text-analytics/report.ts"
+    "report:text-analytics": "tsx scripts/overlays/text-analytics/report.ts",
+    "codemap": "tsx scripts/codemap/build.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
