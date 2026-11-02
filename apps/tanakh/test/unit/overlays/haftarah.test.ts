@@ -411,7 +411,7 @@ describe('Haftarah Overlay', () => {
           items: [v],
           settings: haftarahOverlay.settings,
           data: DATA,
-          focus: { hovered: hovered, pinned: null },
+          focus: { hovered, pinned: null },
         })[0] as Color,
       );
 

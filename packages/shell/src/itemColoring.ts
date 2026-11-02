@@ -95,13 +95,11 @@ export function overlayColorsFor<T, S, D>(
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
-  hovered: SpatialItem<T> | null,
+  focus: Focus<T>,
   base: (index: number) => ItemColor,
   nonMatchDim?: number,
   keepsBase?: number,
-  pinned: SpatialItem<T> | null = null,
 ): Picture<ItemColor | null> {
-  const focus = { hovered, pinned };
   const argsOf = ({ settings, data }: ToolOnMap<T>) => ({ items, settings, data, focus });
   const colorsOf = (on: ToolOnMap<T> | null) => on && overlayColorsFor(on.tool, argsOf(on));
   const { overlay } = tools;

@@ -213,7 +213,7 @@ describe('Text Analytics overlay', () => {
           ...data,
           echoes,
         },
-        focus: { hovered: hovered, pinned: null },
+        focus: { hovered, pinned: null },
       });
 
     it("colours a verse with echoes and leaves one without in the map's grey", () => {

@@ -373,11 +373,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     return toolsPicture(
       toolsNow(),
       items,
-      litHoverItem,
+      focusNow(),
       base,
       dimFor(frontTool),
       text.searchKeepsBase,
-      pinnedItem,
     );
   }
 

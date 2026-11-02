@@ -111,7 +111,7 @@ export function pictureForStop<I extends MapItem>(
     loaded,
   );
   const picture = fillDefaultColors(
-    toolsPicture(shown, items, hovered, base, undefined, keepsBase),
+    toolsPicture(shown, items, { hovered, pinned: null }, base, undefined, keepsBase),
     base,
   );
   if (!byHover) cache.set(key, picture);
