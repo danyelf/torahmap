@@ -6,6 +6,7 @@
     "./*": "./src/*"
   },
   "dependencies": {
+    "@torahmap/engine": "*",
     "@torahmap/shell": "*",
     "@torahmap/site": "*",
     "@torahmap/utils": "*"
