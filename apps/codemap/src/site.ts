@@ -9,8 +9,7 @@ export const codemapSite: Site = {
   direction: 'ltr',
   squareName: 'line',
   email: MAKER_EMAIL,
-  aboutHtml:
-    '<p>An interactive map of a pull request. Every line of the repository is a bar, shaped by its indent and length, and keeps its place whatever is shown.</p>',
+  aboutHtml: `<p>${CODEMAP_PAGE.noScript} Color a line by what the pull request did to it, as a whole or one commit at a time; by how recently or how often it has changed over its file’s history; or by what kind of line it is. The data comes from git alone: whether a line was changed rather than removed and added is a reading of the diff, usually right.</p>`,
   credits: [],
   title(link) {
     return viewTitle(CODEMAP_PAGE.name, link.square ?? null, link);

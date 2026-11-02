@@ -7,8 +7,11 @@
   },
   "dependencies": {
     "@torahmap/engine": "*",
+    "@torahmap/link": "*",
+    "@torahmap/search": "*",
     "@torahmap/shell": "*",
     "@torahmap/site": "*",
+    "@torahmap/stories": "*",
     "@torahmap/utils": "*"
   }
 }

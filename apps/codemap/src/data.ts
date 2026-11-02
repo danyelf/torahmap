@@ -56,3 +56,9 @@ export function structureFrom(loaded: Loaded): CodeStructure {
   if (!structure) throw new Error(`Could not load ${STRUCTURE_FILE}`);
   return structure;
 }
+
+/** What an overlay that reads the structure is handed. */
+export interface StructureData {
+  structure: CodeStructure;
+}
+export const STRUCTURE_DATA = { structure: STRUCTURE_FILE };
