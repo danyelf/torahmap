@@ -55,21 +55,20 @@ lines of TypeScript, so its size needs no new engine work.
   removed lines followed by added lines in the same hunk counts as changed; added lines with nothing
   removed are added. This is a reading of the diff, usually right, and the design says so rather than
   presenting it as git's word.
-- **Churn is computed once, when the data is built**, not in the browser. Recency comes from blame;
-  the number of changes per line from walking each file's history (`git log -L` or equivalent),
-  which is slow and so belongs in the build step.
+- **Churn covers each file's whole history** and is computed once, when the data is built. When a
+  line last changed comes from `git blame`; how many times it changed, from walking the file's
+  `git log`. This pull request's marks are separate: they come from its own commits only.
 - **The map is a live link**, not a picture in the PR description, because step-by-step mode needs
   clicking. A still picture can come later.
-- **Danyel looks remotely**, so nothing may depend on a `localhost` link. In the first version:
-  - the generated data for one pull request is committed to the repo, so the code map's own PR
-    preview on Cloudflare shows a real map;
-  - to see any other pull request, Claude runs the script on that branch, builds the page with its
-    data and publishes it as a private claude.ai artifact (16 MB per file; measure the data rather
-    than assume it fits).
-- **Next step: a GitHub Action** that makes the data on every pull request, stores it, and comments
-  a link on the PR. It is also the form other people would install.
-- **Data comes from a script** that reads git and writes the map's data files, kept apart from the
-  map's code so it can later run against other repos.
+- **The data comes from a separate project, codemap-scrape**, as the VIS map's comes from
+  ieeevis-scrape. It runs locally against a repo and two refs and writes the map's data files into
+  a folder it is given. To see a pull request, its output is copied into `public/data/codemap/` in
+  that PR's branch, and the branch's Cloudflare preview shows the map. Nothing depends on a
+  `localhost` link, since Danyel often looks remotely.
+- **Two open PRs that both carry the data conflict** when the second merges. The files are
+  generated, so the conflict is settled by running the scraper again.
+- **Next step: a GitHub Action** that makes the data on every pull request. It is also the form
+  other people would install.
 
 ## The path to general
 
@@ -79,12 +78,6 @@ lines of TypeScript, so its size needs no new engine work.
 
 The first step should not close off the third: the data script takes a repo and two refs and knows
 nothing about torahmap, and the map reads only its data files.
-
-## Constraint
-
-Blame and churn need the repo's full history. Cloudflare's pull-request builds may check out only
-the latest commit; if so, the data has to be made where the history is (Danyel's machine or a
-GitHub Action) and reach the build some other way.
 
 ## Claude's calls, for Danyel to check
 
