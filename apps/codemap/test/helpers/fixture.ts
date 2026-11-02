@@ -2,7 +2,7 @@
 
 import type { CodeFile, CodeStructure, CodeTexts } from '../../src/data.ts';
 
-const none = { marks: '', deletedBefore: [] };
+const noMarks = { marks: '', deletedBefore: [] };
 
 const main: CodeFile = {
   path: 'src/main.ts',
@@ -28,7 +28,10 @@ const util: CodeFile = {
   lastChanged: [1_750_000_000, 1_750_000_000, 1_750_000_000],
   timesChanged: [3, 3, 3],
   pr: { marks: '.a.', deletedBefore: [3] },
-  commits: [none, { marks: '.a.', deletedBefore: [3] }],
+  commits: [
+    { marks: '...', deletedBefore: [] },
+    { marks: '.a.', deletedBefore: [3] },
+  ],
 };
 
 const old: CodeFile = {
@@ -38,8 +41,8 @@ const old: CodeFile = {
   kind: '',
   lastChanged: [],
   timesChanged: [],
-  pr: none,
-  commits: [none, none],
+  pr: noMarks,
+  commits: [noMarks, noMarks],
   deleted: true,
 };
 
