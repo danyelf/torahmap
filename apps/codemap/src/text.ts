@@ -8,7 +8,7 @@ import { ENGLISH } from '@torahmap/shell/language.ts';
 import { createRowNumbers } from '@torahmap/shell/rowNumbers.ts';
 import type { Story } from '@torahmap/stories';
 import { baseColor } from './baseColor.ts';
-import { FOLDER_LABEL } from './constants.ts';
+import { BAND_GAP, FOLDER_LABEL } from './constants.ts';
 import { TEXTS_FILE, structureFrom, type CodeTexts } from './data.ts';
 import { codemapFiles } from './files.ts';
 import { lineId } from './ids.ts';
@@ -79,14 +79,16 @@ export const codemapText: MapText<CodeItem, TermSettings> = {
 
       labels: (container) => {
         const width = textWidth(container, FOLDER_LABEL.fontSize);
-        // A folder's name shows once it fits above the folder, so names never run into each other.
+        // A folder's name shows once it fits above the folder and in the gap between bands, so
+        // it runs into neither another name nor the band above.
+        const gapFits = (FOLDER_LABEL.fontSize + FOLDER_LABEL.offset) / BAND_GAP;
         return createRowNumbers(
           'codemap-folders',
           laid.books.map((b) => ({
             text: b.name,
             x: b.minX,
             y: b.minY,
-            zoom: width(b.name) / (b.maxX - b.minX),
+            zoom: Math.max(gapFits, width(b.name) / (b.maxX - b.minX)),
           })),
           container,
           FOLDER_LABEL,

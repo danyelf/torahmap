@@ -9,6 +9,6 @@ export const MAX_ROWS = 400; // lines a column holds before the file continues i
 export const STUB_CHARS = 8; // a deleted file's bar, in characters
 export const FILE_GAP = 8;
 export const MAX_WIDTH = 16000; // a band wraps before it is wider than this
-export const BAND_GAP = 60; // between bands, room for the folder names
+export const BAND_GAP = 250; // between bands, room for the folder names at the zoom a desktop opens on
 // A folder's name, in the gap above its files.
 export const FOLDER_LABEL: RowNumberStyle = { fontSize: 11, offset: 4, side: 'above' };
