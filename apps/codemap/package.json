@@ -1,0 +1,11 @@
+{
+  "name": "@torahmap/codemap",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@torahmap/shell": "*"
+  }
+}
