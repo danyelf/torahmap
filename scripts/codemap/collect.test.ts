@@ -9,6 +9,7 @@ import { isExcluded } from './exclude.ts';
 
 const URL = 'https://example.com/r';
 const MAIN_TIME = 1_700_000_000;
+const MAIN_EDIT_TIME = MAIN_TIME + 500;
 const COMMIT_1_TIME = MAIN_TIME + 1000;
 const COMMIT_2_TIME = MAIN_TIME + 2000;
 
@@ -65,6 +66,8 @@ beforeAll(() => {
   write('gone.ts', ['gone']);
   write('package-lock.json', ['{}']);
   commit('main', MAIN_TIME);
+  writeFileSync(join(repo, 'old.ts'), OLD.replace('// the old file', '// the old file, edited'));
+  commit('main edit', MAIN_EDIT_TIME);
   git(['checkout', '-q', '-b', 'branch']);
   write('a.ts', ['one', 'TWO', 'three', 'four', 'five', 'six']);
   commit('first', COMMIT_1_TIME);
@@ -101,7 +104,9 @@ describe('collect', () => {
     const a = fileAt(structure, 'a.ts');
     expect(a.timesChanged).toEqual([1, 2, 1, 1, 1]);
     expect(a.lastChanged).toEqual([MAIN_TIME, COMMIT_1_TIME, MAIN_TIME, MAIN_TIME, COMMIT_1_TIME]);
-    expect(fileAt(structure, 'new.ts').timesChanged.every((n) => n === 1)).toBe(true);
+    const renamed = fileAt(structure, 'new.ts');
+    expect(renamed.timesChanged).toEqual([1, 1, 1, 1, 1, 2]);
+    expect(renamed.lastChanged[5]).toBe(MAIN_EDIT_TIME);
   });
 
   it('gives each head line its text, shape and kind', () => {
