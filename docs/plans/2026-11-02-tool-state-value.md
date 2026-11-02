@@ -2,7 +2,9 @@
 
 **Issues:** #558 (createApp), #565 (link previews)
 **Date:** 2026-11-02
-**Status:** Proposed, not built.
+**Status:** Proposed, revised after review. Not built.
+
+The code references below are to main at `244824e0`.
 
 ## The problem
 
@@ -10,146 +12,172 @@ The tools are the search and at most one overlay. Since #567 their state lives i
 `packages/shell/src/toolsState.ts`, but it is a mutable object, so the shell has to say after
 every change what the change meant:
 
-- **The follow-ups vary.** Six paths change the tools: a reader's edit, picking an overlay, a
-  text's `openOverlay` hook, a story stop, a link or Back, and leaving a story. Each decides for
-  itself what follows (repaint, panel, legend, popup, URL, telemetry), and the orders differ.
-- **Reading a link takes two calls.** It is `switchTo`, then `restore`, while writing one is a
-  single `toUrl`.
+- **The follow-ups vary.** Each path that changes the tools decides for itself what follows:
+  repaint, panels, legend, popup, front tool, files, telemetry and URL.
+- **Reading a link takes two calls,** `switchTo` then `restore`, while writing one is a single
+  `toUrl`.
 - **The story blend works out the tools a second time.** `pictureForStop`
-  (`scrollytelling/overlayBlender.ts`) rebuilds each stop's settings from its link parameters,
-  applies the colour rule itself, and caches the pictures by a string made from those parameters.
+  (`scrollytelling/overlayBlender.ts`) rebuilds each stop's settings from its link parameters and
+  applies the colour rule itself.
+
+The refactor changes nothing a reader can see. Where today's behaviour looks accidental, this plan
+keeps it and names it.
 
 ## The value
 
-A text's settings map `M` gives each of its overlay ids that overlay's settings type, for example
-`{ trop: TropSettings; haftarah: HaftarahSettings; … }`. It is worked out from the text's record
-of overlays, never written by hand:
-
 ```ts
-type Overlays<I, M> = { readonly [K in keyof M]: Overlay<I, M[K]> };
-
-interface ToolState<M, S> {
-  readonly active: keyof M | null;                    // the overlay that is on
-  readonly overlays: { readonly [K in keyof M]?: M[K] }; // every overlay the reader has touched
-  readonly search: S;                                  // the one search
+interface ToolState<S> {
+  readonly active: string | null;                 // the overlay that is on
+  readonly overlays: ReadonlyMap<string, unknown>; // every overlay the reader has touched
+  readonly search: S;                              // the one search
 }
 ```
 
-- **Every overlay the reader has touched is kept,** not only the one showing, so switching away
-  and back still finds what was left. An overlay with no entry has its defaults.
-- **The search sits apart,** because there is always exactly one.
-- **Ids and settings are typed throughout.** The shell is generic over `M`, as it already is over
-  a text's square type and search settings. A text hands it its overlays as a typed record, in
-  place of today's list, with a separate list of ids for the menu's order.
-- **The shell reads and writes settings with no casts.** Its functions are generic over the id
-  (`settingsOf<K extends keyof M>(state, overlays, k: K): M[K]`). A Haftarah setting can't reach
-  Trop. This removes the loose method check on settings that the overlay list needs today, so
-  #559 isn't needed.
-- **Strings from outside, a link's or a story file's, are checked once** (`id in overlays`) when
-  they're read.
-- **Ids are the text's own literal union** (`keyof M`), not an `enum`. The shell can't name any
-  text's ids. The repo's scripts run under Node with their types stripped, and that can't handle
-  an `enum`.
+- **Every overlay the reader has touched is kept,** so switching away and back finds what was
+  left. An overlay with no entry has its defaults.
+- **The search sits apart,** because there is always exactly one, so its settings keep their type.
+- **The empty state is per text:** `emptyTools(search)` gives the search its defaults.
 
-Everything else is a function of the value, given the text's search and its record of overlays:
+Everything else is a function of the value, given the text's search and overlays:
 
-- **Questions:** the overlay, its settings, the search's settings, `shown(state, loaded)`,
-  `picked(state)`, `searching(state)`. These replace the module's getters.
-- **Changes, each returning a new value:**
-  - `withOverlay(state, id)`
-  - `withOverlaySettings(state, overlay, update)`
-  - `withSearch(state, update)`
-  - `withReset(state, overlay)`
+- **Questions:** the active overlay and its settings, `shown(state, loaded)`, `picked(state)`,
+  `searching(state)`. These replace the module's getters.
+- **Changes, each returning a new value:** `withActive(state, id)`,
+  `withOverlaySettings(state, overlay, update)`, `withSearch(state, update)`,
+  `withReset(state, overlay)`.
 
-  Each applies the colour rule: an overlay's new settings avoid the search's colours, and the
-  search's avoid the overlay's.
+The colour rule runs only when settings are written, as it does today. An overlay's new settings
+avoid the search's colours, and the search's avoid the overlay's. Switching to an overlay keeps
+the settings it holds as they are, even if the search's colours changed since.
 
 A settings update already takes the current settings and returns the next ones, so overlays don't
-change. The value relies on updates returning a new object, never editing the old one; a test
-over every overlay's controls holds that.
+change. The value relies on updates returning a new object. A test over every text's overlays,
+the IEEE VIS citations overlay's nested lists included, holds that.
 
 ## Links, against a base
 
-- **`toLink(state)`** writes the overlay, its settings and the search's settings, leaving out
-  values at their default. It drops the settings held for overlays that aren't showing.
+- **`toLink(state)`** writes the active overlay, its settings and the search's settings, leaving
+  out values at their default.
 - **`fromLink(link, base)`** applies a link on top of `base`. The search's settings come first,
-  then the named overlay's, chosen to avoid the search's colours. Every other overlay keeps what
-  `base` held.
+  then the named overlay's, chosen to avoid the search's colours. A link that names no overlay
+  makes `active` null. Every other overlay keeps what `base` held.
 
-Leaving a story becomes `fromLink(toLink(state), state)`, so `keepOnlyLinked` goes. A link with
-no base, `fromLink(link, EMPTY)`, is what a link preview would draw (#565).
+`fromLink(link, emptyTools(search))` is what a link preview would draw (#565).
+
+**Leaving a story trims the overlay only:** `withOverlayTrimmed(state)` keeps of the active overlay
+what a link carries, as `keepOnlyLinked` does today. The search stays exactly as it is, because a
+link doesn't record which word has which colour, so passing the search through a link could swap
+its colours. With no overlay on, the value comes back unchanged.
 
 ## Stories
 
 A story stop names an overlay, its parameters and the search's parameters, which together are a
-link. The stops can therefore be read once, when the story is resolved:
+link. So stops become values once, in the shell, after each text's `stories.resolve`:
 
-- **For drawing,** `fromLink(stop, EMPTY)`. The blend then draws between two values. The cache is
-  keyed by the value itself (a `WeakMap`), so the parameter strings, `paramsKey` and
-  `cacheKeyFor` go, along with the blend's own call to the colour rule.
-- **For arriving at a stop,** `fromLink(stop, state)`. The reader's other overlays keep their
-  settings, as they do now.
+- **For drawing,** `fromLink(stop, emptyTools(search))`. Stops that name the same tools share
+  one value. The resolver keeps a map from a stop's link text to its value, which is today's
+  `cacheKeyFor` moved there. Stops that only move the camera are common, and each would otherwise
+  compute the same picture again.
+- **The blend's picture cache** keeps its nesting by squares and loaded files. Its inner map is
+  keyed by the value instead of a string. The blend's own call to the colour rule goes.
+- **For arriving at a stop,** `fromLink(stop, state)`, so the reader's other overlays keep their
+  settings, as now.
+- **Hot reload on the dev server** re-resolves the stories, which makes new values. The old ones
+  are dropped from the cache with them.
 
 A story is then a sequence of camera, pin and tool state.
 
 ## One place for what follows
 
-The shell holds one variable, `let tools: ToolState`, and changes it through one function:
+The shell holds one variable, `let tools`, and changes it through one function:
 
 ```ts
-setTools(next: ToolState, why: 'reader' | 'hook' | 'stop' | 'link' | 'leave-story'): void
+setTools(next: ToolState<S>, by: 'reader' | 'outside'): void
 ```
 
-It compares `tools` with `next`: the overlay changed, the overlay's settings changed, the search's
-settings changed, or nothing. Then it runs what follows. What follows depends on why, and that is
-the real reason the six paths differ today:
+**`outside`** is a story stop, or a link and Back. Both already run inside
+`applyingExternalState`, which turns off URL writes, so the URL needs no case of its own.
+**`reader`** is every reader action and a text's hooks. They go through `setOverlay`,
+`changeSettings` and `changeSearch` today, including the legend card's × and the starting points
+under None.
 
-| Why | Overlay switched | Telemetry | Panel redraw | URL |
-|---|---|---|---|---|
-| `reader` (an edit or the picker) | `destroy()`, `body` attribute | switch, search change | keeps the control's focus for an edit; fresh for a switch | written; pushed when search turns on or off |
-| `hook` (a text opens an overlay) | as `reader` | as `reader` | as `reader` | as `reader` |
-| `stop` | `destroy()`, `body` attribute | the search's `replaced`, from the fresh panel | fresh | not written |
-| `link` (a link, or Back) | `destroy()`, `body` attribute | as `stop` | fresh | not written |
-| `leave-story` | none | none | none | written |
+What follows today, which `setTools` reproduces:
 
-Writing this table down is half the work. Each row has to be checked against today's code before
-it's built, and any difference found is a bug or a decision for Danyel, not a quiet change.
+- **A reader edits the overlay's settings** (`changeSettings`): repaint (`applyTools`, `render`);
+  the overlay panel redrawn keeping the control's focus; legend and popup; URL replaced.
+- **A reader edits the search** (`changeSearch`): the search's `readerChanged` telemetry;
+  repaint; the search panel redrawn keeping focus; legend and popup; the search's files fetched;
+  URL pushed if the search turned on or off, replaced otherwise.
+- **A reader picks an overlay** (`setOverlay`): switch telemetry; the old overlay's `destroy()`
+  and the `body` attribute; the overlay panel fresh; legend and popup; repaint; URL pushed.
+- **A text opens an overlay** (the `openOverlay` hook): `takeOver`; if the overlay isn't on, its
+  settings reset, then the switch above; then the edit above; then its panel opened. Today that is
+  two paints and two URL writes, the second replacing the first. **It becomes one `setTools`**
+  with the switch and the settings together: one paint and one push. Nothing visible changes, and
+  Back still returns to before the click.
+- **A text changes the search** (the `changeSearch` hook): `takeOver`, the search edit above, then
+  the search panel opened.
+- **A story stop arrives** (`syncStoryStopStateUnguarded`): the old overlay's `destroy()` and the
+  `body` attribute only if the overlay differs; the pin set; both panels fresh, which calls the
+  search's `destroy()` and sends its `replaced` telemetry; legend and popup (twice today, once
+  after); the search's files fetched; the search put in front if it is on. No repaint, because the
+  story draws the map.
+- **A link or Back** (`applyViewState`): the old overlay's `destroy()` and the `body` attribute
+  every time, even for the same overlay; the pin set; both panels fresh, with the search's
+  `destroy()` and `replaced`; legend and popup (twice today, once after); the search's files
+  fetched; repaint; the open panel put in front only when leaving story mode.
 
-The pin stays outside the value, which is option 3 in #558. A story stop and a link set the pin
-before the panel is drawn. They keep doing so by setting it before calling `setTools`.
+So `setTools` compares the old and new values for a `reader` change and runs only what that
+change touches. For an `outside` change it runs every follow-up for both tools without comparing,
+as today. Rebuilding the panels only on a real change is #569, kept out of this refactor.
 
-## What goes
+Two smaller differences are accepted:
 
-- `createOverlaySettings`'s mutable store becomes the map inside the value.
-- `toolsState.ts`'s `restore`, `reset`, `keepOnlyLinked` and `switchTo` go, and its getters
-  become functions of the value.
-- The blend's parameter strings and its own use of the colour rule go.
+- The legend and popup run once instead of twice on a stop or a link.
+- A reader's edit that returns the same settings object no longer repaints. The picture would be
+  the same.
 
-## Alternatives
+**Leaving a story is not a `setTools` call.** `leaveStory` keeps its own steps: `takeOver`, trim
+the overlay, repaint if an overlay is on, `render`, URL pushed. It redraws no panel or legend, so
+they keep showing what the stop set. That may be a bug; it isn't checked or changed here.
 
-- **One map for every tool, the search included.** This is simpler to write, but the search's
-  settings come out of the map untyped and need a cast at every read.
-- **A value shaped exactly like a link,** with the touched overlays kept in a second variable
-  beside it. Every switch would then have to save into that variable and load from it, which is
-  the wiring this plan removes.
+**Outside `setTools`:** the pin, `takeOver`, the camera and the panel frame. A stop and a link set
+the pin before calling `setTools`, so the panel draws the pin; a test fails if that order changes.
 
-- **Keep the mutable module and add `fromLink` and a "what changed" result.** This is smaller,
-  but the blend keeps its second copy of the rule, and previews (#565) still need a page-bound
-  object.
-- **A manager object around the value.** It would wrap one variable and one function. Add it only
-  if something besides the shell needs to hold the tools.
+## Steps
 
-## Testing
+Each step is one pull request that typechecks and passes on its own.
 
-- Unit tests for the value's functions: the colour rule both ways, `fromLink` on a base keeping
-  other overlays' settings, and `toLink` after `fromLink` giving the same link.
-- A test that every overlay's settings updates return a new object.
-- `setTools`'s comparison gets unit tests. Its follow-ups are checked by the layout suite on all
-  four texts and the loading suite. The blend's existing tests carry over.
+1. **The value and its link functions.**
+   - What it covers: the value with string ids; `fromLink`, `toLink` and `withOverlayTrimmed`; the
+     story stops resolved to values; the blend using them.
+   - What goes: the module's `switchTo` and `restore` pair becomes one `fromLink`, and the
+     mutable settings store goes.
+   - Checks: unit tests for the functions, and the blend's existing tests; the layout suite on all
+     four texts.
+2. **`setTools`.**
+   - What it covers: the follow-ups above, with the `openOverlay` hook as one change.
+   - Checks: unit tests for the comparison; the layout suite on all four texts, plus the loading
+     suite, because search file fetching moves into `setTools`. Telemetry has few tests, so the
+     order of events on the hook path is checked once by hand.
+3. **Optional: ids and settings typed by each text.** The shell becomes generic over a text's
+   settings map, with each overlay's settings type read from what its `settingsFromUrl` returns.
+   A test confirmed that this works and that a Haftarah setting given to Trop is refused.
+   - Costs: about 15 source files and 10 tests change. The Tanakh's registry, which tests fill
+     with just the overlays they need, gives way to its record of implementations. Ids from
+     outside are checked with `Object.hasOwn`, not `in`, which accepts `constructor`.
+   - What it doesn't do: remove the loose method check. Code that handles any overlay still holds
+     an untyped list (#559).
+   - Ids are each text's literal union, never an `enum`. The repo's scripts run under Node with
+     their types stripped, and that can't handle an `enum`.
 
-## Open questions
+## Not in this work
 
-- Should a story stop's arrival keep the reader's settings for overlays the stop doesn't show?
-  It does today, and this plan keeps that.
-- `why` has five values for two kinds of follow-up. If the `hook` row stays identical to
-  `reader`, it can fold into it.
+- Rebuilding the panels only when the tools change (#569).
+- Hover and pin as one object, option 3 in #558.
+
+## Alternative
+
+A value shaped exactly like a link, with the touched overlays kept in a second variable beside it.
+Every switch would then save into that variable and load from it, which is the wiring this plan
+removes.
