@@ -102,7 +102,7 @@ export const pullRequestOverlay: Overlay<CodeItem, PullRequestSettings, Structur
   },
 
   summary: ({ commit }, { structure }) => ({
-    detail: commit === null ? undefined : structure.commits[commit - 1]?.subject,
+    detail: commit === null ? undefined : `commit ${commit} of ${structure.commits.length}`,
     colors: [ADDED, CHANGED, REMOVED].map((c: Color) => colorToCss(c)),
   }),
 };

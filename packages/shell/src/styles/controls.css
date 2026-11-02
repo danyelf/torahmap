@@ -63,6 +63,7 @@
 @media (pointer: coarse) {
   .control-segment {
     min-height: 24px;
+    min-width: 24px;
   }
 }
 

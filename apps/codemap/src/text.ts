@@ -45,6 +45,13 @@ const CODE_LINK_KEYS: LinkKeys = {
   zoom: { min: 0.02, max: 12, start: 0.08 },
 };
 
+/** The width in pixels of a text set at `fontSize` in the labels' font, `--text-font`. */
+function textWidth(container: HTMLElement, fontSize: number): (text: string) => number {
+  const context = document.createElement('canvas').getContext('2d')!;
+  context.font = `${fontSize}px ${getComputedStyle(container).getPropertyValue('--text-font')}`;
+  return (text) => context.measureText(text).width;
+}
+
 export const codemapText: MapText<CodeItem, TermSettings> = {
   site: codemapSite,
   link: CODE_LINK_KEYS,
@@ -70,13 +77,21 @@ export const codemapText: MapText<CodeItem, TermSettings> = {
 
       baseColor,
 
-      labels: (container) =>
-        createRowNumbers(
+      labels: (container) => {
+        const width = textWidth(container, FOLDER_LABEL.fontSize);
+        // A folder's name shows once it fits above the folder, so names never run into each other.
+        return createRowNumbers(
           'codemap-folders',
-          laid.books.map((b) => ({ text: b.name, x: b.minX, y: b.minY, zoom: 0 })),
+          laid.books.map((b) => ({
+            text: b.name,
+            x: b.minX,
+            y: b.minY,
+            zoom: width(b.name) / (b.maxX - b.minX),
+          })),
           container,
           FOLDER_LABEL,
-        ),
+        );
+      },
 
       popupText(item, loadedFiles) {
         const texts = loadedFiles.get(TEXTS_FILE) as CodeTexts | undefined;
