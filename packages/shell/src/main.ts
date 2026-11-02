@@ -1594,7 +1594,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const state = storyColumn.view();
 
     // A new page on a phone eases in rather than cutting to it.
-    if (isPhone() && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
+    if (phone && lastSyncedStopId !== null && state.toStop.id !== lastSyncedStopId) {
       keepDriving(beginEase(SWIPE_EASE_MS, now));
       // The controls and the popup move to the new stop as it starts.
       arriveAtStop(state.toStop);
