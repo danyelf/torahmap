@@ -5,23 +5,22 @@
 **Goal:** A new text, the code map at `/codemap/`, that draws every line of a repo as a bar shaped
 by its indent and length, coloured by what a pull request did to it, by churn, and by line type.
 
-**Architecture:** Two projects, as with the VIS map. **codemap-scrape** (a separate repo,
-`~/code/MISC/codemap-scrape`, private, Python with `uv`) reads a repo's git history and writes
-`structure.json` and `texts.json` into a folder it is given. Danyel copies them into
-`public/data/codemap/` in a pull request's branch, and the branch's Cloudflare preview shows the
-map. **torahmap** gets an app, `apps/codemap/`, that lays the files out and hands them to the
-shared shell with `createApp`, as `apps/euaiact/` does.
+**Architecture:** A script, `scripts/codemap/`, reads a repo's git history and writes
+`structure.json` and `texts.json` into a folder, by default `public/data/codemap/`. Committed in a
+pull request's branch, they make the branch's Cloudflare preview show the map. An app,
+`apps/codemap/`, lays the files out and hands them to the shared shell with `createApp`, as
+`apps/euaiact/` does.
 
-**Tech Stack:** Python 3.12 + `uv` + pytest (scraper); TypeScript, vitest, Playwright layout suite
-(map); the git CLI.
+**Tech Stack:** TypeScript, `tsx` for the script, vitest, the Playwright layout suite, the git CLI.
 
 **Spec:** `docs/plans/2026-11-02-code-map-design.md`
 
 ## Global Constraints
 
-- The data files' shape is defined once, in torahmap's `apps/codemap/src/data.ts`. The scraper's
-  README points there and its tests check the output against it field by field.
-- The scraper takes a repo path and two refs and knows nothing about torahmap.
+- The data files' shape is defined once, in `apps/codemap/src/data.ts`. The script imports it, so
+  the script and the map cannot disagree without `npm run typecheck` failing. `scripts/codemap` is
+  added to `tsconfig.json`'s `include` for that.
+- The script takes a repo path and two refs and knows nothing about torahmap.
 - Git only: `git ls-files`, `git show`, `git diff`, `git blame`, `git log`. No diff library.
 - **This PR's marks** come from the PR's own commits. **Churn** covers the file's whole history:
   when each line last changed from `git blame`, how many times from a walk of `git log`.
@@ -30,31 +29,44 @@ shared shell with `createApp`, as `apps/euaiact/` does.
   screen density 1.5 and 2, at rest and while panning, before calling the layout done.
 - Stepping between commits is a settings change, so it uses the existing cross-fade. No new
   animation path, and no colour per commit.
-- torahmap's rules in `CLAUDE.md` and `AGENTS.md` apply to both repos: no ticket refs in code,
-  tests check behaviour, say each thing once, short comments.
+- The rules in `CLAUDE.md` and `AGENTS.md` apply: no ticket refs in code, tests check behaviour,
+  say each thing once, short comments.
 
 ## Review Focus
 
 1. **A pull request that only deletes** (a whole file, or lines with nothing added): the map shows
-   deletion marks, not an unchanged map. Tests in S2, S3 and T3.
+   deletion marks, not an unchanged map. Tests in Tasks 2, 3 and 6.
 2. **A line touched by an early commit and rewritten or removed by a later one**, in step-by-step
-   mode: its mark lands where it now sits, or becomes a deletion mark at its spot. Test in S2 and S3.
-3. **Renamed files**: a moved file is not all "added", and its churn follows it. Test in S3.
+   mode: its mark lands where it now sits, or becomes a deletion mark at its spot. Tests in Tasks 2
+   and 3.
+3. **Renamed files**: a moved file is not all "added", and its churn follows it. Test in Task 3.
 4. **Very long lines and very long files**: a 3,000-character line or a 5,000-line file must not
-   blow the layout's width or height. Test in T2.
+   blow the layout's width or height. Test in Task 5.
 5. **A branch with no commits beyond main**: the map opens, and the PR overlay says there is
-   nothing to show. Tests in S3 and T3.
+   nothing to show. Tests in Tasks 3 and 6.
 
 ---
 
-## The data contract
+### Task 1: The data format and each line's type
 
-Written into torahmap's `apps/codemap/src/data.ts` in task T1; the scraper writes exactly this.
+**Files:**
+
+- Create: `apps/codemap/package.json` (as `apps/euaiact/package.json`), `apps/codemap/src/data.ts`
+- Create: `scripts/codemap/lineKind.ts`, test `scripts/codemap/lineKind.test.ts`
+- Modify: root `package.json` (dependency `@torahmap/codemap`), `tsconfig.json` (`include` gains
+  `scripts/codemap`)
+
+**Interfaces:** `apps/codemap/src/data.ts` holds exactly this, plus
+`structureFrom(loaded: Loaded): CodeStructure` as in `apps/euaiact/src/data.ts`:
 
 ```ts
 export const CODEMAP_DATA_DIR = 'codemap';
 export const STRUCTURE_FILE = `${CODEMAP_DATA_DIR}/structure.json`;
 export const TEXTS_FILE = `${CODEMAP_DATA_DIR}/texts.json`;
+
+/** One character per line. */
+export const LINE_KINDS = { b: 'blank', c: 'comment', i: 'import', h: 'header', x: 'code' } as const;
+export type LineKind = keyof typeof LINE_KINDS;
 
 /** One character per head line: '.' untouched, 'a' added, 'c' changed. */
 export interface Marks {
@@ -68,8 +80,7 @@ export interface CodeFile {
   /** Per head line, parallel arrays. */
   indent: number[];
   length: number[];
-  /** One character per line: b blank, c comment, i import, h header, x code. */
-  kind: string;
+  kind: string; // LineKind per line
   lastChanged: number[]; // unix seconds, from git blame
   timesChanged: number[]; // over the file's whole history
   /** The pull request as a whole, then each of its commits in order. */
@@ -91,153 +102,141 @@ export interface CodeStructure {
 export type CodeTexts = readonly (readonly string[])[];
 ```
 
----
-
-## codemap-scrape
-
-Set up as `~/code/MISC/ieeevis-scrape` is: `git init`, `git config claude.bot true`, an `AGENTS.md`
-and `CLAUDE.md` that point to torahmap's rules, a README with the one command, `pyproject.toml` for
-`uv`, the scripts in `scripts/`, the tests in `tests/`. Pushed to `danyelf/codemap-scrape` once
-Danyel has created it.
-
-### Task S1: Classify each line's type
-
-**Files:** create `scripts/line_kind.py`, `tests/test_line_kind.py`
-
-**Interfaces:** produces `line_kinds(path: str, lines: list[str]) -> str`, one character per line
-(`b c i h x`, as in the contract).
-
-Line by line, with regexes. A block comment spans lines, which is why it takes the whole file.
-`h` is a line that opens a function, method, class or interface; `if (x) {`, `for (…) {` and other
-keywords are not. Files that are not `.ts`, `.js` or `.mjs` get only `b` and `x`; `.py` gets `c`
-and `i` too.
+`lineKinds(path: string, lines: readonly string[]): string` in `scripts/codemap/lineKind.ts`
+returns one `LineKind` per line. Line by line, with regexes, not the TypeScript compiler. A block
+comment spans lines, which is why it takes the whole file. `h` is a line that opens a function,
+method, class or interface; `if (x) {`, `for (…) {` and other keywords are not. `.ts`, `.js`,
+`.mjs` and `.py` files get every kind; other files only `b` and `x`.
 
 - [ ] **Step 1: Write the failing tests**
 
-```python
-assert line_kinds('a.ts', ['', '  ', "import { x } from './x';", "export { y } from './y';"]) == 'bbii'
-assert line_kinds('a.ts', ['// note', '/**', ' * more', ' */', 'const a = 1; // trailing']) == 'ccccx'
-assert line_kinds('a.ts', [
-    'export function f(x: number): number {', 'async function g() {',
-    'export const h = (a: string) => {', '  method(a: string): void {',
-    'export class C {', 'interface I {', '  if (x) {',
-]) == 'hhhhhhx'
-assert line_kinds('README.md', ['# Title', '', 'text']) == 'xbx'
-assert line_kinds('a.py', ['import os', '# note', 'def f():', '    return 1']) == 'ichx'
+```ts
+expect(lineKinds('a.ts', ['', '  ', "import { x } from './x';", "export { y } from './y';"])).toBe('bbii');
+expect(lineKinds('a.ts', ['// note', '/**', ' * more', ' */', 'const a = 1; // trailing'])).toBe('ccccx');
+expect(lineKinds('a.ts', [
+  'export function f(x: number): number {', 'async function g() {',
+  'export const h = (a: string) => {', '  method(a: string): void {',
+  'export class C {', 'interface I {', '  if (x) {',
+])).toBe('hhhhhhx');
+expect(lineKinds('README.md', ['# Title', '', 'text'])).toBe('xbx');
+expect(lineKinds('a.py', ['import os', '# note', 'def f():', '    return 1'])).toBe('ichx');
 ```
 
-- [ ] **Step 2:** `uv run pytest tests/test_line_kind.py` → FAIL.
-- [ ] **Step 3:** implement `line_kinds`.
-- [ ] **Step 4:** run, PASS.
-- [ ] **Step 5:** commit `Classify each line's type`.
+- [ ] **Step 2:** `npx vitest run scripts/codemap/lineKind.test.ts` → FAIL.
+- [ ] **Step 3:** implement `lineKinds`; write `data.ts` and `package.json`.
+- [ ] **Step 4:** the test passes and `npm run typecheck` passes.
+- [ ] **Step 5:** commit `Code map: the data format and each line's type`.
 
-### Task S2: Read a diff and carry lines forward through it
+### Task 2: Read a diff and carry lines forward through it
 
-**Files:** create `scripts/diff.py`, `tests/test_diff.py`, `tests/fixtures/sample.diff` (real
-`git diff -U0 -M` output: a modify, a rename with an edit, an added file, a deleted file)
+**Files:** create `scripts/codemap/diff.ts`, test `scripts/codemap/diff.test.ts`, fixture
+`scripts/codemap/fixtures/sample.diff` (real `git diff -U0 -M` output: a modify, a rename with an
+edit, an added file, a deleted file)
 
 **Interfaces:**
 
-- `Hunk(old_start, old_count, new_start, new_count)`, 1-based as git's `@@ -a,b +c,d @@`
-- `FileDiff(old_path: str | None, new_path: str | None, hunks: list[Hunk])`; None for an added or
-  deleted file
-- `parse_diff(text: str) -> list[FileDiff]`
-- `marks_of(hunks, line_count: int) -> Marks` with `Marks(marks: str, deleted_before: list[int])`
-- `carry_forward(line: int, hunks) -> int | Removed`, where `Removed(before: int)` is the head line
-  just below where it was removed
+- `interface Hunk { oldStart: number; oldCount: number; newStart: number; newCount: number }`,
+  1-based as git's `@@ -a,b +c,d @@`
+- `interface FileDiff { oldPath: string | null; newPath: string | null; hunks: Hunk[] }`; null for
+  an added or deleted file
+- `parseDiff(text: string): FileDiff[]`
+- `marksOf(hunks: readonly Hunk[], lineCount: number): Marks` (`Marks` from `data.ts`)
+- `carryForward(line: number, hunks: readonly Hunk[]): number | { removedBefore: number }`: where
+  an old line sits in the new file, or the new line just below where it was removed
 
 "Changed" is inferred (spec): in a hunk with both removed and added lines, the first
-`min(old_count, new_count)` added lines are `c`, the rest `a`. If `old_count > new_count`, the
-line after the hunk also gets a deletion mark.
+`min(oldCount, newCount)` added lines are `c`, the rest `a`. If `oldCount > newCount`, the line
+after the hunk also gets a deletion mark.
 
 - [ ] **Step 1: Write the failing tests**
 
-```python
-assert [(f.old_path, f.new_path, len(f.hunks)) for f in parse_diff(SAMPLE)] == [
-    ('a.ts', 'a.ts', 2), ('old.ts', 'new.ts', 1), (None, 'add.ts', 1), ('gone.ts', None, 1)]
-assert marks_of([Hunk(10, 2, 10, 3)], 12) == Marks('.........cca', [])
-assert marks_of([Hunk(5, 3, 4, 0)], 6) == Marks('......', [5])   # pure deletion of old 5-7
-assert marks_of([Hunk(5, 3, 5, 1)], 6) == Marks('....c.', [6])   # 3 removed, 1 added
-h = [Hunk(10, 2, 10, 5)]
-assert carry_forward(3, h) == 3
-assert carry_forward(20, h) == 23
-assert carry_forward(11, h) == Removed(15)
+```ts
+expect(parseDiff(SAMPLE).map((f) => [f.oldPath, f.newPath, f.hunks.length])).toEqual([
+  ['a.ts', 'a.ts', 2], ['old.ts', 'new.ts', 1], [null, 'add.ts', 1], ['gone.ts', null, 1],
+]);
+expect(marksOf([{ oldStart: 10, oldCount: 2, newStart: 10, newCount: 3 }], 12))
+  .toEqual({ marks: '.........cca', deletedBefore: [] });
+// Pure deletion of old lines 5-7: git writes newStart 4, newCount 0.
+expect(marksOf([{ oldStart: 5, oldCount: 3, newStart: 4, newCount: 0 }], 6))
+  .toEqual({ marks: '......', deletedBefore: [5] });
+// 3 removed, 1 added: one changed, and a deletion mark below it.
+expect(marksOf([{ oldStart: 5, oldCount: 3, newStart: 5, newCount: 1 }], 6))
+  .toEqual({ marks: '....c.', deletedBefore: [6] });
+const hunks = [{ oldStart: 10, oldCount: 2, newStart: 10, newCount: 5 }];
+expect(carryForward(3, hunks)).toBe(3);
+expect(carryForward(20, hunks)).toBe(23);
+expect(carryForward(11, hunks)).toEqual({ removedBefore: 15 });
 ```
 
 - [ ] **Step 2–4:** fail, implement, pass.
-- [ ] **Step 5:** commit `Read a diff and carry lines forward`.
+- [ ] **Step 5:** commit `Code map: read a diff and carry lines forward`.
 
-### Task S3: Build the data from a repo
+### Task 3: Build the data from a repo
 
-**Files:** create `scripts/build.py` (the command), `scripts/collect.py` (git calls and assembly),
-`scripts/exclude.py` (what is left out), `tests/test_collect.py`
+**Files:** create `scripts/codemap/build.ts` (the command), `scripts/codemap/collect.ts` (git calls
+and assembly), `scripts/codemap/exclude.ts` (what is left out), test
+`scripts/codemap/collect.test.ts`; modify `package.json`
+(`"codemap": "tsx scripts/codemap/build.ts"`)
 
 **Interfaces:**
 
-- `collect(repo: Path, base: str, head: str, repo_url: str) -> tuple[dict, list[list[str]]]`, the
-  structure and texts as in the contract
-- `is_excluded(path: str) -> bool`: lockfiles, `public/data/`, binaries by extension, generated
+- `collect(repo: string, base: string, head: string, repoUrl: string): { structure: CodeStructure; texts: CodeTexts }`
+- `isExcluded(path: string): boolean`: lockfiles, `public/data/`, binaries by extension, generated
   files. The list lives only here.
-- Command: `uv run python -I scripts/build.py --repo <path> [--base origin/main] [--head HEAD] <out dir>`.
-  `repo_url` comes from the repo's `origin` remote. The base is the merge base of the two refs.
+- Command: `npm run codemap -- [--repo <path>] [--base origin/main] [--head HEAD] [<out dir>]`, the
+  out dir defaulting to `public/data/codemap/`. `repoUrl` comes from the repo's `origin` remote;
+  the base is the merge base of the two refs.
 
 How each part is made:
 
-- Files and lines: `git ls-files` at head, less `is_excluded`, read with `git show head:path`.
-- The PR: `git diff -U0 -M <merge base> <head>`, then `marks_of` per file. A file the PR deleted is
+- Files and lines: `git ls-files` at head, less `isExcluded`, read with `git show head:path`.
+- The PR: `git diff -U0 -M <merge base> <head>`, then `marksOf` per file. A file the PR deleted is
   kept with `deleted: true` and empty arrays.
 - Each commit: `git diff -U0 -M <sha>^ <sha>` for each commit in
   `git rev-list --reverse <merge base>..<head>`. Each mark is carried through the later commits'
-  hunks to its head line with `carry_forward`; a line that does not survive becomes a
-  `deleted_before` entry at the line it was removed before.
-- `lastChanged`: `git blame --line-porcelain -M -C <head> -- path`, the committer time of each line.
+  hunks to its head line with `carryForward`; a line that does not survive becomes a
+  `deletedBefore` entry where it was removed.
+- `lastChanged`: `git blame --line-porcelain -M -C <head> -- path`, each line's committer time.
 - `timesChanged`: per file, `git log --follow --reverse -p -U0 -M` over the whole history. Walk the
-  commits carrying a count per line forward with `carry_forward`; a line a commit adds or changes
+  commits carrying a count per line forward with `carryForward`; a line a commit adds or changes
   gains one.
 
-- [ ] **Step 1: Write the failing tests.** Build a fixture repo in `tmp_path`, with fixed dates via
-      `GIT_AUTHOR_DATE` and `GIT_COMMITTER_DATE`. On main: `a.ts` (5 lines), `old.ts`, `gone.ts`.
-      Branch commit 1 edits `a.ts` line 2 and adds line 6; commit 2 deletes `a.ts` line 4,
-      `git mv old.ts new.ts`, and deletes `gone.ts`.
+- [ ] **Step 1: Write the failing tests.** Build a fixture repo in a temp directory, with fixed dates
+      through `GIT_AUTHOR_DATE` and `GIT_COMMITTER_DATE`. On main: `a.ts` (5 lines), `old.ts`,
+      `gone.ts`. Branch commit 1 edits `a.ts` line 2 and adds line 6; commit 2 deletes `a.ts` line
+      4, runs `git mv old.ts new.ts`, and deletes `gone.ts`.
 
-```python
-structure, texts = collect(repo, 'main', 'branch', 'https://example.com/r')
-a = file(structure, 'a.ts')
-# a.ts at head: 5 lines (5, plus line 6, less line 4); old line 6 is now line 5.
-assert a['pr'] == {'marks': '.c..a', 'deletedBefore': [4]}
-assert [c['marks'] for c in a['commits']] == ['.c..a', '.....']
-assert a['commits'][1]['deletedBefore'] == [4]
-assert set(file(structure, 'new.ts')['pr']['marks']) == {'.'}   # a rename, not an add
-assert file(structure, 'gone.ts')['deleted'] is True
-assert a['timesChanged'][1] == 2                                # made on main, changed on the branch
-assert a['lastChanged'][1] == COMMIT_1_TIME
-assert len(texts[structure['files'].index(a)]) == len(a['indent'])
-assert collect(repo, 'main', 'main', URL)[0]['commits'] == []  # nothing beyond main
-assert set(KEYS_FROM_CONTRACT) == set(a)                        # field names as in data.ts
+```ts
+const { structure, texts } = collect(repo, 'main', 'branch', 'https://example.com/r');
+const a = fileAt(structure, 'a.ts');
+// a.ts at head: 5 lines (5, plus line 6, less line 4); old line 6 is now line 5.
+expect(a.pr).toEqual({ marks: '.c..a', deletedBefore: [4] });
+expect(a.commits.map((c) => c.marks)).toEqual(['.c..a', '.....']);
+expect(a.commits[1].deletedBefore).toEqual([4]);
+expect(new Set(fileAt(structure, 'new.ts').pr.marks)).toEqual(new Set(['.'])); // a rename, not an add
+expect(fileAt(structure, 'gone.ts').deleted).toBe(true);
+expect(a.timesChanged[1]).toBe(2); // made on main, changed on the branch
+expect(a.lastChanged[1]).toBe(COMMIT_1_TIME);
+expect(texts[structure.files.indexOf(a)]).toHaveLength(a.indent.length);
+expect(collect(repo, 'main', 'main', URL).structure.commits).toEqual([]); // nothing beyond main
 ```
 
 - [ ] **Step 2–4:** fail, implement, pass.
-- [ ] **Step 5:** run it on torahmap's `codemap-design` branch into a scratch folder; report the
-      files' sizes and the time taken. If `texts.json` is over 10 MB, stop and say so.
-- [ ] **Step 6:** commit `Build the code map's data from a repo`.
+- [ ] **Step 5:** run `npm run codemap -- <scratch folder>` on this branch; report the files' sizes
+      and the time taken. If `texts.json` is over 10 MB, stop and say so.
+- [ ] **Step 6:** commit `Code map: build the data from git`.
 
----
-
-## torahmap (worktree `codemap-design`)
-
-### Task T1: The page, wiring, data shapes and base colour
+### Task 4: The page, wiring and base colour
 
 **Files:**
 
-- Create: `apps/codemap/package.json` (as `apps/euaiact/package.json`); `src/main.ts`;
-  `src/page.ts` (`CODEMAP_PATH = '/codemap/'`, name "Code Map"); `src/site.ts`
-  (`squareName: 'line'`, `direction: 'ltr'`); `src/files.ts`; `src/data.ts` (the contract above,
-  plus `structureFrom(loaded: Loaded): CodeStructure`); `src/baseColor.ts`; `src/constants.ts`
+- Create in `apps/codemap/src/`: `main.ts`; `page.ts` (`CODEMAP_PATH = '/codemap/'`, name "Code
+  Map"); `site.ts` (`squareName: 'line'`, `direction: 'ltr'`); `files.ts`; `baseColor.ts`;
+  `constants.ts`
 - Create: `apps/codemap/test/helpers/fixture.ts`, a small hand-written `CodeStructure` and
-  `CodeTexts` (three files, one deleted, two commits) that every later test uses
-- Modify: root `package.json` (dependency `@torahmap/codemap`), `pages.ts`, `build.ts`
-  (`{ page: 'codemap', dataDir: CODEMAP_DATA_DIR, live: false }`), `vite.config.ts` (`PAGE_PATHS`,
-  `PAGE_FILES`, `pageAddressPlugin('codemap')`)
+  `CodeTexts` (three files, one deleted, two commits) that the map's tests use
+- Modify: `pages.ts`, `build.ts` (`{ page: 'codemap', dataDir: CODEMAP_DATA_DIR, live: false }`),
+  `vite.config.ts` (`PAGE_PATHS`, `PAGE_FILES`, `pageAddressPlugin('codemap')`)
 - Test: `apps/codemap/test/baseColor.test.ts`
 
 Wire it exactly as `ieeevis` is wired in each of those files; `git grep -n ieeevis` lists them.
@@ -248,7 +247,7 @@ id, as in `apps/euaiact/src/baseColor.ts`.
 - [ ] **Step 2–4:** fail, implement, pass.
 - [ ] **Step 5:** `npm run typecheck` passes. Commit `Code map: the page and its wiring`.
 
-### Task T2: Lay out the bars
+### Task 5: Lay out the bars
 
 **Files:** create `apps/codemap/src/layout.ts`, `src/ids.ts`; test `apps/codemap/test/layout.test.ts`
 
@@ -278,7 +277,7 @@ Layout rules, with the constants in `constants.ts`:
 - [ ] **Step 2–4:** fail, implement, pass.
 - [ ] **Step 5:** commit `Code map: lay out the bars`.
 
-### Task T3: The text, popup, search and the three overlays
+### Task 6: The text, popup, search and the three overlays
 
 **Files:** create `apps/codemap/src/text.ts`, `src/search.ts`, `src/references.ts`,
 `src/overlays/index.ts`, `src/overlays/pullRequest.ts`, `src/overlays/churn.ts`,
@@ -306,7 +305,7 @@ The overlays (`colorsFor` takes one `ColorArgs` object, as on main):
   sequential scale, newest or most changed brightest, with its legend as a `strip`.
 - **Line type** (`id: 'kind'`). One colour per kind, with a legend from `swatchList`.
 
-- [ ] **Step 1: Write the failing tests, on the T1 fixture:**
+- [ ] **Step 1: Write the failing tests, on the Task 4 fixture:**
   - `pr` with `commit: null` gives an added line green, a changed line amber, an untouched line
     null, the line below a removal a two-colour split, and a deleted file red.
   - With `commit: 2`, only commit 2's marks show, and `settingsFromUrl({})` gives `commit: null`.
@@ -316,22 +315,22 @@ The overlays (`colorsFor` takes one `ColorArgs` object, as on main):
 - [ ] **Step 2–4:** fail, implement, pass.
 - [ ] **Step 5:** commit `Code map: overlays and popup`.
 
-### Task T4: Real data, the layout suite and pictures
+### Task 7: Real data, the layout suite and pictures
 
 **Files:**
 
-- Add: `public/data/codemap/structure.json` and `texts.json`, written by the scraper (S3) on this
+- Add: `public/data/codemap/structure.json` and `texts.json`, written by `npm run codemap` (Task 3) on this
   branch
 - Modify: `test/layout/app.ts` (`CODEMAP_STATES`), `test/layout/known.test.ts`,
   `scripts/test-browser.ts` (route `apps/codemap/` to the layout suite),
-  `docs/working-in-the-repo.md` (a "Code map data" section like "IEEE VIS data": the scraper's
-  command, where its output goes, and that a conflict in these files is settled by running it again)
+  `docs/working-in-the-repo.md` (a "Code map data" section like "IEEE VIS data": the script's
+  command, where its output goes, and that a conflict in these files is settled by running the script again)
 - Create: `test/layout/codemap.spec.ts`, as `ieeevis.spec.ts`
 
 States: `codemap-default`, `codemap-pr` (`overlay=pr`), `codemap-pr-commit`
 (`overlay=pr&commit=1`), `codemap-churn`, `codemap-kind`, `codemap-popup` (a pinned line).
 
-- [ ] **Step 1:** run the scraper into `public/data/codemap/`. `npm run dev`, open `/codemap/`,
+- [ ] **Step 1:** run `npm run codemap` into `public/data/codemap/`. `npm run dev`, open `/codemap/`,
       try each overlay and step through the commits. Look at zoom 0.25 and 0.22 while panning, for
       moiré.
 - [ ] **Step 2:** add the states and the spec; `npm run test:layout -- -g codemap` passes.

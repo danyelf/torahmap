@@ -60,13 +60,14 @@ lines of TypeScript, so its size needs no new engine work.
   `git log`. This pull request's marks are separate: they come from its own commits only.
 - **The map is a live link**, not a picture in the PR description, because step-by-step mode needs
   clicking. A still picture can come later.
-- **The data comes from a separate project, codemap-scrape**, as the VIS map's comes from
-  ieeevis-scrape. It runs locally against a repo and two refs and writes the map's data files into
-  a folder it is given. To see a pull request, its output is copied into `public/data/codemap/` in
-  that PR's branch, and the branch's Cloudflare preview shows the map. Nothing depends on a
-  `localhost` link, since Danyel often looks remotely.
+- **The data comes from a script in `scripts/codemap/`**, run locally against a repo and two refs.
+  It reads only git, so unlike the VIS scraper it needs no project of its own, and it imports the
+  map's data shapes, so the two cannot disagree. To see a pull request, its output is committed to
+  `public/data/codemap/` in that PR's branch, and the branch's Cloudflare preview shows the map.
+  Nothing depends on a `localhost` link, since Danyel often looks remotely. When a GitHub Action
+  comes, the script may move to a project of its own.
 - **Two open PRs that both carry the data conflict** when the second merges. The files are
-  generated, so the conflict is settled by running the scraper again.
+  generated, so the conflict is settled by running the script again.
 - **Next step: a GitHub Action** that makes the data on every pull request. It is also the form
   other people would install.
 
