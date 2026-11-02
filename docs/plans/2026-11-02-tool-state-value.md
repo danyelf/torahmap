@@ -21,18 +21,37 @@ every change what the change meant:
 
 ## The value
 
+A text's settings map `M` gives each of its overlay ids that overlay's settings type, for example
+`{ trop: TropSettings; haftarah: HaftarahSettings; … }`. It is worked out from the text's record
+of overlays, never written by hand:
+
 ```ts
-interface ToolState {
-  readonly overlay: string | null;                  // the overlay that is on
-  readonly settings: ReadonlyMap<string, unknown>;  // by tool id: the search's, and every overlay's held
+type Overlays<I, M> = { readonly [K in keyof M]: Overlay<I, M[K]> };
+
+interface ToolState<M, S> {
+  readonly active: keyof M | null;                    // the overlay that is on
+  readonly overlays: { readonly [K in keyof M]?: M[K] }; // every overlay the reader has touched
+  readonly search: S;                                  // the one search
 }
 ```
 
-It holds the settings of every overlay the reader has touched, not only the one showing, so
-switching away and back still finds what was left. A tool with no entry has its defaults.
+- **Every overlay the reader has touched is kept,** not only the one showing, so switching away
+  and back still finds what was left. An overlay with no entry has its defaults.
+- **The search sits apart,** because there is always exactly one.
+- **Ids and settings are typed throughout.** The shell is generic over `M`, as it already is over
+  a text's square type and search settings. A text hands it its overlays as a typed record, in
+  place of today's list, with a separate list of ids for the menu's order.
+- **The shell reads and writes settings with no casts.** Its functions are generic over the id
+  (`settingsOf<K extends keyof M>(state, overlays, k: K): M[K]`). A Haftarah setting can't reach
+  Trop. This removes the loose method check on settings that the overlay list needs today, so
+  #559 isn't needed.
+- **Strings from outside, a link's or a story file's, are checked once** (`id in overlays`) when
+  they're read.
+- **Ids are the text's own literal union** (`keyof M`), not an `enum`. The shell can't name any
+  text's ids. The repo's scripts run under Node with their types stripped, and that can't handle
+  an `enum`.
 
-Everything else is a function of the value, given the text's tools (its search and its overlays
-by id):
+Everything else is a function of the value, given the text's search and its record of overlays:
 
 - **Questions:** the overlay, its settings, the search's settings, `shown(state, loaded)`,
   `picked(state)`, `searching(state)`. These replace the module's getters.
@@ -107,6 +126,12 @@ before the panel is drawn. They keep doing so by setting it before calling `setT
 - The blend's parameter strings and its own use of the colour rule go.
 
 ## Alternatives
+
+- **One map for every tool, the search included.** This is simpler to write, but the search's
+  settings come out of the map untyped and need a cast at every read.
+- **A value shaped exactly like a link,** with the touched overlays kept in a second variable
+  beside it. Every switch would then have to save into that variable and load from it, which is
+  the wiring this plan removes.
 
 - **Keep the mutable module and add `fromLink` and a "what changed" result.** This is smaller,
   but the blend keeps its second copy of the rule, and previews (#565) still need a page-bound
