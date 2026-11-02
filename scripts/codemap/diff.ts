@@ -47,9 +47,9 @@ export function parseDiff(text: string): FileDiff[] {
       file.oldPath = line.slice('rename from '.length);
     } else if (line.startsWith('rename to ')) {
       file.newPath = line.slice('rename to '.length);
-    } else if (line.startsWith('--- ')) {
+    } else if (file.hunks.length === 0 && line.startsWith('--- ')) {
       file.oldPath = filePath(line, '--- ');
-    } else if (line.startsWith('+++ ')) {
+    } else if (file.hunks.length === 0 && line.startsWith('+++ ')) {
       file.newPath = filePath(line, '+++ ');
     } else if (line.startsWith('@@')) {
       const m = HUNK.exec(line);

@@ -89,3 +89,23 @@ describe('carryForward', () => {
     expect(carryForward(10, two)).toBe(11);
   });
 });
+
+describe('parseDiff hunk bodies', () => {
+  it('does not read file headers from body lines that look like them', () => {
+    const text = [
+      'diff --git a/q.sql b/q.sql',
+      '--- a/q.sql',
+      '+++ b/q.sql',
+      '@@ -1,2 +1,2 @@',
+      '--- x',
+      '+++ y',
+      '@@ -9 +9 @@',
+      '--- z',
+      '+++ w',
+      '',
+    ].join('\n');
+    expect(parseDiff(text).map((f) => [f.oldPath, f.newPath, f.hunks.length])).toEqual([
+      ['q.sql', 'q.sql', 2],
+    ]);
+  });
+});
