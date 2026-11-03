@@ -49,11 +49,19 @@ export function emptyTools<T, S>(search: SearchTool<T, S>): ToolState<S> {
   return built({ active: null, overlays: new Map(), search: settingsFromLink(search, {}) });
 }
 
+/** The overlay `id` names, or null for none or an id the text doesn't have. */
+export function overlayNamed<T, S>(
+  tools: TextTools<T, S>,
+  id: string | null | undefined,
+): Overlay<T> | null {
+  return (id && tools.overlay(id)) || null;
+}
+
 export function activeOverlay<T, S>(
   state: ToolState<S>,
   tools: TextTools<T, S>,
 ): Overlay<T> | null {
-  return (state.active !== null && tools.overlay(state.active)) || null;
+  return overlayNamed(tools, state.active);
 }
 
 /**
@@ -96,7 +104,7 @@ export function withActive<T, S>(
   tools: TextTools<T, S>,
   id: string,
 ): ToolState<S> {
-  const overlay = tools.overlay(id);
+  const overlay = overlayNamed(tools, id);
   if (!overlay) return state.active === null ? state : built({ ...state, active: null });
   if (overlay.id === state.active) return state;
   // An overlay that is on holds its settings, so they keep one identity while it stays on.
@@ -147,7 +155,7 @@ export function fromLink<T, S>(
   tools: TextTools<T, S>,
 ): ToolState<S> {
   const search = settingsFromLink(tools.search, link.searchParams ?? {});
-  const overlay = (link.overlay && tools.overlay(link.overlay)) || null;
+  const overlay = overlayNamed(tools, link.overlay);
   if (!overlay) return built({ ...base, active: null, search });
   const settings = settingsFromLink(
     overlay,

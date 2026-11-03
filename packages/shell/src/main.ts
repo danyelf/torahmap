@@ -193,7 +193,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const getOverlay = (id: string): Overlay<I> | undefined =>
     text.overlays.find((overlay) => overlay.id === id);
   const textTools: TextTools<I, S> = { search: searchTool, overlay: getOverlay };
-  // What a story stop may name.
   const storyTools = createStoryTools(textTools);
   // What main.ts asks of the loader and viewFiles is the loading suite's to
   // check: creating them, starting the downloads, asking for a fetch, what
@@ -1006,7 +1005,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       if (overlay) {
         overlay.renderLegend?.(
           overlayLegendContainer,
-          toolsState.settingsOfOverlayOn(),
+          toolsState.settingsOf(overlay),
           dataFor(overlay, loader.loaded()),
           items,
         );
@@ -1037,7 +1036,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       overlayFocusContainer,
       hoveredItem,
       pinnedItem,
-      toolsState.settingsOfOverlayOn(),
+      toolsState.settingsOf(overlay),
       data,
       travelTo,
     );

@@ -274,7 +274,7 @@ describe('Overlay Switching Integration', () => {
       if (genesisVerse) {
         const color = state.overlay()!.colorsFor({
           items: [genesisVerse],
-          settings: state.settingsOfOverlayOn(),
+          settings: state.settingsOf(state.overlay()!),
           data: currentData,
           focus: { hovered: null, pinned: null },
         })[0];
@@ -293,7 +293,7 @@ describe('Overlay Switching Integration', () => {
       if (genesisVerse && state.overlay()?.getHoverInfo) {
         const info = state.overlay()!.getHoverInfo!(
           genesisVerse,
-          state.settingsOfOverlayOn(),
+          state.settingsOf(state.overlay()!),
           currentData,
         );
         expect(info).toBeTruthy();
@@ -453,13 +453,13 @@ describe('Overlay Switching Integration', () => {
       const verse = verses[0];
       const color1 = state.overlay()!.colorsFor({
         items: [verse],
-        settings: state.settingsOfOverlayOn(),
+        settings: state.settingsOf(state.overlay()!),
         data: currentData,
         focus: { hovered: null, pinned: null },
       })[0];
       const color2 = state.overlay()!.colorsFor({
         items: [verse],
-        settings: state.settingsOfOverlayOn(),
+        settings: state.settingsOf(state.overlay()!),
         data: currentData,
         focus: { hovered: null, pinned: null },
       })[0];

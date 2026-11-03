@@ -15,13 +15,14 @@ import {
   activeOverlay,
   emptyTools,
   fromLink,
+  overlayNamed,
   pickedTools,
   shownTools,
   type TextTools,
   type ToolState,
 } from '../tools.ts';
 
-// Memoised per items array and loaded files by the stop's tools. Colours that
+// Memoised per items array and loaded files by the stop's tools value. Colours that
 // depend on the hover are recomputed while a square is hovered: caching by
 // hover too would add an entry for every square the cursor crosses.
 const picturesCache = new WeakMap<
@@ -56,7 +57,10 @@ function linkKey<T>(overlay: Overlay<T> | null, tools: TextTools<T>, stop: Story
 
 /** A text's tools, and the tools each story stop names as a value. */
 export interface StoryTools<T> extends TextTools<T> {
-  /** Stops that name the same tools share one value, so they share its picture. */
+  /**
+   * Stops that name the same tools share one value, so they share its picture: stops that only
+   * move the camera are common, and each would otherwise draw the same picture again.
+   */
   toolsOf(stop: StoryStop): ToolState<unknown>;
 }
 
@@ -69,8 +73,7 @@ export function createStoryTools<T>(tools: TextTools<T>): StoryTools<T> {
     toolsOf(stop) {
       let state = byStop.get(stop);
       if (state) return state;
-      const overlay = (stop.overlay && tools.overlay(stop.overlay)) || null;
-      const key = linkKey(overlay, tools, stop);
+      const key = linkKey(overlayNamed(tools, stop.overlay), tools, stop);
       state = byLink.get(key);
       if (!state) {
         state = fromLink(stop, empty, tools);

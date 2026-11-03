@@ -1,6 +1,4 @@
-// The tools are the search and at most one overlay. This holds them as one value (tools.ts) and
-// keeps the one rule between them: a search word and an overlay pick are never in the same
-// colour. It touches nothing on the page; the shell does what follows a change.
+// The tools are the search and at most one overlay, held as one value (tools.ts).
 
 import type { Loaded } from './dataFiles.ts';
 import type { Overlay, SettingsUpdate, Tools } from './overlays/types.ts';
@@ -28,8 +26,6 @@ export interface ToolsState<T, S> {
   overlay(): Overlay<T> | null;
   /** Its id, or NO_OVERLAY. */
   overlayId(): string;
-  /** The on overlay's settings; undefined while none is on. */
-  settingsOfOverlayOn(): unknown;
   searchSettings(): S;
   /** The settings held for `overlay`, on or not; for one never touched, new defaults each call. */
   settingsOf<U>(overlay: Overlay<T, U>): U;
@@ -58,15 +54,9 @@ export interface ToolsState<T, S> {
 
 export function createToolsState<T, S>(tools: TextTools<T, S>): ToolsState<T, S> {
   let state = emptyTools(tools.search);
-  const overlayOn = () => activeOverlay(state, tools);
-
   return {
-    overlay: overlayOn,
+    overlay: () => activeOverlay(state, tools),
     overlayId: () => state.active ?? NO_OVERLAY,
-    settingsOfOverlayOn: () => {
-      const on = overlayOn();
-      return on ? settingsIn(state, on) : undefined;
-    },
     searchSettings: () => state.search,
     settingsOf: (overlay) => settingsIn(state, overlay),
     shown: (loaded) => shownTools(state, tools, loaded),

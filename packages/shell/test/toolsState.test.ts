@@ -179,7 +179,6 @@ describe('switching overlays', () => {
     state.switchTo('none');
     expect(state.overlay()).toBeNull();
     expect(state.overlayId()).toBe('none');
-    expect(state.settingsOfOverlayOn()).toBeUndefined();
   });
 
   it('still takes a reader’s edit to an overlay that is not on', () => {
