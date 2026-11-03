@@ -95,7 +95,7 @@ export function hostOverlay<S, D>(
     getItemColor(verse) {
       return overlay.colorsFor({
         items: [verse],
-        settings: settings,
+        settings,
         data: held,
         focus: { hovered: null, pinned: null },
       })[0];

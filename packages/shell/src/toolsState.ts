@@ -31,7 +31,7 @@ export interface ToolsState<T, S> {
   /** The on overlay's settings; undefined while none is on. */
   settingsOfOverlayOn(): unknown;
   searchSettings(): S;
-  /** The settings held for `overlay`, on or not. */
+  /** The settings held for `overlay`, on or not; for one never touched, new defaults each call. */
   settingsOf<U>(overlay: Overlay<T, U>): U;
   /** The overlay and the search as they stand, each null while off or waiting for its files. */
   shown(loaded: Loaded): Tools<T>;
@@ -58,17 +58,17 @@ export interface ToolsState<T, S> {
 
 export function createToolsState<T, S>(tools: TextTools<T, S>): ToolsState<T, S> {
   let state = emptyTools(tools.search);
-  const overlay = () => activeOverlay(state, tools);
+  const overlayOn = () => activeOverlay(state, tools);
 
   return {
-    overlay,
+    overlay: overlayOn,
     overlayId: () => state.active ?? NO_OVERLAY,
     settingsOfOverlayOn: () => {
-      const on = overlay();
+      const on = overlayOn();
       return on ? settingsIn(state, on) : undefined;
     },
     searchSettings: () => state.search,
-    settingsOf: (of) => settingsIn(state, of),
+    settingsOf: (overlay) => settingsIn(state, overlay),
     shown: (loaded) => shownTools(state, tools, loaded),
     picked: () => pickedTools(state, tools),
     searching: () => tools.search.isSearching(state.search),
@@ -77,12 +77,12 @@ export function createToolsState<T, S>(tools: TextTools<T, S>): ToolsState<T, S>
       state = withActive(state, tools, id);
     },
 
-    reset(of) {
-      state = withReset(state, tools, of);
+    reset(overlay) {
+      state = withReset(state, tools, overlay);
     },
 
-    changeOverlay(of, update) {
-      state = withOverlaySettings(state, tools, of, update);
+    changeOverlay(overlay, update) {
+      state = withOverlaySettings(state, tools, overlay, update);
     },
 
     changeSearch(update) {

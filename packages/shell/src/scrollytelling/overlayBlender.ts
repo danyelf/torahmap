@@ -9,8 +9,7 @@ import type { StoryStop } from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
 import { fillDefaultColors, toolsPicture } from '../itemColoring';
 import { validateOverlayParams, type UrlParamValues } from '@torahmap/link';
-import type { Overlay } from '../overlays/types.ts';
-import { NO_OVERLAY } from '../overlays/types.ts';
+import { NO_OVERLAY, type Overlay } from '../overlays/types.ts';
 import type { Loaded } from '../dataFiles.ts';
 import {
   activeOverlay,
@@ -58,16 +57,16 @@ function linkKey<T>(overlay: Overlay<T> | null, tools: TextTools<T>, stop: Story
 /** A text's tools, and the tools each story stop names as a value. */
 export interface StoryTools<T> extends TextTools<T> {
   /** Stops that name the same tools share one value, so they share its picture. */
-  of(stop: StoryStop): ToolState<unknown>;
+  toolsOf(stop: StoryStop): ToolState<unknown>;
 }
 
-export function storyTools<T>(tools: TextTools<T>): StoryTools<T> {
+export function createStoryTools<T>(tools: TextTools<T>): StoryTools<T> {
   const byStop = new WeakMap<StoryStop, ToolState<unknown>>();
   const byLink = new Map<string, ToolState<unknown>>();
   const empty = emptyTools(tools.search);
   return {
     ...tools,
-    of(stop) {
+    toolsOf(stop) {
       let state = byStop.get(stop);
       if (state) return state;
       const overlay = (stop.overlay && tools.overlay(stop.overlay)) || null;
@@ -85,7 +84,7 @@ export function storyTools<T>(tools: TextTools<T>): StoryTools<T> {
 
 /** The tools a stop picks. */
 export function stopTools<T>(stop: StoryStop, tools: StoryTools<T>): Overlay<T>[] {
-  return pickedTools(tools.of(stop), tools);
+  return pickedTools(tools.toolsOf(stop), tools);
 }
 
 export function pictureForStop<I extends MapItem>(
@@ -97,7 +96,7 @@ export function pictureForStop<I extends MapItem>(
   tools: StoryTools<I>,
   keepsBase?: number,
 ): Picture {
-  const state = tools.of(stop);
+  const state = tools.toolsOf(stop);
   const byHover = !!(activeOverlay(state, tools)?.hoverChangesColors && hovered);
 
   let byLoaded = picturesCache.get(items);

@@ -5,7 +5,7 @@ import {
   pictureForStop,
   computeBlendedColors,
   stopTools,
-  storyTools,
+  createStoryTools,
   type StoryTools,
 } from '../packages/shell/src/scrollytelling/overlayBlender.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
@@ -32,7 +32,7 @@ let textTools: StoryTools<TanakhLayout>;
 // colours its own.
 let verses: TanakhLayout[];
 beforeEach(() => {
-  textTools = storyTools({ search: searchTool, overlay: getOverlay });
+  textTools = createStoryTools({ search: searchTool, overlay: getOverlay });
   verses = [
     { id: 'Genesis.1.1', book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
     { id: 'Genesis.1.2', book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
@@ -605,7 +605,7 @@ describe('stopTools', () => {
 
   it("finds the stop's overlay among the text's own", () => {
     const own = { ...multiColorOverlay, id: 'own' };
-    const tools = storyTools<TanakhLayout>({
+    const tools = createStoryTools<TanakhLayout>({
       search: searchTool,
       overlay: (id) => (id === 'own' ? own : undefined),
     });

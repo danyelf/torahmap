@@ -13,11 +13,9 @@ import {
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
 import { dataFor } from '../packages/shell/src/dataFiles.ts';
-import { toolsShown } from '../packages/shell/src/tools.ts';
 import { configure as configureSearch, searchTool } from '@torahmap/tanakh/search/index.ts';
 import { commentaryOverlay, type CommentaryCounts } from '@torahmap/tanakh/overlays/commentary.ts';
 import { restoreAllMocks } from '../apps/tanakh/test/helpers/mocks.ts';
-import { settingsFromLink } from '../packages/shell/src/overlays/settings.ts';
 import { createToolsState } from '../packages/shell/src/toolsState.ts';
 
 describe('Overlay Switching Integration', () => {
@@ -472,18 +470,6 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('leaves out an overlay whose files did not load', () => {
-      expect(
-        toolsShown(
-          getOverlay('commentary')!,
-          undefined,
-          searchTool,
-          settingsFromLink(searchTool, {}),
-          new Map(),
-        ).overlay,
-      ).toBeNull();
-    });
-
     it('handles malformed data gracefully', () => {
       const overlay = commentaryOverlay;
       const malformed = {

@@ -4,32 +4,6 @@ import { settingsFromLink, settingsToLink, type LinkParams } from './overlays/se
 import type { SearchTool } from './app/search.ts';
 import { dataFor, type Loaded } from './dataFiles.ts';
 
-/** The tools a view picks: the overlay, if one is on, and the search, while it searches on something. */
-export function toolsPicked<T, S>(
-  overlay: Overlay<T> | null,
-  search: SearchTool<T, S>,
-  searchSettings: S,
-): Overlay<T>[] {
-  return [...(overlay ? [overlay] : []), ...(search.isSearching(searchSettings) ? [search] : [])];
-}
-
-/**
- * The tools a view shows: those it picks, each with its data, and left out
- * while a file it reads is missing.
- */
-export function toolsShown<T, S>(
-  overlay: Overlay<T> | null,
-  overlaySettings: unknown,
-  search: SearchTool<T, S>,
-  searchSettings: S,
-  loaded: Loaded,
-): Tools<T> {
-  return {
-    overlay: overlay && withData(overlay, overlaySettings, loaded),
-    search: search.isSearching(searchSettings) ? withData(search, searchSettings, loaded) : null,
-  };
-}
-
 function withData<T>(tool: Overlay<T>, settings: unknown, loaded: Loaded): ToolOnMap<T> | null {
   const data = dataFor(tool, loaded);
   return data === null ? null : { tool, settings, data };
@@ -82,7 +56,10 @@ export function activeOverlay<T, S>(
   return (state.active !== null && tools.overlay(state.active)) || null;
 }
 
-/** The settings `state` holds for `overlay`, on or not. */
+/**
+ * The settings `state` holds for `overlay`, on or not; for one never touched, new defaults each
+ * call.
+ */
 export function settingsIn<T, U>(state: ToolState<unknown>, overlay: Overlay<T, U>): U {
   // Only this overlay's own settings are stored under its id.
   return state.overlays.has(overlay.id)
@@ -90,28 +67,30 @@ export function settingsIn<T, U>(state: ToolState<unknown>, overlay: Overlay<T, 
     : settingsFromLink(overlay, {});
 }
 
-/** The overlay and the search as they stand, each null while off or waiting for its files. */
+/** The overlay and the search, each with its data; null while off or waiting for its files. */
 export function shownTools<T, S>(
   state: ToolState<S>,
   tools: TextTools<T, S>,
   loaded: Loaded,
 ): Tools<T> {
   const overlay = activeOverlay(state, tools);
-  return toolsShown(
-    overlay,
-    overlay && settingsIn(state, overlay),
-    tools.search,
-    state.search,
-    loaded,
-  );
+  const { search } = tools;
+  return {
+    overlay: overlay && withData(overlay, settingsIn(state, overlay), loaded),
+    search: search.isSearching(state.search) ? withData(search, state.search, loaded) : null,
+  };
 }
 
-/** The overlay and the search as picked, whether or not their files are in. */
+/** The overlay, if one is on, and the search, while it searches on something; files or not. */
 export function pickedTools<T, S>(state: ToolState<S>, tools: TextTools<T, S>): Overlay<T>[] {
-  return toolsPicked(activeOverlay(state, tools), tools.search, state.search);
+  const overlay = activeOverlay(state, tools);
+  return [
+    ...(overlay ? [overlay] : []),
+    ...(tools.search.isSearching(state.search) ? [tools.search] : []),
+  ];
 }
 
-/** Make `id` the overlay, or none for an id the text doesn't have. Every overlay keeps its settings. */
+/** Make `id` the overlay, or none for an id the text lacks. Every overlay keeps its settings. */
 export function withActive<T, S>(
   state: ToolState<S>,
   tools: TextTools<T, S>,
@@ -225,7 +204,8 @@ function withEntry(
 }
 
 // Freezing makes an update that edits settings in place throw, rather than change a value the
-// story's picture cache has already drawn. The map is read-only by type alone.
+// story's picture cache has already drawn. It reaches plain objects and arrays only: a Map or Set,
+// the value's own map included, is read-only by type alone.
 function built<S>(state: ToolState<S>): ToolState<S> {
   state.overlays.forEach(deepFreeze);
   deepFreeze(state.search);

@@ -323,8 +323,7 @@ describe('URL State Sync Integration', () => {
 
       // Restore initial state
       const params1 = new URLSearchParams('category=talmud');
-      let settings = settingsFromLink(overlay!, {});
-      settings = settingsFromLink(overlay!, params1);
+      const settings = settingsFromLink(overlay!, params1);
 
       // Get URL params
       const urlParams1 = settingsToLink(overlay!, settings);

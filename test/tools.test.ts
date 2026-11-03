@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { toolsShown, togglesSearch } from '../packages/shell/src/tools.ts';
+import {
+  emptyTools,
+  fromLink,
+  shownTools,
+  togglesSearch,
+  withOverlaySettings,
+} from '../packages/shell/src/tools.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
 import { settingsFromLink } from '../packages/shell/src/overlays/settings.ts';
 import { SAMPLE_LOADED, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
@@ -9,71 +15,42 @@ const counts = testOverlay({
   name: 'Counts',
   data: { counts: 'counts.json' },
 });
+const tools = {
+  search: searchTool,
+  overlay: (id: string) => (id === 'counts' ? counts : undefined),
+};
 
-describe('toolsShown', () => {
+/** The tools with `overlay` on, if named, and the search on `words`. */
+const toolsWith = (words: string, overlay?: string) =>
+  fromLink({ overlay, searchParams: { search: words } }, emptyTools(searchTool), tools);
+
+describe('shownTools', () => {
   it('shows the search once it has a word long enough to search on', () => {
-    expect(
-      toolsShown(
-        null,
-        undefined,
-        searchTool,
-        settingsFromLink(searchTool, { search: 'אור' }),
-        SAMPLE_LOADED,
-      ).search?.tool,
-    ).toBe(searchTool);
+    expect(shownTools(toolsWith('אור'), tools, SAMPLE_LOADED).search?.tool).toBe(searchTool);
   });
 
   it('leaves the search off for a single letter, or for nothing', () => {
-    expect(
-      toolsShown(
-        null,
-        undefined,
-        searchTool,
-        settingsFromLink(searchTool, { search: 'א' }),
-        new Map(),
-      ).search,
-    ).toBeNull();
-    expect(
-      toolsShown(null, undefined, searchTool, settingsFromLink(searchTool, {}), new Map()).search,
-    ).toBeNull();
+    expect(shownTools(toolsWith('א'), tools, SAMPLE_LOADED).search).toBeNull();
+    expect(shownTools(toolsWith(''), tools, SAMPLE_LOADED).search).toBeNull();
   });
 
   it('shows the overlay with its settings and data beside the search', () => {
     const settings = { category: 'total' };
     const loaded = new Map([...SAMPLE_LOADED, ['counts.json', { n: 1 }]]);
-    const tools = toolsShown(
-      counts,
-      settings,
-      searchTool,
-      settingsFromLink(searchTool, { search: 'אור' }),
-      loaded,
-    );
-    expect(tools.overlay).toEqual({ tool: counts, settings, data: { counts: { n: 1 } } });
-    expect(tools.search).not.toBeNull();
+    const state = withOverlaySettings(toolsWith('אור', 'counts'), tools, counts, () => settings);
+    const shown = shownTools(state, tools, loaded);
+    expect(shown.overlay).toEqual({ tool: counts, settings, data: { counts: { n: 1 } } });
+    expect(shown.search).not.toBeNull();
   });
 
   it('leaves out an overlay whose data is missing, and keeps the search', () => {
-    const tools = toolsShown(
-      counts,
-      undefined,
-      searchTool,
-      settingsFromLink(searchTool, { search: 'אור' }),
-      SAMPLE_LOADED,
-    );
-    expect(tools.overlay).toBeNull();
-    expect(tools.search?.tool).toBe(searchTool);
+    const shown = shownTools(toolsWith('אור', 'counts'), tools, SAMPLE_LOADED);
+    expect(shown.overlay).toBeNull();
+    expect(shown.search?.tool).toBe(searchTool);
   });
 
   it('leaves the search out while its files are missing', () => {
-    expect(
-      toolsShown(
-        null,
-        undefined,
-        searchTool,
-        settingsFromLink(searchTool, { search: 'אור' }),
-        new Map(),
-      ).search,
-    ).toBeNull();
+    expect(shownTools(toolsWith('אור'), tools, new Map()).search).toBeNull();
   });
 });
 

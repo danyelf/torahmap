@@ -41,7 +41,7 @@ function controlsAfter(link: string): HTMLElement {
   const overlay = getOverlay(view.overlay);
   const container = document.createElement('div');
   if (overlay) {
-    settings = settingsFromLink(overlay!, view.overlayParams);
+    settings = settingsFromLink(overlay, view.overlayParams);
     overlay.renderControls?.(
       container,
       settings,

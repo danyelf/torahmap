@@ -2,9 +2,9 @@
 
 **Issues:** #558 (createApp), #565 (link previews)
 **Date:** 2026-11-02
-**Status:** Proposed, revised after review. Not built.
+**Status:** Agreed. Step 1 built; steps 2 and 3 not started.
 
-The code references below are to main at `244824e0`.
+The code references below are to main at `244824e0`, before step 1.
 
 ## The problem
 
@@ -76,11 +76,11 @@ its colours. With no overlay on, the value comes back unchanged.
 ## Stories
 
 A story stop names an overlay, its parameters and the search's parameters, which together are a
-link. So each stop becomes a value the first time it is drawn, through `storyTools`, made once in
+link. So each stop becomes a value the first time it is drawn, through `createStoryTools`, made once in
 the shell:
 
 - **For drawing,** `fromLink(stop, emptyTools(search))`. Stops that name the same tools share
-  one value: `storyTools` keeps a map from a stop's link text to its value, and one from the stop
+  one value: `createStoryTools` keeps a map from a stop's link text to its value, and one from the stop
   itself, so a frame doesn't work out the link text again. Stops that only move
   the camera are common, and each would otherwise compute the same picture again.
 - **The blend's picture cache** keeps its nesting by squares and loaded files. Its inner map is
