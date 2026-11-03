@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { CodeFile, CodeStructure } from '../src/data.ts';
-import { CHAR, MAX_CHARS, MAX_ROWS, ROW } from '../src/constants.ts';
+import type { WorldBox } from '@torahmap/engine';
+import {
+  CHAR,
+  MAX_CHARS,
+  MAX_ROWS,
+  NAME_STRIP,
+  ROW,
+  SHADE_REACH,
+  tabHeight,
+} from '../src/constants.ts';
 import { lineId, parseLineId } from '../src/ids.ts';
 import { computeCodeLayout } from '../src/layout.ts';
 import { fixtureStructure } from './helpers/fixture.ts';
@@ -87,26 +96,77 @@ describe('computeCodeLayout', () => {
     }
   });
 
-  it('groups files by folder, apps and packages by two parts', () => {
-    const { books } = computeCodeLayout(
-      structureOf(
-        fileOf('README.md', [0], [1]),
-        fileOf('apps/x/src/a.ts', [0], [1]),
-        fileOf('apps/x/src/b.ts', [0], [1]),
-        fileOf('apps/y/a.ts', [0], [1]),
-        fileOf('docs/p.md', [0], [1]),
-        fileOf('docs/q/r.md', [0], [1]),
-      ),
-    );
-    expect(books.map((b) => b.name)).toEqual(['(root)', 'apps/x', 'apps/y', 'docs']);
+  const tree = structureOf(
+    fileOf('README.md', [0], [1]),
+    fileOf('apps/x/src/a.ts', plain(300), Array(300).fill(5)),
+    fileOf('apps/x/src/b.ts', [0], [1]),
+    fileOf('apps/y/a.ts', [0], [1]),
+    fileOf('docs/p.md', [0], [1]),
+    fileOf('docs/q/r.md', [0], [1]),
+  );
+
+  const inside = (a: WorldBox, b: WorldBox) =>
+    a.minX >= b.minX && a.maxX <= b.maxX && a.minY >= b.minY && a.maxY <= b.maxY;
+  const meet = (a: WorldBox, b: WorldBox) =>
+    a.minX < b.maxX && b.minX < a.maxX && a.minY < b.maxY && b.minY < a.maxY;
+
+  it('boxes every folder at every depth, outer folders first', () => {
+    const { folders } = computeCodeLayout(tree);
+    expect(folders.map((f) => f.name)).toEqual(['apps', 'docs', 'x', 'y', 'q', 'src']);
+    expect(folders.map((f) => f.depth)).toEqual([1, 1, 2, 2, 2, 3]);
   });
 
-  it('wraps groups into a new band below', () => {
-    const files = Array.from({ length: 400 }, (_, i) =>
-      fileOf(`g${i}/a.ts`, plain(10), Array(10).fill(5)),
-    );
-    const { books, bounds } = computeCodeLayout(structureOf(...files));
-    expect(new Set(books.map((b) => b.minY)).size).toBeGreaterThan(1);
-    expect(Math.max(...books.map((b) => b.maxX))).toBeLessThanOrEqual(bounds.width);
+  it('puts each folder inside the one that holds it, below its name strip', () => {
+    const { folders } = computeCodeLayout(tree);
+    const box = (name: string) => folders.find((f) => f.name === name)!;
+    for (const [inner, outer] of [
+      ['x', 'apps'],
+      ['y', 'apps'],
+      ['src', 'x'],
+      ['q', 'docs'],
+    ]) {
+      expect(inside(box(inner), box(outer))).toBe(true);
+      expect(box(inner).minY).toBeGreaterThanOrEqual(box(outer).minY + tabHeight(box(outer).depth));
+    }
+  });
+
+  it('puts each file’s bars, name strip and shade inside its folder, apart from every other file', () => {
+    const { folders, files, items } = computeCodeLayout(tree);
+    const shaded = (f: WorldBox) => ({
+      minX: f.minX - SHADE_REACH,
+      minY: f.minY - NAME_STRIP - SHADE_REACH,
+      maxX: f.maxX + SHADE_REACH,
+      maxY: f.maxY + SHADE_REACH,
+    });
+    for (const file of files) {
+      const path = tree.files[file.file].path;
+      const folder = folders.find((f) => f.name === path.split('/').at(-2));
+      if (folder) expect(inside(shaded(file), folder)).toBe(true);
+      for (const bar of items.filter((i) => i.file === file.file)) {
+        expect(
+          inside(
+            { minX: bar.x, minY: bar.y, maxX: bar.x + bar.width!, maxY: bar.y + bar.size },
+            file,
+          ),
+        ).toBe(true);
+      }
+      for (const other of files.filter((f) => f !== file)) {
+        expect(meet(shaded(file), shaded(other))).toBe(false);
+      }
+    }
+  });
+
+  it('names a file by the last part of its path', () => {
+    const { files } = computeCodeLayout(tree);
+    expect(files.map((f) => f.name)).toContain('r.md');
+  });
+
+  it('keeps two folders side by side from overlapping', () => {
+    const { folders } = computeCodeLayout(tree);
+    for (const a of folders) {
+      for (const b of folders) {
+        if (a !== b && a.depth === b.depth) expect(meet(a, b)).toBe(false);
+      }
+    }
   });
 });
