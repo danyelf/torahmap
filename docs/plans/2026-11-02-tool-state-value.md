@@ -2,7 +2,7 @@
 
 **Issues:** #558 (createApp), #565 (link previews)
 **Date:** 2026-11-02
-**Status:** Agreed. Step 1 built; steps 2 and 3 not started.
+**Status:** Agreed. Steps 1 and 2 built; step 3 not started.
 
 The code references below are to main at `244824e0`, before step 1.
 
@@ -138,11 +138,13 @@ write is pushed when the overlay switched or the search turned on or off, and re
 which is every reader row above, the hook included. For an `outside` change it runs every
 follow-up for both tools without comparing, as today. Rebuilding the panels only on a real change is #569, kept out of this refactor.
 
-Two smaller differences are accepted:
+Three smaller differences are accepted:
 
 - The legend and popup run once instead of twice on a stop or a link.
-- A reader's edit that returns the same settings object no longer repaints. The picture would be
-  the same.
+- A reader's edit that returns the same settings object no longer repaints or sends the search's
+  `readerChanged`. The picture would be the same.
+- A link calls the old overlay's `destroy()` only when the overlay switches, as a stop does. No
+  overlay defines `destroy()`; only the search does, and its call is unchanged.
 
 **Leaving a story is not a `setTools` call.** `leaveStory` keeps its own steps: `takeOver`, trim
 the overlay, repaint if an overlay is on, `render`, URL pushed. It redraws no panel or legend, so

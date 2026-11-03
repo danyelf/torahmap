@@ -16,7 +16,16 @@ import { dataFor } from '../packages/shell/src/dataFiles.ts';
 import { configure as configureSearch, searchTool } from '@torahmap/tanakh/search/index.ts';
 import { commentaryOverlay, type CommentaryCounts } from '@torahmap/tanakh/overlays/commentary.ts';
 import { restoreAllMocks } from '../apps/tanakh/test/helpers/mocks.ts';
-import { createToolsState } from '../packages/shell/src/toolsState.ts';
+import {
+  activeOverlay,
+  emptyTools,
+  fromLink,
+  settingsIn,
+  toLink,
+  withActive,
+  withOverlaySettings,
+  type ToolState,
+} from '../packages/shell/src/tools.ts';
 
 describe('Overlay Switching Integration', () => {
   let mockControlsContainer: HTMLElement;
@@ -24,8 +33,9 @@ describe('Overlay Switching Integration', () => {
   let verses = SAMPLE_VERSES;
   let currentData: unknown;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
-  let state: ReturnType<typeof newState>;
-  const newState = () => createToolsState({ search: searchTool, overlay: getOverlay });
+  const textTools = { search: searchTool, overlay: getOverlay };
+  let tools: ToolState<unknown>;
+  const overlayOn = () => activeOverlay(tools, textTools);
 
   beforeEach(() => {
     // Create real DOM elements for testing (jsdom)
@@ -42,11 +52,11 @@ describe('Overlay Switching Integration', () => {
     });
 
     lastColors = [];
-    state = newState();
+    tools = emptyTools(searchTool);
   });
 
   afterEach(() => {
-    state.overlay()?.destroy?.();
+    overlayOn()?.destroy?.();
     restoreAllMocks();
   });
 
@@ -55,7 +65,7 @@ describe('Overlay Switching Integration', () => {
    */
   function switchToOverlay(overlayId: string): TanakhOverlay {
     // Destroy previous overlay
-    state.overlay()?.destroy?.();
+    overlayOn()?.destroy?.();
 
     // Get new overlay
     const overlay = getOverlay(overlayId);
@@ -70,23 +80,23 @@ describe('Overlay Switching Integration', () => {
     mockControlsContainer.innerHTML = '';
     overlay.renderControls?.(
       mockControlsContainer,
-      state.settingsOf(overlay),
-      (update) => state.changeOverlay(overlay, update),
+      settingsIn(tools, overlay),
+      (update) => (tools = withOverlaySettings(tools, textTools, overlay, update)),
       data,
     );
 
     mockLegendContainer.innerHTML = '';
-    overlay.renderLegend?.(mockLegendContainer, state.settingsOf(overlay), data);
+    overlay.renderLegend?.(mockLegendContainer, settingsIn(tools, overlay), data);
 
     // Apply colors
     lastColors = overlay.colorsFor({
       items: verses,
-      settings: state.settingsOf(overlay),
+      settings: settingsIn(tools, overlay),
       data,
       focus: { hovered: null, pinned: null },
     });
 
-    state.switchTo(overlayId);
+    tools = withActive(tools, textTools, overlayId);
     currentData = data;
     return overlay;
   }
@@ -119,8 +129,8 @@ describe('Overlay Switching Integration', () => {
       // Switch to trop
       switchToOverlay('trop');
 
-      expect(state.overlay()?.id).toBe('trop');
-      expect(state.overlay()?.name).toBe('Trop');
+      expect(overlayOn()?.id).toBe('trop');
+      expect(overlayOn()?.name).toBe('Trop');
 
       // Colors should have changed (trop may return null without selected mark)
       expect(lastColors.length).toBe(verses.length);
@@ -143,7 +153,7 @@ describe('Overlay Switching Integration', () => {
 
       for (const id of overlayIds) {
         switchToOverlay(id);
-        results.push(state.overlay()!.id);
+        results.push(overlayOn()!.id);
 
         // Verify colors were calculated for each overlay
         expect(lastColors.length).toBe(verses.length);
@@ -248,8 +258,8 @@ describe('Overlay Switching Integration', () => {
       mockControlsContainer.innerHTML = '';
       overlay.renderControls?.(
         mockControlsContainer,
-        state.settingsOf(overlay),
-        (update) => state.changeOverlay(overlay, update),
+        settingsIn(tools, overlay),
+        (update) => (tools = withOverlaySettings(tools, textTools, overlay, update)),
         currentData,
       );
       const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
@@ -257,7 +267,7 @@ describe('Overlay Switching Integration', () => {
       select.dispatchEvent(new Event('change'));
 
       mockLegendContainer.innerHTML = '';
-      overlay.renderLegend?.(mockLegendContainer, state.settingsOf(overlay), currentData);
+      overlay.renderLegend?.(mockLegendContainer, settingsIn(tools, overlay), currentData);
 
       expect(mockLegendContainer.innerHTML).not.toBe(initialLegend);
     });
@@ -272,9 +282,9 @@ describe('Overlay Switching Integration', () => {
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
       if (genesisVerse) {
-        const color = state.overlay()!.colorsFor({
+        const color = overlayOn()!.colorsFor({
           items: [genesisVerse],
-          settings: state.settingsOf(state.overlay()!),
+          settings: settingsIn(tools, overlayOn()!),
           data: currentData,
           focus: { hovered: null, pinned: null },
         })[0];
@@ -290,10 +300,10 @@ describe('Overlay Switching Integration', () => {
       const genesisVerse = verses.find(
         (v) => v.book === 'Genesis' && v.chapter === 1 && v.verse === 1,
       );
-      if (genesisVerse && state.overlay()?.getHoverInfo) {
-        const info = state.overlay()!.getHoverInfo!(
+      if (genesisVerse && overlayOn()?.getHoverInfo) {
+        const info = overlayOn()!.getHoverInfo!(
           genesisVerse,
-          state.settingsOf(state.overlay()!),
+          settingsIn(tools, overlayOn()!),
           currentData,
         );
         expect(info).toBeTruthy();
@@ -310,7 +320,7 @@ describe('Overlay Switching Integration', () => {
       mockControlsContainer.innerHTML = '';
       overlay.renderControls?.(
         mockControlsContainer,
-        state.settingsOf(overlay),
+        settingsIn(tools, overlay),
         onChange,
         currentData,
       );
@@ -324,12 +334,12 @@ describe('Overlay Switching Integration', () => {
 
     it("keeps an overlay's settings after switching away", () => {
       const overlay = switchToOverlay('commentary');
-      state.changeOverlay(overlay, () => ({ category: 'Midrash' }));
+      tools = withOverlaySettings(tools, textTools, overlay, () => ({ category: 'Midrash' }));
 
       // Switch away (calls destroy)
       switchToOverlay('trop');
 
-      expect(state.settingsOf(overlay)).toEqual({ category: 'Midrash' });
+      expect(settingsIn(tools, overlay)).toEqual({ category: 'Midrash' });
     });
   });
 
@@ -353,7 +363,7 @@ describe('Overlay Switching Integration', () => {
       switchToOverlay('commentary');
 
       // Should end up on commentary
-      expect(state.overlay()?.id).toBe('commentary');
+      expect(overlayOn()?.id).toBe('commentary');
       expectColorsApplied();
     });
 
@@ -365,7 +375,7 @@ describe('Overlay Switching Integration', () => {
       expect(invalidOverlay).toBeUndefined();
 
       // Current overlay should be unchanged
-      expect(state.overlay()?.id).toBe('commentary');
+      expect(overlayOn()?.id).toBe('commentary');
     });
 
     it('handles overlay with no destroy method', () => {
@@ -394,7 +404,7 @@ describe('Overlay Switching Integration', () => {
     it('provides URL params through the settings store', () => {
       switchToOverlay('commentary');
 
-      const params = state.toUrl().overlayParams;
+      const params = toLink(tools, textTools).overlayParams;
       expect(params).toBeDefined();
       expect(typeof params).toBe('object');
     });
@@ -404,7 +414,11 @@ describe('Overlay Switching Integration', () => {
 
       // Should not throw
       expect(() =>
-        state.fromLink({ overlay: 'trop', overlayParams: new URLSearchParams('trop=tipcha') }),
+        fromLink(
+          { overlay: 'trop', overlayParams: new URLSearchParams('trop=tipcha') },
+          tools,
+          textTools,
+        ),
       ).not.toThrow();
     });
   });
@@ -417,7 +431,7 @@ describe('Overlay Switching Integration', () => {
 
       for (const overlay of allOverlays) {
         switchToOverlay(overlay.id);
-        expect(state.overlay()?.id).toBe(overlay.id);
+        expect(overlayOn()?.id).toBe(overlay.id);
 
         // Check that colors were calculated (some overlays may return all null for test data)
         expect(lastColors.length).toBe(verses.length);
@@ -451,15 +465,15 @@ describe('Overlay Switching Integration', () => {
       switchToOverlay('commentary');
 
       const verse = verses[0];
-      const color1 = state.overlay()!.colorsFor({
+      const color1 = overlayOn()!.colorsFor({
         items: [verse],
-        settings: state.settingsOf(state.overlay()!),
+        settings: settingsIn(tools, overlayOn()!),
         data: currentData,
         focus: { hovered: null, pinned: null },
       })[0];
-      const color2 = state.overlay()!.colorsFor({
+      const color2 = overlayOn()!.colorsFor({
         items: [verse],
-        settings: state.settingsOf(state.overlay()!),
+        settings: settingsIn(tools, overlayOn()!),
         data: currentData,
         focus: { hovered: null, pinned: null },
       })[0];
@@ -479,7 +493,7 @@ describe('Overlay Switching Integration', () => {
       expect(() => {
         overlay.colorsFor({
           items: verses,
-          settings: state.settingsOf(overlay),
+          settings: settingsIn(tools, overlay),
           data: malformed,
           focus: { hovered: null, pinned: null },
         });

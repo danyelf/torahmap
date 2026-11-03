@@ -169,6 +169,34 @@ export function fromLink<T, S>(
   });
 }
 
+/** What a change to the tools touched. */
+export interface ToolsChange {
+  /** A different overlay is on, or none is. */
+  switched: boolean;
+  /** The overlay that stayed on has new settings. */
+  settings: boolean;
+  search: boolean;
+  /** The overlay switched or the search turned on or off: a step Back can undo. */
+  step: boolean;
+}
+
+export function toolsChange<T, S>(
+  before: ToolState<S>,
+  after: ToolState<S>,
+  tools: TextTools<T, S>,
+): ToolsChange {
+  const switched = before.active !== after.active;
+  const { active } = after;
+  return {
+    switched,
+    // The overlay that is on always has an entry, so its settings compare by identity.
+    settings:
+      !switched && active !== null && before.overlays.get(active) !== after.overlays.get(active),
+    search: before.search !== after.search,
+    step: switched || togglesSearch(tools.search, before.search, after.search),
+  };
+}
+
 /** The tools as a link carries them. */
 export function toLink<T, S>(state: ToolState<S>, tools: TextTools<T, S>): ToolsLink {
   const overlay = activeOverlay(state, tools);
