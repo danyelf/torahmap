@@ -1014,8 +1014,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (change.switched) {
       if (!outside) trackOverlaySwitch(overlayId(), before.active ?? NO_OVERLAY);
       activeOverlay(before, textTools)?.destroy?.();
-      document.body.dataset.overlay = overlayId();
     }
+    document.body.dataset.overlay = overlayId();
     if (!outside && change.search) {
       searchTool.telemetry.readerChanged(tools.search, dataFor(searchTool, loader.loaded()));
     }

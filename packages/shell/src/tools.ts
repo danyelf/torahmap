@@ -10,7 +10,7 @@ function withData<T>(tool: Overlay<T>, settings: unknown, loaded: Loaded): ToolO
 }
 
 /** Whether a change turns the search on or off, a step Back can undo, rather than edits it. */
-export function togglesSearch<T, S>(search: SearchTool<T, S>, before: S, after: S): boolean {
+function togglesSearch<T, S>(search: SearchTool<T, S>, before: S, after: S): boolean {
   return search.isSearching(before) !== search.isSearching(after);
 }
 
@@ -32,14 +32,14 @@ export interface ToolState<S> {
 }
 
 /** What a link or a story stop names of the tools. */
-export interface LinkedTools {
+interface LinkedTools {
   overlay?: string | null;
   overlayParams?: LinkParams;
   searchParams?: LinkParams;
 }
 
 /** What a link carries of the tools, with values at their default left out. */
-export interface ToolsLink {
+interface ToolsLink {
   overlay?: string;
   overlayParams: Record<string, string>;
   searchParams: Record<string, string>;
@@ -170,7 +170,7 @@ export function fromLink<T, S>(
 }
 
 /** What a change to the tools touched. */
-export interface ToolsChange {
+interface ToolsChange {
   /** A different overlay is on, or none is. */
   switched: boolean;
   /** The overlay that stayed on has new settings. */
