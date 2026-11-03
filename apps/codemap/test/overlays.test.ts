@@ -5,6 +5,7 @@ import { LINE_KINDS, type CodeStructure, type LineKind } from '../src/data.ts';
 import { lineId } from '../src/ids.ts';
 import { computeCodeLayout, type CodeItem } from '../src/layout.ts';
 import { churnOverlay, type ChurnSettings } from '../src/overlays/churn.ts';
+import { FILE_KINDS, fileKindOf, fileTypeOverlay } from '../src/overlays/fileType.ts';
 import { KIND_COLORS, lineKindOverlay } from '../src/overlays/lineKind.ts';
 import {
   ADDED,
@@ -141,5 +142,49 @@ describe('the line type overlay', () => {
     });
     expect(colours).toEqual(kinds.map((k) => KIND_COLORS[k]));
     expect(new Set(colours.map(String)).size).toBe(kinds.length);
+  });
+});
+
+describe('the file type overlay', () => {
+  const kindNamed = (name: string) => FILE_KINDS.findIndex((k) => k.name === name);
+
+  it('knows a file’s kind by its ending', () => {
+    expect(fileKindOf('apps/a/src/main.ts')).toBe(kindNamed('Code'));
+    expect(fileKindOf('README.md')).toBe(kindNamed('Prose'));
+    expect(fileKindOf('scripts/run.py')).toBe(kindNamed('Scripts'));
+    expect(fileKindOf('index.html')).toBe(kindNamed('Styles and pages'));
+    expect(fileKindOf('data/x.json')).toBe(kindNamed('Data and settings'));
+  });
+
+  it('counts a git hook as a script, and other files with no ending as data', () => {
+    expect(fileKindOf('.githooks/pre-commit')).toBe(kindNamed('Scripts'));
+    expect(fileKindOf('LICENSE')).toBe(kindNamed('Data and settings'));
+    expect(fileKindOf('.gitignore')).toBe(kindNamed('Data and settings'));
+  });
+
+  it('colours every line of a file by its kind', () => {
+    const structure: CodeStructure = {
+      ...fixtureStructure,
+      files: [
+        { ...fixtureStructure.files[0], path: 'notes.md' },
+        ...fixtureStructure.files.slice(1),
+      ],
+    };
+    const items = computeCodeLayout(structure).items;
+    const colours = fileTypeOverlay.colorsFor({
+      items,
+      settings: undefined,
+      data: { structure },
+      focus: NO_FOCUS,
+    });
+    items.forEach((item, i) =>
+      expect(colours[i]).toEqual(
+        FILE_KINDS[item.file === 0 ? kindNamed('Prose') : kindNamed('Code')].color,
+      ),
+    );
+  });
+
+  it('gives each kind its own colour', () => {
+    expect(new Set(FILE_KINDS.map((k) => String(k.color))).size).toBe(FILE_KINDS.length);
   });
 });

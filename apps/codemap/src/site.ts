@@ -9,7 +9,7 @@ export const codemapSite: Site = {
   direction: 'ltr',
   squareName: 'line',
   email: MAKER_EMAIL,
-  aboutHtml: `<p>${CODEMAP_PAGE.noScript} Color a line by what the pull request did to it, as a whole or one commit at a time; by how recently or how often it has changed over its file’s history; or by what kind of line it is. The data comes from git alone: whether a line was changed rather than removed and added is a reading of the diff, usually right.</p>`,
+  aboutHtml: `<p>${CODEMAP_PAGE.noScript} Color a line by what the pull request did to it, as a whole or one commit at a time; by how recently or how often it has changed over its file’s history; by what kind of line it is; or by what kind of file it is in. The data comes from git alone: whether a line was changed rather than removed and added is a reading of the diff, usually right.</p>`,
   credits: [],
   title(link) {
     return viewTitle(CODEMAP_PAGE.name, link.square ?? null, link);
