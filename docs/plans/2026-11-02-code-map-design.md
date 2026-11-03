@@ -106,3 +106,20 @@ nothing about torahmap, and the map reads only its data files.
   simpler line-by-line reading).
 - Colours, labels, the popup (the line's text, its file and number, its last commit).
 - How the two modes and the overlays appear in the menu.
+
+## Folders and files, decided 2026-11-02 after a mockup
+
+- **Every folder is a box, at every depth**, nested, its name in a tab at the top. The repo's
+  shape is its folders; two levels of grouping hid most of it.
+- **Folder and file names keep their size on screen.** Names in map units were unreadable at the
+  whole-repo view. Outer folders claim their place first; a name in the way of one already shown
+  moves down below it while it fits its box, otherwise it is left out, so deeper names appear as
+  you zoom in.
+- **Each file's name sits above it**, shown when its strip and width have room for it.
+- **Files wrap at 200 rows**, so a long file is a block rather than a tall stripe.
+- **Each file sits on a faint shade, without an outline.** The shade sets files apart, so the gaps
+  are tight: 10 map units between files, 14 between rows of files, 4 between a file's own columns.
+  Folders pack their contents in shelves.
+- **A file type overlay**: code, prose, scripts, styles and pages, and data and settings, by the
+  file's ending. The five colours were checked as a set on the dark map, also for colour-blind
+  readers. The kind comes from the path, so the data needs nothing new.
