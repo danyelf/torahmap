@@ -21,7 +21,8 @@ every change what the change meant:
   applies the colour rule itself.
 
 The refactor changes nothing a reader can see. Where today's behaviour looks accidental, this plan
-keeps it and names it.
+keeps it and names it. The one exception is a text opening an overlay, which becomes one step
+where today it is two, with no visible difference.
 
 ## The value
 
@@ -44,15 +45,18 @@ Everything else is a function of the value, given the text's search and overlays
   `searching(state)`. These replace the module's getters.
 - **Changes, each returning a new value:** `withActive(state, id)`,
   `withOverlaySettings(state, overlay, update)`, `withSearch(state, update)`,
-  `withReset(state, overlay)`.
+  `withReset(state, overlay)`. An id the text doesn't have, or `none`, makes `active` null, as
+  `switchTo` does today.
 
 The colour rule runs only when settings are written, as it does today. An overlay's new settings
 avoid the search's colours, and the search's avoid the overlay's. Switching to an overlay keeps
 the settings it holds as they are, even if the search's colours changed since.
 
 A settings update already takes the current settings and returns the next ones, so overlays don't
-change. The value relies on updates returning a new object. A test over every text's overlays,
-the IEEE VIS citations overlay's nested lists included, holds that.
+change. The value relies on updates returning a new object, and the blend's cache relies on values
+never changing. So the value is frozen whenever it is built, nested settings included (the IEEE
+VIS citations overlay holds lists). An update that edits settings in place then throws, in tests
+and in the browser.
 
 ## Links, against a base
 
@@ -95,7 +99,7 @@ The shell holds one variable, `let tools`, and changes it through one function:
 setTools(next: ToolState<S>, by: 'reader' | 'outside'): void
 ```
 
-**`outside`** is a story stop, or a link and Back. Both already run inside
+**`outside`** is a story stop, or a link, including Back. Both already run inside
 `applyingExternalState`, which turns off URL writes, so the URL needs no case of its own.
 **`reader`** is every reader action and a text's hooks. They go through `setOverlay`,
 `changeSettings` and `changeSearch` today, including the legend card's × and the starting points
@@ -128,8 +132,10 @@ What follows today, which `setTools` reproduces:
   fetched; repaint; the open panel put in front only when leaving story mode.
 
 So `setTools` compares the old and new values for a `reader` change and runs only what that
-change touches. For an `outside` change it runs every follow-up for both tools without comparing,
-as today. Rebuilding the panels only on a real change is #569, kept out of this refactor.
+change touches: the overlay switched, the overlay's settings changed, the search changed. Its URL
+write is pushed when the overlay switched or the search turned on or off, and replaced otherwise,
+which is every reader row above, the hook included. For an `outside` change it runs every
+follow-up for both tools without comparing, as today. Rebuilding the panels only on a real change is #569, kept out of this refactor.
 
 Two smaller differences are accepted:
 
@@ -151,18 +157,22 @@ Each step is one pull request that typechecks and passes on its own.
 1. **The value and its link functions.**
    - What it covers: the value with string ids; `fromLink`, `toLink` and `withOverlayTrimmed`; the
      story stops resolved to values; the blend using them.
-   - What goes: the module's `switchTo` and `restore` pair becomes one `fromLink`, and the
-     mutable settings store goes.
+   - Where the value lives: inside the existing module, as one `let state`, whose methods call
+     the new functions. Its `switchTo` and `restore` pair becomes one `fromLink`, and the mutable
+     settings store goes.
    - Checks: unit tests for the functions, and the blend's existing tests; the layout suite on all
      four texts.
 2. **`setTools`.**
-   - What it covers: the follow-ups above, with the `openOverlay` hook as one change.
+   - What it covers: the follow-ups above, with the `openOverlay` hook as one change. The
+     module's variable moves into the shell as `let tools`, and the module itself goes.
    - Checks: unit tests for the comparison; the layout suite on all four texts, plus the loading
      suite, because search file fetching moves into `setTools`. Telemetry has few tests, so the
      order of events on the hook path is checked once by hand.
 3. **Optional: ids and settings typed by each text.** The shell becomes generic over a text's
    settings map, with each overlay's settings type read from what its `settingsFromUrl` returns.
-   A test confirmed that this works and that a Haftarah setting given to Trop is refused.
+   A scratch type-check against the real Tanakh overlays confirmed that this works and that a
+   Haftarah setting given to Trop is refused. The obvious pattern, matching `Overlay<…, S, …>`,
+   does not infer.
    - Costs: about 15 source files and 10 tests change. The Tanakh's registry, which tests fill
      with just the overlays they need, gives way to its record of implementations. Ids from
      outside are checked with `Object.hasOwn`, not `in`, which accepts `constructor`.
