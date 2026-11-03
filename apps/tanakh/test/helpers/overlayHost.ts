@@ -1,12 +1,11 @@
-// Playing the app's part for one overlay: holding its settings in the same
-// store main.ts uses, handing them and its data to every member, and
-// drawing the controls again after each change, into the container they were
-// last drawn in.
+// Playing the app's part for one overlay: holding its settings, handing them
+// and its data to every member, and drawing the controls again after each
+// change, into the container they were last drawn in.
 import type { Overlay, OverlaySummary, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../../src/types';
 import type { TextLanguage } from '@torahmap/shell/language.ts';
 import {
-  createOverlaySettings,
+  settingsToLink,
   settingsFromLink,
   type LinkParams,
 } from '@torahmap/shell/overlays/settings.ts';
@@ -48,19 +47,19 @@ export function hostOverlay<S, D>(
   data: D,
 ): OverlayHost<S, D> {
   let held = data;
-  const store = createOverlaySettings();
+  let settings = settingsFromLink(overlay, {});
   let container: HTMLElement | null = null;
   const listeners: (() => void)[] = [];
 
   function draw(): void {
     if (!container) return;
-    overlay.renderControls?.(container, store.get(overlay), host.change, held);
+    overlay.renderControls?.(container, settings, host.change, held);
   }
 
   const host: OverlayHost<S, D> = {
     overlay,
     get settings() {
-      return store.get(overlay);
+      return settings;
     },
     get data() {
       return held;
@@ -76,14 +75,14 @@ export function hostOverlay<S, D>(
       return into;
     },
     restore(raw) {
-      store.restore(overlay, raw);
+      settings = settingsFromLink(overlay, raw);
       if (container) host.renderControls(container);
     },
     fromUrl(raw) {
       return settingsFromLink(overlay, raw);
     },
     change(update) {
-      store.set(overlay, update(store.get(overlay), []));
+      settings = update(settings, []);
       draw();
       listeners.forEach((listener) => listener());
     },
@@ -91,34 +90,34 @@ export function hostOverlay<S, D>(
       listeners.push(listener);
     },
     toUrl() {
-      return store.toUrl(overlay);
+      return settingsToLink(overlay, settings);
     },
     getItemColor(verse) {
       return overlay.colorsFor({
         items: [verse],
-        settings: store.get(overlay),
+        settings: settings,
         data: held,
         focus: { hovered: null, pinned: null },
       })[0];
     },
     hoverChangesColors(before, after) {
-      return overlay.hoverChangesColors?.(before, after, store.get(overlay), held) ?? false;
+      return overlay.hoverChangesColors?.(before, after, settings, held) ?? false;
     },
     getHoverInfo(verse) {
-      return overlay.getHoverInfo?.(verse, store.get(overlay), held) ?? null;
+      return overlay.getHoverInfo?.(verse, settings, held) ?? null;
     },
     highlightItemText(verse, text, language) {
       if (!overlay.highlightItemText) throw new Error(`${overlay.id} does not mark verse text`);
-      return overlay.highlightItemText(verse, text, language, store.get(overlay), held);
+      return overlay.highlightItemText(verse, text, language, settings, held);
     },
     renderLegend(into) {
-      overlay.renderLegend?.(into, store.get(overlay), held);
+      overlay.renderLegend?.(into, settings, held);
     },
     summary() {
-      return overlay.summary?.(store.get(overlay), held) ?? {};
+      return overlay.summary?.(settings, held) ?? {};
     },
     renderSidebarInfo(verse, isPinned) {
-      return overlay.renderSidebarInfo?.(verse, isPinned, store.get(overlay), held) ?? null;
+      return overlay.renderSidebarInfo?.(verse, isPinned, settings, held) ?? null;
     },
     destroy() {
       overlay.destroy?.();

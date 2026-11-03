@@ -113,7 +113,8 @@ import {
   placeIn,
   type StopPlace,
 } from './scrollytelling/storyColumn.ts';
-import { computeBlendedColors, stopTools, type TextTools } from './scrollytelling/overlayBlender';
+import { computeBlendedColors, stopTools, storyTools } from './scrollytelling/overlayBlender';
+import type { TextTools } from './tools.ts';
 import {
   REJOIN_EASE_MS,
   STORY_DRIVING,
@@ -191,8 +192,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const allOverlays: Overlay<I>[] = [searchTool, ...text.overlays];
   const getOverlay = (id: string): Overlay<I> | undefined =>
     text.overlays.find((overlay) => overlay.id === id);
+  const textTools: TextTools<I, S> = { search: searchTool, overlay: getOverlay };
   // What a story stop may name.
-  const textTools: TextTools<I> = { search: searchTool, overlay: getOverlay };
+  const storyStops = storyTools(textTools);
   // What main.ts asks of the loader and viewFiles is the loading suite's to
   // check: creating them, starting the downloads, asking for a fetch, what
   // showLoadState redraws, and what the map does as a file lands or fails.
@@ -249,7 +251,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   const renderState = createRenderState(renderContext, items, dpr);
 
-  const toolsState = createToolsState(searchTool, getOverlay);
+  const toolsState = createToolsState(textTools);
 
   // The one colour layer on the map: either a settled overlay's colours or a
   // story transition's blend. The shader draws the hover on top of it
@@ -412,7 +414,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       litHoverItem,
       loader.loaded(),
       base,
-      textTools,
+      storyStops,
       text.searchKeepsBase,
     );
   }
@@ -461,12 +463,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
-    const wantedOverlay = stop.overlay ?? NO_OVERLAY;
-    if (wantedOverlay !== toolsState.overlayId()) {
-      activateOverlay(wantedOverlay);
-    }
-
-    toolsState.restore(stop.overlayParams ?? {}, stop.searchParams ?? {});
+    const before = toolsState.overlay();
+    toolsState.fromLink(stop);
+    if (toolsState.overlay() !== before) overlayLeft(before);
     // The pin is set before the panel is drawn, which draws what the pin has.
     const unpinned = pinnedItem !== null && !stop.pin;
     if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
@@ -989,8 +988,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** Switch the active overlay without drawing its UI, painting or writing the URL. */
   function activateOverlay(id: string): void {
-    toolsState.overlay()?.destroy?.();
+    const before = toolsState.overlay();
     toolsState.switchTo(id);
+    overlayLeft(before);
+  }
+
+  /** Let the overlay that was on clean up, and mark the page with the one on now. */
+  function overlayLeft(before: Overlay<I> | null): void {
+    before?.destroy?.();
     document.body.dataset.overlay = toolsState.overlayId();
   }
 
@@ -1505,7 +1510,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         null,
         loader.loaded(),
         base,
-        textTools,
+        storyStops,
         text.searchKeepsBase,
       ),
     );
@@ -1590,17 +1595,20 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (frame.mode !== 'story') return viewFiles.opening(toolsState.picked(), pinnedItem);
     const { stop } = storyColumn.where();
     const item = stop.pin ? squares.find(stop.pin) : null;
-    return viewFiles.opening(stopTools(stop, textTools), item);
+    return viewFiles.opening(stopTools(stop, storyStops), item);
   }
 
   function landingView(): LandingView<I> {
     const shown = pinnedItem ?? hoveredItem;
     let map = toolsState.picked();
     if (driver.by === 'story' && driver.blend) {
-      map = [...stopTools(driver.blend.from, textTools), ...stopTools(driver.blend.to, textTools)];
+      map = [
+        ...stopTools(driver.blend.from, storyStops),
+        ...stopTools(driver.blend.to, storyStops),
+      ];
     } else if (driver.by === 'rejoining') {
       const state = storyColumn.view();
-      map = [...stopTools(state.fromStop, textTools), ...stopTools(state.toStop, textTools)];
+      map = [...stopTools(state.fromStop, storyStops), ...stopTools(state.toStop, storyStops)];
     }
     return viewFiles.landing(colorSource(driver), map, toolsState.overlay(), shown);
   }
@@ -1674,8 +1682,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       closeStory(landingFrame(phone, open, open === 'overlay' && next.overlay === NO_OVERLAY));
     }
 
-    activateOverlay(next.overlay);
-    toolsState.restore(next.overlayParams, next.searchParams);
+    const before = toolsState.overlay();
+    toolsState.fromLink(next);
+    // Even for the same overlay, as its settings are new.
+    overlayLeft(before);
     const item = next.square ? squares.find(next.square) : null;
     pinnedItem = item;
     searchChanged(true);

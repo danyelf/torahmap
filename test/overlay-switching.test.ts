@@ -27,7 +27,7 @@ describe('Overlay Switching Integration', () => {
   let currentData: unknown;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
   let state: ReturnType<typeof newState>;
-  const newState = () => createToolsState(searchTool, getOverlay);
+  const newState = () => createToolsState({ search: searchTool, overlay: getOverlay });
 
   beforeEach(() => {
     // Create real DOM elements for testing (jsdom)
@@ -405,7 +405,9 @@ describe('Overlay Switching Integration', () => {
       switchToOverlay('trop');
 
       // Should not throw
-      expect(() => state.restore(new URLSearchParams('trop=tipcha'), {})).not.toThrow();
+      expect(() =>
+        state.fromLink({ overlay: 'trop', overlayParams: new URLSearchParams('trop=tipcha') }),
+      ).not.toThrow();
     });
   });
 

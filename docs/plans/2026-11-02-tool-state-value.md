@@ -76,18 +76,19 @@ its colours. With no overlay on, the value comes back unchanged.
 ## Stories
 
 A story stop names an overlay, its parameters and the search's parameters, which together are a
-link. So stops become values once, in the shell, after each text's `stories.resolve`:
+link. So each stop becomes a value the first time it is drawn, through `storyTools`, made once in
+the shell:
 
 - **For drawing,** `fromLink(stop, emptyTools(search))`. Stops that name the same tools share
-  one value. The resolver keeps a map from a stop's link text to its value, which is today's
-  `cacheKeyFor` moved there. Stops that only move the camera are common, and each would otherwise
-  compute the same picture again.
+  one value: `storyTools` keeps a map from a stop's link text to its value, and one from the stop
+  itself, so a frame doesn't work out the link text again. Stops that only move
+  the camera are common, and each would otherwise compute the same picture again.
 - **The blend's picture cache** keeps its nesting by squares and loaded files. Its inner map is
   keyed by the value instead of a string. The blend's own call to the colour rule goes.
 - **For arriving at a stop,** `fromLink(stop, state)`, so the reader's other overlays keep their
   settings, as now.
-- **Hot reload on the dev server** re-resolves the stories, which makes new values. The old ones
-  are dropped from the cache with them.
+- **Hot reload on the dev server** re-resolves the stories into new stop objects, which find their
+  values again by link text.
 
 A story is then a sequence of camera, pin and tool state.
 
