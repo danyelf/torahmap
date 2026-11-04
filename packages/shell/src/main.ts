@@ -267,7 +267,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // The search and at most one overlay. Only setTools and leaveStory change it.
   let tools: ToolState<S> = emptyTools(searchTool);
   const overlayOn = (): Overlay<I> | null => activeOverlay(tools, textTools);
-  const overlayId = (): string => tools.active ?? NO_OVERLAY;
+  const overlayId = (state = tools): string => state.active ?? NO_OVERLAY;
   const searching = (): boolean => searchTool.isSearching(tools.search);
 
   // The one colour layer on the map: either a settled overlay's colours or a
@@ -1000,11 +1000,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const overlayStarts = document.getElementById('overlay-starts')!;
 
   /**
-   * Make `next` the tools and redraw what shows them. A reader's change redraws only what it
-   * touched, keeping the focus in the controls it came from; a link's or a story stop's redraws
-   * both panels afresh. The map is painted here while the reader has it; while a story has it, the
-   * story's frame paints, as a repaint here would replace its blend between two stops. URL writes
-   * are off while a link or a stop is applied (`applyingExternalState`).
+   * Make `next` the tools and redraw what shows them. A reader's change redraws its panel in place,
+   * keeping the focus in it. While a story has the map its frame paints, as a repaint here would
+   * replace its blend between two stops. A link or a stop writes no URL (`applyingExternalState`).
    */
   function setTools(next: ToolState<S>, by: 'reader' | 'outside'): void {
     const before = tools;
@@ -1014,7 +1012,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (!outside && !change.switched && !change.settings && !change.search) return;
 
     if (change.switched) {
-      if (!outside) trackOverlaySwitch(overlayId(), before.active ?? NO_OVERLAY);
+      if (!outside) trackOverlaySwitch(overlayId(), overlayId(before));
       activeOverlay(before, textTools)?.destroy?.();
     }
     document.body.dataset.overlay = overlayId();
