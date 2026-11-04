@@ -18,13 +18,13 @@ import {
 } from '../apps/tanakh/test/helpers/mocks.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
 import { readLink, writeLink } from '@torahmap/link';
-import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
+import { settingsFromLink, settingsToLink } from '../packages/shell/src/overlays/settings.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
 
 const DEFAULT_CAMERA = { x: -500, y: 40, zoom: 1 };
 
-// The settings the app holds for each overlay, as main.ts holds them.
-let settings = createOverlaySettings();
+// The settings held for the overlay a view last drew.
+let settings: unknown;
 
 function viewFor(link: string): ViewState {
   mockWindowLocation(`http://localhost:5173/${link}`);
@@ -41,11 +41,11 @@ function controlsAfter(link: string): HTMLElement {
   const overlay = getOverlay(view.overlay);
   const container = document.createElement('div');
   if (overlay) {
-    settings.restore(overlay, view.overlayParams);
+    settings = settingsFromLink(overlay, view.overlayParams);
     overlay.renderControls?.(
       container,
-      settings.get(overlay),
-      (update) => settings.set(overlay, update(settings.get(overlay), [])),
+      settings,
+      (update) => (settings = update(settings, [])),
       dataFor(overlay, SAMPLE_LOADED),
     );
   }
@@ -56,7 +56,7 @@ describe('restoring a link as one complete view', () => {
   beforeEach(() => {
     mockHistory('http://localhost:5173/');
     registerAllOverlays();
-    settings = createOverlaySettings();
+    settings = undefined;
     configureSearch({ verses: SAMPLE_VERSES, callbacks: { onVerseClick: vi.fn() } });
   });
 
@@ -225,16 +225,16 @@ describe('restoring a link as one complete view', () => {
       controlsAfter('?overlay=trop&trop=tipcha');
       const controls = controlsAfter('?overlay=trop');
 
-      expect(settings.toUrl(getOverlay('trop')!)).toEqual({});
+      expect(settingsToLink(getOverlay('trop')!, settings)).toEqual({});
       expect(controls.querySelector('.trop-grid button.selected')).toBeNull();
     });
 
     it('clears the search when the link names none', () => {
-      settings.restore(searchTool, viewFor('?search=light').searchParams);
-      expect(settings.toUrl(searchTool).search).toBe('light');
+      settings = settingsFromLink(searchTool!, viewFor('?search=light').searchParams);
+      expect(settingsToLink(searchTool!, settings).search).toBe('light');
 
-      settings.restore(searchTool, viewFor('?overlay=trop').searchParams);
-      expect(settings.toUrl(searchTool)).toEqual({});
+      settings = settingsFromLink(searchTool!, viewFor('?overlay=trop').searchParams);
+      expect(settingsToLink(searchTool!, settings)).toEqual({});
     });
   });
 });

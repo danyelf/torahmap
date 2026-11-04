@@ -12,7 +12,7 @@ import {
   restoreAllMocks,
 } from '../apps/tanakh/test/helpers/mocks.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
+import { settingsFromLink, settingsToLink } from '../packages/shell/src/overlays/settings.ts';
 
 describe('URL State Sync Integration', () => {
   let originalLocation: Location;
@@ -46,11 +46,7 @@ describe('URL State Sync Integration', () => {
 
       // Restore settings from a link
       const params = new URLSearchParams('category=talmud');
-      const settings = createOverlaySettings();
-      settings.restore(overlay!, params);
-
-      // Get URL params back
-      const urlParams = settings.toUrl(overlay!);
+      const urlParams = settingsToLink(overlay!, settingsFromLink(overlay!, params));
       expect(urlParams).toEqual({ category: 'talmud' });
     });
 
@@ -59,11 +55,7 @@ describe('URL State Sync Integration', () => {
 
       // Restore settings from a link
       const params = new URLSearchParams('trop=tipcha');
-      const settings = createOverlaySettings();
-      settings.restore(overlay!, params);
-
-      // Get URL params back
-      const urlParams = settings.toUrl(overlay!);
+      const urlParams = settingsToLink(overlay!, settingsFromLink(overlay!, params));
       expect(urlParams).toEqual({ trop: 'tipcha' });
     });
 
@@ -72,11 +64,7 @@ describe('URL State Sync Integration', () => {
 
       // Apply URL params
       const params = new URLSearchParams('search=moses');
-      const settings = createOverlaySettings();
-      settings.restore(overlay!, params);
-
-      // Get URL params back
-      const urlParams = settings.toUrl(overlay!);
+      const urlParams = settingsToLink(overlay!, settingsFromLink(overlay!, params));
       expect(urlParams).toEqual({ search: 'moses' });
     });
 
@@ -121,17 +109,17 @@ describe('URL State Sync Integration', () => {
       const overlay = getOverlay('trop');
 
       const container = document.createElement('div');
-      const settings = createOverlaySettings();
+      let settings = settingsFromLink(overlay!, {});
       const draw = () =>
         overlay?.renderControls?.(
           container,
-          settings.get(overlay),
-          (update) => settings.set(overlay, update(settings.get(overlay), [])),
+          settings,
+          (update) => (settings = update(settings, [])),
           dataFor(overlay, SAMPLE_LOADED),
         );
       draw();
       (container.querySelector('.trop-grid button') as HTMLButtonElement).click();
-      const chosen = settings.toUrl(overlay!).trop;
+      const chosen = settingsToLink(overlay!, settings).trop;
       expect(chosen, 'the trop overlay reported no selection').toBeTruthy();
 
       const state: UrlState = {
@@ -157,11 +145,14 @@ describe('URL State Sync Integration', () => {
       container.innerHTML = '';
       draw();
       (container.querySelector('.trop-grid button') as HTMLButtonElement).click();
-      expect(settings.toUrl(overlay!).trop, 'failed to clear the selection').toBeUndefined();
+      expect(
+        settingsToLink(overlay!, settings).trop,
+        'failed to clear the selection',
+      ).toBeUndefined();
 
-      settings.restore(overlay!, restored.overlayParams);
+      settings = settingsFromLink(overlay!, restored.overlayParams);
 
-      expect(settings.toUrl(overlay!).trop).toBe(chosen);
+      expect(settingsToLink(overlay!, settings).trop).toBe(chosen);
     });
   });
 
@@ -332,11 +323,10 @@ describe('URL State Sync Integration', () => {
 
       // Restore initial state
       const params1 = new URLSearchParams('category=talmud');
-      const settings = createOverlaySettings();
-      settings.restore(overlay!, params1);
+      const settings = settingsFromLink(overlay!, params1);
 
       // Get URL params
-      const urlParams1 = settings.toUrl(overlay!);
+      const urlParams1 = settingsToLink(overlay!, settings);
       expect(urlParams1).toEqual({ category: 'talmud' });
 
       // Build URL state

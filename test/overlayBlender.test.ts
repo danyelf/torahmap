@@ -5,12 +5,13 @@ import {
   pictureForStop,
   computeBlendedColors,
   stopTools,
-  type TextTools,
+  createStoryTools,
+  type StoryTools,
 } from '../packages/shell/src/scrollytelling/overlayBlender.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
 import { getOverlay, registerOverlay } from '@torahmap/tanakh/overlays/registry.ts';
 import { commentaryOverlay } from '@torahmap/tanakh/overlays/commentary.ts';
-import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
+import { settingsFromLink } from '../packages/shell/src/overlays/settings.ts';
 import type { ResolvedStoryStop } from '../packages/shell/src/scrollytelling/types.ts';
 import type { TanakhLayout } from '@torahmap/tanakh/types.ts';
 import type { ColorArgs, Overlay, UrlParamValues } from '../packages/shell/src/overlays/types.ts';
@@ -24,13 +25,14 @@ import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
 import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 
 // The tools a stop can name, as a text hands them over: the overlays these
-// tests register, and search.
-const textTools: TextTools<TanakhLayout> = { search: searchTool, overlay: getOverlay };
+// tests register, and search. Fresh for each test, which registers its own.
+let textTools: StoryTools<TanakhLayout>;
 
 // The blender memoises per verses array, so a fresh one keeps each test's
 // colours its own.
 let verses: TanakhLayout[];
 beforeEach(() => {
+  textTools = createStoryTools({ search: searchTool, overlay: getOverlay });
   verses = [
     { id: 'Genesis.1.1', book: 'Genesis', chapter: 1, verse: 1, x: 0, y: 0, size: 4 },
     { id: 'Genesis.1.2', book: 'Genesis', chapter: 1, verse: 2, x: 0, y: 0, size: 4 },
@@ -276,9 +278,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
     // holds cannot be touched, by construction. What this guards is the
     // shared per-category memo: blending two other categories must not leave
     // it painting the held one differently.
-    const settings = createOverlaySettings();
-    settings.restore(commentaryOverlay, { category: 'Midrash' });
-    const held = settings.get(commentaryOverlay);
+    const held = settingsFromLink(commentaryOverlay, { category: 'Midrash' });
     const verse = verses[0];
     const before = commentaryOverlay.colorsFor({
       items: [verse],
@@ -319,7 +319,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
     expect(
       commentaryOverlay.colorsFor({
         items: [verse],
-        settings: settings.get(commentaryOverlay),
+        settings: held,
         data: {
           counts: SAMPLE_COMMENTARY_COUNTS,
         },
@@ -605,7 +605,10 @@ describe('stopTools', () => {
 
   it("finds the stop's overlay among the text's own", () => {
     const own = { ...multiColorOverlay, id: 'own' };
-    const tools = { search: searchTool, overlay: (id: string) => (id === 'own' ? own : undefined) };
+    const tools = createStoryTools<TanakhLayout>({
+      search: searchTool,
+      overlay: (id) => (id === 'own' ? own : undefined),
+    });
     expect(stopTools(stop({ overlay: 'own' }), tools)).toEqual([own]);
     expect(stopTools(stop({ overlay: 'commentary' }), tools)).toEqual([]);
   });

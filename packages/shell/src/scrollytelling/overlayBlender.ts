@@ -7,22 +7,28 @@ import {
 } from '@torahmap/engine';
 import type { StoryStop } from '@torahmap/stories';
 import type { ResolvedStoryStop } from './types';
-import type { Overlay } from '../overlays/types.ts';
 import { fillDefaultColors, toolsPicture } from '../itemColoring';
 import { validateOverlayParams, type UrlParamValues } from '@torahmap/link';
-import { NO_OVERLAY } from '../overlays/types.ts';
-import { settingsFromLink } from '../overlays/settings.ts';
-import type { SearchTool } from '../app/search.ts';
-import { toolsPicked, toolsShown } from '../tools.ts';
+import { NO_OVERLAY, type Overlay } from '../overlays/types.ts';
 import type { Loaded } from '../dataFiles.ts';
+import {
+  activeOverlay,
+  emptyTools,
+  fromLink,
+  overlayNamed,
+  pickedTools,
+  shownTools,
+  type TextTools,
+  type ToolState,
+} from '../tools.ts';
 
-// Memoised per items array and loaded files by the stop's overlay, its search and their
-// validated link parameters. The key is canonical because validateOverlayParams
-// writes keys in the order urlParams declares them, so stops that ask for the
-// same thing share an entry. Colours that depend on the hover are recomputed
-// while a square is hovered: caching by hover too would add an entry for every
-// square the cursor crosses.
-const picturesCache = new WeakMap<readonly MapItem[], WeakMap<Loaded, Map<string, Picture>>>();
+// Memoised per items array and loaded files by the stop's tools value. Colours that
+// depend on the hover are recomputed while a square is hovered: caching by
+// hover too would add an entry for every square the cursor crosses.
+const picturesCache = new WeakMap<
+  readonly MapItem[],
+  WeakMap<Loaded, WeakMap<ToolState<unknown>, Picture>>
+>();
 
 // UrlParamValues declares every key optional; validateOverlayParams only ever
 // sets present keys to non-empty strings, so this just gives TypeScript proof
@@ -37,36 +43,51 @@ function paramsKey(values: UrlParamValues): string {
   return new URLSearchParams(Object.fromEntries(definedEntries(values))).toString();
 }
 
-function cacheKeyFor<T>(
-  overlay: Overlay<T> | null,
-  search: SearchTool<T>,
-  stop: StoryStop,
-): string {
+// Canonical because validateOverlayParams writes keys in the order urlParams
+// declares them, so stops that ask for the same thing share a key.
+function linkKey<T>(overlay: Overlay<T> | null, tools: TextTools<T>, stop: StoryStop): string {
   const overlayKey = overlay
     ? `${overlay.id}?${paramsKey(validateOverlayParams(overlay.urlParams, stop.overlayParams ?? {}))}`
     : NO_OVERLAY;
-  const searchKey = paramsKey(validateOverlayParams(search.urlParams, stop.searchParams ?? {}));
+  const searchKey = paramsKey(
+    validateOverlayParams(tools.search.urlParams, stop.searchParams ?? {}),
+  );
   return `${overlayKey}#${searchKey}`;
 }
 
-/** The text's tools a stop names: its search, and its overlays by id. */
-export interface TextTools<T> {
-  search: SearchTool<T>;
-  overlay(id: string): Overlay<T> | undefined;
+/** A text's tools, and the tools each story stop names as a value. */
+export interface StoryTools<T> extends TextTools<T> {
+  /**
+   * Stops that name the same tools share one value, so they share its picture: stops that only
+   * move the camera are common, and each would otherwise draw the same picture again.
+   */
+  toolsOf(stop: StoryStop): ToolState<unknown>;
 }
 
-function overlayOf<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T> | null {
-  return (stop.overlay && tools.overlay(stop.overlay)) || null;
+export function createStoryTools<T>(tools: TextTools<T>): StoryTools<T> {
+  const byStop = new WeakMap<StoryStop, ToolState<unknown>>();
+  const byLink = new Map<string, ToolState<unknown>>();
+  const empty = emptyTools(tools.search);
+  return {
+    ...tools,
+    toolsOf(stop) {
+      let state = byStop.get(stop);
+      if (state) return state;
+      const key = linkKey(overlayNamed(tools, stop.overlay), tools, stop);
+      state = byLink.get(key);
+      if (!state) {
+        state = fromLink(stop, empty, tools);
+        byLink.set(key, state);
+      }
+      byStop.set(stop, state);
+      return state;
+    },
+  };
 }
 
 /** The tools a stop picks. */
-export function stopTools<T>(stop: StoryStop, tools: TextTools<T>): Overlay<T>[] {
-  const { search } = tools;
-  return toolsPicked(
-    overlayOf(stop, tools),
-    search,
-    settingsFromLink(search, stop.searchParams ?? {}),
-  );
+export function stopTools<T>(stop: StoryStop, tools: StoryTools<T>): Overlay<T>[] {
+  return pickedTools(tools.toolsOf(stop), tools);
 }
 
 export function pictureForStop<I extends MapItem>(
@@ -75,12 +96,11 @@ export function pictureForStop<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => ItemColor,
-  tools: TextTools<I>,
+  tools: StoryTools<I>,
   keepsBase?: number,
 ): Picture {
-  const { search } = tools;
-  const overlay = overlayOf(stop, tools);
-  const byHover = !!(overlay?.hoverChangesColors && hovered);
+  const state = tools.toolsOf(stop);
+  const byHover = !!(activeOverlay(state, tools)?.hoverChangesColors && hovered);
 
   let byLoaded = picturesCache.get(items);
   if (!byLoaded) {
@@ -89,32 +109,24 @@ export function pictureForStop<I extends MapItem>(
   }
   let cache = byLoaded.get(loaded);
   if (!cache) {
-    cache = new Map();
+    cache = new WeakMap();
     byLoaded.set(loaded, cache);
   }
-  const key = cacheKeyFor(overlay, search, stop);
-  const cached = byHover ? undefined : cache.get(key);
+  const cached = byHover ? undefined : cache.get(state);
   if (cached) return cached;
 
-  const searchSettings = settingsFromLink(search, stop.searchParams ?? {});
-  const shown = toolsShown(
-    overlay,
-    overlay
-      ? settingsFromLink(
-          overlay,
-          stop.overlayParams ?? {},
-          search.colorsInUse?.(searchSettings) ?? [],
-        )
-      : undefined,
-    search,
-    searchSettings,
-    loaded,
-  );
   const picture = fillDefaultColors(
-    toolsPicture(shown, items, { hovered, pinned: null }, base, undefined, keepsBase),
+    toolsPicture(
+      shownTools(state, tools, loaded),
+      items,
+      { hovered, pinned: null },
+      base,
+      undefined,
+      keepsBase,
+    ),
     base,
   );
-  if (!byHover) cache.set(key, picture);
+  if (!byHover) cache.set(state, picture);
   return picture;
 }
 
@@ -129,7 +141,7 @@ export function computeBlendedColors<I extends MapItem>(
   hovered: I | null,
   loaded: Loaded,
   base: (index: number) => ItemColor,
-  tools: TextTools<I>,
+  tools: StoryTools<I>,
   keepsBase?: number,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)

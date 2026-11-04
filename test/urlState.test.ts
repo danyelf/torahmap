@@ -12,7 +12,7 @@ import { mockHistory } from '../apps/tanakh/test/helpers/mocks.ts';
 import { setLink } from '../apps/tanakh/test/helpers/setLink.ts';
 import { registerAllOverlays, getAllOverlays } from '@torahmap/tanakh/overlays/index.ts';
 import { LINK_KEYS } from '@torahmap/overlay-catalog';
-import { createOverlaySettings } from '../packages/shell/src/overlays/settings.ts';
+import { settingsFromLink, settingsToLink } from '../packages/shell/src/overlays/settings.ts';
 
 // The registry is where overlays come from — populate it the way the app does.
 registerAllOverlays();
@@ -107,9 +107,8 @@ describe('what every overlay must hold to', () => {
 
     it(`${overlay.id}: only reports settings under keys it declared`, () => {
       const declared = new Set((overlay.urlParams ?? []).map((spec) => spec.key));
-      const store = createOverlaySettings();
-      store.restore(overlay, plausibleSettings(overlay));
-      const reported = Object.keys(store.toUrl(overlay));
+      const settings = settingsFromLink(overlay, plausibleSettings(overlay));
+      const reported = Object.keys(settingsToLink(overlay, settings));
       for (const key of reported) {
         expect(declared, `${overlay.id} reported undeclared "${key}"`).toContain(key);
       }

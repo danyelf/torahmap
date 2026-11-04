@@ -13,11 +13,9 @@ import {
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
 import { dataFor } from '../packages/shell/src/dataFiles.ts';
-import { toolsShown } from '../packages/shell/src/tools.ts';
 import { configure as configureSearch, searchTool } from '@torahmap/tanakh/search/index.ts';
 import { commentaryOverlay, type CommentaryCounts } from '@torahmap/tanakh/overlays/commentary.ts';
 import { restoreAllMocks } from '../apps/tanakh/test/helpers/mocks.ts';
-import { settingsFromLink } from '../packages/shell/src/overlays/settings.ts';
 import { createToolsState } from '../packages/shell/src/toolsState.ts';
 
 describe('Overlay Switching Integration', () => {
@@ -27,7 +25,7 @@ describe('Overlay Switching Integration', () => {
   let currentData: unknown;
   let lastColors: Array<[number, number, number] | [number, number, number][] | null> = [];
   let state: ReturnType<typeof newState>;
-  const newState = () => createToolsState(searchTool, getOverlay);
+  const newState = () => createToolsState({ search: searchTool, overlay: getOverlay });
 
   beforeEach(() => {
     // Create real DOM elements for testing (jsdom)
@@ -276,7 +274,7 @@ describe('Overlay Switching Integration', () => {
       if (genesisVerse) {
         const color = state.overlay()!.colorsFor({
           items: [genesisVerse],
-          settings: state.settingsOfOverlayOn(),
+          settings: state.settingsOf(state.overlay()!),
           data: currentData,
           focus: { hovered: null, pinned: null },
         })[0];
@@ -295,7 +293,7 @@ describe('Overlay Switching Integration', () => {
       if (genesisVerse && state.overlay()?.getHoverInfo) {
         const info = state.overlay()!.getHoverInfo!(
           genesisVerse,
-          state.settingsOfOverlayOn(),
+          state.settingsOf(state.overlay()!),
           currentData,
         );
         expect(info).toBeTruthy();
@@ -405,7 +403,9 @@ describe('Overlay Switching Integration', () => {
       switchToOverlay('trop');
 
       // Should not throw
-      expect(() => state.restore(new URLSearchParams('trop=tipcha'), {})).not.toThrow();
+      expect(() =>
+        state.fromLink({ overlay: 'trop', overlayParams: new URLSearchParams('trop=tipcha') }),
+      ).not.toThrow();
     });
   });
 
@@ -453,13 +453,13 @@ describe('Overlay Switching Integration', () => {
       const verse = verses[0];
       const color1 = state.overlay()!.colorsFor({
         items: [verse],
-        settings: state.settingsOfOverlayOn(),
+        settings: state.settingsOf(state.overlay()!),
         data: currentData,
         focus: { hovered: null, pinned: null },
       })[0];
       const color2 = state.overlay()!.colorsFor({
         items: [verse],
-        settings: state.settingsOfOverlayOn(),
+        settings: state.settingsOf(state.overlay()!),
         data: currentData,
         focus: { hovered: null, pinned: null },
       })[0];
@@ -470,18 +470,6 @@ describe('Overlay Switching Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('leaves out an overlay whose files did not load', () => {
-      expect(
-        toolsShown(
-          getOverlay('commentary')!,
-          undefined,
-          searchTool,
-          settingsFromLink(searchTool, {}),
-          new Map(),
-        ).overlay,
-      ).toBeNull();
-    });
-
     it('handles malformed data gracefully', () => {
       const overlay = commentaryOverlay;
       const malformed = {

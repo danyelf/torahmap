@@ -2,6 +2,16 @@ import { describe, it, expect } from 'vitest';
 import type { SearchTool } from '../src/app/search.ts';
 import type { Overlay } from '../src/overlays/types.ts';
 import { createToolsState } from '../src/toolsState.ts';
+import {
+  emptyTools,
+  fromLink,
+  settingsIn,
+  toLink,
+  withActive,
+  withOverlaySettings,
+  withOverlayTrimmed,
+  withSearch,
+} from '../src/tools.ts';
 
 // A tool's settings are the palette places it uses, which a link carries as `colors=1,2`.
 type Colors = readonly number[];
@@ -35,7 +45,8 @@ const other = paletteTool('other');
 const defaulted = paletteTool('defaulted', '3');
 
 const overlays = new Map([picks, other, defaulted].map((overlay) => [overlay.id, overlay]));
-const newState = () => createToolsState<object, Colors>(search, (id) => overlays.get(id));
+const newState = () =>
+  createToolsState<object, Colors>({ search, overlay: (id) => overlays.get(id) });
 
 /** An edit that adds `place` unless `taken` has it, as a tool's controls would. */
 const add =
@@ -71,30 +82,45 @@ describe('the colour rule', () => {
   });
 });
 
-describe('restoring from a link or a story stop', () => {
-  it('restores the search first, so the overlay avoids its colours', () => {
+describe('taking the tools from a link or a story stop', () => {
+  it('takes the search first, so the overlay avoids its colours', () => {
     const state = newState();
-    state.switchTo('picks');
-    state.restore({ picksColors: '1,2' }, { searchColors: '2,5' });
+    state.fromLink({
+      overlay: 'picks',
+      overlayParams: { picksColors: '1,2' },
+      searchParams: { searchColors: '2,5' },
+    });
+    expect(state.overlay()).toBe(picks);
     expect(state.searchSettings()).toEqual([2, 5]);
     expect(state.settingsOf(picks)).toEqual([1]);
   });
 
   it('replaces what was set rather than adding to it', () => {
     const state = newState();
-    state.switchTo('picks');
-    state.restore({ picksColors: '1' }, { searchColors: '2' });
-    state.restore({}, {});
+    state.fromLink({ overlay: 'picks', overlayParams: { picksColors: '1' } });
+    state.changeSearch(add(2));
+    state.fromLink({ overlay: 'picks' });
     expect(state.settingsOf(picks)).toEqual([]);
     expect(state.searchSettings()).toEqual([]);
   });
 
-  it('restores only the search while no overlay is on', () => {
+  it('turns the overlay off for a link that names none, and keeps what each overlay held', () => {
     const state = newState();
-    state.restore({ picksColors: '1' }, { searchColors: '2' });
+    state.switchTo('picks');
+    state.changeOverlay(picks, add(1));
+    state.fromLink({ overlay: null, searchParams: { searchColors: '2' } });
+    expect(state.overlay()).toBeNull();
     expect(state.searchSettings()).toEqual([2]);
     state.switchTo('picks');
-    expect(state.settingsOf(picks)).toEqual([]);
+    expect(state.settingsOf(picks)).toEqual([1]);
+  });
+
+  it('keeps the settings of overlays the link does not name', () => {
+    const state = newState();
+    state.switchTo('other');
+    state.changeOverlay(other, add(4));
+    state.fromLink({ overlay: 'picks', overlayParams: { picksColors: '1' } });
+    expect(state.settingsOf(other)).toEqual([4]);
   });
 });
 
@@ -110,7 +136,7 @@ describe('leaving a story', () => {
   };
 
   it('keeps of the overlay only what a link carries', () => {
-    const state = createToolsState<object, Colors>(search, () => highlighter);
+    const state = createToolsState<object, Colors>({ search, overlay: () => highlighter });
     state.switchTo('highlighter');
     state.changeOverlay(highlighter, () => ({ shade: 'cool', highlight: true }));
     expect(state.keepOnlyLinked()).toBe(true);
@@ -153,7 +179,6 @@ describe('switching overlays', () => {
     state.switchTo('none');
     expect(state.overlay()).toBeNull();
     expect(state.overlayId()).toBe('none');
-    expect(state.settingsOfOverlayOn()).toBeUndefined();
   });
 
   it('still takes a reader’s edit to an overlay that is not on', () => {
@@ -200,5 +225,39 @@ describe('a reader’s edit to the search', () => {
   it('reports the settings before and after', () => {
     const state = newState();
     expect(state.changeSearch(add(1))).toEqual({ before: [], after: [1] });
+  });
+});
+
+describe('the value', () => {
+  const tools = { search, overlay: (id: string) => overlays.get(id) };
+
+  it('is frozen, so an edit made in place throws', () => {
+    const state = withActive(emptyTools(search), tools, 'picks');
+    const inPlace = (current: Colors): Colors => {
+      (current as number[]).push(1);
+      return current;
+    };
+    expect(() => withOverlaySettings(state, tools, picks, inPlace)).toThrow(TypeError);
+    expect(() => withSearch(state, tools, inPlace)).toThrow(TypeError);
+  });
+
+  it('comes back from its link as it was', () => {
+    let state = withActive(emptyTools(search), tools, 'picks');
+    state = withOverlaySettings(state, tools, picks, add(1));
+    state = withSearch(state, tools, add(2));
+    const again = fromLink(toLink(state, tools), emptyTools(search), tools);
+    expect(again.active).toBe('picks');
+    expect(settingsIn(again, picks)).toEqual([1]);
+    expect(again.search).toEqual([2]);
+  });
+
+  it('stays the same value when switched to the overlay already on', () => {
+    const state = withActive(emptyTools(search), tools, 'picks');
+    expect(withActive(state, tools, 'picks')).toBe(state);
+  });
+
+  it('is unchanged by trimming while no overlay is on', () => {
+    const state = emptyTools(search);
+    expect(withOverlayTrimmed(state, tools)).toBe(state);
   });
 });

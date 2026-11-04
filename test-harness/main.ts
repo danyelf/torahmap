@@ -4,7 +4,7 @@
 
 import { dataFor, loadFiles, overlayFiles } from '@torahmap/shell/dataFiles.ts';
 import { isHebrew } from '@torahmap/hebrew';
-import { createOverlaySettings } from '@torahmap/shell/overlays/settings.ts';
+import { settingsFromLink } from '@torahmap/shell/overlays/settings.ts';
 import {
   configure as configureSearch,
   searchTool as searchOverlay,
@@ -147,14 +147,14 @@ async function main(): Promise<void> {
   // Hold the search's settings the way the app does, and draw the controls again
   // after every change.
   const controlsContainer = document.getElementById('search-controls')!;
-  const settings = createOverlaySettings();
+  let settings = settingsFromLink(searchOverlay, {});
 
   function draw(): void {
     searchOverlay.renderControls?.(
       controlsContainer,
-      settings.get(searchOverlay),
+      settings,
       (update) => {
-        settings.set(searchOverlay, update(settings.get(searchOverlay), []));
+        settings = update(settings, []);
         draw();
       },
       data,

@@ -1,31 +1,33 @@
-// The tools are the search and at most one overlay. This holds which overlay is on and every
-// tool's settings, and keeps the one rule between them: a search word and an overlay pick are
-// never in the same colour. It touches nothing on the page; the shell does what follows a change.
+// The tools are the search and at most one overlay, held as one value (tools.ts).
 
-import type { SearchTool } from './app/search.ts';
 import type { Loaded } from './dataFiles.ts';
-import { createOverlaySettings, type LinkParams } from './overlays/settings.ts';
 import type { Overlay, SettingsUpdate, Tools } from './overlays/types.ts';
 import { NO_OVERLAY } from './overlays/types.ts';
-import { toolsPicked, toolsShown } from './tools.ts';
-
-/** What a link carries of the tools. */
-// Not UrlState's own: its search parameters may hold undefined, which settings never write.
-export interface ToolsLink {
-  overlay?: string;
-  overlayParams: Record<string, string>;
-  searchParams: Record<string, string>;
-}
+import {
+  activeOverlay,
+  emptyTools,
+  fromLink,
+  pickedTools,
+  settingsIn,
+  shownTools,
+  toLink,
+  withActive,
+  withOverlaySettings,
+  withOverlayTrimmed,
+  withReset,
+  withSearch,
+  type LinkedTools,
+  type TextTools,
+  type ToolsLink,
+} from './tools.ts';
 
 export interface ToolsState<T, S> {
   /** The overlay that is on, if one is. */
   overlay(): Overlay<T> | null;
   /** Its id, or NO_OVERLAY. */
   overlayId(): string;
-  /** The on overlay's settings; undefined while none is on. */
-  settingsOfOverlayOn(): unknown;
   searchSettings(): S;
-  /** The settings held for `overlay`, on or not. */
+  /** The settings held for `overlay`, on or not; for one never touched, new defaults each call. */
   settingsOf<U>(overlay: Overlay<T, U>): U;
   /** The overlay and the search as they stand, each null while off or waiting for its files. */
   shown(loaded: Loaded): Tools<T>;
@@ -41,8 +43,8 @@ export interface ToolsState<T, S> {
   changeOverlay<U>(overlay: Overlay<T, U>, update: SettingsUpdate<U>): void;
   /** A reader's edit to the search, which keeps out of the overlay's colours. */
   changeSearch(update: SettingsUpdate<S>): { before: S; after: S };
-  /** Replace both tools' settings with a link's or a story stop's; the search goes first. */
-  restore(overlayParams: LinkParams, searchParams: LinkParams): void;
+  /** Take the tools a link or a story stop names; other overlays keep their settings. */
+  fromLink(link: LinkedTools): void;
   /** Keep of the overlay only what a link carries. False while no overlay is on. */
   keepOnlyLinked(): boolean;
 
@@ -50,70 +52,45 @@ export interface ToolsState<T, S> {
   toUrl(): ToolsLink;
 }
 
-export function createToolsState<T, S>(
-  search: SearchTool<T, S>,
-  getOverlay: (id: string) => Overlay<T> | undefined,
-): ToolsState<T, S> {
-  let current: Overlay<T> | null = null;
-  const settings = createOverlaySettings();
-
-  const searchColors = (): readonly number[] => search.colorsInUse?.(settings.get(search)) ?? [];
-  const overlayColors = (): readonly number[] =>
-    current?.colorsInUse?.(settings.get(current)) ?? [];
-
+export function createToolsState<T, S>(tools: TextTools<T, S>): ToolsState<T, S> {
+  let state = emptyTools(tools.search);
   return {
-    overlay: () => current,
-    overlayId: () => current?.id ?? NO_OVERLAY,
-    settingsOfOverlayOn: () => (current ? settings.get(current) : undefined),
-    searchSettings: () => settings.get(search),
-    settingsOf: (overlay) => settings.get(overlay),
-    shown: (loaded) =>
-      toolsShown(
-        current,
-        current ? settings.get(current) : undefined,
-        search,
-        settings.get(search),
-        loaded,
-      ),
-    picked: () => toolsPicked(current, search, settings.get(search)),
-    searching: () => search.isSearching(settings.get(search)),
+    overlay: () => activeOverlay(state, tools),
+    overlayId: () => state.active ?? NO_OVERLAY,
+    searchSettings: () => state.search,
+    settingsOf: (overlay) => settingsIn(state, overlay),
+    shown: (loaded) => shownTools(state, tools, loaded),
+    picked: () => pickedTools(state, tools),
+    searching: () => tools.search.isSearching(state.search),
 
     switchTo(id) {
-      current = getOverlay(id) ?? null;
+      state = withActive(state, tools, id);
     },
 
     reset(overlay) {
-      settings.restore(overlay, {}, searchColors());
+      state = withReset(state, tools, overlay);
     },
 
     changeOverlay(overlay, update) {
-      settings.set(overlay, update(settings.get(overlay), searchColors()));
+      state = withOverlaySettings(state, tools, overlay, update);
     },
 
     changeSearch(update) {
-      const before = settings.get(search);
-      const after = update(before, overlayColors());
-      settings.set(search, after);
-      return { before, after };
+      const before = state.search;
+      state = withSearch(state, tools, update);
+      return { before, after: state.search };
     },
 
-    restore(overlayParams, searchParams) {
-      settings.restore(search, searchParams);
-      if (current) settings.restore(current, overlayParams, searchColors());
+    fromLink(link) {
+      state = fromLink(link, state, tools);
     },
 
     keepOnlyLinked() {
-      if (!current) return false;
-      settings.restore(current, settings.toUrl(current), searchColors());
+      if (state.active === null) return false;
+      state = withOverlayTrimmed(state, tools);
       return true;
     },
 
-    toUrl() {
-      return {
-        ...(current && { overlay: current.id }),
-        overlayParams: current ? settings.toUrl(current) : {},
-        searchParams: settings.toUrl(search),
-      };
-    },
+    toUrl: () => toLink(state, tools),
   };
 }
