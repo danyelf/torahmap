@@ -146,17 +146,26 @@ export function withReset<T, S>(
 /**
  * A link laid over `base`: the search's settings first, then the named overlay's, chosen to avoid
  * the search's colours. A link that names no overlay turns it off; every other overlay keeps what
- * `base` held.
+ * `base` held. Settings that write the same link as what `base` holds are kept as they are, with
+ * their colours and what the reader is typing.
  */
 export function fromLink<T, S>(
   link: LinkedTools,
   base: ToolState<S>,
   tools: TextTools<T, S>,
 ): ToolState<S> {
-  const search = settingsFromLink(tools.search, link.searchParams ?? {});
+  const search = heldIfSame(
+    tools.search,
+    base.search,
+    settingsFromLink(tools.search, link.searchParams ?? {}),
+  );
   const overlay = overlayNamed(tools, link.overlay);
   if (!overlay) return built({ ...base, active: null, search });
-  const settings = settingsFromLink(overlay, link.overlayParams ?? {}, searchColors(search, tools));
+  const settings = heldIfSame(
+    overlay,
+    base.overlays.has(overlay.id) ? settingsIn(base, overlay) : undefined,
+    settingsFromLink(overlay, link.overlayParams ?? {}, searchColors(search, tools)),
+  );
   return built({
     active: overlay.id,
     overlays: withEntry(base.overlays, overlay.id, settings),
@@ -215,6 +224,14 @@ export function withOverlayTrimmed<T, S>(
   const linked = settingsToLink(overlay, settingsIn(state, overlay));
   const next = settingsFromLink(overlay, linked, searchColors(state.search, tools));
   return built({ ...state, overlays: withEntry(state.overlays, overlay.id, next) });
+}
+
+function heldIfSame<T, U>(tool: Overlay<T, U>, held: U | undefined, next: U): U {
+  if (held === undefined) return next;
+  const a = settingsToLink(tool, held);
+  const b = settingsToLink(tool, next);
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k]) ? held : next;
 }
 
 function searchColors<T, S>(search: S, tools: TextTools<T, S>): readonly number[] {

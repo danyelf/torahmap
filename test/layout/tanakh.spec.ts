@@ -168,6 +168,26 @@ test("the search card's × clears the search, and Back brings it back", async ({
   await expect(page.locator('.map-legend-row[data-panel="overlay"]')).toBeVisible();
 });
 
+test('Back that only pins a verse again leaves the tool panels as they were', async ({ page }) => {
+  desktopOnly('Escape unpins from a keyboard');
+  await openMap(page, `search=${ABRAHAM}&overlay=haftarah&verse=Genesis.22.1`);
+  const controls = ['#search-controls', '#overlay-controls'];
+  // A mark on a control outlives a redraw into the panel, but not the panel built afresh.
+  const marked = () =>
+    page.evaluate(
+      (ids) => ids.map((id) => document.querySelector<HTMLElement>(`${id} > *`)?.dataset.kept),
+      controls,
+    );
+  await page.evaluate((ids) => {
+    for (const id of ids) document.querySelector<HTMLElement>(`${id} > *`)!.dataset.kept = 'yes';
+  }, controls);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => new URL(page.url()).searchParams.get('verse')).toBeNull();
+  await page.goBack();
+  await expect.poll(() => new URL(page.url()).searchParams.get('verse')).toBe('Genesis.22.1');
+  expect(await marked()).toEqual(['yes', 'yes']);
+});
+
 test("a card's × during a story hands the map to the reader, the story still open", async ({
   page,
 }) => {

@@ -118,6 +118,38 @@ describe('taking the tools from a link or a story stop', () => {
     state = fromLink({ overlay: 'picks', overlayParams: { picksColors: '1' } }, state, tools);
     expect(settingsIn(state, other)).toEqual([4]);
   });
+
+  it('keeps the settings held when the link names the same, so nothing changed', () => {
+    const link = {
+      overlay: 'picks',
+      overlayParams: { picksColors: '1' },
+      searchParams: { searchColors: '2' },
+    };
+    const before = fromLink(link, empty(), tools);
+    const after = fromLink(link, before, tools);
+    expect(after.search).toBe(before.search);
+    expect(settingsIn(after, picks)).toBe(settingsIn(before, picks));
+    expect(toolsChange(before, after, tools)).toMatchObject({
+      switched: false,
+      settings: false,
+      search: false,
+    });
+  });
+
+  it('takes the settings a link names when they differ from those held', () => {
+    const before = fromLink(
+      { overlay: 'picks', overlayParams: { picksColors: '1' } },
+      empty(),
+      tools,
+    );
+    const after = fromLink(
+      { overlay: 'picks', overlayParams: { picksColors: '4' } },
+      before,
+      tools,
+    );
+    expect(settingsIn(after, picks)).toEqual([4]);
+    expect(toolsChange(before, after, tools).settings).toBe(true);
+  });
 });
 
 describe('leaving a story', () => {

@@ -2,7 +2,7 @@
 
 **Issues:** #558 (createApp), #565 (link previews)
 **Date:** 2026-11-02
-**Status:** Agreed. Steps 1 and 2 built; step 3 not started.
+**Status:** Done. Steps 1 and 2 built; step 3 dropped, as its types would guard a mistake the code already cannot make.
 
 The code references below are to main at `244824e0`, before step 1.
 
