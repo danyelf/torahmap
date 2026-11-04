@@ -3,11 +3,10 @@ import {
   emptyTools,
   fromLink,
   shownTools,
-  togglesSearch,
+  toolsChange,
   withOverlaySettings,
 } from '../packages/shell/src/tools.ts';
 import { searchTool } from '@torahmap/tanakh/search/index.ts';
-import { settingsFromLink } from '../packages/shell/src/overlays/settings.ts';
 import { SAMPLE_LOADED, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 
 const counts = testOverlay({
@@ -54,23 +53,25 @@ describe('shownTools', () => {
   });
 });
 
-describe('togglesSearch', () => {
-  const at = (words: string) => settingsFromLink(searchTool, { search: words });
+describe('a change to the search as a step Back can undo', () => {
+  const at = (words: string) =>
+    fromLink({ searchParams: { search: words } }, emptyTools(searchTool), tools);
+  const step = (before: string, after: string) => toolsChange(at(before), at(after), tools).step;
 
   it('turns the search on with the first word long enough to search on', () => {
-    expect(togglesSearch(searchTool, at('א'), at('אב'))).toBe(true);
+    expect(step('א', 'אב')).toBe(true);
   });
 
   it('does not count a lone letter', () => {
-    expect(togglesSearch(searchTool, at(''), at('א'))).toBe(false);
+    expect(step('', 'א')).toBe(false);
   });
 
   it('edits, rather than toggles, as a word grows or another joins it', () => {
-    expect(togglesSearch(searchTool, at('אב'), at('אבר'))).toBe(false);
-    expect(togglesSearch(searchTool, at('אברם'), at('אברם,אברהם'))).toBe(false);
+    expect(step('אב', 'אבר')).toBe(false);
+    expect(step('אברם', 'אברם,אברהם')).toBe(false);
   });
 
   it('turns the search off when the last word goes', () => {
-    expect(togglesSearch(searchTool, at('אברם'), at(''))).toBe(true);
+    expect(step('אברם', '')).toBe(true);
   });
 });

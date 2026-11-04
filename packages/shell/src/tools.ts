@@ -10,7 +10,7 @@ function withData<T>(tool: Overlay<T>, settings: unknown, loaded: Loaded): ToolO
 }
 
 /** Whether a change turns the search on or off, a step Back can undo, rather than edits it. */
-export function togglesSearch<T, S>(search: SearchTool<T, S>, before: S, after: S): boolean {
+function togglesSearch<T, S>(search: SearchTool<T, S>, before: S, after: S): boolean {
   return search.isSearching(before) !== search.isSearching(after);
 }
 
@@ -32,14 +32,14 @@ export interface ToolState<S> {
 }
 
 /** What a link or a story stop names of the tools. */
-export interface LinkedTools {
+interface LinkedTools {
   overlay?: string | null;
   overlayParams?: LinkParams;
   searchParams?: LinkParams;
 }
 
 /** What a link carries of the tools, with values at their default left out. */
-export interface ToolsLink {
+interface ToolsLink {
   overlay?: string;
   overlayParams: Record<string, string>;
   searchParams: Record<string, string>;
@@ -69,7 +69,6 @@ export function activeOverlay<T, S>(
  * call.
  */
 export function settingsIn<T, U>(state: ToolState<unknown>, overlay: Overlay<T, U>): U {
-  // Only this overlay's own settings are stored under its id.
   return state.overlays.has(overlay.id)
     ? (state.overlays.get(overlay.id) as U)
     : settingsFromLink(overlay, {});
@@ -121,7 +120,7 @@ export function withOverlaySettings<T, S, U>(
   overlay: Overlay<T, U>,
   update: SettingsUpdate<U>,
 ): ToolState<S> {
-  const next = update(settingsIn(state, overlay), searchColors(state, tools));
+  const next = update(settingsIn(state, overlay), searchColors(state.search, tools));
   return built({ ...state, overlays: withEntry(state.overlays, overlay.id, next) });
 }
 
@@ -140,7 +139,7 @@ export function withReset<T, S>(
   tools: TextTools<T, S>,
   overlay: Overlay<T>,
 ): ToolState<S> {
-  const next = settingsFromLink(overlay, {}, searchColors(state, tools));
+  const next = settingsFromLink(overlay, {}, searchColors(state.search, tools));
   return built({ ...state, overlays: withEntry(state.overlays, overlay.id, next) });
 }
 
@@ -157,16 +156,40 @@ export function fromLink<T, S>(
   const search = settingsFromLink(tools.search, link.searchParams ?? {});
   const overlay = overlayNamed(tools, link.overlay);
   if (!overlay) return built({ ...base, active: null, search });
-  const settings = settingsFromLink(
-    overlay,
-    link.overlayParams ?? {},
-    tools.search.colorsInUse?.(search) ?? [],
-  );
+  const settings = settingsFromLink(overlay, link.overlayParams ?? {}, searchColors(search, tools));
   return built({
     active: overlay.id,
     overlays: withEntry(base.overlays, overlay.id, settings),
     search,
   });
+}
+
+/** What a change to the tools touched. */
+interface ToolsChange {
+  /** A different overlay is on, or none is. */
+  switched: boolean;
+  /** The overlay that stayed on has new settings. */
+  settings: boolean;
+  search: boolean;
+  /** The overlay switched or the search turned on or off: a step Back can undo. */
+  step: boolean;
+}
+
+export function toolsChange<T, S>(
+  before: ToolState<S>,
+  after: ToolState<S>,
+  tools: TextTools<T, S>,
+): ToolsChange {
+  const switched = before.active !== after.active;
+  const { active } = after;
+  return {
+    switched,
+    // The overlay that is on always has an entry, so its settings compare by identity.
+    settings:
+      !switched && active !== null && before.overlays.get(active) !== after.overlays.get(active),
+    search: before.search !== after.search,
+    step: switched || togglesSearch(tools.search, before.search, after.search),
+  };
 }
 
 /** The tools as a link carries them. */
@@ -190,12 +213,12 @@ export function withOverlayTrimmed<T, S>(
   const overlay = activeOverlay(state, tools);
   if (!overlay) return state;
   const linked = settingsToLink(overlay, settingsIn(state, overlay));
-  const next = settingsFromLink(overlay, linked, searchColors(state, tools));
+  const next = settingsFromLink(overlay, linked, searchColors(state.search, tools));
   return built({ ...state, overlays: withEntry(state.overlays, overlay.id, next) });
 }
 
-function searchColors<T, S>(state: ToolState<S>, tools: TextTools<T, S>): readonly number[] {
-  return tools.search.colorsInUse?.(state.search) ?? [];
+function searchColors<T, S>(search: S, tools: TextTools<T, S>): readonly number[] {
+  return tools.search.colorsInUse?.(search) ?? [];
 }
 
 function overlayColors<T, S>(state: ToolState<S>, tools: TextTools<T, S>): readonly number[] {

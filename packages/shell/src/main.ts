@@ -96,8 +96,23 @@ import {
   type SettingsUpdate,
   type Tools,
 } from './overlays/types.ts';
-import { togglesSearch } from './tools.ts';
-import { createToolsState } from './toolsState.ts';
+import {
+  activeOverlay,
+  emptyTools,
+  fromLink,
+  pickedTools,
+  settingsIn,
+  shownTools,
+  toLink,
+  toolsChange,
+  withActive,
+  withOverlaySettings,
+  withOverlayTrimmed,
+  withReset,
+  withSearch,
+  type TextTools,
+  type ToolState,
+} from './tools.ts';
 import { dataFor, loadFiles, type Loaded } from './dataFiles.ts';
 import { filesFirst, staleAfterLanding, type LandingView, type OpeningView } from './downloads.ts';
 import { createLoader } from './loader.ts';
@@ -114,7 +129,6 @@ import {
   type StopPlace,
 } from './scrollytelling/storyColumn.ts';
 import { computeBlendedColors, stopTools, createStoryTools } from './scrollytelling/overlayBlender';
-import type { TextTools } from './tools.ts';
 import {
   REJOIN_EASE_MS,
   STORY_DRIVING,
@@ -250,7 +264,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   const renderState = createRenderState(renderContext, items, dpr);
 
-  const toolsState = createToolsState(textTools);
+  // The search and at most one overlay. Only setTools and leaveStory change it.
+  let tools: ToolState<S> = emptyTools(searchTool);
+  const overlayOn = (): Overlay<I> | null => activeOverlay(tools, textTools);
+  const overlayId = (state = tools): string => state.active ?? NO_OVERLAY;
+  const searching = (): boolean => searchTool.isSearching(tools.search);
 
   // The one colour layer on the map: either a settled overlay's colours or a
   // story transition's blend. The shader draws the hover on top of it
@@ -285,7 +303,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /** The overlay and the search as they stand, each null while off. */
-  const toolsNow = (): Tools<I> => toolsState.shown(loader.loaded());
+  const toolsNow = (): Tools<I> => shownTools(tools, textTools, loader.loaded());
 
   /** The non-match dim a front tool rests at: search's own, or none for the overlay. */
   function dimFor(front: FrontTool): number {
@@ -306,15 +324,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function updateLegend(): void {
-    const tools = toolsNow();
+    const shown = toolsNow();
     const picked = {
-      search: toolsState.searching() ? searchTool : null,
-      overlay: toolsState.overlay(),
+      search: searching() ? searchTool : null,
+      overlay: overlayOn(),
     };
     const rows: LegendRow[] = [];
     const warnings: Node[] = [];
     for (const panel of ['search', 'overlay'] as const) {
-      const on = tools[panel];
+      const on = shown[panel];
       const tool = picked[panel];
       if (on) {
         rows.push({
@@ -329,7 +347,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     }
     showLegend(mapLegend, rows, warnings);
-    const on = tools.overlay;
+    const on = shown.overlay;
     backdrop.show(on?.tool.backdrop?.({ items, settings: on.settings, data: on.data }) ?? null);
   }
 
@@ -388,8 +406,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function setFrontTool(next: FrontTool): void {
     if (next === frontTool) return;
     frontTool = next;
-    const tools = toolsNow();
-    if (!tools.search || !tools.overlay) {
+    const shown = toolsNow();
+    if (!shown.search || !shown.overlay) {
       applyTools();
       render();
       return;
@@ -462,19 +480,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
-    const before = toolsState.overlay();
-    toolsState.fromLink(stop);
-    if (toolsState.overlay() !== before) overlaySwitched(before);
-    // The pin is set before the panel is drawn, which draws what the pin has.
+    // The pin is set before the panels are drawn, which draw what the pin has.
     const unpinned = pinnedItem !== null && !stop.pin;
     if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
     else pinnedItem = null;
-    searchChanged(true);
-    overlayChanged(true);
+    setTools(fromLink(stop, tools, textTools), 'outside');
 
     // A stop with a search puts search in front for it, whether or not the
     // reader has a panel open to see it (stops don't open panels).
-    if (toolsState.searching()) frontTool = 'search';
+    if (searching()) frontTool = 'search';
 
     // The panel's redraw shows a pin but cannot clear one; pinItem would write URL/telemetry.
     if (unpinned) updateSidebarWrapper(null);
@@ -872,7 +886,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const popupHold = createPopupHold();
 
   function buildCurrentUrlState(): UrlState {
-    const state: UrlState = toolsState.toUrl();
+    const state: UrlState = toLink(tools, textTools);
 
     if (pinnedItem) {
       state.square = pinnedItem.id;
@@ -925,15 +939,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
     viewFiles.fetchPopup(item);
-    const tools = toolsNow();
+    const on = toolsNow();
     updateSidebar(
       sidebarElements,
       item,
-      (shown) => text.popupText(shown, loader.loaded(), tools.overlay, tools.search),
+      (shown) => text.popupText(shown, loader.loaded(), on.overlay, on.search),
       {
         waiting: item ? viewFiles.waitingLanguages(item) : {},
         wordsClickable: dataFor(searchTool, loader.loaded()) !== null,
-        ...tools,
+        ...on,
         pinned: isPinned,
       },
     );
@@ -977,7 +991,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     loader,
     files: source.files,
     search: searchTool,
-    searchSettings: toolsState.searchSettings,
+    searchSettings: () => tools.search,
     searchControls,
     closed: showLoadState,
   });
@@ -985,27 +999,49 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const overlayFocusContainer = document.getElementById('overlay-focus');
   const overlayStarts = document.getElementById('overlay-starts')!;
 
-  /** Switch the active overlay without drawing its UI, painting or writing the URL. */
-  function activateOverlay(id: string): void {
-    const before = toolsState.overlay();
-    toolsState.switchTo(id);
-    overlaySwitched(before);
-  }
+  /**
+   * Make `next` the tools and redraw what shows them. A reader's change redraws its panel in place,
+   * keeping the focus in it. While a story has the map its frame paints, as a repaint here would
+   * replace its blend between two stops. A link or a stop writes no URL (`applyingExternalState`).
+   */
+  function setTools(next: ToolState<S>, by: 'reader' | 'outside'): void {
+    const before = tools;
+    const change = toolsChange(before, next, textTools);
+    tools = next;
+    const outside = by === 'outside';
+    if (!outside && !change.switched && !change.settings && !change.search) return;
 
-  /** Let the overlay that was on clean up, and mark the page with the one on now. */
-  function overlaySwitched(before: Overlay<I> | null): void {
-    before?.destroy?.();
-    document.body.dataset.overlay = toolsState.overlayId();
+    if (change.switched) {
+      if (!outside) trackOverlaySwitch(overlayId(), overlayId(before));
+      activeOverlay(before, textTools)?.destroy?.();
+    }
+    document.body.dataset.overlay = overlayId();
+    if (!outside && change.search) {
+      searchTool.telemetry.readerChanged(tools.search, dataFor(searchTool, loader.loaded()));
+    }
+    const painting = driver.by === 'reader';
+    if (painting) applyTools();
+    if (outside || change.search) {
+      viewFiles.fetchSearch();
+      drawSearchPanel(outside);
+    }
+    if (outside || change.switched || change.settings) {
+      drawOverlayPanel(outside || change.switched);
+    }
+    updateLegend();
+    refreshPopup();
+    if (painting) render();
+    syncUrl(change.step);
   }
 
   function renderOverlayLegend(): void {
     if (overlayLegendContainer) {
       overlayLegendContainer.innerHTML = '';
-      const overlay = toolsState.overlay();
+      const overlay = overlayOn();
       if (overlay) {
         overlay.renderLegend?.(
           overlayLegendContainer,
-          toolsState.settingsOf(overlay),
+          settingsIn(tools, overlay),
           dataFor(overlay, loader.loaded()),
           items,
         );
@@ -1024,7 +1060,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function renderOverlayFocus(): void {
     if (!overlayFocusContainer) return;
     overlayFocusContainer.innerHTML = '';
-    const overlay = toolsState.overlay();
+    const overlay = overlayOn();
     if (!overlay?.renderFocus) return;
     const data = dataFor(overlay, loader.loaded());
     if (!data) return;
@@ -1036,7 +1072,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       overlayFocusContainer,
       hoveredItem,
       pinnedItem,
-      toolsState.settingsOf(overlay),
+      settingsIn(tools, overlay),
       data,
       travelTo,
     );
@@ -1044,80 +1080,52 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** Draw the active overlay's controls into what is already there. */
   function renderOverlayControls(): void {
-    const overlay = toolsState.overlay();
+    const overlay = overlayOn();
     if (!overlay || !overlayControlsContainer) return;
     overlay.renderControls?.(
       overlayControlsContainer,
-      toolsState.settingsOf(overlay),
+      settingsIn(tools, overlay),
       (update) => changeSettings(overlay, update),
       dataFor(overlay, loader.loaded()),
     );
   }
 
   /**
-   * Redraw everything that shows the active overlay or its settings. `fresh`
-   * clears the controls first, for a different overlay or settings from
-   * elsewhere; a reader's own edit redraws into them, keeping their focus.
+   * Draw the overlay panel. `fresh` clears the controls first, for a different overlay or settings
+   * from elsewhere; a reader's own edit redraws into them, keeping their focus.
    */
-  function overlayChanged(fresh: boolean): void {
-    drawOverlayPanel(fresh);
-    updateLegend();
-    refreshPopup();
-  }
-
   function drawOverlayPanel(fresh: boolean): void {
     if (fresh) {
-      if (overlaySelect) overlaySelect.value = toolsState.overlayId();
+      if (overlaySelect) overlaySelect.value = overlayId();
       if (overlayControlsContainer) overlayControlsContainer.innerHTML = '';
-      overlayStarts.innerHTML = toolsState.overlay()
+      overlayStarts.innerHTML = overlayOn()
         ? ''
         : startingPointsHtml(searchTool, text.overlays, storyColumn.listed());
     }
     renderOverlayControls();
     renderOverlayFocus();
     renderOverlayLegend();
-    overlayDescription.textContent = toolsState.overlay()?.description ?? '';
+    overlayDescription.textContent = overlayOn()?.description ?? '';
   }
 
   /**
-   * Apply a change a reader asked for to the settings held for `overlay`. A
-   * control left over from an overlay that is no longer showing still changes
-   * that overlay's settings, but paints nothing.
+   * A reader's change to the settings held for `overlay`. A control left over from an overlay that
+   * is no longer showing still changes that overlay's settings, but paints nothing.
    */
-  function changeSettings<S>(overlay: Overlay<I, S>, update: SettingsUpdate<S>): void {
-    toolsState.changeOverlay(overlay, update);
-    if (overlay !== toolsState.overlay()) return;
-
-    applyTools();
-    overlayChanged(false);
-    render();
-    syncUrl(false);
+  function changeSettings<U>(overlay: Overlay<I, U>, update: SettingsUpdate<U>): void {
+    setTools(withOverlaySettings(tools, textTools, overlay, update), 'reader');
   }
 
-  /**
-   * Redraw what shows the search. `fresh` clears the controls first, for
-   * settings from a link or a story stop; a reader's own edit redraws into
-   * them, keeping their focus.
-   */
-  function searchChanged(fresh: boolean): void {
-    viewFiles.fetchSearch();
-    drawSearchPanel(fresh);
-    updateLegend();
-    refreshPopup();
-  }
-
+  /** Draw the search panel; `fresh` as for the overlay panel. */
   function drawSearchPanel(fresh: boolean): void {
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
-      searchTool.telemetry.replaced(
-        toolsState.searchSettings(),
-        dataFor(searchTool, loader.loaded()),
-      );
+      searchTool.telemetry.replaced(tools.search, dataFor(searchTool, loader.loaded()));
     }
     searchTool.renderControls?.(
       searchControls,
-      toolsState.searchSettings(),
+      tools.search,
       changeSearch,
       dataFor(searchTool, loader.loaded()),
     );
@@ -1125,21 +1133,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function changeSearch(update: SettingsUpdate<S>): void {
-    const { before, after } = toolsState.changeSearch(update);
-    searchTool.telemetry.readerChanged(after, dataFor(searchTool, loader.loaded()));
-    applyTools();
-    searchChanged(false);
-    render();
-    syncUrl(togglesSearch(searchTool, before, after));
+    setTools(withSearch(tools, textTools, update), 'reader');
   }
 
   function setOverlay(id: string): void {
-    trackOverlaySwitch(id, toolsState.overlayId());
-    activateOverlay(id);
-    overlayChanged(true);
-    applyTools();
-    render();
-    syncUrl(true);
+    setTools(withActive(tools, textTools, id), 'reader');
   }
 
   // sendBeacon survives the page navigating away, so following the link to
@@ -1147,7 +1145,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   sidebarElements.link?.addEventListener('click', () => {
     const item = pinnedItem ?? hoveredItem;
     if (!item) return;
-    trackSefariaOpen(item.id, text.area(item).area, toolsState.overlayId());
+    trackSefariaOpen(item.id, text.area(item).area, overlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -1159,7 +1157,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     document.addEventListener('keydown', (e) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'C') {
         e.preventDefault();
-        const { overlay, overlayParams, searchParams } = toolsState.toUrl();
+        const { overlay, overlayParams, searchParams } = toLink(tools, textTools);
         const comment = writeStopComment(
           'STOP_ID',
           { camera: cameraSetting(camera), overlay, pin: pinnedItem?.id },
@@ -1177,16 +1175,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     pinAndGlide,
     openOverlay: (overlay, update) => {
       takeOver('takeover');
-      if (toolsState.overlayId() !== overlay.id) {
-        toolsState.reset(overlay);
-        setOverlay(overlay.id);
-      }
-      changeSettings(overlay, update);
+      // One change, so one paint and one history entry, with Back returning to before the click.
+      const on =
+        tools.active === overlay.id
+          ? tools
+          : withActive(withReset(tools, textTools, overlay), textTools, overlay.id);
+      setTools(withOverlaySettings(on, textTools, overlay, update), 'reader');
       if (frame.mode === 'explore' && frame.open !== 'overlay') {
         dispatch({ type: 'choose', panel: 'overlay' });
       }
     },
-    searchSettings: toolsState.searchSettings,
+    searchSettings: () => tools.search,
     changeSearch: (update) => {
       takeOver('takeover');
       changeSearch(update);
@@ -1202,7 +1201,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       drawOverlayPanel(true);
     },
   });
-  searchChanged(true);
+  viewFiles.fetchSearch();
+  drawSearchPanel(true);
+  updateLegend();
+  refreshPopup();
 
   applyLanguageChoice(source.languages);
 
@@ -1252,8 +1254,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function leaveStory(exploring: Frame): void {
     takeOver('fold');
-    // Exploring keeps only what a link carries, so a stop's highlight stays behind.
-    if (toolsState.keepOnlyLinked()) applyTools();
+    // Exploring keeps only what a link carries, so a stop's highlight stays behind. The panels
+    // and legend are not redrawn, so they keep showing what the stop set.
+    const trimmed = withOverlayTrimmed(tools, textTools);
+    if (trimmed !== tools) {
+      tools = trimmed;
+      applyTools();
+    }
     closeStory(exploring);
     rememberVisit();
     render();
@@ -1331,7 +1338,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (target.closest('.story-leave'))
       return dispatch({
         type: 'choose',
-        panel: toolsState.searching() ? 'search' : 'overlay',
+        panel: searching() ? 'search' : 'overlay',
       });
     const chosen = storyChosen(target);
     if (chosen) return readStory(chosen.id, chosen.fromStart);
@@ -1591,7 +1598,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** What the link or the story stop shows first. */
   function openingView(): OpeningView<I> {
-    if (frame.mode !== 'story') return viewFiles.opening(toolsState.picked(), pinnedItem);
+    if (frame.mode !== 'story') return viewFiles.opening(pickedTools(tools, textTools), pinnedItem);
     const { stop } = storyColumn.where();
     const item = stop.pin ? squares.find(stop.pin) : null;
     return viewFiles.opening(stopTools(stop, storyTools), item);
@@ -1599,7 +1606,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function landingView(): LandingView<I> {
     const shown = pinnedItem ?? hoveredItem;
-    let map = toolsState.picked();
+    let map = pickedTools(tools, textTools);
     if (driver.by === 'story' && driver.blend) {
       map = [
         ...stopTools(driver.blend.from, storyTools),
@@ -1609,7 +1616,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       const state = storyColumn.view();
       map = [...stopTools(state.fromStop, storyTools), ...stopTools(state.toStop, storyTools)];
     }
-    return viewFiles.landing(colorSource(driver), map, toolsState.overlay(), shown);
+    return viewFiles.landing(colorSource(driver), map, overlayOn(), shown);
   }
 
   /** Bring the map up to date with data that just landed, the way it is being drawn. */
@@ -1681,21 +1688,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       closeStory(landingFrame(phone, open, open === 'overlay' && next.overlay === NO_OVERLAY));
     }
 
-    const before = toolsState.overlay();
-    toolsState.fromLink(next);
-    // Even for the same overlay, as its settings are new.
-    overlaySwitched(before);
     const item = next.square ? squares.find(next.square) : null;
     pinnedItem = item;
-    searchChanged(true);
-    overlayChanged(true);
-    if (!item) updateSidebarWrapper(null);
-
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));
 
-    applyTools();
-    render();
+    setTools(fromLink(next, tools, textTools), 'outside');
+    if (!item) updateSidebarWrapper(null);
 
     if (next.mode === 'story') {
       openStory('cut', 'link', next.story, next.stop);

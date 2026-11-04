@@ -880,7 +880,7 @@ describe('Search Overlay', () => {
     it('still calls onVerseClick after the overlay is destroyed and remounted', () => {
       // configureSearch runs once at startup, not on every activation, so the
       // click callback it hands in must survive an overlay switch the way
-      // activateOverlay drives one: render, destroy, render again.
+      // the shell drives one: render, destroy, render again.
       const onVerseClick = vi.fn();
       configure({ verses: testVerses, callbacks: { onVerseClick } });
 
