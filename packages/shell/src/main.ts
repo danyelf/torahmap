@@ -1000,9 +1000,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const overlayStarts = document.getElementById('overlay-starts')!;
 
   /**
-   * Make `next` the tools and redraw what shows them. A reader's change runs only what it touched,
-   * keeping the focus in the controls it came from, then paints and writes the URL. A link's or a
-   * story stop's redraws both panels afresh and leaves the painting to the caller.
+   * Make `next` the tools and redraw what shows them. A reader's change redraws only what it
+   * touched, keeping the focus in the controls it came from; a link's or a story stop's redraws
+   * both panels afresh. The map is painted here while the reader has it; while a story has it, the
+   * story's frame paints, as a repaint here would replace its blend between two stops. URL writes
+   * are off while a link or a stop is applied (`applyingExternalState`).
    */
   function setTools(next: ToolState<S>, by: 'reader' | 'outside'): void {
     const before = tools;
@@ -1019,7 +1021,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (!outside && change.search) {
       searchTool.telemetry.readerChanged(tools.search, dataFor(searchTool, loader.loaded()));
     }
-    if (!outside) applyTools();
+    const painting = driver.by === 'reader';
+    if (painting) applyTools();
     if (outside || change.search) {
       viewFiles.fetchSearch();
       drawSearchPanel(outside);
@@ -1029,8 +1032,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
     updateLegend();
     refreshPopup();
-    if (outside) return;
-    render();
+    if (painting) render();
     syncUrl(change.step);
   }
 
@@ -1690,14 +1692,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     const item = next.square ? squares.find(next.square) : null;
     pinnedItem = item;
-    setTools(fromLink(next, tools, textTools), 'outside');
-    if (!item) updateSidebarWrapper(null);
-
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));
 
-    applyTools();
-    render();
+    setTools(fromLink(next, tools, textTools), 'outside');
+    if (!item) updateSidebarWrapper(null);
 
     if (next.mode === 'story') {
       openStory('cut', 'link', next.story, next.stop);
