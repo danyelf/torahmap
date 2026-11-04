@@ -118,38 +118,6 @@ describe('taking the tools from a link or a story stop', () => {
     state = fromLink({ overlay: 'picks', overlayParams: { picksColors: '1' } }, state, tools);
     expect(settingsIn(state, other)).toEqual([4]);
   });
-
-  it('keeps the settings held when the link names the same, so nothing changed', () => {
-    const link = {
-      overlay: 'picks',
-      overlayParams: { picksColors: '1' },
-      searchParams: { searchColors: '2' },
-    };
-    const before = fromLink(link, empty(), tools);
-    const after = fromLink(link, before, tools);
-    expect(after.search).toBe(before.search);
-    expect(settingsIn(after, picks)).toBe(settingsIn(before, picks));
-    expect(toolsChange(before, after, tools)).toMatchObject({
-      switched: false,
-      settings: false,
-      search: false,
-    });
-  });
-
-  it('takes the settings a link names when they differ from those held', () => {
-    const before = fromLink(
-      { overlay: 'picks', overlayParams: { picksColors: '1' } },
-      empty(),
-      tools,
-    );
-    const after = fromLink(
-      { overlay: 'picks', overlayParams: { picksColors: '4' } },
-      before,
-      tools,
-    );
-    expect(settingsIn(after, picks)).toEqual([4]);
-    expect(toolsChange(before, after, tools).settings).toBe(true);
-  });
 });
 
 describe('leaving a story', () => {
@@ -260,7 +228,14 @@ describe('the value', () => {
 });
 
 describe('what a change touched', () => {
-  const nothing = { switched: false, settings: false, search: false, step: false };
+  const nothing = {
+    switched: false,
+    settings: false,
+    search: false,
+    step: false,
+    linked: { overlay: false, search: false },
+  };
+  const linked = (overlay: boolean, search: boolean) => ({ linked: { overlay, search } });
 
   it('sees a switch, which Back can undo', () => {
     const before = empty();
@@ -274,7 +249,11 @@ describe('what a change touched', () => {
   it("sees an edit to the overlay's settings", () => {
     const before = on('picks');
     const after = withOverlaySettings(before, tools, picks, add(1));
-    expect(toolsChange(before, after, tools)).toEqual({ ...nothing, settings: true });
+    expect(toolsChange(before, after, tools)).toEqual({
+      ...nothing,
+      settings: true,
+      ...linked(true, false),
+    });
   });
 
   it('sees nothing in an edit to an overlay that is not on', () => {
@@ -297,8 +276,32 @@ describe('what a change touched', () => {
     const off = empty();
     const searching = withSearch(off, tools, add(1));
     const more = withSearch(searching, tools, add(2));
-    expect(toolsChange(off, searching, tools)).toEqual({ ...nothing, search: true, step: true });
-    expect(toolsChange(searching, more, tools)).toEqual({ ...nothing, search: true });
-    expect(toolsChange(more, off, tools)).toEqual({ ...nothing, search: true, step: true });
+    const searchLinked = linked(false, true);
+    expect(toolsChange(off, searching, tools)).toEqual({
+      ...nothing,
+      search: true,
+      step: true,
+      ...searchLinked,
+    });
+    expect(toolsChange(searching, more, tools)).toEqual({
+      ...nothing,
+      search: true,
+      ...searchLinked,
+    });
+    expect(toolsChange(more, off, tools)).toEqual({
+      ...nothing,
+      search: true,
+      step: true,
+      ...searchLinked,
+    });
+  });
+
+  it('tells a link naming the same tools from one naming new ones', () => {
+    const link = { overlay: 'picks', overlayParams: { picksColors: '1' } };
+    const before = fromLink(link, empty(), tools);
+    const again = fromLink(link, before, tools);
+    const other = fromLink({ ...link, searchParams: { searchColors: '2' } }, before, tools);
+    expect(toolsChange(before, again, tools)).toMatchObject(linked(false, false));
+    expect(toolsChange(before, other, tools)).toMatchObject(linked(false, true));
   });
 });

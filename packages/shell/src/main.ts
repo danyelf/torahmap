@@ -1000,9 +1000,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const overlayStarts = document.getElementById('overlay-starts')!;
 
   /**
-   * Make `next` the tools and redraw what shows them. Only a tool that changed has its panel
-   * redrawn: in place for a reader, keeping the focus in it, and afresh for a link or a stop. While a story has the map its frame paints, as a repaint here would
-   * replace its blend between two stops. A link or a stop writes no URL (`applyingExternalState`).
+   * Make `next` the tools and redraw what shows them. A panel is redrawn into what is there, keeping
+   * its focus, unless a link or a stop names its tool anew. While a story has the map its frame
+   * paints, as a repaint here would replace its blend between two stops. A link or a stop writes no
+   * URL (`applyingExternalState`).
    */
   function setTools(next: ToolState<S>, by: 'reader' | 'outside'): void {
     const before = tools;
@@ -1023,11 +1024,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (painting) applyTools();
     if (change.search) {
       viewFiles.fetchSearch();
-      drawSearchPanel(outside);
+      drawSearchPanel(outside && change.linked.search);
     }
-    if (change.switched || change.settings) drawOverlayPanel(outside || change.switched);
-    // A link or a stop may move the pin, which the overlay's focus shows.
-    else if (outside) renderOverlayFocus();
+    if (change.switched || change.settings) {
+      drawOverlayPanel(change.switched || (outside && change.linked.overlay));
+    }
     updateLegend();
     refreshPopup();
     if (painting) render();
