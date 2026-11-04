@@ -188,6 +188,21 @@ test('Back that only pins a verse again leaves the tool panels as they were', as
   expect(await marked()).toEqual(['yes', 'yes']);
 });
 
+test('unpinning a verse under the pointer leaves it in the popup, as a hover', async ({ page }) => {
+  desktopOnly('Escape unpins from a keyboard, and a mouse hovers');
+  await openMap(page, 'verse=Genesis.22.1&zoom=1.4');
+  // The pinned verse is centred, so the pointer rests on it.
+  const canvas = (await page.locator('#canvas').boundingBox())!;
+  await page.mouse.move(canvas.x + canvas.width / 2, canvas.y + canvas.height / 2);
+  const ref = page.locator('#popup .ref-text');
+  const pinned = await ref.textContent();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => new URL(page.url()).searchParams.get('verse')).toBeNull();
+  await expect(page.locator('#popup')).toHaveClass(/\bvisible\b/);
+  await expect(page.locator('#popup')).not.toHaveClass(/\bpinned\b/);
+  await expect(ref).toHaveText(pinned!);
+});
+
 test("a card's × during a story hands the map to the reader, the story still open", async ({
   page,
 }) => {

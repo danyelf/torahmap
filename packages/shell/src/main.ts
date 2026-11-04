@@ -481,17 +481,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
     // The pin is set before the panels are drawn, which draw what the pin has.
-    const unpinned = pinnedItem !== null && !stop.pin;
-    if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
-    else pinnedItem = null;
+    setPin(stop.pin ? (squares.find(stop.pin) ?? pinnedItem) : null);
     setTools(fromLink(stop, tools, textTools), 'outside');
 
     // A stop with a search puts search in front for it, whether or not the
     // reader has a panel open to see it (stops don't open panels).
     if (searching()) frontTool = 'search';
-
-    // The panel's redraw shows a pin but cannot clear one; pinItem would write URL/telemetry.
-    if (unpinned) updateSidebarWrapper(null);
   }
 
   const camera = text.startCamera(mapViewport());
@@ -792,8 +787,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     takeOver('takeover');
     trackSquareClick(item.id, text.area(item).area);
     const focusBefore = focusNow();
-    pinnedItem = item;
-    updateSidebarWrapper(item, true);
+    setPin(item);
     if (centerCamera) {
       centerOnItem(item);
     }
@@ -804,8 +798,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function unpinItem(): void {
     takeOver('takeover');
     const focusBefore = focusNow();
-    pinnedItem = null;
-    updateSidebarWrapper(null);
+    setPin(null);
     repaint(focusBefore);
     syncUrl(true);
   }
@@ -826,6 +819,16 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     litHoverItem = square;
     if (!sameItem(focusBefore.hovered, square)) repaint(focusBefore);
   });
+
+  /**
+   * A story moving the map changes the square under a still pointer with no pointer event. The
+   * story's frame draws the highlight and takes the colours' hover when it next paints; the popup
+   * and the overlay's focus stay as they were.
+   */
+  function followPointer(): void {
+    hoveredItem = litHoverItem = gestures.squareUnderMouse();
+    restHover.cancel();
+  }
 
   function setHover(square: I | null): void {
     if (sameItem(hoveredItem, square)) return;
@@ -960,7 +963,17 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    */
   function refreshPopup(): void {
     if (pinnedItem) updateSidebarWrapper(pinnedItem, true);
-    else if (hoveredItem) updateSidebarWrapper(hoveredItem, false);
+    else updateSidebarWrapper(hoveredItem, false);
+  }
+
+  /**
+   * Every pin and unpin goes through here; who asked decides what else follows (the camera,
+   * the map's colours, the URL, telemetry). The popup shows the pin, else the hovered square.
+   */
+  function setPin(item: I | null): void {
+    const changed = !sameItem(pinnedItem, item);
+    pinnedItem = item;
+    if (changed) refreshPopup();
   }
 
   /** Redraw every place that says a file is loading or failed. */
@@ -1580,9 +1593,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const nearer = nearerStop(state);
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
-    // Not setHover: the render below draws the highlight.
-    hoveredItem = litHoverItem = gestures.squareUnderMouse();
-    restHover.cancel();
+    followPointer();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.
@@ -1695,12 +1706,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
 
     const item = next.square ? squares.find(next.square) : null;
-    pinnedItem = item;
+    setPin(item);
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));
 
     setTools(fromLink(next, tools, textTools), 'outside');
-    if (!item) updateSidebarWrapper(null);
 
     if (next.mode === 'story') {
       openStory('cut', 'link', next.story, next.stop);
