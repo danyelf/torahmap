@@ -1001,7 +1001,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /**
    * Make `next` the tools and redraw what shows them. A panel is redrawn into what is there, keeping
-   * its focus, unless a link or a stop names its tool anew. While a story has the map its frame
+   * its focus, unless its overlay switched or a link or a stop names other settings for its tool
+   * than the panel had. While a story has the map its frame
    * paints, as a repaint here would replace its blend between two stops. A link or a stop writes no
    * URL (`applyingExternalState`).
    */
@@ -1017,8 +1018,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       activeOverlay(before, textTools)?.destroy?.();
     }
     document.body.dataset.overlay = overlayId();
-    if (!outside && change.search) {
-      searchTool.telemetry.readerChanged(tools.search, dataFor(searchTool, loader.loaded()));
+    if (change.search) {
+      const data = dataFor(searchTool, loader.loaded());
+      // A link's search, even one naming the words already there, counts as sent, not the reader's.
+      if (outside) searchTool.telemetry.replaced(tools.search, data);
+      else searchTool.telemetry.readerChanged(tools.search, data);
     }
     const painting = driver.by === 'reader';
     if (painting) applyTools();
@@ -1092,8 +1096,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Draw the overlay panel. `fresh` clears the controls first, for a different overlay or settings
-   * from elsewhere; a reader's own edit redraws into them, keeping their focus.
+   * Draw the overlay panel. `fresh` clears the controls first; otherwise they are redrawn into,
+   * keeping their focus.
    */
   function drawOverlayPanel(fresh: boolean): void {
     if (fresh) {
@@ -1122,7 +1126,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
-      searchTool.telemetry.replaced(tools.search, dataFor(searchTool, loader.loaded()));
     }
     searchTool.renderControls?.(
       searchControls,

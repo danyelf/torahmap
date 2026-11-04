@@ -183,6 +183,7 @@ export function toolsChange<T, S>(
   tools: TextTools<T, S>,
 ): ToolsChange {
   const switched = before.active !== after.active;
+  const [linkBefore, linkAfter] = [toLink(before, tools), toLink(after, tools)];
   const { active } = after;
   return {
     switched,
@@ -192,11 +193,8 @@ export function toolsChange<T, S>(
     search: before.search !== after.search,
     step: switched || togglesSearch(tools.search, before.search, after.search),
     linked: {
-      overlay: !sameParams(toLink(before, tools).overlayParams, toLink(after, tools).overlayParams),
-      search: !sameParams(
-        settingsToLink(tools.search, before.search),
-        settingsToLink(tools.search, after.search),
-      ),
+      overlay: !sameParams(linkBefore.overlayParams, linkAfter.overlayParams),
+      search: !sameParams(linkBefore.searchParams, linkAfter.searchParams),
     },
   };
 }
