@@ -154,6 +154,20 @@ describe('the cited works overlay', () => {
     expect(open('vega')[0]).toContain('Vega-Lite (2020)');
     expect(open('munzner')[0]).toContain('Visualization Analysis and Design');
   });
+
+  it('takes the reader from a listed paper to the square that holds the work', () => {
+    const container = document.createElement('div');
+    const travels: string[] = [];
+    citedWorksOverlay.renderControls!(
+      container,
+      { picked: [workId(2)] },
+      () => {},
+      data,
+      (id) => travels.push(id),
+    );
+    container.querySelector<HTMLElement>('.search-result')!.click();
+    expect(travels).toEqual(['1.2']);
+  });
 });
 
 describe('the entries of cited works in a text', () => {

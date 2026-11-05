@@ -11,7 +11,7 @@ export const citedWorksOverlay = listOverlay<CitedData>({
   noun: { one: 'cited work', many: 'cited works' },
   data: CITED_DATA,
   namesOf: (paper, data) => worksByPaper(data).get(paper.index) ?? [],
-  namesAt: (item, data) => worksAt(data).get(item.id) ?? [],
+  namesAt: (id, data) => worksAt(data).get(id) ?? [],
   titlesOf: (id, { cited }) => [cited[Number(id)].title],
   ...CITED_WORDING,
   label: (id, { cited }) => workTitle(cited[Number(id)]),
