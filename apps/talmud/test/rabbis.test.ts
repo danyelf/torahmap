@@ -172,33 +172,77 @@ describe('the hover text', () => {
   });
 });
 
-describe('the finder', () => {
-  function open(settings = picking()) {
-    const container = document.createElement('div');
-    document.body.append(container);
-    const changes: PickSettings[] = [];
-    let current = settings;
-    const draw = () =>
-      overlay.renderControls!(
-        container,
-        current,
-        (update) => {
-          current = update(current, []);
-          changes.push(current);
-          draw();
-        },
-        data,
-        () => {},
-      );
-    draw();
-    const type = (text: string) => {
-      const input = container.querySelector('input')!;
-      input.value = text;
-      input.dispatchEvent(new Event('input'));
-    };
-    return { container, type, changes, rows: () => [...container.querySelectorAll('.pick-row')] };
-  }
+function open(settings = picking(), travelTo: (id: string) => void = () => {}) {
+  const container = document.createElement('div');
+  document.body.append(container);
+  const changes: PickSettings[] = [];
+  let current = settings;
+  const draw = () =>
+    overlay.renderControls!(
+      container,
+      current,
+      (update) => {
+        current = update(current, []);
+        changes.push(current);
+        draw();
+      },
+      data,
+      travelTo,
+    );
+  draw();
+  const type = (text: string) => {
+    const input = container.querySelector('input')!;
+    input.value = text;
+    input.dispatchEvent(new Event('input'));
+  };
+  return { container, type, changes, rows: () => [...container.querySelectorAll('.pick-row')] };
+}
 
+describe('the passage list', () => {
+  const rows = (settings: PickSettings, travelTo?: (id: string) => void) => {
+    const { container } = open(settings, travelTo);
+    return [...container.querySelectorAll<HTMLElement>('.passage-list .search-result')];
+  };
+  const dots = (row: HTMLElement) =>
+    [...row.querySelectorAll<HTMLElement>('.term-dot')].map((dot) => dot.style.background !== '');
+
+  it('lists the passages naming a pick, in Talmud order, with a hollow dot for a maybe', () => {
+    const listed = rows(picking('lakish', 'gamliel-a'));
+    expect(listed.map((row) => row.querySelector('.ref')!.textContent)).toEqual([
+      'A 2a:1',
+      'A 2a:2',
+      'A 2a:3',
+    ]);
+    expect(dots(listed[0])).toEqual([true]);
+    expect(dots(listed[2])).toEqual([false]);
+  });
+
+  it('lists the passages the map lights and no others', () => {
+    const settings = picking('lakish');
+    const lit = Object.keys(dating.segments).filter(
+      (id) =>
+        overlay.standoutsFor!({
+          items: [item(id)],
+          settings,
+          data,
+          focus: { hovered: null, pinned: null },
+        })[0],
+    );
+    expect(rows(settings)).toHaveLength(lit.length);
+  });
+
+  it('lists nothing while nothing is picked', () => {
+    expect(rows(picking())).toEqual([]);
+  });
+
+  it('travels to the passage a click names', () => {
+    const travelTo = vi.fn();
+    rows(picking('lakish'), travelTo)[1].click();
+    expect(travelTo).toHaveBeenCalledWith('A.2a.2');
+  });
+});
+
+describe('the finder', () => {
   it('labels a picked rabbi as it labels a suggestion, and the legend does too', () => {
     const finder = open(picking('yochanan'));
     const picked = finder.container.querySelector('.pick-picked-row')!;

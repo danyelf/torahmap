@@ -5,6 +5,7 @@ import type { Overlay, SettingsUpdate, UrlParamSpec } from '@torahmap/shell/over
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { colorToCss, type Color } from '@torahmap/utils';
+import { createResultsList } from '@torahmap/search';
 import {
   addPick,
   MAX_PICKS,
@@ -28,13 +29,15 @@ import {
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { DATING_FILE, type Rabbi, type TalmudDating } from '../dating.ts';
-import type { TalmudLayoutItem } from '../layout.ts';
+import { parseTalmudId, talmudRef, type TalmudLayoutItem } from '../layout.ts';
 import { RABBIS_UNLIT_KEEPS } from '../constants.ts';
 import { fadeTo, markNames, nameFor, type RabbiLink } from './dating.ts';
 import { legendRow, swatchRow } from '@torahmap/shell/overlays/swatchList.ts';
 import {
   eraLine,
   namedIn,
+  namesIn,
+  passagesNaming,
   passagesOf,
   pickedPlaces,
   pickedColors,
@@ -72,6 +75,7 @@ interface Finder extends PickFinder {
   settings: PickSettings;
   data: RabbiData | null;
   onChange(update: SettingsUpdate<PickSettings>): void;
+  travelTo(id: string): void;
 }
 
 /** The overlay for a Talmud whose passages `base` colours when no tool does. */
@@ -127,8 +131,40 @@ export function rabbisOverlay(
     return pickRow(lines, onClick);
   }
 
+  /** The passages that name the picks, as the map lights them; a click pins one and brings it into view. */
+  function passageList(
+    settings: PickSettings,
+    data: RabbiData,
+    travelTo: (id: string) => void,
+  ): HTMLElement[] {
+    const places = pickedPlaces(settings, data);
+    const colors = pickedColors(settings, data);
+    const passages = passagesNaming(data, places);
+    if (!passages.length) return [];
+    const heading = document.createElement('div');
+    heading.className = 'panel-section-heading';
+    heading.textContent = count(passages.length, 'passage');
+    const list = document.createElement('div');
+    list.className = 'results-list';
+    createResultsList<(typeof passages)[number]>().render(list, passages, ({ id, named }) => {
+      const picked = places.flatMap((place, i) => (named.has(place) ? [i] : []));
+      const identity = parseTalmudId(id);
+      return {
+        colors: picked.map((i) => colors[i]),
+        hollow: new Set(picked.flatMap((i, at) => (named.get(places[i]) === 'maybe' ? [at] : []))),
+        ref: identity ? talmudRef(identity) : id,
+        snippet: document.createTextNode(namesIn(data, id).join(' · ')),
+        onSelect: () => travelTo(id),
+      };
+    });
+    const box = document.createElement('div');
+    box.className = 'passage-list';
+    box.append(heading, list);
+    return [box];
+  }
+
   function drawFinder(finder: Finder): void {
-    const { settings, data, onChange, lists } = finder;
+    const { settings, data, onChange, lists, travelTo } = finder;
     lists.replaceChildren();
     if (!data) {
       lists.append(pickNote('Loading the rabbis…'));
@@ -192,6 +228,7 @@ export function rabbisOverlay(
             };
           }),
         ),
+        ...passageList(settings, data, travelTo),
       );
     }
 
@@ -244,6 +281,7 @@ export function rabbisOverlay(
           settings: { picked: [] },
           data: null,
           onChange: () => {},
+          travelTo: () => {},
           draw: () => drawFinder(finder),
         };
         return finder;
@@ -283,9 +321,9 @@ export function rabbisOverlay(
       return items.map((item) => namedIn(data, item.id, places).size > 0);
     },
 
-    renderControls(container, settings, onChange, data) {
+    renderControls(container, settings, onChange, data, travelTo) {
       const finder = finderIn(container);
-      Object.assign(finder, { settings, data, onChange });
+      Object.assign(finder, { settings, data, onChange, travelTo });
       finder.draw();
     },
 
