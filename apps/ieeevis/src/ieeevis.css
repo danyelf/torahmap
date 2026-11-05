@@ -30,7 +30,7 @@
   box-shadow: 0 0 0 1px #fff;
 }
 
-/* The panel scrolls the papers the picks light, so the list does not scroll on its own. */
+/* The panel scrolls the papers the picks light. */
 .paper-list .results-list {
   max-height: none;
 }

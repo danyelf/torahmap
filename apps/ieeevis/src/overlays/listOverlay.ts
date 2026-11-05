@@ -103,19 +103,19 @@ export function listOverlay<D extends ListData>(
     ...(entry.detail ? [pickMeta(entry.detail)] : []),
     pickMeta(papers(entry.papers)),
   ];
-  /** The names the square `id` of `paper` lights under. */
-  const namesAt = (paper: Paper, id: string, data: D) =>
-    kind.namesAt?.(id, data) ?? kind.namesOf(paper, data);
+  /** Which of `picked` light the square `id` of `paper`, as places among them. */
+  const litBy = (picked: readonly Entry[], paper: Paper, id: string, data: D) =>
+    listedBy(picked, kind.namesAt?.(id, data) ?? kind.namesOf(paper, data));
   const listedUnder = (item: PieceItem, settings: ListSettings, data: D) => {
     const picked = picks.picked(settings, data);
-    return listedBy(picked, namesAt(item.paper, item.id, data)).map((i) => picked[i]);
+    return litBy(picked, item.paper, item.id, data).map((i) => picked[i]);
   };
 
   /** The entries of the picked names' works in a reference list's `text`, in order, each with its pick's colour. */
   function entrySpans(item: PieceItem, text: string, settings: ListSettings, data: D) {
     if (item.section !== REFERENCES_SECTION) return [];
     const picked = picks.picked(settings, data);
-    return listedBy(picked, namesAt(item.paper, item.id, data))
+    return litBy(picked, item.paper, item.id, data)
       .flatMap((i) =>
         entriesOf(text, kind.titlesOf!(picked[i].name, data)).map((span) => ({
           ...span,
@@ -186,7 +186,7 @@ export function listOverlay<D extends ListData>(
             onRemove: () => unpick(entry),
           })),
         ),
-        paperList(picked, colors, data, travelTo),
+        ...paperList(picked, colors, data, travelTo),
       );
 
     const heading = document.createElement('div');
@@ -213,13 +213,13 @@ export function listOverlay<D extends ListData>(
     colors: readonly Color[],
     data: D,
     travelTo: (id: string) => void,
-  ): HTMLElement {
+  ): HTMLElement[] {
     const listed = data.structure.days.flatMap((day) =>
       day.sessions.flatMap((session) =>
         session.papers.flatMap((paper) => {
           const lit = [...paper.pieces].flatMap((_, n) => {
             const id = pieceId(paper.index, n);
-            const under = listedBy(picked, namesAt(paper, id, data));
+            const under = litBy(picked, paper, id, data);
             return under.length ? [{ id, under }] : [];
           });
           if (!lit.length) return [];
@@ -228,6 +228,7 @@ export function listOverlay<D extends ListData>(
         }),
       ),
     );
+    if (!listed.length) return [];
     const heading = document.createElement('div');
     heading.className = 'panel-section-heading';
     heading.textContent = paperCount(listed.length);
@@ -246,7 +247,7 @@ export function listOverlay<D extends ListData>(
     const box = document.createElement('div');
     box.className = 'paper-list';
     box.append(heading, list);
-    return box;
+    return [box];
   }
 
   const finderIn = (container: HTMLElement): Finder<D> =>
@@ -282,7 +283,7 @@ export function listOverlay<D extends ListData>(
       if (!picked.length) return items.map(baseColor);
       const colors = colorsOf(picked);
       return items.map((item) => {
-        const lit = listedBy(picked, namesAt(item.paper, item.id, data)).map((i) => colors[i]);
+        const lit = litBy(picked, item.paper, item.id, data).map((i) => colors[i]);
         if (!lit.length) return unlit(item);
         const shown = isPlaceholder(item) ? lit.map((c) => brighten(c, PLACEHOLDER_KEEPS)) : lit;
         return shown.length === 1 ? shown[0] : shown;
@@ -291,7 +292,7 @@ export function listOverlay<D extends ListData>(
 
     standoutsFor({ items, settings, data }) {
       const picked = picks.picked(settings, data);
-      return items.map((item) => listedBy(picked, namesAt(item.paper, item.id, data)).length > 0);
+      return items.map((item) => litBy(picked, item.paper, item.id, data).length > 0);
     },
 
     renderControls(container, settings, onChange, data, travelTo) {
