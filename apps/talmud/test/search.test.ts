@@ -81,7 +81,13 @@ describe('the Talmud’s search', () => {
   it('draws its panel before its file is in, listing nothing', () => {
     const container = document.createElement('div');
     const settings = talmudSearch.settingsFromUrl!({ search: 'רבי' }, []);
-    talmudSearch.renderControls!(container, settings, () => {}, null);
+    talmudSearch.renderControls!(
+      container,
+      settings,
+      () => {},
+      null,
+      () => {},
+    );
     expect(container.querySelectorAll('.search-result')).toHaveLength(0);
     talmudSearch.destroy!();
   });

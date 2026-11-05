@@ -86,7 +86,13 @@ describe('searching the Act', () => {
   it('lists each paragraph found with an excerpt of its match', () => {
     const container = document.createElement('div');
     const settings = actSearch.settingsFromUrl!({ search: 'records,provider' }, []);
-    actSearch.renderControls!(container, settings, () => {}, data);
+    actSearch.renderControls!(
+      container,
+      settings,
+      () => {},
+      data,
+      () => {},
+    );
     const rows = [...container.querySelectorAll('.search-result')];
     expect(rows).toHaveLength(2);
     for (const row of rows) expect(row.querySelector('.snippet mark')).not.toBeNull();

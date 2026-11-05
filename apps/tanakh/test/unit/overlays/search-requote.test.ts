@@ -23,12 +23,24 @@ describe('requoting the search results', () => {
     const container = document.createElement('div');
     // Genesis 19:28 has both עַל and עָלָה; only the parse tells them apart.
     const settings = { terms: addTerm([], 'עלה') };
-    searchTool.renderControls!(container, settings, () => {}, { ...files, parse: null });
+    searchTool.renderControls!(
+      container,
+      settings,
+      () => {},
+      { ...files, parse: null },
+      () => {},
+    );
     expect(markIn(container, '19:28')).toBe('עַל');
     const list = container.querySelector('#search-results')!;
     list.scrollTop = 120;
 
-    searchTool.renderControls!(container, settings, () => {}, files);
+    searchTool.renderControls!(
+      container,
+      settings,
+      () => {},
+      files,
+      () => {},
+    );
 
     expect(markIn(container, '19:28')).toBe('עָלָה');
     expect(list.scrollTop).toBe(120);

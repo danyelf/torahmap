@@ -53,7 +53,7 @@ export function hostOverlay<S, D>(
 
   function draw(): void {
     if (!container) return;
-    overlay.renderControls?.(container, settings, host.change, held);
+    overlay.renderControls?.(container, settings, host.change, held, () => {});
   }
 
   const host: OverlayHost<S, D> = {

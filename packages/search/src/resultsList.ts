@@ -2,7 +2,7 @@
 //
 // Told what to show on every pass, so it holds no opinion about what the search
 // found — only how far down its own list it has drawn.
-import { colorToCss } from '@torahmap/utils';
+import { colorToCss, type Color } from '@torahmap/utils';
 import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import type { SearchResult, Snippet } from './textIndex.ts';
 import { colorIndexAt, type SearchTerm } from './terms.ts';
@@ -25,7 +25,16 @@ export interface ResultsView {
 
 const RESULTS_BATCH_SIZE = 50;
 
-function createResultElement(result: SearchResult, view: ResultsView): HTMLDivElement {
+/** One row of a results list: a dot per colour it is found under, its name, and a line below. */
+export interface ResultRow {
+  colors: readonly Color[];
+  ref: string;
+  snippet: Node;
+  rtl?: boolean;
+  onSelect(): void;
+}
+
+export function resultRow(row: ResultRow): HTMLDivElement {
   const div = document.createElement('div');
   div.className = 'search-result';
 
@@ -34,40 +43,52 @@ function createResultElement(result: SearchResult, view: ResultsView): HTMLDivEl
 
   const termIndicators = document.createElement('span');
   termIndicators.className = 'term-indicators';
-  for (const m of result.matchingTerms) {
+  for (const color of row.colors) {
     const dot = document.createElement('span');
     dot.className = 'term-dot';
-    dot.style.background = colorToCss(PALETTE[colorIndexAt(view.terms, m.termIndex)]);
+    dot.style.background = colorToCss(color);
     termIndicators.appendChild(dot);
   }
   refDiv.appendChild(termIndicators);
-  refDiv.appendChild(document.createTextNode(result.ref));
+  refDiv.appendChild(document.createTextNode(row.ref));
 
+  const snippetDiv = document.createElement('div');
+  snippetDiv.className = `snippet ${row.rtl ? 'rtl' : ''}`;
+  snippetDiv.appendChild(row.snippet);
+
+  div.appendChild(refDiv);
+  div.appendChild(snippetDiv);
+
+  div.addEventListener('click', row.onSelect);
+
+  return div;
+}
+
+function createResultElement(result: SearchResult, view: ResultsView): HTMLDivElement {
   // The snippet quotes the word the list is answering about, else whichever
   // term claimed the item first.
   const firstMatch =
     result.matchingTerms.find((m) => m.termIndex === view.focus) ?? result.matchingTerms[0];
 
   const term = view.terms[firstMatch.termIndex];
-  const snippetDiv = document.createElement('div');
-  snippetDiv.className = `snippet ${term && view.rtl(term) ? 'rtl' : ''}`;
-
   const { snippet, matchStart, matchEnd } = (term && view.snippet(result, term)) ?? {
     snippet: result.ref,
     matchStart: 0,
     matchEnd: 0,
   };
 
-  snippetDiv.appendChild(
-    markRange(snippet, matchStart, matchEnd, colorIndexAt(view.terms, firstMatch.termIndex)),
-  );
-
-  div.appendChild(refDiv);
-  div.appendChild(snippetDiv);
-
-  div.addEventListener('click', () => view.onSelect(result));
-
-  return div;
+  return resultRow({
+    colors: result.matchingTerms.map((m) => PALETTE[colorIndexAt(view.terms, m.termIndex)]),
+    ref: result.ref,
+    snippet: markRange(
+      snippet,
+      matchStart,
+      matchEnd,
+      colorIndexAt(view.terms, firstMatch.termIndex),
+    ),
+    rtl: !!term && view.rtl(term),
+    onSelect: () => view.onSelect(result),
+  });
 }
 
 export interface ResultsList {

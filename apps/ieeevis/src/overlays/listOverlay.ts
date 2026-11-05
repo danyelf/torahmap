@@ -24,11 +24,11 @@ import {
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { trackOverlayPick, type PickHow } from '@torahmap/shell/analytics.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
-import { mark } from '@torahmap/search';
+import { mark, resultRow } from '@torahmap/search';
 import { baseColor, isPlaceholder } from '../baseColor.ts';
 import { entriesOf } from '../citations.ts';
 import { REFERENCES_SECTION } from '../data.ts';
-import type { PieceItem } from '../layout.ts';
+import { pieceId, type PieceItem } from '../layout.ts';
 import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
   listedBy,
@@ -84,6 +84,7 @@ interface Finder<D> extends PickFinder {
   settings: ListSettings;
   data: D | null;
   onChange(update: SettingsUpdate<ListSettings>): void;
+  travelTo(id: string): void;
 }
 
 export function listOverlay<D extends ListData>(
@@ -139,7 +140,7 @@ export function listOverlay<D extends ListData>(
     return fragment;
   }
 
-  function drawFinder({ settings, data, onChange, input, lists }: Finder<D>): void {
+  function drawFinder({ settings, data, onChange, travelTo, input, lists }: Finder<D>): void {
     lists.replaceChildren();
     if (!data) {
       lists.append(pickNote(`Loading the ${noun.many}…`));
@@ -182,6 +183,7 @@ export function listOverlay<D extends ListData>(
             onRemove: () => unpick(entry),
           })),
         ),
+        paperList(picked, colors, data, travelTo),
       );
 
     const heading = document.createElement('div');
@@ -202,11 +204,52 @@ export function listOverlay<D extends ListData>(
     lists.append(quick);
   }
 
+  /** The papers the picks light, in program order; a click on one pins it and brings it into view. */
+  function paperList(
+    picked: readonly Picked[],
+    colors: readonly Color[],
+    data: D,
+    travelTo: (id: string) => void,
+  ): HTMLElement {
+    const listed = data.structure.days.flatMap((day) =>
+      day.sessions.flatMap((session) =>
+        session.papers.flatMap((paper) => {
+          const under = listedBy(picked, kind.namesOf(paper, data));
+          return under.length ? [{ paper, session, under }] : [];
+        }),
+      ),
+    );
+    const heading = document.createElement('div');
+    heading.className = 'panel-section-heading';
+    heading.textContent = `${listed.length} paper${listed.length === 1 ? '' : 's'}`;
+    const list = document.createElement('div');
+    list.className = 'results-list visible';
+    list.append(
+      ...listed.map(({ paper, session, under }) =>
+        resultRow({
+          colors: under.map((i) => colors[i]),
+          ref: paper.title,
+          snippet: document.createTextNode([paper.when, session.name].filter(Boolean).join(' · ')),
+          onSelect: () => travelTo(pieceId(paper.index, 0)),
+        }),
+      ),
+    );
+    const box = document.createElement('div');
+    box.append(heading, list);
+    return box;
+  }
+
   const finderIn = (container: HTMLElement): Finder<D> =>
     pickFinderIn<Finder<D>>(container, {
       placeholder: `Find ${aNoun} by name…`,
       label: `Find ${aNoun}`,
-      extend: (parts) => ({ ...parts, settings: { picked: [] }, data: null, onChange: () => {} }),
+      extend: (parts) => ({
+        ...parts,
+        settings: { picked: [] },
+        data: null,
+        onChange: () => {},
+        travelTo: () => {},
+      }),
       onType: drawFinder,
     });
 
@@ -241,9 +284,9 @@ export function listOverlay<D extends ListData>(
       return items.map((item) => listedBy(picked, namesAt(item, data)).length > 0);
     },
 
-    renderControls(container, settings, onChange, data) {
+    renderControls(container, settings, onChange, data, travelTo) {
       const finder = finderIn(container);
-      Object.assign(finder, { settings, data, onChange });
+      Object.assign(finder, { settings, data, onChange, travelTo });
       drawFinder(finder);
     },
 

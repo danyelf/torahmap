@@ -47,6 +47,7 @@ function controlsAfter(link: string): HTMLElement {
       settings,
       (update) => (settings = update(settings, [])),
       dataFor(overlay, SAMPLE_LOADED),
+      () => {},
     );
   }
   return container;

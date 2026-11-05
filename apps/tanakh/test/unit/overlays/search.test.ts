@@ -1500,6 +1500,7 @@ describe('Search Overlay', () => {
         before,
         (update) => requests.push(update),
         searchOverlay.data,
+        () => {},
       );
       type(container, 'God');
 
@@ -1522,6 +1523,7 @@ describe('Search Overlay', () => {
           held = update(held, []) as SearchSettings;
         },
         searchOverlay.data,
+        () => {},
       );
 
       type(container, 'God');

@@ -192,7 +192,7 @@
   cursor: default;
 }
 
-#search-results {
+.results-list {
   background: rgba(30, 30, 30, 0.98);
   border: 1px solid #444;
   border-radius: 4px;
@@ -203,7 +203,7 @@
   margin-top: 8px;
 }
 
-#search-results.visible {
+.results-list.visible {
   display: block;
 }
 
@@ -259,7 +259,7 @@
 }
 
 @media (max-width: 768px) {
-  #search-results {
+  .results-list {
     max-height: 40vh;
   }
   .search-result {

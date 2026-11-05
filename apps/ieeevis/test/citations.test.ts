@@ -137,7 +137,13 @@ describe('the cited works overlay', () => {
   it('finds a work by its title or its authors', () => {
     const open = (typed: string) => {
       const container = document.createElement('div');
-      citedWorksOverlay.renderControls!(container, { picked: [] }, () => {}, data);
+      citedWorksOverlay.renderControls!(
+        container,
+        { picked: [] },
+        () => {},
+        data,
+        () => {},
+      );
       const input = container.querySelector<HTMLInputElement>('.pick-input')!;
       input.value = typed;
       input.dispatchEvent(new Event('input'));
@@ -249,6 +255,7 @@ describe('the citations overlay', () => {
       settings,
       (update) => changes.push(update(settings, [])),
       data,
+      () => {},
     );
     container.querySelector<HTMLButtonElement>('[data-view="works"]')!.click();
     expect(changes).toEqual([{ ...settings, view: 'works' }]);

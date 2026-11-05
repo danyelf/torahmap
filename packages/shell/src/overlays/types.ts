@@ -149,11 +149,14 @@ interface OverlayMembers<T, S, D> {
   // settings to the next. The app applies each update exactly once, immediately,
   // to the settings it holds, so a control never needs, and must never keep, a
   // copy of them to write from.
+  //
+  // `travelTo` pins a square by id and brings it into view.
   renderControls?(
     container: HTMLElement,
     settings: S,
     onChange: (update: SettingsUpdate<S>) => void,
     data: D | null,
+    travelTo: (id: string) => void,
   ): void;
   renderLegend?(
     container: HTMLElement,
@@ -163,8 +166,7 @@ interface OverlayMembers<T, S, D> {
   ): void;
 
   // Says in the panel what the overlay finds about the hovered or pinned square.
-  // The container is emptied before each call; `travelTo` pins a square by id and
-  // brings it into view.
+  // The container is emptied before each call; `travelTo` as for the controls.
   renderFocus?(
     container: HTMLElement,
     hovered: SpatialItem<T> | null,

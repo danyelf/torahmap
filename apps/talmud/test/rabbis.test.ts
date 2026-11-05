@@ -188,6 +188,7 @@ describe('the finder', () => {
           draw();
         },
         data,
+        () => {},
       );
     draw();
     const type = (text: string) => {
@@ -270,7 +271,13 @@ describe('the finder', () => {
     const finder = open();
     const box = finder.container.querySelector('input')!;
     finder.type('yoch');
-    overlay.renderControls!(finder.container, picking('lakish'), () => {}, data);
+    overlay.renderControls!(
+      finder.container,
+      picking('lakish'),
+      () => {},
+      data,
+      () => {},
+    );
     expect(finder.container.querySelector('input')).toBe(box);
     expect(box.value).toBe('yoch');
   });

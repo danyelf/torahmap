@@ -83,6 +83,7 @@ describe('Overlay Switching Integration', () => {
       settingsIn(tools, overlay),
       (update) => (tools = withOverlaySettings(tools, textTools, overlay, update)),
       data,
+      () => {},
     );
 
     mockLegendContainer.innerHTML = '';
@@ -261,6 +262,7 @@ describe('Overlay Switching Integration', () => {
         settingsIn(tools, overlay),
         (update) => (tools = withOverlaySettings(tools, textTools, overlay, update)),
         currentData,
+        () => {},
       );
       const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;
       select.value = 'Midrash';
@@ -323,6 +325,7 @@ describe('Overlay Switching Integration', () => {
         settingsIn(tools, overlay),
         onChange,
         currentData,
+        () => {},
       );
 
       const select = mockControlsContainer.querySelector('select') as HTMLSelectElement;

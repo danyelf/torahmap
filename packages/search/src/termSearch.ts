@@ -469,7 +469,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
             <button type="button" id="search-clear-all">Clear</button>
           </div>
           <div id="search-hit-caption"></div>
-          <div id="search-results"></div>
+          <div id="search-results" class="results-list"></div>
         `;
 
         searchHitCaption = container.querySelector('#search-hit-caption');
