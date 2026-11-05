@@ -222,6 +222,15 @@ describe('fillDefaultColors', () => {
     expect(picture.rings).toEqual([ORANGE, null, CYAN]);
   });
 
+  it('gives a square that stands out no base ring, so its colour shows', () => {
+    const picture = fillDefaultColors(
+      { colors: [RED, RED], standout: [true, false] },
+      getDefaultColor,
+      () => ORANGE,
+    );
+    expect(picture.rings).toEqual([null, ORANGE]);
+  });
+
   it('gives a picture with no rings the base rings', () => {
     const picture = fillDefaultColors({ colors: [null, RED] }, getDefaultColor, () => ORANGE);
     expect(picture.rings).toEqual([ORANGE, ORANGE]);
