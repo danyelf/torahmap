@@ -25,7 +25,7 @@ import {
 import { trackOverlayPick, type PickHow } from '@torahmap/shell/analytics.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
 import { mark } from '@torahmap/search';
-import { baseColor } from '../baseColor.ts';
+import { baseColor, isPlaceholder } from '../baseColor.ts';
 import { entriesOf } from '../citations.ts';
 import { REFERENCES_SECTION } from '../data.ts';
 import type { PieceItem } from '../layout.ts';
@@ -42,6 +42,8 @@ import {
 
 /** How much of its colour a paper keeps when it is under none of the picks. */
 const UNLIT_KEEPS = 0.35;
+/** How much of its pick's colour a lit paper keeps where it has no text, so it still reads as missing. */
+const PLACEHOLDER_KEEPS = 0.6;
 
 const colorsOf = (picked: readonly Picked[]) => pickColors(picked.map((p) => p.slot));
 
@@ -229,7 +231,8 @@ export function listOverlay<D extends ListData>(
       return items.map((item) => {
         const lit = listedBy(picked, namesAt(item, data)).map((i) => colors[i]);
         if (!lit.length) return unlit(item);
-        return lit.length === 1 ? lit[0] : lit;
+        const shown = isPlaceholder(item) ? lit.map((c) => brighten(c, PLACEHOLDER_KEEPS)) : lit;
+        return shown.length === 1 ? shown[0] : shown;
       });
     },
 

@@ -68,6 +68,12 @@ describe('the authors overlay', () => {
     expect(other).not.toEqual(mine);
   });
 
+  it('lights a paper’s squares that have no text dimmer than its text', () => {
+    const [missing] = colours(['José Núñez'], 2) as [number, number, number][];
+    const full = pickColors([0])[0] as [number, number, number];
+    missing.forEach((c, i) => expect(c).toBeLessThan(full[i]));
+  });
+
   it('splits a paper by two picked authors between their colours', () => {
     const [both] = colours(['Ana Silva', 'Bei Wang'], 0);
     expect(both).toEqual(pickColors([0, 1]));
