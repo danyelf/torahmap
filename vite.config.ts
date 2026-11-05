@@ -27,7 +27,7 @@ function getGitBranch(): string {
 
 // pages.ts reaches the stories, which storiesPlugin writes once Vite has started, so it is
 // imported then, and by URL: esbuild bundles a path into the config, importing it at once.
-const PAGES = pathToFileURL(resolve(__dirname, 'pages.ts')).href;
+const PAGES = pathToFileURL(resolve(import.meta.dirname, 'pages.ts')).href;
 const pageAt = async (path: string) =>
   ((await import(PAGES)) as typeof import('./pages.ts')).pageAt(path);
 
@@ -46,7 +46,7 @@ function pagePlugin(): Plugin {
   };
 }
 
-const TEMPLATE = resolve(__dirname, 'index.html');
+const TEMPLATE = resolve(import.meta.dirname, 'index.html');
 type ExtraPage = Exclude<BuiltPage, 'main'>;
 const PAGE_PATHS: Record<ExtraPage, string> = {
   talmud: TALMUD_PATH,
@@ -55,7 +55,7 @@ const PAGE_PATHS: Record<ExtraPage, string> = {
 };
 const htmlPath = (page: ExtraPage) => `${PAGE_PATHS[page]}index.html`;
 // No such file: pageAddressPlugin gives the build index.html under this name.
-const htmlFile = (page: ExtraPage) => resolve(__dirname, `.${htmlPath(page)}`);
+const htmlFile = (page: ExtraPage) => resolve(import.meta.dirname, `.${htmlPath(page)}`);
 const PAGE_FILES: Record<BuiltPage, string> = {
   main: TEMPLATE,
   talmud: htmlFile('talmud'),
