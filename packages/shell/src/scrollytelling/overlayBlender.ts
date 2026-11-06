@@ -98,7 +98,6 @@ export function pictureForStop<I extends MapItem>(
   base: (index: number) => ItemColor,
   tools: StoryTools<I>,
   keepsBase?: number,
-  baseRing?: (index: number) => ItemColor | null,
 ): Picture {
   const state = tools.toolsOf(stop);
   const byHover = !!(activeOverlay(state, tools)?.hoverChangesColors && hovered);
@@ -126,7 +125,6 @@ export function pictureForStop<I extends MapItem>(
       keepsBase,
     ),
     base,
-    baseRing,
   );
   if (!byHover) cache.set(state, picture);
   return picture;
@@ -145,17 +143,13 @@ export function computeBlendedColors<I extends MapItem>(
   base: (index: number) => ItemColor,
   tools: StoryTools<I>,
   keepsBase?: number,
-  baseRing?: (index: number) => ItemColor | null,
 ): ColorLayer {
   if (fromStop === toStop || t === 0)
-    return still(
-      pictureForStop(fromStop, items, hovered, loaded, base, tools, keepsBase, baseRing),
-    );
-  if (t >= 1)
-    return still(pictureForStop(toStop, items, hovered, loaded, base, tools, keepsBase, baseRing));
+    return still(pictureForStop(fromStop, items, hovered, loaded, base, tools, keepsBase));
+  if (t >= 1) return still(pictureForStop(toStop, items, hovered, loaded, base, tools, keepsBase));
   return {
-    from: pictureForStop(fromStop, items, hovered, loaded, base, tools, keepsBase, baseRing),
-    to: pictureForStop(toStop, items, hovered, loaded, base, tools, keepsBase, baseRing),
+    from: pictureForStop(fromStop, items, hovered, loaded, base, tools, keepsBase),
+    to: pictureForStop(toStop, items, hovered, loaded, base, tools, keepsBase),
     t,
   };
 }
