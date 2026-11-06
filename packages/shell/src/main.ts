@@ -490,8 +490,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // reader has a panel open to see it (stops don't open panels).
     if (searching()) frontTool = 'search';
 
-    // The panel's redraw shows a pin but cannot clear one; pinItem would write URL/telemetry.
-    if (unpinned) updateSidebarWrapper(null);
+    // The tools' redraw shows a pin but cannot take one away; pinItem would write URL/telemetry.
+    if (unpinned) showPin();
   }
 
   const camera = text.startCamera(mapViewport());
@@ -793,7 +793,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     trackSquareClick(item.id, text.area(item).area);
     const focusBefore = focusNow();
     pinnedItem = item;
-    updateSidebarWrapper(item, true);
+    showPin();
     if (centerCamera) {
       centerOnItem(item);
     }
@@ -805,7 +805,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     takeOver('takeover');
     const focusBefore = focusNow();
     pinnedItem = null;
-    updateSidebarWrapper(null);
+    showPin();
     repaint(focusBefore);
     syncUrl(true);
   }
@@ -826,6 +826,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     litHoverItem = square;
     if (!sameItem(focusBefore.hovered, square)) repaint(focusBefore);
   });
+
+  /** The square under a pointer the story moved the map beneath. Not setHover: the frame draws it. */
+  function followPointer(): void {
+    hoveredItem = litHoverItem = gestures.squareUnderMouse();
+    restHover.cancel();
+  }
 
   function setHover(square: I | null): void {
     if (sameItem(hoveredItem, square)) return;
@@ -961,6 +967,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function refreshPopup(): void {
     if (pinnedItem) updateSidebarWrapper(pinnedItem, true);
     else if (hoveredItem) updateSidebarWrapper(hoveredItem, false);
+  }
+
+  /** The popup once the pin changes: the pin, else the hovered square as a hover, else none. */
+  function showPin(): void {
+    updateSidebarWrapper(pinnedItem ?? hoveredItem, pinnedItem !== null);
   }
 
   /** Redraw every place that says a file is loading or failed. */
@@ -1580,9 +1591,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const nearer = nearerStop(state);
     if (lastSyncedStopId !== nearer.id) arriveAtStop(nearer);
 
-    // Not setHover: the render below draws the highlight.
-    hoveredItem = litHoverItem = gestures.squareUnderMouse();
-    restHover.cancel();
+    followPointer();
 
     if (settled) {
       // At rest: paint via the explore-mode color pipeline, once per stop.
@@ -1700,7 +1709,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));
 
     setTools(fromLink(next, tools, textTools), 'outside');
-    if (!item) updateSidebarWrapper(null);
+    if (!item) showPin();
 
     if (next.mode === 'story') {
       openStory('cut', 'link', next.story, next.stop);
