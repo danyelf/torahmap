@@ -132,3 +132,8 @@
   gap: 10px;
   margin-top: 8px;
 }
+
+/* While suggestions answer what was typed, the quick picks give the list the room. */
+.pick-suggestions ~ .pick-quick {
+  display: none;
+}

@@ -4,7 +4,7 @@ import './rabbis.css';
 import type { Overlay, SettingsUpdate, UrlParamSpec } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW } from '@torahmap/shell/language.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
-import { colorToCss, type Color } from '@torahmap/utils';
+import { colorToCss, isSearchableWord, type Color } from '@torahmap/utils';
 import { createResultsList } from '@torahmap/search';
 import {
   addPick,
@@ -196,7 +196,7 @@ export function rabbisOverlay(
       const candidates = finder.asking.rabbis.filter((p) => !places.includes(p));
       for (const place of candidates) who.append(rabbiRow(data, place, () => pick(place)));
       lists.append(who);
-    } else if (typed.trim()) {
+    } else if (isSearchableWord(typed)) {
       const found = suggest(data, typed, places);
       lists.append(
         pickSuggestions(

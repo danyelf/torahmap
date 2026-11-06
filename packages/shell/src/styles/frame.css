@@ -438,7 +438,7 @@ body[data-open='about'] #about-panel {
 
 /* The description helps choose an overlay; while it lists results, the list needs the room. */
 #overlay-description:empty,
-#overlay-panel:has(.results-fill) #overlay-description {
+#overlay-panel:has(:is(.results-fill, .pick-suggestions)) #overlay-description {
   display: none;
 }
 
@@ -449,18 +449,19 @@ body[data-open='about'] #about-panel {
    below the choosing and a short list, so on a small sheet #panel-body scrolls
    instead. */
 #search-panel,
-#overlay-panel:has(.results-fill) {
+#overlay-panel:has(:is(.results-fill, .pick-suggestions)) {
   flex: 1 0 auto;
 }
 
 #search-controls,
-#overlay-panel:has(.results-fill) :is(#overlay-controls, .pick-finder, .pick-lists, .results-box) {
+#overlay-panel:has(:is(.results-fill, .pick-suggestions))
+  :is(#overlay-controls, .pick-finder, .pick-lists, .results-box) {
   flex: 1 1 auto;
   min-height: 0;
 }
 
 #search-controls,
-#overlay-panel:has(.results-fill) #overlay-controls,
+#overlay-panel:has(:is(.results-fill, .pick-suggestions)) #overlay-controls,
 .results-box {
   display: flex;
   flex-direction: column;
@@ -471,10 +472,12 @@ body[data-open='about'] #about-panel {
   flex-shrink: 0;
 }
 
-#panel .results-fill {
+#panel .results-fill,
+#panel .pick-suggestions {
   flex: 1 1 0;
   min-height: 120px;
   max-height: none;
+  overflow-y: auto;
 }
 
 #overlay-starts:not(:empty) {

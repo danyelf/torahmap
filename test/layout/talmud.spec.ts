@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import { test } from '../browser/fakeMap.ts';
-import { desktopOnly, openMap, viaMenu } from '../browser/page.ts';
+import { desktopOnly, onlyOn, openMap, viaMenu } from '../browser/page.ts';
 import {
   attachScreenshot,
   boxes,
@@ -260,4 +260,29 @@ test("the overlay's description gives way to the list once a rabbi is picked", a
   await page.locator('.pick-quick .pick-chip').first().click();
   await expect(page.locator('#overlay-panel .results-fill')).toBeVisible();
   await expect(description).toBeHidden();
+});
+
+test('a long list of rabbi matches stays inside the sheet and scrolls', async ({ page }) => {
+  onlyOn(['phone'], 'the sheet is only this short on a phone');
+  await openMap(page, 'overlay=rabbis', TALMUD);
+  await viaMenu(page, 'overlay');
+  await page.locator('.pick-input').fill('רב');
+  await expect(page.locator('.pick-suggestions .pick-row').nth(5)).toBeVisible();
+  const [body] = await full(page, '#panel-body');
+  const [list] = await full(page, '.pick-suggestions');
+  expect(list.y + list.height).toBeLessThanOrEqual(body.y + body.height);
+  expect(
+    await page.locator('.pick-suggestions').evaluate((el) => el.scrollHeight > el.clientHeight),
+  ).toBe(true);
+  await attachScreenshot(page, test.info());
+});
+
+test('a single letter in the finder lists nothing', async ({ page }) => {
+  desktopAndPhoneOnly();
+  await openMap(page, 'overlay=rabbis', TALMUD);
+  await viaMenu(page, 'overlay');
+  await page.locator('.pick-input').fill('ר');
+  await expect(page.locator('.pick-suggestions')).toHaveCount(0);
+  await page.locator('.pick-input').fill('רב');
+  await expect(page.locator('.pick-suggestions')).toHaveCount(1);
 });
