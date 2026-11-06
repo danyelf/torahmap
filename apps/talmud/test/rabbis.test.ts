@@ -243,23 +243,8 @@ describe('the passage list', () => {
 });
 
 describe('the quick picks once a rabbi is picked', () => {
-  const chipsShown = (container: HTMLElement) =>
-    !container.querySelector<HTMLElement>('.pick-quick-body')!.hidden;
-
-  it('show with no link while nothing is picked', () => {
-    const { container } = open(picking());
-    expect(container.querySelector('.pick-quick-link')).toBeNull();
-    expect(chipsShown(container)).toBe(true);
-  });
-
-  it('fold behind a link that shows and hides them, above the list', () => {
+  it('sit between the picks and the list', () => {
     const { container } = open(picking('lakish'));
-    const link = container.querySelector<HTMLButtonElement>('.pick-quick-link')!;
-    expect(chipsShown(container)).toBe(false);
-    link.click();
-    expect(chipsShown(container)).toBe(true);
-    link.click();
-    expect(chipsShown(container)).toBe(false);
     const order = [...container.querySelectorAll('.pick-picked, .pick-quick, .results-box')];
     expect(order.map((el) => el.className)).toEqual(['pick-picked', 'pick-quick', 'results-box']);
   });

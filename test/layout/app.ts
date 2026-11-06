@@ -600,15 +600,6 @@ export const IEEEVIS_STATES: State[] = [
     shown: ['.pick-input', '.pick-picked-row'],
   },
   {
-    name: 'vis-authors-panel-chips-open',
-    link: 'overlay=authors&authors=Bei Wang,Chaoli Wang',
-    then: async (page) => {
-      await viaMenu(page, 'overlay');
-      await page.locator('.pick-quick-link').click();
-    },
-    shown: ['.pick-quick-link'],
-  },
-  {
     name: 'vis-keywords',
     link: 'overlay=keywords&keywords=visual analytics,Uncertainty visualization',
     shown: ['#map-legend'],

@@ -460,7 +460,7 @@ body[data-open='about'] #about-panel {
 }
 
 #search-controls,
-#overlay-controls,
+#overlay-panel:has(.results-fill) #overlay-controls,
 .results-box {
   display: flex;
   flex-direction: column;

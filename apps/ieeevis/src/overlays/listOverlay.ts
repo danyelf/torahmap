@@ -19,6 +19,7 @@ import {
   pickMeta,
   pickNote,
   pickQuick,
+  pickResultsBox,
   pickRow,
   pickSuggestions,
   type PickFinder,
@@ -199,8 +200,11 @@ export function listOverlay<D extends ListData>(
       ),
     );
     lists.append(
-      pickQuick(kind.quickHeading ?? 'Most papers', [chips], picked.length > 0),
-      ...(picked.length ? paperList(picked, colors, data, travelTo) : []),
+      ...pickQuick(
+        kind.quickHeading ?? 'Most papers',
+        [chips],
+        picked.length ? paperList(picked, colors, data, travelTo) : [],
+      ),
     );
   }
 
@@ -226,11 +230,7 @@ export function listOverlay<D extends ListData>(
       ),
     );
     if (!listed.length) return [];
-    const heading = document.createElement('div');
-    heading.className = 'panel-section-heading';
-    heading.textContent = paperCount(listed.length);
-    const list = document.createElement('div');
-    list.className = 'results-list results-fill';
+    const { box, list } = pickResultsBox(paperCount(listed.length));
     createResultsList<(typeof listed)[number]>().render(
       list,
       listed,
@@ -241,9 +241,6 @@ export function listOverlay<D extends ListData>(
         onSelect: () => travelTo(first),
       }),
     );
-    const box = document.createElement('div');
-    box.className = 'results-box';
-    box.append(heading, list);
     return [box];
   }
 

@@ -126,11 +126,7 @@
   text-decoration: underline;
 }
 
-.pick-quick-body[hidden] {
-  display: none;
-}
-
-.pick-quick-body {
+.pick-quick-body:not([hidden]) {
   display: flex;
   flex-direction: column;
   gap: 10px;

@@ -23,6 +23,7 @@ import {
   pickMeta,
   pickNote,
   pickQuick,
+  pickResultsBox,
   pickRow,
   pickSuggestions,
   pickSwatch,
@@ -142,11 +143,7 @@ export function rabbisOverlay(
     const colors = pickedColors(settings, data);
     const passages = passagesNaming(data, places);
     if (!passages.length) return [];
-    const heading = document.createElement('div');
-    heading.className = 'panel-section-heading';
-    heading.textContent = count(passages.length, 'passage');
-    const list = document.createElement('div');
-    list.className = 'results-list results-fill';
+    const { box, list } = pickResultsBox(count(passages.length, 'passage'));
     createResultsList<(typeof passages)[number]>().render(list, passages, ({ id, named }) => {
       const picked = places.flatMap((place, i) => (named.has(place) ? [i] : []));
       const identity = parseTalmudId(id);
@@ -158,9 +155,6 @@ export function rabbisOverlay(
         onSelect: () => travelTo(id),
       };
     });
-    const box = document.createElement('div');
-    box.className = 'results-box';
-    box.append(heading, list);
     return [box];
   }
 
@@ -263,8 +257,11 @@ export function rabbisOverlay(
       eras.push(group);
     }
     lists.append(
-      pickQuick('Most named rabbis', eras, places.length > 0),
-      ...(places.length ? passageList(settings, data, travelTo) : []),
+      ...pickQuick(
+        'Most named rabbis',
+        eras,
+        places.length ? passageList(settings, data, travelTo) : [],
+      ),
     );
   }
 
