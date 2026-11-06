@@ -11,8 +11,7 @@ function escapeForRegex(term: string): string {
 export const ENGLISH_LETTERS = 'ḥḤéÉçÇïÏàÀĥĤ';
 
 /** Each of `ENGLISH_LETTERS` read as its plain letter, which keeps a position's place in the text. */
-const ACCENTED = new RegExp(`[${ENGLISH_LETTERS}]`);
-const EVERY_ACCENTED = new RegExp(ACCENTED, 'g');
+const ACCENTED = new RegExp(`[${ENGLISH_LETTERS}]`, 'g');
 const plainLetter = (letter: string) => letter.normalize('NFD')[0]!;
 
 /** English: lowercased and without accents, a word bounded by punctuation as well as by space (accents are already plain when a word is read). */
@@ -20,11 +19,7 @@ export const english: SearchLanguage = {
   id: ENGLISH,
   rtl: false,
   claims: () => true,
-  // Testing first is what keeps folding fast: replacing in every item of the Talmud's English cost 2.5 times as much as lowercasing it.
-  fold(text) {
-    const lower = text.toLowerCase();
-    return ACCENTED.test(lower) ? lower.replace(EVERY_ACCENTED, plainLetter) : lower;
-  },
+  fold: (text) => text.toLowerCase().replace(ACCENTED, plainLetter),
   toOriginal: (_text, foldedAt) => foldedAt,
   wholeWords(haystack, needle, limit) {
     const ranges: TextRange[] = [];
