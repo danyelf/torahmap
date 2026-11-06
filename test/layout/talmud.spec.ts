@@ -276,3 +276,25 @@ test('a long list of rabbi matches stays inside the sheet and scrolls', async ({
   ).toBe(true);
   await attachScreenshot(page, test.info());
 });
+
+test('the arrow keys walk down a long list of matches, keeping the focused one in view', async ({
+  page,
+}) => {
+  desktopAndPhoneOnly();
+  await openMap(page, 'overlay=rabbis', TALMUD);
+  await viaMenu(page, 'overlay');
+  await page.locator('.pick-input').fill('ר');
+  await page.locator('.pick-input').press('ArrowDown');
+  for (let i = 0; i < 30; i++) await page.keyboard.press('ArrowDown');
+  const [row, list] = await page.evaluate(() =>
+    [document.activeElement!, document.querySelector('.pick-suggestions')!].map((el) => {
+      const { top, bottom } = el.getBoundingClientRect();
+      return { top, bottom, index: (el as HTMLElement).dataset.index };
+    }),
+  );
+  expect(row.index).toBe('30');
+  expect(row.top).toBeGreaterThanOrEqual(list.top - 1);
+  expect(row.bottom).toBeLessThanOrEqual(list.bottom + 1);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.pick-picked-row')).toHaveCount(1);
+});
