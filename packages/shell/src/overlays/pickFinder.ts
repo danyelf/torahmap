@@ -148,3 +148,34 @@ export function pickChips(chips: Node[]): HTMLElement {
   row.append(...chips);
   return row;
 }
+
+/**
+ * The quick picks under their heading. With `folded` they hide behind a "+ heading" link that
+ * shows and hides them.
+ */
+export function pickQuick(heading: string, picks: Node[], folded: boolean): HTMLElement {
+  const box = document.createElement('div');
+  box.className = 'pick-quick';
+  const body = document.createElement('div');
+  body.className = 'pick-quick-body';
+  body.append(...picks);
+  if (!folded) {
+    const title = document.createElement('div');
+    title.className = 'panel-section-heading';
+    title.textContent = heading;
+    box.append(title, body);
+    return box;
+  }
+  const link = document.createElement('button');
+  link.type = 'button';
+  link.className = 'pick-quick-link';
+  link.textContent = `+ ${heading}`;
+  link.setAttribute('aria-expanded', 'false');
+  body.hidden = true;
+  link.addEventListener('click', () => {
+    body.hidden = !body.hidden;
+    link.setAttribute('aria-expanded', String(!body.hidden));
+  });
+  box.append(link, body);
+  return box;
+}

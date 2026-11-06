@@ -22,6 +22,7 @@ import {
   pickFinderIn,
   pickMeta,
   pickNote,
+  pickQuick,
   pickRow,
   pickSuggestions,
   pickSwatch,
@@ -145,7 +146,7 @@ export function rabbisOverlay(
     heading.className = 'panel-section-heading';
     heading.textContent = count(passages.length, 'passage');
     const list = document.createElement('div');
-    list.className = 'results-list';
+    list.className = 'results-list results-fill';
     createResultsList<(typeof passages)[number]>().render(list, passages, ({ id, named }) => {
       const picked = places.flatMap((place, i) => (named.has(place) ? [i] : []));
       const identity = parseTalmudId(id);
@@ -158,7 +159,7 @@ export function rabbisOverlay(
       };
     });
     const box = document.createElement('div');
-    box.className = 'passage-list';
+    box.className = 'results-box';
     box.append(heading, list);
     return [box];
   }
@@ -228,16 +229,10 @@ export function rabbisOverlay(
             };
           }),
         ),
-        ...passageList(settings, data, travelTo),
       );
     }
 
-    const quick = document.createElement('div');
-    quick.className = 'rabbi-quick';
-    const heading = document.createElement('div');
-    heading.className = 'panel-section-heading';
-    heading.textContent = 'Most named';
-    quick.append(heading);
+    const eras: HTMLElement[] = [];
     for (const { heading: era, entries } of quickPicks(data)) {
       const group = document.createElement('div');
       group.className = 'rabbi-era';
@@ -265,9 +260,12 @@ export function rabbisOverlay(
         ),
       );
       group.append(chips);
-      quick.append(group);
+      eras.push(group);
     }
-    lists.append(quick);
+    lists.append(
+      pickQuick('Most named', eras, places.length > 0),
+      ...(places.length ? passageList(settings, data, travelTo) : []),
+    );
   }
 
   const finderIn = (container: HTMLElement): Finder =>

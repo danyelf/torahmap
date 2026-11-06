@@ -18,6 +18,7 @@ import {
   pickFinderIn,
   pickMeta,
   pickNote,
+  pickQuick,
   pickRow,
   pickSuggestions,
   type PickFinder,
@@ -186,12 +187,7 @@ export function listOverlay<D extends ListData>(
             onRemove: () => unpick(entry),
           })),
         ),
-        ...paperList(picked, colors, data, travelTo),
       );
-
-    const heading = document.createElement('div');
-    heading.className = 'panel-section-heading';
-    heading.textContent = kind.quickHeading ?? 'Most papers';
     const chips = pickChips(
       picks.quick(data).map((entry) =>
         pickChip(entry.label, {
@@ -202,9 +198,10 @@ export function listOverlay<D extends ListData>(
         }),
       ),
     );
-    const quick = document.createElement('div');
-    quick.append(heading, chips);
-    lists.append(quick);
+    lists.append(
+      pickQuick(kind.quickHeading ?? 'Most papers', [chips], picked.length > 0),
+      ...(picked.length ? paperList(picked, colors, data, travelTo) : []),
+    );
   }
 
   /** The papers the picks light, in program order; a click on one pins its first lit square and brings it into view. */
@@ -233,7 +230,7 @@ export function listOverlay<D extends ListData>(
     heading.className = 'panel-section-heading';
     heading.textContent = paperCount(listed.length);
     const list = document.createElement('div');
-    list.className = 'results-list';
+    list.className = 'results-list results-fill';
     createResultsList<(typeof listed)[number]>().render(
       list,
       listed,
@@ -245,7 +242,7 @@ export function listOverlay<D extends ListData>(
       }),
     );
     const box = document.createElement('div');
-    box.className = 'paper-list';
+    box.className = 'results-box';
     box.append(heading, list);
     return [box];
   }

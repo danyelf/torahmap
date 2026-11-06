@@ -201,7 +201,7 @@ function open(settings = picking(), travelTo: (id: string) => void = () => {}) {
 describe('the passage list', () => {
   const rows = (settings: PickSettings, travelTo?: (id: string) => void) => {
     const { container } = open(settings, travelTo);
-    return [...container.querySelectorAll<HTMLElement>('.passage-list .search-result')];
+    return [...container.querySelectorAll<HTMLElement>('.results-box .search-result')];
   };
   const dots = (row: HTMLElement) =>
     [...row.querySelectorAll<HTMLElement>('.term-dot')].map((dot) => dot.style.background !== '');
@@ -239,6 +239,29 @@ describe('the passage list', () => {
     const travelTo = vi.fn();
     rows(picking('lakish'), travelTo)[1].click();
     expect(travelTo).toHaveBeenCalledWith('A.2a.2');
+  });
+});
+
+describe('the quick picks once a rabbi is picked', () => {
+  const chipsShown = (container: HTMLElement) =>
+    !container.querySelector<HTMLElement>('.pick-quick-body')!.hidden;
+
+  it('show with no link while nothing is picked', () => {
+    const { container } = open(picking());
+    expect(container.querySelector('.pick-quick-link')).toBeNull();
+    expect(chipsShown(container)).toBe(true);
+  });
+
+  it('fold behind a link that shows and hides them, above the list', () => {
+    const { container } = open(picking('lakish'));
+    const link = container.querySelector<HTMLButtonElement>('.pick-quick-link')!;
+    expect(chipsShown(container)).toBe(false);
+    link.click();
+    expect(chipsShown(container)).toBe(true);
+    link.click();
+    expect(chipsShown(container)).toBe(false);
+    const order = [...container.querySelectorAll('.pick-picked, .pick-quick, .results-box')];
+    expect(order.map((el) => el.className)).toEqual(['pick-picked', 'pick-quick', 'results-box']);
   });
 });
 

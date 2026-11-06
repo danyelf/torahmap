@@ -393,8 +393,8 @@ body[data-menu] #story-cue {
   flex-direction: column;
 }
 
-/* A panel keeps its height and #panel-body scrolls it. Search's results are
-   the exception, below. */
+/* A panel keeps its height and #panel-body scrolls it. A panel that lists
+   results is the exception, below. */
 .tool {
   display: none;
   flex-direction: column;
@@ -440,25 +440,37 @@ body[data-open='about'] #about-panel {
   display: none;
 }
 
-/* Search's results fill what the panel has, in their own scroll. Every other
-   panel keeps its height and #panel-body scrolls it. */
+/* Search and an overlay's picked list choose, then list what they chose: the
+   choosing stays short at the top and the list fills what the panel has, in
+   its own scroll, so the overlay's colour key stays in view below it. The
+   chain of boxes down to the list takes the height. The panel never shrinks
+   below the choosing and a short list, so on a small sheet #panel-body scrolls
+   instead. */
 #search-panel,
-#search-controls {
+#overlay-panel:has(.results-fill) {
+  flex: 1 0 auto;
+}
+
+#search-controls,
+#overlay-panel:has(.results-fill) :is(#overlay-controls, .pick-finder, .pick-lists, .results-box) {
   flex: 1 1 auto;
   min-height: 0;
 }
 
-#search-controls {
+#search-controls,
+#overlay-controls,
+.results-box {
   display: flex;
   flex-direction: column;
 }
 
-#search-controls > * {
+:is(#search-controls, #overlay-panel, #overlay-controls, .pick-finder, .pick-lists, .results-box)
+  > * {
   flex-shrink: 0;
 }
 
-#panel #search-results {
-  flex: 1 1 auto;
+#panel .results-fill {
+  flex: 1 1 0;
   min-height: 120px;
   max-height: none;
 }
