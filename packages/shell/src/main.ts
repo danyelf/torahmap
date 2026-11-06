@@ -226,9 +226,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const baseColors = items.map((item, i) => text.baseColor(item, i));
   const base = (i: number): ItemColor => baseColors[i];
   const baseRings = text.baseRing && items.map((item, i) => text.baseRing!(item, i));
+  const baseRing = baseRings && ((i: number) => baseRings[i]);
   // A picture with its holes filled with each square's base colour, and its base ring.
   const fill = (picture: Picture<ItemColor | null>): Picture<ItemColor> =>
-    fillDefaultColors(picture, base, baseRings && ((i) => baseRings[i]));
+    fillDefaultColors(picture, base, baseRing);
 
   // Placed over the map; render() moves them with it.
   const labelLayer = document.createElement('div');
@@ -433,6 +434,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       base,
       storyTools,
       text.searchKeepsBase,
+      baseRing,
     );
   }
 
@@ -1539,6 +1541,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         base,
         storyTools,
         text.searchKeepsBase,
+        baseRing,
       ),
     );
   }

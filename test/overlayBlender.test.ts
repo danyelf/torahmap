@@ -476,6 +476,28 @@ describe('pictureForStop', () => {
       computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor, textTools).from,
     );
   });
+
+  it("gives a square its text's base ring", () => {
+    const stop: ResolvedStoryStop = {
+      id: 's1',
+      text: '',
+      camera: { x: 0, y: 0, zoom: 1 },
+      overlay: null,
+    };
+    const IVORY: Color = [1, 1, 0.9];
+    const ring = (i: number) => (i === 0 ? IVORY : null);
+    const picture = pictureForStop(
+      stop,
+      verses,
+      null,
+      new Map(),
+      getDefaultColor,
+      textTools,
+      undefined,
+      ring,
+    );
+    expect(picture.rings).toEqual([IVORY, null]);
+  });
 });
 
 describe('a stop whose overlay data is missing', () => {
