@@ -1,11 +1,12 @@
 // What a build of the site holds: the live site's, built from main, has the Tanakh's page and the
 // pages whose flag is on; every other branch's preview has every page.
 
+import { CODEMAP_DATA_DIR } from '@torahmap/codemap/data.ts';
 import { EUAIACT_DATA_DIR } from '@torahmap/euaiact/data.ts';
 import { IEEEVIS_DATA_DIR } from '@torahmap/ieeevis/data.ts';
 import { TALMUD_DATA_DIR } from '@torahmap/talmud/data.ts';
 
-export type BuiltPage = 'main' | 'talmud' | 'euaiact' | 'ieeevis';
+export type BuiltPage = 'main' | 'talmud' | 'euaiact' | 'ieeevis' | 'codemap';
 
 /** A page beside the Tanakh's: its data folder under public/data/, and whether the live site has it. */
 export interface ExtraPage {
@@ -18,6 +19,7 @@ export const EXTRA_PAGES: readonly ExtraPage[] = [
   { page: 'talmud', dataDir: TALMUD_DATA_DIR, live: true },
   { page: 'euaiact', dataDir: EUAIACT_DATA_DIR, live: true },
   { page: 'ieeevis', dataDir: IEEEVIS_DATA_DIR, live: true },
+  { page: 'codemap', dataDir: CODEMAP_DATA_DIR, live: false },
 ];
 
 export function isLiveBuild(command: 'build' | 'serve', branch: string): boolean {
