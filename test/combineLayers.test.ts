@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   combineLayers,
   fillDefaultColors,
+  takePassageLook,
   toolsPicture,
 } from '../packages/shell/src/itemColoring.ts';
 import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
@@ -324,5 +325,32 @@ describe('toolsPicture', () => {
     );
 
     expect(picture.colors).toEqual([RED]);
+  });
+});
+
+describe('takePassageLook', () => {
+  const IVORY: Color = [1, 1, 0.9];
+
+  it('draws a square as its passage, ring included, and leaves the others', () => {
+    const picture = takePassageLook(
+      { colors: [RED, BLUE, RED], rings: [null, IVORY, null] },
+      (i) => (i === 1 ? 0 : null),
+    );
+    expect(picture.colors).toEqual([RED, RED, RED]);
+    expect(picture.rings).toEqual([null, RED, null]);
+  });
+
+  it("keeps the passage's own ring, as a search match has", () => {
+    const picture = takePassageLook({ colors: [RED, BLUE], rings: [ORANGE, IVORY] }, (i) =>
+      i === 1 ? 0 : null,
+    );
+    expect(picture.rings).toEqual([ORANGE, ORANGE]);
+  });
+
+  it('is the same picture when it is taken again', () => {
+    const once = takePassageLook({ colors: [RED, BLUE], rings: [null, IVORY] }, (i) =>
+      i === 1 ? 0 : null,
+    );
+    expect(takePassageLook(once, (i) => (i === 1 ? 0 : null))).toEqual(once);
   });
 });
