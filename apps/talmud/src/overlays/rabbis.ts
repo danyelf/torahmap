@@ -199,14 +199,13 @@ export function rabbisOverlay(
     } else if (isSearchableWord(typed)) {
       const found = suggest(data, typed, places);
       lists.append(
-        full || !found.length
-          ? pickSuggestions(1, () =>
-              pickNote(full ? `${MAX_PICKS} at most: unpick one first.` : 'No rabbi by that name.'),
-            )
-          : pickSuggestions(found.length, (i) => {
-              const { place, matched } = found[i];
-              return rabbiRow(data, place, () => pick(place), matched);
-            }),
+        pickSuggestions(
+          full
+            ? [pickNote(`${MAX_PICKS} at most: unpick one first.`)]
+            : found.length
+              ? found.map(({ place, matched }) => rabbiRow(data, place, () => pick(place), matched))
+              : [pickNote('No rabbi by that name.')],
+        ),
       );
     }
 

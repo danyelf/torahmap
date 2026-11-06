@@ -168,15 +168,13 @@ export function listOverlay<D extends ListData>(
     if (isSearchableWord(input.value)) {
       const found = picks.suggest(data, input.value, picked);
       lists.append(
-        full || !found.length
-          ? pickSuggestions(1, () =>
-              pickNote(
-                full ? `${MAX_PICKS} at most: unpick one first.` : `No ${noun.one} by that name.`,
-              ),
-            )
-          : pickSuggestions(found.length, (i) =>
-              pickRow(linesOf(found[i]), () => choose(found[i], 'typed')),
-            ),
+        pickSuggestions(
+          full
+            ? [pickNote(`${MAX_PICKS} at most: unpick one first.`)]
+            : found.length
+              ? found.map((entry) => pickRow(linesOf(entry), () => choose(entry, 'typed')))
+              : [pickNote(`No ${noun.one} by that name.`)],
+        ),
       );
     }
 

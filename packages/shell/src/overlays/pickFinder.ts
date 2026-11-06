@@ -4,7 +4,6 @@
 import './pickFinder.css';
 import { colorToCss, type Color } from '@torahmap/utils';
 import { CONTROL } from '../panel.ts';
-import { windowOf } from './windowOf.ts';
 
 export interface PickFinder {
   root: HTMLElement;
@@ -50,13 +49,6 @@ export function pickFinderIn<F extends PickFinder>(
   container.replaceChildren(root);
   const finder = extend({ root, input, lists });
   input.addEventListener('input', () => onType(finder));
-  input.addEventListener('keydown', (event) => {
-    if (event.key !== 'ArrowDown') return;
-    const first = root.querySelector<HTMLElement>('.pick-suggestions [data-index="0"]');
-    if (!first) return;
-    event.preventDefault();
-    first.focus();
-  });
   finders.set(container, finder);
   return finder;
 }
@@ -120,94 +112,11 @@ export function pickedList(
   return list;
 }
 
-const GAP = 4;
-const OVERSCAN = 6;
-/** Until a row is drawn and measured, a row is taken to be this tall. */
-const GUESSED_ROW = 60;
-
-/**
- * The suggestions for what was typed, one above another: `count` rows, each made by `row` only
- * while it is near the scroll box's view, so a long list costs no more than a short one. The box
- * keeps the full height of all of them. The arrow keys move the focus from row to row, and from
- * the field into the first.
- */
-export function pickSuggestions(count: number, row: (index: number) => Node): HTMLElement {
+/** The suggestions for what was typed, one above another. */
+export function pickSuggestions(rows: Node[]): HTMLElement {
   const box = document.createElement('div');
   box.className = 'pick-suggestions';
-  const before = document.createElement('div');
-  const after = document.createElement('div');
-  box.append(before, after);
-  const heights = Array<number>(count).fill(GUESSED_ROW + GAP);
-  const drawn = new Map<number, HTMLElement>();
-
-  const tops = () => {
-    const found: number[] = [];
-    let top = 0;
-    for (const h of heights) {
-      found.push(top);
-      top += h;
-    }
-    return found;
-  };
-
-  function draw(): void {
-    for (let pass = 0; pass < 3; pass++) {
-      const {
-        start,
-        end,
-        before: above,
-        after: below,
-      } = windowOf(heights, box.scrollTop, box.clientHeight || window.innerHeight, OVERSCAN);
-      for (const [index, node] of drawn) {
-        if (index >= start && index < end) continue;
-        node.remove();
-        drawn.delete(index);
-      }
-      let next: Node = after;
-      for (let index = end - 1; index >= start; index--) {
-        let node = drawn.get(index);
-        if (!node) {
-          node = row(index) as HTMLElement;
-          node.dataset.index = String(index);
-          drawn.set(index, node);
-        }
-        if (node.nextSibling !== next) box.insertBefore(node, next);
-        next = node;
-      }
-      before.style.height = `${above}px`;
-      after.style.height = `${below}px`;
-      let moved = false;
-      for (const [index, node] of drawn) {
-        const height = node.offsetHeight + GAP;
-        if (node.offsetHeight && height !== heights[index]) {
-          heights[index] = height;
-          moved = true;
-        }
-      }
-      if (!moved) return;
-    }
-  }
-
-  function focusRow(index: number): void {
-    const top = tops()[index];
-    if (top < box.scrollTop) box.scrollTop = top;
-    else if (top + heights[index] > box.scrollTop + box.clientHeight)
-      box.scrollTop = top + heights[index] - box.clientHeight;
-    draw();
-    drawn.get(index)?.focus({ preventScroll: true });
-  }
-
-  box.addEventListener('scroll', draw);
-  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(draw).observe(box);
-  box.addEventListener('keydown', (event) => {
-    const at = Number((event.target as HTMLElement).dataset.index);
-    if (Number.isNaN(at)) return;
-    const to = { ArrowDown: at + 1, ArrowUp: at - 1, Home: 0, End: count - 1 }[event.key];
-    if (to === undefined) return;
-    event.preventDefault();
-    if (to >= 0 && to < count) focusRow(to);
-  });
-  draw();
+  box.append(...rows);
   return box;
 }
 

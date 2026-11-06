@@ -10,6 +10,7 @@
   gap: 10px;
 }
 
+.pick-suggestions,
 .pick-picked {
   display: flex;
   flex-direction: column;
@@ -135,13 +136,4 @@
 /* While suggestions answer what was typed, the quick picks give the list the room. */
 .pick-suggestions ~ .pick-quick {
   display: none;
-}
-
-.pick-suggestions .pick-row {
-  width: 100%;
-  margin-bottom: 4px;
-}
-
-.pick-suggestions > .pick-note {
-  display: block;
 }
