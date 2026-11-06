@@ -67,19 +67,20 @@
   color: #bbb;
 }
 
-/* Links.
+/* Links, in the about panel and the popup's English text.
  *
- * On the panel (#020202 once composited), #8ec5f7 reaches 11.3:1, above the
+ * On the about panel (#020202 once composited), #8ec5f7 reaches 11.3:1, above the
  * body text's 10.8:1 (#bbb), so a link reads brighter than the prose around
  * it; the frame's accent, #6ab0f3, reaches only 9.0:1 and would read dimmer.
  * The underline carries the distinction without depending on colour at all.
  */
-#about-panel {
+:root {
   --link: #8ec5f7;
   --link-hover: #b6d9fa;
 }
 
-#about-panel a {
+#about-panel a,
+#popup .popup-english a {
   color: var(--link);
   text-decoration: underline;
   text-decoration-thickness: 1px;
@@ -90,12 +91,14 @@
     text-decoration-color 0.15s;
 }
 
-#about-panel a:hover {
+#about-panel a:hover,
+#popup .popup-english a:hover {
   color: var(--link-hover);
   text-decoration-color: var(--link-hover);
 }
 
-#about-panel a:focus-visible {
+#about-panel a:focus-visible,
+#popup .popup-english a:focus-visible {
   outline: 2px solid var(--link);
   outline-offset: 2px;
   border-radius: 2px;
