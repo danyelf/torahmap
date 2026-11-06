@@ -228,7 +228,14 @@ describe('the value', () => {
 });
 
 describe('what a change touched', () => {
-  const nothing = { switched: false, settings: false, search: false, step: false };
+  const nothing = {
+    switched: false,
+    settings: false,
+    search: false,
+    step: false,
+    linked: { overlay: false, search: false },
+  };
+  const linked = (overlay: boolean, search: boolean) => ({ linked: { overlay, search } });
 
   it('sees a switch, which Back can undo', () => {
     const before = empty();
@@ -242,7 +249,11 @@ describe('what a change touched', () => {
   it("sees an edit to the overlay's settings", () => {
     const before = on('picks');
     const after = withOverlaySettings(before, tools, picks, add(1));
-    expect(toolsChange(before, after, tools)).toEqual({ ...nothing, settings: true });
+    expect(toolsChange(before, after, tools)).toEqual({
+      ...nothing,
+      settings: true,
+      ...linked(true, false),
+    });
   });
 
   it('sees nothing in an edit to an overlay that is not on', () => {
@@ -265,8 +276,32 @@ describe('what a change touched', () => {
     const off = empty();
     const searching = withSearch(off, tools, add(1));
     const more = withSearch(searching, tools, add(2));
-    expect(toolsChange(off, searching, tools)).toEqual({ ...nothing, search: true, step: true });
-    expect(toolsChange(searching, more, tools)).toEqual({ ...nothing, search: true });
-    expect(toolsChange(more, off, tools)).toEqual({ ...nothing, search: true, step: true });
+    const searchLinked = linked(false, true);
+    expect(toolsChange(off, searching, tools)).toEqual({
+      ...nothing,
+      search: true,
+      step: true,
+      ...searchLinked,
+    });
+    expect(toolsChange(searching, more, tools)).toEqual({
+      ...nothing,
+      search: true,
+      ...searchLinked,
+    });
+    expect(toolsChange(more, off, tools)).toEqual({
+      ...nothing,
+      search: true,
+      step: true,
+      ...searchLinked,
+    });
+  });
+
+  it('tells a link naming the same tools from one naming new ones', () => {
+    const link = { overlay: 'picks', overlayParams: { picksColors: '1' } };
+    const before = fromLink(link, empty(), tools);
+    const again = fromLink(link, before, tools);
+    const other = fromLink({ ...link, searchParams: { searchColors: '2' } }, before, tools);
+    expect(toolsChange(before, again, tools)).toMatchObject(linked(false, false));
+    expect(toolsChange(before, other, tools)).toMatchObject(linked(false, true));
   });
 });

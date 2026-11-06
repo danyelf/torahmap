@@ -1000,9 +1000,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const overlayStarts = document.getElementById('overlay-starts')!;
 
   /**
-   * Make `next` the tools and redraw what shows them. A reader's change redraws its panel in place,
-   * keeping the focus in it. While a story has the map its frame paints, as a repaint here would
-   * replace its blend between two stops. A link or a stop writes no URL (`applyingExternalState`).
+   * Make `next` the tools and redraw what shows them. A panel is redrawn into what is there, keeping
+   * its focus, unless its overlay switched or a link or a stop names other settings for its tool
+   * than the panel had. While a story has the map its frame
+   * paints, as a repaint here would replace its blend between two stops. A link or a stop writes no
+   * URL (`applyingExternalState`).
    */
   function setTools(next: ToolState<S>, by: 'reader' | 'outside'): void {
     const before = tools;
@@ -1016,17 +1018,20 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       activeOverlay(before, textTools)?.destroy?.();
     }
     document.body.dataset.overlay = overlayId();
-    if (!outside && change.search) {
-      searchTool.telemetry.readerChanged(tools.search, dataFor(searchTool, loader.loaded()));
+    if (change.search) {
+      const data = dataFor(searchTool, loader.loaded());
+      // A link's search, even one naming the words already there, counts as sent, not the reader's.
+      if (outside) searchTool.telemetry.replaced(tools.search, data);
+      else searchTool.telemetry.readerChanged(tools.search, data);
     }
     const painting = driver.by === 'reader';
     if (painting) applyTools();
-    if (outside || change.search) {
+    if (change.search) {
       viewFiles.fetchSearch();
-      drawSearchPanel(outside);
+      drawSearchPanel(outside && change.linked.search);
     }
-    if (outside || change.switched || change.settings) {
-      drawOverlayPanel(outside || change.switched);
+    if (change.switched || change.settings) {
+      drawOverlayPanel(change.switched || (outside && change.linked.overlay));
     }
     updateLegend();
     refreshPopup();
@@ -1091,8 +1096,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   /**
-   * Draw the overlay panel. `fresh` clears the controls first, for a different overlay or settings
-   * from elsewhere; a reader's own edit redraws into them, keeping their focus.
+   * Draw the overlay panel. `fresh` clears the controls first; otherwise they are redrawn into,
+   * keeping their focus.
    */
   function drawOverlayPanel(fresh: boolean): void {
     if (fresh) {
@@ -1121,7 +1126,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (fresh) {
       searchTool.destroy?.();
       searchControls.innerHTML = '';
-      searchTool.telemetry.replaced(tools.search, dataFor(searchTool, loader.loaded()));
     }
     searchTool.renderControls?.(
       searchControls,
@@ -1232,6 +1236,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       text.stories.resolve(stops, initialCamera, items, squares, mapFocus(), mapViewport()),
   );
   storyColumn.onMove(storyMoved);
+  // None's places to start list the stories, so the overlay panel waits for the column.
+  drawOverlayPanel(true);
   configureAnalytics({ getStory: () => storyColumn.where().story.id });
   applyFrame();
 
@@ -1710,9 +1716,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // A link that names nothing has opened the story and handed it the map.
     if (driver.by !== 'reader') handOver(readerTakesOver(0), 'fold');
     closeStory(landingFrame(phone, 'overlay', true));
-    // No stop has drawn the overlay panel, so None's places to start are not in it yet.
-    drawOverlayPanel(true);
-    // Nor its colours: a link that names no view never reaches restoreFromUrl, and
+    // No stop has painted the map: a link that names no view never reaches restoreFromUrl, and
     // without an overlay no file landing repaints the map.
     applyTools();
   }

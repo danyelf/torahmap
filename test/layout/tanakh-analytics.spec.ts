@@ -46,6 +46,23 @@ test('a linked search is never recorded; a word the reader adds is', async ({ pa
   expect(errors).toEqual([]);
 });
 
+test('a linked search Back brings again is never recorded either', async ({ page }) => {
+  const errors = await openMap(page, 'search=light&verse=Genesis.1.3');
+  await allLoaded(page);
+  await recordEvents(page);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => param(page, 'verse')).toBeNull();
+  await page.goBack();
+  await expect.poll(() => param(page, 'verse')).toBe('Genesis.1.3');
+  await viaMenu(page, 'search');
+  await page.locator('#add-term').click();
+  await page.locator('.term-row[data-open="true"] .term-input').fill('dark');
+  await expect.poll(() => sentSearches(page)).toEqual(['dark']);
+  await allLoaded(page);
+  expect(await sentSearches(page)).toEqual(['dark']);
+  expect(errors).toEqual([]);
+});
+
 test('going to a place records what was typed and where it led', async ({ page }) => {
   const errors = await openMap(page, '');
   await recordEvents(page);

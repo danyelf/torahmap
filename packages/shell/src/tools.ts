@@ -173,6 +173,8 @@ interface ToolsChange {
   search: boolean;
   /** The overlay switched or the search turned on or off: a step Back can undo. */
   step: boolean;
+  /** What a link names of each tool changed, as opposed to settings it does not carry. */
+  linked: { overlay: boolean; search: boolean };
 }
 
 export function toolsChange<T, S>(
@@ -181,6 +183,7 @@ export function toolsChange<T, S>(
   tools: TextTools<T, S>,
 ): ToolsChange {
   const switched = before.active !== after.active;
+  const [linkBefore, linkAfter] = [toLink(before, tools), toLink(after, tools)];
   const { active } = after;
   return {
     switched,
@@ -189,7 +192,16 @@ export function toolsChange<T, S>(
       !switched && active !== null && before.overlays.get(active) !== after.overlays.get(active),
     search: before.search !== after.search,
     step: switched || togglesSearch(tools.search, before.search, after.search),
+    linked: {
+      overlay: !sameParams(linkBefore.overlayParams, linkAfter.overlayParams),
+      search: !sameParams(linkBefore.searchParams, linkAfter.searchParams),
+    },
   };
+}
+
+function sameParams(a: Record<string, string>, b: Record<string, string>): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
 }
 
 /** The tools as a link carries them. */
