@@ -263,7 +263,7 @@ export function rabbisOverlay(
       eras.push(group);
     }
     lists.append(
-      pickQuick('Most named', eras, places.length > 0),
+      pickQuick('Most named rabbis', eras, places.length > 0),
       ...(places.length ? passageList(settings, data, travelTo) : []),
     );
   }
