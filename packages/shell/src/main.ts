@@ -87,7 +87,12 @@ import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { createBackdrop } from './backdrop.ts';
 import { restingHover } from './restingHover.ts';
-import { toolsPicture, layerToRecompute, fillDefaultColors } from './itemColoring.ts';
+import {
+  toolsPicture,
+  layerToRecompute,
+  fillDefaultColors,
+  takePassageLook,
+} from './itemColoring.ts';
 import { settingsFromLink } from './overlays/settings.ts';
 import {
   NO_OVERLAY,
@@ -226,10 +231,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const baseColors = items.map((item, i) => text.baseColor(item, i));
   const base = (i: number): ItemColor => baseColors[i];
   const baseRings = text.baseRing && items.map((item, i) => text.baseRing!(item, i));
-  const baseRing = baseRings && ((i: number) => baseRings[i]);
-  // A picture with its holes filled with each square's base colour, and its base ring.
-  const fill = (picture: Picture<ItemColor | null>): Picture<ItemColor> =>
-    fillDefaultColors(picture, base, baseRing);
+  const ringsFrom = text.ringsFrom;
+  const passages = ringsFrom && items.map((item, i) => ringsFrom.passageOf(item, i));
+  // Whether the camera is too far out for the text's rings: the squares then look like their passages.
+  let farOut = false;
+  // The state of `farOut` that each side of the colour layer was filled for.
+  let layerFar = { from: false, to: false };
+  const bothFar = (far = farOut) => ({ from: far, to: far });
+  /** A picture with its holes filled with each square's base colour, and its base ring. */
+  const fill = (picture: Picture<ItemColor | null>, far = farOut): Picture<ItemColor> => {
+    const filled = fillDefaultColors(picture, base, baseRings && ((i) => baseRings[i]));
+    return far && passages ? takePassageLook(filled, (i) => passages[i]) : filled;
+  };
 
   // Placed over the map; render() moves them with it.
   const labelLayer = document.createElement('div');
@@ -292,14 +305,21 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // The pictures' fields, not the pictures: a story stop's are cached, while
     // the pictures around them are made afresh each frame.
     const inputs = [from, to].flatMap((p) => (p ? Object.entries(p).flat() : [null]));
+    inputs.push(layerFar.from, layerFar.to);
     if (inputs.length === built.length && inputs.every((input, i) => input === built[i])) return;
     built = inputs;
 
-    rebuildGeometry(renderContext.gl, renderState, fill(from), to && fill(to));
+    rebuildGeometry(
+      renderContext.gl,
+      renderState,
+      fill(from, layerFar.from),
+      to && fill(to, layerFar.to),
+    );
   }
 
-  function setColorLayer(next: ColorLayer<ItemColor | null>): void {
+  function setColorLayer(next: ColorLayer<ItemColor | null>, far = bothFar()): void {
     colorLayer = next;
+    layerFar = far;
     composite();
   }
 
@@ -374,7 +394,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * through the renderer's own picture blend — the one a story ease uses —
    * then `settle` paints the picture it rests on. Snaps under reduced motion.
    */
-  function fadeMap(to: Picture, settle: () => void): void {
+  function fadeMap(to: Picture, settle: () => void, far = bothFar()): void {
     cancelFade();
     if (reducedMotion.matches) {
       settle();
@@ -395,7 +415,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         // itself) until the next repaint.
         settle();
       } else {
-        setColorLayer({ from, to, t: easingFunctions[DEFAULT_EASING](raw) });
+        setColorLayer({ from, to, t: easingFunctions[DEFAULT_EASING](raw) }, far);
         fadeFrame = requestAnimationFrame(step);
       }
       render();
@@ -434,7 +454,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       base,
       storyTools,
       text.searchKeepsBase,
-      baseRing,
     );
   }
 
@@ -497,6 +516,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   const camera = text.startCamera(mapViewport());
+  if (ringsFrom) farOut = camera.zoom < ringsFrom.zoom;
 
   let pinnedItem: I | null = null;
 
@@ -688,7 +708,23 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // overlay or pin out from under it.
   let lastSyncedStopId: string | null = null;
 
+  /** Redraws the map's rings for the camera's distance: a fade while exploring, a snap in a story. */
+  function syncRings(): void {
+    if (!ringsFrom || camera.zoom < ringsFrom.zoom === farOut) return;
+    const out = !farOut;
+    if (driver.by === 'story') {
+      farOut = out;
+      setColorLayer(colorLayer, bothFar());
+      return;
+    }
+    // The picture it fades from keeps its own look; `to` is filled for the new one.
+    const to = fill(explorePicture(), out);
+    farOut = out;
+    fadeMap(to, applyTools, { from: !out, to: out });
+  }
+
   function render(): void {
+    syncRings();
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
     backdrop.place(offset, camera.zoom);
     moveLabels(offset, camera.zoom);
@@ -1511,8 +1547,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
   function withDefaults(layer: ColorLayer<ItemColor | null>): ColorLayer {
     return {
-      from: fill(layer.from),
-      to: layer.to && fill(layer.to),
+      from: fill(layer.from, layerFar.from),
+      to: layer.to && fill(layer.to, layerFar.to),
       t: layer.t,
     };
   }
@@ -1541,7 +1577,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         base,
         storyTools,
         text.searchKeepsBase,
-        baseRing,
       ),
     );
   }

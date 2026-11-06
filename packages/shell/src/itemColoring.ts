@@ -86,6 +86,28 @@ export function fillDefaultColors(
   };
 }
 
+/**
+ * `picture` with each square `passageOf` names drawn as its passage's square: its colour, its
+ * ring and its stripes. The ring is the passage's colour where it has none, so the square stays
+ * solid when blended with one that has a ring.
+ */
+export function takePassageLook(
+  picture: Picture<ItemColor>,
+  passageOf: (index: number) => number | null,
+): Picture<ItemColor> {
+  const colors = [...picture.colors];
+  const rings = picture.colors.map((_, i) => picture.rings?.[i] ?? null);
+  const uncoloured = picture.uncoloured && [...picture.uncoloured];
+  colors.forEach((_, i) => {
+    const j = passageOf(i);
+    if (j === null) return;
+    colors[i] = picture.colors[j];
+    rings[i] = picture.rings?.[j] ?? picture.colors[j];
+    if (uncoloured) uncoloured[i] = uncoloured[j];
+  });
+  return { ...picture, colors, rings, ...(uncoloured && { uncoloured }) };
+}
+
 /** A settled overlay's colours, one entry per item. */
 export function overlayColorsFor<T, S, D>(
   overlay: Overlay<T, S, D> | null,

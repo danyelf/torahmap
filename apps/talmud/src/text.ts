@@ -23,6 +23,7 @@ import { createMishnahLetters } from './mishnahMarks.ts';
 import { createMapLabels, sectionLabelReach } from '@torahmap/shell/mapLabels.ts';
 import {
   HADRAN_RING_COLOR,
+  PEREK_LABEL_ZOOM,
   SEARCH_KEEPS_BASE,
   SEDARIM,
   SEDER_LABEL_SIZE,
@@ -127,6 +128,12 @@ export const talmudText: MapText<TalmudLayoutItem, TermSettings> = {
 
       baseColor,
       baseRing: (item) => (hadrans.has(item.id) ? HADRAN_RING_COLOR : null),
+      // Far out the hadran lines would crowd the map with ivory; they take their passage's look.
+      ringsFrom: {
+        zoom: PEREK_LABEL_ZOOM,
+        passageOf: (item, i) =>
+          hadrans.has(item.id) && laid.items[i - 1]?.tractate === item.tractate ? i - 1 : null,
+      },
       searchKeepsBase: SEARCH_KEEPS_BASE,
 
       labels(container) {

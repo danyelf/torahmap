@@ -519,6 +519,14 @@ export const TALMUD_STATES: State[] = [
     },
     shown: ['#overlay-legend'],
   },
+  // Hadran lines are rings from zoom 0.7 up, and look like their passages below it.
+  { name: 'talmud-hadran-near', link: 'zoom=0.8&x=6800&y=240', shown: ['#canvas'] },
+  { name: 'talmud-hadran-far', link: 'zoom=0.6&x=6800&y=240', shown: ['#canvas'] },
+  {
+    name: 'talmud-hadran-far-rabbis',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish&zoom=0.6&x=6800&y=240',
+    shown: ['#canvas'],
+  },
   { name: 'talmud-dating', link: 'overlay=dating', shown: ['#map-legend'] },
   {
     name: 'talmud-dating-pinned',
