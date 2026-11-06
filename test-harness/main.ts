@@ -158,6 +158,7 @@ async function main(): Promise<void> {
         draw();
       },
       data,
+      () => {},
     );
   }
   draw();

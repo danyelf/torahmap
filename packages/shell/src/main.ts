@@ -1072,6 +1072,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     glideToItem(item);
   }
 
+  /** Pins the square `id` names and brings it into view, for an overlay's panel. */
+  function travelTo(id: string): void {
+    const item = squares.find(id);
+    if (item) pinAndGlide(item);
+  }
+
   /** Draw what the active overlay says about the square in focus. */
   function renderOverlayFocus(): void {
     if (!overlayFocusContainer) return;
@@ -1080,10 +1086,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (!overlay?.renderFocus) return;
     const data = dataFor(overlay, loader.loaded());
     if (!data) return;
-    const travelTo = (id: string) => {
-      const item = squares.find(id);
-      if (item) pinAndGlide(item);
-    };
     overlay.renderFocus(
       overlayFocusContainer,
       hoveredItem,
@@ -1103,6 +1105,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       settingsIn(tools, overlay),
       (update) => changeSettings(overlay, update),
       dataFor(overlay, loader.loaded()),
+      travelTo,
     );
   }
 
@@ -1143,6 +1146,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       tools.search,
       changeSearch,
       dataFor(searchTool, loader.loaded()),
+      travelTo,
     );
     viewFiles.showSearchNotice();
   }

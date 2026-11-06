@@ -115,6 +115,25 @@ function standingIn({ dating }: RabbiData, id: string): Map<number, Certainty> {
 export const namedIn = (data: RabbiData, id: string, places: readonly number[]) =>
   new Map([...standingIn(data, id)].filter(([place]) => places.includes(place)));
 
+/** The passages that name any of `places`, in Talmud order, each with how it names them. */
+export const passagesNaming = (data: RabbiData, places: readonly number[]) =>
+  places.length
+    ? Object.keys(data.dating.segments).flatMap((id) => {
+        const named = namedIn(data, id, places);
+        return named.size ? [{ id, named }] : [];
+      })
+    : [];
+
+/** The names a passage lists, once each: a rabbi's own where it is certain, else the shared name. */
+export function namesIn({ dating }: RabbiData, id: string): string[] {
+  const names = new Set<string>();
+  for (const person of dating.segments[id]?.[2] ?? []) {
+    const { sure, who } = readingOf(dating, person);
+    names.add(sure ? dating.rabbis[who[0]].en : dating.people[person].en);
+  }
+  return [...names];
+}
+
 /** The passages a rabbi is named in, for certain and else. */
 export const passagesOf = (data: RabbiData, place: number) => {
   const { sure, maybe } = indexFor(data);

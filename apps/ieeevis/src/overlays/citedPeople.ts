@@ -11,7 +11,7 @@ export const citedPeopleOverlay = listOverlay<CitedData>({
   noun: { one: 'cited person', many: 'cited people' },
   data: CITED_DATA,
   namesOf: (paper, data) => peopleByPaper(data).get(paper.index) ?? [],
-  namesAt: (item, data) => peopleAt(data).get(item.id) ?? [],
+  namesAt: (id, data) => peopleAt(data).get(id) ?? [],
   titlesOf: (person, data) => titlesByPerson(data).get(person) ?? [],
   ...CITED_WORDING,
 });

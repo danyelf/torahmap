@@ -69,7 +69,7 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
     return overlay.standoutsFor!({ ...args, settings });
   },
 
-  renderControls(container, settings, onChange, data) {
+  renderControls(container, settings, onChange, data, travelTo) {
     if (!container.querySelector('.control-segments')) {
       const toggle = document.createElement('div');
       toggle.className = CONTROL.segments;
@@ -109,6 +109,7 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
             lists: { ...current.lists, [view]: update(current.lists[view], taken) },
           })),
         data,
+        travelTo,
       );
     }
   },

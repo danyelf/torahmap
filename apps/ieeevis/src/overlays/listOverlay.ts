@@ -24,11 +24,11 @@ import {
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { trackOverlayPick, type PickHow } from '@torahmap/shell/analytics.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
-import { mark } from '@torahmap/search';
+import { createResultsList, mark } from '@torahmap/search';
 import { baseColor, isPlaceholder } from '../baseColor.ts';
 import { entriesOf } from '../citations.ts';
-import { REFERENCES_SECTION } from '../data.ts';
-import type { PieceItem } from '../layout.ts';
+import { REFERENCES_SECTION, type Paper } from '../data.ts';
+import { pieceId, type PieceItem } from '../layout.ts';
 import { legendRow, swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import {
   listedBy,
@@ -44,6 +44,8 @@ import {
 const UNLIT_KEEPS = 0.35;
 /** How much of its pick's colour a lit paper keeps where it has no text, so it still reads as missing. */
 const PLACEHOLDER_KEEPS = 0.6;
+
+const paperCount = (n: number) => `${n} paper${n === 1 ? '' : 's'}`;
 
 const colorsOf = (picked: readonly Picked[]) => pickColors(picked.map((p) => p.slot));
 
@@ -84,6 +86,7 @@ interface Finder<D> extends PickFinder {
   settings: ListSettings;
   data: D | null;
   onChange(update: SettingsUpdate<ListSettings>): void;
+  travelTo(id: string): void;
 }
 
 export function listOverlay<D extends ListData>(
@@ -93,25 +96,26 @@ export function listOverlay<D extends ListData>(
   const aNoun = `${/^[aeiou]/.test(noun.one) ? 'an' : 'a'} ${noun.one}`;
   const picks = picksOf(kind);
   const lead = kind.popupLead ? `${kind.popupLead}: ` : '';
-  const papers = (n: number) =>
-    `${kind.countLead ? `${kind.countLead} ` : ''}${n} paper${n === 1 ? '' : 's'}`;
+  const papers = (n: number) => `${kind.countLead ? `${kind.countLead} ` : ''}${paperCount(n)}`;
   /** A pick's lines: what it is called, what says which one it is, and how many papers list it. */
   const linesOf = (entry: Entry) => [
     entry.label,
     ...(entry.detail ? [pickMeta(entry.detail)] : []),
     pickMeta(papers(entry.papers)),
   ];
-  const namesAt = kind.namesAt ?? ((item: PieceItem, data: D) => kind.namesOf(item.paper, data));
+  /** Which of `picked` light the square `id` of `paper`, as places among them. */
+  const litBy = (picked: readonly Entry[], paper: Paper, id: string, data: D) =>
+    listedBy(picked, kind.namesAt?.(id, data) ?? kind.namesOf(paper, data));
   const listedUnder = (item: PieceItem, settings: ListSettings, data: D) => {
     const picked = picks.picked(settings, data);
-    return listedBy(picked, namesAt(item, data)).map((i) => picked[i]);
+    return litBy(picked, item.paper, item.id, data).map((i) => picked[i]);
   };
 
   /** The entries of the picked names' works in a reference list's `text`, in order, each with its pick's colour. */
   function entrySpans(item: PieceItem, text: string, settings: ListSettings, data: D) {
     if (item.section !== REFERENCES_SECTION) return [];
     const picked = picks.picked(settings, data);
-    return listedBy(picked, namesAt(item, data))
+    return litBy(picked, item.paper, item.id, data)
       .flatMap((i) =>
         entriesOf(text, kind.titlesOf!(picked[i].name, data)).map((span) => ({
           ...span,
@@ -139,7 +143,7 @@ export function listOverlay<D extends ListData>(
     return fragment;
   }
 
-  function drawFinder({ settings, data, onChange, input, lists }: Finder<D>): void {
+  function drawFinder({ settings, data, onChange, travelTo, input, lists }: Finder<D>): void {
     lists.replaceChildren();
     if (!data) {
       lists.append(pickNote(`Loading the ${noun.many}…`));
@@ -182,6 +186,7 @@ export function listOverlay<D extends ListData>(
             onRemove: () => unpick(entry),
           })),
         ),
+        ...paperList(picked, colors, data, travelTo),
       );
 
     const heading = document.createElement('div');
@@ -202,11 +207,60 @@ export function listOverlay<D extends ListData>(
     lists.append(quick);
   }
 
+  /** The papers the picks light, in program order; a click on one pins its first lit square and brings it into view. */
+  function paperList(
+    picked: readonly Picked[],
+    colors: readonly Color[],
+    data: D,
+    travelTo: (id: string) => void,
+  ): HTMLElement[] {
+    const listed = data.structure.days.flatMap((day) =>
+      day.sessions.flatMap((session) =>
+        session.papers.flatMap((paper) => {
+          const lit = [...paper.pieces].flatMap((_, n) => {
+            const id = pieceId(paper.index, n);
+            const under = litBy(picked, paper, id, data);
+            return under.length ? [{ id, under }] : [];
+          });
+          if (!lit.length) return [];
+          const under = [...new Set(lit.flatMap((square) => square.under))].sort((a, b) => a - b);
+          return [{ paper, session, under, first: lit[0].id }];
+        }),
+      ),
+    );
+    if (!listed.length) return [];
+    const heading = document.createElement('div');
+    heading.className = 'panel-section-heading';
+    heading.textContent = paperCount(listed.length);
+    const list = document.createElement('div');
+    list.className = 'results-list';
+    createResultsList<(typeof listed)[number]>().render(
+      list,
+      listed,
+      ({ paper, session, under, first }) => ({
+        colors: under.map((i) => colors[i]),
+        ref: paper.title,
+        snippet: document.createTextNode([paper.when, session.name].filter(Boolean).join(' · ')),
+        onSelect: () => travelTo(first),
+      }),
+    );
+    const box = document.createElement('div');
+    box.className = 'paper-list';
+    box.append(heading, list);
+    return [box];
+  }
+
   const finderIn = (container: HTMLElement): Finder<D> =>
     pickFinderIn<Finder<D>>(container, {
       placeholder: `Find ${aNoun} by name…`,
       label: `Find ${aNoun}`,
-      extend: (parts) => ({ ...parts, settings: { picked: [] }, data: null, onChange: () => {} }),
+      extend: (parts) => ({
+        ...parts,
+        settings: { picked: [] },
+        data: null,
+        onChange: () => {},
+        travelTo: () => {},
+      }),
       onType: drawFinder,
     });
 
@@ -229,7 +283,7 @@ export function listOverlay<D extends ListData>(
       if (!picked.length) return items.map(baseColor);
       const colors = colorsOf(picked);
       return items.map((item) => {
-        const lit = listedBy(picked, namesAt(item, data)).map((i) => colors[i]);
+        const lit = litBy(picked, item.paper, item.id, data).map((i) => colors[i]);
         if (!lit.length) return unlit(item);
         const shown = isPlaceholder(item) ? lit.map((c) => brighten(c, PLACEHOLDER_KEEPS)) : lit;
         return shown.length === 1 ? shown[0] : shown;
@@ -238,12 +292,12 @@ export function listOverlay<D extends ListData>(
 
     standoutsFor({ items, settings, data }) {
       const picked = picks.picked(settings, data);
-      return items.map((item) => listedBy(picked, namesAt(item, data)).length > 0);
+      return items.map((item) => litBy(picked, item.paper, item.id, data).length > 0);
     },
 
-    renderControls(container, settings, onChange, data) {
+    renderControls(container, settings, onChange, data, travelTo) {
       const finder = finderIn(container);
-      Object.assign(finder, { settings, data, onChange });
+      Object.assign(finder, { settings, data, onChange, travelTo });
       drawFinder(finder);
     },
 

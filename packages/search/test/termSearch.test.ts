@@ -57,7 +57,13 @@ describe('a term search with no extra mode', () => {
 
   it('counts its results by its own noun', () => {
     const container = document.createElement('div');
-    search.tool.renderControls!(container, fromLink({ search: 'gamma' }), () => {}, data);
+    search.tool.renderControls!(
+      container,
+      fromLink({ search: 'gamma' }),
+      () => {},
+      data,
+      () => {},
+    );
     expect(container.querySelector('#search-hit-caption')!.textContent).toBe('2 matching lines');
     search.tool.destroy!();
   });
@@ -66,7 +72,13 @@ describe('a term search with no extra mode', () => {
     let picked: string | null = null;
     search.configure(items, (item) => (picked = item.id));
     const container = document.createElement('div');
-    search.tool.renderControls!(container, fromLink({ search: 'delta' }), () => {}, data);
+    search.tool.renderControls!(
+      container,
+      fromLink({ search: 'delta' }),
+      () => {},
+      data,
+      () => {},
+    );
     container.querySelector<HTMLElement>('.search-result')!.click();
     expect(picked).toBe('b');
     search.tool.destroy!();
@@ -96,7 +108,13 @@ describe('a term search counting wholes', () => {
   it('says how many wholes match, by their noun', () => {
     const container = document.createElement('div');
     const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
-    wholes.tool.renderControls!(container, settings, () => {}, data);
+    wholes.tool.renderControls!(
+      container,
+      settings,
+      () => {},
+      data,
+      () => {},
+    );
     expect(container.querySelector('#search-hit-caption')!.textContent).toBe('2 matching poems');
     expect(wholes.hitCount(data, settings, settings.terms[0])).toBe(2);
     wholes.tool.destroy!();
@@ -105,7 +123,13 @@ describe('a term search counting wholes', () => {
   it('lists each whole once, at its first match', () => {
     const container = document.createElement('div');
     const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
-    wholes.tool.renderControls!(container, settings, () => {}, data);
+    wholes.tool.renderControls!(
+      container,
+      settings,
+      () => {},
+      data,
+      () => {},
+    );
     const rows = [...container.querySelectorAll('.search-result')].map((r) => r.textContent);
     expect(rows).toHaveLength(2);
     expect(rows[0]).toContain('x0');

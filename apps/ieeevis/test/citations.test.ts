@@ -137,7 +137,13 @@ describe('the cited works overlay', () => {
   it('finds a work by its title or its authors', () => {
     const open = (typed: string) => {
       const container = document.createElement('div');
-      citedWorksOverlay.renderControls!(container, { picked: [] }, () => {}, data);
+      citedWorksOverlay.renderControls!(
+        container,
+        { picked: [] },
+        () => {},
+        data,
+        () => {},
+      );
       const input = container.querySelector<HTMLInputElement>('.pick-input')!;
       input.value = typed;
       input.dispatchEvent(new Event('input'));
@@ -147,6 +153,20 @@ describe('the cited works overlay', () => {
     };
     expect(open('vega')[0]).toContain('Vega-Lite (2020)');
     expect(open('munzner')[0]).toContain('Visualization Analysis and Design');
+  });
+
+  it('takes the reader from a listed paper to the square that holds the work', () => {
+    const container = document.createElement('div');
+    const travels: string[] = [];
+    citedWorksOverlay.renderControls!(
+      container,
+      { picked: [workId(2)] },
+      () => {},
+      data,
+      (id) => travels.push(id),
+    );
+    container.querySelector<HTMLElement>('.search-result')!.click();
+    expect(travels).toEqual(['1.2']);
   });
 });
 
@@ -249,6 +269,7 @@ describe('the citations overlay', () => {
       settings,
       (update) => changes.push(update(settings, [])),
       data,
+      () => {},
     );
     container.querySelector<HTMLButtonElement>('[data-view="works"]')!.click();
     expect(changes).toEqual([{ ...settings, view: 'works' }]);

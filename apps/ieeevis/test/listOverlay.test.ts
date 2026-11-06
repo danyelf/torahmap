@@ -150,6 +150,7 @@ describe('the quick picks', () => {
       settings,
       (update) => changes.push(update(settings, [])),
       data,
+      () => {},
     );
     const chips = [...container.querySelectorAll<HTMLButtonElement>('.pick-chip')];
     return { chips, changes };
@@ -185,11 +186,48 @@ describe('the quick picks', () => {
   });
 });
 
+describe('the papers the picks light', () => {
+  const open = (picked: string[]) => {
+    const container = document.createElement('div');
+    const travels: string[] = [];
+    authorsOverlay.renderControls!(
+      container,
+      { picked },
+      () => {},
+      data,
+      (id) => travels.push(id),
+    );
+    const rows = [...container.querySelectorAll<HTMLElement>('.search-result')];
+    return { rows, travels };
+  };
+
+  it('are listed in program order, a dot for each pick that lists one', () => {
+    const { rows } = open(['Bei Wang', 'Ana Silva']);
+    expect(rows.map((r) => r.querySelectorAll('.term-dot').length)).toEqual([2, 1]);
+  });
+
+  it('take the reader to a paper’s first square when one is clicked', () => {
+    const { rows, travels } = open(['Bei Wang']);
+    rows[1].click();
+    expect(travels).toEqual(['1.0']);
+  });
+
+  it('are not listed while nothing is picked', () => {
+    expect(open([]).rows).toEqual([]);
+  });
+});
+
 describe('a typed pick', () => {
   it('is recorded as typed', () => {
     const sent = recording();
     const container = document.createElement('div');
-    authorsOverlay.renderControls!(container, { picked: [] }, () => {}, data);
+    authorsOverlay.renderControls!(
+      container,
+      { picked: [] },
+      () => {},
+      data,
+      () => {},
+    );
     const input = container.querySelector('input')!;
     input.value = 'nunez';
     input.dispatchEvent(new Event('input'));

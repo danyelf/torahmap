@@ -102,13 +102,25 @@ describe('Haftarah Overlay', () => {
     it('draws the custom picker, and the key once the readings arrive', () => {
       const container = document.createElement('div');
       const settings = { custom: 'ashkenazi' as const, preview: null, reading: null };
-      overlay.renderControls!(container, settings, () => {}, null);
+      overlay.renderControls!(
+        container,
+        settings,
+        () => {},
+        null,
+        () => {},
+      );
       expect(container.querySelector('#custom-select')).not.toBeNull();
       expect(container.querySelector('.haftarah-key')).toBeNull();
-      overlay.renderControls!(container, settings, () => {}, {
-        mappings: SAMPLE_HAFTARAH_MAPPINGS,
-        structure: SAMPLE_STRUCTURE,
-      });
+      overlay.renderControls!(
+        container,
+        settings,
+        () => {},
+        {
+          mappings: SAMPLE_HAFTARAH_MAPPINGS,
+          structure: SAMPLE_STRUCTURE,
+        },
+        () => {},
+      );
       expect(container.querySelector('.haftarah-key')).not.toBeNull();
     });
 

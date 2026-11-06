@@ -116,6 +116,7 @@ describe('URL State Sync Integration', () => {
           settings,
           (update) => (settings = update(settings, [])),
           dataFor(overlay, SAMPLE_LOADED),
+          () => {},
         );
       draw();
       (container.querySelector('.trop-grid button') as HTMLButtonElement).click();

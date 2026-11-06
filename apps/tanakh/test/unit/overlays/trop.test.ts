@@ -702,6 +702,7 @@ describe('Trop Overlay', () => {
         { tab: 'prose', mark: null, preview: null },
         () => {},
         null,
+        () => {},
       );
       expect(container.querySelectorAll('.trop-chart button')).toHaveLength(0);
       tropOverlay.renderControls!(
@@ -711,6 +712,7 @@ describe('Trop Overlay', () => {
         {
           texts: testVerseTexts,
         },
+        () => {},
       );
       expect(container.querySelectorAll('.trop-chart button').length).toBeGreaterThan(0);
     });

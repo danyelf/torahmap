@@ -84,7 +84,13 @@ describe('Commentary Overlay', () => {
 
     it('draws its picker but no legend before the data is in', () => {
       const controls = document.createElement('div');
-      overlay.renderControls!(controls, commentaryOverlay.settings, () => {}, null);
+      overlay.renderControls!(
+        controls,
+        commentaryOverlay.settings,
+        () => {},
+        null,
+        () => {},
+      );
       expect(controls.querySelector('select')).not.toBeNull();
       const legend = document.createElement('div');
       legend.innerHTML = 'stale';
