@@ -546,7 +546,7 @@ export const TALMUD_STATES: State[] = [
     link: 'overlay=rabbis',
     then: async (page) => {
       await viaMenu(page, 'overlay');
-      await page.locator('.pick-input').fill('ר');
+      await page.locator('.pick-input').fill('רב');
     },
     shown: ['.pick-suggestions'],
   },

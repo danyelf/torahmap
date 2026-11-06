@@ -266,7 +266,7 @@ test('a long list of rabbi matches stays inside the sheet and scrolls', async ({
   onlyOn(['phone'], 'the sheet is only this short on a phone');
   await openMap(page, 'overlay=rabbis', TALMUD);
   await viaMenu(page, 'overlay');
-  await page.locator('.pick-input').fill('ר');
+  await page.locator('.pick-input').fill('רב');
   await expect(page.locator('.pick-suggestions .pick-row').nth(5)).toBeVisible();
   const [body] = await full(page, '#panel-body');
   const [list] = await full(page, '.pick-suggestions');
@@ -283,7 +283,7 @@ test('the arrow keys walk down a long list of matches, keeping the focused one i
   desktopAndPhoneOnly();
   await openMap(page, 'overlay=rabbis', TALMUD);
   await viaMenu(page, 'overlay');
-  await page.locator('.pick-input').fill('ר');
+  await page.locator('.pick-input').fill('רב');
   await page.locator('.pick-input').press('ArrowDown');
   for (let i = 0; i < 30; i++) await page.keyboard.press('ArrowDown');
   const [row, list] = await page.evaluate(() =>
@@ -297,4 +297,14 @@ test('the arrow keys walk down a long list of matches, keeping the focused one i
   expect(row.bottom).toBeLessThanOrEqual(list.bottom + 1);
   await page.keyboard.press('Enter');
   await expect(page.locator('.pick-picked-row')).toHaveCount(1);
+});
+
+test('a single letter in the finder lists nothing', async ({ page }) => {
+  desktopAndPhoneOnly();
+  await openMap(page, 'overlay=rabbis', TALMUD);
+  await viaMenu(page, 'overlay');
+  await page.locator('.pick-input').fill('ר');
+  await expect(page.locator('.pick-suggestions')).toHaveCount(0);
+  await page.locator('.pick-input').fill('רב');
+  await expect(page.locator('.pick-suggestions')).toHaveCount(1);
 });

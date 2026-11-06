@@ -25,7 +25,7 @@ import {
   type PickFinder,
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { trackOverlayPick, type PickHow } from '@torahmap/shell/analytics.ts';
-import { brighten, colorToCss, type Color } from '@torahmap/utils';
+import { brighten, colorToCss, isSearchableWord, type Color } from '@torahmap/utils';
 import { createResultsList, mark } from '@torahmap/search';
 import { baseColor, isPlaceholder } from '../baseColor.ts';
 import { entriesOf } from '../citations.ts';
@@ -165,7 +165,7 @@ export function listOverlay<D extends ListData>(
       onChange(removePick(entry.name));
     };
 
-    if (input.value.trim()) {
+    if (isSearchableWord(input.value)) {
       const found = picks.suggest(data, input.value, picked);
       lists.append(
         full || !found.length
