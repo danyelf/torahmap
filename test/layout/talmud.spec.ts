@@ -251,3 +251,13 @@ test('a long list of passages scrolls on its own and leaves the colour key in vi
   });
   expect(scrolls).toEqual({ list: true, panel: false });
 });
+
+test("the overlay's description gives way to the list once a rabbi is picked", async ({ page }) => {
+  await openMap(page, 'overlay=rabbis', TALMUD);
+  await viaMenu(page, 'overlay');
+  const description = page.locator('#overlay-description');
+  await expect(description).toBeVisible();
+  await page.locator('.pick-quick .pick-chip').first().click();
+  await expect(page.locator('#overlay-panel .results-fill')).toBeVisible();
+  await expect(description).toBeHidden();
+});

@@ -436,7 +436,9 @@ body[data-open='about'] #about-panel {
   line-height: 1.5;
 }
 
-#overlay-description:empty {
+/* The description helps choose an overlay; while it lists results, the list needs the room. */
+#overlay-description:empty,
+#overlay-panel:has(.results-fill) #overlay-description {
   display: none;
 }
 
