@@ -19,7 +19,7 @@ import type { ExtraMode } from './extraMode.ts';
 import './search.css';
 import { highlightTerms, termMatches, type TermMatcher } from './highlight.ts';
 import type { SearchLanguage } from './language.ts';
-import { createResultsList, type ResultsView } from './resultsList.ts';
+import { createResultsList, searchRow, type ResultsView } from './resultsList.ts';
 import { mountTermRows, type TermRows } from './termRows.ts';
 import {
   byExtra,
@@ -288,7 +288,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   let shown: TermSettings | null = null;
   let shownData: D | null = null;
   let rows: TermRows | null = null;
-  const resultsList = createResultsList();
+  const resultsList = createResultsList<SearchResult>();
+  /** What the list is drawn from, kept to quote it again. */
+  let listed: ResultsView | null = null;
 
   /**
    * The one number the term rows cannot show: how many items the search finds
@@ -332,25 +334,27 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     if (!searchResults) return;
 
     if (!data) {
-      resultsList.render(searchResults, {
+      listed = {
         results: [],
         terms: [],
         focus: -1,
         onSelect: showItem,
         snippet: () => null,
         rtl,
-      });
+      };
+      resultsList.render(searchResults, listed.results, searchRow(listed));
       return;
     }
 
-    resultsList.render(searchResults, {
+    listed = {
       results: onePerWhole(resultsForOpenRow(data, settings)),
       terms: searchFor(data, settings).active,
       focus: openTermIndex(settings),
       onSelect: showItem,
       snippet: snippetFor(data),
       rtl,
-    });
+    };
+    resultsList.render(searchResults, listed.results, searchRow(listed));
   }
 
   function snippetFor(data: D): ResultsView['snippet'] {
@@ -516,7 +520,10 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         spec.onlyQuotesChange?.(previousData, data)
       ) {
         // Quote the list again in place, so the reader keeps their place in it.
-        resultsList.requote(searchResults, snippetFor(data));
+        if (listed) {
+          listed = { ...listed, snippet: snippetFor(data) };
+          resultsList.redraw(searchResults, searchRow(listed));
+        }
         return;
       }
 
@@ -551,6 +558,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       searchHitCaption = null;
       searchClear = null;
       shown = null;
+      listed = null;
       shownData = null;
       requestChange = null;
     },

@@ -24,7 +24,7 @@ import {
 } from '@torahmap/shell/overlays/pickFinder.ts';
 import { trackOverlayPick, type PickHow } from '@torahmap/shell/analytics.ts';
 import { brighten, colorToCss, type Color } from '@torahmap/utils';
-import { mark, resultRow } from '@torahmap/search';
+import { createResultsList, mark } from '@torahmap/search';
 import { baseColor, isPlaceholder } from '../baseColor.ts';
 import { entriesOf } from '../citations.ts';
 import { REFERENCES_SECTION, type Paper } from '../data.ts';
@@ -233,16 +233,16 @@ export function listOverlay<D extends ListData>(
     heading.className = 'panel-section-heading';
     heading.textContent = paperCount(listed.length);
     const list = document.createElement('div');
-    list.className = 'results-list visible';
-    list.append(
-      ...listed.map(({ paper, session, under, first }) =>
-        resultRow({
-          colors: under.map((i) => colors[i]),
-          ref: paper.title,
-          snippet: document.createTextNode([paper.when, session.name].filter(Boolean).join(' · ')),
-          onSelect: () => travelTo(first),
-        }),
-      ),
+    list.className = 'results-list';
+    createResultsList<(typeof listed)[number]>().render(
+      list,
+      listed,
+      ({ paper, session, under, first }) => ({
+        colors: under.map((i) => colors[i]),
+        ref: paper.title,
+        snippet: document.createTextNode([paper.when, session.name].filter(Boolean).join(' · ')),
+        onSelect: () => travelTo(first),
+      }),
     );
     const box = document.createElement('div');
     box.className = 'paper-list';
