@@ -148,3 +148,44 @@ export function pickChips(chips: Node[]): HTMLElement {
   row.append(...chips);
   return row;
 }
+
+/** The quick picks under their heading; once `results` list what was picked, they fold behind a "+ heading" link. */
+export function pickQuick(heading: string, picks: Node[], results: Node[]): Node[] {
+  const box = document.createElement('div');
+  box.className = 'pick-quick';
+  const body = document.createElement('div');
+  body.className = 'pick-quick-body';
+  body.append(...picks);
+  if (results.length) {
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.className = 'pick-quick-link';
+    link.textContent = `+ ${heading}`;
+    link.setAttribute('aria-expanded', 'false');
+    body.hidden = true;
+    link.addEventListener('click', () => {
+      body.hidden = !body.hidden;
+      link.setAttribute('aria-expanded', String(!body.hidden));
+    });
+    box.append(link, body);
+  } else {
+    const title = document.createElement('div');
+    title.className = 'panel-section-heading';
+    title.textContent = heading;
+    box.append(title, body);
+  }
+  return [box, ...results];
+}
+
+/** A heading over a list that fills the panel's remaining height. */
+export function pickResultsBox(heading: string): { box: HTMLElement; list: HTMLDivElement } {
+  const title = document.createElement('div');
+  title.className = 'panel-section-heading';
+  title.textContent = heading;
+  const list = document.createElement('div');
+  list.className = 'results-list results-fill';
+  const box = document.createElement('div');
+  box.className = 'results-box';
+  box.append(title, list);
+  return { box, list };
+}

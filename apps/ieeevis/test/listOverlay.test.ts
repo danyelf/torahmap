@@ -217,6 +217,25 @@ describe('the papers the picks light', () => {
   });
 });
 
+describe('the quick picks once something is picked', () => {
+  const open = (picked: string[]) => {
+    const container = document.createElement('div');
+    authorsOverlay.renderControls!(
+      container,
+      { picked },
+      () => {},
+      data,
+      () => {},
+    );
+    return container;
+  };
+  it('sit between the picks and the list', () => {
+    const container = open(['Bei Wang']);
+    const order = [...container.querySelectorAll('.pick-picked, .pick-quick, .results-box')];
+    expect(order.map((el) => el.className)).toEqual(['pick-picked', 'pick-quick', 'results-box']);
+  });
+});
+
 describe('a typed pick', () => {
   it('is recorded as typed', () => {
     const sent = recording();

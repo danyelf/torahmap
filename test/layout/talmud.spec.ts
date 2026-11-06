@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 import { test } from '../browser/fakeMap.ts';
-import { openMap, viaMenu } from '../browser/page.ts';
+import { desktopOnly, openMap, viaMenu } from '../browser/page.ts';
 import {
   attachScreenshot,
   boxes,
@@ -227,4 +227,37 @@ test("the Talmud's search card's × clears the search, and Back brings it back",
   desktopTabletAndPhoneOnly();
   await openMap(page, `search=${encodeURIComponent('משנה')}`, TALMUD);
   await closeFromLegend(page, 'search');
+});
+
+test('a long list of passages scrolls on its own and leaves the colour key in view', async ({
+  page,
+}) => {
+  desktopOnly('a phone sheet is half the screen, too short to hold both');
+  await openMap(
+    page,
+    'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
+    TALMUD,
+  );
+  await viaMenu(page, 'overlay');
+  const [panel] = await full(page, '#panel-body');
+  const [key] = await full(page, '#overlay-legend');
+  expect(key.y + key.height).toBeLessThanOrEqual(panel.y + panel.height);
+  const scrolls = await page.evaluate(() => {
+    const own = (selector: string) => {
+      const el = document.querySelector(selector)!;
+      return el.scrollHeight > el.clientHeight + 1;
+    };
+    return { list: own('#overlay-panel .results-fill'), panel: own('#panel-body') };
+  });
+  expect(scrolls).toEqual({ list: true, panel: false });
+});
+
+test("the overlay's description gives way to the list once a rabbi is picked", async ({ page }) => {
+  await openMap(page, 'overlay=rabbis', TALMUD);
+  await viaMenu(page, 'overlay');
+  const description = page.locator('#overlay-description');
+  await expect(description).toBeVisible();
+  await page.locator('.pick-quick .pick-chip').first().click();
+  await expect(page.locator('#overlay-panel .results-fill')).toBeVisible();
+  await expect(description).toBeHidden();
 });

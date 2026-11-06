@@ -109,3 +109,26 @@
 .pick-chip:disabled {
   cursor: default;
 }
+
+.pick-quick-link {
+  align-self: flex-start;
+  min-height: 24px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pick-quick-link:hover {
+  text-decoration: underline;
+}
+
+.pick-quick-body:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}

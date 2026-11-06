@@ -542,6 +542,15 @@ export const TALMUD_STATES: State[] = [
     shown: ['.pick-input'],
   },
   {
+    name: 'talmud-rabbis-panel-chips-open',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.pick-quick-link').click();
+    },
+    shown: ['.pick-quick-link'],
+  },
+  {
     name: 'talmud-rabbis-and-search',
     link: `search=${encodeURIComponent('אמר')}&overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish`,
     shown: ['#map-legend'],
