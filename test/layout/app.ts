@@ -542,6 +542,15 @@ export const TALMUD_STATES: State[] = [
     shown: ['.pick-input'],
   },
   {
+    name: 'talmud-rabbis-typing',
+    link: 'overlay=rabbis',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.pick-input').fill('ר');
+    },
+    shown: ['.pick-suggestions'],
+  },
+  {
     name: 'talmud-rabbis-panel-chips-open',
     link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish',
     then: async (page) => {

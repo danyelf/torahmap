@@ -71,6 +71,10 @@ export const KNOWN: Record<string, Known> = {
   'explore-search-and-overlay-pinned/tablet/touch-targets': POPUP_KNOWN,
   'talmud-dating-pinned/phone/touch-targets': POPUP_KNOWN,
   'talmud-dating-pinned/tablet/touch-targets': POPUP_KNOWN,
+  'talmud-rabbis-typing/phone/map-clear-of-panel': {
+    reason: 'Typing in a finder opens the phone sheet to full height, over the map.',
+    violations: ['#canvas overlaps #panel by 390×232px'],
+  },
   'talmud-rabbis-pinned/phone/touch-targets': POPUP_KNOWN,
   'talmud-rabbis-pinned/tablet/touch-targets': POPUP_KNOWN,
   'goto-chapter-taken/phone/touch-targets': POPUP_KNOWN,
