@@ -10,22 +10,25 @@ function escapeForRegex(term: string): string {
 /** The letters beyond a–z in the shipped English, as `scripts/search/english-letters-report.ts` finds them. */
 export const ENGLISH_LETTERS = 'ḥḤéÉçÇïÏàÀĥĤ';
 
-/** A character that continues a word: what `\b` counts, plus `ENGLISH_LETTERS`. */
-const WORD_CHARACTER = `[\\w${ENGLISH_LETTERS}]`;
+/** Each of `ENGLISH_LETTERS` read as its plain letter, which keeps a position's place in the text. */
+const ACCENTED = new RegExp(`[${ENGLISH_LETTERS}]`);
+const EVERY_ACCENTED = new RegExp(ACCENTED, 'g');
+const plainLetter = (letter: string) => letter.normalize('NFD')[0]!;
 
-/** English: lowercased, a word bounded by punctuation as well as by space. */
+/** English: lowercased and without accents, a word bounded by punctuation as well as by space (accents are already plain when a word is read). */
 export const english: SearchLanguage = {
   id: ENGLISH,
   rtl: false,
   claims: () => true,
-  fold: (text) => text.toLowerCase(),
+  // Testing first is what keeps folding fast: replacing in every item of the Talmud's English cost 2.5 times as much as lowercasing it.
+  fold(text) {
+    const lower = text.toLowerCase();
+    return ACCENTED.test(lower) ? lower.replace(EVERY_ACCENTED, plainLetter) : lower;
+  },
   toOriginal: (_text, foldedAt) => foldedAt,
   wholeWords(haystack, needle, limit) {
     const ranges: TextRange[] = [];
-    const pattern = new RegExp(
-      `(?<!${WORD_CHARACTER})${escapeForRegex(needle)}(?!${WORD_CHARACTER})`,
-      'g',
-    );
+    const pattern = new RegExp(`(?<!\\w)${escapeForRegex(needle)}(?!\\w)`, 'g');
     let match;
     while ((match = pattern.exec(haystack)) !== null) {
       ranges.push({ start: match.index, end: match.index + match[0].length });
