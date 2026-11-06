@@ -16,7 +16,6 @@ export interface RabbiData {
 }
 
 const QUICK_PICKS = 28;
-const SUGGESTIONS = 6;
 
 /** Whether a passage names a rabbi without doubt, or only as one of the people a name can mean. */
 export type Certainty = 'sure' | 'maybe';
@@ -217,11 +216,9 @@ export function suggest(
       }
     }
   });
-  return found
-    .sort(
-      (a, b) =>
-        Number(b.starts) - Number(a.starts) ||
-        sure[b.place] + maybe[b.place] - (sure[a.place] + maybe[a.place]),
-    )
-    .slice(0, SUGGESTIONS);
+  return found.sort(
+    (a, b) =>
+      Number(b.starts) - Number(a.starts) ||
+      sure[b.place] + maybe[b.place] - (sure[a.place] + maybe[a.place]),
+  );
 }
