@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest';
 import {
   isHebrew,
   isWordSeparator,
+  mapStrippedRangeToOriginal,
   mapStrippedToOriginal,
   splitIntoWords,
   stripNikkud,
@@ -73,5 +74,28 @@ describe('is this Hebrew?', () => {
   it('is not for points or punctuation alone', () => {
     expect(isHebrew('\u05B0\u05B1')).toBe(false);
     expect(isHebrew('׃')).toBe(false);
+  });
+});
+
+describe('mapping a stretch back to the pointed text', () => {
+  const text = 'וַיִּקְרָ֖א אֶל־מֹשֶׁ֑ה וַיְדַבֵּ֤ר יְהֹוָה֙ אֵלָ֔יו';
+  const marked = (word: string) => {
+    const at = stripNikkud(text).indexOf(word);
+    const { start, end } = mapStrippedRangeToOriginal(text, { start: at, end: at + word.length });
+    return text.slice(start, end);
+  };
+
+  it('keeps the points and accents on the last letter', () => {
+    expect(marked('יהוה')).toBe('יְהֹוָה֙');
+    expect(marked('משה')).toBe('מֹשֶׁ֑ה');
+  });
+
+  it('keeps the points on the first letter and none of the letter before', () => {
+    expect(marked('אל')).toBe('אֶל');
+    expect(marked('ויקרא')).toBe('וַיִּקְרָ֖א');
+  });
+
+  it('keeps a stretch inside a word to the letters it covers', () => {
+    expect(marked('קר')).toBe('קְרָ֖');
   });
 });

@@ -7,7 +7,7 @@ const xs: SearchLanguage = {
   rtl: false,
   claims: (term) => term.includes('x'),
   fold: (text) => text,
-  toOriginal: (_text, at) => at,
+  toOriginalRange: (_text, range) => range,
   wholeWords: (haystack, needle) => {
     const at = haystack.indexOf(` ${needle} `);
     return at === -1 ? [] : [{ start: at + 1, end: at + 1 + needle.length }];

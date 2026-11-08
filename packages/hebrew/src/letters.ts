@@ -101,16 +101,32 @@ export function splitIntoWords(text: string): TextWord[] {
   return words;
 }
 
-/** Where a position in nikkud-stripped text falls in the text it came from. */
+/** Where the character at a position of nikkud-stripped text sits in the text it came from. */
 export function mapStrippedToOriginal(original: string, strippedPos: number): number {
   if (strippedPos < 0) return 0;
 
   let stripped = 0;
   for (let i = 0; i < original.length; i++) {
+    if (isNikkud(original.charCodeAt(i))) continue;
     if (stripped === strippedPos) return i;
-    if (!isNikkud(original.charCodeAt(i))) stripped++;
+    stripped++;
   }
   return original.length;
+}
+
+/**
+ * Where a stretch of nikkud-stripped text falls in the text it came from: from
+ * its first letter to past the points and accents on its last, so a mark
+ * carries every point of the letters it covers and none of its neighbours'.
+ */
+export function mapStrippedRangeToOriginal(original: string, { start, end }: TextRange): TextRange {
+  if (end <= start) {
+    const at = mapStrippedToOriginal(original, start);
+    return { start: at, end: at };
+  }
+  let after = mapStrippedToOriginal(original, end - 1) + 1;
+  while (after < original.length && isNikkud(original.charCodeAt(after))) after++;
+  return { start: mapStrippedToOriginal(original, start), end: after };
 }
 
 /** `text` with each letter written as one character with its point, וּ (U+FB35), as letter and point. */
