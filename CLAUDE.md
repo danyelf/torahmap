@@ -31,11 +31,6 @@ What the map does is in [README.md](README.md). What an agent also needs:
 ## Commands
 
 ```bash
-npm install
-npm run dev            # dev server at http://localhost:5173
-npm run build
-npm test               # vitest; test:watch, test:coverage
-npm run typecheck
 npm run format         # Prettier owns formatting; format:check reports only
 npm run test:browser   # the browser tests the branch's changes can break; -- --list says which
 ```
@@ -47,8 +42,6 @@ belongs to; `-- --all` runs every test. While working, run only the
 layout states a change touches (`npm run test:layout -- -g <name>`). Run the loading suite by hand
 after changing what `main.ts` asks of the loader and `viewFiles.ts` (the comment above
 `createLoader` lists it), or which files an overlay or the search asks for.
-The two browser suites take turns across the machine, whichever checkout starts them: a run waits,
-saying for whom, until the one before it ends. `SUITE_LOCK=off` skips the wait.
 
 `.githooks/pre-commit` checks formatting, typechecks and runs the tests before every commit. After
 cloning, run `git config core.hooksPath .githooks` and
@@ -56,31 +49,13 @@ cloning, run `git config core.hooksPath .githooks` and
 
 ## Project Structure
 
-- `apps/` — what runs: `tanakh`, `talmud`, `euaiact` (each text's map) and `worker` (the
-  Cloudflare Worker that serves the site).
-- `packages/` — shared code: `engine`, `shell`, `search`, `hebrew`, `link`, `site`, `stories`,
-  `overlay-catalog`, `telemetry`, `utils`. A package or app imports only the packages its
-  `package.json` lists, and only the Tanakh's app and the Worker import the Tanakh's own code
-  (`test/package-imports.test.ts`).
-- `index.html` — every text's page, filled by `vite.config.ts` at the address `pages.ts` gives it.
-- `test/` — whole-repository checks, what the dev server sends, and the browser suites
-  `test/layout/` and `test/loading/`, with what they share in `test/browser/`.
-- `public/data/` — shipped data. `data/` — the sources behind it, largely gitignored.
-- `scripts/` — tooling to regenerate the data, laid out to match `public/data/`.
-- `docs/plans/` — design docs, one per feature, each dated and headed with its status.
-- `experiments/`, `test-harness/`, `video/`, `scripts/print/` — prototypes, the search-UI
-  harness, scripted video, wall prints.
+`docs/plans/` holds design docs, one per feature, each dated and headed with its status.
 
 ## Architecture
 
 A functional, modular design: pure functions over classes and mutation, one responsibility per
 module, state kept at the level it belongs to, no circular dependencies.
 
-- **main.ts** (`packages/shell`) is the app shell, `createApp(text)`: it orchestrates the modules and handles user interactions for whichever text it is given. Nothing it imports may be a text's own code; `test/package-imports.test.ts` holds that line
-- **layout.ts** (`apps/tanakh`) computes fixed positions for all verses (Torah side-by-side, Nevi'im with prophets, Ketuvim with special groupings)
-- **rendering.ts** (`packages/engine`) manages WebGL infrastructure (RenderContext = immutable, RenderState = mutable)
-- **itemColoring.ts** (`packages/shell`) uses two-pass design: compute semantic state, then apply colors
-- **overlays/** (`apps/tanakh/src/overlays/`) are pluggable and easy to add
 - Any animated change to what the map shows goes through the renderer's
   picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
   story stops ease with. Don't add another animation path for it.
