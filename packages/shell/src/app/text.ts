@@ -69,6 +69,11 @@ interface OpenText<I extends MapItem, S = unknown> {
   baseColor(item: I, index: number): ItemColor;
   /** A square's ring while no tool rings it or makes it stand out, or null for none. */
   baseRing?(item: I, index: number): ItemColor | null;
+  /**
+   * Squares a text draws as rings only from `zoom` up. Further out, each takes the look of the
+   * square `passageOf` gives its index, or stays as it is for null.
+   */
+  ringsFrom?: { zoom: number; passageOf(item: I, index: number): number | null };
   /** While search alone is on, how much of its base colour a square it does not find keeps; without it, the square goes grey. */
   searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
