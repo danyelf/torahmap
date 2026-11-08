@@ -7,6 +7,10 @@ What CLAUDE.md leaves out because most tasks don't need it.
 Read `.githooks/pre-commit` for how to bypass it deliberately. Once per clone, point git at it with
 `git config core.hooksPath .githooks`.
 
+Claude Code sets `core.hooksPath` to the primary checkout's `.githooks` whenever it makes a
+worktree, so every worktree runs the primary checkout's hooks. A branch that changes `.githooks/`
+tests its copy by running it directly.
+
 ## Layout tests
 
 `npm run test:layout` tests the interface for layout in a real browser, at four screen sizes, from
@@ -20,10 +24,24 @@ failures accepted for now, what each measures and why. `npm run test:layout:shot
 
 It runs on four workers, and is not part of the pre-commit hook.
 
+`npm run shots -- <state>...` draws the states a change touches on a desktop and a phone, pushes
+the pictures to `refs/shots/<branch>` (main does not track them), prints the Markdown that embeds
+them, and redraws the share cards in `public/`.
+
+Cloudflare builds every pull request and gives it a public `workers.dev` link. The link arrives as
+a comment from `cloudflare-workers-and-pages` (`gh pr view <n> --json comments`), which is also
+where a failed build shows up.
+
 ## Loading tests
 
 The map draws before its data and fills in as each file lands. `npm run test:loading` tests that
-in a real browser at one desktop and one phone size.
+in a real browser at one desktop and one phone size. `npm run test:browser` runs it only when
+the changed files call for it; run it by hand after changing what `main.ts` asks of the loader and
+`viewFiles.ts` (the comment above `createLoader` lists it), or which files an overlay or the search
+asks for.
+
+The two browser suites take turns across the machine, whichever checkout starts them: a run waits,
+saying for whom, until the one before it ends. `SUITE_LOCK=off` skips the wait.
 
 ## The site a browser suite runs against
 
