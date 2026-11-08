@@ -27,13 +27,21 @@ const SLOW_MOBILE_DATA = {
   uploadThroughput: 375_000,
 };
 
-async function throttle(page: Page): Promise<void> {
+/** Slows the data files down; the returned function lifts the slowing. */
+async function throttle(page: Page): Promise<() => Promise<void>> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Network.enable');
-  await cdp.send('Network.emulateNetworkConditionsByRule', {
-    offline: false,
-    matchedNetworkConditions: [SLOW_MOBILE_DATA],
-  });
+  const apply = (matchedNetworkConditions: (typeof SLOW_MOBILE_DATA)[]) =>
+    cdp.send('Network.emulateNetworkConditionsByRule', {
+      offline: false,
+      matchedNetworkConditions,
+    });
+  await apply([SLOW_MOBILE_DATA]);
+  return async () => {
+    await apply([
+      { ...SLOW_MOBILE_DATA, latency: 0, downloadThroughput: -1, uploadThroughput: -1 },
+    ]);
+  };
 }
 
 /** The requests for one data file, as they are made. */
@@ -66,8 +74,13 @@ export async function open(
     body,
   }: { console?: boolean; until?: 'firstFrame' | 'loaded'; body?: string } = {},
 ): Promise<{ release: () => void; errors: string[] }> {
-  await throttle(page);
-  const release = await hold(page, held, body);
+  const unthrottle = await throttle(page);
+  const releaseHeld = await hold(page, held, body);
+  // The slowing makes the held state catchable; once released, files land at full speed.
+  const release = () => {
+    void unthrottle().catch(() => {});
+    releaseHeld();
+  };
   const errors = collectErrors(page, { console });
   await page.goto(link ? `/?${link}` : '/');
   if (until === 'loaded') await allLoaded(page);
