@@ -39,7 +39,9 @@ Run `npm run test:browser` before opening or updating a PR: it reads the files c
 `origin/main` and runs the layout suite (`test:layout`), the loading suite (`test:loading`) or
 both, by the rules in `scripts/test-browser.ts`, and of each only the tests of the texts the change
 belongs to; `-- --all` runs every test. While working, run only the
-layout states a change touches (`npm run test:layout -- -g <name>`).
+layout states a change touches (`npm run test:layout -- -g <name>`). Run the loading suite by hand
+after changing what `main.ts` asks of the loader and `viewFiles.ts` (the comment above
+`createLoader` lists it), or which files an overlay or the search asks for.
 
 `.githooks/pre-commit` checks formatting, typechecks and runs the tests before every commit. After
 cloning, run `git config core.hooksPath .githooks` and

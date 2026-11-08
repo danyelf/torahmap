@@ -35,10 +35,7 @@ where a failed build shows up.
 ## Loading tests
 
 The map draws before its data and fills in as each file lands. `npm run test:loading` tests that
-in a real browser at one desktop and one phone size. `npm run test:browser` runs it only when
-the changed files call for it; run it by hand after changing what `main.ts` asks of the loader and
-`viewFiles.ts` (the comment above `createLoader` lists it), or which files an overlay or the search
-asks for.
+in a real browser at one desktop and one phone size.
 
 The two browser suites take turns across the machine, whichever checkout starts them: a run waits,
 saying for whom, until the one before it ends. `SUITE_LOCK=off` skips the wait.
