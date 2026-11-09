@@ -20,7 +20,7 @@ export const english: SearchLanguage = {
   rtl: false,
   claims: () => true,
   fold: (text) => text.toLowerCase().replace(ACCENTED, plainLetter),
-  toOriginal: (_text, foldedAt) => foldedAt,
+  toOriginalRange: (_text, folded) => folded,
   wholeWords(haystack, needle, limit) {
     const ranges: TextRange[] = [];
     const pattern = new RegExp(`(?<!\\w)${escapeForRegex(needle)}(?!\\w)`, 'g');

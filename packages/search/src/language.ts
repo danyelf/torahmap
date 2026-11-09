@@ -12,8 +12,8 @@ export interface SearchLanguage {
   clean?(typed: string): string;
   /** The spelling text is compared under. */
   fold(text: string): string;
-  /** Where a position in folded text falls in the text it came from. */
-  toOriginal(text: string, foldedAt: number): number;
+  /** Where a stretch of folded text falls in the text it came from. */
+  toOriginalRange(text: string, folded: TextRange): TextRange;
   /** Each stretch of folded `haystack` where folded `needle` stands as whole words. */
   wholeWords(haystack: string, needle: string, limit: number): TextRange[];
 }

@@ -215,7 +215,7 @@ export function meaningRanges(
   const ranges: TextRange[] = [];
   for (const { word, start, end } of splitIntoWords(folded)) {
     if (wordMatches(dictionary, words, keys, word, text, start)) {
-      ranges.push({ start: language.toOriginal(text, start), end: language.toOriginal(text, end) });
+      ranges.push(language.toOriginalRange(text, { start, end }));
     }
   }
   return ranges;

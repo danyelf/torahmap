@@ -42,7 +42,7 @@ describe('requoting the search results', () => {
       () => {},
     );
 
-    expect(markIn(container, '19:28')).toBe('עָלָה');
+    expect(markIn(container, '19:28')).toBe('עָלָה֙');
     expect(list.scrollTop).toBe(120);
   });
 });

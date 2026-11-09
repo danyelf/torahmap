@@ -67,10 +67,9 @@ function termRanges(
   const folded = language.fold(text);
   const needle = language.fold(term.text.trim());
   const mode = matcher.modeOf(term) as MatchMode;
-  return matchRanges(folded, needle, { mode, language }).map(({ start, end }) => ({
-    start: language.toOriginal(text, start),
-    end: language.toOriginal(text, end),
-  }));
+  return matchRanges(folded, needle, { mode, language }).map((range) =>
+    language.toOriginalRange(text, range),
+  );
 }
 
 /**
