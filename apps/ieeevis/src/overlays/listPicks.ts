@@ -24,7 +24,6 @@ export interface PickSource<D extends ListData> {
 export type ListSettings = PickSettings;
 
 const QUICK_PICKS = 18;
-const SUGGESTIONS = 6;
 
 /** What papers are listed under: one author, one keyword, one cited person or one cited work. */
 export interface Entry {
@@ -83,8 +82,7 @@ export function picksOf<D extends ListData>(source: PickSource<D>): Picks<D> {
           (entry) =>
             !skip.some((s) => s.name === entry.name) && words.every((w) => entry.plain.includes(w)),
         )
-        .sort((a, b) => Number(starts(b)) - Number(starts(a)))
-        .slice(0, SUGGESTIONS);
+        .sort((a, b) => Number(starts(b)) - Number(starts(a)));
     },
   };
 }
