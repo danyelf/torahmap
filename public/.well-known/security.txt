@@ -1,0 +1,7 @@
+Contact: mailto:danyel@danyelfisher.info
+Expires: 2027-11-10T00:00:00Z
+Preferred-Languages: en
+Canonical: https://torahmap.org/.well-known/security.txt
+Canonical: https://talmud.torahmap.org/.well-known/security.txt
+Canonical: https://euaiact.torahmap.org/.well-known/security.txt
+Canonical: https://ieeevis.danyelfisher.info/.well-known/security.txt
