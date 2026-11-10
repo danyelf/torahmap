@@ -25,7 +25,7 @@ import { talmudId } from '@torahmap/talmud/layout.ts';
 import { isAmbiguous, latestGeneration, type Facts, type Mention } from './facts.ts';
 
 /** The edition the map shows, whose character positions the tags use. */
-const EDITION = 'William Davidson Edition - Aramaic';
+export const EDITION = 'William Davidson Edition - Aramaic';
 
 const REF = /^(.+) (\d+)([ab]):(\d+)(.*)$/;
 /** How far from its tagged position a name may be found in the map's own text. */
