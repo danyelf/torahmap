@@ -155,8 +155,9 @@ readings come from [hebcal's leyning tables](https://github.com/hebcal/hebcal-le
 
 ### IEEE VIS data
 
-The VIS map, at https://ieeevis.danyelfisher.info (its page is `/ieeevis/` in the build; the Worker
-serves it at that host's root and sends the Talmud's and AI Act's pages to torahmap.org), reads
+The VIS map, at https://ieeevis.torahmap.org (its page is `/ieeevis/` in the build; the Worker
+serves it at that host's root, and at the root of its first host, https://ieeevis.danyelfisher.info,
+and sends the Talmud's and AI Act's pages to torahmap.org), reads
 three files in `public/data/ieeevis/`, all from the
 [ieeevis-scrape](https://github.com/danyelf/ieeevis-scrape) project's `scripts/build.py`:
 
@@ -199,5 +200,6 @@ cmp /tmp/p-remote.bin public/data/ieeevis/p.bin && echo current
 `--local` in place of `--remote`. The dev server and the browser suites read `p.bin` from
 `public/data/ieeevis/`, so pack it in each checkout that runs them.
 
-Its telemetry rows have the host `ieeevis.danyelfisher.info`; the saved queries take
-`torahmap.org`, so run them with `SITE_HOST=ieeevis.danyelfisher.info` to read the VIS map's.
+Its telemetry rows have the host `ieeevis.torahmap.org` (or `ieeevis.danyelfisher.info`, its first
+host); the saved queries take `torahmap.org`, so run them with `SITE_HOST=ieeevis.torahmap.org` to
+read the VIS map's.

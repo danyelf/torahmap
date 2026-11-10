@@ -6,7 +6,7 @@ import type { PageCopy } from '@torahmap/shell/app/page.ts';
 export const IEEEVIS_PATH = '/ieeevis/';
 
 /** Where the VIS map lives, at the root; its link preview's picture is served from here. */
-export const IEEEVIS_ORIGIN = 'https://ieeevis.danyelfisher.info';
+export const IEEEVIS_ORIGIN = 'https://ieeevis.torahmap.org';
 
 /** IEEE VIS's own icon, in the tab and beside the map's title. */
 export const IEEEVIS_ICON = '/ieeevis-icon.svg';

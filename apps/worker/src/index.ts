@@ -153,8 +153,10 @@ async function ieeevisTexts(request: Request, env: Env): Promise<Response> {
 }
 
 // The VIS map has a host of its own, where it is served at the root. The other texts' pages
-// belong to torahmap.org, and the VIS page's own address there leads to its host.
-const VIS_HOST = 'ieeevis.danyelfisher.info';
+// belong to torahmap.org, and the VIS page's own address there leads to its host. The map's
+// first host, under danyelfisher.info, serves it too, so links to it keep working.
+const VIS_HOST = 'ieeevis.torahmap.org';
+const VIS_HOSTS = [VIS_HOST, 'ieeevis.danyelfisher.info'];
 const SITE_HOST = new URL(ORIGIN).hostname;
 const OTHER_PAGES = ['/talmud', '/euaiact'];
 const VIS_PAGE = '/ieeevis';
@@ -165,10 +167,10 @@ const within = (pathname: string, folder: string) =>
 /** Where a page of the wrong host belongs, or null. Data, assets and the endpoint stay on every host. */
 function movedTo(url: URL): string | null {
   const { hostname, pathname, search } = url;
-  if (hostname === VIS_HOST) {
+  if (VIS_HOSTS.includes(hostname)) {
     if (OTHER_PAGES.some((folder) => within(pathname, folder)))
       return `https://${SITE_HOST}${pathname}${search}`;
-    if (within(pathname, VIS_PAGE)) return `https://${VIS_HOST}/${search}`;
+    if (within(pathname, VIS_PAGE)) return `https://${hostname}/${search}`;
   }
   if (hostname === SITE_HOST && within(pathname, VIS_PAGE)) return `https://${VIS_HOST}/${search}`;
   return null;
@@ -181,7 +183,7 @@ const SUBDOMAIN_PAGES = ['talmud', 'euaiact'];
 
 /** The page a host serves at its root, or null for any other host. */
 function rootPage(url: URL): string | null {
-  if (url.hostname === VIS_HOST) return `${VIS_PAGE}/`;
+  if (VIS_HOSTS.includes(url.hostname)) return `${VIS_PAGE}/`;
   const name = url.hostname.split('.')[0];
   return SUBDOMAIN_PAGES.includes(name) ? `/${name}/` : null;
 }
