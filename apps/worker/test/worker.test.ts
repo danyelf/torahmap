@@ -276,6 +276,13 @@ describe('the page at /', () => {
       env(),
     );
     expect(response.headers.get('Location')).toBe('https://ieeevis.danyelfisher.info/?search=x');
+    await worker.fetch(page('https://ieeevis.danyelfisher.info/data/ieeevis/structure.json'), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[1][0].url).pathname).toBe(
+      '/data/ieeevis/structure.json',
+    );
+    const event = post(valid, { Origin: 'https://ieeevis.danyelfisher.info' });
+    const sent = new Request('https://ieeevis.danyelfisher.info/api/event', event);
+    expect((await worker.fetch(sent, e)).status).toBe(204);
   });
 
   it('keeps a whole shared link when it moves a page', async () => {
