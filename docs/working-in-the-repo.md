@@ -201,3 +201,16 @@ cmp /tmp/p-remote.bin public/data/ieeevis/p.bin && echo current
 
 Its telemetry rows have the host `ieeevis.danyelfisher.info`; the saved queries take
 `torahmap.org`, so run them with `SITE_HOST=ieeevis.danyelfisher.info` to read the VIS map's.
+
+### Code map data
+
+The code map, at `/codemap/`, reads `public/data/codemap/structure.json` and `texts.json`, which
+`scripts/codemap/` writes from git for one pull request: this branch against `origin/main` unless
+told otherwise.
+
+```bash
+npm run codemap -- [--repo <path>] [--base origin/main] [--head HEAD] [<out dir>]
+```
+
+Commit both files after the branch's other commits, so they show those commits. A merge or rebase
+conflict in either is settled by running the script again, never by hand.

@@ -1,0 +1,37 @@
+diff --git a/a.ts b/a.ts
+index 624b469..5aa31b2 100644
+--- a/a.ts
++++ b/a.ts
+@@ -3 +3 @@ line 2
+-line 3
++line three changed
+@@ -9 +8,0 @@ line 8
+-line 9
+diff --git a/add.ts b/add.ts
+new file mode 100644
+index 0000000..b77b4eb
+--- /dev/null
++++ b/add.ts
+@@ -0,0 +1,2 @@
++x
++y
+diff --git a/gone.ts b/gone.ts
+deleted file mode 100644
+index 21f56f2..0000000
+--- a/gone.ts
++++ /dev/null
+@@ -1,4 +0,0 @@
+-gone 1
+-gone 2
+-gone 3
+-gone 4
+diff --git a/old.ts b/new.ts
+similarity index 90%
+rename from old.ts
+rename to new.ts
+index bb1ace5..974d4d7 100644
+--- a/old.ts
++++ b/new.ts
+@@ -5 +5 @@ old line 4
+-old line 5
++new five

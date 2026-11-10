@@ -94,4 +94,5 @@ export const KNOWN: Record<string, Known> = {
       VIS_POPUP_KNOWN,
     ),
   ),
+  ...Object.fromEntries(onTouchScreens(['codemap-popup'], POPUP_KNOWN)),
 };
