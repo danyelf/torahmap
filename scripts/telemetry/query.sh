@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs one saved query over the last N days (default 30) and prints the JSON
 # Analytics Engine returns. Usage: query.sh <file.sql> [days]
-# SITE_HOST names another host's rows, as ieeevis.danyelfisher.info.
+# SITE_HOST names another host's rows, as ieeevis.torahmap.org.
 # Needs CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN with Account Analytics: Read.
 set -euo pipefail
 

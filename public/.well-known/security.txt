@@ -4,4 +4,5 @@ Preferred-Languages: en
 Canonical: https://torahmap.org/.well-known/security.txt
 Canonical: https://talmud.torahmap.org/.well-known/security.txt
 Canonical: https://euaiact.torahmap.org/.well-known/security.txt
+Canonical: https://ieeevis.torahmap.org/.well-known/security.txt
 Canonical: https://ieeevis.danyelfisher.info/.well-known/security.txt

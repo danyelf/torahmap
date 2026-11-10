@@ -28,6 +28,7 @@
     { "pattern": "torahmap.org", "custom_domain": true },
     { "pattern": "talmud.torahmap.org", "custom_domain": true },
     { "pattern": "euaiact.torahmap.org", "custom_domain": true },
+    { "pattern": "ieeevis.torahmap.org", "custom_domain": true },
     { "pattern": "ieeevis.danyelfisher.info", "custom_domain": true },
   ],
   // Each pull request's build gets a public workers.dev link to try it at.

@@ -238,8 +238,44 @@ describe('the page at /', () => {
 
   it('serves the VIS map at the root of its own host, and leaves its files and the endpoint alone', async () => {
     const e = envWithIndex();
+    await worker.fetch(page('https://ieeevis.torahmap.org/?search=graph', slack), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[0][0].url).pathname).toBe('/ieeevis/');
+    await worker.fetch(page('https://ieeevis.torahmap.org/data/ieeevis/structure.json'), e);
+    expect(new URL(e.ASSETS.fetch.mock.calls[1][0].url).pathname).toBe(
+      '/data/ieeevis/structure.json',
+    );
+    const event = post(valid, { Origin: 'https://ieeevis.torahmap.org' });
+    const sent = new Request('https://ieeevis.torahmap.org/api/event', event);
+    expect((await worker.fetch(sent, e)).status).toBe(204);
+  });
+
+  it("sends the other texts' pages to torahmap.org from the VIS host", async () => {
+    for (const path of ['/talmud/', '/talmud/?at=Berakhot.2a', '/euaiact/']) {
+      const response = await worker.fetch(page(`https://ieeevis.torahmap.org${path}`), env());
+      expect(response.status).toBe(302);
+      expect(response.headers.get('Location')).toBe(`https://torahmap.org${path}`);
+    }
+  });
+
+  it("sends the VIS page's old address to its host", async () => {
+    for (const from of [
+      'https://torahmap.org/ieeevis/?search=x',
+      'https://ieeevis.torahmap.org/ieeevis/?search=x',
+    ]) {
+      const response = await worker.fetch(page(from), env());
+      expect(response.headers.get('Location')).toBe('https://ieeevis.torahmap.org/?search=x');
+    }
+  });
+
+  it('keeps serving the VIS map at its first host, under danyelfisher.info', async () => {
+    const e = envWithIndex();
     await worker.fetch(page('https://ieeevis.danyelfisher.info/?search=graph', slack), e);
     expect(new URL(e.ASSETS.fetch.mock.calls[0][0].url).pathname).toBe('/ieeevis/');
+    const response = await worker.fetch(
+      page('https://ieeevis.danyelfisher.info/ieeevis/?search=x'),
+      env(),
+    );
+    expect(response.headers.get('Location')).toBe('https://ieeevis.danyelfisher.info/?search=x');
     await worker.fetch(page('https://ieeevis.danyelfisher.info/data/ieeevis/structure.json'), e);
     expect(new URL(e.ASSETS.fetch.mock.calls[1][0].url).pathname).toBe(
       '/data/ieeevis/structure.json',
@@ -249,28 +285,10 @@ describe('the page at /', () => {
     expect((await worker.fetch(sent, e)).status).toBe(204);
   });
 
-  it("sends the other texts' pages to torahmap.org from the VIS host", async () => {
-    for (const path of ['/talmud/', '/talmud/?at=Berakhot.2a', '/euaiact/']) {
-      const response = await worker.fetch(page(`https://ieeevis.danyelfisher.info${path}`), env());
-      expect(response.status).toBe(302);
-      expect(response.headers.get('Location')).toBe(`https://torahmap.org${path}`);
-    }
-  });
-
-  it("sends the VIS page's old address to its host", async () => {
-    for (const from of [
-      'https://torahmap.org/ieeevis/?search=x',
-      'https://ieeevis.danyelfisher.info/ieeevis/?search=x',
-    ]) {
-      const response = await worker.fetch(page(from), env());
-      expect(response.headers.get('Location')).toBe('https://ieeevis.danyelfisher.info/?search=x');
-    }
-  });
-
   it('keeps a whole shared link when it moves a page', async () => {
     const query = '?overlay=people&at=3.1&people=Ann%20Lee&x=a%2Bb';
     const response = await worker.fetch(page(`https://torahmap.org/ieeevis/${query}`), env());
-    expect(response.headers.get('Location')).toBe(`https://ieeevis.danyelfisher.info/${query}`);
+    expect(response.headers.get('Location')).toBe(`https://ieeevis.torahmap.org/${query}`);
   });
 
   it('leaves a preview’s /ieeevis/ page to the static files', async () => {
