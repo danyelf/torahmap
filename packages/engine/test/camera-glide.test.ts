@@ -5,7 +5,11 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
-  CAMERA_GLIDE_MS,
+  planGlide,
+  FLIGHT_MIN_ZOOM,
+  FLIGHT_MIN_MS,
+  FLIGHT_MAX_MS,
+  FLIGHT_PEAK_PER_DISTANCE,
   type Camera,
   worldToScreen,
 } from '../src/index.ts';
@@ -62,6 +66,12 @@ describe('viewFocusedOn', () => {
   });
 });
 
+const OPTIONS = { viewportWidth: 800 };
+const takes = (from: Camera, to: Camera): number =>
+  planGlide(from, to, OPTIONS.viewportWidth).durationMs;
+const LONG = takes({ x: 0, y: 0, zoom: 1 }, { x: 100, y: 50, zoom: 4 });
+const ZOOM_ONLY = takes({ x: 500, y: 200, zoom: 1 }, { x: 500, y: 200, zoom: 4 });
+
 describe('animateCameraTo', () => {
   let now = 0;
   const frames: Array<(t: number) => void> = [];
@@ -93,8 +103,8 @@ describe('animateCameraTo', () => {
     const camera: Camera = { x: 0, y: 0, zoom: 1 };
     const target: Camera = { x: 100, y: 50, zoom: 4 };
 
-    animateCameraTo(camera, target, () => {});
-    advance(CAMERA_GLIDE_MS);
+    animateCameraTo(camera, target, () => {}, OPTIONS);
+    advance(LONG);
 
     expect(camera).toEqual(target);
   });
@@ -103,8 +113,8 @@ describe('animateCameraTo', () => {
     mockClock();
     const camera: Camera = { x: 0, y: 0, zoom: 1 };
 
-    animateCameraTo(camera, { x: 100, y: 50, zoom: 4 }, () => {});
-    advance(CAMERA_GLIDE_MS / 2);
+    animateCameraTo(camera, { x: 100, y: 50, zoom: 4 }, () => {}, OPTIONS);
+    advance(LONG / 2);
 
     expect(camera.x).toBeGreaterThan(0);
     expect(camera.x).toBeLessThan(100);
@@ -117,9 +127,9 @@ describe('animateCameraTo', () => {
     mockClock();
     const camera: Camera = { x: 500, y: 200, zoom: 1 };
 
-    animateCameraTo(camera, { x: 500, y: 200, zoom: 4 }, () => {});
+    animateCameraTo(camera, { x: 500, y: 200, zoom: 4 }, () => {}, OPTIONS);
     for (const at of [0.25, 0.5, 0.75]) {
-      advance(CAMERA_GLIDE_MS * at);
+      advance(ZOOM_ONLY * at);
       const middle = worldToScreen({ x: 500, y: 200 }, camera, VIEW);
       expect(middle.x).toBeCloseTo(400, 10);
       expect(middle.y).toBeCloseTo(300, 10);
@@ -130,11 +140,11 @@ describe('animateCameraTo', () => {
     mockClock();
     const camera: Camera = { x: 0, y: 0, zoom: 1 };
 
-    const stop = animateCameraTo(camera, { x: 100, y: 50, zoom: 4 }, () => {});
-    advance(CAMERA_GLIDE_MS / 2);
+    const stop = animateCameraTo(camera, { x: 100, y: 50, zoom: 4 }, () => {}, OPTIONS);
+    advance(LONG / 2);
     const whereItStopped = { ...camera };
     stop();
-    advance(CAMERA_GLIDE_MS);
+    advance(LONG);
 
     expect(camera).toEqual(whereItStopped);
   });
@@ -143,10 +153,104 @@ describe('animateCameraTo', () => {
     mockClock();
     const onFrame = vi.fn();
 
-    animateCameraTo({ x: 0, y: 0, zoom: 1 }, { x: 100, y: 50, zoom: 4 }, onFrame);
-    advance(CAMERA_GLIDE_MS / 4);
-    advance(CAMERA_GLIDE_MS / 2);
+    animateCameraTo({ x: 0, y: 0, zoom: 1 }, { x: 100, y: 50, zoom: 4 }, onFrame, OPTIONS);
+    advance(LONG / 4);
+    advance(LONG / 2);
 
     expect(onFrame).toHaveBeenCalledTimes(2);
+  });
+
+  it('snaps to the target in one frame under reduced motion', () => {
+    mockClock();
+    const camera: Camera = { x: 0, y: 0, zoom: 1 };
+    const target: Camera = { x: 5000, y: 50, zoom: 4 };
+
+    animateCameraTo(camera, target, () => {}, { ...OPTIONS, reducedMotion: true });
+    advance(1);
+
+    expect(camera).toEqual(target);
+  });
+
+  it('says when it has arrived, and not when it is stopped', () => {
+    mockClock();
+    const onDone = vi.fn();
+    const stop = animateCameraTo({ x: 0, y: 0, zoom: 1 }, { x: 100, y: 50, zoom: 4 }, () => {}, {
+      ...OPTIONS,
+      onDone,
+    });
+    advance(LONG / 2);
+    expect(onDone).not.toHaveBeenCalled();
+    advance(LONG);
+    expect(onDone).toHaveBeenCalledTimes(1);
+    stop();
+  });
+});
+
+describe('planGlide', () => {
+  const WIDTH = 1000;
+  const start = { x: 0, y: 0, zoom: 2.5 };
+  const far = { x: 8000, y: 3000, zoom: 2.5 };
+  const middling = { x: 1500, y: 0, zoom: 2.5 };
+  const near = { x: 100, y: 20, zoom: 2.5 };
+
+  it('starts at the first view and ends exactly on the second', () => {
+    for (const to of [far, middling, near, { x: 40, y: 0, zoom: 6 }]) {
+      const glide = planGlide(start, to, WIDTH);
+      expect(glide.at(0).x).toBeCloseTo(start.x, 6);
+      expect(glide.at(0).zoom).toBeCloseTo(start.zoom, 6);
+      expect(glide.at(1)).toEqual(to);
+    }
+  });
+
+  it('rises on a long move and does not go below the zoom floor', () => {
+    const glide = planGlide(start, far, WIDTH);
+    const zooms = Array.from({ length: 101 }, (_, i) => glide.at(i / 100).zoom);
+
+    expect(Math.min(...zooms)).toBeLessThan(start.zoom / 2);
+    expect(Math.min(...zooms)).toBeGreaterThanOrEqual(FLIGHT_MIN_ZOOM);
+  });
+
+  it('keeps the zoom of a move to somewhere already on screen', () => {
+    const glide = planGlide(start, near, WIDTH);
+
+    for (let i = 0; i <= 10; i++) expect(glide.at(i / 10).zoom).toBeCloseTo(start.zoom, 6);
+  });
+
+  it('rises less on a middling move than a long one, in proportion to the distance', () => {
+    const lowest = (to: Camera): number => {
+      const glide = planGlide(start, to, WIDTH);
+      return Math.min(...Array.from({ length: 101 }, (_, i) => glide.at(i / 100).zoom));
+    };
+    const seenAtTop = (to: Camera, distance: number): number => WIDTH / lowest(to) / distance;
+
+    expect(seenAtTop(middling, 1500)).toBeLessThanOrEqual(FLIGHT_PEAK_PER_DISTANCE + 1e-6);
+  });
+
+  it('takes longer for a longer move, within its limits', () => {
+    const ms = (to: Camera): number => planGlide(start, to, WIDTH).durationMs;
+
+    expect(ms(far)).toBeGreaterThan(ms(middling));
+    expect(ms(middling)).toBeGreaterThanOrEqual(ms(near));
+    expect(ms(near)).toBeGreaterThanOrEqual(FLIGHT_MIN_MS);
+    expect(ms({ x: 1e9, y: 0, zoom: 2.5 })).toBeLessThanOrEqual(FLIGHT_MAX_MS);
+  });
+
+  it('never moves backwards on the way, even when interrupting', () => {
+    for (const interrupting of [false, true]) {
+      const glide = planGlide(start, near, WIDTH, interrupting);
+      let last = -Infinity;
+      for (let i = 0; i <= 20; i++) {
+        const x = glide.at(i / 20).x;
+        expect(x).toBeGreaterThanOrEqual(last);
+        last = x;
+      }
+    }
+  });
+
+  it('starts moving at once when it interrupts another move', () => {
+    const slowStart = planGlide(start, near, WIDTH).at(0.05).x;
+    const quickStart = planGlide(start, near, WIDTH, true).at(0.05).x;
+
+    expect(quickStart).toBeGreaterThan(slowStart * 5);
   });
 });

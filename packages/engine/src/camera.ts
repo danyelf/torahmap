@@ -1,7 +1,7 @@
 // Camera module - handles zoom and pan state
 
-import { lerpCamera, easingFunctions } from './interpolation.ts';
-import { DEFAULT_EASING, type CameraPosition, type MapItem, type ZoomRange } from './types.ts';
+import { planGlide } from './glide.ts';
+import type { CameraPosition, MapItem, ZoomRange } from './types.ts';
 
 /** Where a square stands and how big it is: all the camera needs to aim at it. */
 export type ItemBox = Pick<MapItem, 'x' | 'y' | 'size' | 'width'>;
@@ -158,15 +158,20 @@ export function viewFocusedOn(
   return { ...centreForFocus(item, zoom, focus, viewport), zoom };
 }
 
-/** How long a camera glide takes. Long enough to read as travel over the map. */
-export const CAMERA_GLIDE_MS = 500;
+export interface GlideOptions {
+  /** Width of the map on screen, in pixels. */
+  viewportWidth: number;
+  /** Another move was still running when this one began. */
+  interrupting?: boolean;
+  /** Snap to the target instead of travelling. */
+  reducedMotion?: boolean;
+  /** Called once the camera has arrived, but not when the glide is stopped. */
+  onDone?: () => void;
+}
 
 /**
- * Glide the camera to a target, the way the story moves between its stops.
- *
- * The same interpolation and easing a story uses between stops (`lerpCamera`
- * with `DEFAULT_EASING`); only the thing driving the progress differs. A story stop is driven by scroll position, and there is
- * no scroll behind a click, so this drives it from the clock instead.
+ * Move the camera to a target along `planGlide`'s path, driven by the clock. Every camera move that
+ * is not the reader's own hands goes through here.
  *
  * The camera is edited in place, because that is the object the render loop
  * reads. Returns a function that stops the glide, which the caller owes the
@@ -176,17 +181,19 @@ export function animateCameraTo(
   camera: Camera,
   target: Camera,
   onFrame: () => void,
-  durationMs: number = CAMERA_GLIDE_MS,
+  { viewportWidth, interrupting = false, reducedMotion = false, onDone }: GlideOptions,
 ): () => void {
-  const from = { ...camera };
+  const glide = planGlide({ ...camera }, target, viewportWidth, interrupting);
+  const durationMs = reducedMotion ? 0 : glide.durationMs;
   const started = performance.now();
   let request = 0;
 
   const step = (now: number): void => {
     const progress = durationMs > 0 ? Math.min(1, (now - started) / durationMs) : 1;
-    Object.assign(camera, lerpCamera(from, target, easingFunctions[DEFAULT_EASING](progress)));
+    Object.assign(camera, glide.at(progress));
     onFrame();
     if (progress < 1) request = requestAnimationFrame(step);
+    else onDone?.();
   };
 
   request = requestAnimationFrame(step);

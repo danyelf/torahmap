@@ -7,6 +7,7 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
+  planGlide,
   boxAround,
   cameraToFit,
   type Camera,
@@ -30,7 +31,6 @@ import {
   still,
   type ColorLayer,
   easingFunctions,
-  lerpCamera,
 } from '@torahmap/engine';
 import { debounce } from '@torahmap/utils';
 import type { MapText, Reference, Site } from './app/text.ts';
@@ -730,20 +730,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     moveLabels(offset, camera.zoom);
   }
 
-  function centerOnItem(item: I): void {
-    Object.assign(camera, centreForFocus(item, camera.zoom, mapFocus(), mapViewport()));
-  }
-
   // A square is six pixels across, so centring it while scaled out
   // moves the map and shows the reader nothing. Close enough to pick it out.
   const RESULT_CLICK_ZOOM = 2.5;
 
   let stopCameraGlide: (() => void) | null = null;
+  let gliding = false;
 
   /** Stop a glide in its tracks, for when the reader takes the map back. */
   function cancelCameraGlide(): void {
     stopCameraGlide?.();
     stopCameraGlide = null;
+    gliding = false;
   }
 
   /**
@@ -772,12 +770,30 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     glideTo({ zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) });
   }
 
+  /** Where every camera move that is not the reader's own hands goes. */
   function glideTo(target: Camera): void {
+    const interrupting = gliding;
     cancelCameraGlide();
-    stopCameraGlide = animateCameraTo(camera, target, () => {
-      render();
-      debouncedCameraSettled();
-    });
+    gliding = true;
+    stopCameraGlide = animateCameraTo(
+      camera,
+      target,
+      () => {
+        render();
+        debouncedCameraSettled();
+      },
+      {
+        viewportWidth: mapViewport().width,
+        interrupting,
+        reducedMotion: reducedMotion.matches,
+        onDone: () => (gliding = false),
+      },
+    );
+  }
+
+  /** Bring a square to the middle of the map without changing the zoom. */
+  function glideToCentre(item: I): void {
+    glideTo({ zoom: camera.zoom, ...centreForFocus(item, camera.zoom, mapFocus(), mapViewport()) });
   }
 
   /** The squares of a place, in reading order. */
@@ -826,15 +842,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
-  function pinItem(item: I, centerCamera: boolean = false): void {
+  function pinItem(item: I): void {
     takeOver('takeover');
     trackSquareClick(item.id, text.area(item).area);
     const focusBefore = focusNow();
     pinnedItem = item;
     showPin();
-    if (centerCamera) {
-      centerOnItem(item);
-    }
     repaint(focusBefore);
     syncUrl(true);
   }
@@ -916,7 +929,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       },
       step(by) {
         const next = pinnedItem && squares.step(pinnedItem, by);
-        if (next) pinItem(next, true);
+        if (next) {
+          pinItem(next);
+          glideToCentre(next);
+        }
       },
       escape(inField) {
         const does = escapeDoes({ menu: frame.menu, pinned: pinnedItem !== null, inField });
@@ -1616,7 +1632,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     if (driver.by === 'rejoining') {
       const t = easingFunctions[DEFAULT_EASING](rejoinProgress(driver, now));
-      Object.assign(camera, lerpCamera(driver.fromCamera, state.camera, t));
+      Object.assign(camera, planGlide(driver.fromCamera, state.camera, mapViewport().width).at(t));
       setColorLayer({ from: driver.fromPicture, to: driver.toPicture, t });
       render();
       scheduleStoryFrame();
