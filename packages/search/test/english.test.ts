@@ -42,3 +42,21 @@ describe('english accents', () => {
     expect(found('johanon', 'substring')).toEqual(['Joḥanon']);
   });
 });
+
+describe('english quotes', () => {
+  const text = 'The am ha’aretz said “yes”.';
+  const found = (term: string) =>
+    matchRanges(english.fold(text), english.fold(term), {
+      mode: 'substring',
+      language: english,
+    }).map(({ start, end }) => text.slice(start, end));
+
+  it('finds curly quotes from the straight ones a keyboard types', () => {
+    expect(found("ha'aretz")).toEqual(['ha’aretz']);
+    expect(found('"yes"')).toEqual(['“yes”']);
+  });
+
+  it('finds straight quotes from curly ones', () => {
+    expect(found('ha’aretz')).toEqual(['ha’aretz']);
+  });
+});

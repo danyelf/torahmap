@@ -12,14 +12,21 @@ export const ENGLISH_LETTERS = 'ḥḤéÉçÇïÏàÀĥĤ';
 
 /** Each of `ENGLISH_LETTERS` read as its plain letter, which keeps a position's place in the text. */
 const ACCENTED = new RegExp(`[${ENGLISH_LETTERS}]`, 'g');
+const CURLY_SINGLE = /[‘’]/g;
+const CURLY_DOUBLE = /[“”]/g;
 const plainLetter = (letter: string) => letter.normalize('NFD')[0]!;
 
-/** English: lowercased and without accents, a word bounded by punctuation as well as by space (accents are already plain when a word is read). */
+/** English: lowercased, without accents, curly quotes read as straight (the text is curly, a keyboard is straight), a word bounded by punctuation as well as by space (accents are already plain when a word is read). */
 export const english: SearchLanguage = {
   id: ENGLISH,
   rtl: false,
   claims: () => true,
-  fold: (text) => text.toLowerCase().replace(ACCENTED, plainLetter),
+  fold: (text) =>
+    text
+      .toLowerCase()
+      .replace(ACCENTED, plainLetter)
+      .replace(CURLY_SINGLE, "'")
+      .replace(CURLY_DOUBLE, '"'),
   toOriginalRange: (_text, folded) => folded,
   wholeWords(haystack, needle, limit) {
     const ranges: TextRange[] = [];
