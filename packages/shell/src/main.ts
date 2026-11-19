@@ -956,6 +956,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         if (does === 'unpin') unpinItem();
         else dispatch({ type: does });
       },
+      goTo() {
+        if (!goToExample) return false;
+        // Choosing the open panel would fold a phone's sheet.
+        if (frame.mode !== 'explore' || frame.open !== 'goto')
+          dispatch({ type: 'choose', panel: 'goto' });
+        // dispatch skips focus on a phone; a key press means a keyboard is here.
+        goToPanel.focus();
+        return true;
+      },
     },
   });
 

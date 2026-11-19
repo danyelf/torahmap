@@ -77,6 +77,7 @@ beforeEach(() => {
       tap: (square) => log.push(`tap ${id(square)}`),
       step: (by) => log.push(`step ${by}`),
       escape: (inField) => log.push(inField ? 'escape from a field' : 'escape'),
+      goTo: () => (log.push('goTo'), true),
     },
   });
 });
@@ -267,6 +268,28 @@ describe('the keys', () => {
     key('ArrowRight');
     key('Escape');
     expect(heard).toEqual(['step 1', 'step -1', 'escape']);
+  });
+
+  it('Ctrl-G opens Go to, from a field too, and is kept from the browser', () => {
+    const press = (init: KeyboardEventInit, target: EventTarget = document.body): boolean =>
+      target.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }),
+      );
+    document.body.insertAdjacentHTML('beforeend', '<input>');
+    expect(press({ key: 'g', ctrlKey: true })).toBe(false);
+    press({ key: 'g', ctrlKey: true }, document.body.lastElementChild!);
+    expect(heard).toEqual(['goTo', 'goTo']);
+  });
+
+  it('leaves G, Cmd-G and Ctrl-Alt-G alone', () => {
+    const press = (init: KeyboardEventInit): boolean =>
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }),
+      );
+    expect(press({ key: 'g' })).toBe(true);
+    expect(press({ key: 'g', metaKey: true })).toBe(true);
+    expect(press({ key: 'g', ctrlKey: true, altKey: true })).toBe(true);
+    expect(heard).toEqual([]);
   });
 
   it.each(['<input>', '<textarea></textarea>', '<select></select>', '<div contenteditable></div>'])(

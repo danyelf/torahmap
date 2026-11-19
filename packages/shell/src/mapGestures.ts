@@ -37,6 +37,8 @@ export interface MapIntents<I extends MapItem> {
   step(by: 1 | -1): void;
   /** Escape, pressed in a field such as the search box or not. */
   escape(inField: boolean): void;
+  /** Ctrl-G: opens the Go to box. False when this map has none, which leaves the key to the browser. */
+  goTo(): boolean;
 }
 
 /** What Escape does: closes the menu, else unpins the square unless pressed in a field, else closes the panel or story. */
@@ -213,6 +215,11 @@ export function createMapGestures<I extends MapItem>(options: {
       'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
     );
     if (e.key === 'Escape') return intents.escape(inField);
+    // Cmd-G is the browser's find-next on a Mac, so only Control counts.
+    if (e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'g') {
+      if (intents.goTo()) e.preventDefault();
+      return;
+    }
     // A field's arrow keys are its own.
     if (inField) return;
     const by = arrowStep(e.key, direction);

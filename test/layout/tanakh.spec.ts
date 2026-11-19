@@ -3,6 +3,7 @@ import { test } from '../browser/fakeMap.ts';
 import { ABRAHAM, CHROME, STATES } from './app.ts';
 import { measureLayout, testPanelsOpen, testStates } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
+import { GO_TO_BOX_ID } from '../../packages/shell/src/goToBox.ts';
 import {
   canvasShot,
   desktopOnly,
@@ -60,6 +61,18 @@ test("a returning reader's Search button opens search, ready to type", async ({ 
   await openMap(page, '');
   await page.locator('[data-start="search"]').click();
   await expect(page.locator('#search-input')).toBeFocused();
+});
+
+const GO_TO_BOX = `#${GO_TO_BOX_ID}`;
+
+test('Control-G opens Go to with the box ready to type', async ({ page }) => {
+  desktopOnly('a key press needs a keyboard');
+  await openMap(page, '');
+  await page.keyboard.press('Control+g');
+  await expect(page.locator(GO_TO_BOX)).toBeFocused();
+  await page.locator('#search-input').focus();
+  await page.keyboard.press('Control+g');
+  await expect(page.locator(GO_TO_BOX)).toBeFocused();
 });
 
 test('choosing None offers the places to start, and an overlay takes them away', async ({
