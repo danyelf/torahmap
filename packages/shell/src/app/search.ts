@@ -13,6 +13,8 @@ export type SearchTool<T, S = unknown, D = unknown> = Overlay<T, S, D> & SearchM
 interface SearchMembers<S, D> {
   /** Whether `settings` search on anything. While not, search colours nothing. */
   isSearching(settings: S): boolean;
+  /** The ids of the squares `settings` find, in the order of the map. */
+  hits(settings: S, data: D): readonly string[];
   /** Files `settings` search, to download at once rather than in their turn. */
   filesNow?(settings: S): readonly string[];
   /** Told what happens to the search, for telemetry. */

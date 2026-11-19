@@ -37,7 +37,11 @@ export interface MapIntents<I extends MapItem> {
   step(by: 1 | -1): void;
   /** Escape, pressed in a field such as the search box or not. */
   escape(inField: boolean): void;
-  /** Ctrl-G: opens the Go to box. False when this map has none, which leaves the key to the browser. */
+  /** The browser's Find keys, taken over: opens the search box, its text selected. */
+  find(): void;
+  /** Find next / previous: steps to a search hit. False with no hit to go to, which leaves the key to the browser. */
+  stepHit(by: 1 | -1): boolean;
+  /** Opens the Go to box. False when this map has none, which leaves the key to the browser. */
   goTo(): boolean;
 }
 
@@ -50,6 +54,11 @@ export function escapeDoes(state: {
   if (state.menu) return 'menu';
   if (state.pinned && !state.inField) return 'unpin';
   return 'close';
+}
+
+/** Whether the platform's main modifier is down alone: Command on a Mac, Control elsewhere, as the browser's own keys. */
+export function hasMainModifier(e: KeyboardEvent, mac: boolean): boolean {
+  return (mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey) && !e.altKey;
 }
 
 /** Which way an arrow key steps: forward is the way the text reads. */
@@ -80,8 +89,11 @@ export function createMapGestures<I extends MapItem>(options: {
   clickable: (square: I | null) => boolean;
   direction: 'rtl' | 'ltr';
   intents: MapIntents<I>;
+  /** Whether Command, not Control, is the main modifier; read from the browser when left out. */
+  mac?: boolean;
 }): MapGestures<I> {
   const { canvas, onMap, squareUnder, clickable, direction, intents } = options;
+  const mac = options.mac ?? /Mac|iPhone|iPad/.test(navigator.platform);
 
   const touches = createTouchState();
   // Where a press went down and when, until it is released or cancelled.
@@ -215,10 +227,17 @@ export function createMapGestures<I extends MapItem>(options: {
       'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
     );
     if (e.key === 'Escape') return intents.escape(inField);
-    // Cmd-G is the browser's find-next on a Mac, so only Control counts.
-    if (e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'g') {
-      if (intents.goTo()) e.preventDefault();
-      return;
+    // The platform's main modifier, as the browser's own find keys use.
+    if (hasMainModifier(e, mac)) {
+      const key = e.key.toLowerCase();
+      let taken = false;
+      if (key === 'f') {
+        intents.find();
+        taken = true;
+      } else if (key === 'g') taken = intents.stepHit(e.shiftKey ? -1 : 1);
+      else if (key === 'k') taken = intents.goTo();
+      if (taken) e.preventDefault();
+      if (key === 'f' || key === 'g' || key === 'k') return;
     }
     // A field's arrow keys are its own.
     if (inField) return;

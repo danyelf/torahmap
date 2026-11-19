@@ -956,6 +956,23 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         if (does === 'unpin') unpinItem();
         else dispatch({ type: does });
       },
+      find() {
+        if (frame.mode !== 'explore' || frame.open !== 'search')
+          dispatch({ type: 'choose', panel: 'search' });
+        const box = document.getElementById(SEARCH_BOX_ID) as HTMLInputElement | null;
+        box?.focus();
+        box?.select();
+      },
+      stepHit(by) {
+        const data = dataFor(searchTool, loader.loaded());
+        const hits = data && searching() ? searchTool.hits(tools.search, data) : [];
+        if (hits.length === 0) return false;
+        const at = pinnedItem ? hits.indexOf(pinnedItem.id) : -1;
+        const to =
+          at === -1 ? (by === 1 ? 0 : hits.length - 1) : (at + by + hits.length) % hits.length;
+        travelTo(hits[to]);
+        return true;
+      },
       goTo() {
         if (!goToExample) return false;
         // Choosing the open panel would fold a phone's sheet.

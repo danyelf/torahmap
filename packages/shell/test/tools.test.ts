@@ -42,6 +42,7 @@ function paletteTool(id: string, defaultColors = ''): Overlay<object, Colors> {
 const search: SearchTool<object, Colors> = {
   ...paletteTool('search'),
   isSearching: (colors) => colors.length > 0,
+  hits: () => [],
   telemetry: { readerChanged() {}, replaced() {}, dataLoaded() {} },
 };
 const picks = paletteTool('picks');
