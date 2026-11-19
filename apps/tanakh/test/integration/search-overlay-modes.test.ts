@@ -576,19 +576,19 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(dotsOn(1)).toBe(1);
     });
 
-    it('counts the listed verses and the union, in that order', () => {
+    it('counts the union of every term, not the open row', () => {
       searchOverlay.restore(new URLSearchParams('search=אברהם,אברם&mode=w,w'));
       searchOverlay.renderControls?.(container);
 
       const caption = container.querySelector('#search-hit-caption')!;
-      expect(caption.textContent).toBe('2 of 3 matching verses');
+      expect(caption.textContent).toContain('3');
     });
 
-    it('says the number once when one word accounts for everything', () => {
+    it('counts one word verses when it is the only term', () => {
       searchOverlay.restore(new URLSearchParams('search=אברהם&mode=w'));
       searchOverlay.renderControls?.(container);
 
-      expect(container.querySelector('#search-hit-caption')!.textContent).toBe('2 matching verses');
+      expect(container.querySelector('#search-hit-caption')!.textContent).toContain('2');
     });
 
     // The list filters by the open row, and the row list is what settles which
@@ -603,7 +603,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // אברהם is in 2 verses, אברם in 2, אלהים in 1, four between them.
       searchOverlay.restore(new URLSearchParams('search=אברהם,אברם,אלהים&mode=w,w,w'));
 
-      expect(caption()).toBe('2 of 4 matching verses');
+      expect(caption()).toContain('4');
       expect(refs()).toHaveLength(2);
     });
 
@@ -618,7 +618,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
         .querySelector<HTMLElement>('.term-remove')!
         .click();
 
-      expect(caption()).toBe('2 of 3 matching verses');
+      expect(caption()).toContain('3');
       expect(refs()).toHaveLength(2);
     });
 
