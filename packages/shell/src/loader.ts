@@ -1,6 +1,7 @@
 // Runs the downloads behind the first frame: what has landed, what is on its
 // way or failed, a file fetched ahead of its stage, search's prebuild and load
 // timing. The shell hears when a file lands or fails and redraws.
+import { whenIdle } from '@torahmap/utils';
 import { downloadKbps, trackLoadTiming } from './analytics.ts';
 import { dataFor, downloadFiles, type Loaded } from './dataFiles.ts';
 import { downloadStages, waitingOn, type LoadState } from './downloads.ts';
@@ -62,7 +63,7 @@ export function createLoader<I>(options: {
     const before = loaded;
     loaded = new Map(before).set(path, content);
     // Before the redraws, so one that throws cannot hold back load timing.
-    prebuildCompleted(overlays, before, loaded, prebuilt);
+    prebuildCompleted(overlays, before, loaded, prebuilt, whenIdle, () => loaded);
     const data = dataFor(search, loaded);
     if (data && data !== dataFor(search, before)) search.telemetry.dataLoaded(data);
     options.landed(before, loaded);
