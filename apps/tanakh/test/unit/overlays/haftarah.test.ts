@@ -516,6 +516,64 @@ describe('Haftarah Overlay', () => {
     });
   });
 
+  describe('Jumping to a reading', () => {
+    const idsOf = (name: string) => {
+      const container = haftarahOverlay.renderControls();
+      return {
+        container,
+        swatch: container.querySelector<HTMLElement>(`[data-reading="${name}"]`)!,
+      };
+    };
+    const links = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('.haftarah-jump')];
+
+    it('pins a reading and fits its Torah portion when its swatch is clicked', () => {
+      const { swatch } = idsOf('Bereshit');
+      swatch.click();
+      expect(haftarahOverlay.settings.reading).toBe('Bereshit');
+      const [fitted] = haftarahOverlay.fits;
+      expect(fitted).toContain('Genesis.1.1');
+      expect(fitted).not.toContain('Isaiah.42.5');
+    });
+
+    it('fits the haftarah for an occasion, which has no Torah portion', () => {
+      const { swatch, container } = idsOf('Shabbat Rosh Chodesh');
+      swatch.click();
+      expect(haftarahOverlay.fits.at(-1)).toContain('Isaiah.66.1');
+      expect(links(container.querySelector('.haftarah-card')!)).toHaveLength(1);
+    });
+
+    it('shows a card for the pinned reading that links to both places, and clears it', () => {
+      haftarahOverlay.restore({ reading: 'Bereshit' });
+      const container = haftarahOverlay.renderControls();
+      const card = container.querySelector<HTMLElement>('.haftarah-card')!;
+      expect(card.hidden).toBe(false);
+      const [torah, haftarah] = links(card);
+      haftarah.click();
+      expect(haftarahOverlay.fits.at(-1)).toContain('Isaiah.42.5');
+      torah.click();
+      expect(haftarahOverlay.fits.at(-1)).toContain('Genesis.1.1');
+
+      card.querySelector<HTMLElement>('.haftarah-card-clear')!.click();
+      expect(haftarahOverlay.settings.reading).toBeNull();
+      expect(card.hidden).toBe(true);
+    });
+
+    it('offers each reading of a pinned verse as links in its popup', () => {
+      const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
+      expect(haftarahOverlay.renderSidebarInfo(verse, false)).toBeNull();
+      const box = haftarahOverlay.renderSidebarInfo(verse, true)!;
+      const [, haftarah] = links(box);
+      haftarah.click();
+      expect(haftarahOverlay.settings.reading).toBe('Bereshit');
+      expect(haftarahOverlay.fits.at(-1)).toContain('Isaiah.42.5');
+    });
+
+    it('says nothing in the popup for a verse in no reading', () => {
+      const psalms = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
+      expect(haftarahOverlay.renderSidebarInfo(psalms, true)).toBeNull();
+    });
+  });
+
   describe('Multi-Item Verses', () => {
     it('returns color for haftarah verse (single item)', () => {
       // Isaiah 54:1-10 is Noach haftarah in our sample

@@ -203,6 +203,16 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
+    // A pinned reading's card, with links to its Torah portion and its haftarah.
+    name: 'explore-haftarah-reading',
+    link: 'overlay=haftarah&reading=Vayeshev',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.haftarah-card').scrollIntoViewIfNeeded();
+    },
+    shown: ['.haftarah-card'],
+  },
+  {
     name: 'explore-trop-legend',
     link: 'overlay=trop&trop=shalshelet',
     then: async (page) => {

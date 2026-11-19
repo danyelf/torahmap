@@ -3,7 +3,7 @@
 
 import type { MapItem } from '@torahmap/engine';
 import { ENGLISH, HEBREW, type TextLanguage } from './language.ts';
-import type { ToolOnMap } from './overlays/types.ts';
+import type { PopupActions, ToolOnMap } from './overlays/types.ts';
 import { textWords, wrapWordsInFragment } from './textWords.ts';
 import { combineMarks } from './textMarks.ts';
 import { insertReferences, linkStretches, type TextLink, type TextReference } from './textLinks.ts';
@@ -144,6 +144,7 @@ export interface PopupView<I extends MapItem> {
   overlay: ToolOnMap<I> | null;
   search: ToolOnMap<I> | null;
   pinned: boolean;
+  actions?: PopupActions<unknown>;
 }
 
 /** Draw `item`'s popup, or hide it for null; `say` is the text's popupText. */
@@ -187,8 +188,13 @@ export function updateSidebar<I extends MapItem>(
   refDetail?.replaceChildren(...(text.refDetail ? [text.refDetail] : []));
   if (overlayInfo) {
     const lines = [
-      currentOverlay?.renderSidebarInfo?.(item, isPinned, overlaySettings, overlayData) ??
-        currentOverlay?.getHoverInfo?.(item, overlaySettings, overlayData),
+      currentOverlay?.renderSidebarInfo?.(
+        item,
+        isPinned,
+        overlaySettings,
+        overlayData,
+        view.actions,
+      ) ?? currentOverlay?.getHoverInfo?.(item, overlaySettings, overlayData),
       search?.tool.getHoverInfo?.(item, search.settings, search.data),
     ].filter((line): line is HTMLElement | string => !!line);
     overlayInfo.replaceChildren(...lines.map(infoLine));

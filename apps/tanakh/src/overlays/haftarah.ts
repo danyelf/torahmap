@@ -8,7 +8,12 @@ import {
   escapeHtml,
   lingeringHover,
 } from '@torahmap/utils';
-import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import type {
+  FitTo,
+  Overlay,
+  SettingsUpdate,
+  UrlParamValues,
+} from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { passageRef, verseId } from '@torahmap/link/tanakh';
 import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
@@ -23,6 +28,7 @@ import {
   type HaftarahDerivation,
   type HaftarahItem,
   type OccasionCategory,
+  type VerseRange,
 } from './haftarah/readings.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { buildLegendGradient, legendCaption } from './legend.ts';
@@ -168,6 +174,91 @@ function colorAt(
   return shown.length === 1 ? shown[0] : shown;
 }
 
+/**
+ * The two places a reading appears: its Torah portion, and its haftarah. An
+ * occasion has only the second, so that is where jumping to it goes.
+ */
+interface Passage {
+  readonly label: 'Torah' | 'Haftarah';
+  readonly ranges: readonly VerseRange[];
+}
+
+function passagesOf(item: HaftarahItem, custom: Custom): Passage[] {
+  const haftarah: Passage = { label: 'Haftarah', ranges: item.haftarah[custom] };
+  return isParsha(item) ? [{ label: 'Torah', ranges: [item.torah] }, haftarah] : [haftarah];
+}
+
+function passageText(passage: Passage): string {
+  return passage.ranges.map((r) => passageRef(r.book, r.start, r.end)).join(', ');
+}
+
+function passageIds(data: HaftarahData, passage: Passage): string[] {
+  const ids: string[] = [];
+  for (const range of passage.ranges) {
+    forEachVerseInRange(data.structure, range, (book, ch, v) => ids.push(verseId(book, ch, v)));
+  }
+  return ids;
+}
+
+/** Pins the reading and fits one of its passages into view. */
+function jumpTo(
+  data: HaftarahData,
+  item: HaftarahItem,
+  passage: Passage,
+  fitTo: FitTo,
+  change: (update: SettingsUpdate<HaftarahSettings>) => void,
+): void {
+  change((current) => ({ ...current, reading: item.name }));
+  fitTo(passageIds(data, passage));
+}
+
+function jumpLink(
+  data: HaftarahData,
+  item: HaftarahItem,
+  passage: Passage,
+  fitTo: FitTo,
+  change: (update: SettingsUpdate<HaftarahSettings>) => void,
+): HTMLElement {
+  const link = document.createElement('button');
+  link.type = 'button';
+  link.className = 'haftarah-jump';
+  link.textContent = `${passage.label} ${passageText(passage)}`;
+  link.addEventListener('click', () => jumpTo(data, item, passage, fitTo, change));
+  return link;
+}
+
+/** The card for the pinned reading: its name, a link to each place it appears, and a way to clear it. */
+function renderCard(
+  card: HTMLElement,
+  settings: HaftarahSettings,
+  data: HaftarahData | null,
+  fitTo: FitTo,
+  change: (update: SettingsUpdate<HaftarahSettings>) => void,
+): void {
+  const item =
+    data && settings.reading !== null
+      ? deriveHaftarah(data, settings.custom).itemByName.get(settings.reading)
+      : undefined;
+  card.hidden = !data || !item;
+  card.replaceChildren();
+  if (!data || !item) return;
+
+  const title = document.createElement('div');
+  title.className = 'haftarah-card-title';
+  title.textContent = `${item.name} (${item.hebrewName})`;
+
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'haftarah-card-clear';
+  clear.textContent = 'Clear';
+  clear.addEventListener('click', () => change((current) => ({ ...current, reading: null })));
+
+  const links = passagesOf(item, settings.custom).map((passage) =>
+    jumpLink(data, item, passage, fitTo, change),
+  );
+  card.append(title, ...links, clear);
+}
+
 function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
   const groups = new Map<K, T[]>();
   for (const item of items) {
@@ -181,7 +272,7 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
 
 /**
  * The key: each book by its portions, then each category of occasion by its
- * readings. Hovering one previews it. Its colours and names are the same for
+ * readings. Hovering one previews it; clicking one picks it. Its colours and names are the same for
  * both customs, so it is built once.
  */
 function renderKey(
@@ -189,6 +280,7 @@ function renderKey(
   data: HaftarahData,
   custom: Custom,
   onPreview: (reading: string | null) => void,
+  onPick: (item: HaftarahItem) => void,
 ): void {
   if (container.querySelector('.haftarah-key')) return;
   const derived = deriveHaftarah(data, custom);
@@ -225,6 +317,11 @@ function renderKey(
     else preview.enter(reading);
   });
   key.addEventListener('pointerleave', () => preview.leave());
+  key.addEventListener('click', (e) => {
+    const reading = (e.target as Element).closest<HTMLElement>('[data-reading]')?.dataset.reading;
+    const item = reading === undefined ? undefined : derived.itemByName.get(reading);
+    if (item) onPick(item);
+  });
 }
 
 export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, HaftarahData> = {
@@ -258,7 +355,14 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     return items.map((item) => colorAt(item, derived, lit));
   },
 
-  renderControls(container: HTMLElement, settings: HaftarahSettings, onChange, data) {
+  renderControls(
+    container: HTMLElement,
+    settings: HaftarahSettings,
+    onChange,
+    data,
+    _travelTo,
+    fitTo = () => {},
+  ) {
     let select = container.querySelector<HTMLSelectElement>('#custom-select');
     if (!select) {
       const wrapper = document.createElement('div');
@@ -270,6 +374,10 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
         </select>
       `;
       container.appendChild(wrapper);
+      const card = document.createElement('div');
+      card.className = 'haftarah-card';
+      card.hidden = true;
+      container.appendChild(card);
 
       select = wrapper.querySelector('select')!;
       select.addEventListener('change', () => {
@@ -280,9 +388,23 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
 
     select.value = settings.custom;
     if (data) {
-      renderKey(container, data, settings.custom, (preview) =>
-        onChange((current) => ({ ...current, preview })),
+      renderKey(
+        container,
+        data,
+        settings.custom,
+        (preview) => onChange((current) => ({ ...current, preview })),
+        (item) => jumpTo(data, item, passagesOf(item, settings.custom)[0], fitTo, onChange),
       );
+    }
+    renderCard(
+      container.querySelector<HTMLElement>('.haftarah-card')!,
+      settings,
+      data,
+      fitTo,
+      onChange,
+    );
+    for (const swatch of container.querySelectorAll<HTMLElement>('.haftarah-key [data-reading]')) {
+      swatch.classList.toggle('pinned', swatch.dataset.reading === settings.reading);
     }
   },
 
@@ -308,7 +430,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
         ${legendCaption(`A portion and its haftarah (${customLabel(settings.custom)}) share a colour`)}
         ${legendCaption('A verse in more than one reading is split corner to corner, one band each')}
       </div>
-      ${legendCaption('Hover a reading to light it and its haftarah; the rest darkens')}
+      ${legendCaption('Hover a reading to light it and its haftarah; click one to pin it')}
     `;
   },
 
@@ -336,6 +458,26 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     }
 
     return null;
+  },
+
+  renderSidebarInfo(verse, isPinned, settings, data, actions) {
+    if (!isPinned || !actions) return null;
+    const derived = deriveHaftarah(data, settings.custom);
+    const parsha = derived.torahVerseToParsha.get(verse.id);
+    const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(verse.id) ?? []);
+    if (items.length === 0) return null;
+
+    const box = document.createElement('div');
+    for (const item of items) {
+      const line = document.createElement('div');
+      line.append(`${item.name}: `);
+      passagesOf(item, settings.custom).forEach((passage, i) => {
+        if (i > 0) line.append(' | ');
+        line.append(jumpLink(data, item, passage, actions.fitTo, actions.change));
+      });
+      box.append(line);
+    }
+    return box;
   },
 
   settingsFromUrl(params: UrlParamValues<typeof HAFTARAH.urlParams>): HaftarahSettings {

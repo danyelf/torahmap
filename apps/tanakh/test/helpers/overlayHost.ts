@@ -13,6 +13,8 @@ import type { TanakhOverlay } from '../../src/overlays/index';
 
 export interface OverlayHost<S, D> {
   readonly overlay: Overlay<TanakhIdentity, S, D>;
+  /** The squares each request to bring squares into view named, in order. */
+  readonly fits: (readonly string[])[];
   /** The settings the app holds for this overlay. */
   readonly settings: S;
   /** The data the overlay is handed. */
@@ -50,14 +52,17 @@ export function hostOverlay<S, D>(
   let settings = settingsFromLink(overlay, {});
   let container: HTMLElement | null = null;
   const listeners: (() => void)[] = [];
+  const fits: (readonly string[])[] = [];
+  const fitTo = (ids: readonly string[]) => void fits.push(ids);
 
   function draw(): void {
     if (!container) return;
-    overlay.renderControls?.(container, settings, host.change, held, () => {});
+    overlay.renderControls?.(container, settings, host.change, held, () => {}, fitTo);
   }
 
   const host: OverlayHost<S, D> = {
     overlay,
+    fits,
     get settings() {
       return settings;
     },
@@ -117,7 +122,12 @@ export function hostOverlay<S, D>(
       return overlay.summary?.(settings, held) ?? {};
     },
     renderSidebarInfo(verse, isPinned) {
-      return overlay.renderSidebarInfo?.(verse, isPinned, settings, held) ?? null;
+      return (
+        overlay.renderSidebarInfo?.(verse, isPinned, settings, held, {
+          fitTo,
+          change: host.change,
+        }) ?? null
+      );
     },
     destroy() {
       overlay.destroy?.();
