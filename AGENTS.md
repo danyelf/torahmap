@@ -92,8 +92,7 @@ parameters or the data files outright; nothing old has to keep working.
   Neither are the section markers `{פ}` and `{ס}`.
 - A word's meanings narrow its search. Each term gets one colour, never one per
   meaning.
-- Search finds the word typed, in every form it takes. It never offers a way
-  over to related words.
+- Search finds the word typed, in every form it takes.
 
 ## Issue Tracking
 
