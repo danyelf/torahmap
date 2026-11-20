@@ -5,6 +5,7 @@ import type { MapItem } from '@torahmap/engine';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   arrowStep,
+  hasMainModifier,
   createMapGestures,
   escapeDoes,
   tapDoes,
@@ -24,6 +25,7 @@ let zoomIn: HTMLButtonElement;
 let zoomOut: HTMLButtonElement;
 let heard: string[];
 let pinned: Square | null;
+let hitsExist: boolean;
 let gestures: MapGestures<Square>;
 
 const id = (square: Square | null): string => square?.id ?? 'none';
@@ -59,7 +61,9 @@ beforeEach(() => {
   const log: string[] = [];
   heard = log;
   pinned = null;
+  hitsExist = true;
   gestures = createMapGestures<Square>({
+    mac: false,
     canvas,
     zoomIn,
     zoomOut,
@@ -77,6 +81,9 @@ beforeEach(() => {
       tap: (square) => log.push(`tap ${id(square)}`),
       step: (by) => log.push(`step ${by}`),
       escape: (inField) => log.push(inField ? 'escape from a field' : 'escape'),
+      find: () => log.push('find'),
+      stepHit: (by) => (log.push(`hit ${by}`), hitsExist),
+      goTo: () => (log.push('goTo'), true),
     },
   });
 });
@@ -269,6 +276,50 @@ describe('the keys', () => {
     expect(heard).toEqual(['step 1', 'step -1', 'escape']);
   });
 
+  describe('with the main modifier', () => {
+    const press = (init: KeyboardEventInit, target: EventTarget = document.body): boolean =>
+      target.dispatchEvent(
+        new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init }),
+      );
+
+    it("F, G and K are the map's, and kept from the browser", () => {
+      expect(press({ key: 'f', ctrlKey: true })).toBe(false);
+      expect(press({ key: 'g', ctrlKey: true })).toBe(false);
+      expect(press({ key: 'G', shiftKey: true, ctrlKey: true })).toBe(false);
+      expect(press({ key: 'k', ctrlKey: true })).toBe(false);
+      expect(heard).toEqual(['find', 'hit 1', 'hit -1', 'goTo']);
+    });
+
+    it('leave the browser the keys with Alt, Command or no modifier', () => {
+      for (const init of [{ metaKey: true }, { altKey: true, ctrlKey: true }, {}]) {
+        for (const key of ['f', 'g', 'k']) expect(press({ key, ...init })).toBe(true);
+      }
+      expect(heard).toEqual([]);
+    });
+
+    it('leave Shift with F and K to the browser', () => {
+      expect(press({ key: 'F', shiftKey: true, ctrlKey: true })).toBe(true);
+      expect(press({ key: 'K', shiftKey: true, ctrlKey: true })).toBe(true);
+      expect(heard).toEqual([]);
+    });
+
+    it('read the letter from its place on a Hebrew keyboard', () => {
+      expect(press({ key: 'כ', code: 'KeyF', ctrlKey: true })).toBe(false);
+      expect(heard).toEqual(['find']);
+    });
+
+    it('leave find-next to the browser when there is no hit to go to', () => {
+      hitsExist = false;
+      expect(press({ key: 'g', ctrlKey: true })).toBe(true);
+    });
+
+    it('work from a field too', () => {
+      document.body.insertAdjacentHTML('beforeend', '<input>');
+      press({ key: 'k', ctrlKey: true }, document.body.lastElementChild!);
+      expect(heard).toEqual(['goTo']);
+    });
+  });
+
   it.each(['<input>', '<textarea></textarea>', '<select></select>', '<div contenteditable></div>'])(
     'leave the arrows to %s, and say Escape came from a field',
     (html) => {
@@ -284,6 +335,18 @@ describe('the keys', () => {
     document.body.insertAdjacentHTML('beforeend', '<div contenteditable="false"></div>');
     key('ArrowLeft', document.body.lastElementChild!);
     expect(heard).toEqual(['step 1']);
+  });
+});
+
+describe('the main modifier', () => {
+  it('is Command on a Mac and Control elsewhere, and never both', () => {
+    const key = (init: KeyboardEventInit) => new KeyboardEvent('keydown', init);
+    expect(hasMainModifier(key({ metaKey: true }), true)).toBe(true);
+    expect(hasMainModifier(key({ ctrlKey: true }), true)).toBe(false);
+    expect(hasMainModifier(key({ ctrlKey: true }), false)).toBe(true);
+    expect(hasMainModifier(key({ metaKey: true }), false)).toBe(false);
+    expect(hasMainModifier(key({ metaKey: true, ctrlKey: true }), true)).toBe(false);
+    expect(hasMainModifier(key({ metaKey: true, altKey: true }), true)).toBe(false);
   });
 });
 

@@ -406,6 +406,10 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     data: spec.data,
 
     isSearching,
+    hits: (settings, data) => {
+      const { matchingTerms } = searchFor(data, settings);
+      return items.filter((item) => matchingTerms.has(item.id)).map((item) => item.id);
+    },
     ...(spec.filesNow ? { filesNow: spec.filesNow } : {}),
     telemetry: spec.telemetry?.({ hitCount, modeOf }) ?? NO_TELEMETRY,
 

@@ -298,6 +298,19 @@ body[data-menu] #panel-body {
   font-size: 13px;
 }
 
+.menu-shortcut {
+  margin-left: auto;
+  color: #999;
+  font-size: 13px;
+}
+
+/* A touch screen has no keyboard to press them on. */
+@media (pointer: coarse) {
+  .menu-shortcut {
+    display: none;
+  }
+}
+
 .menu-confirm-mark {
   color: var(--accent);
 }

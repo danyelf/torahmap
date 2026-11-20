@@ -15,6 +15,7 @@ import {
 } from '@torahmap/engine';
 import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from './constants.ts';
 import { DRAG_PX } from './frame.ts';
+import { SHORTCUT_KEYS, onMac } from './shortcuts.ts';
 
 /** The longest press, in ms, that still counts as a tap. */
 const TAP_MS = 300;
@@ -37,6 +38,12 @@ export interface MapIntents<I extends MapItem> {
   step(by: 1 | -1): void;
   /** Escape, pressed in a field such as the search box or not. */
   escape(inField: boolean): void;
+  /** The browser's Find keys, taken over: opens the search box, its text selected. */
+  find(): void;
+  /** Find next / previous: steps to a search hit. False with no hit to go to, which leaves the key to the browser. */
+  stepHit(by: 1 | -1): boolean;
+  /** Opens the Go to box. False when this map has none. */
+  goTo(): boolean;
 }
 
 /** What Escape does: closes the menu, else unpins the square unless pressed in a field, else closes the panel or story. */
@@ -48,6 +55,17 @@ export function escapeDoes(state: {
   if (state.menu) return 'menu';
   if (state.pinned && !state.inField) return 'unpin';
   return 'close';
+}
+
+/** Whether the platform's main modifier is down alone: Command on a Mac, Control elsewhere, as the browser's own keys. */
+export function hasMainModifier(e: KeyboardEvent, mac: boolean): boolean {
+  return (mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey) && !e.altKey;
+}
+
+/** The letter a key press names; on a layout without Latin letters, such as Hebrew, the Latin letter at its place on the keyboard. */
+export function shortcutLetter(e: KeyboardEvent): string {
+  if (/^[a-z]$/i.test(e.key)) return e.key.toLowerCase();
+  return /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : e.key;
 }
 
 /** Which way an arrow key steps: forward is the way the text reads. */
@@ -78,8 +96,11 @@ export function createMapGestures<I extends MapItem>(options: {
   clickable: (square: I | null) => boolean;
   direction: 'rtl' | 'ltr';
   intents: MapIntents<I>;
+  /** Whether Command, not Control, is the main modifier; read from the browser when left out. */
+  mac?: boolean;
 }): MapGestures<I> {
   const { canvas, onMap, squareUnder, clickable, direction, intents } = options;
+  const mac = options.mac ?? onMac(navigator.platform);
 
   const touches = createTouchState();
   // Where a press went down and when, until it is released or cancelled.
@@ -213,6 +234,24 @@ export function createMapGestures<I extends MapItem>(options: {
       'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
     );
     if (e.key === 'Escape') return intents.escape(inField);
+    if (hasMainModifier(e, mac)) {
+      let taken = false;
+      switch (shortcutLetter(e)) {
+        case SHORTCUT_KEYS.find:
+          if (!e.shiftKey) {
+            intents.find();
+            taken = true;
+          }
+          break;
+        case SHORTCUT_KEYS.next:
+          taken = intents.stepHit(e.shiftKey ? -1 : 1);
+          break;
+        case SHORTCUT_KEYS.goTo:
+          taken = !e.shiftKey && intents.goTo();
+          break;
+      }
+      if (taken) return e.preventDefault();
+    }
     // A field's arrow keys are its own.
     if (inField) return;
     const by = arrowStep(e.key, direction);

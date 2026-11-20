@@ -44,6 +44,7 @@ import {
   type Frame,
   type FrameEvent,
   type FrontTool,
+  type Panel,
   PANELS,
   PANEL_TITLES,
   isPanel,
@@ -85,6 +86,7 @@ import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
+import { onMac } from './shortcuts.ts';
 import { createBackdrop } from './backdrop.ts';
 import { restingHover } from './restingHover.ts';
 import {
@@ -591,6 +593,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         source.site,
         { ...place, title: story.data.title },
         menuPanels,
+        onMac(navigator.platform),
       );
     }
     const opened = frame.open !== previous?.open;
@@ -955,6 +958,29 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         const does = escapeDoes({ menu: frame.menu, pinned: pinnedItem !== null, inField });
         if (does === 'unpin') unpinItem();
         else dispatch({ type: does });
+      },
+      find() {
+        openPanel('search');
+        const box = document.getElementById(SEARCH_BOX_ID) as HTMLInputElement | null;
+        box?.focus();
+        box?.select();
+      },
+      stepHit(by) {
+        const data = dataFor(searchTool, loader.loaded());
+        const hits = data && searching() ? searchTool.hits(tools.search, data) : [];
+        if (hits.length === 0) return false;
+        const at = pinnedItem ? hits.indexOf(pinnedItem.id) : -1;
+        const to =
+          at === -1 ? (by === 1 ? 0 : hits.length - 1) : (at + by + hits.length) % hits.length;
+        travelTo(hits[to]);
+        return true;
+      },
+      goTo() {
+        if (!goToExample) return false;
+        openPanel('goto');
+        // dispatch skips focus on a phone; a key press means a keyboard is here.
+        goToPanel.focus();
+        return true;
       },
     },
   });
@@ -1402,10 +1428,16 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     readerOpensStory(id, fromStart ? null : undefined);
   }
 
+  /** Opens `panel` and closes the menu; choosing the open panel again would fold a phone's sheet. */
+  function openPanel(panel: Panel): void {
+    if (frame.mode !== 'explore' || frame.open !== panel || frame.menu)
+      dispatch({ type: 'choose', panel });
+  }
+
   function takeStart(choice: StartChoice): void {
     if (choice.kind === 'story') return readStory(choice.id, false);
     if (choice.kind === 'search') {
-      dispatch({ type: 'choose', panel: 'search' });
+      openPanel('search');
       document.getElementById(SEARCH_BOX_ID)?.focus();
       return;
     }

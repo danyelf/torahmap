@@ -3,6 +3,7 @@ import { test } from '../browser/fakeMap.ts';
 import { ABRAHAM, CHROME, STATES } from './app.ts';
 import { measureLayout, testPanelsOpen, testStates } from './check.ts';
 import { NO_OVERLAY } from '@torahmap/shell/overlays/types.ts';
+import { GO_TO_BOX_ID } from '../../packages/shell/src/goToBox.ts';
 import {
   canvasShot,
   desktopOnly,
@@ -60,6 +61,47 @@ test("a returning reader's Search button opens search, ready to type", async ({ 
   await openMap(page, '');
   await page.locator('[data-start="search"]').click();
   await expect(page.locator('#search-input')).toBeFocused();
+});
+
+const GO_TO_BOX = `#${GO_TO_BOX_ID}`;
+
+test('the main modifier with F and K opens Search and Go to, boxes ready to type', async ({
+  page,
+}) => {
+  desktopOnly('a key press needs a keyboard');
+  await openMap(page, '');
+  await page.keyboard.press('ControlOrMeta+k');
+  await expect(page.locator(GO_TO_BOX)).toBeFocused();
+  await page.keyboard.press('ControlOrMeta+f');
+  await expect(page.locator('#search-input')).toBeFocused();
+  await page.keyboard.press('ControlOrMeta+k');
+  await expect(page.locator(GO_TO_BOX)).toBeFocused();
+});
+
+test('the main modifier with G steps through the search hits, and Shift goes back', async ({
+  page,
+}) => {
+  desktopOnly('a key press needs a keyboard');
+  await openMap(page, `search=${ABRAHAM}`);
+  await allLoaded(page);
+  const pinned = () => new URL(page.url()).searchParams.get('verse');
+  await page.keyboard.press('ControlOrMeta+g');
+  await expect.poll(pinned).not.toBeNull();
+  const first = pinned();
+  await page.keyboard.press('ControlOrMeta+g');
+  await expect.poll(pinned).not.toBe(first);
+  await page.keyboard.press('ControlOrMeta+Shift+g');
+  await expect.poll(pinned).toBe(first);
+});
+
+test("the menu shows Search's shortcut where there is a keyboard, and not on a touch screen", async ({
+  page,
+}) => {
+  await openMap(page, '');
+  await page.locator('#menu-toggle').click();
+  const hint = page.locator('.menu-item[data-action="search"] .menu-shortcut');
+  if (test.info().project.use.hasTouch) await expect(hint).toBeHidden();
+  else await expect(hint).toBeVisible();
 });
 
 test('choosing None offers the places to start, and an overlay takes them away', async ({
