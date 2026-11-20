@@ -1572,7 +1572,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    */
   function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
-    return rejoin(now, duration, camera, flatten(withDefaults(colorLayer)), storyPicture());
+    return rejoin(
+      now,
+      reducedMotion.matches ? 0 : duration,
+      camera,
+      flatten(withDefaults(colorLayer)),
+      storyPicture(),
+    );
   }
 
   /** The story's picture where it is now. */
