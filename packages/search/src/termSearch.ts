@@ -303,19 +303,11 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       return;
     }
     const { active, results } = searchFor(data, settings);
-    const listed = countOf(resultsForOpenRow(data, settings));
     const total = countOf(results);
 
     let message: string;
     if (active.length > 0 && results.length > 0) {
-      // The list shows the open row's items, so the caption above it counts
-      // those, and names the union second so the number the rows cannot show
-      // between them is still somewhere. With one term the two are the same
-      // number and saying it twice would be noise.
-      message =
-        listed === total
-          ? `${total} matching ${noun.many}`
-          : `${listed} of ${total} matching ${noun.many}`;
+      message = `${total} matching ${noun.many}`;
     } else if (active.length > 0) {
       message = `No matching ${noun.many}`;
     } else if (typedTerms(settings).length > 0) {
@@ -364,7 +356,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   /**
    * Make this row the one the reader is working in.
    *
-   * The list and the caption follow the open row, so both are redrawn — without
+   * The list follows the open row, so it is redrawn — without
    * rerunning the search, which has not changed.
    */
   function openRow(id: string): void {
@@ -372,7 +364,6 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     if (!shown) return;
     rows?.render();
     renderResults(shown, shownData);
-    updateHitCaption(shown, shownData);
   }
 
   /** Hand a clicked result back to the app as the item it names. */
