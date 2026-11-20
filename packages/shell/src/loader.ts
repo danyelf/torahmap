@@ -63,7 +63,7 @@ export function createLoader<I>(options: {
     const before = loaded;
     loaded = new Map(before).set(path, content);
     // Before the redraws, so one that throws cannot hold back load timing.
-    prebuildCompleted(overlays, before, loaded, prebuilt, whenIdle, () => loaded);
+    prebuildCompleted(overlays, before, () => loaded, prebuilt, whenIdle);
     const data = dataFor(search, loaded);
     if (data && data !== dataFor(search, before)) search.telemetry.dataLoaded(data);
     options.landed(before, loaded);

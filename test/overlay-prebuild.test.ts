@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { memoByValueAndKey } from '@torahmap/utils';
+import { memoByValueAndLatestKey } from '@torahmap/utils';
 import { optional, type Loaded } from '../packages/shell/src/dataFiles.ts';
 import type { Overlay } from '../packages/shell/src/overlays/types.ts';
 import { prebuildCompleted } from '../packages/shell/src/overlays/prebuild.ts';
@@ -22,10 +22,11 @@ describe('prebuildCompleted', () => {
     prebuildCompleted(
       [a, b],
       new Map(),
-      new Map([
-        ['a.json', 1],
-        ['b.json', 2],
-      ]),
+      () =>
+        new Map([
+          ['a.json', 1],
+          ['b.json', 2],
+        ]),
       () => {},
       idle.schedule,
     );
@@ -41,7 +42,13 @@ describe('prebuildCompleted', () => {
     const missing = withPrebuild('m', 'missing.json');
     const plain = testOverlay({ id: 'p', name: 'p' });
     const idle = turns();
-    prebuildCompleted([missing, plain], new Map(), new Map(), () => {}, idle.schedule);
+    prebuildCompleted(
+      [missing, plain],
+      new Map(),
+      () => new Map(),
+      () => {},
+      idle.schedule,
+    );
     idle.next();
     idle.next();
     expect(missing.prebuild).not.toHaveBeenCalled();
@@ -60,10 +67,11 @@ describe('prebuildCompleted', () => {
     prebuildCompleted(
       [broken, after],
       new Map(),
-      new Map([
-        ['x.json', 1],
-        ['y.json', 2],
-      ]),
+      () =>
+        new Map([
+          ['x.json', 1],
+          ['y.json', 2],
+        ]),
       () => {},
       idle.schedule,
     );
@@ -79,7 +87,7 @@ describe('prebuildCompleted', () => {
     prebuildCompleted(
       [a],
       loaded,
-      new Map([...loaded, ['other.json', 2]]),
+      () => new Map([...loaded, ['other.json', 2]]),
       () => {},
       idle.schedule,
     );
@@ -91,7 +99,7 @@ describe('prebuildCompleted', () => {
     const a = withPrebuild('a', 'a.json');
     const settled = vi.fn(() => expect(a.prebuild).toHaveBeenCalled());
     const idle = turns();
-    prebuildCompleted([a], new Map(), new Map([['a.json', 1]]), settled, idle.schedule);
+    prebuildCompleted([a], new Map(), () => new Map([['a.json', 1]]), settled, idle.schedule);
     idle.next();
     expect(settled).toHaveBeenCalledWith(a, true);
   });
@@ -106,7 +114,7 @@ describe('prebuildCompleted', () => {
     );
     const settled = vi.fn();
     const idle = turns();
-    prebuildCompleted([broken], new Map(), new Map([['x.json', 1]]), settled, idle.schedule);
+    prebuildCompleted([broken], new Map(), () => new Map([['x.json', 1]]), settled, idle.schedule);
     expect(() => idle.next()).toThrow('broken');
     expect(settled).toHaveBeenCalledWith(broken, false);
   });
@@ -120,10 +128,10 @@ interface Data {
 const TEXT = { text: 'text.json' };
 const ENGLISH = { english: 'english.json' };
 
-/** An overlay that builds an index from its text and optional English, once per pair, like the Talmud's search. */
+/** An overlay that builds an index from its text and optional English, memoized as the Talmud's search is. */
 function indexing() {
   const builds: string[] = [];
-  const index = memoByValueAndKey((_text: object, english: object | null) => {
+  const index = memoByValueAndLatestKey((_text: object, english: object | null) => {
     builds.push(english ? 'text+english' : 'text');
     return {};
   });
@@ -153,10 +161,9 @@ function session() {
       prebuildCompleted(
         [overlay],
         before,
-        loaded,
+        () => loaded,
         (_, built) => settled.push(built),
         (run) => queue.push(run),
-        () => loaded,
       );
     },
     /** What a search typed now does. */
@@ -173,13 +180,14 @@ function session() {
 }
 
 describe('prebuildCompleted for an overlay with an optional file', () => {
-  it('builds from the text alone, then again once the English lands', () => {
+  it('builds from the text alone, then again once the English lands, telling the loader each time', () => {
     const s = session();
     s.land(TEXT);
     s.idle();
     s.land(ENGLISH);
     s.idle();
     expect(s.builds).toEqual(['text', 'text+english']);
+    expect(s.settled).toEqual([true, true]);
   });
 
   it('builds once from both when the English lands before the idle turn', () => {
@@ -222,14 +230,5 @@ describe('prebuildCompleted for an overlay with an optional file', () => {
     s.idle();
     s.search();
     expect(s.builds).toEqual(['text', 'text+english']);
-  });
-
-  it('tells the loader each time it ran', () => {
-    const s = session();
-    s.land(TEXT);
-    s.idle();
-    s.land(ENGLISH);
-    s.idle();
-    expect(s.settled).toEqual([true, true]);
   });
 });

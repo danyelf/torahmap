@@ -2,35 +2,30 @@ import type { Overlay } from './types.ts';
 import { dataFor, type Loaded } from '../dataFiles.ts';
 
 /**
- * Call the prebuild of each overlay whose data `after` completes or changes,
- * one per idle turn so none holds up a frame, and tell `settled` after each
- * whether it built. An overlay's data changes when an optional file of its
- * lands, and what it built from the data before is then stale.
- *
- * Each runs with the data `current` gives when its turn comes, so a prebuild
- * queued before a later file landed builds from everything in, and the one
- * that file queued finds it built. A prebuild that throws still throws.
+ * Call the prebuild of each overlay whose data `loaded()` completes or changes
+ * since `before` (an optional file landing), one per idle turn so none holds up
+ * a frame, and tell `settled` after each whether it built. Each builds from
+ * `loaded()` when its turn comes, so none builds from data already stale. A
+ * prebuild that throws still throws.
  */
 export function prebuildCompleted<T>(
   overlays: readonly Overlay<T>[],
   before: Loaded,
-  after: Loaded,
+  loaded: () => Loaded,
   settled: (overlay: Overlay<T>, built: boolean) => void,
   schedule: (run: () => void) => void,
-  current: () => Loaded = () => after,
 ): void {
-  const waiting = overlays.filter(
-    (overlay) =>
-      overlay.prebuild &&
-      dataFor(overlay, after) !== null &&
-      dataFor(overlay, after) !== dataFor(overlay, before),
-  );
+  const after = loaded();
+  const waiting = overlays.filter((overlay) => {
+    const data = dataFor(overlay, after);
+    return overlay.prebuild && data !== null && data !== dataFor(overlay, before);
+  });
   const next = (): void => {
     const overlay = waiting.shift();
     if (!overlay) return;
     let built = false;
     try {
-      overlay.prebuild?.(dataFor(overlay, current()));
+      overlay.prebuild?.(dataFor(overlay, loaded()));
       built = true;
     } finally {
       schedule(next);

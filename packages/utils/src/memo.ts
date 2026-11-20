@@ -35,12 +35,7 @@ export function memoByValueAndKey<K extends object, Q, V>(
   return (value, key) => keyed(value)(key);
 }
 
-/**
- * `memoByValueAndKey` that keeps only the latest key per value: asking with a
- * new key lets go of the one before. For a key that only ever moves on, such
- * as an optional file arriving, so the result built without it is not held
- * beside the one built with it.
- */
+/** `memoByValueAndKey` that keeps only the latest key per value: a new key lets go of the one before. */
 export function memoByValueAndLatestKey<K extends object, Q, V>(
   derive: (value: K, key: Q) => V,
 ): (value: K, key: Q) => V {
