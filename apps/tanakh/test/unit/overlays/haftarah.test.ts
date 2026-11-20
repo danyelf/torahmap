@@ -356,49 +356,48 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.getItemColor(psalms)).toEqual(DIMMED_GREY);
     });
 
-    it('lights every reading that shares a verse with the previewed one', () => {
-      // Overlaps Bereshit's Ashkenazi haftarah, 42:5-21.
-      loadRoshChodesh('ashkenazi', [
-        { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
-      ]);
-      const cold = haftarahOverlay.getItemColor(genesis) as Color;
-      preview(ROSH_CHODESH);
+    describe('a verse shared by two readings', () => {
+      // Bereshit's Ashkenazi haftarah is Isaiah 42:5-21; Rosh Chodesh gets 42:18-25, so 42:18-21 are in both.
+      const only = createVerse({ book: 'Isaiah', chapter: 42, verse: 10 });
+      const both = createVerse({ book: 'Isaiah', chapter: 42, verse: 19 });
+      const otherOnly = createVerse({ book: 'Isaiah', chapter: 42, verse: 23 });
 
-      expect(sum(haftarahOverlay.getItemColor(genesis) as Color)).toBeGreaterThan(sum(cold));
-      expect(sum(haftarahOverlay.getItemColor(noach) as Color)).toBeLessThan(
-        sum(
-          haftarahOverlay.overlay.colorsFor({
-            items: [noach],
-            settings: haftarahOverlay.fromUrl({}),
-            data: haftarahOverlay.data,
-            focus: { hovered: null, pinned: null },
-          })[0] as Color,
-        ),
+      beforeEach(() =>
+        loadRoshChodesh('ashkenazi', [
+          { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
+        ]),
       );
-    });
 
-    it("finds shared verses in the custom's own haftarot", () => {
-      // Noach's Sephardi haftarah; under Ashkenazi, Rosh Chodesh shares nothing.
-      loadRoshChodesh('sephardi', [
-        { book: 'Isaiah', start: { chapter: 54, verse: 1 }, end: { chapter: 54, verse: 10 } },
-      ]);
-      const noachLit = () => {
-        const cold = haftarahOverlay.overlay.colorsFor({
-          items: [noach],
-          settings: {
-            ...haftarahOverlay.settings,
-            preview: null,
-          },
+      const colour = (v: typeof genesis, hovered: typeof genesis | null, preview: string | null) =>
+        haftarahOverlay.overlay.colorsFor({
+          items: [v],
+          settings: { ...haftarahOverlay.settings, preview },
           data: haftarahOverlay.data,
-          focus: { hovered: null, pinned: null },
+          focus: { hovered, pinned: null },
         })[0] as Color;
-        return sum(haftarahOverlay.getItemColor(noach) as Color) > sum(cold);
-      };
+      const lit = (
+        target: typeof genesis,
+        hovered: typeof genesis | null,
+        preview: string | null = null,
+      ) => sum(colour(target, hovered, preview)) > sum(colour(target, null, null));
 
-      preview(ROSH_CHODESH);
-      expect(noachLit()).toBe(false);
-      haftarahOverlay.change((current) => ({ ...current, custom: 'sephardi' }));
-      expect(noachLit()).toBe(true);
+      it('lights both readings when the verse is in both', () => {
+        expect(lit(only, both)).toBe(true);
+        expect(lit(otherOnly, both)).toBe(true);
+      });
+
+      it('lights only the reading a verse of just one belongs to', () => {
+        expect(lit(only, only)).toBe(true);
+        expect(lit(otherOnly, only)).toBe(false);
+        expect(lit(only, otherOnly)).toBe(false);
+        expect(lit(otherOnly, otherOnly)).toBe(true);
+      });
+
+      it('lights only the reading chosen in the key, and keeps the shared verse split', () => {
+        expect(lit(otherOnly, null, ROSH_CHODESH)).toBe(true);
+        expect(lit(only, null, ROSH_CHODESH)).toBe(false);
+        expect(Array.isArray(colour(both, null, ROSH_CHODESH))).toBe(true);
+      });
     });
 
     it('leaves the map hover out of the colours while a reading is previewed', () => {
@@ -566,6 +565,47 @@ describe('Haftarah Overlay', () => {
       haftarah.click();
       expect(haftarahOverlay.settings.reading).toBe('Bereshit');
       expect(haftarahOverlay.fits.at(-1)).toContain('Isaiah.42.5');
+    });
+
+    describe('pinning a verse', () => {
+      const cardName = (container: HTMLElement) =>
+        container.querySelector<HTMLElement>('.haftarah-card-title')?.textContent;
+
+      it('makes its reading the pinned one, so the card follows the pin', () => {
+        haftarahOverlay.restore({ reading: 'Bereshit' });
+        const container = haftarahOverlay.renderControls();
+        haftarahOverlay.pin(createVerse({ book: 'Genesis', chapter: 7, verse: 1 }));
+        expect(haftarahOverlay.settings.reading).toBe('Noach');
+        expect(cardName(container)).toContain('Noach');
+      });
+
+      it('takes the reading a haftarah verse belongs to', () => {
+        const container = haftarahOverlay.renderControls();
+        haftarahOverlay.pin(createVerse({ book: 'Isaiah', chapter: 42, verse: 5 }));
+        expect(haftarahOverlay.settings.reading).toBe('Bereshit');
+        expect(cardName(container)).toContain('Bereshit');
+      });
+
+      it('leaves the card empty for a verse in two readings, which both stay lit', () => {
+        const shared = structuredClone(SAMPLE_HAFTARAH_MAPPINGS);
+        shared.specialOccasions[0].haftarah.ashkenazi = [
+          { book: 'Isaiah', start: { chapter: 42, verse: 18 }, end: { chapter: 42, verse: 25 } },
+        ];
+        haftarahOverlay.setData({ mappings: shared, structure: SAMPLE_STRUCTURE });
+        haftarahOverlay.restore({ reading: 'Noach' });
+        const container = haftarahOverlay.renderControls();
+        haftarahOverlay.pin(createVerse({ book: 'Isaiah', chapter: 42, verse: 19 }));
+        expect(haftarahOverlay.settings.reading).toBeNull();
+        expect(container.querySelector<HTMLElement>('.haftarah-card')!.hidden).toBe(true);
+      });
+
+      it('clears the reading and its card for a verse in none', () => {
+        haftarahOverlay.restore({ reading: 'Bereshit' });
+        const container = haftarahOverlay.renderControls();
+        haftarahOverlay.pin(createVerse({ book: 'Psalms', chapter: 1, verse: 1 }));
+        expect(haftarahOverlay.settings.reading).toBeNull();
+        expect(container.querySelector<HTMLElement>('.haftarah-card')!.hidden).toBe(true);
+      });
     });
 
     it('says nothing in the popup for a verse in no reading', () => {

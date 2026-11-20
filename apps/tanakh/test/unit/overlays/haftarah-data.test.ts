@@ -12,7 +12,13 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { HAFTARAH_FILES } from '../../../src/overlays/haftarah/readings';
+import {
+  HAFTARAH_FILES,
+  readingColor,
+  isParsha,
+  type HaftarahMappings,
+} from '../../../src/overlays/haftarah/readings';
+import { colorToCss } from '@torahmap/utils';
 
 interface VerseRef {
   chapter: number;
@@ -216,6 +222,28 @@ describe('the haftarah readings the app ships', () => {
         .filter((item) => !item.hebrewName || item.hebrewName === item.name)
         .map((item) => item.name);
       expect(missing).toEqual([]);
+    });
+  });
+
+  describe('Colours', () => {
+    const all = mappings as unknown as HaftarahMappings;
+    const readings = [...all.parshiot, ...all.specialOccasions];
+
+    function groups(): Map<string, string[]> {
+      const byGroup = new Map<string, string[]>();
+      for (const item of readings) {
+        const group = isParsha(item) ? item.torah.book : item.category;
+        const colors = byGroup.get(group) ?? [];
+        colors.push(colorToCss(readingColor(item, all)));
+        byGroup.set(group, colors);
+      }
+      return byGroup;
+    }
+
+    it('gives no two readings of one book or one category the same colour', () => {
+      for (const [group, colors] of groups()) {
+        expect(new Set(colors).size, group).toBe(colors.length);
+      }
     });
   });
 });

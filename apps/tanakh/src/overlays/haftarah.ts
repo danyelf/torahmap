@@ -20,7 +20,7 @@ import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import {
   deriveHaftarah,
   forEachVerseInRange,
-  readingColor,
+  OCCASION_CATEGORIES,
   HAFTARAH_FILES,
   isParsha,
   type Custom,
@@ -98,22 +98,6 @@ function litByHover(
   return items ? new Set(items) : null;
 }
 
-/** A previewed reading, with every reading that shares any of its haftarah verses. */
-function litByPreview(
-  data: HaftarahData,
-  derived: HaftarahDerivation,
-  item: HaftarahItem,
-  custom: Custom,
-): Set<HaftarahItem> {
-  const lit = new Set([item]);
-  for (const range of item.haftarah[custom]) {
-    forEachVerseInRange(data.structure, range, (book, ch, v) => {
-      derived.haftarahVerseToItem.get(verseId(book, ch, v))?.forEach((i) => lit.add(i));
-    });
-  }
-  return lit;
-}
-
 /** The reading called `name` lit as a preview, or null when no reading has that name. */
 function litByName(
   data: HaftarahData,
@@ -123,7 +107,7 @@ function litByName(
   if (name === null) return null;
   const derived = deriveHaftarah(data, custom);
   const item = derived.itemByName.get(name);
-  return item ? litByPreview(data, derived, item, custom) : null;
+  return item ? new Set([item]) : null;
 }
 
 /**
@@ -301,9 +285,9 @@ function renderKey(
   };
 
   const books = [...byBook].map(([book, parshiot]) => row(book, parshiot));
-  const categories = (Object.keys(CATEGORY_LABELS) as OccasionCategory[])
-    .filter((category) => byCategory.has(category))
-    .map((category) => row(CATEGORY_LABELS[category], byCategory.get(category)!));
+  const categories = OCCASION_CATEGORIES.filter((category) => byCategory.has(category)).map(
+    (category) => row(CATEGORY_LABELS[category], byCategory.get(category)!),
+  );
 
   const key = document.createElement('div');
   key.className = 'haftarah-key';
@@ -416,10 +400,8 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     const parshaCount = data.mappings.parshiot.length;
     const occasionCount = data.mappings.specialOccasions.length;
 
-    const totalItems = deriveHaftarah(data, settings.custom).items.length;
-    const gradient = buildLegendGradient(10, (i) =>
-      readingColor(i * (totalItems / 10), totalItems),
-    );
+    const { items, itemToColor } = deriveHaftarah(data, settings.custom);
+    const gradient = buildLegendGradient(items.length, (i) => itemToColor.get(items[i])!);
 
     container.innerHTML = `
       <div class="legend-row">
@@ -458,6 +440,13 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     }
 
     return null;
+  },
+
+  settingsOnPin(verse, settings, data) {
+    const derived = deriveHaftarah(data, settings.custom);
+    const parsha = derived.torahVerseToParsha.get(verse.id);
+    const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(verse.id) ?? []);
+    return { ...settings, reading: items.length === 1 ? items[0].name : null };
   },
 
   renderSidebarInfo(verse, isPinned, settings, data, actions) {

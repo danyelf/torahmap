@@ -211,6 +211,10 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): boolean;
 
+  // The settings once the reader pins `item`, so that what the overlay keeps
+  // beside the pin follows it. Absent, pinning leaves the settings alone.
+  settingsOnPin?(item: SpatialItem<T>, settings: S, data: D): S;
+
   renderSidebarInfo?(
     item: SpatialItem<T>,
     isPinned: boolean,

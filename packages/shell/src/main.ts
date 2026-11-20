@@ -843,12 +843,21 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     trackSquareClick(item.id, text.area(item).area);
     const focusBefore = focusNow();
     pinnedItem = item;
+    followPin(item);
     showPin();
     if (centerCamera) {
       centerOnItem(item);
     }
     repaint(focusBefore);
     syncUrl(true);
+  }
+
+  /** Lets the overlay bring its settings in step with the square just pinned. */
+  function followPin(item: I): void {
+    const overlay = overlayOn();
+    const data = overlay && dataFor(overlay, loader.loaded());
+    if (!overlay?.settingsOnPin || !data) return;
+    changeSettings(overlay, (current) => overlay.settingsOnPin!(item, current, data));
   }
 
   function unpinItem(): void {

@@ -213,6 +213,35 @@ export const STATES: State[] = [
     shown: ['.haftarah-card'],
   },
   {
+    // Stepping the pin to the next verse moves the card to that verse's reading.
+    name: 'explore-haftarah-pin-follows',
+    link: 'overlay=haftarah&reading=Vayeshev&verse=Genesis.1.1',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.keyboard.press('ArrowLeft');
+      await expect(page.locator('.haftarah-card-title')).toContainText('Bereshit');
+    },
+    shown: ['#popup'],
+  },
+  {
+    // A verse in two readings, so both are lit.
+    name: 'explore-haftarah-verse-both',
+    link: 'overlay=haftarah&zoom=1.6&verse=Jeremiah.9.22',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // A verse in one reading, which alone is lit.
+    name: 'explore-haftarah-verse-one',
+    link: 'overlay=haftarah&zoom=1.6&verse=Jeremiah.9.21',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // A verse in one reading, which alone is lit.
+    name: 'explore-haftarah-verse-other',
+    link: 'overlay=haftarah&zoom=1.6&verse=Jeremiah.7.21',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
     name: 'explore-trop-legend',
     link: 'overlay=trop&trop=shalshelet',
     then: async (page) => {
@@ -405,7 +434,6 @@ export const STATES: State[] = [
     then: async (page: Page) => {
       await viaMenu(page, 'about');
       await page.locator(`#language-choice [data-languages="${choice}"]`).click();
-      await page.keyboard.press('Escape');
     },
     shown: ['#map-title'],
   })),

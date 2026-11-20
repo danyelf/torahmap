@@ -29,6 +29,8 @@ export interface OverlayHost<S, D> {
   fromUrl(raw: LinkParams): S;
   /** Apply a change to the settings held, and redraw, as main.ts does for a control's onChange. */
   change(update: SettingsUpdate<S>): void;
+  /** Pin `verse` as the app does: the overlay brings its settings in step, and the controls are redrawn. */
+  pin(verse: TanakhLayout): void;
   /** Called after every change the controls or `change` make. Restoring is not a change. */
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
@@ -90,6 +92,9 @@ export function hostOverlay<S, D>(
       settings = update(settings, []);
       draw();
       listeners.forEach((listener) => listener());
+    },
+    pin(verse) {
+      if (overlay.settingsOnPin) host.change(() => overlay.settingsOnPin!(verse, settings, held));
     },
     onChange(listener) {
       listeners.push(listener);
