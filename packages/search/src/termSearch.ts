@@ -595,7 +595,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
         id = empty.id;
         terms = setTermText(terms, id, text, taken);
       } else {
-        terms = addTerm(terms, text, taken);
+        const grown = addTerm(terms, text, taken);
+        if (grown.length === terms.length) return null;
+        terms = grown;
         id = terms[terms.length - 1].id;
       }
 

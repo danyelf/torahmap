@@ -66,10 +66,11 @@ const placeAt = (picked: string[], id: string, taken: readonly number[]): string
   return next;
 };
 
-/** A new pick takes the first colour no search term or pick uses. */
+/** A new pick takes the first colour no search term or pick uses, and is refused when none is left. */
 export const addPick = (id: string): SettingsUpdate<PickSettings> =>
   function (current, taken) {
     if (current.picked.includes(id) || pickSlots(current).length >= MAX_PICKS) return current;
+    if (new Set([...taken, ...picksInUse(current)]).size >= PALETTE.length) return current;
     return { picked: placeAt(current.picked, id, taken) };
   };
 

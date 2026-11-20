@@ -121,7 +121,7 @@ export function openWordMenu(options: WordMenuOptions): void {
     // Say so rather than offering a button that would decline.
     const note = document.createElement('div');
     note.className = 'word-menu-note';
-    note.textContent = `All ${MAX_TERMS} words are already on the map. Remove one to add another.`;
+    note.textContent = `All ${MAX_TERMS} colours are already in use. Remove a word to add another.`;
     menu.appendChild(note);
   } else {
     if (options.meanings.length === 0) {

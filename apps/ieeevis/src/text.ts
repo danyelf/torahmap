@@ -2,7 +2,7 @@
 
 import { cameraToFit, centreForFocus } from '@torahmap/engine';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
-import type { TermSettings } from '@torahmap/search';
+import { addTerm, type TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { coverElement, placeCover } from './covers.ts';
@@ -48,7 +48,7 @@ const MAP_TITLE = 'IEEE VIS 2026';
 
 const swatch = (color: Color, outlined = false): string =>
   `<span class="story-swatch${outlined ? ' outlined' : ''}" style="background:${colorToCss(color)}"></span>`;
-// The story picks and searches these in order, so each takes the palette's colour at its place.
+// The story picks these in order, so each takes the palette's colour at its place.
 const STORY_KEYWORDS = ['Large Language Models', 'Uncertainty visualization'];
 // Mode w: a whole word.
 const STORY_SEARCH = [
@@ -56,8 +56,13 @@ const STORY_SEARCH = [
   { term: 'LLM', mode: 'w' },
   { term: 'parrot', mode: '' },
 ];
+// The searches are added in this order, as a link adds them, so each gets the colour the map gives it.
+const STORY_TERMS = STORY_SEARCH.reduce(
+  (terms, { term }) => addTerm(terms, term),
+  [] as ReturnType<typeof addTerm>,
+);
 const searched = (term: string): string =>
-  `${swatch(PALETTE[STORY_SEARCH.findIndex((t) => t.term === term)])} ${term}`;
+  `${swatch(PALETTE[STORY_TERMS.find((t) => t.text === term)!.colorIndex])} ${term}`;
 const STORY_CITED = ['Danyel Fisher'];
 
 export const WHOLE_MAP: Story = {

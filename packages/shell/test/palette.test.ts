@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rgbToOklch } from '@torahmap/utils';
-import { freeColor, PALETTE } from '../src/overlays/palette.ts';
+import { colorFor, freeColor, PALETTE } from '../src/overlays/palette.ts';
 import { MAX_PICKS } from '../src/overlays/picks.ts';
 
 describe('the palette', () => {
@@ -33,8 +33,45 @@ describe('the palette', () => {
         expect(apart(colors[a], colors[b])).toBeGreaterThan(0.06);
   });
 
-  it('has a colour for every pick allowed beside the words', () => {
-    expect(PALETTE.length).toBeGreaterThan(MAX_PICKS);
+  it('has a colour for every pick allowed', () => {
+    expect(PALETTE.length).toBeGreaterThanOrEqual(MAX_PICKS);
+  });
+
+  it('puts a good distance of hue between each colour and the next, the last and first included', () => {
+    const gap = (a: number, b: number) => {
+      const turn = Math.abs(colors[a].h - colors[b].h) % 360;
+      return Math.min(turn, 360 - turn);
+    };
+    for (let i = 0; i < colors.length; i++) {
+      expect(gap(i, (i + 1) % colors.length)).toBeGreaterThanOrEqual(90);
+    }
+  });
+});
+
+describe('a word colour', () => {
+  it('is the same every time, whatever else is taken that it does not use', () => {
+    const own = colorFor('abraham', []);
+    expect(colorFor('abraham', [])).toBe(own);
+    expect(colorFor('abraham', [(own + 2) % PALETTE.length])).toBe(own);
+  });
+
+  it('steps to the next colour in the list when its own is taken, wrapping at the end', () => {
+    const own = colorFor('abraham', []);
+    expect(colorFor('abraham', [own])).toBe((own + 1) % PALETTE.length);
+    const taken = [own, (own + 1) % PALETTE.length];
+    expect(colorFor('abraham', taken)).toBe((own + 2) % PALETTE.length);
+  });
+
+  it('is never a taken colour while one is free', () => {
+    for (const word of ['a', 'b', 'c', 'd', 'e', 'f', 'g']) {
+      const taken = PALETTE.map((_, place) => place).filter((place) => place !== 3);
+      expect(colorFor(word, taken)).toBe(3);
+    }
+  });
+
+  it('is the word’s own when every colour is taken', () => {
+    const all = PALETTE.map((_, place) => place);
+    expect(colorFor('abraham', all)).toBe(colorFor('abraham', []));
   });
 });
 

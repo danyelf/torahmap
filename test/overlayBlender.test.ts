@@ -1,5 +1,5 @@
 import { type Color } from '@torahmap/utils';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { colorsOf, placesOf } from '../apps/tanakh/test/helpers/termMarks.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   pictureForStop,
@@ -263,7 +263,7 @@ describe('a stop with search words and an overlay that colours', () => {
       searchParams: { search: 'God' },
     };
     pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools);
-    expect(taken).toEqual([0]);
+    expect(taken).toEqual(placesOf('God'));
   });
 });
 
@@ -545,7 +545,7 @@ describe('a stop that searches', () => {
       textTools,
     );
 
-    expect(picture.colors[0]).toEqual(PALETTE[0]);
+    expect(picture.colors[0]).toEqual(colorsOf('God')[0]);
     expect(picture.colors[1]).toEqual([grey, grey, grey]);
     expect(picture.rings).toBeUndefined();
   });
@@ -558,7 +558,7 @@ describe('a stop that searches', () => {
       [1, 0, 0],
       [0, 0, 1],
     ]);
-    expect(picture.rings![0]).toEqual(PALETTE[0]);
+    expect(picture.rings![0]).toEqual(colorsOf('God')[0]);
     expect(picture.colors[1]).toEqual([0.5 * DIM, 0.5 * DIM, 0.5 * DIM]);
     expect(picture.rings![1]).toBeNull();
   });
@@ -578,7 +578,7 @@ describe('a stop that searches', () => {
     );
     expect(
       pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools).colors[0],
-    ).toEqual(PALETTE[0]);
+    ).toEqual(colorsOf('God')[0]);
   });
 });
 

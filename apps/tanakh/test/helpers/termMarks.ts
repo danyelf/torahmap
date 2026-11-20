@@ -1,4 +1,14 @@
+import { addTerm, type SearchTerm } from '@torahmap/search';
 import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+
+/** The places in PALETTE the words get when searched for one after another. */
+export const placesOf = (...words: string[]): number[] =>
+  words
+    .reduce((terms, word) => addTerm(terms, word), [] as SearchTerm[])
+    .map((term) => term.colorIndex);
+
+/** The colours the words get when searched for one after another. */
+export const colorsOf = (...words: string[]) => placesOf(...words).map((place) => PALETTE[place]);
 
 /** The channels of a PALETTE colour as CSS writes them in a colour: `r, g, b`. */
 export const channelsOf = (place: number): string =>

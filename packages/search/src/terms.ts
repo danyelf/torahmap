@@ -6,8 +6,8 @@
 // that choice the moment an earlier term is edited, because every later index
 // shifts and the choice lands silently on a different word.
 
-import { freeColor, PALETTE } from '@torahmap/shell/overlays/palette.ts';
-import { MAX_PICKS } from '@torahmap/shell/overlays/picks.ts';
+import { colorFor, PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { plainName } from '@torahmap/shell/overlays/picks.ts';
 import { isSearchableWord } from '@torahmap/utils';
 import { TERM_SEPARATORS } from './constants.ts';
 import type { ExtraMode } from './extraMode.ts';
@@ -22,8 +22,9 @@ export interface SearchTerm {
   /** What the reader typed. */
   text: string;
   /**
-   * Place in PALETTE, held from when the term first has a word until it is emptied. An empty
-   * term's is a placeholder: its colour is chosen when its first word is typed.
+   * Place in PALETTE: the one the term's text hashes to, or the next free one. Chosen again each
+   * time the text changes, so a term may change colour as it is typed; it is not chosen again when
+   * another term is removed. An empty term's is a placeholder.
    */
   colorIndex: number;
   /**
@@ -43,11 +44,8 @@ export interface SearchTerm {
   chosen: string[] | null;
 }
 
-/**
- * One colour per term, and the picks keep the rest of PALETTE, so a colour is always left for
- * the next term or pick.
- */
-export const MAX_TERMS = PALETTE.length - MAX_PICKS;
+/** One colour per term; the picks' colours leave fewer for terms (`addTerm`). */
+export const MAX_TERMS = PALETTE.length;
 
 let nextId = 0;
 
@@ -55,17 +53,22 @@ let nextId = 0;
 export const heldColors = (terms: SearchTerm[]): number[] =>
   terms.filter((t) => t.text.trim()).map((t) => t.colorIndex);
 
+/** The place in PALETTE for `text`, avoiding the colours `others` and `taken` hold. */
+const colorOf = (text: string, others: SearchTerm[], taken: readonly number[]): number =>
+  colorFor(plainName(text), [...taken, ...heldColors(others)]);
+
 /**
- * The terms with one more, in the first colour that neither a term nor `taken`, the colours the
- * picks hold, is using.
+ * The terms with one more, in the colour its text hashes to or the next that neither a term nor
+ * `taken`, the colours the picks hold, is using. Unchanged when no colour is left for it.
  */
 export function addTerm(
   terms: SearchTerm[],
   text: string,
   taken: readonly number[] = [],
 ): SearchTerm[] {
-  if (terms.length >= MAX_TERMS) return terms;
-  const colorIndex = freeColor([...taken, ...heldColors(terms)]);
+  if (terms.length >= MAX_TERMS || new Set([...taken, ...heldColors(terms)]).size >= PALETTE.length)
+    return terms;
+  const colorIndex = colorOf(text, terms, taken);
   return [...terms, { id: `t${nextId++}`, text, colorIndex, mode: null, chosen: null }];
 }
 
@@ -101,13 +104,12 @@ export function setTermText(
   const index = terms.findIndex((t) => t.id === id);
   if (index === -1) return terms;
 
-  // The first part stays this term, so its id survives the edit, and its colour too once it
-  // has one; an empty term takes its colour with its first word.
+  // The first part stays this term, so its id survives the edit; its colour follows its text,
+  // and an emptied term keeps the one it had.
   const [old, others] = [terms[index], terms.filter((t) => t.id !== id)];
-  const colorIndex =
-    old.text.trim() || !replacement[0].trim()
-      ? old.colorIndex
-      : freeColor([...taken, ...heldColors(others)]);
+  const colorIndex = replacement[0].trim()
+    ? colorOf(replacement[0], others, taken)
+    : old.colorIndex;
   const edited = { ...old, text: replacement[0], colorIndex, chosen: null };
   let out = [...terms.slice(0, index), edited, ...terms.slice(index + 1)];
 
