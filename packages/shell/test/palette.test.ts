@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { rgbToOklch } from '@torahmap/utils';
-import { colorFor, freeColor, PALETTE } from '../src/overlays/palette.ts';
+import { colorFor, freeColor, PALETTE, randomColor } from '../src/overlays/palette.ts';
 import { MAX_PICKS } from '../src/overlays/picks.ts';
 
 describe('the palette', () => {
@@ -87,5 +87,17 @@ describe('the first free colour', () => {
 
   it('falls back to the first when every colour is taken', () => {
     expect(freeColor(PALETTE.map((_, place) => place))).toBe(0);
+  });
+});
+
+describe('a random colour', () => {
+  it('is never one taken, and can be any of the rest', () => {
+    const seen = new Set<number>();
+    for (let i = 0; i < 200; i++) seen.add(randomColor([0, 3]));
+    expect([...seen].sort()).toEqual([1, 2, 4, 5]);
+  });
+
+  it('falls back to the first when every colour is taken', () => {
+    expect(randomColor(PALETTE.map((_, place) => place))).toBe(0);
   });
 });

@@ -2,7 +2,7 @@
 //
 // The mode belongs to a term and is set on that term's row, so these tests
 // click the row.
-import { colorsOf } from '../helpers/termMarks';
+import { colorsHeld, colorsOf } from '../helpers/termMarks';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../src/search/index';
 import { configure } from '../../src/search/index.ts';
@@ -408,7 +408,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(searchOverlay.getItemColor(gen175)).toBeNull();
 
       chooseMode('substring');
-      expect(searchOverlay.getItemColor(gen175)).toEqual(colorsOf('ברהם')[0]);
+      expect(searchOverlay.getItemColor(gen175)).toEqual(colorsHeld(searchOverlay)[0]);
     });
   });
 

@@ -114,23 +114,24 @@ describe('colours shared with picks', () => {
     }
   });
 
-  it('holds a colour only once a word is in the term', () => {
-    const blank = addTerm([], '');
-
-    expect(heldColors(blank)).toEqual([]);
-    expect(heldColors(setTermText(blank, blank[0].id, 'עלה'))).toHaveLength(1);
+  it('gives an empty term a colour no term or pick is using, and holds it', () => {
+    const two = addTerm(addTerm([], 'עלה', [0]), 'מלך', [0]);
+    for (let i = 0; i < 50; i++) {
+      const blank = addTerm(two, '', [0]);
+      expect(new Set([0, ...heldColors(blank)]).size).toBe(4);
+    }
   });
 
-  it('settles an empty term colour when its first word is typed, round the picks', () => {
-    const blank = addTerm([], '', []);
+  it('keeps a term its colour as its word is typed', () => {
+    const blank = addTerm([], '', [0]);
+    let terms = blank;
+    for (const text of ['ע', 'על', 'עלה']) terms = setTermText(terms, blank[0].id, text, [0]);
 
-    const typed = setTermText(blank, blank[0].id, 'עלה', [0]);
-
-    expect([0]).not.toContain(typed[0].colorIndex);
+    expect(terms[0].colorIndex).toBe(blank[0].colorIndex);
   });
 
   it('gives the terms a comma makes colours the picks are not using', () => {
-    const blank = addTerm([], '');
+    const blank = addTerm([], '', [0, 2]);
 
     const typed = setTermText(blank, blank[0].id, 'עלה, מלך', [0, 2]);
 
@@ -293,20 +294,20 @@ describe('a comma still means another word', () => {
     expect(typed.map((t) => t.text)).toEqual(['עלה', 'מלך']);
   });
 
-  it("keeps the edited term's own id on the first part, coloured for that part", () => {
+  it("keeps the edited term's own id and colour on the first part", () => {
     const one = addTerm([], 'x');
     const typed = setTermText(one, one[0].id, 'עלה, מלך');
 
     expect(typed[0].id).toBe(one[0].id);
-    expect(typed[0].colorIndex).toBe(addTerm([], 'עלה')[0].colorIndex);
+    expect(typed[0].colorIndex).toBe(one[0].colorIndex);
   });
 
-  it('colours a term for its new text, and keeps the colour when it is emptied', () => {
+  it('keeps a term its colour when its text is changed or emptied', () => {
     const one = addTerm([], 'עלה');
     const retyped = setTermText(one, one[0].id, 'מלך');
-    expect(retyped[0].colorIndex).toBe(addTerm([], 'מלך')[0].colorIndex);
+    expect(retyped[0].colorIndex).toBe(one[0].colorIndex);
 
-    expect(setTermText(retyped, retyped[0].id, '')[0].colorIndex).toBe(retyped[0].colorIndex);
+    expect(setTermText(retyped, retyped[0].id, '')[0].colorIndex).toBe(one[0].colorIndex);
   });
 
   it('keeps the terms that were already there', () => {

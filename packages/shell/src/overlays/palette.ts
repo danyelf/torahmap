@@ -26,6 +26,13 @@ export function freeColor(taken: Iterable<number>): number {
   return free < 0 ? 0 : free;
 }
 
+/** A random place in PALETTE not in `taken`; the first if all are taken. */
+export function randomColor(taken: Iterable<number>): number {
+  const used = new Set(taken);
+  const free = PALETTE.map((_, place) => place).filter((place) => !used.has(place));
+  return free.length ? free[Math.floor(Math.random() * free.length)] : 0;
+}
+
 /** FNV-1a: a short string hash that gives the same number everywhere. */
 function hashOf(text: string): number {
   let hash = 0x811c9dc5;

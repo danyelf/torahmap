@@ -1,4 +1,4 @@
-import { addTerm, type SearchTerm } from '@torahmap/search';
+import { addTerm, type SearchTerm, type TermSettings } from '@torahmap/search';
 import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 
 /** The places in PALETTE the words get when searched for one after another. */
@@ -17,3 +17,11 @@ export const channelsOf = (place: number): string =>
 /** The place in PALETTE a search mark is coloured with, or -1 if it is none of them. */
 export const placeOfMark = (mark: HTMLElement): number =>
   PALETTE.findIndex((_, place) => mark.style.background.includes(channelsOf(place)));
+
+/** The places in PALETTE the search's terms hold, in order: what typing a word gives it. */
+export const placesHeld = (search: { settings: TermSettings }): number[] =>
+  search.settings.terms.map((term) => term.colorIndex);
+
+/** The colours the search's terms hold, in order. */
+export const colorsHeld = (search: { settings: TermSettings }) =>
+  placesHeld(search).map((place) => PALETTE[place]);
