@@ -165,9 +165,9 @@ describe('searching for a clicked word', () => {
     ).toBe('word');
   });
 
-  it('refuses a seventh word, because the palette holds six', () => {
+  it('refuses a sixth word, because the palette holds five', () => {
     render();
-    for (const word of ['עלה', 'רוח', 'מלך', 'בית', 'ארץ', 'שמים']) {
+    for (const word of ['עלה', 'רוח', 'מלך', 'בית', 'ארץ']) {
       expect(clickWord(word, null)).toBe(true);
     }
 

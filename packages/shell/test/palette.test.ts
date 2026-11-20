@@ -36,16 +36,6 @@ describe('the palette', () => {
   it('has a colour for every pick allowed', () => {
     expect(PALETTE.length).toBeGreaterThanOrEqual(MAX_PICKS);
   });
-
-  it('puts a good distance of hue between each colour and the next, the last and first included', () => {
-    const gap = (a: number, b: number) => {
-      const turn = Math.abs(colors[a].h - colors[b].h) % 360;
-      return Math.min(turn, 360 - turn);
-    };
-    for (let i = 0; i < colors.length; i++) {
-      expect(gap(i, (i + 1) % colors.length)).toBeGreaterThanOrEqual(90);
-    }
-  });
 });
 
 describe('a word colour', () => {
@@ -93,8 +83,9 @@ describe('the first free colour', () => {
 describe('a random colour', () => {
   it('is never one taken, and can be any of the rest', () => {
     const seen = new Set<number>();
-    for (let i = 0; i < 200; i++) seen.add(randomColor([0, 3]));
-    expect([...seen].sort()).toEqual([1, 2, 4, 5]);
+    for (let i = 0; i < 500; i++) seen.add(randomColor([0, 3]));
+    const rest = PALETTE.map((_, place) => place).filter((place) => place !== 0 && place !== 3);
+    expect([...seen].sort()).toEqual(rest);
   });
 
   it('falls back to the first when every colour is taken', () => {

@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseSearchTerms } from '@torahmap/search';
 import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { MAX_PICKS } from '@torahmap/shell/overlays/picks.ts';
 import { meaningsInVerse, sameMeaning, versesFor } from '../../src/search/dictionary.ts';
 import {
   addTerm,
@@ -78,13 +79,14 @@ describe('adding a term', () => {
     expect(addTerm(all, 'אלהים')).toHaveLength(MAX_TERMS);
   });
 
-  it('refuses a term when the picks hold the colours it would need', () => {
-    const picks = [0, 1, 2, 3];
-    const two = addTerm(addTerm([], 'עלה', picks), 'מלך', picks);
-    expect(two).toHaveLength(2);
-    expect(new Set([...picks, ...heldColors(two)]).size).toBe(PALETTE.length);
-
-    expect(addTerm(two, 'דבר', picks)).toHaveLength(2);
+  it('leaves every term and every pick a colour of its own, at the most of each', () => {
+    const picks = Array.from({ length: MAX_PICKS }, (_, place) => place);
+    const terms = ['עלה', 'מלך', 'דבר', 'ארץ', 'שמים', 'אש'].reduce(
+      (list, text) => addTerm(list, text, picks),
+      [] as SearchTerm[],
+    );
+    expect(terms).toHaveLength(MAX_TERMS);
+    expect(new Set([...picks, ...heldColors(terms)]).size).toBe(MAX_TERMS + MAX_PICKS);
   });
 
   it('gives a word the same colour whatever its case, points or the order it is added in', () => {

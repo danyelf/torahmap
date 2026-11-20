@@ -59,7 +59,7 @@ describe('picking', () => {
 
   it('changes nothing when the words already hold every colour left', () => {
     const current = { picked: ['a', 'b'] };
-    expect(addPick('c')(current, [2, 3, 4, 5])).toBe(current);
+    expect(addPick('c')(current, PALETTE.map((_, place) => place).slice(2))).toBe(current);
   });
 
   it('changes nothing once as many are picked as a square can show', () => {

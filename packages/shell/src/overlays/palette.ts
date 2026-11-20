@@ -4,14 +4,11 @@
 import { maxChroma, oklchToRgb, type Color } from '@torahmap/utils';
 
 /**
- * OKLCH hues, evenly spaced round the wheel and listed so that each is far from the next, wrap
- * included: a word whose colour is taken steps to the next in the list. Every colour is this
- * light, so none looks brighter than another on the dark map, and no more saturated than
+ * OKLCH hues in the order a clashing word steps through them, each far from the one before it. Every colour is
+ * this light, so none looks brighter than another on the dark map, and no more saturated than
  * `CHROMA_CAP`, which holds the greens and yellows back to the strength the blues and reds can reach.
- * The starting angle is the one whose closest pair is farthest apart on the dark map and under
- * red-green colour blindness.
  */
-const HUES = [50, 170, 290, 110, 350, 230];
+const HUES = [215, 50, 320, 125, 5, 275, 165, 85, 245];
 const LIGHTNESS = 0.74;
 const CHROMA_CAP = 0.16;
 

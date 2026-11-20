@@ -7,7 +7,7 @@
 // shifts and the choice lands silently on a different word.
 
 import { colorFor, PALETTE, randomColor } from '@torahmap/shell/overlays/palette.ts';
-import { plainName } from '@torahmap/shell/overlays/picks.ts';
+import { MAX_PICKS, plainName } from '@torahmap/shell/overlays/picks.ts';
 import { isSearchableWord } from '@torahmap/utils';
 import { TERM_SEPARATORS } from './constants.ts';
 import type { ExtraMode } from './extraMode.ts';
@@ -44,8 +44,11 @@ export interface SearchTerm {
   chosen: string[] | null;
 }
 
-/** One colour per term; the picks' colours leave fewer for terms (`addTerm`). */
-export const MAX_TERMS = PALETTE.length;
+/**
+ * One colour per term, and the picks keep the rest of PALETTE, so a colour is always left for
+ * the next term or pick.
+ */
+export const MAX_TERMS = PALETTE.length - MAX_PICKS;
 
 let nextId = 0;
 

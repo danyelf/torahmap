@@ -64,7 +64,7 @@ At the burning bush, God tells Moses to tell the Israelites that he was sent by 
 
 <!-- stop: name_in_list_worldwide_three_names | camera: everything | pin: Exodus.3.15 | search: אברם,אברהם,יצחק,יעקב -->
 
-After Genesis, he is usually named alongside Isaac and Jacob. (Jacob’s name, in pink, appears more often.)
+After Genesis, he is usually named alongside Isaac and Jacob. (Jacob’s name, in orange, appears more often.)
 
 <!-- stop: liturgy_verse | camera: Exodus.3.15 | zoom: 2.5 | overlay: commentary | category: Liturgy -->
 
