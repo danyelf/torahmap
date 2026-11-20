@@ -307,7 +307,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
 
     let message: string;
     if (active.length > 0 && results.length > 0) {
-      message = `${total} matching ${noun.many} in total`;
+      message = `${total} matching ${noun.many}`;
     } else if (active.length > 0) {
       message = `No matching ${noun.many}`;
     } else if (typedTerms(settings).length > 0) {
