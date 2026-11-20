@@ -64,7 +64,9 @@ describe('a term search with no extra mode', () => {
       data,
       () => {},
     );
-    expect(container.querySelector('#search-hit-caption')!.textContent).toMatch(/2.*lines/);
+    expect(container.querySelector('#search-hit-caption')!.textContent).toMatch(
+      /^2 matching lines/,
+    );
     search.tool.destroy!();
   });
 
@@ -115,7 +117,9 @@ describe('a term search counting wholes', () => {
       data,
       () => {},
     );
-    expect(container.querySelector('#search-hit-caption')!.textContent).toMatch(/2.*poems/);
+    expect(container.querySelector('#search-hit-caption')!.textContent).toMatch(
+      /^2 matching poems/,
+    );
     expect(wholes.hitCount(data, settings, settings.terms[0])).toBe(2);
     wholes.tool.destroy!();
   });

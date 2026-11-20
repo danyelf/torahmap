@@ -581,20 +581,18 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.renderControls?.(container);
 
       const caption = container.querySelector('#search-hit-caption')!;
-      expect(caption.textContent).toContain('3');
+      expect(caption.textContent).toMatch(/^3 matching/);
     });
 
-    it('counts one word verses when it is the only term', () => {
+    it("counts that word's verses when it is the only term", () => {
       searchOverlay.restore(new URLSearchParams('search=אברהם&mode=w'));
       searchOverlay.renderControls?.(container);
 
-      expect(container.querySelector('#search-hit-caption')!.textContent).toContain('2');
+      expect(container.querySelector('#search-hit-caption')!.textContent).toMatch(/^2 matching/);
     });
 
     // The list filters by the open row, and the row list is what settles which
-    // row that is once the previously open one is gone. Drawing the list
-    // before the rows shows every term's verses under a caption counting one
-    // term's.
+    // row that is once the previously open one is gone.
     const caption = () => container.querySelector('#search-hit-caption')!.textContent;
 
     it('agrees with its own caption when a link arrives at an open panel', () => {
@@ -603,7 +601,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // אברהם is in 2 verses, אברם in 2, אלהים in 1, four between them.
       searchOverlay.restore(new URLSearchParams('search=אברהם,אברם,אלהים&mode=w,w,w'));
 
-      expect(caption()).toContain('4');
+      expect(caption()).toMatch(/^4 matching/);
       expect(refs()).toHaveLength(2);
     });
 
@@ -618,7 +616,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
         .querySelector<HTMLElement>('.term-remove')!
         .click();
 
-      expect(caption()).toContain('3');
+      expect(caption()).toMatch(/^3 matching/);
       expect(refs()).toHaveLength(2);
     });
 

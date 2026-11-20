@@ -356,7 +356,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   /**
    * Make this row the one the reader is working in.
    *
-   * The list and the caption follow the open row, so both are redrawn — without
+   * The list follows the open row, so it is redrawn — without
    * rerunning the search, which has not changed.
    */
   function openRow(id: string): void {
@@ -364,7 +364,6 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     if (!shown) return;
     rows?.render();
     renderResults(shown, shownData);
-    updateHitCaption(shown, shownData);
   }
 
   /** Hand a clicked result back to the app as the item it names. */
