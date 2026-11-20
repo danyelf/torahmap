@@ -519,16 +519,14 @@ export const TALMUD_STATES: State[] = [
     },
     shown: ['#overlay-legend'],
   },
-  // Far out, the names have faded and the covers' edges and the gaps between them tell the
-  // tractates apart.
   { name: 'talmud-tractates-far', link: 'zoom=0.07&x=3553&y=2164', shown: ['#canvas'] },
   { name: 'talmud-tractates-near', link: 'zoom=0.2&x=3553&y=2164', shown: ['#canvas'] },
   // Hadran lines are rings from zoom 0.7 up, and look like their passages below it.
-  { name: 'talmud-hadran-near', link: 'zoom=0.8&x=6800&y=240', shown: ['#canvas'] },
-  { name: 'talmud-hadran-far', link: 'zoom=0.6&x=6800&y=240', shown: ['#canvas'] },
+  { name: 'talmud-hadran-near', link: 'zoom=0.8&x=7560&y=240', shown: ['#canvas'] },
+  { name: 'talmud-hadran-far', link: 'zoom=0.6&x=7560&y=240', shown: ['#canvas'] },
   {
     name: 'talmud-hadran-far-rabbis',
-    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish&zoom=0.6&x=6800&y=240',
+    link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish&zoom=0.6&x=7560&y=240',
     shown: ['#canvas'],
   },
   { name: 'talmud-dating', link: 'overlay=dating', shown: ['#map-legend'] },

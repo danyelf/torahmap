@@ -1,5 +1,4 @@
-// A faint tinted panel behind a group of squares, with a one-pixel edge: the VIS Map's time slots
-// and the Talmud map's tractates.
+// A faint tinted panel behind a group of squares, with a one-pixel edge.
 
 import './covers.css';
 
