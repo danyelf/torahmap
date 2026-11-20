@@ -11,6 +11,9 @@ This project tracks issues on **GitHub Issues**: https://github.com/danyelf/tora
 **Always work in a worktree**, made before your first edit; a hook refuses new branches in the
 primary checkout. Once there, work as autonomously as you can on the issue.
 
+**Start a branch's name with a word**, as in `search-total-612`, not `612-search-total`. Cloudflare
+names the PR's preview link after the branch, and a name that starts with a digit gets no link.
+
 A session in the primary checkout never `cd`s into a worktree under `.claude/worktrees`; the `cd`
 would move the whole session there, and a hook blocks it. Run commands there in a subshell,
 `(cd /abs/worktree && npm test)`, or name the worktree: `git -C /abs/worktree`,
