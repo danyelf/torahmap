@@ -734,7 +734,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // moves the map and shows the reader nothing. Close enough to pick it out.
   const RESULT_CLICK_ZOOM = 2.5;
 
-  /** Stops the glide under way; null once it has arrived. */
   let stopCameraGlide: (() => void) | null = null;
 
   /** Stop a glide in its tracks, for when the reader takes the map back. */
@@ -769,7 +768,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     glideTo({ zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) });
   }
 
-  /** Where every camera move that is not the reader's own hands goes. */
+  /** Fly the camera to `target`. */
   function glideTo(target: Camera): void {
     const interrupting = stopCameraGlide !== null;
     cancelCameraGlide();
@@ -788,11 +787,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         onDone: () => (stopCameraGlide = null),
       },
     );
-  }
-
-  /** Bring a square to the middle of the map without changing the zoom. */
-  function glideToCentre(item: I): void {
-    glideTo({ zoom: camera.zoom, ...centreForFocus(item, camera.zoom, mapFocus(), mapViewport()) });
   }
 
   /** The squares of a place, in reading order. */
@@ -930,7 +924,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         const next = pinnedItem && squares.step(pinnedItem, by);
         if (next) {
           pinItem(next);
-          glideToCentre(next);
+          glideTo({
+            zoom: camera.zoom,
+            ...centreForFocus(next, camera.zoom, mapFocus(), mapViewport()),
+          });
         }
       },
       escape(inField) {
@@ -1631,14 +1628,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
     if (driver.by === 'rejoining') {
       const progress = rejoinProgress(driver, now);
-      // The glide eases its own progress; the picture eases with the story's curve.
+      const t = easingFunctions[DEFAULT_EASING](progress);
+      // Planned each frame: the story's camera, the target, moves as the reader scrolls.
       const glide = planGlide(driver.fromCamera, state.camera, mapViewport().width, zoomRange.min);
-      Object.assign(camera, glide.at(progress));
-      setColorLayer({
-        from: driver.fromPicture,
-        to: driver.toPicture,
-        t: easingFunctions[DEFAULT_EASING](progress),
-      });
+      Object.assign(camera, glide.at(t));
+      setColorLayer({ from: driver.fromPicture, to: driver.toPicture, t });
       render();
       scheduleStoryFrame();
       return;

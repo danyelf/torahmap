@@ -171,6 +171,19 @@ describe('animateCameraTo', () => {
     expect(camera).toEqual(target);
   });
 
+  it('starts moving at once when it interrupts another move', () => {
+    const target: Camera = { x: 100, y: 20, zoom: 2.5 };
+    const quickly = (interrupting: boolean): number => {
+      mockClock();
+      const camera: Camera = { x: 0, y: 0, zoom: 2.5 };
+      animateCameraTo(camera, target, () => {}, { ...OPTIONS, interrupting });
+      advance(10);
+      return camera.x;
+    };
+
+    expect(quickly(true)).toBeGreaterThan(quickly(false) * 5);
+  });
+
   it('says when it has arrived, and not when it is stopped', () => {
     mockClock();
     const onDone = vi.fn();
@@ -252,22 +265,13 @@ describe('planGlide', () => {
     expect(ms({ x: 1e9, y: 0, zoom: 2.5 })).toBeLessThanOrEqual(FLIGHT_MAX_MS);
   });
 
-  it('never moves backwards on the way, even when interrupting', () => {
-    for (const interrupting of [false, true]) {
-      const glide = planGlide(start, near, WIDTH, MIN_ZOOM, interrupting);
-      let last = -Infinity;
-      for (let i = 0; i <= 20; i++) {
-        const x = glide.at(i / 20).x;
-        expect(x).toBeGreaterThanOrEqual(last);
-        last = x;
-      }
+  it('never moves backwards on the way', () => {
+    const glide = planGlide(start, near, WIDTH, MIN_ZOOM);
+    let last = -Infinity;
+    for (let i = 0; i <= 20; i++) {
+      const x = glide.at(i / 20).x;
+      expect(x).toBeGreaterThanOrEqual(last);
+      last = x;
     }
-  });
-
-  it('starts moving at once when it interrupts another move', () => {
-    const slowStart = planGlide(start, near, WIDTH, MIN_ZOOM).at(0.05).x;
-    const quickStart = planGlide(start, near, WIDTH, MIN_ZOOM, true).at(0.05).x;
-
-    expect(quickStart).toBeGreaterThan(slowStart * 5);
   });
 });

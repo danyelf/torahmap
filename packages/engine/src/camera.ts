@@ -158,12 +158,15 @@ export function viewFocusedOn(
   return { ...centreForFocus(item, zoom, focus, viewport), zoom };
 }
 
+const easeInOutCubic = (t: number): number => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
+const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
+
 export interface GlideOptions {
   /** Width of the map on screen, in pixels. */
   viewportWidth: number;
   /** The text's zoom floor, which a flight does not rise past. */
   minZoom: number;
-  /** Another move was still running when this one began. */
+  /** Another move was still running when this one began: it eases out only, or a held key would stall on each slow start. */
   interrupting?: boolean;
   /** Snap to the target instead of travelling. */
   reducedMotion?: boolean;
@@ -184,14 +187,15 @@ export function animateCameraTo(
   onFrame: () => void,
   { viewportWidth, minZoom, interrupting = false, reducedMotion = false, onDone }: GlideOptions,
 ): () => void {
-  const glide = planGlide({ ...camera }, target, viewportWidth, minZoom, interrupting);
+  const glide = planGlide({ ...camera }, target, viewportWidth, minZoom);
   const durationMs = reducedMotion ? 0 : glide.durationMs;
+  const ease = interrupting ? easeOutCubic : easeInOutCubic;
   const started = performance.now();
   let request = 0;
 
   const step = (now: number): void => {
     const progress = durationMs > 0 ? Math.min(1, (now - started) / durationMs) : 1;
-    Object.assign(camera, glide.at(progress));
+    Object.assign(camera, glide.at(ease(progress)));
     onFrame();
     if (progress < 1) request = requestAnimationFrame(step);
     else onDone?.();

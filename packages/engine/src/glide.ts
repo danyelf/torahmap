@@ -4,20 +4,24 @@ import { lerpCamera } from './interpolation.ts';
 import type { CameraPosition } from './types.ts';
 
 /** How high the camera rises on a long move (van Wijk & Nuij's rho). */
-export const FLIGHT_RHO = 1.4;
+const FLIGHT_RHO = 1.4;
 /** The camera never rises until it sees more than this many times the distance it travels. */
 export const FLIGHT_PEAK_PER_DISTANCE = 0.75;
 /** Milliseconds per unit of path length. */
-export const FLIGHT_MS_PER_UNIT = 450;
+const FLIGHT_MS_PER_UNIT = 450;
 /** Quickest and slowest a move takes. */
 export const FLIGHT_MIN_MS = 300;
 export const FLIGHT_MAX_MS = 2000;
+/** Flattening stops when the peak is within this ratio of the higher end, or rho is this small. */
+const FLATTEN_PEAK_MARGIN = 1.001;
+const FLATTEN_MIN_RHO = 0.05;
+const FLATTEN_RHO_STEP = 0.97;
 /** A destination this many screen-widths away or less is reached by panning, not by rising. */
-export const PAN_WITHIN_WIDTHS = 1;
+const PAN_WITHIN_WIDTHS = 1;
 
 export interface Glide {
   durationMs: number;
-  /** The camera at progress `u`, from 0 (the start) to 1 (the destination). */
+  /** The camera at progress `u`, from 0 (the start) to 1 (the destination), already eased by the caller. */
   at(u: number): CameraPosition;
 }
 
@@ -72,28 +76,21 @@ function flightPath(
   };
 }
 
-const easeInOutCubic = (t: number): number => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
-const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
-
 /**
  * How the camera gets from `from` to `to` in a viewport `viewportWidth` pixels wide, never zooming
  * out past `minZoom`.
  *
- * A destination within a screen-width is a plain eased pan, keeping the zoom ratio steady. Further
- * than that the camera rises, pans and descends. The rise is flattened until it is no higher than
- * FLIGHT_PEAK_PER_DISTANCE times the distance. Duration follows the unflattened path, so a flatter
- * arc is not hurried. `interrupting` is for a move that starts while another is still running: it
- * eases out only, because a slow start every time would stall a held key.
+ * A destination within a screen-width is a plain pan. Further than that the camera rises, pans and
+ * descends, flattened until it is no higher than FLIGHT_PEAK_PER_DISTANCE times the distance.
+ * Duration follows the unflattened path, so a flatter arc is not hurried.
  */
 export function planGlide(
   from: CameraPosition,
   to: CameraPosition,
   viewportWidth: number,
   minZoom: number,
-  interrupting = false,
 ): Glide {
-  const ease = interrupting ? easeOutCubic : easeInOutCubic;
-  const pan = (u: number): CameraPosition => (u >= 1 ? { ...to } : lerpCamera(from, to, ease(u)));
+  const pan = (u: number): CameraPosition => (u >= 1 ? { ...to } : lerpCamera(from, to, u));
   // A map not laid out yet has no width to plan a path in.
   if (!(viewportWidth > 0)) return { durationMs: 0, at: pan };
   const nominal = flightPath(from, to, viewportWidth, FLIGHT_RHO);
@@ -114,9 +111,9 @@ export function planGlide(
     p.peakWidth > FLIGHT_PEAK_PER_DISTANCE * distance || viewportWidth / p.peakWidth < minZoom;
   // The floor on the start and end widths: a flatter arc can never go below them.
   const lowest = Math.max(viewportWidth / from.zoom, viewportWidth / to.zoom);
-  while (tooHigh(path) && path.peakWidth > lowest * 1.001 && rho > 0.05) {
-    rho *= 0.97;
+  while (tooHigh(path) && path.peakWidth > lowest * FLATTEN_PEAK_MARGIN && rho > FLATTEN_MIN_RHO) {
+    rho *= FLATTEN_RHO_STEP;
     path = flightPath(from, to, viewportWidth, rho);
   }
-  return { durationMs, at: (u) => (u >= 1 ? { ...to } : path.at(ease(u))) };
+  return { durationMs, at: (u) => (u >= 1 ? { ...to } : path.at(u)) };
 }
