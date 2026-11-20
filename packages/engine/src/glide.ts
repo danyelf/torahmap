@@ -3,19 +3,17 @@
 import { lerpCamera } from './interpolation.ts';
 import type { CameraPosition } from './types.ts';
 
-/** How far the camera rises on a long move; larger rises higher and pans flatter (van Wijk & Nuij's rho). */
+/** How high the camera rises on a long move (van Wijk & Nuij's rho). */
 export const FLIGHT_RHO = 1.4;
 /** The camera never rises until it sees more than this many times the distance it travels. */
 export const FLIGHT_PEAK_PER_DISTANCE = 0.75;
-/** Milliseconds per unit of path length, which counts distance in screen-widths at the high point, plus zoom change. */
+/** Milliseconds per unit of path length. */
 export const FLIGHT_MS_PER_UNIT = 450;
 /** Quickest and slowest a move takes. */
 export const FLIGHT_MIN_MS = 300;
 export const FLIGHT_MAX_MS = 2000;
 /** A destination this many screen-widths away or less is reached by panning, not by rising. */
 export const PAN_WITHIN_WIDTHS = 1;
-/** The lowest zoom a flight rises to, matching the zoom floor. */
-export const FLIGHT_MIN_ZOOM = 0.1;
 
 export interface Glide {
   durationMs: number;
@@ -63,7 +61,8 @@ function flightPath(
   const length = (q1 - q0) / rho;
   return {
     length,
-    peakWidth: Math.max(w0, w1, b0 > 0 ? w0 * Math.cosh(q0) : 0),
+    // The high point, where rho * s + q0 = 0, lies on the path only when q0 < 0 < q1.
+    peakWidth: Math.max(w0, w1, q0 < 0 && q1 > 0 ? w0 * Math.cosh(q0) : 0),
     at(u) {
       const s = u * length;
       const k = (w0 / (r2 * d)) * (Math.cosh(q0) * Math.tanh(rho * s + q0) - Math.sinh(q0));
@@ -77,12 +76,12 @@ const easeInOutCubic = (t: number): number => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * 
 const easeOutCubic = (t: number): number => 1 - (1 - t) ** 3;
 
 /**
- * How the camera gets from `from` to `to` in a viewport `viewportWidth` pixels wide.
+ * How the camera gets from `from` to `to` in a viewport `viewportWidth` pixels wide, never zooming
+ * out past `minZoom`.
  *
  * A destination within a screen-width is a plain eased pan, keeping the zoom ratio steady. Further
- * than that the camera rises, pans and descends, so the reader sees where the move goes instead of
- * a blur. The rise is flattened until it is no higher than FLIGHT_PEAK_PER_DISTANCE times the
- * distance and stays above FLIGHT_MIN_ZOOM. Duration follows the unflattened path, so a flatter
+ * than that the camera rises, pans and descends. The rise is flattened until it is no higher than
+ * FLIGHT_PEAK_PER_DISTANCE times the distance. Duration follows the unflattened path, so a flatter
  * arc is not hurried. `interrupting` is for a move that starts while another is still running: it
  * eases out only, because a slow start every time would stall a held key.
  */
@@ -90,9 +89,13 @@ export function planGlide(
   from: CameraPosition,
   to: CameraPosition,
   viewportWidth: number,
+  minZoom: number,
   interrupting = false,
 ): Glide {
   const ease = interrupting ? easeOutCubic : easeInOutCubic;
+  const pan = (u: number): CameraPosition => (u >= 1 ? { ...to } : lerpCamera(from, to, ease(u)));
+  // A map not laid out yet has no width to plan a path in.
+  if (!(viewportWidth > 0)) return { durationMs: 0, at: pan };
   const nominal = flightPath(from, to, viewportWidth, FLIGHT_RHO);
   const durationMs = Math.min(
     FLIGHT_MAX_MS,
@@ -102,14 +105,13 @@ export function planGlide(
   const distance = Math.hypot(to.x - from.x, to.y - from.y);
   const widths = (distance * Math.min(from.zoom, to.zoom)) / viewportWidth;
   if (widths <= PAN_WITHIN_WIDTHS) {
-    return { durationMs, at: (u) => (u >= 1 ? { ...to } : lerpCamera(from, to, ease(u))) };
+    return { durationMs, at: pan };
   }
 
   let rho = FLIGHT_RHO;
   let path = nominal;
   const tooHigh = (p: Path): boolean =>
-    p.peakWidth > FLIGHT_PEAK_PER_DISTANCE * distance ||
-    viewportWidth / p.peakWidth < FLIGHT_MIN_ZOOM;
+    p.peakWidth > FLIGHT_PEAK_PER_DISTANCE * distance || viewportWidth / p.peakWidth < minZoom;
   // The floor on the start and end widths: a flatter arc can never go below them.
   const lowest = Math.max(viewportWidth / from.zoom, viewportWidth / to.zoom);
   while (tooHigh(path) && path.peakWidth > lowest * 1.001 && rho > 0.05) {

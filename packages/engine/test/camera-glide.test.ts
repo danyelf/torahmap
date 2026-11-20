@@ -6,7 +6,6 @@ import {
   viewFocusedOn,
   animateCameraTo,
   planGlide,
-  FLIGHT_MIN_ZOOM,
   FLIGHT_MIN_MS,
   FLIGHT_MAX_MS,
   FLIGHT_PEAK_PER_DISTANCE,
@@ -66,9 +65,10 @@ describe('viewFocusedOn', () => {
   });
 });
 
-const OPTIONS = { viewportWidth: 800 };
+const MIN_ZOOM = 0.1;
+const OPTIONS = { viewportWidth: 800, minZoom: MIN_ZOOM };
 const takes = (from: Camera, to: Camera): number =>
-  planGlide(from, to, OPTIONS.viewportWidth).durationMs;
+  planGlide(from, to, OPTIONS.viewportWidth, MIN_ZOOM).durationMs;
 const LONG = takes({ x: 0, y: 0, zoom: 1 }, { x: 100, y: 50, zoom: 4 });
 const ZOOM_ONLY = takes({ x: 500, y: 200, zoom: 1 }, { x: 500, y: 200, zoom: 4 });
 
@@ -195,7 +195,7 @@ describe('planGlide', () => {
 
   it('starts at the first view and ends exactly on the second', () => {
     for (const to of [far, middling, near, { x: 40, y: 0, zoom: 6 }]) {
-      const glide = planGlide(start, to, WIDTH);
+      const glide = planGlide(start, to, WIDTH, MIN_ZOOM);
       expect(glide.at(0).x).toBeCloseTo(start.x, 6);
       expect(glide.at(0).zoom).toBeCloseTo(start.zoom, 6);
       expect(glide.at(1)).toEqual(to);
@@ -203,22 +203,39 @@ describe('planGlide', () => {
   });
 
   it('rises on a long move and does not go below the zoom floor', () => {
-    const glide = planGlide(start, far, WIDTH);
+    const glide = planGlide(start, far, WIDTH, MIN_ZOOM);
     const zooms = Array.from({ length: 101 }, (_, i) => glide.at(i / 100).zoom);
 
     expect(Math.min(...zooms)).toBeLessThan(start.zoom / 2);
-    expect(Math.min(...zooms)).toBeGreaterThanOrEqual(FLIGHT_MIN_ZOOM);
+    expect(Math.min(...zooms)).toBeGreaterThanOrEqual(MIN_ZOOM);
+  });
+
+  it('keeps to the zoom floor it is given', () => {
+    const floor = 0.8;
+    const glide = planGlide(start, far, WIDTH, floor);
+    const zooms = Array.from({ length: 101 }, (_, i) => glide.at(i / 100).zoom);
+
+    expect(Math.min(...zooms)).toBeGreaterThanOrEqual(floor - 1e-9);
+    expect(Math.min(...zooms)).toBeLessThan(floor * 1.1);
+  });
+
+  it('pans without travelling on a map with no width', () => {
+    const glide = planGlide(start, far, 0, MIN_ZOOM);
+
+    expect(glide.durationMs).toBe(0);
+    expect(Number.isFinite(glide.at(0.5).x)).toBe(true);
+    expect(glide.at(1)).toEqual(far);
   });
 
   it('keeps the zoom of a move to somewhere already on screen', () => {
-    const glide = planGlide(start, near, WIDTH);
+    const glide = planGlide(start, near, WIDTH, MIN_ZOOM);
 
     for (let i = 0; i <= 10; i++) expect(glide.at(i / 10).zoom).toBeCloseTo(start.zoom, 6);
   });
 
   it('rises less on a middling move than a long one, in proportion to the distance', () => {
     const lowest = (to: Camera): number => {
-      const glide = planGlide(start, to, WIDTH);
+      const glide = planGlide(start, to, WIDTH, MIN_ZOOM);
       return Math.min(...Array.from({ length: 101 }, (_, i) => glide.at(i / 100).zoom));
     };
     const seenAtTop = (to: Camera, distance: number): number => WIDTH / lowest(to) / distance;
@@ -227,7 +244,7 @@ describe('planGlide', () => {
   });
 
   it('takes longer for a longer move, within its limits', () => {
-    const ms = (to: Camera): number => planGlide(start, to, WIDTH).durationMs;
+    const ms = (to: Camera): number => planGlide(start, to, WIDTH, MIN_ZOOM).durationMs;
 
     expect(ms(far)).toBeGreaterThan(ms(middling));
     expect(ms(middling)).toBeGreaterThanOrEqual(ms(near));
@@ -237,7 +254,7 @@ describe('planGlide', () => {
 
   it('never moves backwards on the way, even when interrupting', () => {
     for (const interrupting of [false, true]) {
-      const glide = planGlide(start, near, WIDTH, interrupting);
+      const glide = planGlide(start, near, WIDTH, MIN_ZOOM, interrupting);
       let last = -Infinity;
       for (let i = 0; i <= 20; i++) {
         const x = glide.at(i / 20).x;
@@ -248,8 +265,8 @@ describe('planGlide', () => {
   });
 
   it('starts moving at once when it interrupts another move', () => {
-    const slowStart = planGlide(start, near, WIDTH).at(0.05).x;
-    const quickStart = planGlide(start, near, WIDTH, true).at(0.05).x;
+    const slowStart = planGlide(start, near, WIDTH, MIN_ZOOM).at(0.05).x;
+    const quickStart = planGlide(start, near, WIDTH, MIN_ZOOM, true).at(0.05).x;
 
     expect(quickStart).toBeGreaterThan(slowStart * 5);
   });

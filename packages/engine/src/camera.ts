@@ -161,6 +161,8 @@ export function viewFocusedOn(
 export interface GlideOptions {
   /** Width of the map on screen, in pixels. */
   viewportWidth: number;
+  /** The text's zoom floor, which a flight does not rise past. */
+  minZoom: number;
   /** Another move was still running when this one began. */
   interrupting?: boolean;
   /** Snap to the target instead of travelling. */
@@ -170,8 +172,7 @@ export interface GlideOptions {
 }
 
 /**
- * Move the camera to a target along `planGlide`'s path, driven by the clock. Every camera move that
- * is not the reader's own hands goes through here.
+ * Move the camera to a target along `planGlide`'s path, driven by the clock.
  *
  * The camera is edited in place, because that is the object the render loop
  * reads. Returns a function that stops the glide, which the caller owes the
@@ -181,9 +182,9 @@ export function animateCameraTo(
   camera: Camera,
   target: Camera,
   onFrame: () => void,
-  { viewportWidth, interrupting = false, reducedMotion = false, onDone }: GlideOptions,
+  { viewportWidth, minZoom, interrupting = false, reducedMotion = false, onDone }: GlideOptions,
 ): () => void {
-  const glide = planGlide({ ...camera }, target, viewportWidth, interrupting);
+  const glide = planGlide({ ...camera }, target, viewportWidth, minZoom, interrupting);
   const durationMs = reducedMotion ? 0 : glide.durationMs;
   const started = performance.now();
   let request = 0;

@@ -734,14 +734,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   // moves the map and shows the reader nothing. Close enough to pick it out.
   const RESULT_CLICK_ZOOM = 2.5;
 
+  /** Stops the glide under way; null once it has arrived. */
   let stopCameraGlide: (() => void) | null = null;
-  let gliding = false;
 
   /** Stop a glide in its tracks, for when the reader takes the map back. */
   function cancelCameraGlide(): void {
     stopCameraGlide?.();
     stopCameraGlide = null;
-    gliding = false;
   }
 
   /**
@@ -772,9 +771,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /** Where every camera move that is not the reader's own hands goes. */
   function glideTo(target: Camera): void {
-    const interrupting = gliding;
+    const interrupting = stopCameraGlide !== null;
     cancelCameraGlide();
-    gliding = true;
     stopCameraGlide = animateCameraTo(
       camera,
       target,
@@ -784,9 +782,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       },
       {
         viewportWidth: mapViewport().width,
+        minZoom: zoomRange.min,
         interrupting,
         reducedMotion: reducedMotion.matches,
-        onDone: () => (gliding = false),
+        onDone: () => (stopCameraGlide = null),
       },
     );
   }
@@ -1631,9 +1630,15 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
 
     if (driver.by === 'rejoining') {
-      const t = easingFunctions[DEFAULT_EASING](rejoinProgress(driver, now));
-      Object.assign(camera, planGlide(driver.fromCamera, state.camera, mapViewport().width).at(t));
-      setColorLayer({ from: driver.fromPicture, to: driver.toPicture, t });
+      const progress = rejoinProgress(driver, now);
+      // The glide eases its own progress; the picture eases with the story's curve.
+      const glide = planGlide(driver.fromCamera, state.camera, mapViewport().width, zoomRange.min);
+      Object.assign(camera, glide.at(progress));
+      setColorLayer({
+        from: driver.fromPicture,
+        to: driver.toPicture,
+        t: easingFunctions[DEFAULT_EASING](progress),
+      });
       render();
       scheduleStoryFrame();
       return;
