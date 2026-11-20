@@ -129,16 +129,12 @@
   color: #8ab4ff;
   text-decoration: underline;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
 }
 
 .haftarah-card-clear {
   margin-left: auto;
   color: #aaa;
-}
-
-.haftarah-jump,
-.haftarah-card-clear {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
 }

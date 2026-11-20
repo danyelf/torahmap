@@ -195,7 +195,7 @@ export const SAMPLE_HAFTARAH_MAPPINGS: HaftarahMappings = {
           {
             book: 'I Samuel',
             start: { chapter: 1, verse: 1 },
-            end: { chapter: 2, verse: 10 },
+            end: { chapter: 2, verse: 9 },
           },
         ],
       },

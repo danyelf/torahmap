@@ -83,17 +83,27 @@ function relevantId(
   return verse && isRelevantVerse(verse, deriveHaftarah(data, settings.custom)) ? verse.id : null;
 }
 
+/** The readings verse `id` is in: a Torah verse is in its portion alone. */
+function readingsOf(derived: HaftarahDerivation, id: string): readonly HaftarahItem[] {
+  const parsha = derived.torahVerseToParsha.get(id);
+  return parsha ? [parsha] : (derived.haftarahVerseToItem.get(id) ?? []);
+}
+
 /** The readings to light: whatever the hovered verse belongs to, or null when it belongs to none. */
 function litByHover(
   derived: HaftarahDerivation,
   hovered: TanakhLayout | null,
 ): Set<HaftarahItem> | null {
-  if (!hovered) return null;
-  const key = hovered.id;
-  const parsha = derived.torahVerseToParsha.get(key);
-  if (parsha) return new Set([parsha]);
-  const items = derived.haftarahVerseToItem.get(key);
-  return items ? new Set(items) : null;
+  const items = hovered ? readingsOf(derived, hovered.id) : [];
+  return items.length > 0 ? new Set(items) : null;
+}
+
+function readingNamed(
+  data: HaftarahData,
+  custom: Custom,
+  name: string | null,
+): HaftarahItem | undefined {
+  return name === null ? undefined : deriveHaftarah(data, custom).itemByName.get(name);
 }
 
 /** The reading called `name` lit as a preview, or null when no reading has that name. */
@@ -102,9 +112,7 @@ function litByName(
   custom: Custom,
   name: string | null,
 ): Set<HaftarahItem> | null {
-  if (name === null) return null;
-  const derived = deriveHaftarah(data, custom);
-  const item = derived.itemByName.get(name);
+  const item = readingNamed(data, custom, name);
   return item ? new Set([item]) : null;
 }
 
@@ -138,9 +146,7 @@ function colorAt(
   derived: HaftarahDerivation,
   lit: Set<HaftarahItem> | null,
 ): Color | Color[] | null {
-  const key = verse.id;
-  const parsha = derived.torahVerseToParsha.get(key);
-  const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
+  const items = readingsOf(derived, verse.id);
   if (items.length === 0) return lit ? DIMMED_GREY : null;
 
   const colors = items
@@ -170,8 +176,8 @@ function passagesOf(item: HaftarahItem, custom: Custom): Passage[] {
   return isParsha(item) ? [{ label: 'Torah', ranges: [item.torah] }, haftarah] : [haftarah];
 }
 
-function passageText(passage: Passage): string {
-  return passage.ranges.map((r) => passageRef(r.book, r.start, r.end)).join(', ');
+function rangesText(ranges: readonly VerseRange[]): string {
+  return ranges.map((r) => passageRef(r.book, r.start, r.end)).join(', ');
 }
 
 function passageIds(data: HaftarahData, passage: Passage): string[] {
@@ -204,7 +210,7 @@ function jumpLink(
   const link = document.createElement('button');
   link.type = 'button';
   link.className = 'haftarah-jump';
-  link.textContent = `${passage.label} ${passageText(passage)}`;
+  link.textContent = `${passage.label} ${rangesText(passage.ranges)}`;
   link.addEventListener('click', () => jumpTo(data, item, passage, fitTo, change));
   return link;
 }
@@ -217,10 +223,7 @@ function renderCard(
   fitTo: FitTo,
   change: (update: SettingsUpdate<HaftarahSettings>) => void,
 ): void {
-  const item =
-    data && settings.reading !== null
-      ? deriveHaftarah(data, settings.custom).itemByName.get(settings.reading)
-      : undefined;
+  const item = data ? readingNamed(data, settings.custom, settings.reading) : undefined;
   card.hidden = !data || !item;
   card.replaceChildren();
   if (!data || !item) return;
@@ -254,8 +257,8 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
 
 /**
  * The key: each book by its portions, then each category of occasion by its
- * readings. Hovering one previews it; clicking one picks it. Its colours and names are the same for
- * both customs, so it is built once.
+ * readings. Hovering one previews it; clicking one picks it. Its colours and
+ * names are the same for both customs, so it is built once.
  */
 function renderKey(
   container: HTMLElement,
@@ -375,7 +378,8 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
         data,
         settings.custom,
         (preview) => onChange((current) => ({ ...current, preview })),
-        (item) => jumpTo(data, item, passagesOf(item, settings.custom)[0], fitTo, onChange),
+        // The key is built once, so the custom comes from the select, which every render sets.
+        (item) => jumpTo(data, item, passagesOf(item, select!.value as Custom)[0], fitTo, onChange),
       );
     }
     renderCard(
@@ -420,8 +424,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
 
     const parshaFromTorah = derived.torahVerseToParsha.get(key);
     if (parshaFromTorah) {
-      const haftarahRanges = parshaFromTorah.haftarah[settings.custom];
-      const haftarahStr = haftarahRanges.map((r) => passageRef(r.book, r.start, r.end)).join(', ');
+      const haftarahStr = rangesText(parshaFromTorah.haftarah[settings.custom]);
       return `${parshaFromTorah.name} (${parshaFromTorah.hebrewName}) → ${haftarahStr}`;
     }
 
@@ -441,17 +444,13 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
   },
 
   settingsOnPin(verse, settings, data) {
-    const derived = deriveHaftarah(data, settings.custom);
-    const parsha = derived.torahVerseToParsha.get(verse.id);
-    const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(verse.id) ?? []);
+    const items = readingsOf(deriveHaftarah(data, settings.custom), verse.id);
     return { ...settings, reading: items.length === 1 ? items[0].name : null };
   },
 
   renderSidebarInfo(verse, isPinned, settings, data, actions) {
     if (!isPinned || !actions) return null;
-    const derived = deriveHaftarah(data, settings.custom);
-    const parsha = derived.torahVerseToParsha.get(verse.id);
-    const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(verse.id) ?? []);
+    const items = readingsOf(deriveHaftarah(data, settings.custom), verse.id);
     if (items.length === 0) return null;
 
     const box = document.createElement('div');

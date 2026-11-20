@@ -542,6 +542,16 @@ describe('Haftarah Overlay', () => {
       expect(links(container.querySelector('.haftarah-card')!)).toHaveLength(1);
     });
 
+    it('fits the haftarah of the custom chosen since the key was drawn', () => {
+      const { container } = idsOf('Rosh Hashanah Day 1');
+      const select = container.querySelector<HTMLSelectElement>('#custom-select')!;
+      select.value = 'sephardi';
+      select.dispatchEvent(new Event('change'));
+      container.querySelector<HTMLElement>('[data-reading="Rosh Hashanah Day 1"]')!.click();
+      expect(haftarahOverlay.fits.at(-1)).toContain('I.Samuel.2.9');
+      expect(haftarahOverlay.fits.at(-1)).not.toContain('I.Samuel.2.10');
+    });
+
     it('shows a card for the pinned reading that links to both places, and clears it', () => {
       haftarahOverlay.restore({ reading: 'Bereshit' });
       const container = haftarahOverlay.renderControls();
