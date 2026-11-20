@@ -1,0 +1,6 @@
+.map-cover {
+  position: absolute;
+  box-sizing: border-box;
+  background: rgba(var(--tint), var(--cover-opacity));
+  border: 1px solid rgba(var(--tint), var(--edge-opacity));
+}

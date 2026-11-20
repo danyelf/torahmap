@@ -1,4 +1,6 @@
-// A faint tinted panel behind a group of squares: the VIS Map's time slots.
+// A faint tinted panel behind a group of squares, with a one-pixel edge.
+
+import './covers.css';
 
 /** A panel's extent in map units. */
 export interface CoverBox {
@@ -8,20 +10,15 @@ export interface CoverBox {
   maxY: number;
 }
 
-/** A panel tinted `rgb` (0-255 each) at `opacity`, with a one-pixel edge at `edgeOpacity` if given. */
+/** A panel tinted `rgb` (0-255 each) at `opacity`, with a one-pixel edge at `edgeOpacity`. */
 export function coverElement(
   [r, g, b]: readonly [number, number, number],
   opacity: number,
-  edgeOpacity?: number,
+  edgeOpacity: number,
 ): HTMLDivElement {
   const el = document.createElement('div');
-  el.style.cssText = `
-    position:absolute;
-    box-sizing:border-box;
-    background:rgba(${r},${g},${b},${opacity});
-    border-radius:4px;
-    ${edgeOpacity === undefined ? '' : `border:1px solid rgba(${r},${g},${b},${edgeOpacity});`}
-  `;
+  el.className = 'map-cover';
+  el.style.cssText = `--tint:${r},${g},${b}; --cover-opacity:${opacity}; --edge-opacity:${edgeOpacity};`;
   return el;
 }
 

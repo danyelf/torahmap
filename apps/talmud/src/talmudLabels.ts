@@ -3,6 +3,7 @@
 
 import { amudName, type TractateBlock, type PerekAnchor, type DafRowAnchor } from './layout.ts';
 import {
+  COVER_EDGE_OPACITY,
   COVER_OPACITY,
   DAF_LABEL,
   DAF_LABEL_ZOOM_ALL,
@@ -11,6 +12,7 @@ import {
   SEDARIM,
 } from './constants.ts';
 import { HEBREW_LABEL_FONT, HEBREW_LABEL_SCALE } from '@torahmap/shell/labelTypography.ts';
+import { coverElement, placeCover } from '@torahmap/shell/covers.ts';
 import './talmudLabels.css';
 import { createRowNumbers, labelGroup, type Placed } from '@torahmap/shell/rowNumbers.ts';
 
@@ -23,10 +25,7 @@ function coverOf(block: TractateBlock): HTMLElement | null {
   const tint = SEDARIM.find((s) => s.en === block.section)?.tint;
   if (!tint) return null;
   const [r, g, b] = tint.map((c) => Math.round(c * 255));
-  const el = document.createElement('div');
-  el.className = 'talmud-cover';
-  el.style.cssText = `--tint:${r},${g},${b}; --cover-opacity:${COVER_OPACITY};`;
-  return el;
+  return coverElement([r, g, b], COVER_OPACITY, COVER_EDGE_OPACITY);
 }
 
 function perekLabel(a: PerekAnchor): Placed {
@@ -92,10 +91,7 @@ export function createTalmudLabels(
     if (zoom !== coversAt) {
       coversAt = zoom;
       for (const { el, cover } of placedCovers) {
-        el.style.left = `${cover.minX * zoom}px`;
-        el.style.top = `${cover.minY * zoom}px`;
-        el.style.width = `${(cover.maxX - cover.minX) * zoom}px`;
-        el.style.height = `${(cover.maxY - cover.minY) * zoom}px`;
+        placeCover(el, cover, zoom);
       }
       const { base, min, max } = PEREK_SIZE;
       pereks.el.style.fontSize = `${Math.max(min, Math.min(max, base * zoom)) * HEBREW_LABEL_SCALE}px`;
