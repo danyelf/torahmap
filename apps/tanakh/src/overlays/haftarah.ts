@@ -35,7 +35,6 @@ import { buildLegendGradient, legendCaption } from './legend.ts';
 import { HAFTARAH, HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 import './haftarah.css';
 
-// In the order the legend lists them.
 const CATEGORY_LABELS: Record<OccasionCategory, string> = {
   'high-holidays': 'High Holidays',
   sukkot: 'Sukkot',
@@ -61,9 +60,8 @@ function darkTint(color: Color): Color {
 
 /**
  * Which custom's readings to show; the reading the pointer is over in the key;
- * and a reading a story stop lights. Only the custom goes into a link, so
- * leaving the story drops the reading. The app holds this; the overlay keeps
- * none.
+ * and the pinned reading, which a story stop sets too. The custom and the
+ * pinned reading go into a link. The app holds this; the overlay keeps none.
  */
 export interface HaftarahSettings {
   readonly custom: Custom;
@@ -474,6 +472,8 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
   },
 
   settingsToUrl(settings: HaftarahSettings): Record<string, string> {
-    return { custom: settings.custom };
+    return settings.reading === null
+      ? { custom: settings.custom }
+      : { custom: settings.custom, reading: settings.reading };
   },
 };

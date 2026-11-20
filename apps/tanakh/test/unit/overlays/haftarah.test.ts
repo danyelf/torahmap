@@ -426,10 +426,11 @@ describe('Haftarah Overlay', () => {
         })[0] as Color,
       );
 
-    it('reads a name with spaces and punctuation, and never writes it into a link', () => {
+    it('reads a name with spaces and punctuation, and writes it into a link that restores it', () => {
       haftarahOverlay.restore({ reading: 'Rosh Hashanah Day 1' });
       expect(haftarahOverlay.settings.reading).toBe('Rosh Hashanah Day 1');
-      expect(haftarahOverlay.toUrl()).toEqual({});
+      expect(haftarahOverlay.toUrl()).toEqual({ reading: 'Rosh Hashanah Day 1' });
+      expect(haftarahOverlay.fromUrl(haftarahOverlay.toUrl()).reading).toBe('Rosh Hashanah Day 1');
 
       haftarahOverlay.restore({ reading: "Tisha B'Av, Morning" });
       expect(haftarahOverlay.settings.reading).toBe("Tisha B'Av, Morning");
