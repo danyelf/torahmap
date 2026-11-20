@@ -44,6 +44,7 @@ import {
   type Frame,
   type FrameEvent,
   type FrontTool,
+  type Panel,
   PANELS,
   PANEL_TITLES,
   isPanel,
@@ -957,8 +958,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         else dispatch({ type: does });
       },
       find() {
-        if (frame.mode !== 'explore' || frame.open !== 'search')
-          dispatch({ type: 'choose', panel: 'search' });
+        openPanel('search');
         const box = document.getElementById(SEARCH_BOX_ID) as HTMLInputElement | null;
         box?.focus();
         box?.select();
@@ -975,9 +975,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       },
       goTo() {
         if (!goToExample) return false;
-        // Choosing the open panel would fold a phone's sheet.
-        if (frame.mode !== 'explore' || frame.open !== 'goto')
-          dispatch({ type: 'choose', panel: 'goto' });
+        openPanel('goto');
         // dispatch skips focus on a phone; a key press means a keyboard is here.
         goToPanel.focus();
         return true;
@@ -1428,10 +1426,16 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     readerOpensStory(id, fromStart ? null : undefined);
   }
 
+  /** Opens `panel` and closes the menu; choosing the open panel again would fold a phone's sheet. */
+  function openPanel(panel: Panel): void {
+    if (frame.mode !== 'explore' || frame.open !== panel || frame.menu)
+      dispatch({ type: 'choose', panel });
+  }
+
   function takeStart(choice: StartChoice): void {
     if (choice.kind === 'story') return readStory(choice.id, false);
     if (choice.kind === 'search') {
-      dispatch({ type: 'choose', panel: 'search' });
+      openPanel('search');
       document.getElementById(SEARCH_BOX_ID)?.focus();
       return;
     }

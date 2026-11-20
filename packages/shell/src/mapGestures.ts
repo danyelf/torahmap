@@ -41,7 +41,7 @@ export interface MapIntents<I extends MapItem> {
   find(): void;
   /** Find next / previous: steps to a search hit. False with no hit to go to, which leaves the key to the browser. */
   stepHit(by: 1 | -1): boolean;
-  /** Opens the Go to box. False when this map has none, which leaves the key to the browser. */
+  /** Opens the Go to box. False when this map has none. */
   goTo(): boolean;
 }
 
@@ -59,6 +59,12 @@ export function escapeDoes(state: {
 /** Whether the platform's main modifier is down alone: Command on a Mac, Control elsewhere, as the browser's own keys. */
 export function hasMainModifier(e: KeyboardEvent, mac: boolean): boolean {
   return (mac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey) && !e.altKey;
+}
+
+/** The letter a key press names; on a layout without Latin letters, such as Hebrew, the Latin letter at its place on the keyboard. */
+export function shortcutLetter(e: KeyboardEvent): string {
+  if (/^[a-z]$/i.test(e.key)) return e.key.toLowerCase();
+  return /^Key[A-Z]$/.test(e.code) ? e.code.slice(3).toLowerCase() : e.key;
 }
 
 /** Which way an arrow key steps: forward is the way the text reads. */
@@ -227,17 +233,23 @@ export function createMapGestures<I extends MapItem>(options: {
       'input, textarea, select, [contenteditable]:not([contenteditable="false"])',
     );
     if (e.key === 'Escape') return intents.escape(inField);
-    // The platform's main modifier, as the browser's own find keys use.
     if (hasMainModifier(e, mac)) {
-      const key = e.key.toLowerCase();
       let taken = false;
-      if (key === 'f') {
-        intents.find();
-        taken = true;
-      } else if (key === 'g') taken = intents.stepHit(e.shiftKey ? -1 : 1);
-      else if (key === 'k') taken = intents.goTo();
-      if (taken) e.preventDefault();
-      if (key === 'f' || key === 'g' || key === 'k') return;
+      switch (shortcutLetter(e)) {
+        case 'f':
+          if (!e.shiftKey) {
+            intents.find();
+            taken = true;
+          }
+          break;
+        case 'g':
+          taken = intents.stepHit(e.shiftKey ? -1 : 1);
+          break;
+        case 'k':
+          taken = !e.shiftKey && intents.goTo();
+          break;
+      }
+      if (taken) return e.preventDefault();
     }
     // A field's arrow keys are its own.
     if (inField) return;

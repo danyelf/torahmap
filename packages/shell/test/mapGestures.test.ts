@@ -63,6 +63,7 @@ beforeEach(() => {
   pinned = null;
   hitsExist = true;
   gestures = createMapGestures<Square>({
+    mac: false,
     canvas,
     zoomIn,
     zoomOut,
@@ -294,6 +295,17 @@ describe('the keys', () => {
         for (const key of ['f', 'g', 'k']) expect(press({ key, ...init })).toBe(true);
       }
       expect(heard).toEqual([]);
+    });
+
+    it('leave Shift with F and K to the browser', () => {
+      expect(press({ key: 'F', shiftKey: true, ctrlKey: true })).toBe(true);
+      expect(press({ key: 'K', shiftKey: true, ctrlKey: true })).toBe(true);
+      expect(heard).toEqual([]);
+    });
+
+    it('read the letter from its place on a Hebrew keyboard', () => {
+      expect(press({ key: 'כ', code: 'KeyF', ctrlKey: true })).toBe(false);
+      expect(heard).toEqual(['find']);
     });
 
     it('leave find-next to the browser when there is no hit to go to', () => {
