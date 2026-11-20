@@ -34,3 +34,17 @@ export function memoByValueAndKey<K extends object, Q, V>(
   });
   return (value, key) => keyed(value)(key);
 }
+
+/** `memoByValueAndKey` that keeps only the latest key per value: a new key lets go of the one before. */
+export function memoByValueAndLatestKey<K extends object, Q, V>(
+  derive: (value: K, key: Q) => V,
+): (value: K, key: Q) => V {
+  const latest = memoByValue((value: K) => {
+    let held: { key: Q; result: V } | null = null;
+    return (key: Q): V => {
+      if (held === null || held.key !== key) held = { key, result: derive(value, key) };
+      return held.result;
+    };
+  });
+  return (value, key) => latest(value)(key);
+}
