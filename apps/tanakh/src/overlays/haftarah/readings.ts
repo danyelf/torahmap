@@ -26,15 +26,19 @@ export interface ParshaData {
   haftarah: Record<Custom, VerseRange[]>;
 }
 
-export type OccasionCategory =
-  | 'rosh-chodesh'
-  | 'four-shabbatot'
-  | 'high-holidays'
-  | 'sukkot'
-  | 'pesach'
-  | 'shavuot'
-  | 'fast-days'
-  | 'other';
+/** In the order the legend lists them, and the order their colours step through. */
+export const OCCASION_CATEGORIES = [
+  'high-holidays',
+  'sukkot',
+  'four-shabbatot',
+  'pesach',
+  'shavuot',
+  'fast-days',
+  'rosh-chodesh',
+  'other',
+] as const;
+
+export type OccasionCategory = (typeof OCCASION_CATEGORIES)[number];
 
 interface SpecialOccasionData {
   name: string;
@@ -66,9 +70,62 @@ export interface HaftarahData {
   structure: TorahData;
 }
 
-export function readingColor(itemIndex: number, totalItemCount: number): Color {
-  const hue = (itemIndex / totalItemCount) * 360;
-  return hslToRgb({ h: hue, s: 0.8, l: 0.55 });
+// Each Torah book has a hue band, centred where the books stay apart on the colour wheel and
+// clear of the holidays' magenta. A portion's place in its book moves it across the band, so a
+// run of portions reads as one family; its place in a lightness ramp is a second cue, and
+// alternating light and dark tells neighbours apart. Per-book lightness offsets keep the books
+// apart for a reader who cannot tell their hues.
+const BOOK_HUES: Record<string, { hue: number; lightness: number }> = {
+  Genesis: { hue: 15, lightness: -0.05 },
+  Exodus: { hue: 65, lightness: 0.05 },
+  Leviticus: { hue: 130, lightness: -0.05 },
+  Numbers: { hue: 195, lightness: 0 },
+  Deuteronomy: { hue: 250, lightness: 0.05 },
+};
+const BOOK_HUE_SPAN = 50;
+const BOOK_LIGHTNESS_RAMP = 0.12;
+const NEIGHBOUR_LIGHTNESS = 0.08;
+const BASE_LIGHTNESS = 0.57;
+
+// The holidays take magenta, which no book does and the map's background is not. Each category
+// has its own hue, and its readings step along a lightness ramp.
+const OCCASION_HUE = 296;
+const OCCASION_CATEGORY_STEP = 7;
+const OCCASION_LIGHTNESS = { from: 0.45, to: 0.7 };
+
+/** `index` of `count` positions, as 0 to 1. */
+function along(index: number, count: number): number {
+  return count > 1 ? index / (count - 1) : 0.5;
+}
+
+/** A reading's colour from its place among the readings of its book (a portion) or its category (an occasion). */
+export function readingColor(item: HaftarahItem, data: HaftarahMappings): Color {
+  if (isParsha(item)) {
+    const book = item.torah.book;
+    const mates = data.parshiot.filter((p) => p.torah.book === book);
+    const k = mates.indexOf(item);
+    const t = along(k, mates.length) - 0.5;
+    const { hue, lightness } = BOOK_HUES[book];
+    return hslToRgb({
+      h: (hue + t * BOOK_HUE_SPAN + 360) % 360,
+      s: 0.8,
+      l:
+        BASE_LIGHTNESS +
+        lightness +
+        t * BOOK_LIGHTNESS_RAMP +
+        (k % 2 === 0 ? -NEIGHBOUR_LIGHTNESS : NEIGHBOUR_LIGHTNESS),
+    });
+  }
+  const mates = data.specialOccasions.filter((o) => o.category === item.category);
+  const k = mates.indexOf(item);
+  const category = OCCASION_CATEGORIES.indexOf(item.category);
+  return hslToRgb({
+    h: OCCASION_HUE + category * OCCASION_CATEGORY_STEP,
+    s: 0.8,
+    l:
+      OCCASION_LIGHTNESS.from +
+      (OCCASION_LIGHTNESS.to - OCCASION_LIGHTNESS.from) * along(k, mates.length),
+  });
 }
 
 /** Everything about a custom's readings that a verse's color depends on. */
@@ -114,10 +171,8 @@ export const deriveHaftarah = memoByValueAndKey(
     const itemToColor = new Map<HaftarahItem, Color>();
     const items: HaftarahItem[] = [...data.mappings.parshiot, ...data.mappings.specialOccasions];
 
-    // Parshiot take color indices 0..parshiot.length-1; special occasions
-    // continue from there, so the rainbow runs across both without repeats.
-    items.forEach((item, i) => {
-      itemToColor.set(item, readingColor(i, items.length));
+    for (const item of items) {
+      itemToColor.set(item, readingColor(item, data.mappings));
 
       if (isParsha(item)) {
         forEachVerseInRange(data.structure, item.torah, (book, ch, v) => {
@@ -138,7 +193,7 @@ export const deriveHaftarah = memoByValueAndKey(
           }
         });
       }
-    });
+    }
 
     return {
       items,

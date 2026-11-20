@@ -8,14 +8,19 @@ import {
   escapeHtml,
   lingeringHover,
 } from '@torahmap/utils';
-import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import type {
+  FitTo,
+  Overlay,
+  SettingsUpdate,
+  UrlParamValues,
+} from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { passageRef, verseId } from '@torahmap/link/tanakh';
 import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import {
   deriveHaftarah,
   forEachVerseInRange,
-  readingColor,
+  OCCASION_CATEGORIES,
   HAFTARAH_FILES,
   isParsha,
   type Custom,
@@ -23,13 +28,13 @@ import {
   type HaftarahDerivation,
   type HaftarahItem,
   type OccasionCategory,
+  type VerseRange,
 } from './haftarah/readings.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { buildLegendGradient, legendCaption } from './legend.ts';
 import { HAFTARAH, HAFTARAH_CUSTOMS } from '@torahmap/overlay-catalog';
 import './haftarah.css';
 
-// In the order the legend lists them.
 const CATEGORY_LABELS: Record<OccasionCategory, string> = {
   'high-holidays': 'High Holidays',
   sukkot: 'Sukkot',
@@ -55,9 +60,8 @@ function darkTint(color: Color): Color {
 
 /**
  * Which custom's readings to show; the reading the pointer is over in the key;
- * and a reading a story stop lights. Only the custom goes into a link, so
- * leaving the story drops the reading. The app holds this; the overlay keeps
- * none.
+ * and the pinned reading, which a story stop sets too. The custom and the
+ * pinned reading go into a link. The app holds this; the overlay keeps none.
  */
 export interface HaftarahSettings {
   readonly custom: Custom;
@@ -79,33 +83,27 @@ function relevantId(
   return verse && isRelevantVerse(verse, deriveHaftarah(data, settings.custom)) ? verse.id : null;
 }
 
+/** The readings verse `id` is in: a Torah verse is in its portion alone. */
+function readingsOf(derived: HaftarahDerivation, id: string): readonly HaftarahItem[] {
+  const parsha = derived.torahVerseToParsha.get(id);
+  return parsha ? [parsha] : (derived.haftarahVerseToItem.get(id) ?? []);
+}
+
 /** The readings to light: whatever the hovered verse belongs to, or null when it belongs to none. */
 function litByHover(
   derived: HaftarahDerivation,
   hovered: TanakhLayout | null,
 ): Set<HaftarahItem> | null {
-  if (!hovered) return null;
-  const key = hovered.id;
-  const parsha = derived.torahVerseToParsha.get(key);
-  if (parsha) return new Set([parsha]);
-  const items = derived.haftarahVerseToItem.get(key);
-  return items ? new Set(items) : null;
+  const items = hovered ? readingsOf(derived, hovered.id) : [];
+  return items.length > 0 ? new Set(items) : null;
 }
 
-/** A previewed reading, with every reading that shares any of its haftarah verses. */
-function litByPreview(
+function readingNamed(
   data: HaftarahData,
-  derived: HaftarahDerivation,
-  item: HaftarahItem,
   custom: Custom,
-): Set<HaftarahItem> {
-  const lit = new Set([item]);
-  for (const range of item.haftarah[custom]) {
-    forEachVerseInRange(data.structure, range, (book, ch, v) => {
-      derived.haftarahVerseToItem.get(verseId(book, ch, v))?.forEach((i) => lit.add(i));
-    });
-  }
-  return lit;
+  name: string | null,
+): HaftarahItem | undefined {
+  return name === null ? undefined : deriveHaftarah(data, custom).itemByName.get(name);
 }
 
 /** The reading called `name` lit as a preview, or null when no reading has that name. */
@@ -114,10 +112,8 @@ function litByName(
   custom: Custom,
   name: string | null,
 ): Set<HaftarahItem> | null {
-  if (name === null) return null;
-  const derived = deriveHaftarah(data, custom);
-  const item = derived.itemByName.get(name);
-  return item ? litByPreview(data, derived, item, custom) : null;
+  const item = readingNamed(data, custom, name);
+  return item ? new Set([item]) : null;
 }
 
 /**
@@ -150,9 +146,7 @@ function colorAt(
   derived: HaftarahDerivation,
   lit: Set<HaftarahItem> | null,
 ): Color | Color[] | null {
-  const key = verse.id;
-  const parsha = derived.torahVerseToParsha.get(key);
-  const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
+  const items = readingsOf(derived, verse.id);
   if (items.length === 0) return lit ? DIMMED_GREY : null;
 
   const colors = items
@@ -168,6 +162,88 @@ function colorAt(
   return shown.length === 1 ? shown[0] : shown;
 }
 
+/**
+ * The two places a reading appears: its Torah portion, and its haftarah. An
+ * occasion has only the second, so that is where jumping to it goes.
+ */
+interface Passage {
+  readonly label: 'Torah' | 'Haftarah';
+  readonly ranges: readonly VerseRange[];
+}
+
+function passagesOf(item: HaftarahItem, custom: Custom): Passage[] {
+  const haftarah: Passage = { label: 'Haftarah', ranges: item.haftarah[custom] };
+  return isParsha(item) ? [{ label: 'Torah', ranges: [item.torah] }, haftarah] : [haftarah];
+}
+
+function rangesText(ranges: readonly VerseRange[]): string {
+  return ranges.map((r) => passageRef(r.book, r.start, r.end)).join(', ');
+}
+
+function passageIds(data: HaftarahData, passage: Passage): string[] {
+  const ids: string[] = [];
+  for (const range of passage.ranges) {
+    forEachVerseInRange(data.structure, range, (book, ch, v) => ids.push(verseId(book, ch, v)));
+  }
+  return ids;
+}
+
+/** Pins the reading and fits one of its passages into view. */
+function jumpTo(
+  data: HaftarahData,
+  item: HaftarahItem,
+  passage: Passage,
+  fitTo: FitTo,
+  change: (update: SettingsUpdate<HaftarahSettings>) => void,
+): void {
+  change((current) => ({ ...current, reading: item.name }));
+  fitTo(passageIds(data, passage));
+}
+
+function jumpLink(
+  data: HaftarahData,
+  item: HaftarahItem,
+  passage: Passage,
+  fitTo: FitTo,
+  change: (update: SettingsUpdate<HaftarahSettings>) => void,
+): HTMLElement {
+  const link = document.createElement('button');
+  link.type = 'button';
+  link.className = 'haftarah-jump';
+  link.textContent = `${passage.label} ${rangesText(passage.ranges)}`;
+  link.addEventListener('click', () => jumpTo(data, item, passage, fitTo, change));
+  return link;
+}
+
+/** The card for the pinned reading: its name, a link to each place it appears, and a way to clear it. */
+function renderCard(
+  card: HTMLElement,
+  settings: HaftarahSettings,
+  data: HaftarahData | null,
+  fitTo: FitTo,
+  change: (update: SettingsUpdate<HaftarahSettings>) => void,
+): void {
+  const item = data ? readingNamed(data, settings.custom, settings.reading) : undefined;
+  card.hidden = !data || !item;
+  card.replaceChildren();
+  if (!data || !item) return;
+
+  const title = document.createElement('div');
+  title.className = 'haftarah-card-title';
+  title.textContent = `${item.name} (${item.hebrewName})`;
+
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'haftarah-card-clear';
+  clear.textContent = 'Clear';
+  clear.addEventListener('click', () => change((current) => ({ ...current, reading: null })));
+
+  const links = passagesOf(item, settings.custom).map((passage) =>
+    jumpLink(data, item, passage, fitTo, change),
+  );
+  card.append(title, ...links, clear);
+}
+
 function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
   const groups = new Map<K, T[]>();
   for (const item of items) {
@@ -181,14 +257,15 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
 
 /**
  * The key: each book by its portions, then each category of occasion by its
- * readings. Hovering one previews it. Its colours and names are the same for
- * both customs, so it is built once.
+ * readings. Hovering one previews it; clicking one picks it. Its colours and
+ * names are the same for both customs, so it is built once.
  */
 function renderKey(
   container: HTMLElement,
   data: HaftarahData,
   custom: Custom,
   onPreview: (reading: string | null) => void,
+  onPick: (item: HaftarahItem) => void,
 ): void {
   if (container.querySelector('.haftarah-key')) return;
   const derived = deriveHaftarah(data, custom);
@@ -209,9 +286,9 @@ function renderKey(
   };
 
   const books = [...byBook].map(([book, parshiot]) => row(book, parshiot));
-  const categories = (Object.keys(CATEGORY_LABELS) as OccasionCategory[])
-    .filter((category) => byCategory.has(category))
-    .map((category) => row(CATEGORY_LABELS[category], byCategory.get(category)!));
+  const categories = OCCASION_CATEGORIES.filter((category) => byCategory.has(category)).map(
+    (category) => row(CATEGORY_LABELS[category], byCategory.get(category)!),
+  );
 
   const key = document.createElement('div');
   key.className = 'haftarah-key';
@@ -225,6 +302,11 @@ function renderKey(
     else preview.enter(reading);
   });
   key.addEventListener('pointerleave', () => preview.leave());
+  key.addEventListener('click', (e) => {
+    const reading = (e.target as Element).closest<HTMLElement>('[data-reading]')?.dataset.reading;
+    const item = reading === undefined ? undefined : derived.itemByName.get(reading);
+    if (item) onPick(item);
+  });
 }
 
 export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, HaftarahData> = {
@@ -258,7 +340,14 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     return items.map((item) => colorAt(item, derived, lit));
   },
 
-  renderControls(container: HTMLElement, settings: HaftarahSettings, onChange, data) {
+  renderControls(
+    container: HTMLElement,
+    settings: HaftarahSettings,
+    onChange,
+    data,
+    _travelTo,
+    fitTo = () => {},
+  ) {
     let select = container.querySelector<HTMLSelectElement>('#custom-select');
     if (!select) {
       const wrapper = document.createElement('div');
@@ -270,6 +359,10 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
         </select>
       `;
       container.appendChild(wrapper);
+      const card = document.createElement('div');
+      card.className = 'haftarah-card';
+      card.hidden = true;
+      container.appendChild(card);
 
       select = wrapper.querySelector('select')!;
       select.addEventListener('change', () => {
@@ -280,9 +373,24 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
 
     select.value = settings.custom;
     if (data) {
-      renderKey(container, data, settings.custom, (preview) =>
-        onChange((current) => ({ ...current, preview })),
+      renderKey(
+        container,
+        data,
+        settings.custom,
+        (preview) => onChange((current) => ({ ...current, preview })),
+        // The key is built once, so the custom comes from the select, which every render sets.
+        (item) => jumpTo(data, item, passagesOf(item, select!.value as Custom)[0], fitTo, onChange),
       );
+    }
+    renderCard(
+      container.querySelector<HTMLElement>('.haftarah-card')!,
+      settings,
+      data,
+      fitTo,
+      onChange,
+    );
+    for (const swatch of container.querySelectorAll<HTMLElement>('.haftarah-key [data-reading]')) {
+      swatch.classList.toggle('pinned', swatch.dataset.reading === settings.reading);
     }
   },
 
@@ -294,10 +402,8 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     const parshaCount = data.mappings.parshiot.length;
     const occasionCount = data.mappings.specialOccasions.length;
 
-    const totalItems = deriveHaftarah(data, settings.custom).items.length;
-    const gradient = buildLegendGradient(10, (i) =>
-      readingColor(i * (totalItems / 10), totalItems),
-    );
+    const { items, itemToColor } = deriveHaftarah(data, settings.custom);
+    const gradient = buildLegendGradient(items.length, (i) => itemToColor.get(items[i])!);
 
     container.innerHTML = `
       <div class="legend-row">
@@ -308,7 +414,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
         ${legendCaption(`A portion and its haftarah (${customLabel(settings.custom)}) share a colour`)}
         ${legendCaption('A verse in more than one reading is split corner to corner, one band each')}
       </div>
-      ${legendCaption('Hover a reading to light it and its haftarah; the rest darkens')}
+      ${legendCaption('Hover a reading to light it and its haftarah; click one to pin it')}
     `;
   },
 
@@ -318,8 +424,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
 
     const parshaFromTorah = derived.torahVerseToParsha.get(key);
     if (parshaFromTorah) {
-      const haftarahRanges = parshaFromTorah.haftarah[settings.custom];
-      const haftarahStr = haftarahRanges.map((r) => passageRef(r.book, r.start, r.end)).join(', ');
+      const haftarahStr = rangesText(parshaFromTorah.haftarah[settings.custom]);
       return `${parshaFromTorah.name} (${parshaFromTorah.hebrewName}) → ${haftarahStr}`;
     }
 
@@ -338,11 +443,36 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
     return null;
   },
 
+  settingsOnPin(verse, settings, data) {
+    const items = readingsOf(deriveHaftarah(data, settings.custom), verse.id);
+    return { ...settings, reading: items.length === 1 ? items[0].name : null };
+  },
+
+  renderSidebarInfo(verse, isPinned, settings, data, actions) {
+    if (!isPinned || !actions) return null;
+    const items = readingsOf(deriveHaftarah(data, settings.custom), verse.id);
+    if (items.length === 0) return null;
+
+    const box = document.createElement('div');
+    for (const item of items) {
+      const line = document.createElement('div');
+      line.append(`${item.name}: `);
+      passagesOf(item, settings.custom).forEach((passage, i) => {
+        if (i > 0) line.append(' | ');
+        line.append(jumpLink(data, item, passage, actions.fitTo, actions.change));
+      });
+      box.append(line);
+    }
+    return box;
+  },
+
   settingsFromUrl(params: UrlParamValues<typeof HAFTARAH.urlParams>): HaftarahSettings {
     return { custom: params.custom, preview: null, reading: params.reading ?? null };
   },
 
   settingsToUrl(settings: HaftarahSettings): Record<string, string> {
-    return { custom: settings.custom };
+    return settings.reading === null
+      ? { custom: settings.custom }
+      : { custom: settings.custom, reading: settings.reading };
   },
 };

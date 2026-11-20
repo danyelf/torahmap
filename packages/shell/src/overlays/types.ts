@@ -35,6 +35,15 @@ export type SettingsUpdate<S> = {
   bivarianceHack(current: S, taken: readonly number[]): S;
 }['bivarianceHack'];
 
+/** Glides the camera to fit the squares `ids` name, as going to a place does. */
+export type FitTo = (ids: readonly string[]) => void;
+
+/** What an overlay can ask of the app from inside a popup. */
+export interface PopupActions<S> {
+  fitTo: FitTo;
+  change(update: SettingsUpdate<S>): void;
+}
+
 // Generic over T, a text's own fields on a square; over the settings type S,
 // which each overlay defines for itself; and over the data type D, the files it
 // reads. The app holds an overlay's settings and data and hands them to every
@@ -150,13 +159,15 @@ interface OverlayMembers<T, S, D> {
   // to the settings it holds, so a control never needs, and must never keep, a
   // copy of them to write from.
   //
-  // `travelTo` pins a square by id and brings it into view.
+  // `travelTo` pins a square by id and brings it into view; `fitTo` brings a
+  // set of squares into view without pinning any.
   renderControls?(
     container: HTMLElement,
     settings: S,
     onChange: (update: SettingsUpdate<S>) => void,
     data: D | null,
     travelTo: (id: string) => void,
+    fitTo?: FitTo,
   ): void;
   renderLegend?(
     container: HTMLElement,
@@ -200,11 +211,16 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): boolean;
 
+  // The settings once the reader pins `item`, so that what the overlay keeps
+  // beside the pin follows it. Absent, pinning leaves the settings alone.
+  settingsOnPin?(item: SpatialItem<T>, settings: S, data: D): S;
+
   renderSidebarInfo?(
     item: SpatialItem<T>,
     isPinned: boolean,
     settings: S,
     data: D,
+    actions?: PopupActions<S>,
   ): HTMLElement | null;
 
   // Where the tool's words fall in an item's text, as highlightItemText would mark them.

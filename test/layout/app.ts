@@ -203,6 +203,45 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
+    // A pinned reading's card, with links to its Torah portion and its haftarah.
+    name: 'explore-haftarah-reading',
+    link: 'overlay=haftarah&reading=Vayeshev',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.haftarah-card').scrollIntoViewIfNeeded();
+    },
+    shown: ['.haftarah-card'],
+  },
+  {
+    // Stepping the pin to the next verse moves the card to that verse's reading.
+    name: 'explore-haftarah-pin-follows',
+    link: 'overlay=haftarah&reading=Vayeshev&verse=Genesis.1.1',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.keyboard.press('ArrowLeft');
+      await expect(page.locator('.haftarah-card-title')).toContainText('Bereshit');
+    },
+    shown: ['#popup'],
+  },
+  {
+    // A verse in both Tzav's haftarah and Tisha B'Av's, so both are lit.
+    name: 'explore-haftarah-verse-both',
+    link: 'overlay=haftarah&zoom=1.6&verse=Jeremiah.9.22',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // A verse in Tisha B'Av's haftarah alone, next to one in both.
+    name: 'explore-haftarah-verse-one',
+    link: 'overlay=haftarah&zoom=1.6&verse=Jeremiah.9.21',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // A verse in Tzav's haftarah alone, the other reading of the shared verse.
+    name: 'explore-haftarah-verse-other',
+    link: 'overlay=haftarah&zoom=1.6&verse=Jeremiah.7.21',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
     name: 'explore-trop-legend',
     link: 'overlay=trop&trop=shalshelet',
     then: async (page) => {

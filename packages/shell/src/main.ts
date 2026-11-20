@@ -780,9 +780,21 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     });
   }
 
+  const squaresIn = (ids: readonly string[]): I[] =>
+    ids.map((id) => squares.find(id)).filter((item) => item !== null);
+
   /** The squares of a place, in reading order. */
-  const squaresOf = (found: Reference): I[] =>
-    found.ids.map((id) => squares.find(id)).filter((item) => item !== null);
+  const squaresOf = (found: Reference): I[] => squaresIn(found.ids);
+
+  /** Fits the squares `ids` name into view, for an overlay's panel or popup. */
+  function fitTo(ids: readonly string[]): void {
+    const place = squaresIn(ids);
+    if (place.length === 0) return;
+    takeOver('takeover');
+    // A full-height sheet would hide the glide.
+    if (frame.full) setFrame({ ...frame, full: false });
+    glideToFit(place);
+  }
 
   /**
    * A square's text in the first shown language whose file is in, fetching its files, or
@@ -831,12 +843,21 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     trackSquareClick(item.id, text.area(item).area);
     const focusBefore = focusNow();
     pinnedItem = item;
+    followPin(item);
     showPin();
     if (centerCamera) {
       centerOnItem(item);
     }
     repaint(focusBefore);
     syncUrl(true);
+  }
+
+  /** Lets the overlay bring its settings in step with the square just pinned. */
+  function followPin(item: I): void {
+    const overlay = overlayOn();
+    const data = overlay && dataFor(overlay, loader.loaded());
+    if (!overlay?.settingsOnPin || !data) return;
+    changeSettings(overlay, (current) => overlay.settingsOnPin!(item, current, data));
   }
 
   function unpinItem(): void {
@@ -993,6 +1014,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         wordsClickable: dataFor(searchTool, loader.loaded()) !== null,
         ...on,
         pinned: isPinned,
+        actions: {
+          fitTo,
+          change: (update) => {
+            if (on.overlay) changeSettings(on.overlay.tool, update);
+          },
+        },
       },
     );
   }
@@ -1144,6 +1171,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       (update) => changeSettings(overlay, update),
       dataFor(overlay, loader.loaded()),
       travelTo,
+      fitTo,
     );
   }
 
