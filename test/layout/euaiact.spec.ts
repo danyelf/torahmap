@@ -24,6 +24,8 @@ import {
 import { EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
 import { computeActLayout } from '@torahmap/euaiact/layout.ts';
 import { SQUARE_GAP } from '@torahmap/engine';
+import { addTerm } from '../../packages/search/src/terms.ts';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 
 const laid = computeActLayout(
   JSON.parse(
@@ -64,32 +66,35 @@ test.describe('on a dense screen', () => {
     await openMap(page, 'overlay=amendment&search=deployer&zoom=12&x=150&y=43', ACT);
     await page.mouse.move(0, 0);
     const png = await canvasShot(page);
-    const { across, down } = await page.evaluate(async (b64) => {
-      const img = new Image();
-      img.src = `data:image/png;base64,${b64}`;
-      await img.decode();
-      const c = document.createElement('canvas');
-      c.width = img.width;
-      c.height = img.height;
-      const ctx = c.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-      // The search's cyan, #1ab3cc.
-      const ring = (x: number, y: number) => {
-        const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
-        return Math.abs(r - 26) + Math.abs(g - 179) + Math.abs(b - 204) < 60;
-      };
-      // From the recital's middle outward: its fill, then its ring, a run of orange.
-      const run = (step: (i: number) => [number, number]) => {
-        let i = 0;
-        while (i < 2000 && !ring(...step(i))) i++;
-        let n = 0;
-        while (ring(...step(i + n))) n++;
-        return n;
-      };
-      const mx = Math.floor(c.width / 2);
-      const my = Math.floor(c.height / 2);
-      return { across: run((i) => [mx - i, my]), down: run((i) => [mx, my - i]) };
-    }, png.toString('base64'));
+    const cyan = PALETTE[addTerm([], 'deployer')[0].colorIndex].map((c) => Math.round(c * 255));
+    const { across, down } = await page.evaluate(
+      async ({ b64, cyan }) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${b64}`;
+        await img.decode();
+        const c = document.createElement('canvas');
+        c.width = img.width;
+        c.height = img.height;
+        const ctx = c.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+        const ring = (x: number, y: number) => {
+          const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
+          return Math.abs(r - cyan[0]) + Math.abs(g - cyan[1]) + Math.abs(b - cyan[2]) < 60;
+        };
+        // From the recital's middle outward: its fill, then its ring, a run of the search's colour.
+        const run = (step: (i: number) => [number, number]) => {
+          let i = 0;
+          while (i < 2000 && !ring(...step(i))) i++;
+          let n = 0;
+          while (ring(...step(i + n))) n++;
+          return n;
+        };
+        const mx = Math.floor(c.width / 2);
+        const my = Math.floor(c.height / 2);
+        return { across: run((i) => [mx - i, my]), down: run((i) => [mx, my - i]) };
+      },
+      { b64: png.toString('base64'), cyan },
+    );
     expect(across).toBeGreaterThan(0);
     expect(Math.abs(down - across)).toBeLessThanOrEqual(1);
   });
