@@ -15,6 +15,7 @@ import {
 } from '@torahmap/engine';
 import { ZOOM_IN_FACTOR, ZOOM_OUT_FACTOR } from './constants.ts';
 import { DRAG_PX } from './frame.ts';
+import { SHORTCUT_KEYS, onMac } from './shortcuts.ts';
 
 /** The longest press, in ms, that still counts as a tap. */
 const TAP_MS = 300;
@@ -99,7 +100,7 @@ export function createMapGestures<I extends MapItem>(options: {
   mac?: boolean;
 }): MapGestures<I> {
   const { canvas, onMap, squareUnder, clickable, direction, intents } = options;
-  const mac = options.mac ?? /Mac|iPhone|iPad/.test(navigator.platform);
+  const mac = options.mac ?? onMac(navigator.platform);
 
   const touches = createTouchState();
   // Where a press went down and when, until it is released or cancelled.
@@ -236,16 +237,16 @@ export function createMapGestures<I extends MapItem>(options: {
     if (hasMainModifier(e, mac)) {
       let taken = false;
       switch (shortcutLetter(e)) {
-        case 'f':
+        case SHORTCUT_KEYS.find:
           if (!e.shiftKey) {
             intents.find();
             taken = true;
           }
           break;
-        case 'g':
+        case SHORTCUT_KEYS.next:
           taken = intents.stepHit(e.shiftKey ? -1 : 1);
           break;
-        case 'k':
+        case SHORTCUT_KEYS.goTo:
           taken = !e.shiftKey && intents.goTo();
           break;
       }

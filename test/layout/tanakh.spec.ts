@@ -94,6 +94,16 @@ test('the main modifier with G steps through the search hits, and Shift goes bac
   await expect.poll(pinned).toBe(first);
 });
 
+test("the menu shows Search's shortcut where there is a keyboard, and not on a touch screen", async ({
+  page,
+}) => {
+  await openMap(page, '');
+  await page.locator('#menu-toggle').click();
+  const hint = page.locator('.menu-item[data-action="search"] .menu-shortcut');
+  if (test.info().project.use.hasTouch) await expect(hint).toBeHidden();
+  else await expect(hint).toBeVisible();
+});
+
 test('choosing None offers the places to start, and an overlay takes them away', async ({
   page,
 }) => {

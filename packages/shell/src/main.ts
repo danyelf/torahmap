@@ -86,6 +86,7 @@ import { tabTitle } from './tabTitle.ts';
 import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
+import { onMac } from './shortcuts.ts';
 import { createBackdrop } from './backdrop.ts';
 import { restingHover } from './restingHover.ts';
 import {
@@ -592,6 +593,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         source.site,
         { ...place, title: story.data.title },
         menuPanels,
+        onMac(navigator.platform),
       );
     }
     const opened = frame.open !== previous?.open;

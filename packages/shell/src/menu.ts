@@ -1,5 +1,6 @@
 import { escapeHtml } from '@torahmap/utils';
 import { PANEL_TITLES, type Panel } from './frame.ts';
+import { PANEL_SHORTCUTS, shortcutLabel } from './shortcuts.ts';
 import type { Site } from './app/text.ts';
 
 /** Where the story is: its stop, counted from one, and how many it has. */
@@ -18,9 +19,10 @@ export const SHARE = 'share';
 // rest match PANEL_TITLES.
 const MENU_LABELS: Record<Panel, string> = { ...PANEL_TITLES, overlay: 'Overlays' };
 
-const item = (action: string, label: string, detail = ''): string =>
+const item = (action: string, label: string, detail = '', shortcut = ''): string =>
   `<button type="button" class="menu-item" data-action="${action}">${label}` +
   (detail ? ` <span class="menu-detail">${detail}</span>` : '') +
+  (shortcut ? `<span class="menu-shortcut">${shortcut}</span>` : '') +
   `</button>`;
 
 /** The menu: the site's name, then its items. Each item carries the action it takes; the click handler reads it. */
@@ -28,12 +30,21 @@ export function menuHtml(
   site: Site,
   place: StoryPlace & { title: string },
   panels: readonly Panel[],
+  mac: boolean,
 ): string {
   return [
     `<h2 class="menu-title">${escapeHtml(site.page.name)}</h2>`,
     item(CONTINUE_STORY, `Continue ${escapeHtml(place.title)}`, `${place.number}/${place.total}`),
     item(SHARE, 'Share'),
     '<div class="menu-divider" role="separator"></div>',
-    ...panels.map((panel) => item(panel, escapeHtml(MENU_LABELS[panel]))),
+    ...panels.map((panel) => {
+      const letter = PANEL_SHORTCUTS[panel];
+      return item(
+        panel,
+        escapeHtml(MENU_LABELS[panel]),
+        '',
+        letter ? shortcutLabel(letter, mac) : '',
+      );
+    }),
   ].join('');
 }
