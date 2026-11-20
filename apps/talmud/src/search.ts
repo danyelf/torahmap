@@ -1,7 +1,7 @@
 // The Talmud's search: @torahmap/search's term search over every segment, in
 // the Davidson edition, which spells abbreviations out. A whole word may carry
 // the letters Hebrew and Aramaic attach in front of one.
-import { memoByValue, memoByValueAndKey } from '@torahmap/utils';
+import { memoByValue, memoByValueAndLatestKey } from '@torahmap/utils';
 import { hebrew } from '@torahmap/hebrew';
 import { TERM_SEARCH_PARAMS } from '@torahmap/link';
 import { optional } from '@torahmap/shell/dataFiles.ts';
@@ -54,9 +54,9 @@ function* entries(
   }
 }
 
-// Per structure, then per search text and English.
+// Per structure, then per search text, holding only the latest English (null until it arrives).
 const indexes = memoByValue((structure: TalmudStructure) =>
-  memoByValueAndKey((text: TalmudSearchText, translation: TalmudSearchText | null) =>
+  memoByValueAndLatestKey((text: TalmudSearchText, translation: TalmudSearchText | null) =>
     buildTextIndex(entries(structure, text, translation), LANGUAGES),
   ),
 );

@@ -1,4 +1,4 @@
-import { memoByValueAndKey } from '../src/index.ts';
+import { memoByValueAndKey, memoByValueAndLatestKey } from '../src/index.ts';
 import { describe, it, expect, vi } from 'vitest';
 
 describe('memoByValueAndKey', () => {
@@ -18,5 +18,25 @@ describe('memoByValueAndKey', () => {
     const first = memo({}, 'a');
     expect(memo({}, 'a')).not.toBe(first);
     expect(derive).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('memoByValueAndLatestKey', () => {
+  it('derives once while the key stays the same', () => {
+    const derive = vi.fn((_value: object, key: string) => ({ key }));
+    const memo = memoByValueAndLatestKey(derive);
+    const value = {};
+    expect(memo(value, 'a')).toBe(memo(value, 'a'));
+    expect(derive).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets go of the earlier key when asked with a new one', () => {
+    const derive = vi.fn((_value: object, key: string) => ({ key }));
+    const memo = memoByValueAndLatestKey(derive);
+    const value = {};
+    const first = memo(value, 'a');
+    memo(value, 'b');
+    expect(memo(value, 'a')).not.toBe(first);
+    expect(derive).toHaveBeenCalledTimes(3);
   });
 });
