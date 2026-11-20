@@ -5,7 +5,7 @@ import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import type { TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
-import { coverElement, placeCover } from './covers.ts';
+import { coverElement, placeCover } from '@torahmap/shell/covers.ts';
 import { createMapLabels, SECTION_LABEL_LINE_EM } from '@torahmap/shell/mapLabels.ts';
 import type { Story } from '@torahmap/stories';
 import { baseColor, isPlaceholder, PLACEHOLDER_RING } from './baseColor.ts';

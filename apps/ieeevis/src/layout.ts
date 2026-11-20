@@ -5,7 +5,7 @@
 import type { MapItem } from '@torahmap/engine';
 import { idHash, positionJitter } from '@torahmap/utils';
 import { sectionLabelReach, type BookBox } from '@torahmap/shell/mapLabels.ts';
-import type { CoverBox } from './covers.ts';
+import type { CoverBox } from '@torahmap/shell/covers.ts';
 import { timeSlotsOf, type Day, type Paper, type Section, type Structure } from './data.ts';
 
 const SQUARE_SIZE = 6;
