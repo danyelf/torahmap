@@ -7,6 +7,7 @@ import {
   centreForFocus,
   viewFocusedOn,
   animateCameraTo,
+  planGlide,
   boxAround,
   cameraToFit,
   type Camera,
@@ -30,7 +31,6 @@ import {
   still,
   type ColorLayer,
   easingFunctions,
-  lerpCamera,
 } from '@torahmap/engine';
 import { debounce } from '@torahmap/utils';
 import type { MapText, Reference, Site } from './app/text.ts';
@@ -730,10 +730,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     moveLabels(offset, camera.zoom);
   }
 
-  function centerOnItem(item: I): void {
-    Object.assign(camera, centreForFocus(item, camera.zoom, mapFocus(), mapViewport()));
-  }
-
   // A square is six pixels across, so centring it while scaled out
   // moves the map and shows the reader nothing. Close enough to pick it out.
   const RESULT_CLICK_ZOOM = 2.5;
@@ -772,12 +768,25 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     glideTo({ zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) });
   }
 
+  /** Fly the camera to `target`. */
   function glideTo(target: Camera): void {
+    const interrupting = stopCameraGlide !== null;
     cancelCameraGlide();
-    stopCameraGlide = animateCameraTo(camera, target, () => {
-      render();
-      debouncedCameraSettled();
-    });
+    stopCameraGlide = animateCameraTo(
+      camera,
+      target,
+      () => {
+        render();
+        debouncedCameraSettled();
+      },
+      {
+        viewportWidth: mapViewport().width,
+        minZoom: zoomRange.min,
+        interrupting,
+        reducedMotion: reducedMotion.matches,
+        onDone: () => (stopCameraGlide = null),
+      },
+    );
   }
 
   const squaresIn = (ids: readonly string[]): I[] =>
@@ -838,16 +847,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   // pinItem, unpinItem and zoomAt answer only the reader's gestures; the story
   // sets the view directly. So each takes the wheel.
-  function pinItem(item: I, centerCamera: boolean = false): void {
+  function pinItem(item: I): void {
     takeOver('takeover');
     trackSquareClick(item.id, text.area(item).area);
     const focusBefore = focusNow();
     pinnedItem = item;
     followPin(item);
     showPin();
-    if (centerCamera) {
-      centerOnItem(item);
-    }
     repaint(focusBefore);
     syncUrl(true);
   }
@@ -937,7 +943,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       },
       step(by) {
         const next = pinnedItem && squares.step(pinnedItem, by);
-        if (next) pinItem(next, true);
+        if (next) {
+          pinItem(next);
+          glideTo({
+            zoom: camera.zoom,
+            ...centreForFocus(next, camera.zoom, mapFocus(), mapViewport()),
+          });
+        }
       },
       escape(inField) {
         const does = escapeDoes({ menu: frame.menu, pinned: pinnedItem !== null, inField });
@@ -1588,7 +1600,13 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    */
   function beginEase(duration: number, now: number): StoryHasMap {
     cancelCameraGlide();
-    return rejoin(now, duration, camera, flatten(withDefaults(colorLayer)), storyPicture());
+    return rejoin(
+      now,
+      reducedMotion.matches ? 0 : duration,
+      camera,
+      flatten(withDefaults(colorLayer)),
+      storyPicture(),
+    );
   }
 
   /** The story's picture where it is now. */
@@ -1643,8 +1661,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
 
     if (driver.by === 'rejoining') {
-      const t = easingFunctions[DEFAULT_EASING](rejoinProgress(driver, now));
-      Object.assign(camera, lerpCamera(driver.fromCamera, state.camera, t));
+      const progress = rejoinProgress(driver, now);
+      const t = easingFunctions[DEFAULT_EASING](progress);
+      // Planned each frame: the story's camera, the target, moves as the reader scrolls.
+      const glide = planGlide(driver.fromCamera, state.camera, mapViewport().width, zoomRange.min);
+      Object.assign(camera, glide.at(t));
       setColorLayer({ from: driver.fromPicture, to: driver.toPicture, t });
       render();
       scheduleStoryFrame();

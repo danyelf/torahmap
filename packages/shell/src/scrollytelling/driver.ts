@@ -105,6 +105,7 @@ export function storyScrolled(driver: ReaderDriving, scrollTop: number): ReaderD
 /** How far through the ease, 0 to 1. */
 export function rejoinProgress(driver: Driver, now: number): number {
   if (driver.by !== 'rejoining') return 1;
+  if (driver.duration <= 0) return 1;
   return Math.min(1, Math.max(0, (now - driver.since) / driver.duration));
 }
 

@@ -2,6 +2,7 @@ export * from './camera.ts';
 export * from './colorBlending.ts';
 export * from './constants.ts';
 export * from './geometry.ts';
+export * from './glide.ts';
 export * from './hitDetection.ts';
 export * from './interpolation.ts';
 export * from './items.ts';
