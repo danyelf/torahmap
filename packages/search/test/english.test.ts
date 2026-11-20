@@ -6,6 +6,12 @@ function words(text: string, term: string) {
   return english.wholeWords(english.fold(text), english.fold(term), Infinity);
 }
 
+function foundIn(text: string, term: string, mode: 'substring' | 'word') {
+  return matchRanges(english.fold(text), english.fold(term), { mode, language: english }).map(
+    ({ start, end }) => text.slice(start, end),
+  );
+}
+
 describe('english whole words', () => {
   it('reads a letter with a mark as part of its word', () => {
     expect(words('Rabbi Yoḥanan said', 'yo')).toEqual([]);
@@ -21,10 +27,7 @@ describe('english whole words', () => {
 
 describe('english accents', () => {
   const text = 'Rabbi Joḥanon met Ḥanina at a café, naïve.';
-  const found = (term: string, mode: 'substring' | 'word') =>
-    matchRanges(english.fold(text), english.fold(term), { mode, language: english }).map(
-      ({ start, end }) => text.slice(start, end),
-    );
+  const found = (term: string, mode: 'substring' | 'word') => foundIn(text, term, mode);
 
   it('finds an accented word from plain letters, whole or in part', () => {
     expect(found('johanon', 'word')).toEqual(['Joḥanon']);
@@ -40,5 +43,19 @@ describe('english accents', () => {
 
   it('marks a word as written, accents included', () => {
     expect(found('johanon', 'substring')).toEqual(['Joḥanon']);
+  });
+});
+
+describe('english quotes', () => {
+  const text = 'The am ha’aretz said “yes”.';
+  const found = (term: string) => foundIn(text, term, 'substring');
+
+  it('finds curly quotes from the straight ones a keyboard types', () => {
+    expect(found("ha'aretz")).toEqual(['ha’aretz']);
+    expect(found('"yes"')).toEqual(['“yes”']);
+  });
+
+  it('finds straight quotes from curly ones', () => {
+    expect(found('ha’aretz')).toEqual(['ha’aretz']);
   });
 });
