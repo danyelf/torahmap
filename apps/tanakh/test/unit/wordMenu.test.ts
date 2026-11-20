@@ -5,10 +5,7 @@
 // gesture to do that on its own.
 //
 // Every panel offers two kinds of search: the reading or readings the verse
-// supports, and the written form itself. It never offers a different word - the
-// readings a spelling allows but this verse rules out are somebody else's word,
-// and a search box that walks the reader towards one is the thing this project
-// decided not to build.
+// supports, and the written form itself.
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { openWordMenu, closeWordMenu, type WordMenuOptions } from '../../src/search/wordMenu';

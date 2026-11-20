@@ -84,8 +84,7 @@ To line up against the Hebrew in `all-texts.json`, fold it the way
 them fails the test suite with the offending verses named.
 
 BHSA also records a derivational root for each lexeme, which this index does
-not carry. Search deliberately offers the meanings of the word you typed rather
-than a path to its derivational neighbours, so nothing would read it.
+not carry.
 
 ### What counts as a word
 
