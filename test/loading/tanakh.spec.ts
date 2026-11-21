@@ -46,7 +46,7 @@ test('the search results are quoted again when the per-word parse lands, keeping
   await expect(mark).toHaveText('עַל');
   await list.evaluate((el) => (el.scrollTop = 60));
   release();
-  await expect(mark).toHaveText('עָלָה');
+  await expect(mark).toHaveText('עָלָה֙');
   expect(await list.evaluate((el) => el.scrollTop)).toBe(60);
   await allLoaded(page);
   expect(errors).toEqual([]);
