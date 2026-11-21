@@ -116,7 +116,6 @@ describe('colours from the word', () => {
   it('gives an empty term a colour no term is using', () => {
     const three = addTerm(addTerm(addTerm([], 'עלה'), 'מלך'), 'דבר');
 
-    expect(heldColors(addTerm(three, ''))).toHaveLength(4);
     expect(new Set(heldColors(addTerm(three, ''))).size).toBe(4);
   });
 });

@@ -2,7 +2,7 @@
 
 import { cameraToFit, centreForFocus } from '@torahmap/engine';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
-import { addTerm, type TermSettings } from '@torahmap/search';
+import { addTerm, type SearchTerm, type TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { coverElement, placeCover } from '@torahmap/shell/covers.ts';
@@ -59,7 +59,7 @@ const STORY_SEARCH = [
 // The searches are added as a link adds them, so each shows the colour the map gives it.
 const STORY_TERMS = STORY_SEARCH.reduce(
   (terms, { term }) => addTerm(terms, term),
-  [] as ReturnType<typeof addTerm>,
+  [] as SearchTerm[],
 );
 const searched = (term: string): string =>
   `${swatch(PALETTE[STORY_TERMS.find((t) => t.text === term)!.colorIndex])} ${term}`;

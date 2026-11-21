@@ -1,4 +1,4 @@
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { colorsOf } from '../helpers/termMarks';
 import { describe, it, expect } from 'vitest';
 import { buildDictionary, buildTextIndex, type LexiconFile } from '../../src/search/search';
 import { searchTool } from '../../src/search/index';
@@ -81,7 +81,7 @@ describe('one search over two dictionaries', () => {
         data: known,
         focus: { hovered: null, pinned: null },
       }),
-    ).toEqual([null, PALETTE[0]]);
+    ).toEqual([null, colorsOf('קול')[0]]);
     expect(
       searchTool.colorsFor({
         items: verses,

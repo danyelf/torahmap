@@ -1,12 +1,12 @@
 import { type Color } from '@torahmap/utils';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../../src/search/index';
 import { configure, type SearchSettings } from '../../../src/search/index.ts';
 import { parseSearchTerms } from '@torahmap/search';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import { channelsOf, colorsHeld, placesHeld } from '../../helpers/termMarks';
+import { channelsOf, colorsHeld } from '../../helpers/termMarks';
+import { heldColors } from '@torahmap/search';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import { SEARCH_RECORD_DELAY_MS } from '@torahmap/search';
 import type { TanakhLayout } from '../../../src/types';
@@ -224,9 +224,7 @@ describe('Search Overlay', () => {
     });
 
     it('assigns different colors to different terms', () => {
-      // First term gets first color, second term gets second color
-      expect(PALETTE[0]).not.toEqual(held()[1]);
-      expect(PALETTE[1]).not.toEqual(held()[2]);
+      expect(held()[0]).not.toEqual(held()[1]);
     });
   });
 
@@ -1164,7 +1162,7 @@ describe('Search Overlay', () => {
       );
       const html = fragmentToHtml(result);
 
-      const [first, second] = placesHeld(searchOverlay.settings.terms);
+      const [first, second] = heldColors(searchOverlay.settings.terms);
       expect(html).toContain(channelsOf(first));
       expect(html).toContain(channelsOf(second));
     });

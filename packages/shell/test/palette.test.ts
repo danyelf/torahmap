@@ -39,6 +39,11 @@ describe('the palette', () => {
 });
 
 describe('the first free colour', () => {
+  it('looks from the place it is given, wrapping round', () => {
+    expect(freeColor([4], 4)).toBe(5);
+    expect(freeColor([PALETTE.length - 1], PALETTE.length - 1)).toBe(0);
+  });
+
   it('is the first when nothing is taken', () => {
     expect(freeColor([])).toBe(0);
   });

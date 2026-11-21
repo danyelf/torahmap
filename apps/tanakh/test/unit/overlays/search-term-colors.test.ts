@@ -14,7 +14,8 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { searchDataFor } from '../../helpers/searchData';
-import { placeOfMark, placesHeld } from '../../helpers/termMarks';
+import { placeOfMark } from '../../helpers/termMarks';
+import { heldColors } from '@torahmap/search';
 
 const texts: VerseTexts = {
   Genesis: {
@@ -55,7 +56,7 @@ function css(index: number): string {
 const searchOverlay = hostOverlay(searchTool, searchDataFor(texts));
 
 /** The place in PALETTE of the second term, the one that stays when the first is removed. */
-const survivorPlace = (): number => placesHeld(searchOverlay.settings.terms)[1];
+const survivorPlace = (): number => heldColors(searchOverlay.settings.terms)[1];
 
 beforeEach(() => {
   configure({ verses });
@@ -129,7 +130,7 @@ describe('the panel summary', () => {
     typeIntoInput(rowInput(container, 1), 'spirit');
 
     expect(searchOverlay.summary()).toEqual({
-      terms: [{ text: 'spirit', color: css(placesHeld(searchOverlay.settings.terms)[1]) }],
+      terms: [{ text: 'spirit', color: css(heldColors(searchOverlay.settings.terms)[1]) }],
     });
   });
 });
