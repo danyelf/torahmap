@@ -89,6 +89,15 @@ describe('telemetry worker', () => {
     });
   });
 
+  it("adds a text page's folder to the host when the page was served from the site's host", async () => {
+    const e = env();
+    await worker.fetch(post(valid, { Referer: 'https://torahmap.org/talmud/?story=tour' }), e);
+    await worker.fetch(post(valid, { Referer: 'https://torahmap.org/' }), e);
+    await worker.fetch(post(valid, { Referer: 'https://elsewhere.example/talmud/' }), e);
+    const hosts = vi.mocked(e.TORAHMAP_EVENTS.writeDataPoint).mock.calls.map(([p]) => p.blobs[4]);
+    expect(hosts).toEqual(['torahmap.org/talmud', 'torahmap.org', 'torahmap.org']);
+  });
+
   it('rejects a mismatched Origin in either direction', async () => {
     const e = env();
     const toSite = new Request('https://torahmap.org/api/event', {

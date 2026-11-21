@@ -7,7 +7,7 @@ import {
 } from '@torahmap/shell/analytics.ts';
 import { euaiactText } from './text.ts';
 
-// An event does not record which text's page sent it, so this page sends none.
+// This map sends no telemetry.
 configureAnalytics({ enabled: false });
 reportUncaughtErrors();
 createApp(euaiactText).catch((error) => reportError('main', error));
