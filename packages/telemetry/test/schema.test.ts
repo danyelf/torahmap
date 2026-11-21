@@ -55,6 +55,19 @@ describe('toDataPoint', () => {
     expect(point?.doubles).toEqual([0]);
   });
 
+  it('writes the sequence into the last number column of every page event, and only with one', () => {
+    const fields = { stop_id: 'a', story: 'tour', stop_number: 3, total_stops: 9 };
+    const numbered = toDataPoint(
+      { event: 'story_stop', visit: 'v', mode: 'story', sequence: 7, fields },
+      context,
+    );
+    expect(numbered?.doubles).toHaveLength(20);
+    expect(numbered?.doubles.slice(0, 2)).toEqual([3, 9]);
+    expect(numbered?.doubles[19]).toBe(7);
+    const bare = toDataPoint({ event: 'story_stop', visit: 'v', mode: 'story', fields }, context);
+    expect(bare?.doubles).toEqual([3, 9]);
+  });
+
   it('refuses a Worker-only event from the page', () => {
     expect(
       toDataPoint({ event: 'link_preview', visit: 'v', mode: 'story', fields: {} }, context),

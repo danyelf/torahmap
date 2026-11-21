@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { addTerm, SEARCH_RECORD_DELAY_MS, type SearchTerm } from '@torahmap/search';
+import { configureAnalytics } from '@torahmap/shell/analytics.ts';
 import type { Paper, Structure } from '../src/data.ts';
 import { paperOf } from '../src/layout.ts';
-import { pieceEntries } from '../src/search.ts';
+import { pieceEntries, visSearch } from '../src/search.ts';
 
 const paper = (index: number, pieces: string): Paper => ({
   index,
@@ -42,5 +44,35 @@ describe('counting by paper', () => {
   it('puts a paper’s pieces together and keeps papers apart', () => {
     expect(paperOf('12.0')).toBe(paperOf('12.7'));
     expect(paperOf('1.10')).not.toBe(paperOf('11.0'));
+  });
+});
+
+describe('what search records', () => {
+  const sent: { event: string; fields: Record<string, unknown> }[] = [];
+  beforeEach(() => {
+    vi.useFakeTimers();
+    sent.length = 0;
+    configureAnalytics({
+      enabled: true,
+      visitId: 'v',
+      send: (body) => sent.push(JSON.parse(body)),
+    });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    configureAnalytics({ enabled: false });
+  });
+
+  it('sends the settled term with the papers it found', () => {
+    const data = {
+      structure,
+      texts: { '0.0': 'The abstract.', '0.1': 'The introduction.' },
+    };
+    const terms: SearchTerm[] = addTerm([], 'introduction');
+    visSearch.telemetry.readerChanged({ terms }, data);
+    vi.advanceTimersByTime(SEARCH_RECORD_DELAY_MS);
+    expect(sent.map((e) => [e.event, e.fields.term, e.fields.result_count])).toEqual([
+      ['search_execute', 'introduction', 1],
+    ]);
   });
 });

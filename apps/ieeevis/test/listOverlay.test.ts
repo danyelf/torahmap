@@ -180,8 +180,8 @@ describe('the quick picks', () => {
       .chips.find((c) => c.textContent === 'Uncertainty')!
       .click();
     expect(sent()).toEqual([
-      { overlay: 'keywords', pick: 'Visual Analytics', how: 'quick' },
-      { overlay: 'keywords', pick: 'Uncertainty', how: 'unpick' },
+      { overlay: 'keywords', pick: 'Visual Analytics', how: 'quick', typed: '' },
+      { overlay: 'keywords', pick: 'Uncertainty', how: 'unpick', typed: '' },
     ]);
   });
 });
@@ -251,6 +251,8 @@ describe('a typed pick', () => {
     input.value = 'nunez';
     input.dispatchEvent(new Event('input'));
     container.querySelector<HTMLButtonElement>('.pick-row')!.click();
-    expect(sent()).toEqual([{ overlay: 'authors', pick: 'José Núñez', how: 'typed' }]);
+    expect(sent()).toEqual([
+      { overlay: 'authors', pick: 'José Núñez', how: 'typed', typed: 'nunez' },
+    ]);
   });
 });

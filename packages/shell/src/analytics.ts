@@ -53,11 +53,13 @@ const options: Options = {
 };
 let storyStopsSent = new Set<string>();
 let errorsSent = new Set<string>();
+let eventsSent = 0;
 
 export function configureAnalytics(changes: Partial<Options>): void {
   if (changes.visitId !== undefined) {
     storyStopsSent = new Set();
     errorsSent = new Set();
+    eventsSent = 0;
   }
   Object.assign(options, changes);
 }
@@ -76,6 +78,7 @@ function track<E extends EventName>(event: E, fields: EventFields<E>): void {
     event,
     visit: options.visitId,
     mode: options.getMode(),
+    sequence: ++eventsSent,
     fields,
   };
   options.send(JSON.stringify(payload));
@@ -136,8 +139,8 @@ export function trackOverlaySwitch(overlay: string, previousOverlay: string): vo
 /** How a reader changed an overlay's picks. */
 export type PickHow = 'typed' | 'quick' | 'unpick';
 
-export function trackOverlayPick(overlay: string, pick: string, how: PickHow): void {
-  track('overlay_pick', { overlay, pick, how });
+export function trackOverlayPick(overlay: string, pick: string, how: PickHow, typed = ''): void {
+  track('overlay_pick', { overlay, pick, how, typed: typed.slice(0, MAX_BLOB_CHARS) });
 }
 
 export function trackSearchExecute(
@@ -175,8 +178,51 @@ export function trackWordSearch(word: string, choice: string, id: string): void 
   track('word_search', { word, choice, id });
 }
 
-export function trackSefariaOpen(id: string, area: string, overlay: string): void {
-  track('sefaria_open', { id, area, overlay });
+export function trackMenu(state: 'open' | 'closed', item = ''): void {
+  track('menu', { state, item });
+}
+
+/**
+ * What the menu tells telemetry: its opening and closing, and on a close the item whose click
+ * closed it. A dismissal names no item, so a choice is told once and forgotten.
+ */
+export function menuTelemetry(send = trackMenu) {
+  let choice = '';
+  return {
+    /** The click of `item` is about to close the menu. */
+    chose(item: string): void {
+      choice = item;
+    },
+    /** The menu opened or closed. */
+    changed(open: boolean): void {
+      send(open ? 'open' : 'closed', open ? '' : choice);
+      choice = '';
+    },
+  };
+}
+
+export function trackLinkOut(id: string, area: string, overlay: string): void {
+  track('link_out', { id, area, overlay });
+}
+
+/** Reports the seconds the page has been visible each time it is hidden or leaves. */
+export function reportVisitEnd(
+  doc: Document = document,
+  win: Window = window,
+  now: () => number = () => performance.now(),
+): void {
+  let visibleMs = 0;
+  let shownAt: number | null = doc.visibilityState === 'visible' ? now() : null;
+  const end = () => {
+    if (shownAt !== null) visibleMs += now() - shownAt;
+    shownAt = doc.visibilityState === 'visible' ? now() : null;
+    track('visit_end', { visible_seconds: Math.round(visibleMs / 100) / 10 });
+  };
+  doc.addEventListener('visibilitychange', () => {
+    if (doc.visibilityState === 'hidden') end();
+    else shownAt = now();
+  });
+  win.addEventListener('pagehide', end);
 }
 
 export function trackWebGLMissing(): void {

@@ -69,7 +69,12 @@ async function handleEvent(request: Request, url: URL, env: Env): Promise<Respon
     return new Response(null, { status: 400 });
   }
 
-  const point = toDataPoint(payload, requestContext(request, url));
+  const context = requestContext(request, url);
+  const folder = pageFolder(request, url);
+  const point = toDataPoint(
+    payload,
+    folder ? { ...context, host: `${context.host}${folder}` } : context,
+  );
   if (!point) return new Response(null, { status: 400 });
 
   env.TORAHMAP_EVENTS.writeDataPoint(point);
@@ -163,6 +168,24 @@ const VIS_PAGE = '/ieeevis';
 
 const within = (pathname: string, folder: string) =>
   pathname === folder || pathname.startsWith(`${folder}/`);
+
+/**
+ * The folder of another text's page that sent an event, as /talmud, or null. Such a page is also
+ * served from the site's own host, where its rows would be the Tanakh's; the folder, added to the
+ * host column, keeps them apart.
+ */
+function pageFolder(request: Request, url: URL): string | null {
+  const referer = request.headers.get('Referer');
+  if (!referer) return null;
+  let from: URL;
+  try {
+    from = new URL(referer);
+  } catch {
+    return null;
+  }
+  if (from.origin !== url.origin) return null;
+  return OTHER_PAGES.find((folder) => within(from.pathname, folder)) ?? null;
+}
 
 /** Where a page of the wrong host belongs, or null. Data, assets and the endpoint stay on every host. */
 function movedTo(url: URL): string | null {

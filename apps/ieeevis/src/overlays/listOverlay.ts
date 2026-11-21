@@ -155,8 +155,8 @@ export function listOverlay<D extends ListData>(
     const isPicked = (entry: Entry) => picked.some((p) => p.name === entry.name);
     const full = picked.length >= MAX_PICKS;
     const choose = (entry: Entry, how: Exclude<PickHow, 'unpick'>) => {
+      trackOverlayPick(kind.id, entry.label, how, how === 'typed' ? input.value : '');
       input.value = '';
-      trackOverlayPick(kind.id, entry.label, how);
       onChange(addPick(entry.name));
     };
     const unpick = (entry: Entry) => {
