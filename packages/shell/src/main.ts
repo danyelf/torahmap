@@ -89,7 +89,6 @@ import { linkForScreen, pushes } from './linkForScreen.ts';
 import { getSidebarElements, updateSidebar } from './sidebar.ts';
 import { createMapGestures, escapeDoes, tapDoes } from './mapGestures.ts';
 import { onMac } from './shortcuts.ts';
-import { createBackdrop } from './backdrop.ts';
 import { restingHover } from './restingHover.ts';
 import {
   toolsPicture,
@@ -253,7 +252,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   labelLayer.id = 'map-labels';
   document.body.appendChild(labelLayer);
   const moveLabels = text.labels(labelLayer);
-  const backdrop = createBackdrop(labelLayer);
 
   const dpr = window.devicePixelRatio || 1;
 
@@ -372,8 +370,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       }
     }
     showLegend(mapLegend, rows, warnings);
-    const on = shown.overlay;
-    backdrop.show(on?.tool.backdrop?.({ items, settings: on.settings, data: on.data }) ?? null);
   }
 
   /** The map exploring shows: the tools as they stand, the front one in front. */
@@ -736,7 +732,6 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function render(): void {
     syncRings();
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
-    backdrop.place(offset, camera.zoom);
     moveLabels(offset, camera.zoom);
   }
 

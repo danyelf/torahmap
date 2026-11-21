@@ -329,7 +329,7 @@ export const STATES: State[] = [
     shown: ['#map-legend'],
   },
   {
-    // The whole Tanakh at once: the spectrum reads as sections of colour.
+    // The whole Tanakh at once: each verse in the colour of its farthest echo.
     name: 'explore-text-analytics-echoes-view-zoomed-out',
     link: 'overlay=text-analytics&analysis=echoes&zoom=0.1',
     shown: ['#map-legend'],
@@ -347,7 +347,7 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
-    // Kings, where the wheel's hue changes fast from verse to verse: nearby echoes fade to grey.
+    // Kings: most echoes lie in the same book or the same section.
     name: 'explore-text-analytics-echoes-kings-pinned',
     link: 'overlay=text-analytics&analysis=echoes&zoom=0.6&verse=I.Kings.16.27',
     shown: ['#popup', '#map-legend'],

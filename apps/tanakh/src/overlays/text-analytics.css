@@ -74,21 +74,3 @@
   height: 28px;
   margin: 2px 0 0;
 }
-
-.echo-section {
-  margin: 6px 0;
-  font-size: 12px;
-}
-
-.echo-strip {
-  height: 12px;
-  margin: 2px 0;
-  border-radius: 2px;
-}
-
-.echo-strip-ends {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  opacity: 0.7;
-}
