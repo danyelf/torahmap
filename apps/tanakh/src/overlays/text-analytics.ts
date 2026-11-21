@@ -20,7 +20,6 @@ import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import { getDefaultColor } from '../baseColor.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
-import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import { verseRef } from '@torahmap/link/tanakh';
 import { ECHO_WORDS, TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
@@ -183,12 +182,14 @@ function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: b
 // palest distance step stands out from it.
 const PLAIN_BRIGHTNESS = 0.6;
 const FOCUSED_VERSE: Color = [1, 1, 1];
+// How far the other verses with echoes fade toward the plain grey while one verse is focused,
+// pinned or hovered alike, so a pointer crossing the map does not change what they look like.
+const OTHERS_FADE = 0.5;
 
 /**
- * With a verse focused, its echoes take the colour of their distance from it and the verse is
- * white. Other verses with echoes keep the colour of their farthest echo while the pointer is on
- * the verse, so passages can be traced from one to the next; with only a pinned verse they dim to
- * grey. Verses without echoes keep the plain grey.
+ * With a verse focused (hovered, else pinned), its echoes take the colour of their distance from
+ * it and the verse is white. Other verses with echoes keep the colour of their farthest echo,
+ * faded, so passages can be traced from one to the next. Verses without echoes keep the plain grey.
  */
 function echoColors(
   items: TanakhLayout[],
@@ -209,7 +210,6 @@ function echoColors(
   };
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
   if (!focused) return items.map(({ id }, i) => farthestEchoOr(id, i));
-  const dimOthers = focused !== focus.hovered;
   const from = places[positions.get(focused.id)!];
   const colors = new Map<string, Color>([[focused.id, FOCUSED_VERSE]]);
   for (const echo of echoesOf(data, settings, focused)!.places) {
@@ -218,8 +218,9 @@ function echoColors(
   return items.map(({ id }, i) => {
     const color = colors.get(id);
     if (color) return color;
-    if (dimOthers && echoesOfPosition(id).length) return DIMMED_GREY;
-    return farthestEchoOr(id, i);
+    return echoesOfPosition(id).length
+      ? mixToward(farthestEchoOr(id, i), plain(i), OTHERS_FADE)
+      : plain(i);
   });
 }
 

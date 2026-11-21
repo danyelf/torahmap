@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overlays/text-analytics';
 import { NO_DATA } from '../../../src/overlays/colors';
-import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
-import { brighten } from '@torahmap/utils';
+import { brighten, type Color } from '@torahmap/utils';
 import { getDefaultColor } from '../../../src/baseColor';
 import { DISTANCE_STEPS } from '../../../src/overlays/text-analytics/distance';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
@@ -302,6 +301,8 @@ describe('Text Analytics overlay', () => {
           focus: { hovered, pinned },
         });
       const [chapter, book, section, other] = DISTANCE_STEPS.map((step) => step.color);
+      const mixed = (color: Color, grey: Color): Color =>
+        color.map((c, i) => c + (grey[i] - c) * 0.5) as Color;
 
       it('colours a verse by the distance of its farthest echo', () => {
         expect(paint({ 0: [1, 5] })[0]).toEqual(chapter);
@@ -315,20 +316,24 @@ describe('Text Analytics overlay', () => {
         expect(colors.slice(0, 6)).toEqual([[1, 1, 1], chapter, book, section, other, other]);
       });
 
-      it('dims other verses that have echoes while a verse is only pinned', () => {
-        const colors = paint({ 0: [1, 5], 2: [3, 5] }, null, places[0]);
-        expect(colors[2]).toEqual(DIMMED_GREY);
-        expect(colors[3]).toEqual(DIMMED_GREY);
-        expect(colors[4]).toEqual(brighten(getDefaultColor(4), 0.6));
-      });
-
-      it('keeps the colours of other verses with echoes while the pointer is on a verse', () => {
+      it('fades other verses with echoes toward the plain grey, and leaves the rest plain', () => {
         const echoes = { 0: [1, 5], 2: [3, 5] };
         const resting = paint(echoes);
-        const hovering = paint(echoes, places[0]);
-        expect(hovering[2]).toEqual(resting[2]);
-        expect(hovering[2]).toEqual(section);
-        expect(hovering[4]).toEqual(resting[4]);
+        const faded = paint(echoes, null, places[0]);
+        const plain = brighten(getDefaultColor(2), 0.6);
+        expect(faded[2]).not.toEqual(resting[2]);
+        expect(faded[2]).toEqual(mixed(resting[2] as Color, plain));
+        expect(faded[4]).toEqual(brighten(getDefaultColor(4), 0.6));
+      });
+
+      it('fades them the same whether the focused verse is pinned or hovered', () => {
+        const echoes = { 0: [1, 5], 2: [3, 5] };
+        expect(paint(echoes, places[0])).toEqual(paint(echoes, null, places[0]));
+      });
+
+      it('shows the pinned verse again when the pointer is on a verse without echoes', () => {
+        const echoes = { 0: [1, 5], 2: [3, 5] };
+        expect(paint(echoes, places[5], places[0])).toEqual(paint(echoes, null, places[0]));
       });
     });
 

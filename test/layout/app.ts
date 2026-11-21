@@ -347,18 +347,18 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
-    // The same view with the pointer away: other verses with echoes dim to grey.
+    // I Samuel 31:1 pinned, the pointer away: other verses with echoes fade rather than go grey.
     name: 'explore-text-analytics-echoes-view-pinned-close',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.5&verse=Jeremiah.52.1',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.86&verse=I.Samuel.31.1',
     shown: ['#popup', '#map-legend'],
   },
   {
-    // The pointer on one of the pinned verse's echoes: verses with echoes of their own keep their colours.
+    // The same view with the pointer on another verse that has echoes: they fade the same way.
     name: 'explore-text-analytics-echoes-view-hover',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.5&verse=Jeremiah.52.1',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.86&verse=I.Samuel.31.1',
     then: async (page) => {
       const canvas = (await page.locator('#canvas').boundingBox())!;
-      await page.mouse.move(canvas.x + canvas.width / 2 + 206, canvas.y + canvas.height / 2 - 117);
+      await page.mouse.move(canvas.x + canvas.width / 2 - 136, canvas.y + canvas.height / 2 - 210);
     },
     shown: ['#popup', '#map-legend'],
   },
