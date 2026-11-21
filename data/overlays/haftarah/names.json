@@ -296,25 +296,25 @@
       "note": "The second Shabbat of Chanukah can only be the eighth day, which is the one day that reads I Kings instead of Zechariah."
     },
     {
-      "name": "Sheqalim",
+      "name": "Shabbat Sheqalim",
       "hebrewName": "שבת שקלים",
       "category": "four-shabbatot",
       "hebcal": "Shabbat Shekalim"
     },
     {
-      "name": "Zakhor",
+      "name": "Shabbat Zakhor",
       "hebrewName": "שבת זכור",
       "category": "four-shabbatot",
       "hebcal": "Shabbat Zachor"
     },
     {
-      "name": "Parah",
+      "name": "Shabbat Parah",
       "hebrewName": "שבת פרה",
       "category": "four-shabbatot",
       "hebcal": "Shabbat Parah"
     },
     {
-      "name": "Ha-Chodesh",
+      "name": "Shabbat Ha-Chodesh",
       "hebrewName": "שבת החודש",
       "category": "four-shabbatot",
       "hebcal": "Shabbat HaChodesh"

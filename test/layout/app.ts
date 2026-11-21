@@ -242,6 +242,12 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
+    // A verse in a special Shabbat's haftarah (Zakhor).
+    name: 'explore-haftarah-verse-special-shabbat',
+    link: 'overlay=haftarah&zoom=1.6&verse=I.Samuel.15.19',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
     name: 'explore-trop-legend',
     link: 'overlay=trop&trop=shalshelet',
     then: async (page) => {
