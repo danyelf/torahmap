@@ -312,7 +312,7 @@ export const STATES: State[] = [
     link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=0.8&x=2304&y=11&verse=Numbers.1.29',
     then: async (page) => {
       await viaMenu(page, 'overlay');
-      await page.locator('.parallel-verses button').first().click();
+      await page.locator('.parallel-verses button:not(.parallel-source)').first().click();
       await expect(page.locator('#popup')).toContainText('Numbers 2:6');
     },
     shown: ['#popup', '#map-legend'],
@@ -329,7 +329,7 @@ export const STATES: State[] = [
     shown: ['#map-legend'],
   },
   {
-    // The whole Tanakh at once: the spectrum reads as sections of colour.
+    // The whole Tanakh at once: each verse in the colour of its farthest echo.
     name: 'explore-text-analytics-echoes-view-zoomed-out',
     link: 'overlay=text-analytics&analysis=echoes&zoom=0.1',
     shown: ['#map-legend'],
@@ -347,7 +347,29 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
-    // Kings, where the wheel's hue changes fast from verse to verse: nearby echoes fade to grey.
+    // I Kings 8:17 with the parallels list showing it in its place among them.
+    name: 'explore-text-analytics-echoes-view-source-listed',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.3&verse=I.Kings.8.17',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // I Samuel 31:1 pinned, the pointer away: other verses with echoes fade rather than go grey.
+    name: 'explore-text-analytics-echoes-view-pinned-close',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.86&verse=I.Samuel.31.1',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // The same view with the pointer on another verse that has echoes: they fade the same way.
+    name: 'explore-text-analytics-echoes-view-hover',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.86&verse=I.Samuel.31.1',
+    then: async (page) => {
+      const canvas = (await page.locator('#canvas').boundingBox())!;
+      await page.mouse.move(canvas.x + canvas.width / 2 - 136, canvas.y + canvas.height / 2 - 210);
+    },
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // Kings: most echoes lie in the same book or the same section.
     name: 'explore-text-analytics-echoes-kings-pinned',
     link: 'overlay=text-analytics&analysis=echoes&zoom=0.6&verse=I.Kings.16.27',
     shown: ['#popup', '#map-legend'],
