@@ -126,7 +126,7 @@ The map opens on `structure.json` alone; the popup and search ask for `texts.jso
 ## Colour rules for picks and search words
 
 Words and picks draw from one set of nine colours (`packages/shell/src/overlays/palette.ts`; #497). A new
-pick takes the first colour no other holds; a word typed into a new box takes a random free one, and a word that arrives with its text takes the colour its plain form hashes to, or the next free. Each keeps its colour until removed. A link carries no colours:
+pick takes the first colour no other holds. A word's colour comes from the first letter of its plain form, or the next free colour when that is held; it changes only when the first letter does. A link carries no colours:
 on opening, words take colours first and picks follow in link order. At most five words and four picks.
 
 ## Hard-won fixes

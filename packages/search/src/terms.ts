@@ -22,10 +22,10 @@ export interface SearchTerm {
   /** What the reader typed. */
   text: string;
   /**
-   * Place in PALETTE, chosen once when the term is made and kept until it is removed, so typing
-   * never changes it and removing another term recolours nobody. A term made with its word gets the
-   * colour its plain form hashes to, so a link or story stop shows the same colours each time; an
-   * empty one, made for the reader to type in, a random free colour.
+   * Place in PALETTE, from the first letter of the term's plain form: the colour that letter
+   * hashes to, or the next free one when another term or pick holds it. Typing more letters keeps
+   * it, a new first letter chooses again, and removing another term recolours nobody. An empty term
+   * has no letter and takes the colour the empty string hashes to.
    */
   colorIndex: number;
   /**
@@ -56,25 +56,27 @@ let nextId = 0;
 /** The colours the terms hold. */
 export const heldColors = (terms: SearchTerm[]): number[] => terms.map((t) => t.colorIndex);
 
-/** FNV-1a of the word's plain form, as a place in PALETTE to start looking from. */
-function hashedStart(text: string): number {
+const firstLetter = (text: string): string => [...plainName(text)][0] ?? '';
+
+/** FNV-1a of the first letter, as a place in PALETTE to start looking from. */
+function hashedStart(letter: string): number {
   let hash = 0x811c9dc5;
-  for (const char of plainName(text)) hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193);
+  for (let i = 0; i < letter.length; i++) hash = Math.imul(hash ^ letter.charCodeAt(i), 0x01000193);
   return (hash >>> 0) % PALETTE.length;
 }
 
-/**
- * The terms with one more, in a colour neither a term nor `taken`, the colours the picks hold, is
- * using: the word's hashed colour or the next free one, or a random free one for an empty term.
- */
+/** The colour for `text`'s first letter that neither `held` nor the picks' `taken` is using. */
+const colorFor = (text: string, held: number[], taken: readonly number[]): number =>
+  freeColor([...taken, ...held], hashedStart(firstLetter(text)));
+
+/** The terms with one more, in the colour its first letter gives it. */
 export function addTerm(
   terms: SearchTerm[],
   text: string,
   taken: readonly number[] = [],
 ): SearchTerm[] {
   if (terms.length >= MAX_TERMS) return terms;
-  const from = text.trim() ? hashedStart(text) : Math.floor(Math.random() * PALETTE.length);
-  const colorIndex = freeColor([...taken, ...heldColors(terms)], from);
+  const colorIndex = colorFor(text, heldColors(terms), taken);
   return [...terms, { id: `t${nextId++}`, text, colorIndex, mode: null, chosen: null }];
 }
 
@@ -110,8 +112,14 @@ export function setTermText(
   const index = terms.findIndex((t) => t.id === id);
   if (index === -1) return terms;
 
-  // The first part stays this term, so its id and colour survive the edit.
-  const edited = { ...terms[index], text: replacement[0], chosen: null };
+  // The first part stays this term, so its id survives the edit; its colour does too until the
+  // first letter changes.
+  const old = terms[index];
+  const colorIndex =
+    firstLetter(old.text) === firstLetter(replacement[0])
+      ? old.colorIndex
+      : colorFor(replacement[0], heldColors(terms.filter((t) => t.id !== id)), taken);
+  const edited = { ...old, text: replacement[0], colorIndex, chosen: null };
   let out = [...terms.slice(0, index), edited, ...terms.slice(index + 1)];
 
   // Any further parts become terms of their own, until the colours run out.

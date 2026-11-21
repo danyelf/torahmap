@@ -268,27 +268,42 @@ describe('carrying a narrowed search in a URL', () => {
 describe('a comma still means another word', () => {
   it('splits a comma-separated string into separate terms', () => {
     // The comma box is gone, but readers type commas and old URLs hold them.
-    const one = addTerm([], 'x');
+    const one = addTerm([], 'עלה');
     const typed = setTermText(one, one[0].id, 'עלה, מלך');
 
     expect(typed.map((t) => t.text)).toEqual(['עלה', 'מלך']);
   });
 
   it("keeps the edited term's own id and colour on the first part", () => {
-    const one = addTerm([], 'x');
+    const one = addTerm([], 'עלה');
     const typed = setTermText(one, one[0].id, 'עלה, מלך');
 
     expect(typed[0].id).toBe(one[0].id);
     expect(typed[0].colorIndex).toBe(one[0].colorIndex);
   });
 
-  it('keeps an empty term colour when its word is typed, and when it is retyped', () => {
-    const blank = addTerm([], '');
-    const typed = setTermText(blank, blank[0].id, 'עלה');
-    const retyped = setTermText(typed, typed[0].id, 'מלך');
+  it('keeps the colour while the first letter stays, and takes the new letter on a change', () => {
+    const [one] = addTerm([], 'abraham');
+    const longer = setTermText([one], one.id, 'abram');
+    const other = setTermText(longer, one.id, 'isaac');
 
-    expect(typed[0].colorIndex).toBe(blank[0].colorIndex);
-    expect(retyped[0].colorIndex).toBe(blank[0].colorIndex);
+    expect(longer[0].colorIndex).toBe(one.colorIndex);
+    expect(other[0].colorIndex).toBe(addTerm([], 'isaac')[0].colorIndex);
+  });
+
+  it('gives a typed first letter the colour of that letter, whichever box it is typed in', () => {
+    const blank = addTerm([], '');
+    const typed = setTermText(blank, blank[0].id, 'Isaac');
+
+    expect(typed[0].colorIndex).toBe(addTerm([], 'isaac')[0].colorIndex);
+  });
+
+  it('steps past a colour another term holds when the first letter changes', () => {
+    const [first] = addTerm([], 'abraham');
+    const two = addTerm([first], 'isaac');
+    const retyped = setTermText(two, two[1].id, 'abel');
+
+    expect(retyped[1].colorIndex).not.toBe(first.colorIndex);
   });
 
   it('keeps the terms that were already there', () => {
