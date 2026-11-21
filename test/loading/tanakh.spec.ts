@@ -166,11 +166,15 @@ test('a lexicon search cannot build from fails its prebuild alone, and the rest 
   await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
   expect((await sentLoadTiming(page))[0].search_ready).toBe(0);
   // With no search typed, nothing builds the dictionary as the lexicon lands:
-  // only search's idle prebuild does, and it throws uncaught, by design.
-  await expect.poll(() => errors.length).toBe(1);
-  expect(errors[0]).not.toMatch(/^console:/);
-  // The built page's stack names no function; its message names the missing field.
-  expect(errors[0]).toContain('lexemes');
+  // only search's idle prebuild does, and it throws uncaught, by design. It
+  // builds again when the optional parse lands, on the same lexicon, so it
+  // throws once per attempt.
+  await expect.poll(() => errors.length).toBe(2);
+  for (const error of errors) {
+    expect(error).not.toMatch(/^console:/);
+    // The built page's stack names no function; its message names the missing field.
+    expect(error).toContain('lexemes');
+  }
 });
 
 test('load timing says when the texts landed, after the first frame', async ({ page }) => {
