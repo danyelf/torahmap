@@ -141,10 +141,8 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
   /** A result row's quotation of its item for `term`, as the panel quotes it. */
   excerptFor(data: D, result: SearchResult, term: SearchTerm): Snippet | null;
   /**
-   * The search with `text` added as a term matched as `mode`, with `chosen`
-   * for the extra mode, or null when the
-   * palette is full. Fills the empty row if there is one, and opens the row it
-   * fills.
+   * The search with `text` added as a term matched as `mode`, with `chosen` for the extra mode, or
+   * null when the palette is full. Fills the empty row if there is one, and opens the row it fills.
    */
   addTermOrFill(
     settings: TermSettings,

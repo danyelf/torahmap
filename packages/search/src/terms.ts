@@ -22,10 +22,9 @@ export interface SearchTerm {
   /** What the reader typed. */
   text: string;
   /**
-   * Place in TERM_PALETTE, from the first letter of the term's plain form: the colour that letter
-   * hashes to, or the next free one when another term holds it. Typing more letters keeps
-   * it, a new first letter chooses again, and removing another term recolours nobody. An empty term
-   * has no letter and takes the colour the empty string hashes to.
+   * Place in TERM_PALETTE: the colour the first letter of the term's plain form hashes to, or the
+   * next free one. Kept while the first letter stays and when other terms are removed; a link
+   * carries only the order, so opening it chooses again.
    */
   colorIndex: number;
   /**
@@ -55,7 +54,10 @@ export const heldColors = (terms: SearchTerm[]): number[] => terms.map((t) => t.
 
 const firstLetter = (text: string): string => [...plainName(text)][0] ?? '';
 
-/** FNV-1a of the first letter, as a place in TERM_PALETTE to start looking from. */
+/**
+ * FNV-1a of the first letter, as a place in TERM_PALETTE to start looking from. A hash rather than
+ * the code point, so that neighbouring Hebrew letters do not get neighbouring colours.
+ */
 function hashedStart(letter: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < letter.length; i++) hash = Math.imul(hash ^ letter.charCodeAt(i), 0x01000193);

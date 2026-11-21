@@ -25,11 +25,10 @@ export interface ColorArgs<T, S = unknown, D = unknown> {
   focus: Focus<T>;
 }
 
-// A change to an overlay's settings: the next settings, worked out from the
-// current ones. Typed through a method so
-// that its parameter is checked bivariantly, like the Overlay members below; as a
-// plain function type, S would sit in both directions and no Overlay<T,
-// SomeSettings> would be an Overlay.
+// A change to an overlay's settings: the next settings, worked out from the current ones. Typed
+// through a method so that its parameter is checked bivariantly, like the Overlay members below; as
+// a plain function type, S would sit in both directions and no Overlay<T, SomeSettings> would be
+// an Overlay.
 export type SettingsUpdate<S> = {
   bivarianceHack(current: S): S;
 }['bivarianceHack'];

@@ -67,7 +67,7 @@ describe('adding a term', () => {
     expect(new Set(colors).size).toBe(3);
   });
 
-  it('refuses a term past the limit, which would leave the picks without a colour', () => {
+  it('refuses a term past the limit', () => {
     const five = ['עלה', 'מלך', 'דבר', 'ארץ', 'שמים'].reduce(
       (list, text) => addTerm(list, text),
       [] as SearchTerm[],

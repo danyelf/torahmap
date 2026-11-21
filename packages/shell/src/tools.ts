@@ -135,8 +135,8 @@ export function withReset<T, S>(state: ToolState<S>, overlay: Overlay<T>): ToolS
 }
 
 /**
- * A link laid over `base`: the search's settings first, then the named overlay's. A link that names no overlay turns it off; every other overlay keeps what
- * `base` held.
+ * A link laid over `base`: the search's settings first, then the named overlay's. A link that
+ * names no overlay turns it off; every other overlay keeps what `base` held.
  */
 export function fromLink<T, S>(
   link: LinkedTools,
