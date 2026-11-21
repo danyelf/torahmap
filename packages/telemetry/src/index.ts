@@ -92,12 +92,20 @@ const WORKER_EVENTS: ReadonlySet<EventName> = new Set(
   (Object.keys(EVENTS) as EventName[]).filter((e) => 'by' in EVENTS[e]),
 );
 
+/**
+ * Where a page's event holds its place in the visit (1, 2, 3...): the last of Analytics Engine's
+ * twenty number columns, so it sits in the same place for every event and clear of each event's own.
+ */
+const SEQUENCE_COLUMN = 20;
+
 /** An event's columns in order: its strings from blob1, its numbers from double1. */
 export function columns(event: EventName): { blobs: string[]; doubles: string[] } {
-  return {
-    blobs: [...COMMON_COLUMNS, ...EVENTS[event].blobs],
-    doubles: [...EVENTS[event].doubles],
-  };
+  const doubles: string[] = [...EVENTS[event].doubles];
+  if (!WORKER_EVENTS.has(event)) {
+    while (doubles.length < SEQUENCE_COLUMN - 1) doubles.push('');
+    doubles.push('sequence');
+  }
+  return { blobs: [...COMMON_COLUMNS, ...EVENTS[event].blobs], doubles };
 }
 type Blobs<E extends EventName> = Exclude<(typeof EVENTS)[E]['blobs'][number], RequestColumn>;
 type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
@@ -118,6 +126,8 @@ export interface EventPayload<E extends EventName = EventName> {
   event: E;
   visit: string;
   mode: DriverKind;
+  /** This event's place in the visit, counting from 1, so their order is exact. */
+  sequence: number;
   fields: EventFields<E>;
 }
 
@@ -149,14 +159,17 @@ function isMode(mode: unknown): mode is DriverKind {
 /** The data point for a payload from the page, or null if it is not one we accept. */
 export function toDataPoint(payload: unknown, context: RequestContext): DataPoint | null {
   if (typeof payload !== 'object' || payload === null) return null;
-  const { event, visit, mode, fields } = payload as { [K in keyof EventPayload]?: unknown };
+  const { event, visit, mode, sequence, fields } = payload as {
+    [K in keyof EventPayload]?: unknown;
+  };
   if (!isEventName(event)) return null;
   if (WORKER_EVENTS.has(event)) return null;
   if (typeof visit !== 'string' || visit.length === 0 || visit.length > 64) return null;
   if (!isMode(mode)) return null;
   const given: Record<string, unknown> =
     typeof fields === 'object' && fields !== null ? (fields as Record<string, unknown>) : {};
-  return dataPoint(event, visit, mode, context, given);
+  const placed = typeof sequence === 'number' ? { ...given, sequence } : given;
+  return dataPoint(event, visit, mode, context, placed);
 }
 
 /**
@@ -193,6 +206,9 @@ function dataPoint(
   return {
     indexes: [index],
     blobs: blobs.map((name) => (name in fromRequest ? fromRequest[name] : blob(name))),
-    doubles: doubles.map(double),
+    // The sequence column and the zeros before it are written only for an event that has one.
+    doubles: ('sequence' in given ? doubles : doubles.slice(0, EVENTS[event].doubles.length)).map(
+      double,
+    ),
   };
 }

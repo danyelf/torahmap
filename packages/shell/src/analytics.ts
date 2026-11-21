@@ -53,11 +53,13 @@ const options: Options = {
 };
 let storyStopsSent = new Set<string>();
 let errorsSent = new Set<string>();
+let eventsSent = 0;
 
 export function configureAnalytics(changes: Partial<Options>): void {
   if (changes.visitId !== undefined) {
     storyStopsSent = new Set();
     errorsSent = new Set();
+    eventsSent = 0;
   }
   Object.assign(options, changes);
 }
@@ -76,6 +78,7 @@ function track<E extends EventName>(event: E, fields: EventFields<E>): void {
     event,
     visit: options.visitId,
     mode: options.getMode(),
+    sequence: ++eventsSent,
     fields,
   };
   options.send(JSON.stringify(payload));

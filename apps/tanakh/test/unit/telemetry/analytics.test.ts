@@ -43,8 +43,21 @@ describe('analytics', () => {
         event: 'search_execute',
         visit: 'v1',
         mode: 'reader',
+        sequence: 1,
         fields: { term: 'light', language: 'en', search_mode: 'word', result_count: 12 },
       },
+    ]);
+  });
+
+  it('numbers a visit’s events from 1, and starts again for the next visit', () => {
+    trackSquareClick('a', 'x');
+    trackSquareClick('b', 'x');
+    configureAnalytics({ visitId: 'v2' });
+    trackSquareClick('c', 'x');
+    expect(sent().map((e) => [e.visit, e.sequence])).toEqual([
+      ['v1', 1],
+      ['v1', 2],
+      ['v2', 1],
     ]);
   });
 
@@ -120,6 +133,7 @@ describe('analytics', () => {
         event: 'page_view',
         visit: 'v1',
         mode: 'reader',
+        sequence: 1,
         fields: {
           story_stop: 'intro',
           referrer: 'example.com',
@@ -146,6 +160,7 @@ describe('analytics', () => {
         event: 'share',
         visit: 'v1',
         mode: 'reader',
+        sequence: 1,
         fields: {
           how: 'copied',
           what: 'view',
@@ -196,6 +211,7 @@ describe('errors', () => {
         event: 'error',
         visit: 'v1',
         mode: 'reader',
+        sequence: 1,
         fields: { source: 'loadFiles', message: 'TypeError: Failed to fetch' },
       },
     ]);
