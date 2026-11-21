@@ -40,7 +40,8 @@ export const EVENTS = {
   view_settled: { blobs: ['area', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   // A reader picking or unpicking one of an overlay's names, such as an author, as it is shown.
-  overlay_pick: { blobs: ['overlay', 'pick', 'how'], doubles: [] },
+  // typed is what the reader had typed when they chose a typed pick, empty otherwise.
+  overlay_pick: { blobs: ['overlay', 'pick', 'how', 'typed'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
   square_click: { blobs: ['id', 'area'], doubles: [] },
   // What was typed in Go to and pressed Enter on, the place it read to and that place's area:
@@ -49,7 +50,10 @@ export const EVENTS = {
   word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
   // The link out of a square's popup: Sefaria, or on the VIS map the paper's page.
-  sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },
+  link_out: { blobs: ['id', 'area', 'overlay'], doubles: [] },
+  // Sent each time the page is hidden or leaves, with the seconds it has been visible so far:
+  // a visit's longest is its length, and 0 means it was never shown.
+  visit_end: { blobs: [], doubles: ['visible_seconds'] },
   // A browser with WebGL 2 whose shaders fail to compile records an error from
   // 'main' instead: both show the same notice, but the causes differ.
   webgl_missing: { blobs: ['browser'], doubles: [] },

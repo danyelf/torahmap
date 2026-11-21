@@ -67,7 +67,8 @@ import {
   reportError,
   trackOverlaySwitch,
   trackPageView,
-  trackSefariaOpen,
+  trackLinkOut,
+  reportVisitEnd,
   trackShare,
   trackStoryExit,
   trackStoryReturn,
@@ -1268,7 +1269,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   sidebarElements.link?.addEventListener('click', () => {
     const item = pinnedItem ?? hoveredItem;
     if (!item) return;
-    trackSefariaOpen(item.id, text.area(item).area, overlayId());
+    trackLinkOut(item.id, text.area(item).area, overlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -1865,6 +1866,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     ),
     visited,
   );
+  reportVisitEnd();
   recordingDriver = true;
   markViewSettled();
 

@@ -6,12 +6,14 @@ import {
   configureAnalytics,
   downloadKbps,
   reportError,
+  reportVisitEnd,
+  trackOverlayPick,
   reportUncaughtErrors,
   trackStoryExit,
   trackStoryReturn,
   trackPageView,
   trackSearchExecute,
-  trackSefariaOpen,
+  trackLinkOut,
   trackShare,
   trackSquareClick,
   trackStoryStop,
@@ -96,12 +98,12 @@ describe('analytics', () => {
     ]);
   });
 
-  it("sends a square click and a Sefaria visit by the square's id and area", () => {
+  it("sends a square click and a link out by the square's id and area", () => {
     trackSquareClick('Berakhot.2a.1', 'Berakhot');
-    trackSefariaOpen('Berakhot.2a.1', 'Berakhot', 'none');
+    trackLinkOut('Berakhot.2a.1', 'Berakhot', 'none');
     expect(sent().map((e) => [e.event, e.fields])).toEqual([
       ['square_click', { id: 'Berakhot.2a.1', area: 'Berakhot' }],
-      ['sefaria_open', { id: 'Berakhot.2a.1', area: 'Berakhot', overlay: 'none' }],
+      ['link_out', { id: 'Berakhot.2a.1', area: 'Berakhot', overlay: 'none' }],
     ]);
   });
 
@@ -247,6 +249,55 @@ describe('errors', () => {
     const message = 'ResizeObserver loop completed with undelivered notifications.';
     target.dispatchEvent(Object.assign(new Event('error'), { error: null, message }));
     expect(sent()).toEqual([]);
+  });
+});
+
+describe('visit length', () => {
+  function page(visible: boolean) {
+    const doc = Object.assign(new EventTarget(), {
+      visibilityState: visible ? 'visible' : 'hidden',
+    }) as unknown as Document & { visibilityState: string };
+    const win = new EventTarget() as unknown as Window;
+    let clock = 0;
+    reportVisitEnd(doc, win, () => clock);
+    return {
+      pass: (ms: number) => (clock += ms),
+      show: (state: 'visible' | 'hidden') => {
+        doc.visibilityState = state;
+        doc.dispatchEvent(new Event('visibilitychange'));
+      },
+      leave: () => win.dispatchEvent(new Event('pagehide')),
+    };
+  }
+  const seconds = () => sent().map((e) => [e.event, e.fields.visible_seconds]);
+
+  it('adds up the time the page was visible, however often it was hidden between', () => {
+    const p = page(true);
+    p.pass(2000);
+    p.show('hidden');
+    p.pass(60000);
+    p.show('visible');
+    p.pass(3000);
+    p.leave();
+    expect(seconds()).toEqual([
+      ['visit_end', 2],
+      ['visit_end', 5],
+    ]);
+  });
+
+  it('reports 0 for a page opened in the background and never shown', () => {
+    const p = page(false);
+    p.pass(30000);
+    p.leave();
+    expect(seconds()).toEqual([['visit_end', 0]]);
+  });
+});
+
+describe('overlay picks', () => {
+  it('records what was typed with a typed pick, and nothing for the others', () => {
+    trackOverlayPick('authors', 'Ana Silva', 'typed', 'silv');
+    trackOverlayPick('authors', 'Ana Silva', 'quick');
+    expect(sent().map((e) => e.fields.typed)).toEqual(['silv', '']);
   });
 });
 

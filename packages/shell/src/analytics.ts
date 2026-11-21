@@ -136,8 +136,8 @@ export function trackOverlaySwitch(overlay: string, previousOverlay: string): vo
 /** How a reader changed an overlay's picks. */
 export type PickHow = 'typed' | 'quick' | 'unpick';
 
-export function trackOverlayPick(overlay: string, pick: string, how: PickHow): void {
-  track('overlay_pick', { overlay, pick, how });
+export function trackOverlayPick(overlay: string, pick: string, how: PickHow, typed = ''): void {
+  track('overlay_pick', { overlay, pick, how, typed: typed.slice(0, MAX_BLOB_CHARS) });
 }
 
 export function trackSearchExecute(
@@ -175,8 +175,31 @@ export function trackWordSearch(word: string, choice: string, id: string): void 
   track('word_search', { word, choice, id });
 }
 
-export function trackSefariaOpen(id: string, area: string, overlay: string): void {
-  track('sefaria_open', { id, area, overlay });
+export function trackLinkOut(id: string, area: string, overlay: string): void {
+  track('link_out', { id, area, overlay });
+}
+
+/**
+ * Reports how long the page has been visible each time it is hidden or leaves, so a visit that
+ * was never shown can be told from one that was read. sendBeacon survives the unload.
+ */
+export function reportVisitEnd(
+  doc: Document = document,
+  win: Window = window,
+  now: () => number = () => performance.now(),
+): void {
+  let visibleMs = 0;
+  let shownAt: number | null = doc.visibilityState === 'visible' ? now() : null;
+  const end = () => {
+    if (shownAt !== null) visibleMs += now() - shownAt;
+    shownAt = doc.visibilityState === 'visible' ? now() : null;
+    track('visit_end', { visible_seconds: Math.round(visibleMs / 100) / 10 });
+  };
+  doc.addEventListener('visibilitychange', () => {
+    if (doc.visibilityState === 'hidden') end();
+    else shownAt = now();
+  });
+  win.addEventListener('pagehide', end);
 }
 
 export function trackWebGLMissing(): void {
