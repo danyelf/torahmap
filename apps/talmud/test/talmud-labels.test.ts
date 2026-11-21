@@ -11,7 +11,14 @@ const daf = (n: number, amud: 'a' | 'b', topY: number): DafRowAnchor => ({
   topY,
 });
 const DAPIM = [daf(2, 'a', 0), daf(2, 'b', 6), daf(3, 'a', 12), daf(3, 'b', 18), daf(10, 'a', 24)];
-const PEREK: PerekAnchor = { tractate: 'T', perekIdx: 0, hebrewName: 'פרק', rightX: 100, topY: 0 };
+const PEREK: PerekAnchor = {
+  tractate: 'T',
+  perekIdx: 0,
+  hebrewName: 'פרק',
+  rightX: 100,
+  topY: 0,
+  continued: false,
+};
 
 let parent: HTMLElement;
 let move: (pan: { x: number; y: number }, zoom: number) => void;
@@ -67,5 +74,17 @@ describe('perek names', () => {
     move({ x: 5, y: 10 }, 1);
     expect(hidden(name)).toBe(false);
     expect(onScreen(name)).toEqual({ x: 105, y: 8 });
+  });
+
+  it('mark a perek that carries on from the column before, quieter than its first heading', () => {
+    const labels = (anchors: PerekAnchor[]) => {
+      const host = document.createElement('div');
+      createTalmudLabels([], anchors, [], host);
+      return [...host.querySelectorAll<HTMLElement>('#talmud-perek-labels > *')];
+    };
+    const [first] = labels([PEREK]);
+    const [again] = labels([{ ...PEREK, continued: true }]);
+    expect(again.textContent).not.toBe(first.textContent);
+    expect(Number(again.style.opacity)).toBeLessThan(Number(first.style.opacity));
   });
 });
