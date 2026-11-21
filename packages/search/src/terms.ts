@@ -7,7 +7,7 @@
 // shifts and the choice lands silently on a different word.
 
 import { freeColor, PALETTE } from '@torahmap/shell/overlays/palette.ts';
-import { MAX_PICKS } from '@torahmap/shell/overlays/picks.ts';
+import { MAX_PICKS, plainName } from '@torahmap/shell/overlays/picks.ts';
 import { isSearchableWord } from '@torahmap/utils';
 import { TERM_SEPARATORS } from './constants.ts';
 import type { ExtraMode } from './extraMode.ts';
@@ -22,8 +22,10 @@ export interface SearchTerm {
   /** What the reader typed. */
   text: string;
   /**
-   * Place in PALETTE, held from when the term first has a word until it is emptied. An empty
-   * term's is a placeholder: its colour is chosen when its first word is typed.
+   * Place in PALETTE, chosen once when the term is made and kept until it is removed, so typing
+   * never changes it and removing another term recolours nobody. A term made with its word gets the
+   * colour its plain form hashes to, so a link or story stop shows the same colours each time; an
+   * empty one, made for the reader to type in, a random free colour.
    */
   colorIndex: number;
   /**
@@ -51,13 +53,19 @@ export const MAX_TERMS = PALETTE.length - MAX_PICKS;
 
 let nextId = 0;
 
-/** The colours the terms hold: those with a word in them. */
-export const heldColors = (terms: SearchTerm[]): number[] =>
-  terms.filter((t) => t.text.trim()).map((t) => t.colorIndex);
+/** The colours the terms hold. */
+export const heldColors = (terms: SearchTerm[]): number[] => terms.map((t) => t.colorIndex);
+
+/** FNV-1a of the word's plain form, as a place in PALETTE to start looking from. */
+function hashedStart(text: string): number {
+  let hash = 0x811c9dc5;
+  for (const char of plainName(text)) hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193);
+  return (hash >>> 0) % PALETTE.length;
+}
 
 /**
- * The terms with one more, in the first colour that neither a term nor `taken`, the colours the
- * picks hold, is using.
+ * The terms with one more, in a colour neither a term nor `taken`, the colours the picks hold, is
+ * using: the word's hashed colour or the next free one, or a random free one for an empty term.
  */
 export function addTerm(
   terms: SearchTerm[],
@@ -65,7 +73,8 @@ export function addTerm(
   taken: readonly number[] = [],
 ): SearchTerm[] {
   if (terms.length >= MAX_TERMS) return terms;
-  const colorIndex = freeColor([...taken, ...heldColors(terms)]);
+  const from = text.trim() ? hashedStart(text) : Math.floor(Math.random() * PALETTE.length);
+  const colorIndex = freeColor([...taken, ...heldColors(terms)], from);
   return [...terms, { id: `t${nextId++}`, text, colorIndex, mode: null, chosen: null }];
 }
 
@@ -101,14 +110,8 @@ export function setTermText(
   const index = terms.findIndex((t) => t.id === id);
   if (index === -1) return terms;
 
-  // The first part stays this term, so its id survives the edit, and its colour too once it
-  // has one; an empty term takes its colour with its first word.
-  const [old, others] = [terms[index], terms.filter((t) => t.id !== id)];
-  const colorIndex =
-    old.text.trim() || !replacement[0].trim()
-      ? old.colorIndex
-      : freeColor([...taken, ...heldColors(others)]);
-  const edited = { ...old, text: replacement[0], colorIndex, chosen: null };
+  // The first part stays this term, so its id and colour survive the edit.
+  const edited = { ...terms[index], text: replacement[0], chosen: null };
   let out = [...terms.slice(0, index), edited, ...terms.slice(index + 1)];
 
   // Any further parts become terms of their own, until the colours run out.

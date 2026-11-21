@@ -6,7 +6,7 @@ import { configure, type SearchSettings } from '../../../src/search/index.ts';
 import { parseSearchTerms } from '@torahmap/search';
 import { createVerse } from '../../helpers/fixtures';
 import { assertValidColor } from '../../helpers/assertions';
-import { channelsOf } from '../../helpers/termMarks';
+import { channelsOf, colorsHeld, placesHeld } from '../../helpers/termMarks';
 import { renderSearchControls, typeInSearch } from '../../helpers/searchOverlay';
 import { SEARCH_RECORD_DELAY_MS } from '@torahmap/search';
 import type { TanakhLayout } from '../../../src/types';
@@ -20,6 +20,9 @@ const searchOverlay = hostOverlay(searchTool, searchDataFor({}));
 function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
 }
+
+/** The colours the search's terms hold, in order. */
+const held = () => colorsHeld(searchOverlay.settings.terms);
 
 function type(container: HTMLElement, text: string): void {
   typeInSearch(container, text);
@@ -181,8 +184,8 @@ describe('Search Overlay', () => {
       expect(color1).not.toBeNull();
       expect(color3).not.toBeNull();
 
-      expect(color1).toEqual(PALETTE[0]);
-      expect(color3).toEqual(PALETTE[0]);
+      expect(color1).toEqual(held()[0]);
+      expect(color3).toEqual(held()[0]);
     });
 
     it('gives no colour to a verse it does not match', () => {
@@ -194,7 +197,7 @@ describe('Search Overlay', () => {
       const verse = testVerses[0]; // Genesis 1:1
       const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
     });
   });
 
@@ -209,7 +212,7 @@ describe('Search Overlay', () => {
       const verse = testVerses[0];
       const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
-      expect(color).toEqual(PALETTE[0]); // Color for first term
+      expect(color).toEqual(held()[0]); // Color for first term
     });
 
     it('returns array of colors for verse matching multiple terms', () => {
@@ -217,13 +220,13 @@ describe('Search Overlay', () => {
       const verse = testVerses[1];
       const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
-      expect(color).toEqual(PALETTE[1]);
+      expect(color).toEqual(held()[1]);
     });
 
     it('assigns different colors to different terms', () => {
       // First term gets first color, second term gets second color
-      expect(PALETTE[0]).not.toEqual(PALETTE[1]);
-      expect(PALETTE[1]).not.toEqual(PALETTE[2]);
+      expect(PALETTE[0]).not.toEqual(held()[1]);
+      expect(PALETTE[1]).not.toEqual(held()[2]);
     });
   });
 
@@ -240,7 +243,7 @@ describe('Search Overlay', () => {
       const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
       expect(color).not.toBeNull();
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
     });
 
     it('gives no colour to a verse without a Hebrew match', () => {
@@ -256,7 +259,7 @@ describe('Search Overlay', () => {
       const verse = testVerses[0];
       const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
     });
   });
 
@@ -767,7 +770,7 @@ describe('Search Overlay', () => {
       const verse = testVerses[6];
       const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
 
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
     });
 
     it('updates input when applying URL params', () => {
@@ -1021,14 +1024,14 @@ describe('Search Overlay', () => {
 
       const verse = testVerses[0]; // Genesis 1:1
       let color = searchOverlay.getItemColor(verse);
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
 
       // Simulate switching to a different overlay (calls destroy)
       searchOverlay.destroy?.();
 
       // Search state survives, still available internally
       color = searchOverlay.getItemColor(verse);
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
 
       // Simulate switching back to search overlay (renders controls again)
       const container2 = render();
@@ -1037,7 +1040,7 @@ describe('Search Overlay', () => {
       expect(input2.value).toBe('God');
 
       color = searchOverlay.getItemColor(verse);
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
     });
 
     it("preserves a term's mode across destroy/recreate cycles", () => {
@@ -1161,8 +1164,9 @@ describe('Search Overlay', () => {
       );
       const html = fragmentToHtml(result);
 
-      expect(html).toContain(channelsOf(0));
-      expect(html).toContain(channelsOf(1));
+      const [first, second] = placesHeld(searchOverlay.settings.terms);
+      expect(html).toContain(channelsOf(first));
+      expect(html).toContain(channelsOf(second));
     });
 
     it('handles overlapping matches correctly', () => {
@@ -1461,13 +1465,12 @@ describe('Search Overlay', () => {
       expect(colorsFor(testVerses, 'God, heavens')).toEqual(expected);
     });
 
-    it('colours each term by its position in the query', () => {
+    it('gives a word the same colour whatever comes before it', () => {
       const heavens = testVerses[3];
       const [alone] = colorsFor([heavens], 'heavens');
       const [second] = colorsFor([heavens], 'light, heavens');
 
-      expect(alone).toEqual(PALETTE[0]);
-      expect(second).toEqual(PALETTE[1]);
+      expect(second).toEqual(alone);
     });
 
     it('answers null everywhere for a query with nothing to search on', () => {
@@ -1555,7 +1558,7 @@ describe('Search Overlay', () => {
       // Matching verses should be highlighted
       const verse = testVerses[0]; // Genesis 1:1
       const color = searchOverlay.getItemColor(verse) as [number, number, number] | null;
-      expect(color).toEqual(PALETTE[0]);
+      expect(color).toEqual(held()[0]);
     });
 
     it('handles parseSearchTerms correctly', () => {

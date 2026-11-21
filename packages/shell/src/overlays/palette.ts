@@ -16,9 +16,15 @@ export const PALETTE: readonly Color[] = HUES.map((hue) =>
   oklchToRgb(LIGHTNESS, Math.min(0.92 * maxChroma(LIGHTNESS, hue), CHROMA_CAP), hue),
 );
 
-/** The first colour not in `taken`, as its place in PALETTE; the first again if all are taken. */
-export function freeColor(taken: Iterable<number>): number {
+/**
+ * The first colour not in `taken`, as its place in PALETTE, looking from place `from` on and
+ * wrapping round; `from` again if all are taken.
+ */
+export function freeColor(taken: Iterable<number>, from = 0): number {
   const used = new Set(taken);
-  const free = PALETTE.findIndex((_, place) => !used.has(place));
-  return free < 0 ? 0 : free;
+  for (let step = 0; step < PALETTE.length; step++) {
+    const place = (from + step) % PALETTE.length;
+    if (!used.has(place)) return place;
+  }
+  return from;
 }

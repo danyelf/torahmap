@@ -2,7 +2,7 @@
 //
 // The mode belongs to a term and is set on that term's row, so these tests
 // click the row.
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { colorsHeld, colorsOf } from '../helpers/termMarks';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { searchTool } from '../../src/search/index';
 import { configure } from '../../src/search/index.ts';
@@ -103,8 +103,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       // Whole word: Genesis 12:1 holds אברם itself, Genesis 17:5 holds it and
       // also אברהם, and Exodus 3:6 holds only אברהם.
       const exodus = testVerses.find((v) => v.book === 'Exodus' && v.chapter === 3)!;
-      expect(searchOverlay.getItemColor(testVerses[1])).toEqual(PALETTE[0]);
-      expect(searchOverlay.getItemColor(exodus)).not.toEqual(PALETTE[0]);
+      const [color] = colorsOf('אברם');
+      expect(searchOverlay.getItemColor(testVerses[1])).toEqual(color);
+      expect(searchOverlay.getItemColor(exodus)).not.toEqual(color);
 
       // The app repaints after a restore itself, so a restore is not announced
       // as a change the reader made.
@@ -408,7 +409,9 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       expect(searchOverlay.getItemColor(gen175)).toBeNull();
 
       chooseMode('substring');
-      expect(searchOverlay.getItemColor(gen175)).toEqual(PALETTE[0]);
+      expect(searchOverlay.getItemColor(gen175)).toEqual(
+        colorsHeld(searchOverlay.settings.terms)[0],
+      );
     });
   });
 

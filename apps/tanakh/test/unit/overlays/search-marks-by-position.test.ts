@@ -17,7 +17,7 @@ import { configure } from '../../../src/search/index.ts';
 import { hostOverlay } from '../../helpers/overlayHost';
 import { createVerse } from '../../helpers/fixtures';
 import { realSearchData } from '../../helpers/searchData';
-import { placeOfMark } from '../../helpers/termMarks';
+import { placeOfMark, placesOf } from '../../helpers/termMarks';
 
 const searchOverlay = hostOverlay(searchTool, realSearchData().files);
 
@@ -60,22 +60,23 @@ describe('marking a verse that holds two words of one spelling', () => {
     // Either term's spelling matches either word, so only the place in the
     // verse decides which is which. Matching on the spelling alone gives both
     // words to whichever term claims a position first.
+    const [verb, offering] = placesOf('עלה', 'עלה');
     expect(marks()).toEqual([
-      [0, 'ויעל'],
-      [1, 'עלת'],
+      [verb, 'ויעל'],
+      [offering, 'עלת'],
     ]);
   });
 
   it('marks the verb alone when only the verb is searched for', () => {
     searchOverlay.restore({ search: 'עלה', m: ASCEND });
 
-    expect(marks()).toEqual([[0, 'ויעל']]);
+    expect(marks()).toEqual([[placesOf('עלה')[0], 'ויעל']]);
   });
 
   it('marks the offering alone when only the nouns are searched for', () => {
     searchOverlay.restore({ search: 'עלה', m: OFFERINGS });
 
-    expect(marks()).toEqual([[0, 'עלת']]);
+    expect(marks()).toEqual([[placesOf('עלה')[0], 'עלת']]);
   });
 
   it('still marks both when the term is not narrowed at all', () => {
@@ -94,9 +95,10 @@ describe('marking a verse without the per-word parse', () => {
     searchOverlay.setData({ ...realSearchData().files, parse: null });
     searchOverlay.restore({ search: 'עלה', m: ASCEND });
 
+    const [place] = placesOf('עלה');
     expect(marks()).toEqual([
-      [0, 'ויעל'],
-      [0, 'עלת'],
+      [place, 'ויעל'],
+      [place, 'עלת'],
     ]);
   });
 });

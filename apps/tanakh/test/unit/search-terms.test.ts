@@ -6,6 +6,7 @@
 // the selection silently lands on a different word.
 
 import { describe, it, expect } from 'vitest';
+import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { parseSearchTerms } from '@torahmap/search';
 import { meaningsInVerse, sameMeaning, versesFor } from '../../src/search/dictionary.ts';
 import {
@@ -78,25 +79,11 @@ describe('adding a term', () => {
 });
 
 describe('colours shared with picks', () => {
-  it('gives a new term the first colour the picks are not using', () => {
-    const terms = addTerm([], 'עלה', [0, 1]);
+  const allBut = (free: number) => [...Array(PALETTE.length).keys()].filter((p) => p !== free);
 
-    expect(terms[0].colorIndex).toBe(2);
-  });
-
-  it('holds a colour only once a word is in the term', () => {
-    const blank = addTerm([], '');
-
-    expect(heldColors(blank)).toEqual([]);
-    expect(heldColors(setTermText(blank, blank[0].id, 'עלה'))).toHaveLength(1);
-  });
-
-  it('settles an empty term colour when its first word is typed, round the picks', () => {
-    const blank = addTerm([], '', []);
-
-    const typed = setTermText(blank, blank[0].id, 'עלה', [0]);
-
-    expect(typed[0].colorIndex).toBe(1);
+  it('gives a new term a colour the picks are not using', () => {
+    expect(addTerm([], 'עלה', allBut(4))[0].colorIndex).toBe(4);
+    expect(addTerm([], '', allBut(4))[0].colorIndex).toBe(4);
   });
 
   it('gives the terms a comma makes colours the picks are not using', () => {
@@ -104,7 +91,33 @@ describe('colours shared with picks', () => {
 
     const typed = setTermText(blank, blank[0].id, 'עלה, מלך', [0, 2]);
 
-    expect(typed.map((t) => t.colorIndex)).toEqual([1, 3]);
+    expect(typed).toHaveLength(2);
+    for (const { colorIndex } of typed) expect([0, 2]).not.toContain(colorIndex);
+    expect(typed[0].colorIndex).not.toBe(typed[1].colorIndex);
+  });
+});
+
+describe('colours from the word', () => {
+  it('gives the same word the same colour whatever its case or vowel points', () => {
+    const [plain] = addTerm([], 'abraham');
+
+    expect(addTerm([], 'Abraham')[0].colorIndex).toBe(plain.colorIndex);
+    expect(addTerm([], 'שָׁלוֹם')[0].colorIndex).toBe(addTerm([], 'שלום')[0].colorIndex);
+  });
+
+  it('steps to the next free colour when its own is taken', () => {
+    const [first] = addTerm([], 'abraham');
+
+    const second = addTerm([first], 'abraham')[1];
+
+    expect(second.colorIndex).toBe((first.colorIndex + 1) % PALETTE.length);
+  });
+
+  it('gives an empty term a colour no term is using', () => {
+    const three = addTerm(addTerm(addTerm([], 'עלה'), 'מלך'), 'דבר');
+
+    expect(heldColors(addTerm(three, ''))).toHaveLength(4);
+    expect(new Set(heldColors(addTerm(three, ''))).size).toBe(4);
   });
 });
 
@@ -152,14 +165,14 @@ describe('removing a term', () => {
     expect(after.map((t) => t.colorIndex)).toEqual([before.get('מלך'), before.get('דבר')]);
   });
 
-  it('frees its colour for the next term added', () => {
+  it('frees its colour for a word that hashes to it', () => {
     const three = ['עלה', 'מלך', 'דבר'].reduce(
       (list, text) => addTerm(list, text),
       [] as SearchTerm[],
     );
     const freed = three[0].colorIndex;
 
-    const next = addTerm(removeTerm(three, three[0].id), 'ארץ');
+    const next = addTerm(removeTerm(three, three[0].id), 'עלה');
 
     expect(next[next.length - 1].colorIndex).toBe(freed);
   });
@@ -268,6 +281,15 @@ describe('a comma still means another word', () => {
 
     expect(typed[0].id).toBe(one[0].id);
     expect(typed[0].colorIndex).toBe(one[0].colorIndex);
+  });
+
+  it('keeps an empty term colour when its word is typed, and when it is retyped', () => {
+    const blank = addTerm([], '');
+    const typed = setTermText(blank, blank[0].id, 'עלה');
+    const retyped = setTermText(typed, typed[0].id, 'מלך');
+
+    expect(typed[0].colorIndex).toBe(blank[0].colorIndex);
+    expect(retyped[0].colorIndex).toBe(blank[0].colorIndex);
   });
 
   it('keeps the terms that were already there', () => {

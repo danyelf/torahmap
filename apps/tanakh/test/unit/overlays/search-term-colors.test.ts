@@ -14,7 +14,7 @@ import { hostOverlay } from '../../helpers/overlayHost';
 import { renderSearchControls, typeIntoInput } from '../../helpers/searchOverlay';
 import type { VerseTexts } from '../../../src/verseTexts';
 import { searchDataFor } from '../../helpers/searchData';
-import { placeOfMark } from '../../helpers/termMarks';
+import { placeOfMark, placesHeld } from '../../helpers/termMarks';
 
 const texts: VerseTexts = {
   Genesis: {
@@ -54,6 +54,9 @@ function css(index: number): string {
 
 const searchOverlay = hostOverlay(searchTool, searchDataFor(texts));
 
+/** The place in PALETTE of the second term, the one that stays when the first is removed. */
+const survivorPlace = (): number => placesHeld(searchOverlay.settings.terms)[1];
+
 beforeEach(() => {
   configure({ verses });
   searchOverlay.restore({ search: '', mode: undefined, m: undefined });
@@ -68,17 +71,17 @@ describe('a surviving term keeps one colour', () => {
     typeIntoInput(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
     typeIntoInput(rowInput(container, 1), 'spirit');
+    const kept = survivorPlace();
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
     const swatch = container.querySelector<HTMLElement>('.term-swatch')!;
     const dot = container.querySelector<HTMLElement>('.term-dot')!;
     expect(dot.style.background).toBe(swatch.style.background);
 
-    // And it is the second colour, not the first: the term was born second.
-    expect(swatch.style.background).toBe(css(1));
+    expect(swatch.style.background).toBe(css(kept));
 
     const mark = container.querySelector<HTMLElement>('.search-result .snippet mark')!;
-    expect(placeOfMark(mark)).toBe(1);
+    expect(placeOfMark(mark)).toBe(kept);
   });
 
   it('marks the verse text in the same colour as the row', () => {
@@ -87,6 +90,7 @@ describe('a surviving term keeps one colour', () => {
     typeIntoInput(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
     typeIntoInput(rowInput(container, 1), 'spirit');
+    const kept = survivorPlace();
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
     const fragment = searchOverlay.highlightItemText(
@@ -99,7 +103,7 @@ describe('a surviving term keeps one colour', () => {
 
     const mark = holder.querySelector('mark')!;
     expect(mark.textContent).toBe('spirit');
-    expect(placeOfMark(mark)).toBe(1);
+    expect(placeOfMark(mark)).toBe(kept);
   });
 
   it('keeps the second colour on the map', () => {
@@ -108,11 +112,11 @@ describe('a surviving term keeps one colour', () => {
     typeIntoInput(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
     typeIntoInput(rowInput(container, 1), 'spirit');
+    const kept = survivorPlace();
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
-    // Genesis 1:2 holds "spirit". Settings rebuilt from the URL would give the
-    // survivor colour 0 once it moves to the first position.
-    expect(searchOverlay.getItemColor(verses[1])).toEqual(PALETTE[1]);
+    // Genesis 1:2 holds "spirit".
+    expect(searchOverlay.getItemColor(verses[1])).toEqual(PALETTE[kept]);
   });
 });
 
@@ -125,7 +129,7 @@ describe('the panel summary', () => {
     typeIntoInput(rowInput(container, 1), 'spirit');
 
     expect(searchOverlay.summary()).toEqual({
-      terms: [{ text: 'spirit', color: css(1) }],
+      terms: [{ text: 'spirit', color: css(placesHeld(searchOverlay.settings.terms)[1]) }],
     });
   });
 });
