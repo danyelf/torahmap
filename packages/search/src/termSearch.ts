@@ -6,7 +6,7 @@
 // in is presentation, not a setting, so each search holds its own.
 import { colorToCss, isSearchableWord, memoByValue, type Color } from '@torahmap/utils';
 import type { SearchTelemetry, SearchTool } from '@torahmap/shell/app/search.ts';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import type {
   Credit,
   FileNames,
@@ -35,7 +35,6 @@ import {
   applyModes,
   colorIndexAt,
   encodeModes,
-  heldColors,
   languageOf,
   MAX_TERMS,
   parseSearchTerms,
@@ -142,17 +141,14 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
   /** A result row's quotation of its item for `term`, as the panel quotes it. */
   excerptFor(data: D, result: SearchResult, term: SearchTerm): Snippet | null;
   /**
-   * The search with `text` added as a term matched as `mode`, with `chosen`
-   * for the extra mode, in a colour `taken` is not using, or null when the
-   * palette is full. Fills the empty row if there is one, and opens the row it
-   * fills.
+   * The search with `text` added as a term matched as `mode`, with `chosen` for the extra mode, or
+   * null when the palette is full. Fills the empty row if there is one, and opens the row it fills.
    */
   addTermOrFill(
     settings: TermSettings,
     text: string,
     mode: string,
     chosen: readonly string[] | null,
-    taken: readonly number[],
   ): TermSettings | null;
   /** What the extra mode works from, built from search's files. */
   extraOf(data: D): X | null;
@@ -380,7 +376,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     const termIndices = search.matchingTerms.get(item.id);
     if (!termIndices || termIndices.length === 0) return null;
 
-    const colors = termIndices.map((i) => PALETTE[colorIndexAt(search.active, i)]);
+    const colors = termIndices.map((i) => TERM_PALETTE[colorIndexAt(search.active, i)]);
     return colors.length === 1 ? colors[0] : colors;
   }
 
@@ -427,13 +423,11 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
 
     settingsFromUrl,
 
-    colorsInUse: (settings) => heldColors(settings.terms),
-
     summary(settings) {
       return {
         terms: activeTerms(settings).map((t) => ({
           text: t.text.trim(),
-          color: colorToCss(PALETTE[t.colorIndex]),
+          color: colorToCss(TERM_PALETTE[t.colorIndex]),
         })),
       };
     },
@@ -492,12 +486,12 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
             modeOf: (term) => modeIn(contextOf(rowsExtra()), term),
             hitCount: (term) => (shown && shownData ? hitCount(shownData, shown, term) : null),
             edit(change) {
-              requestChange?.((current, taken) => ({ terms: change(current.terms, taken) }));
+              requestChange?.((current) => ({ terms: change(current.terms) }));
             },
             openRow,
             addRow() {
-              requestChange?.((current, taken) => {
-                const terms = addTerm(current.terms, '', taken);
+              requestChange?.((current) => {
+                const terms = addTerm(current.terms, '');
                 openTermId = terms[terms.length - 1].id;
                 return { terms };
               });
@@ -578,7 +572,7 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
     extraOf,
     resultsFor: (data, settings) => searchFor(data, settings).results,
     excerptFor: (data, result, term) => snippetFor(data)(result, term),
-    addTermOrFill(settings, text, mode, chosen, taken) {
+    addTermOrFill(settings, text, mode, chosen) {
       if (!canAddTerm(settings)) return null;
 
       // Fill the empty row, wherever it is, rather than leave it above the new
@@ -588,9 +582,9 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
       let id: string;
       if (empty) {
         id = empty.id;
-        terms = setTermText(terms, id, text, taken);
+        terms = setTermText(terms, id, text);
       } else {
-        terms = addTerm(terms, text, taken);
+        terms = addTerm(terms, text);
         id = terms[terms.length - 1].id;
       }
 

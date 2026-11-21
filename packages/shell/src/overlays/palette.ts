@@ -1,24 +1,36 @@
-// The colours the map lights words and picks in. A search term and a pick draw from this one set,
-// so no two on the map share a colour.
+// The colours the map lights words and picks in: one set for search terms, one for picks, so the
+// two never share a colour or step round each other.
 
 import { maxChroma, oklchToRgb, type Color } from '@torahmap/utils';
 
 /**
- * OKLCH hues in the order they are handed out, each far from the ones before it. Every colour is
- * this light, so none looks brighter than another on the dark map, and no more saturated than
- * `CHROMA_CAP`, which holds the greens and yellows back to the strength the blues and reds can reach.
+ * Every colour is this light, so none looks brighter than another on the dark map, and no more
+ * saturated than `CHROMA_CAP`, which holds the greens and yellows back to the strength the blues
+ * and reds can reach.
  */
-const HUES = [215, 50, 320, 125, 5, 275, 165, 85, 245];
 const LIGHTNESS = 0.74;
 const CHROMA_CAP = 0.16;
 
-export const PALETTE: readonly Color[] = HUES.map((hue) =>
-  oklchToRgb(LIGHTNESS, Math.min(0.92 * maxChroma(LIGHTNESS, hue), CHROMA_CAP), hue),
-);
+const fromHues = (hues: readonly number[]): readonly Color[] =>
+  hues.map((hue) =>
+    oklchToRgb(LIGHTNESS, Math.min(0.92 * maxChroma(LIGHTNESS, hue), CHROMA_CAP), hue),
+  );
 
-/** The first colour not in `taken`, as its place in PALETTE; the first again if all are taken. */
-export function freeColor(taken: Iterable<number>): number {
+/** OKLCH hues, each far from the one before it, the order a clashing word steps through them. */
+export const TERM_PALETTE = fromHues([215, 50, 320, 125, 5]);
+
+/** OKLCH hues in the order picks are handed them. */
+export const PICK_PALETTE = fromHues([275, 165, 85, 245]);
+
+/**
+ * The first place below `size` not in `taken`, looking from place `from` on and wrapping round;
+ * `from` again if all are taken.
+ */
+export function freeColor(taken: Iterable<number>, size: number, from = 0): number {
   const used = new Set(taken);
-  const free = PALETTE.findIndex((_, place) => !used.has(place));
-  return free < 0 ? 0 : free;
+  for (let step = 0; step < size; step++) {
+    const place = (from + step) % size;
+    if (!used.has(place)) return place;
+  }
+  return from;
 }

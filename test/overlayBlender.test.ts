@@ -1,5 +1,5 @@
 import { type Color } from '@torahmap/utils';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { colorsOf } from '../apps/tanakh/test/helpers/termMarks.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   pictureForStop,
@@ -237,33 +237,6 @@ describe('story stop settings reach the overlay', () => {
     const stop = { ...stopWith({ state: 'on' }), overlay: 'test-typed-settings' };
     computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor, textTools);
     expect(handed).toEqual({ on: true });
-  });
-});
-
-describe('a stop with search words and an overlay that colours', () => {
-  it('keeps the overlay out of the colours the words hold', () => {
-    let taken: readonly number[] | null = null;
-    const overlay: Overlay<TanakhLayout, object> = {
-      id: 'test-taking',
-      name: 'Test Taking',
-      urlParams: [],
-      settingsFromUrl: (_params, held) => {
-        taken = held;
-        return {};
-      },
-      settingsToUrl: () => ({}),
-      colorsFor: ({ items }) => items.map(() => [0.5, 0.5, 0.5] as [number, number, number]),
-    };
-    registerOverlay(overlay);
-    const stop: ResolvedStoryStop = {
-      id: 's',
-      text: '',
-      camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-taking',
-      searchParams: { search: 'God' },
-    };
-    pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools);
-    expect(taken).toEqual([0]);
   });
 });
 
@@ -545,7 +518,7 @@ describe('a stop that searches', () => {
       textTools,
     );
 
-    expect(picture.colors[0]).toEqual(PALETTE[0]);
+    expect(picture.colors[0]).toEqual(colorsOf('God')[0]);
     expect(picture.colors[1]).toEqual([grey, grey, grey]);
     expect(picture.rings).toBeUndefined();
   });
@@ -558,7 +531,7 @@ describe('a stop that searches', () => {
       [1, 0, 0],
       [0, 0, 1],
     ]);
-    expect(picture.rings![0]).toEqual(PALETTE[0]);
+    expect(picture.rings![0]).toEqual(colorsOf('God')[0]);
     expect(picture.colors[1]).toEqual([0.5 * DIM, 0.5 * DIM, 0.5 * DIM]);
     expect(picture.rings![1]).toBeNull();
   });
@@ -578,7 +551,7 @@ describe('a stop that searches', () => {
     );
     expect(
       pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools).colors[0],
-    ).toEqual(PALETTE[0]);
+    ).toEqual(colorsOf('God')[0]);
   });
 });
 

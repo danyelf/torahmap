@@ -1236,7 +1236,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
    * is no longer showing still changes that overlay's settings, but paints nothing.
    */
   function changeSettings<U>(overlay: Overlay<I, U>, update: SettingsUpdate<U>): void {
-    setTools(withOverlaySettings(tools, textTools, overlay, update), 'reader');
+    setTools(withOverlaySettings(tools, overlay, update), 'reader');
   }
 
   /** Draw the search panel; `fresh` as for the overlay panel. */
@@ -1256,7 +1256,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function changeSearch(update: SettingsUpdate<S>): void {
-    setTools(withSearch(tools, textTools, update), 'reader');
+    setTools(withSearch(tools, update), 'reader');
   }
 
   function setOverlay(id: string): void {
@@ -1302,8 +1302,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       const on =
         tools.active === overlay.id
           ? tools
-          : withActive(withReset(tools, textTools, overlay), textTools, overlay.id);
-      setTools(withOverlaySettings(on, textTools, overlay, update), 'reader');
+          : withActive(withReset(tools, overlay), textTools, overlay.id);
+      setTools(withOverlaySettings(on, overlay, update), 'reader');
       if (frame.mode === 'explore' && frame.open !== 'overlay') {
         dispatch({ type: 'choose', panel: 'overlay' });
       }

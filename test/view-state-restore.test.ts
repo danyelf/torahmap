@@ -45,7 +45,7 @@ function controlsAfter(link: string): HTMLElement {
     overlay.renderControls?.(
       container,
       settings,
-      (update) => (settings = update(settings, [])),
+      (update) => (settings = update(settings)),
       dataFor(overlay, SAMPLE_LOADED),
       () => {},
     );

@@ -129,15 +129,8 @@ export function searchForMeaning(
   settings: SearchSettings,
   text: string,
   meaningKeys: readonly string[] | null,
-  taken: readonly number[],
 ): SearchSettings | null {
   const chosen = meaningKeys && meaningKeys.length > 0 ? meaningKeys : null;
   const spelling = chosen ? (spellingFor(dictionary, chosen, text) ?? text) : text;
-  return tanakhSearch.addTermOrFill(
-    settings,
-    spelling,
-    chosen ? meaningsMode.id : 'word',
-    chosen,
-    taken,
-  );
+  return tanakhSearch.addTermOrFill(settings, spelling, chosen ? meaningsMode.id : 'word', chosen);
 }

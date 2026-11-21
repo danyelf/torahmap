@@ -7,7 +7,6 @@ import {
   MAX_PICKS,
   pickColors,
   picksFromUrl,
-  picksInUse,
   picksToUrl,
   removePick,
 } from '@torahmap/shell/overlays/picks.ts';
@@ -267,8 +266,7 @@ export function listOverlay<D extends ListData>(
     data: kind.data,
 
     urlParams: [{ key: kind.urlKey, kind: 'text' }],
-    settingsFromUrl: (params, taken) => ({ picked: picksFromUrl(params[kind.urlKey], taken) }),
-    colorsInUse: picksInUse,
+    settingsFromUrl: (params) => ({ picked: picksFromUrl(params[kind.urlKey]) }),
     settingsToUrl: ({ picked }) =>
       Object.fromEntries(picked.length ? [[kind.urlKey, picksToUrl(picked)]] : []),
 

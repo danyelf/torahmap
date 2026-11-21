@@ -229,7 +229,7 @@ describe('the entries of cited works in a text', () => {
 });
 
 describe('the citations overlay', () => {
-  const link = (params: Record<string, string>) => citationsOverlay.settingsFromUrl!(params, []);
+  const link = (params: Record<string, string>) => citationsOverlay.settingsFromUrl!(params);
 
   it('opens on people, and a link can open it on works', () => {
     expect(link({}).view).toBe('people');
@@ -267,7 +267,7 @@ describe('the citations overlay', () => {
     citationsOverlay.renderControls!(
       container,
       settings,
-      (update) => changes.push(update(settings, [])),
+      (update) => changes.push(update(settings)),
       data,
       () => {},
     );

@@ -25,7 +25,7 @@ const ITEMS = [item('Recital.1', 'recital'), item('9(2)'), item('9(3)')];
 const colours = (params: Record<string, string>) =>
   actSearch.colorsFor({
     items: ITEMS,
-    settings: actSearch.settingsFromUrl!(params, []),
+    settings: actSearch.settingsFromUrl!(params),
     data,
     focus: { hovered: null, pinned: null },
   });
@@ -54,7 +54,7 @@ describe('searching the Act', () => {
 
   it('finds nothing for a single letter', () => {
     expect(found({ search: 'a' })).toEqual([]);
-    expect(actSearch.isSearching(actSearch.settingsFromUrl!({ search: 'a' }, []))).toBe(false);
+    expect(actSearch.isSearching(actSearch.settingsFromUrl!({ search: 'a' }))).toBe(false);
   });
 
   it('treats what a reader types as letters, not as a pattern', () => {
@@ -73,7 +73,7 @@ describe('searching the Act', () => {
   it('marks each match in a paragraph’s text, in any case', () => {
     const text = 'Records, recordsets and RECORDS.';
     const div = document.createElement('div');
-    const settings = actSearch.settingsFromUrl!({ search: 'records' }, []);
+    const settings = actSearch.settingsFromUrl!({ search: 'records' });
     div.append(actSearch.highlightItemText!(item('9(2)'), text, ENGLISH, settings, data));
     expect([...div.querySelectorAll('mark')].map((m) => m.textContent)).toEqual([
       'Records',
@@ -85,7 +85,7 @@ describe('searching the Act', () => {
 
   it('lists each paragraph found with an excerpt of its match', () => {
     const container = document.createElement('div');
-    const settings = actSearch.settingsFromUrl!({ search: 'records,provider' }, []);
+    const settings = actSearch.settingsFromUrl!({ search: 'records,provider' });
     actSearch.renderControls!(
       container,
       settings,
@@ -101,7 +101,7 @@ describe('searching the Act', () => {
 
   it('keeps its terms and their modes in the link', () => {
     const link = actSearch.settingsToUrl!(
-      actSearch.settingsFromUrl!({ search: 'provider,deploy', mode: 'w,w' }, []),
+      actSearch.settingsFromUrl!({ search: 'provider,deploy', mode: 'w,w' }),
     );
     expect(found(link)).toEqual(['9(2)']);
     expect(found({ search: link.search })).toEqual(['Recital.1', '9(2)']);

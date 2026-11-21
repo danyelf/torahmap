@@ -113,40 +113,30 @@ export function withActive<T, S>(
   return built({ ...state, active: overlay.id, overlays });
 }
 
-/** A change to `overlay`'s settings, which keeps out of the search's colours. */
+/** A change to `overlay`'s settings. */
 export function withOverlaySettings<T, S, U>(
   state: ToolState<S>,
-  tools: TextTools<T, S>,
   overlay: Overlay<T, U>,
   update: SettingsUpdate<U>,
 ): ToolState<S> {
-  const next = update(settingsIn(state, overlay), searchColors(state.search, tools));
+  const next = update(settingsIn(state, overlay));
   return built({ ...state, overlays: withEntry(state.overlays, overlay.id, next) });
 }
 
-/** A change to the search, which keeps out of the overlay's colours. */
-export function withSearch<T, S>(
-  state: ToolState<S>,
-  tools: TextTools<T, S>,
-  update: SettingsUpdate<S>,
-): ToolState<S> {
-  return built({ ...state, search: update(state.search, overlayColors(state, tools)) });
+/** A change to the search. */
+export function withSearch<S>(state: ToolState<S>, update: SettingsUpdate<S>): ToolState<S> {
+  return built({ ...state, search: update(state.search) });
 }
 
-/** `overlay` at its defaults, chosen to avoid the search's colours. */
-export function withReset<T, S>(
-  state: ToolState<S>,
-  tools: TextTools<T, S>,
-  overlay: Overlay<T>,
-): ToolState<S> {
-  const next = settingsFromLink(overlay, {}, searchColors(state.search, tools));
+/** `overlay` at its defaults. */
+export function withReset<T, S>(state: ToolState<S>, overlay: Overlay<T>): ToolState<S> {
+  const next = settingsFromLink(overlay, {});
   return built({ ...state, overlays: withEntry(state.overlays, overlay.id, next) });
 }
 
 /**
- * A link laid over `base`: the search's settings first, then the named overlay's, chosen to avoid
- * the search's colours. A link that names no overlay turns it off; every other overlay keeps what
- * `base` held.
+ * A link laid over `base`: the search's settings first, then the named overlay's. A link that
+ * names no overlay turns it off; every other overlay keeps what `base` held.
  */
 export function fromLink<T, S>(
   link: LinkedTools,
@@ -156,7 +146,7 @@ export function fromLink<T, S>(
   const search = settingsFromLink(tools.search, link.searchParams ?? {});
   const overlay = overlayNamed(tools, link.overlay);
   if (!overlay) return built({ ...base, active: null, search });
-  const settings = settingsFromLink(overlay, link.overlayParams ?? {}, searchColors(search, tools));
+  const settings = settingsFromLink(overlay, link.overlayParams ?? {});
   return built({
     active: overlay.id,
     overlays: withEntry(base.overlays, overlay.id, settings),
@@ -225,17 +215,8 @@ export function withOverlayTrimmed<T, S>(
   const overlay = activeOverlay(state, tools);
   if (!overlay) return state;
   const linked = settingsToLink(overlay, settingsIn(state, overlay));
-  const next = settingsFromLink(overlay, linked, searchColors(state.search, tools));
+  const next = settingsFromLink(overlay, linked);
   return built({ ...state, overlays: withEntry(state.overlays, overlay.id, next) });
-}
-
-function searchColors<T, S>(search: S, tools: TextTools<T, S>): readonly number[] {
-  return tools.search.colorsInUse?.(search) ?? [];
-}
-
-function overlayColors<T, S>(state: ToolState<S>, tools: TextTools<T, S>): readonly number[] {
-  const overlay = activeOverlay(state, tools);
-  return (overlay && overlay.colorsInUse?.(settingsIn(state, overlay))) ?? [];
 }
 
 function withEntry(

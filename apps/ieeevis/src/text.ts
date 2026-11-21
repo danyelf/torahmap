@@ -2,7 +2,7 @@
 
 import { cameraToFit, centreForFocus } from '@torahmap/engine';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
-import type { TermSettings } from '@torahmap/search';
+import { addTerm, type SearchTerm, type TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
 import { ENGLISH } from '@torahmap/shell/language.ts';
 import { coverElement, placeCover } from '@torahmap/shell/covers.ts';
@@ -28,7 +28,7 @@ import { configureSearch, squareBody, visSearch } from './search.ts';
 import { createMapCredit } from './mapCredit.ts';
 import { createMapTitle } from './mapTitle.ts';
 import { SECTIONS } from './overlays/sections.ts';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { PICK_PALETTE, TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { picksToUrl } from '@torahmap/shell/overlays/picks.ts';
 import { colorToCss, type Color } from '@torahmap/utils';
 import { WORDS_PER_SQUARE } from './page.ts';
@@ -48,7 +48,7 @@ const MAP_TITLE = 'IEEE VIS 2026';
 
 const swatch = (color: Color, outlined = false): string =>
   `<span class="story-swatch${outlined ? ' outlined' : ''}" style="background:${colorToCss(color)}"></span>`;
-// The story picks and searches these in order, so each takes the palette's colour at its place.
+// The story picks these in order, so each takes the palette's colour at its place.
 const STORY_KEYWORDS = ['Large Language Models', 'Uncertainty visualization'];
 // Mode w: a whole word.
 const STORY_SEARCH = [
@@ -56,8 +56,13 @@ const STORY_SEARCH = [
   { term: 'LLM', mode: 'w' },
   { term: 'parrot', mode: '' },
 ];
+// The searches are added as a link adds them, so each shows the colour the map gives it.
+const STORY_TERMS = STORY_SEARCH.reduce(
+  (terms, { term }) => addTerm(terms, term),
+  [] as SearchTerm[],
+);
 const searched = (term: string): string =>
-  `${swatch(PALETTE[STORY_SEARCH.findIndex((t) => t.term === term)])} ${term}`;
+  `${swatch(TERM_PALETTE[STORY_TERMS.find((t) => t.text === term)!.colorIndex])} ${term}`;
 const STORY_CITED = ['Danyel Fisher'];
 
 export const WHOLE_MAP: Story = {
@@ -97,14 +102,14 @@ export const WHOLE_MAP: Story = {
       },
       {
         id: 'keywords',
-        text: `The Keywords overlay shows where topics turn up across the week: ${STORY_KEYWORDS.map((keyword, i) => `${swatch(PALETTE[i])} ${keyword}`).join(' and ')}.`,
+        text: `The Keywords overlay shows where topics turn up across the week: ${STORY_KEYWORDS.map((keyword, i) => `${swatch(PICK_PALETTE[i])} ${keyword}`).join(' and ')}.`,
         camera: 'initial',
         overlay: 'keywords',
         overlayParams: { keywords: picksToUrl(STORY_KEYWORDS) },
       },
       {
         id: 'citations',
-        text: `The Citations overlay shows which papers cite papers by an author, such as ${swatch(PALETTE[0])} ${STORY_CITED[0]}.`,
+        text: `The Citations overlay shows which papers cite papers by an author, such as ${swatch(PICK_PALETTE[0])} ${STORY_CITED[0]}.`,
         camera: 'initial',
         overlay: 'citations',
         overlayParams: { cite: 'people', people: picksToUrl(STORY_CITED) },

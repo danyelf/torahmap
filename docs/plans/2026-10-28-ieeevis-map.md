@@ -125,9 +125,11 @@ The map opens on `structure.json` alone; the popup and search ask for `texts.jso
 
 ## Colour rules for picks and search words
 
-Words and picks draw from one set of nine colours (`packages/shell/src/overlays/palette.ts`; #497). A new
-word or pick takes the first colour no other holds and keeps it until removed. A link carries no colours:
-on opening, words take colours first and picks follow in link order. At most five words and four picks.
+Search words and picks have colours of their own (`packages/shell/src/overlays/palette.ts`; #497): five for
+words, four for picks, so the two never share or step round each other. A word's colour comes from the first
+letter of its plain form, or the next free word colour when that is held; it changes only when the first letter
+does. A pick takes the first free pick colour and keeps it. A link carries no colours. At most five words and
+four picks.
 
 ## Hard-won fixes
 
@@ -139,8 +141,6 @@ on opening, words take colours first and picks follow in link order. At most fiv
 - The program pages pack several keywords into one with `;`; the scrape splits them. 949 of 1,110
   keywords are on one paper only, so the legend says how many papers list any, so that a paper with none
   is not read as having none.
-- An empty search box holds no colour; it takes one with its first word, or it would use up the first colour.
-- `reduce(addTerm)` fails the typecheck now that `addTerm` takes `taken`; write the lambda.
 - `.map(colorToCss)` passes the index as the second argument; the alpha version is a separate function.
 - The layout reporter deletes tracked shots; restore with `git checkout -- layout-report`, and `git add -f`
   only the states being committed.
@@ -152,8 +152,6 @@ on opening, words take colours first and picks follow in link order. At most fiv
 
 - Paper type as the default overlay for a returning reader. It needs a way to write "no overlay" in a
   link and a default overlay in the shell.
-- A word and a pick can still share a colour after the reader switches to another overlay that holds
-  picks, since only the current overlay's picks count as taken.
 - On a phone, typing in a finder grows the sheet past the room the map has made for it. The Talmud's
   Rabbis finder does the same (#492).
 - Putting the page live: `live: false` in `build.ts` keeps it out of torahmap.org.
