@@ -25,7 +25,7 @@ const search = createTermSearch<{ id: string }, Data>({
 });
 
 const fromLink = (params: Record<string, string>): TermSettings =>
-  search.tool.settingsFromUrl!(params, []);
+  search.tool.settingsFromUrl!(params);
 
 describe('a term search with no extra mode', () => {
   it('reads and writes its terms and their modes in the link', () => {
@@ -109,7 +109,7 @@ describe('a term search counting wholes', () => {
 
   it('says how many wholes match, by their noun', () => {
     const container = document.createElement('div');
-    const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
+    const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' });
     wholes.tool.renderControls!(
       container,
       settings,
@@ -126,7 +126,7 @@ describe('a term search counting wholes', () => {
 
   it('lists each whole once, at its first match', () => {
     const container = document.createElement('div');
-    const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' }, []);
+    const settings = wholes.tool.settingsFromUrl!({ search: 'gamma' });
     wholes.tool.renderControls!(
       container,
       settings,

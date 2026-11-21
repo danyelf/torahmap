@@ -1,5 +1,5 @@
 import { type Color } from '@torahmap/utils';
-import { colorsOf, placesOf } from '../apps/tanakh/test/helpers/termMarks.ts';
+import { colorsOf } from '../apps/tanakh/test/helpers/termMarks.ts';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   pictureForStop,
@@ -237,33 +237,6 @@ describe('story stop settings reach the overlay', () => {
     const stop = { ...stopWith({ state: 'on' }), overlay: 'test-typed-settings' };
     computeBlendedColors(stop, stop, 0, verses, null, new Map(), getDefaultColor, textTools);
     expect(handed).toEqual({ on: true });
-  });
-});
-
-describe('a stop with search words and an overlay that colours', () => {
-  it('keeps the overlay out of the colours the words hold', () => {
-    let taken: readonly number[] | null = null;
-    const overlay: Overlay<TanakhLayout, object> = {
-      id: 'test-taking',
-      name: 'Test Taking',
-      urlParams: [],
-      settingsFromUrl: (_params, held) => {
-        taken = held;
-        return {};
-      },
-      settingsToUrl: () => ({}),
-      colorsFor: ({ items }) => items.map(() => [0.5, 0.5, 0.5] as [number, number, number]),
-    };
-    registerOverlay(overlay);
-    const stop: ResolvedStoryStop = {
-      id: 's',
-      text: '',
-      camera: { x: 0, y: 0, zoom: 1 },
-      overlay: 'test-taking',
-      searchParams: { search: 'God' },
-    };
-    pictureForStop(stop, verses, null, SAMPLE_LOADED, getDefaultColor, textTools);
-    expect(taken).toEqual(placesOf('God'));
   });
 });
 

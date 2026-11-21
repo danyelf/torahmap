@@ -154,7 +154,7 @@ async function main(): Promise<void> {
       controlsContainer,
       settings,
       (update) => {
-        settings = update(settings, []);
+        settings = update(settings);
         draw();
       },
       data,

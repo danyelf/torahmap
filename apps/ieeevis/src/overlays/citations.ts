@@ -42,9 +42,9 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
   data: CITED_DATA,
 
   urlParams: URL_PARAMS,
-  settingsFromUrl(params, taken) {
+  settingsFromUrl(params) {
     const lists = Object.fromEntries(
-      VIEW_NAMES.map((view) => [view, VIEWS[view].overlay.settingsFromUrl!(params, taken)]),
+      VIEW_NAMES.map((view) => [view, VIEWS[view].overlay.settingsFromUrl!(params)]),
     ) as CitationSettings['lists'];
     return { view: (params.cite as View | undefined) ?? VIEW_NAMES[0], lists };
   },
@@ -55,10 +55,6 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
       ...VIEW_NAMES.map((v) => VIEWS[v].overlay.settingsToUrl!(settings.lists[v])),
     ),
   }),
-  colorsInUse(settings) {
-    const { overlay, settings: picks } = shown(settings);
-    return overlay.colorsInUse!(picks);
-  },
 
   colorsFor(args) {
     const { overlay, settings } = shown(args.settings);
@@ -104,9 +100,9 @@ export const citationsOverlay: Overlay<PieceItem, CitationSettings, CitedData> =
         finder,
         settings.lists[view],
         (update) =>
-          onChange((current, taken) => ({
+          onChange((current) => ({
             ...current,
-            lists: { ...current.lists, [view]: update(current.lists[view], taken) },
+            lists: { ...current.lists, [view]: update(current.lists[view]) },
           })),
         data,
         travelTo,

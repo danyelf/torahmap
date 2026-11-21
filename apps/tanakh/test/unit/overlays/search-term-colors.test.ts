@@ -5,7 +5,7 @@
 // name a term by its position in the searched list. Those are the same number
 // until a term is removed, and then they are not.
 
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../src/search/index';
 import { configure } from '../../../src/search/index.ts';
@@ -49,7 +49,7 @@ function rowInput(container: HTMLElement, index: number): HTMLInputElement {
 }
 
 function css(index: number): string {
-  const [r, g, b] = PALETTE[index];
+  const [r, g, b] = TERM_PALETTE[index];
   return `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
 }
 
@@ -117,7 +117,7 @@ describe('a surviving term keeps one colour', () => {
     container.querySelectorAll<HTMLButtonElement>('.term-remove')[0].click();
 
     // Genesis 1:2 holds "spirit".
-    expect(searchOverlay.getItemColor(verses[1])).toEqual(PALETTE[kept]);
+    expect(searchOverlay.getItemColor(verses[1])).toEqual(TERM_PALETTE[kept]);
   });
 });
 

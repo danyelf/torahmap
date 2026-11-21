@@ -30,7 +30,7 @@ const segment = (id: string) => {
 const ITEMS = ['TractA.2a.1', 'TractA.2a.2', 'TractA.2a.3', 'TractA.3b.1'].map(segment);
 
 const found = (params: Record<string, string>): string[] => {
-  const settings = talmudSearch.settingsFromUrl!(params, []);
+  const settings = talmudSearch.settingsFromUrl!(params);
   const colors = talmudSearch.colorsFor({
     items: ITEMS,
     settings,
@@ -59,12 +59,12 @@ describe('the Talmud’s search', () => {
   });
 
   it('keeps the search and its mode in the link', () => {
-    const settings = talmudSearch.settingsFromUrl!({ search: 'רבי', mode: 'w' }, []);
+    const settings = talmudSearch.settingsFromUrl!({ search: 'רבי', mode: 'w' });
     expect(talmudSearch.settingsToUrl!(settings)).toEqual({ search: 'רבי', mode: 'w' });
   });
 
   it('marks nothing in popup text that abbreviates what search found', () => {
-    const settings = talmudSearch.settingsFromUrl!({ search: 'רבי', mode: 'w' }, []);
+    const settings = talmudSearch.settingsFromUrl!({ search: 'רבי', mode: 'w' });
     const fragment = talmudSearch.highlightItemText!(
       ITEMS[0],
       'אמר ר׳ יוחנן',
@@ -80,7 +80,7 @@ describe('the Talmud’s search', () => {
 
   it('draws its panel before its file is in, listing nothing', () => {
     const container = document.createElement('div');
-    const settings = talmudSearch.settingsFromUrl!({ search: 'רבי' }, []);
+    const settings = talmudSearch.settingsFromUrl!({ search: 'רבי' });
     talmudSearch.renderControls!(
       container,
       settings,
@@ -99,7 +99,7 @@ describe('the Talmud’s search in English', () => {
   };
   const withEnglish: TalmudSearchData = { ...data, english };
   const foundIn = (d: TalmudSearchData, params: Record<string, string>): string[] => {
-    const settings = talmudSearch.settingsFromUrl!(params, []);
+    const settings = talmudSearch.settingsFromUrl!(params);
     const colors = talmudSearch.colorsFor({
       items: ITEMS,
       settings,
@@ -123,7 +123,7 @@ describe('the Talmud’s search in English', () => {
   });
 
   it('searches Hebrew and English terms side by side', () => {
-    const settings = talmudSearch.settingsFromUrl!({ search: 'קל וחומר,ami' }, []);
+    const settings = talmudSearch.settingsFromUrl!({ search: 'קל וחומר,ami' });
     const colors = talmudSearch.colorsFor({
       items: ITEMS,
       settings,
@@ -138,7 +138,7 @@ describe('the Talmud’s search in English', () => {
 
   it('asks for the English file at once only for an English term', () => {
     const files = (search: string) =>
-      talmudSearch.filesNow!(talmudSearch.settingsFromUrl!({ search }, []));
+      talmudSearch.filesNow!(talmudSearch.settingsFromUrl!({ search }));
     expect(files('רבי')).toEqual([]);
     expect(files('a')).toEqual([]);
     expect(files('rabbi')).toEqual([SEARCH_ENGLISH_FILE]);
@@ -146,7 +146,7 @@ describe('the Talmud’s search in English', () => {
   });
 
   it('marks the popup’s English only inside the stretches it is told search reads', () => {
-    const settings = talmudSearch.settingsFromUrl!({ search: 'rabbi' }, []);
+    const settings = talmudSearch.settingsFromUrl!({ search: 'rabbi' });
     const text = 'Rabbi said: as Rabbi taught';
     const host = document.createElement('div');
     host.appendChild(

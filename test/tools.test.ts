@@ -36,7 +36,7 @@ describe('shownTools', () => {
   it('shows the overlay with its settings and data beside the search', () => {
     const settings = { category: 'total' };
     const loaded = new Map([...SAMPLE_LOADED, ['counts.json', { n: 1 }]]);
-    const state = withOverlaySettings(toolsWith('אור', 'counts'), tools, counts, () => settings);
+    const state = withOverlaySettings(toolsWith('אור', 'counts'), counts, () => settings);
     const shown = shownTools(state, tools, loaded);
     expect(shown.overlay).toEqual({ tool: counts, settings, data: { counts: { n: 1 } } });
     expect(shown.search).not.toBeNull();

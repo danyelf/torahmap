@@ -1,7 +1,7 @@
 // A list of rows under a panel, drawn a batch at a time as the reader scrolls: search's matches,
 // or any other items an overlay lists.
 import { colorToCss, type Color } from '@torahmap/utils';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import type { SearchResult, Snippet } from './textIndex.ts';
 import { colorIndexAt, type SearchTerm } from './terms.ts';
 import { markRange } from './highlight.ts';
@@ -81,7 +81,7 @@ export function searchRow(view: ResultsView): (result: SearchResult) => ResultRo
     };
 
     return {
-      colors: result.matchingTerms.map((m) => PALETTE[colorIndexAt(view.terms, m.termIndex)]),
+      colors: result.matchingTerms.map((m) => TERM_PALETTE[colorIndexAt(view.terms, m.termIndex)]),
       ref: result.ref,
       snippet: markRange(
         snippet,

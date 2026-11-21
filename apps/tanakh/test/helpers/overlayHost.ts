@@ -89,7 +89,7 @@ export function hostOverlay<S, D>(
       return settingsFromLink(overlay, raw);
     },
     change(update) {
-      settings = update(settings, []);
+      settings = update(settings);
       draw();
       listeners.forEach((listener) => listener());
     },

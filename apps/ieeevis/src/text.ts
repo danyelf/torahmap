@@ -28,7 +28,7 @@ import { configureSearch, squareBody, visSearch } from './search.ts';
 import { createMapCredit } from './mapCredit.ts';
 import { createMapTitle } from './mapTitle.ts';
 import { SECTIONS } from './overlays/sections.ts';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { PICK_PALETTE, TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { picksToUrl } from '@torahmap/shell/overlays/picks.ts';
 import { colorToCss, type Color } from '@torahmap/utils';
 import { WORDS_PER_SQUARE } from './page.ts';
@@ -62,7 +62,7 @@ const STORY_TERMS = STORY_SEARCH.reduce(
   [] as SearchTerm[],
 );
 const searched = (term: string): string =>
-  `${swatch(PALETTE[STORY_TERMS.find((t) => t.text === term)!.colorIndex])} ${term}`;
+  `${swatch(TERM_PALETTE[STORY_TERMS.find((t) => t.text === term)!.colorIndex])} ${term}`;
 const STORY_CITED = ['Danyel Fisher'];
 
 export const WHOLE_MAP: Story = {
@@ -102,14 +102,14 @@ export const WHOLE_MAP: Story = {
       },
       {
         id: 'keywords',
-        text: `The Keywords overlay shows where topics turn up across the week: ${STORY_KEYWORDS.map((keyword, i) => `${swatch(PALETTE[i])} ${keyword}`).join(' and ')}.`,
+        text: `The Keywords overlay shows where topics turn up across the week: ${STORY_KEYWORDS.map((keyword, i) => `${swatch(PICK_PALETTE[i])} ${keyword}`).join(' and ')}.`,
         camera: 'initial',
         overlay: 'keywords',
         overlayParams: { keywords: picksToUrl(STORY_KEYWORDS) },
       },
       {
         id: 'citations',
-        text: `The Citations overlay shows which papers cite papers by an author, such as ${swatch(PALETTE[0])} ${STORY_CITED[0]}.`,
+        text: `The Citations overlay shows which papers cite papers by an author, such as ${swatch(PICK_PALETTE[0])} ${STORY_CITED[0]}.`,
         camera: 'initial',
         overlay: 'citations',
         overlayParams: { cite: 'people', people: picksToUrl(STORY_CITED) },

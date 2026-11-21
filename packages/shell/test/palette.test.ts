@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { rgbToOklch } from '@torahmap/utils';
-import { freeColor, PALETTE } from '../src/overlays/palette.ts';
+import { freeColor, PICK_PALETTE, TERM_PALETTE } from '../src/overlays/palette.ts';
 import { MAX_PICKS } from '../src/overlays/picks.ts';
 
 describe('the palette', () => {
+  const PALETTE = [...TERM_PALETTE, ...PICK_PALETTE];
   const colors = PALETTE.map((color) => rgbToOklch([...color]));
 
   it('makes every colour equally light', () => {
@@ -33,27 +34,29 @@ describe('the palette', () => {
         expect(apart(colors[a], colors[b])).toBeGreaterThan(0.06);
   });
 
-  it('has a colour for every pick allowed beside the words', () => {
-    expect(PALETTE.length).toBeGreaterThan(MAX_PICKS);
+  it('has a colour for every pick allowed', () => {
+    expect(PICK_PALETTE.length).toBeGreaterThanOrEqual(MAX_PICKS);
   });
 });
 
 describe('the first free colour', () => {
-  it('looks from the place it is given, wrapping round', () => {
-    expect(freeColor([4], 4)).toBe(5);
-    expect(freeColor([PALETTE.length - 1], PALETTE.length - 1)).toBe(0);
-  });
+  const SIZE = 5;
 
   it('is the first when nothing is taken', () => {
-    expect(freeColor([])).toBe(0);
+    expect(freeColor([], SIZE)).toBe(0);
   });
 
   it('skips the colours taken, wherever they are', () => {
-    expect(freeColor([0, 2, 1])).toBe(3);
-    expect(freeColor([1])).toBe(0);
+    expect(freeColor([0, 2, 1], SIZE)).toBe(3);
+    expect(freeColor([1], SIZE)).toBe(0);
   });
 
-  it('falls back to the first when every colour is taken', () => {
-    expect(freeColor(PALETTE.map((_, place) => place))).toBe(0);
+  it('looks from the place it is given, wrapping round', () => {
+    expect(freeColor([4], SIZE, 4)).toBe(0);
+    expect(freeColor([2], SIZE, 2)).toBe(3);
+  });
+
+  it('falls back to the place it started from when every colour is taken', () => {
+    expect(freeColor([0, 1, 2, 3, 4], SIZE, 2)).toBe(2);
   });
 });

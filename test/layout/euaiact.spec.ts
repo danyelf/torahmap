@@ -25,7 +25,7 @@ import { EUAIACT_PATH as ACT } from '@torahmap/euaiact/page.ts';
 import { computeActLayout } from '@torahmap/euaiact/layout.ts';
 import { SQUARE_GAP } from '@torahmap/engine';
 import { addTerm } from '../../packages/search/src/terms.ts';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 
 const laid = computeActLayout(
   JSON.parse(
@@ -66,7 +66,7 @@ test.describe('on a dense screen', () => {
     await openMap(page, 'overlay=amendment&search=deployer&zoom=12&x=150&y=43', ACT);
     await page.mouse.move(0, 0);
     const png = await canvasShot(page);
-    const [cr, cg, cb] = PALETTE[addTerm([], 'deployer')[0].colorIndex].map((c) =>
+    const [cr, cg, cb] = TERM_PALETTE[addTerm([], 'deployer')[0].colorIndex].map((c) =>
       Math.round(c * 255),
     );
     const { across, down } = await page.evaluate(

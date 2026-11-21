@@ -6,7 +6,7 @@
 // the selection silently lands on a different word.
 
 import { describe, it, expect } from 'vitest';
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { parseSearchTerms } from '@torahmap/search';
 import { meaningsInVerse, sameMeaning, versesFor } from '../../src/search/dictionary.ts';
 import {
@@ -78,25 +78,6 @@ describe('adding a term', () => {
   });
 });
 
-describe('colours shared with picks', () => {
-  const allBut = (free: number) => [...Array(PALETTE.length).keys()].filter((p) => p !== free);
-
-  it('gives a new term a colour the picks are not using', () => {
-    expect(addTerm([], 'עלה', allBut(4))[0].colorIndex).toBe(4);
-    expect(addTerm([], '', allBut(4))[0].colorIndex).toBe(4);
-  });
-
-  it('gives the terms a comma makes colours the picks are not using', () => {
-    const blank = addTerm([], '');
-
-    const typed = setTermText(blank, blank[0].id, 'עלה, מלך', [0, 2]);
-
-    expect(typed).toHaveLength(2);
-    for (const { colorIndex } of typed) expect([0, 2]).not.toContain(colorIndex);
-    expect(typed[0].colorIndex).not.toBe(typed[1].colorIndex);
-  });
-});
-
 describe('colours from the word', () => {
   it('gives the same word the same colour whatever its case or vowel points', () => {
     const [plain] = addTerm([], 'abraham');
@@ -105,12 +86,21 @@ describe('colours from the word', () => {
     expect(addTerm([], 'שָׁלוֹם')[0].colorIndex).toBe(addTerm([], 'שלום')[0].colorIndex);
   });
 
+  it('gives every term a colour of its own even when all start with one letter', () => {
+    const terms = ['abel', 'abraham', 'adam', 'aaron', 'amos'].reduce(
+      (list, text) => addTerm(list, text),
+      [] as SearchTerm[],
+    );
+
+    expect(new Set(heldColors(terms)).size).toBe(MAX_TERMS);
+  });
+
   it('steps to the next free colour when its own is taken', () => {
     const [first] = addTerm([], 'abraham');
 
     const second = addTerm([first], 'abraham')[1];
 
-    expect(second.colorIndex).toBe((first.colorIndex + 1) % PALETTE.length);
+    expect(second.colorIndex).toBe((first.colorIndex + 1) % TERM_PALETTE.length);
   });
 
   it('gives an empty term a colour no term is using', () => {

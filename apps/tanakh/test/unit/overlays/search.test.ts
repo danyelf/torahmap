@@ -1521,7 +1521,7 @@ describe('Search Overlay', () => {
         container,
         held,
         (update) => {
-          held = update(held, []) as SearchSettings;
+          held = update(held) as SearchSettings;
         },
         searchOverlay.data,
         () => {},

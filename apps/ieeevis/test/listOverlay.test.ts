@@ -97,7 +97,7 @@ describe('the authors overlay', () => {
 
   it('comes back from a link as the same picks', () => {
     const settings = { picked: ['Ana Silva', 'Bei Wang'] };
-    expect(authorsOverlay.settingsFromUrl!(authorsOverlay.settingsToUrl!(settings), [])).toEqual(
+    expect(authorsOverlay.settingsFromUrl!(authorsOverlay.settingsToUrl!(settings))).toEqual(
       settings,
     );
     expect(authorsOverlay.settingsToUrl!({ picked: [] })).toEqual({});
@@ -148,7 +148,7 @@ describe('the quick picks', () => {
     keywordsOverlay.renderControls!(
       container,
       settings,
-      (update) => changes.push(update(settings, [])),
+      (update) => changes.push(update(settings)),
       data,
       () => {},
     );

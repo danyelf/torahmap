@@ -3,7 +3,7 @@
 //
 // Everything here takes the terms as an argument, so nothing in this file knows
 // what the search currently holds.
-import { PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 import { colorToCssAlpha, type TextRange } from '@torahmap/utils';
 import type { SearchLanguage } from './language.ts';
 import { matchRanges, type MatchMode } from './matching.ts';
@@ -22,7 +22,7 @@ const MARK_ALPHA = 0.4;
 /** A term's mark, in the term's colour. Both highlighters in this file go through here. */
 export function mark(text: string, colorIndex: number): HTMLElement {
   const element = document.createElement('mark');
-  element.style.background = colorToCssAlpha(PALETTE[colorIndex], MARK_ALPHA);
+  element.style.background = colorToCssAlpha(TERM_PALETTE[colorIndex], MARK_ALPHA);
   element.style.color = '#fff';
   element.textContent = text;
   return element;

@@ -6,8 +6,8 @@
 // that choice the moment an earlier term is edited, because every later index
 // shifts and the choice lands silently on a different word.
 
-import { freeColor, PALETTE } from '@torahmap/shell/overlays/palette.ts';
-import { MAX_PICKS, plainName } from '@torahmap/shell/overlays/picks.ts';
+import { freeColor, TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
+import { plainName } from '@torahmap/shell/overlays/picks.ts';
 import { isSearchableWord } from '@torahmap/utils';
 import { TERM_SEPARATORS } from './constants.ts';
 import type { ExtraMode } from './extraMode.ts';
@@ -22,8 +22,8 @@ export interface SearchTerm {
   /** What the reader typed. */
   text: string;
   /**
-   * Place in PALETTE, from the first letter of the term's plain form: the colour that letter
-   * hashes to, or the next free one when another term or pick holds it. Typing more letters keeps
+   * Place in TERM_PALETTE, from the first letter of the term's plain form: the colour that letter
+   * hashes to, or the next free one when another term holds it. Typing more letters keeps
    * it, a new first letter chooses again, and removing another term recolours nobody. An empty term
    * has no letter and takes the colour the empty string hashes to.
    */
@@ -45,11 +45,8 @@ export interface SearchTerm {
   chosen: string[] | null;
 }
 
-/**
- * One colour per term, and the picks keep the rest of PALETTE, so a colour is always left for
- * the next term or pick.
- */
-export const MAX_TERMS = PALETTE.length - MAX_PICKS;
+/** One colour per term. */
+export const MAX_TERMS = TERM_PALETTE.length;
 
 let nextId = 0;
 
@@ -58,25 +55,21 @@ export const heldColors = (terms: SearchTerm[]): number[] => terms.map((t) => t.
 
 const firstLetter = (text: string): string => [...plainName(text)][0] ?? '';
 
-/** FNV-1a of the first letter, as a place in PALETTE to start looking from. */
+/** FNV-1a of the first letter, as a place in TERM_PALETTE to start looking from. */
 function hashedStart(letter: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < letter.length; i++) hash = Math.imul(hash ^ letter.charCodeAt(i), 0x01000193);
-  return (hash >>> 0) % PALETTE.length;
+  return (hash >>> 0) % TERM_PALETTE.length;
 }
 
-/** The colour for `text`'s first letter that neither `held` nor the picks' `taken` is using. */
-const colorFor = (text: string, held: number[], taken: readonly number[]): number =>
-  freeColor([...taken, ...held], hashedStart(firstLetter(text)));
+/** The colour for `text`'s first letter, or the next free one after it. */
+const colorFor = (text: string, held: number[]): number =>
+  freeColor(held, TERM_PALETTE.length, hashedStart(firstLetter(text)));
 
 /** The terms with one more, in the colour its first letter gives it. */
-export function addTerm(
-  terms: SearchTerm[],
-  text: string,
-  taken: readonly number[] = [],
-): SearchTerm[] {
+export function addTerm(terms: SearchTerm[], text: string): SearchTerm[] {
   if (terms.length >= MAX_TERMS) return terms;
-  const colorIndex = colorFor(text, heldColors(terms), taken);
+  const colorIndex = colorFor(text, heldColors(terms));
   return [...terms, { id: `t${nextId++}`, text, colorIndex, mode: null, chosen: null }];
 }
 
@@ -92,12 +85,7 @@ export function removeTerm(terms: SearchTerm[], id: string): SearchTerm[] {
  * keeps the invariant the URL depends on: no term's text holds a character
  * that would later split it in two.
  */
-export function setTermText(
-  terms: SearchTerm[],
-  id: string,
-  text: string,
-  taken: readonly number[] = [],
-): SearchTerm[] {
+export function setTermText(terms: SearchTerm[], id: string, text: string): SearchTerm[] {
   // `text` is kept exactly as the box holds it, trailing space and all, so the
   // input element and the term never disagree about what is written. Trimming
   // happens where it matters: looking up meanings, and building the query.
@@ -118,13 +106,13 @@ export function setTermText(
   const colorIndex =
     firstLetter(old.text) === firstLetter(replacement[0])
       ? old.colorIndex
-      : colorFor(replacement[0], heldColors(terms.filter((t) => t.id !== id)), taken);
+      : colorFor(replacement[0], heldColors(terms.filter((t) => t.id !== id)));
   const edited = { ...old, text: replacement[0], colorIndex, chosen: null };
   let out = [...terms.slice(0, index), edited, ...terms.slice(index + 1)];
 
   // Any further parts become terms of their own, until the colours run out.
   for (const extra of replacement.slice(1)) {
-    const grown = addTerm(out, extra, taken);
+    const grown = addTerm(out, extra);
     if (grown.length === out.length) break;
     out = grown;
   }

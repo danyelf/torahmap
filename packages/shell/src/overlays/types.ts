@@ -26,13 +26,12 @@ export interface ColorArgs<T, S = unknown, D = unknown> {
 }
 
 // A change to an overlay's settings: the next settings, worked out from the
-// current ones and from `taken`, the PALETTE colours the other tool (the search,
-// or the overlay) holds, which a new colour must avoid. Typed through a method so
+// current ones. Typed through a method so
 // that its parameter is checked bivariantly, like the Overlay members below; as a
 // plain function type, S would sit in both directions and no Overlay<T,
 // SomeSettings> would be an Overlay.
 export type SettingsUpdate<S> = {
-  bivarianceHack(current: S, taken: readonly number[]): S;
+  bivarianceHack(current: S): S;
 }['bivarianceHack'];
 
 /** Glides the camera to fit the squares `ids` name, as going to a place does. */
@@ -101,9 +100,8 @@ interface OverlayWithSettings<S> {
   // settingsFromUrl receives only declared keys, with declared defaults filled
   // in; an empty link gives the settings the overlay starts with. A value
   // settingsToUrl writes at its declared default stays out of the link.
-  // `taken` is as for SettingsUpdate.
   urlParams: readonly UrlParamSpec[];
-  settingsFromUrl(params: UrlParamValues, taken: readonly number[]): S;
+  settingsFromUrl(params: UrlParamValues): S;
   settingsToUrl(settings: S): Record<string, string>;
 }
 
@@ -125,10 +123,6 @@ interface OverlayMembers<T, S, D> {
   description?: string;
 
   destroy?(): void;
-
-  // The PALETTE colours these settings use, as places in it. Absent for a tool
-  // that draws in none of them.
-  colorsInUse?(settings: S): readonly number[];
 
   // One colour per item, as the map and the story's blend ask for them: null
   // renders default gray; Color[] splits the square corner to corner, one band

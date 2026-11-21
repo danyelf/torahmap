@@ -81,7 +81,7 @@ describe('Overlay Switching Integration', () => {
     overlay.renderControls?.(
       mockControlsContainer,
       settingsIn(tools, overlay),
-      (update) => (tools = withOverlaySettings(tools, textTools, overlay, update)),
+      (update) => (tools = withOverlaySettings(tools, overlay, update)),
       data,
       () => {},
     );
@@ -260,7 +260,7 @@ describe('Overlay Switching Integration', () => {
       overlay.renderControls?.(
         mockControlsContainer,
         settingsIn(tools, overlay),
-        (update) => (tools = withOverlaySettings(tools, textTools, overlay, update)),
+        (update) => (tools = withOverlaySettings(tools, overlay, update)),
         currentData,
         () => {},
       );
@@ -337,7 +337,7 @@ describe('Overlay Switching Integration', () => {
 
     it("keeps an overlay's settings after switching away", () => {
       const overlay = switchToOverlay('commentary');
-      tools = withOverlaySettings(tools, textTools, overlay, () => ({ category: 'Midrash' }));
+      tools = withOverlaySettings(tools, overlay, () => ({ category: 'Midrash' }));
 
       // Switch away (calls destroy)
       switchToOverlay('trop');
