@@ -572,7 +572,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     applyFrame(previous);
   }
 
-  /** The menu item the reader last chose, told to the menu's close. */
+  /** The menu item whose click closes the menu, told to the close; empty when it is dismissed. */
   let menuChoice = '';
 
   /**
@@ -1486,8 +1486,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (start) return takeStart(start);
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
-    if (action && droppedMenu.contains(actionItem)) menuChoice = action;
-    if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
+    if (action === CONTINUE_STORY) {
+      menuChoice = action;
+      return dispatch({ type: 'story' });
+    }
     if (action === SHARE) {
       // A share already in flight ignores a second tap: sharing again would
       // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
@@ -1507,7 +1509,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // panel does.
     const chooser = target.closest('.map-legend-open')?.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
-    if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
+    if (isPanel(panelName)) {
+      menuChoice = action ?? '';
+      dispatch({ type: 'choose', panel: panelName });
+    }
   }
 
   /** A legend card's ×: what the search panel's Clear, or the overlay's None, does. */
@@ -1519,6 +1524,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     (
       mapLegend.querySelector<HTMLElement>('.map-legend-row:not([hidden]) button') ?? menuToggle
     ).focus();
+  }
+
+  function closeMenuAfterShare(): void {
+    menuChoice = SHARE;
+    dispatch({ type: 'menu' });
   }
 
   /** A pan's debounced address write may not have landed yet, so it is brought current first. */
@@ -1550,10 +1560,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       // Reopening the menu redraws its items, detaching this one; a stale
       // timer must not then close whatever menu is open by the time it fires.
       setTimeout(() => {
-        if (frame.menu && item.isConnected) dispatch({ type: 'menu' });
+        if (frame.menu && item.isConnected) closeMenuAfterShare();
       }, 1500);
     } else if (frame.menu) {
-      dispatch({ type: 'menu' });
+      closeMenuAfterShare();
     }
   }
   for (const id of ['panel', 'menu-toggle', 'menu', 'map-legend']) {
