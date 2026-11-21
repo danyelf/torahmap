@@ -7,6 +7,7 @@ import {
   downloadKbps,
   reportError,
   reportVisitEnd,
+  menuTelemetry,
   trackMenu,
   trackOverlayPick,
   reportUncaughtErrors,
@@ -318,6 +319,19 @@ describe('menu', () => {
       ['menu', { state: 'open', item: '' }],
       ['menu', { state: 'closed', item: 'about' }],
     ]);
+  });
+});
+
+describe('menuTelemetry', () => {
+  it('names the item whose click closed the menu, and nothing for a dismissal', () => {
+    const told: string[] = [];
+    const menu = menuTelemetry((state, item) => told.push(`${state}:${item}`));
+    menu.changed(true);
+    menu.chose('about');
+    menu.changed(false);
+    menu.changed(true);
+    menu.changed(false);
+    expect(told).toEqual(['open:', 'closed:about', 'open:', 'closed:']);
   });
 });
 

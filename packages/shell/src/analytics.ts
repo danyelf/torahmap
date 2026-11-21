@@ -182,6 +182,25 @@ export function trackMenu(state: 'open' | 'closed', item = ''): void {
   track('menu', { state, item });
 }
 
+/**
+ * What the menu tells telemetry: its opening and closing, and on a close the item whose click
+ * closed it. A dismissal names no item, so a choice is told once and forgotten.
+ */
+export function menuTelemetry(send = trackMenu) {
+  let choice = '';
+  return {
+    /** The click of `item` is about to close the menu. */
+    chose(item: string): void {
+      choice = item;
+    },
+    /** The menu opened or closed. */
+    changed(open: boolean): void {
+      send(open ? 'open' : 'closed', open ? '' : choice);
+      choice = '';
+    },
+  };
+}
+
 export function trackLinkOut(id: string, area: string, overlay: string): void {
   track('link_out', { id, area, overlay });
 }

@@ -68,7 +68,7 @@ import {
   trackOverlaySwitch,
   trackPageView,
   trackLinkOut,
-  trackMenu,
+  menuTelemetry,
   reportVisitEnd,
   trackShare,
   trackStoryExit,
@@ -572,8 +572,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     applyFrame(previous);
   }
 
-  /** The menu item whose click closes the menu, told to the close; empty when it is dismissed. */
-  let menuChoice = '';
+  const menuRecord = menuTelemetry();
 
   /**
    * Puts the frame on the page. The stylesheet reads the attributes; the menu
@@ -593,8 +592,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
     if (previous && frame.menu !== previous.menu) {
-      trackMenu(frame.menu ? 'open' : 'closed', frame.menu ? '' : menuChoice);
-      menuChoice = '';
+      menuRecord.changed(frame.menu);
     }
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
@@ -1487,7 +1485,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
     if (action === CONTINUE_STORY) {
-      menuChoice = action;
+      menuRecord.chose(action);
       return dispatch({ type: 'story' });
     }
     if (action === SHARE) {
@@ -1510,7 +1508,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const chooser = target.closest('.map-legend-open')?.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
     if (isPanel(panelName)) {
-      menuChoice = action ?? '';
+      if (action) menuRecord.chose(action);
       dispatch({ type: 'choose', panel: panelName });
     }
   }
@@ -1527,7 +1525,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function closeMenuAfterShare(): void {
-    menuChoice = SHARE;
+    menuRecord.chose(SHARE);
     dispatch({ type: 'menu' });
   }
 
