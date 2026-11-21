@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { columns, EVENTS, type EventName } from '@torahmap/telemetry';
+import { columns, EVENTS, RETIRED_EVENTS, type EventName } from '@torahmap/telemetry';
 
 const dir = join(__dirname, '../scripts/telemetry');
 const queries = readdirSync(dir).filter((f) => f.endsWith('.sql'));
@@ -57,7 +57,8 @@ describe('telemetry queries', () => {
     expect(events.length).toBeGreaterThan(0);
     expect(sql).toContain('{{SITE}}');
 
-    for (const event of events) {
+    for (const read of events) {
+      const event = RETIRED_EVENTS[read] ?? read;
       expect(EVENTS).toHaveProperty(event);
       for (const ref of references(sql)) {
         const actual = columns(event as EventName)[ref.kind][ref.n - 1];

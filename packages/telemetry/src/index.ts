@@ -52,7 +52,8 @@ export const EVENTS = {
   // The menu opening or closing; item is the menu item chosen as it closed, empty when it was
   // dismissed or is opening.
   menu: { blobs: ['state', 'item'], doubles: [] },
-  // The link out of a square's popup: Sefaria, or on the VIS map the paper's page.
+  // The link out of a square's popup: Sefaria, or on the VIS map the paper's page. Rows sent
+  // before 2026-11-20 call it sefaria_open (see RETIRED_EVENTS), with the same columns.
   link_out: { blobs: ['id', 'area', 'overlay'], doubles: [] },
   // Sent each time the page is hidden or leaves, with the seconds it has been visible so far:
   // a visit's longest is its length, and 0 means it was never shown.
@@ -85,6 +86,9 @@ export const EVENTS = {
 >;
 
 export type EventName = keyof typeof EVENTS;
+
+/** Names an event had before, with the event that replaced each: old rows keep them. */
+export const RETIRED_EVENTS: Record<string, EventName> = { sefaria_open: 'link_out' };
 
 export type WorkerEvent = {
   [E in EventName]: (typeof EVENTS)[E] extends { by: 'worker' } ? E : never;
