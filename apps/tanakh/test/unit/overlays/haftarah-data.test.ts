@@ -141,7 +141,12 @@ describe('the haftarah readings the app ships', () => {
       const four = mappings.specialOccasions.filter(
         (o) => (o as Reading & { category: string }).category === 'four-shabbatot',
       );
-      expect(four.map((o) => o.name)).toEqual(['Sheqalim', 'Zakhor', 'Parah', 'Ha-Chodesh']);
+      expect(four.map((o) => o.hebrewName)).toEqual([
+        'שבת שקלים',
+        'שבת זכור',
+        'שבת פרה',
+        'שבת החודש',
+      ]);
     });
 
     it('reads Jonah at Yom Kippur afternoon', () => {

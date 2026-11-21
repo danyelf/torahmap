@@ -54,6 +54,7 @@ export const KNOWN: Record<string, Known> = {
         'explore-haftarah-verse-both',
         'explore-haftarah-verse-one',
         'explore-haftarah-verse-other',
+        'explore-haftarah-verse-special-shabbat',
       ],
       POPUP_KNOWN,
     ),
