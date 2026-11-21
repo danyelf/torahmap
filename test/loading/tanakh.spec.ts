@@ -6,6 +6,7 @@ import { test } from '../browser/fakeMap.ts';
 import {
   allLoaded,
   desktopOnly,
+  hold,
   param,
   recordEvents,
   sentSearches,
@@ -156,21 +157,30 @@ test('a lexicon search cannot build from fails its prebuild alone, and the rest 
 }) => {
   desktopOnly('what loads does not depend on the screen');
   const parseLanded = page.waitForResponse(`**/data/${PARSE}`, { timeout: 120_000 });
+  // The parse is held until the first attempt has failed: landing before the
+  // last required file, it would make that the only attempt.
+  const releaseParse = await hold(page, [PARSE]);
   // A lexicon with no lexemes: building the dictionary from it throws.
   const { release, errors } = await open(page, 'overlay=haftarah', [LEXICON], { body: '{}' });
   await recordEvents(page);
   release();
+  // With no search typed, nothing builds the dictionary as the lexicon lands:
+  // only search's idle prebuild does, and it throws uncaught, by design.
+  await expect.poll(() => errors.length).toBe(1);
+  releaseParse();
   await allLoaded(page);
   // The per-word parse is the last stage.
   expect((await parseLanded).ok()).toBe(true);
   await expect.poll(() => sentLoadTiming(page)).toHaveLength(1);
   expect((await sentLoadTiming(page))[0].search_ready).toBe(0);
-  // With no search typed, nothing builds the dictionary as the lexicon lands:
-  // only search's idle prebuild does, and it throws uncaught, by design.
-  await expect.poll(() => errors.length).toBe(1);
-  expect(errors[0]).not.toMatch(/^console:/);
-  // The built page's stack names no function; its message names the missing field.
-  expect(errors[0]).toContain('lexemes');
+  // It builds again when the parse lands, on the same lexicon, so it throws
+  // once per attempt.
+  await expect.poll(() => errors.length).toBe(2);
+  for (const error of errors) {
+    expect(error).not.toMatch(/^console:/);
+    // The built page's stack names no function; its message names the missing field.
+    expect(error).toContain('lexemes');
+  }
 });
 
 test('load timing says when the texts landed, after the first frame', async ({ page }) => {
