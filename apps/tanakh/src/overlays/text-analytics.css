@@ -74,3 +74,7 @@
   height: 28px;
   margin: 2px 0 0;
 }
+
+.parallel-list button.parallel-source {
+  border-left: 2px solid var(--accent);
+}

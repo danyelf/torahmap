@@ -306,7 +306,7 @@ export const STATES: State[] = [
     link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=0.8&x=2304&y=11&verse=Numbers.1.29',
     then: async (page) => {
       await viaMenu(page, 'overlay');
-      await page.locator('.parallel-verses button').first().click();
+      await page.locator('.parallel-verses button:not(.parallel-source)').first().click();
       await expect(page.locator('#popup')).toContainText('Numbers 2:6');
     },
     shown: ['#popup', '#map-legend'],
@@ -338,6 +338,28 @@ export const STATES: State[] = [
     // 2 Kings 22:1 is retold in 1 Kings 15:10 and 2 Chronicles 34:1.
     name: 'explore-text-analytics-echoes-view-pinned',
     link: 'overlay=text-analytics&analysis=echoes&zoom=0.1&verse=II.Kings.22.1',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // I Kings 8:17 with the parallels list showing it in its place among them.
+    name: 'explore-text-analytics-echoes-view-source-listed',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.3&verse=I.Kings.8.17',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // The same view with the pointer away: other verses with echoes dim to grey.
+    name: 'explore-text-analytics-echoes-view-pinned-close',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.5&verse=Jeremiah.52.1',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // The pointer on one of the pinned verse's echoes: verses with echoes of their own keep their colours.
+    name: 'explore-text-analytics-echoes-view-hover',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=0.5&verse=Jeremiah.52.1',
+    then: async (page) => {
+      const canvas = (await page.locator('#canvas').boundingBox())!;
+      await page.mouse.move(canvas.x + canvas.width / 2 + 206, canvas.y + canvas.height / 2 - 117);
+    },
     shown: ['#popup', '#map-legend'],
   },
   {
