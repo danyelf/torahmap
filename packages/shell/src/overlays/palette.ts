@@ -17,10 +17,10 @@ const fromHues = (hues: readonly number[]): readonly Color[] =>
   );
 
 /** OKLCH hues, each far from the one before it, the order a clashing word steps through them. */
-export const TERM_PALETTE = fromHues([5, 165, 320, 85, 245]);
+export const TERM_PALETTE = fromHues([215, 50, 320, 125, 5]);
 
 /** OKLCH hues in the order picks are handed them. */
-export const PICK_PALETTE = fromHues([215, 50, 275, 125]);
+export const PICK_PALETTE = fromHues([275, 165, 85, 245]);
 
 /**
  * The first place below `size` not in `taken`, looking from place `from` on and wrapping round;
