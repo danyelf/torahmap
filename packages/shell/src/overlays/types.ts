@@ -144,10 +144,6 @@ interface OverlayMembers<T, S, D> {
   // standout is otherwise a plain square.
   halosFor?(args: ColorArgs<T, S, D>): boolean[];
 
-  // A field behind the squares; null for none. It is redrawn when the tools change, not when
-  // the focus moves, so it is given none.
-  backdrop?(args: Omit<ColorArgs<T, S, D>, 'focus'>): Backdrop | null;
-
   // The panel may be drawn without the overlay's data; then data is null.
   //
   // Draw the controls for `settings`. The app calls this again with the same
@@ -251,19 +247,6 @@ interface OverlayMembers<T, S, D> {
   // panel. Omit when the overlay derives everything from already-credited text;
   // a test enforces this for everything else.
   credits?: readonly Credit[];
-}
-
-/**
- * A faint colour field behind the map: `stops` are CSS colours spread evenly round a circle,
- * clockwise from straight up, around `centre`; it covers `rect`, all in map units. `fade`, if
- * given, greys the field out to `radius` around the centre, fully at the centre.
- */
-export interface Backdrop {
-  rect: { minX: number; minY: number; maxX: number; maxY: number };
-  centre: { x: number; y: number };
-  stops: string[];
-  opacity: number;
-  fade?: { radius: number; color: string };
 }
 
 export interface OverlaySummary {

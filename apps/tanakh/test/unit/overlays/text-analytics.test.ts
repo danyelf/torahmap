@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overlays/text-analytics';
 import { NO_DATA } from '../../../src/overlays/colors';
 import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
+import { brighten } from '@torahmap/utils';
+import { getDefaultColor } from '../../../src/baseColor';
+import { DISTANCE_STEPS } from '../../../src/overlays/text-analytics/distance';
 import { createVerse, SAMPLE_TEXT_ANALYTICS_SCORES } from '../../helpers/fixtures';
 import { initBookData } from '../../../src/books';
 import { hostOverlay } from '../../helpers/overlayHost';
@@ -216,11 +219,11 @@ describe('Text Analytics overlay', () => {
         focus: { hovered, pinned: null },
       });
 
-    it("colours a verse with echoes and leaves one without in the map's grey", () => {
+    it('shows a verse without echoes in the map grey at 0.6 of its brightness', () => {
       const [first, second] = colors({ 0: [3, 5] }, null);
-      expect(first).not.toBeNull();
-      expect(second).toBeNull();
-      expect(colors({}, null)[0]).toBeNull();
+      expect(first).not.toEqual(brighten(getDefaultColor(0), 0.6));
+      expect(second).toEqual(brighten(getDefaultColor(1), 0.6));
+      expect(colors({}, null)[0]).toEqual(brighten(getDefaultColor(0), 0.6));
     });
 
     it('counts only the echoes sharing at least the chosen words in a row', () => {
@@ -244,15 +247,67 @@ describe('Text Analytics overlay', () => {
       expect(say(6)).toBe('');
     });
 
-    it('dims the verses outside the focus: greys to the dimmed grey, colours toward it', () => {
-      const echoes = { 0: [3, 5], 1: [2, 7], 2: [3, 5] };
-      const plain = colors(echoes, null);
-      const lit = colors(echoes, verse(1));
-      expect(lit[0]).toEqual(plain[0]);
-      expect(lit[3]).toEqual(plain[3]);
-      expect(lit[1]).not.toEqual(plain[1]);
-      expect(lit[1]).not.toEqual(DIMMED_GREY);
-      expect(colors({ 0: [3, 5] }, verse(1))[1]).toEqual(DIMMED_GREY);
+    describe('by distance', () => {
+      // In reading order: Genesis 1:1, Genesis 1:2, Genesis 2:1, Exodus 1:1, Isaiah 1:1, Psalms 1:1.
+      initBookData({
+        books: ['Genesis', 'Exodus', 'Isaiah', 'Psalms'].map((name, i) => ({
+          name,
+          hebrewName: '',
+          section: (['torah', 'torah', 'neviim', 'ketuvim'] as const)[i],
+          chapters: [2],
+        })),
+        layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+      });
+      const places = [
+        createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
+        createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),
+        createVerse({ book: 'Genesis', chapter: 2, verse: 1 }),
+        createVerse({ book: 'Exodus', chapter: 1, verse: 1 }),
+        createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }),
+        createVerse({ book: 'Psalms', chapter: 1, verse: 1 }),
+      ];
+      const spread: TextAnalyticsData = {
+        ...data,
+        scores: {
+          ...data.scores,
+          repetition: {
+            Genesis: { '1': [0, 0], '2': [0] },
+            Exodus: { '1': [0] },
+            Isaiah: { '1': [0] },
+            Psalms: { '1': [0] },
+          },
+        },
+      };
+      const paint = (
+        echoes: TextAnalyticsData['echoes'],
+        hovered: (typeof places)[number] | null = null,
+      ) =>
+        textAnalyticsOverlay.colorsFor!({
+          items: places,
+          settings: echoSettings,
+          data: { ...spread, echoes },
+          focus: { hovered, pinned: null },
+        });
+      const [chapter, book, section, other] = DISTANCE_STEPS.map((step) => step.color);
+
+      it('colours a verse by the distance of its farthest echo', () => {
+        expect(paint({ 0: [1, 5] })[0]).toEqual(chapter);
+        expect(paint({ 0: [1, 5, 2, 5] })[0]).toEqual(book);
+        expect(paint({ 0: [1, 5, 2, 5, 3, 5] })[0]).toEqual(section);
+        expect(paint({ 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5] })[0]).toEqual(other);
+      });
+
+      it("colours a focused verse's echoes by their distance from it, and the verse white", () => {
+        const colors = paint({ 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5] }, places[0]);
+        expect(colors.slice(0, 6)).toEqual([[1, 1, 1], chapter, book, section, other, other]);
+      });
+
+      it('dims other verses that have echoes to the dimmed grey, and leaves the rest plain', () => {
+        const colors = paint({ 0: [1, 5], 2: [3, 5] }, places[0]);
+        expect(colors[2]).toEqual(DIMMED_GREY);
+        expect(colors[3]).toEqual(DIMMED_GREY);
+        expect(colors[4]).toEqual(brighten(getDefaultColor(4), 0.6));
+      });
     });
 
     describe('marking the shared phrase', () => {
@@ -332,121 +387,5 @@ describe('Text Analytics overlay', () => {
       h.restore({ analysis: 'repetitive-wording' });
       expect(h.renderControls().querySelector('label')!.hidden).toBe(true);
     });
-
-    describe('the colour wheel', () => {
-      // The map is 1000 units square, so the wheel's centre is at about (503, 508).
-      const anchor = createVerse({ book: 'Exodus', chapter: 1, verse: 1, x: 994, y: 994 });
-      const partnerAt = (x: number, y: number) => [
-        createVerse({ verse: 1, x: 0, y: 0 }),
-        createVerse({ verse: 2, x: 50, y: 0 }),
-        createVerse({ verse: 3, x: 50, y: 50 }),
-        createVerse({ verse: 4, x: x - 3, y: y - 3 }),
-        anchor,
-      ];
-      const colourOfFirst = (x: number, y: number) =>
-        textAnalyticsOverlay.colorsFor!({
-          items: partnerAt(x, y),
-          settings: echoSettings,
-          data: {
-            ...data,
-            echoes: { 0: [3, 5] },
-          },
-          focus: { hovered: null, pinned: null },
-        })[0];
-
-      it('colours a verse by the direction of its farthest echo from the centre, not the distance', () => {
-        expect(colourOfFirst(753, 258)).toEqual(colourOfFirst(803, 208));
-        expect(colourOfFirst(753, 258)).not.toEqual(colourOfFirst(253, 258));
-      });
-
-      // How far a colour is from grey: the spread of its channels.
-      const colourfulness = (color: unknown) => {
-        const channels = color as number[];
-        return Math.max(...channels) - Math.min(...channels);
-      };
-
-      it('fades a place near the wheel centre toward grey', () => {
-        expect(colourfulness(colourOfFirst(503, 508))).toBeLessThan(0.01);
-        expect(colourfulness(colourOfFirst(503, 508))).toBeLessThan(
-          colourfulness(colourOfFirst(803, 208)),
-        );
-      });
-
-      it('fades an echo near its verse toward grey, but stays brighter than an unmatched verse', () => {
-        const hop = (x: number, y: number) =>
-          textAnalyticsOverlay.colorsFor!({
-            items: [
-              createVerse({ verse: 1, x: x - 30, y: y - 30 }),
-              createVerse({ verse: 4, x: x - 3, y: y - 3 }),
-              anchor,
-            ],
-            settings: echoSettings,
-            data: { ...data, echoes: { 0: [3, 5] } },
-            focus: { hovered: null, pinned: null },
-          })[0]!;
-        const near = hop(803, 208);
-        expect(colourfulness(near)).toBeLessThan(colourfulness(colourOfFirst(803, 208)));
-        expect(Math.min(...(near as number[]))).toBeGreaterThan(Math.max(...DIMMED_GREY));
-      });
-
-      it('colours a verse by the place of its farthest echo in reading order', () => {
-        const items = partnerAt(603, 408);
-        const first = (echoes: TextAnalyticsData['echoes']) =>
-          textAnalyticsOverlay.colorsFor!({
-            items,
-            settings: echoSettings,
-            data: { ...data, echoes },
-            focus: { hovered: null, pinned: null },
-          })[0];
-        // Verse 2 lies at the left of the centre, verse 4 at the upper right; 4 is the farther.
-        expect(first({ 0: [1, 5, 3, 5] })).toEqual(first({ 0: [3, 5] }));
-        expect(first({ 0: [1, 5, 3, 5] })).not.toEqual(first({ 0: [1, 5] }));
-      });
-
-      it('draws a field behind the squares for this analysis only', () => {
-        const items = partnerAt(603, 408);
-        const field = textAnalyticsOverlay.backdrop!({ items, settings: echoSettings, data })!;
-        expect(field.stops).toHaveLength(360);
-        expect(field.rect.minX).toBeLessThan(0);
-        expect(field.rect.maxX).toBeGreaterThan(1000);
-        expect(field.centre.x).toBeGreaterThan(450);
-        expect(field.centre.x).toBeLessThan(550);
-        expect(textAnalyticsOverlay.backdrop!({ items, settings: wording, data })).toBeNull();
-      });
-    });
-  });
-
-  it('draws the echoes legend as a strip for each section, named by its first and last book', () => {
-    initBookData({
-      books: [
-        { name: 'Genesis', hebrewName: '', section: 'torah', chapters: [4] },
-        { name: 'Exodus', hebrewName: '', section: 'torah', chapters: [1] },
-        { name: 'Isaiah', hebrewName: '', section: 'neviim', chapters: [1] },
-      ],
-      layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
-    });
-    const scores = {
-      ...data.scores,
-      repetition: { Genesis: { '1': [0, 0, 0, 0] }, Exodus: { '1': [0] }, Isaiah: { '1': [0] } },
-    };
-    const items = [
-      createVerse({ book: 'Genesis', verse: 1, x: 0, y: 0 }),
-      createVerse({ book: 'Exodus', verse: 1, x: 50, y: 0 }),
-      createVerse({ book: 'Isaiah', verse: 1, x: 100, y: 50 }),
-    ];
-    const container = document.createElement('div');
-    textAnalyticsOverlay.renderLegend!(container, echoSettings, { ...data, scores }, items);
-    const rows = [...container.querySelectorAll('.echo-section')];
-    expect(rows).toHaveLength(2);
-    const ends = rows.map((r) =>
-      [...r.querySelectorAll('.echo-strip-ends span')].map((e) => e.textContent),
-    );
-    expect(ends).toEqual([
-      ['Genesis', 'Exodus'],
-      ['Isaiah', 'Isaiah'],
-    ]);
-    expect(rows.every((r) => r.querySelector<HTMLElement>('.echo-strip')!.style.background)).toBe(
-      true,
-    );
   });
 });
