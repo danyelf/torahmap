@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Runs one saved query over the last N days (default 30) and prints the JSON
 # Analytics Engine returns. Usage: query.sh <file.sql> [days]
-# SITE_HOST names another host's rows, as ieeevis.torahmap.org; commas join several hosts,
-# as the VIS map's two, ieeevis.torahmap.org,ieeevis.danyelfisher.info.
+# SITE_HOST names other hosts' rows, commas between: ieeevis.torahmap.org,ieeevis.danyelfisher.info.
 # Needs CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_API_TOKEN with Account Analytics: Read.
 set -euo pipefail
 
@@ -14,7 +13,8 @@ site="blob5 IN ('${hosts//,/\',\'}') AND timestamp > NOW() - INTERVAL '$days' DA
 : "${CLOUDFLARE_ACCOUNT_ID:?set CLOUDFLARE_ACCOUNT_ID}"
 : "${CLOUDFLARE_API_TOKEN:?set CLOUDFLARE_API_TOKEN}"
 
-sed "s/{{SITE}}/$site/g" "$file" | tr '\n' ' ' | sed 's/$/ FORMAT JSON/' |
+# | not /, since a host may hold a folder, as torahmap.org/talmud.
+sed "s|{{SITE}}|$site|g" "$file" | tr '\n' ' ' | sed 's/$/ FORMAT JSON/' |
   curl -sS --fail-with-body \
     "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/analytics_engine/sql" \
     -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" --data-binary @-

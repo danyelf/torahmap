@@ -171,8 +171,14 @@ export function toDataPoint(payload: unknown, context: RequestContext): DataPoin
   if (!isMode(mode)) return null;
   const given: Record<string, unknown> =
     typeof fields === 'object' && fields !== null ? (fields as Record<string, unknown>) : {};
-  const placed = typeof sequence === 'number' ? { ...given, sequence } : given;
-  return dataPoint(event, visit, mode, context, placed);
+  return dataPoint(
+    event,
+    visit,
+    mode,
+    context,
+    given,
+    typeof sequence === 'number' ? sequence : null,
+  );
 }
 
 /**
@@ -194,6 +200,7 @@ function dataPoint(
   mode: string,
   context: RequestContext,
   given: Record<string, unknown>,
+  sequence: number | null = null,
 ): DataPoint {
   const blob = (name: string) => {
     const value = given[name];
@@ -210,8 +217,8 @@ function dataPoint(
     indexes: [index],
     blobs: blobs.map((name) => (name in fromRequest ? fromRequest[name] : blob(name))),
     // The sequence column and the zeros before it are written only for an event that has one.
-    doubles: ('sequence' in given ? doubles : doubles.slice(0, EVENTS[event].doubles.length)).map(
-      double,
+    doubles: (sequence === null ? doubles.slice(0, EVENTS[event].doubles.length) : doubles).map(
+      (name) => (name === 'sequence' ? (sequence ?? 0) : double(name)),
     ),
   };
 }

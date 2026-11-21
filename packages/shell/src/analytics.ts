@@ -186,10 +186,7 @@ export function trackLinkOut(id: string, area: string, overlay: string): void {
   track('link_out', { id, area, overlay });
 }
 
-/**
- * Reports how long the page has been visible each time it is hidden or leaves, so a visit that
- * was never shown can be told from one that was read. sendBeacon survives the unload.
- */
+/** Reports the seconds the page has been visible each time it is hidden or leaves. */
 export function reportVisitEnd(
   doc: Document = document,
   win: Window = window,

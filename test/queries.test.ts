@@ -74,6 +74,6 @@ describe('telemetry queries', () => {
     const host = columns('page_view').blobs.indexOf('host') + 1;
     expect(host).toBeGreaterThan(0);
     expect(script).toMatch(new RegExp(`\\bsite="blob${host} IN \\('`));
-    expect(script).toContain('s/{{SITE}}/$site/g');
+    expect(script).toContain('s|{{SITE}}|$site|g');
   });
 });
