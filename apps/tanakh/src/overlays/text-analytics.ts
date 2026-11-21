@@ -185,9 +185,10 @@ const PLAIN_BRIGHTNESS = 0.6;
 const FOCUSED_VERSE: Color = [1, 1, 1];
 
 /**
- * With a verse focused, its echoes take the colour of their distance from it, other verses with
- * echoes dim to grey and the rest keep the plain grey. With none, a verse with echoes takes the
- * colour of its farthest echo.
+ * With a verse focused, its echoes take the colour of their distance from it and the verse is
+ * white. Other verses with echoes keep the colour of their farthest echo while the pointer is on
+ * the verse, so passages can be traced from one to the next; with only a pinned verse they dim to
+ * grey. Verses without echoes keep the plain grey.
  */
 function echoColors(
   items: TanakhLayout[],
@@ -199,23 +200,26 @@ function echoColors(
   const plain = (index: number) => brighten(getDefaultColor(index), PLAIN_BRIGHTNESS);
   const echoesOfPosition = (id: string) =>
     echoesAt(data.echoes, positions.get(id)!, settings.words);
-  const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
-  if (focused) {
-    const from = places[positions.get(focused.id)!];
-    const colors = new Map<string, Color>([[focused.id, FOCUSED_VERSE]]);
-    for (const echo of echoesOf(data, settings, focused)!.places) {
-      colors.set(echo.id, DISTANCE_STEPS[distanceStep(from, echo)].color);
-    }
-    return items.map(
-      ({ id }, i) => colors.get(id) ?? (echoesOfPosition(id).length ? DIMMED_GREY : plain(i)),
-    );
-  }
-  return items.map(({ id }, i) => {
+  const farthestEchoOr = (id: string, index: number): Color => {
     const echoes = echoesOfPosition(id);
-    if (echoes.length === 0) return plain(i);
+    if (echoes.length === 0) return plain(index);
     const from = places[positions.get(id)!];
     const farthest = Math.max(...echoes.map(([other]) => distanceStep(from, places[other])));
     return DISTANCE_STEPS[farthest].color;
+  };
+  const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
+  if (!focused) return items.map(({ id }, i) => farthestEchoOr(id, i));
+  const dimOthers = focused !== focus.hovered;
+  const from = places[positions.get(focused.id)!];
+  const colors = new Map<string, Color>([[focused.id, FOCUSED_VERSE]]);
+  for (const echo of echoesOf(data, settings, focused)!.places) {
+    colors.set(echo.id, DISTANCE_STEPS[distanceStep(from, echo)].color);
+  }
+  return items.map(({ id }, i) => {
+    const color = colors.get(id);
+    if (color) return color;
+    if (dimOthers && echoesOfPosition(id).length) return DIMMED_GREY;
+    return farthestEchoOr(id, i);
   });
 }
 
@@ -304,14 +308,17 @@ export const textAnalyticsOverlay: Overlay<
     const found = focusEchoes(data, settings, hovered, pinned);
     if (!found) return;
     const focus = focusedVerse(data, settings, hovered, pinned);
-    const focusText = focus ? textOf(data, focus) : '';
     const note = document.createElement('div');
     note.className = 'parallel-verses';
     const heading = document.createElement('p');
     heading.textContent = `Parallel verses (${found.places.length})`;
     const list = document.createElement('div');
     list.className = 'parallel-list';
-    for (const place of found.places) {
+    const { positions } = readingOrder(data.scores);
+    const inOrder = [...found.places, ...(focus ? [focus] : [])].sort(
+      (a, b) => positions.get(a.id)! - positions.get(b.id)!,
+    );
+    for (const place of inOrder) {
       const row = document.createElement('button');
       row.type = 'button';
       const ref = document.createElement('span');
@@ -321,13 +328,20 @@ export const textAnalyticsOverlay: Overlay<
       quote.className = 'parallel-quote';
       quote.dir = 'auto';
       const he = textOf(data, place);
+      // A parallel is marked against the focused verse, the focused verse against its parallels.
+      const partners = (place.id === focus?.id ? found.places : [focus!]).map((other) =>
+        textOf(data, other),
+      );
       quote.append(
         markStretches(
           he,
-          focusText && he ? sharedStretches(wordsOf(he), [wordsOf(focusText)], settings.words) : [],
+          he
+            ? sharedStretches(wordsOf(he), partners.filter(Boolean).map(wordsOf), settings.words)
+            : [],
         ),
       );
       row.append(ref, quote);
+      row.classList.toggle('parallel-source', place.id === focus?.id);
       row.addEventListener('click', () => travelTo(place.id));
       list.appendChild(row);
     }

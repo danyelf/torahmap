@@ -109,8 +109,20 @@ describe('Text Analytics overlay', () => {
     textAnalyticsOverlay.renderFocus!(panel, verse(1), null, wording, data, (id) =>
       travelled.push(id),
     );
-    panel.querySelector('button')!.click();
+    [...panel.querySelectorAll('button')]
+      .find((b) => b.textContent!.includes('Genesis 1:4'))!
+      .click();
     expect(travelled).toEqual([verse(4).id]);
+  });
+
+  it('lists the focused verse among its parallels, in canonical order', () => {
+    const refs = (focus: number) => {
+      const panel = document.createElement('div');
+      textAnalyticsOverlay.renderFocus!(panel, verse(focus), null, wording, data, () => {});
+      return [...panel.querySelectorAll('.parallel-ref')].map((ref) => ref.textContent);
+    };
+    expect(refs(1)).toEqual(['Genesis 1:1', 'Genesis 1:4']);
+    expect(refs(4)).toEqual(['Genesis 1:1', 'Genesis 1:4']);
   });
 
   it('colours the map as usual when neither the hovered nor the pinned verse has echoes', () => {
@@ -281,12 +293,13 @@ describe('Text Analytics overlay', () => {
       const paint = (
         echoes: TextAnalyticsData['echoes'],
         hovered: (typeof places)[number] | null = null,
+        pinned: (typeof places)[number] | null = null,
       ) =>
         textAnalyticsOverlay.colorsFor!({
           items: places,
           settings: echoSettings,
           data: { ...spread, echoes },
-          focus: { hovered, pinned: null },
+          focus: { hovered, pinned },
         });
       const [chapter, book, section, other] = DISTANCE_STEPS.map((step) => step.color);
 
@@ -302,11 +315,20 @@ describe('Text Analytics overlay', () => {
         expect(colors.slice(0, 6)).toEqual([[1, 1, 1], chapter, book, section, other, other]);
       });
 
-      it('dims other verses that have echoes to the dimmed grey, and leaves the rest plain', () => {
-        const colors = paint({ 0: [1, 5], 2: [3, 5] }, places[0]);
+      it('dims other verses that have echoes while a verse is only pinned', () => {
+        const colors = paint({ 0: [1, 5], 2: [3, 5] }, null, places[0]);
         expect(colors[2]).toEqual(DIMMED_GREY);
         expect(colors[3]).toEqual(DIMMED_GREY);
         expect(colors[4]).toEqual(brighten(getDefaultColor(4), 0.6));
+      });
+
+      it('keeps the colours of other verses with echoes while the pointer is on a verse', () => {
+        const echoes = { 0: [1, 5], 2: [3, 5] };
+        const resting = paint(echoes);
+        const hovering = paint(echoes, places[0]);
+        expect(hovering[2]).toEqual(resting[2]);
+        expect(hovering[2]).toEqual(section);
+        expect(hovering[4]).toEqual(resting[4]);
       });
     });
 
@@ -355,7 +377,9 @@ describe('Text Analytics overlay', () => {
       it('marks the run each parallel in the list shares with the focused verse', () => {
         const panel = document.createElement('div');
         textAnalyticsOverlay.renderFocus!(panel, verse(1), null, echoSettings, marking, () => {});
+        // Once in the focused verse, once in its parallel.
         expect([...panel.querySelectorAll('mark')].map((mark) => mark.textContent)).toEqual([
+          'זחט יכל מנס עפצ קרש',
           'זחט יכל מנס עפצ קרש',
         ]);
       });
