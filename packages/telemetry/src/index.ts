@@ -49,6 +49,9 @@ export const EVENTS = {
   go_to: { blobs: ['typed', 'ref', 'area'], doubles: [] },
   word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
+  // The menu opening or closing; item is the menu item chosen as it closed, empty when it was
+  // dismissed or is opening.
+  menu: { blobs: ['state', 'item'], doubles: [] },
   // The link out of a square's popup: Sefaria, or on the VIS map the paper's page.
   link_out: { blobs: ['id', 'area', 'overlay'], doubles: [] },
   // Sent each time the page is hidden or leaves, with the seconds it has been visible so far:

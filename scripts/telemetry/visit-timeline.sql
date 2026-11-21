@@ -5,7 +5,7 @@ FROM (
   FROM torahmap_events
   WHERE blob1 IN ('page_view', 'story_stop', 'story_exit', 'story_return', 'view_settled',
     'overlay_switch', 'overlay_pick', 'search_execute', 'square_click', 'go_to', 'word_menu_open',
-    'word_search', 'link_out', 'share', 'error', 'load_timing', 'webgl_missing') AND {{SITE}}
+    'word_search', 'link_out', 'share', 'menu', 'error', 'load_timing', 'webgl_missing') AND {{SITE}}
 )
 ORDER BY visit, sequence
 LIMIT 300

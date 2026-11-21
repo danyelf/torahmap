@@ -68,6 +68,7 @@ import {
   trackOverlaySwitch,
   trackPageView,
   trackLinkOut,
+  trackMenu,
   reportVisitEnd,
   trackShare,
   trackStoryExit,
@@ -571,6 +572,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     applyFrame(previous);
   }
 
+  /** The menu item the reader last chose, told to the menu's close. */
+  let menuChoice = '';
+
   /**
    * Puts the frame on the page. The stylesheet reads the attributes; the menu
    * and the panels are drawn as they open, and left alone while they stay open.
@@ -588,6 +592,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     storyContent.inert = frame.menu;
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
+    if (previous && frame.menu !== previous.menu) {
+      trackMenu(frame.menu ? 'open' : 'closed', frame.menu ? '' : menuChoice);
+      menuChoice = '';
+    }
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
       droppedMenu.innerHTML = menuHtml(
@@ -1478,6 +1486,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (start) return takeStart(start);
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
+    if (action && droppedMenu.contains(actionItem)) menuChoice = action;
     if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
     if (action === SHARE) {
       // A share already in flight ignores a second tap: sharing again would

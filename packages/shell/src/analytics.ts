@@ -178,6 +178,10 @@ export function trackWordSearch(word: string, choice: string, id: string): void 
   track('word_search', { word, choice, id });
 }
 
+export function trackMenu(state: 'open' | 'closed', item = ''): void {
+  track('menu', { state, item });
+}
+
 export function trackLinkOut(id: string, area: string, overlay: string): void {
   track('link_out', { id, area, overlay });
 }

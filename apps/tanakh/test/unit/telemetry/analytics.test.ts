@@ -7,6 +7,7 @@ import {
   downloadKbps,
   reportError,
   reportVisitEnd,
+  trackMenu,
   trackOverlayPick,
   reportUncaughtErrors,
   trackStoryExit,
@@ -306,6 +307,17 @@ describe('visit length', () => {
     p.pass(30000);
     p.leave();
     expect(seconds()).toEqual([['visit_end', 0]]);
+  });
+});
+
+describe('menu', () => {
+  it('sends its opening and closing, with the item chosen as it closed', () => {
+    trackMenu('open');
+    trackMenu('closed', 'about');
+    expect(sent().map((e) => [e.event, e.fields])).toEqual([
+      ['menu', { state: 'open', item: '' }],
+      ['menu', { state: 'closed', item: 'about' }],
+    ]);
   });
 });
 

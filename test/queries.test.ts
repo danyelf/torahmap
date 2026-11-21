@@ -26,6 +26,7 @@ const ALIASES: Record<string, Partial<Record<EventName, string>>> = {
     word_search: 'word',
     link_out: 'id',
     share: 'how',
+    menu: 'state',
     error: 'source',
     load_timing: 'connection',
     webgl_missing: 'browser',
