@@ -18,7 +18,7 @@ describe('distance between verses', () => {
         section: section as 'torah' | 'neviim' | 'ketuvim',
         chapters: [1],
       })),
-      layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+      layout: { minorProphetStacks: [['Hosea', 'Joel']], ketuvimStacks: [], multiColumnBooks: {} },
     });
   });
 

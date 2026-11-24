@@ -4,6 +4,7 @@
 import type { TorahData } from './types.ts';
 
 const sectionMap = new Map<string, 'torah' | 'neviim' | 'ketuvim'>();
+let minorProphets = new Set<string>();
 let initialized = false;
 
 /**
@@ -15,6 +16,7 @@ export function initBookData(data: TorahData): void {
   for (const b of data.books) {
     sectionMap.set(b.name, b.section);
   }
+  minorProphets = new Set(data.layout.minorProphetStacks.flat());
   initialized = true;
 }
 
@@ -27,4 +29,9 @@ function assertInitialized(): void {
 export function getBookSection(bookName: string): 'torah' | 'neviim' | 'ketuvim' {
   assertInitialized();
   return sectionMap.get(bookName) ?? 'neviim';
+}
+
+export function isMinorProphet(bookName: string): boolean {
+  assertInitialized();
+  return minorProphets.has(bookName);
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overlays/text-analytics';
 import { NO_DATA } from '../../../src/overlays/colors';
 import { brighten, type Color } from '@torahmap/utils';
@@ -229,7 +229,7 @@ describe('Text Analytics overlay', () => {
         focus: { hovered, pinned: null },
       });
 
-    it('shows a verse without echoes in the map grey at 0.6 of its brightness', () => {
+    it('shows a verse without echoes in a darker map grey', () => {
       const [first, second] = colors({ 0: [3, 5] }, null);
       expect(first).not.toEqual(brighten(getDefaultColor(0), 0.6));
       expect(second).toEqual(brighten(getDefaultColor(1), 0.6));
@@ -259,15 +259,17 @@ describe('Text Analytics overlay', () => {
 
     describe('by distance', () => {
       // In reading order: Genesis 1:1, Genesis 1:2, Genesis 2:1, Exodus 1:1, Isaiah 1:1, Psalms 1:1.
-      initBookData({
-        books: ['Genesis', 'Exodus', 'Isaiah', 'Psalms'].map((name, i) => ({
-          name,
-          hebrewName: '',
-          section: (['torah', 'torah', 'neviim', 'ketuvim'] as const)[i],
-          chapters: [2],
-        })),
-        layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
-      });
+      beforeAll(() =>
+        initBookData({
+          books: ['Genesis', 'Exodus', 'Isaiah', 'Psalms'].map((name, i) => ({
+            name,
+            hebrewName: '',
+            section: (['torah', 'torah', 'neviim', 'ketuvim'] as const)[i],
+            chapters: [2],
+          })),
+          layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+        }),
+      );
       const places = [
         createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),
         createVerse({ book: 'Genesis', chapter: 1, verse: 2 }),

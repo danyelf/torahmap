@@ -125,7 +125,7 @@ function echoesOf(
   return found;
 }
 
-/** The echoes the map shows: the hovered verse's if it has any, else the pinned verse's. */
+/** The verse's id if it has echoes. */
 const echoKey = (
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
@@ -154,18 +154,13 @@ function focusEchoes(
   return verse && echoesOf(data, settings, verse);
 }
 
-// While a verse is focused, the others go this far toward a dark blue-grey: darker, duller and
-// cooler than any colour the focused verse and its matches wear.
+// While a verse is focused, the others go this far toward a dark blue-grey.
 const OUT_OF_FOCUS: Color = [0.2, 0.24, 0.34];
 const OUT_OF_FOCUS_SHARE = 0.6;
 
 /** A verse's colour while another verse is focused, in either analysis. */
 function outOfFocus(color: Color): Color {
-  // A distance colour can lie outside the screen's range.
-  return color.map((c, i) => {
-    const shown = Math.min(1, Math.max(0, c));
-    return shown + (OUT_OF_FOCUS[i] - shown) * OUT_OF_FOCUS_SHARE;
-  }) as Color;
+  return color.map((c, i) => c + (OUT_OF_FOCUS[i] - c) * OUT_OF_FOCUS_SHARE) as Color;
 }
 
 function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: boolean): Color {
@@ -192,23 +187,21 @@ function echoColors(
   focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
 ): Color[] {
   const { places, positions } = readingOrder(data.scores);
-  const plain = (index: number) => brighten(getDefaultColor(index), PLAIN_BRIGHTNESS);
-  const echoesOfPosition = (id: string) =>
-    echoesAt(data.echoes, positions.get(id)!, settings.words);
-  const farthestEchoOr = (id: string, index: number): Color => {
-    const echoes = echoesOfPosition(id);
-    if (echoes.length === 0) return plain(index);
-    const from = places[positions.get(id)!];
+  const farthestEcho = (id: string): Color | null => {
+    const position = positions.get(id)!;
+    const echoes = echoesAt(data.echoes, position, settings.words);
+    if (echoes.length === 0) return null;
+    const from = places[position];
     const farthest = Math.max(...echoes.map(([other]) => distanceStep(from, places[other])));
     return DISTANCE_STEPS[farthest].color;
   };
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
-  if (!focused) return items.map(({ id }, i) => farthestEchoOr(id, i));
-  const lit = echoesOf(data, settings, focused)!.matches;
+  const lit = focused && echoesOf(data, settings, focused)!.matches;
   return items.map(({ id }, i) => {
-    if (id === focused.id) return FOCUSED_VERSE;
-    const resting = farthestEchoOr(id, i);
-    return lit.has(id) || !echoesOfPosition(id).length ? resting : outOfFocus(resting);
+    if (id === focused?.id) return FOCUSED_VERSE;
+    const color = farthestEcho(id);
+    if (!color) return brighten(getDefaultColor(i), PLAIN_BRIGHTNESS);
+    return !lit || lit.has(id) ? color : outOfFocus(color);
   });
 }
 
@@ -277,7 +270,6 @@ export const textAnalyticsOverlay: Overlay<
     container.querySelector('input')!.value = String(settings.words);
   },
 
-  // The focused verse with echoes keeps them and itself in full colour; the rest are muted.
   colorsFor({ items, settings, data, focus }) {
     if (settings.analysis === 'echoes') return echoColors(items, data, settings, focus);
     const lit = focusEchoes(data, settings, focus.hovered, focus.pinned)?.matches;
