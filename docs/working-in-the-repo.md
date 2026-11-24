@@ -201,5 +201,8 @@ cmp /tmp/p-remote.bin public/data/ieeevis/p.bin && echo current
 `public/data/ieeevis/`, so pack it in each checkout that runs them.
 
 Its telemetry rows have the host `ieeevis.torahmap.org` (or `ieeevis.danyelfisher.info`, its first
-host); the saved queries take `torahmap.org`, so run them with `SITE_HOST=ieeevis.torahmap.org` to
-read the VIS map's.
+host); the saved queries take `torahmap.org`, so run them with
+`SITE_HOST=ieeevis.torahmap.org,ieeevis.danyelfisher.info` to read the VIS map's.
+The Talmud map's rows have the host `talmud.torahmap.org`, or `torahmap.org/talmud` when its page
+was opened under the site's own host (the Worker adds the folder, from the page's Referer). The
+EU AI Act map sends no telemetry.

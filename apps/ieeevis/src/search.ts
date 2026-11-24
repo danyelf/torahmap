@@ -1,7 +1,17 @@
 // Search over the papers' titles, authors and text.
 import { memoByValue } from '@torahmap/utils';
 import { TERM_SEARCH_PARAMS } from '@torahmap/link';
-import { buildTextIndex, createTermSearch, english, type SearchEntry } from '@torahmap/search';
+import {
+  activeTerms,
+  buildTextIndex,
+  createTermSearch,
+  english,
+  SEARCH_RECORD_DELAY_MS,
+  searchTelemetry,
+  type SearchEntry,
+} from '@torahmap/search';
+import { trackSearchExecute } from '@torahmap/shell/analytics.ts';
+import { ENGLISH } from '@torahmap/shell/language.ts';
 import { papersOf, STRUCTURE_FILE, TEXTS_FILE, type PaperTexts, type Structure } from './data.ts';
 import { paperOf, pieceId } from './layout.ts';
 import type { PieceItem } from './layout.ts';
@@ -45,6 +55,18 @@ const search = createTermSearch<PieceItem, VisSearchData>({
   placeholder: 'Search the papers…',
   description: 'Finds a word or phrase in any paper’s title, authors or text.',
   urlParams: TERM_SEARCH_PARAMS,
+  telemetry: (counts) =>
+    searchTelemetry(SEARCH_RECORD_DELAY_MS, {
+      active: activeTerms,
+      recordOf: (data, term) => `${counts.modeOf(data, term)}:${term.text.trim()}`,
+      send: (data, settings, term) =>
+        trackSearchExecute(
+          term.text,
+          ENGLISH,
+          counts.modeOf(data, term),
+          counts.hitCount(data, settings, term)!,
+        ),
+    }),
 });
 
 export const visSearch = search.tool;

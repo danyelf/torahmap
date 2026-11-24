@@ -67,7 +67,9 @@ import {
   reportError,
   trackOverlaySwitch,
   trackPageView,
-  trackSefariaOpen,
+  trackLinkOut,
+  menuTelemetry,
+  reportVisitEnd,
   trackShare,
   trackStoryExit,
   trackStoryReturn,
@@ -570,6 +572,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     applyFrame(previous);
   }
 
+  const menuRecord = menuTelemetry();
+
   /**
    * Puts the frame on the page. The stylesheet reads the attributes; the menu
    * and the panels are drawn as they open, and left alone while they stay open.
@@ -587,6 +591,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     storyContent.inert = frame.menu;
     panelBody.inert = frame.menu;
     toolsTitle.textContent = frame.open ? PANEL_TITLES[frame.open] : '';
+    if (previous && frame.menu !== previous.menu) {
+      menuRecord.changed(frame.menu);
+    }
     if (frame.menu && !previous?.menu) {
       const { story, place } = storyColumn.where();
       droppedMenu.innerHTML = menuHtml(
@@ -1268,7 +1275,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   sidebarElements.link?.addEventListener('click', () => {
     const item = pinnedItem ?? hoveredItem;
     if (!item) return;
-    trackSefariaOpen(item.id, text.area(item).area, overlayId());
+    trackLinkOut(item.id, text.area(item).area, overlayId());
   });
 
   overlaySelect?.addEventListener('change', () => {
@@ -1477,7 +1484,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (start) return takeStart(start);
     const actionItem = target.closest<HTMLElement>('[data-action]');
     const action = actionItem?.dataset.action;
-    if (action === CONTINUE_STORY) return dispatch({ type: 'story' });
+    if (action === CONTINUE_STORY) {
+      menuRecord.chose(action);
+      return dispatch({ type: 'story' });
+    }
     if (action === SHARE) {
       // A share already in flight ignores a second tap: sharing again would
       // double the clipboard write, or, mid share-sheet, throw InvalidStateError.
@@ -1497,7 +1507,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     // panel does.
     const chooser = target.closest('.map-legend-open')?.closest<HTMLElement>('.map-legend-row');
     const panelName = action ?? chooser?.dataset.panel;
-    if (isPanel(panelName)) dispatch({ type: 'choose', panel: panelName });
+    if (isPanel(panelName)) {
+      if (action) menuRecord.chose(action);
+      dispatch({ type: 'choose', panel: panelName });
+    }
   }
 
   /** A legend card's ×: what the search panel's Clear, or the overlay's None, does. */
@@ -1509,6 +1522,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     (
       mapLegend.querySelector<HTMLElement>('.map-legend-row:not([hidden]) button') ?? menuToggle
     ).focus();
+  }
+
+  function closeMenuAfterShare(): void {
+    menuRecord.chose(SHARE);
+    dispatch({ type: 'menu' });
   }
 
   /** A pan's debounced address write may not have landed yet, so it is brought current first. */
@@ -1540,10 +1558,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       // Reopening the menu redraws its items, detaching this one; a stale
       // timer must not then close whatever menu is open by the time it fires.
       setTimeout(() => {
-        if (frame.menu && item.isConnected) dispatch({ type: 'menu' });
+        if (frame.menu && item.isConnected) closeMenuAfterShare();
       }, 1500);
     } else if (frame.menu) {
-      dispatch({ type: 'menu' });
+      closeMenuAfterShare();
     }
   }
   for (const id of ['panel', 'menu-toggle', 'menu', 'map-legend']) {
@@ -1865,6 +1883,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     ),
     visited,
   );
+  reportVisitEnd();
   recordingDriver = true;
   markViewSettled();
 

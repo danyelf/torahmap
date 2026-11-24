@@ -40,7 +40,8 @@ export const EVENTS = {
   view_settled: { blobs: ['area', 'section', 'zoom_band'], doubles: ['zoom'] },
   overlay_switch: { blobs: ['overlay', 'previous_overlay'], doubles: [] },
   // A reader picking or unpicking one of an overlay's names, such as an author, as it is shown.
-  overlay_pick: { blobs: ['overlay', 'pick', 'how'], doubles: [] },
+  // typed is what the reader had typed when they chose a typed pick, empty otherwise.
+  overlay_pick: { blobs: ['overlay', 'pick', 'how', 'typed'], doubles: [] },
   search_execute: { blobs: ['term', 'language', 'search_mode'], doubles: ['result_count'] },
   square_click: { blobs: ['id', 'area'], doubles: [] },
   // What was typed in Go to and pressed Enter on, the place it read to and that place's area:
@@ -48,8 +49,15 @@ export const EVENTS = {
   go_to: { blobs: ['typed', 'ref', 'area'], doubles: [] },
   word_menu_open: { blobs: ['word', 'id', 'palette_full'], doubles: ['meanings'] },
   word_search: { blobs: ['word', 'choice', 'id'], doubles: [] },
-  // The link out of a square's popup: Sefaria, or on the VIS map the paper's page.
-  sefaria_open: { blobs: ['id', 'area', 'overlay'], doubles: [] },
+  // The menu opening or closing; item is the menu item chosen as it closed, empty when it was
+  // dismissed or is opening.
+  menu: { blobs: ['state', 'item'], doubles: [] },
+  // The link out of a square's popup: Sefaria, or on the VIS map the paper's page. Rows sent
+  // before 2026-11-20 call it sefaria_open (see RETIRED_EVENTS), with the same columns.
+  link_out: { blobs: ['id', 'area', 'overlay'], doubles: [] },
+  // Sent each time the page is hidden or leaves, with the seconds it has been visible so far:
+  // a visit's longest is its length, and 0 means it was never shown.
+  visit_end: { blobs: [], doubles: ['visible_seconds'] },
   // A browser with WebGL 2 whose shaders fail to compile records an error from
   // 'main' instead: both show the same notice, but the causes differ.
   webgl_missing: { blobs: ['browser'], doubles: [] },
@@ -79,6 +87,9 @@ export const EVENTS = {
 
 export type EventName = keyof typeof EVENTS;
 
+/** Names an event had before, with the event that replaced each: old rows keep them. */
+export const RETIRED_EVENTS: Record<string, EventName> = { sefaria_open: 'link_out' };
+
 export type WorkerEvent = {
   [E in EventName]: (typeof EVENTS)[E] extends { by: 'worker' } ? E : never;
 }[EventName];
@@ -88,12 +99,20 @@ const WORKER_EVENTS: ReadonlySet<EventName> = new Set(
   (Object.keys(EVENTS) as EventName[]).filter((e) => 'by' in EVENTS[e]),
 );
 
+/**
+ * Where a page's event holds its place in the visit (1, 2, 3...): the last of Analytics Engine's
+ * twenty number columns, so it sits in the same place for every event and clear of each event's own.
+ */
+const SEQUENCE_COLUMN = 20;
+
 /** An event's columns in order: its strings from blob1, its numbers from double1. */
 export function columns(event: EventName): { blobs: string[]; doubles: string[] } {
-  return {
-    blobs: [...COMMON_COLUMNS, ...EVENTS[event].blobs],
-    doubles: [...EVENTS[event].doubles],
-  };
+  const doubles: string[] = [...EVENTS[event].doubles];
+  if (!WORKER_EVENTS.has(event)) {
+    while (doubles.length < SEQUENCE_COLUMN - 1) doubles.push('');
+    doubles.push('sequence');
+  }
+  return { blobs: [...COMMON_COLUMNS, ...EVENTS[event].blobs], doubles };
 }
 type Blobs<E extends EventName> = Exclude<(typeof EVENTS)[E]['blobs'][number], RequestColumn>;
 type Doubles<E extends EventName> = (typeof EVENTS)[E]['doubles'][number];
@@ -114,6 +133,8 @@ export interface EventPayload<E extends EventName = EventName> {
   event: E;
   visit: string;
   mode: DriverKind;
+  /** This event's place in the visit, counting from 1, so their order is exact. */
+  sequence: number;
   fields: EventFields<E>;
 }
 
@@ -145,14 +166,23 @@ function isMode(mode: unknown): mode is DriverKind {
 /** The data point for a payload from the page, or null if it is not one we accept. */
 export function toDataPoint(payload: unknown, context: RequestContext): DataPoint | null {
   if (typeof payload !== 'object' || payload === null) return null;
-  const { event, visit, mode, fields } = payload as { [K in keyof EventPayload]?: unknown };
+  const { event, visit, mode, sequence, fields } = payload as {
+    [K in keyof EventPayload]?: unknown;
+  };
   if (!isEventName(event)) return null;
   if (WORKER_EVENTS.has(event)) return null;
   if (typeof visit !== 'string' || visit.length === 0 || visit.length > 64) return null;
   if (!isMode(mode)) return null;
   const given: Record<string, unknown> =
     typeof fields === 'object' && fields !== null ? (fields as Record<string, unknown>) : {};
-  return dataPoint(event, visit, mode, context, given);
+  return dataPoint(
+    event,
+    visit,
+    mode,
+    context,
+    given,
+    typeof sequence === 'number' ? sequence : null,
+  );
 }
 
 /**
@@ -174,6 +204,7 @@ function dataPoint(
   mode: string,
   context: RequestContext,
   given: Record<string, unknown>,
+  sequence: number | null = null,
 ): DataPoint {
   const blob = (name: string) => {
     const value = given[name];
@@ -189,6 +220,9 @@ function dataPoint(
   return {
     indexes: [index],
     blobs: blobs.map((name) => (name in fromRequest ? fromRequest[name] : blob(name))),
-    doubles: doubles.map(double),
+    // The sequence column and the zeros before it are written only for an event that has one.
+    doubles: (sequence === null ? doubles.slice(0, EVENTS[event].doubles.length) : doubles).map(
+      (name) => (name === 'sequence' ? (sequence ?? 0) : double(name)),
+    ),
   };
 }

@@ -2,7 +2,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { columns, EVENTS, type EventName } from '@torahmap/telemetry';
+import { columns, EVENTS, RETIRED_EVENTS, type EventName } from '@torahmap/telemetry';
 
 const dir = join(__dirname, '../scripts/telemetry');
 const queries = readdirSync(dir).filter((f) => f.endsWith('.sql'));
@@ -10,6 +10,27 @@ const queries = readdirSync(dir).filter((f) => f.endsWith('.sql'));
 // An alias that reads one column across events, naming the field it holds for each.
 const ALIASES: Record<string, Partial<Record<EventName, string>>> = {
   choice_or_id: { word_menu_open: 'id', word_search: 'choice' },
+  // blob6 of every event that has one: the first thing the event names.
+  detail: {
+    page_view: 'story_stop',
+    story_stop: 'stop_id',
+    story_exit: 'stop_id',
+    story_return: 'stop_id',
+    view_settled: 'area',
+    overlay_switch: 'overlay',
+    overlay_pick: 'overlay',
+    search_execute: 'term',
+    square_click: 'id',
+    go_to: 'typed',
+    word_menu_open: 'word',
+    word_search: 'word',
+    link_out: 'id',
+    share: 'how',
+    menu: 'state',
+    error: 'source',
+    load_timing: 'connection',
+    webgl_missing: 'browser',
+  },
 };
 
 function eventsRead(sql: string): string[] {
@@ -36,7 +57,8 @@ describe('telemetry queries', () => {
     expect(events.length).toBeGreaterThan(0);
     expect(sql).toContain('{{SITE}}');
 
-    for (const event of events) {
+    for (const read of events) {
+      const event = RETIRED_EVENTS[read] ?? read;
       expect(EVENTS).toHaveProperty(event);
       for (const ref of references(sql)) {
         const actual = columns(event as EventName)[ref.kind][ref.n - 1];
@@ -52,7 +74,7 @@ describe('telemetry queries', () => {
     const script = readFileSync(join(dir, 'query.sh'), 'utf8');
     const host = columns('page_view').blobs.indexOf('host') + 1;
     expect(host).toBeGreaterThan(0);
-    expect(script).toMatch(new RegExp(`\\bsite="blob${host} = '[^']+'`));
-    expect(script).toContain('s/{{SITE}}/$site/g');
+    expect(script).toMatch(new RegExp(`\\bsite="blob${host} IN \\('`));
+    expect(script).toContain('s|{{SITE}}|$site|g');
   });
 });

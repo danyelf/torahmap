@@ -67,7 +67,7 @@ that opens with the story folded.
 | `square_click` | a square on the map is pinned, by click or arrow key |
 | `word_menu_open` | a word in the verse text is clicked |
 | `word_search` | a choice in the word menu is picked |
-| `sefaria_open` | the popup's Sefaria link is clicked |
+| `link_out` | the popup's link out, to Sefaria or a paper's page, is clicked |
 
 Both story events name the stop the story is at, and are sent from the one
 function in `main.ts` that changes the driver, only when it passes between
