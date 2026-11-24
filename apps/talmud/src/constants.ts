@@ -53,6 +53,12 @@ export const TRACTATE_LABEL_HEIGHT = TRACTATE_TAB.above + 4;
 // The threshold is in *display rows*, which roughly corresponds to half-
 // dapim plus a few perek-boundary splits.
 export const TRACTATE_WRAP_ROWS = 50;
+// A column may start or end with part of a perek only if it holds at least this many of its rows.
+// Fewer leaves a stub the heading and daf numbers outweigh.
+export const MIN_PEREK_STUB_ROWS = 5;
+// How much taller than the shortest possible tallest column a split may be, to cut between perakim
+// rather than through one.
+export const COLUMN_HEIGHT_TOLERANCE = 2 * SEGMENT_SIZE;
 // Between a tractate's columns: room for the daf numbers beside a column, then 14 more.
 export const TRACTATE_COLUMN_GAP = DAF_LABEL_ROOM.right + 14;
 

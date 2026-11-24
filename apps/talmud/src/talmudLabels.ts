@@ -33,7 +33,7 @@ function perekLabel(a: PerekAnchor): Placed {
   el.style.cssText = `
     position:absolute;
     color:#cfd6e6;
-    opacity:0.75;
+    opacity:${a.continued ? 0.5 : 0.75};
     font-family:${HEBREW_LABEL_FONT};
     font-weight:600;
     text-shadow:0 1px 2px rgba(0,0,0,0.7);
@@ -42,7 +42,7 @@ function perekLabel(a: PerekAnchor): Placed {
     direction:rtl;
     transform:translate(-100%, -100%);
   `;
-  el.textContent = a.hebrewName;
+  el.textContent = a.continued ? `${a.hebrewName} …` : a.hebrewName;
   // Above its first row, flush with its right edge.
   return { el, x: a.rightX, y: a.topY - 2 };
 }

@@ -569,6 +569,9 @@ export const TALMUD_STATES: State[] = [
   // Hadran lines are rings from zoom 0.7 up, and look like their passages below it.
   { name: 'talmud-hadran-near', link: 'zoom=0.8&x=7560&y=240', shown: ['#canvas'] },
   { name: 'talmud-hadran-far', link: 'zoom=0.6&x=7560&y=240', shown: ['#canvas'] },
+  // A tractate wrapped into columns: even in height, with a perek that runs on marked in the next.
+  { name: 'talmud-columns-zevachim', link: 'zoom=1.1&x=7473&y=2355', shown: ['#canvas'] },
+  { name: 'talmud-columns-shabbat', link: 'zoom=1.1&x=7394&y=753', shown: ['#canvas'] },
   {
     name: 'talmud-hadran-far-rabbis',
     link: 'overlay=rabbis&rabbis=rabbi-yochanan-b-napacha,rabbi-shimon-b-lakish&zoom=0.6&x=7560&y=240',

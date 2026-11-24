@@ -5,6 +5,7 @@ import {
   BOOK_GAP,
   DAF_LABEL,
   DAF_LABEL_ROOM,
+  MIN_PEREK_STUB_ROWS,
   PEREK_GAP,
   PEREK_LABEL_ZOOM,
   POSITION_JITTER,
@@ -168,5 +169,91 @@ describe("each tractate's cover", () => {
     expect(Math.min(...covers.map((c) => c.minX))).toBe(0);
     expect(result.bounds.width).toBe(Math.max(...covers.map((c) => c.maxX)));
     expect(result.bounds.height).toBe(Math.max(...covers.map((c) => c.maxY)));
+  });
+});
+
+describe('a tractate split into columns', () => {
+  // One amud a row, three squares each, perakim of the given lengths in rows.
+  const tractateOf = (perekRows: number[]) => {
+    const amudim = perekRows.flatMap((count, perekIdx) =>
+      Array.from({ length: count }, () => ({ perekIdx })),
+    );
+    return {
+      name: 'Split',
+      hebrewName: 'פיצול',
+      seder: 'Moed',
+      amudim: amudim.map(({ perekIdx }, i) => ({
+        daf: 2 + Math.floor(i / 2),
+        amud: i % 2 === 0 ? ('a' as const) : ('b' as const),
+        segmentCount: 3,
+        perekIdx,
+        mishnahMask: [false, false, false],
+      })),
+      perakim: perekRows.map((_, i) => ({
+        hebrewName: `פרק ${i}`,
+        startAmudIdx: 0,
+        endAmudIdx: 0,
+        startSegmentInFirstAmud: 1,
+        endSegmentInLastAmud: 3,
+      })),
+    };
+  };
+
+  /** Each column's rows, as the perek each belongs to, read off the squares. */
+  const columnsOf = (perekRows: number[]) => {
+    const tractate = tractateOf(perekRows);
+    const result = computeTalmudLayout({ tractates: [tractate] });
+    const perekOf = (daf: number, amud: string) =>
+      tractate.amudim[(daf - 2) * 2 + (amud === 'b' ? 1 : 0)].perekIdx;
+    const edges = [...new Set(result.dafRows.map((r) => r.rightX))].sort((a, b) => b - a);
+    const columns = edges.map((edge, c) => {
+      const rows = new Map<number, number>();
+      for (const s of result.items) {
+        if (s.x < edge && (c === edges.length - 1 || s.x >= edges[c + 1])) {
+          rows.set(s.y, perekOf(s.daf, s.amud));
+        }
+      }
+      return [...rows].sort((a, b) => a[0] - b[0]);
+    });
+    return { result, columns };
+  };
+
+  it('cuts through a perek only where each side keeps at least MIN_PEREK_STUB_ROWS rows', () => {
+    // Perakim whose natural cut points all fall near a few rows of a perek.
+    for (const perekRows of [
+      [53, 53, 53, 53],
+      [52, 3, 52, 3, 52],
+      [27, 27, 27, 27, 27, 27, 27, 27],
+    ]) {
+      const { columns } = columnsOf(perekRows);
+      const cutThrough = (c: number) => columns[c + 1][0][1] === columns[c].at(-1)![1];
+      expect(columns.slice(1).some((_, c) => cutThrough(c))).toBe(true);
+      for (let c = 0; c < columns.length - 1; c++) {
+        const lastPerek = columns[c].at(-1)![1];
+        if (!cutThrough(c)) continue;
+        const rowsOf = (col: (typeof columns)[number]) =>
+          col.filter(([, p]) => p === lastPerek).length;
+        expect(rowsOf(columns[c])).toBeGreaterThanOrEqual(MIN_PEREK_STUB_ROWS);
+        expect(rowsOf(columns[c + 1])).toBeGreaterThanOrEqual(MIN_PEREK_STUB_ROWS);
+      }
+    }
+  });
+
+  it('cuts so the columns come out as tall as each other, to within a couple of rows', () => {
+    // Perakim of 60 and 40 rows: cutting between them leaves a column 20 rows taller.
+    const { columns } = columnsOf([60, 40]);
+    const heights = columns.map((c) => c.at(-1)![0] - c[0][0] + SEGMENT_SIZE);
+    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(2 * SEGMENT_SIZE);
+  });
+
+  it('marks a perek that carries on into the next column, and only that one', () => {
+    // 80 rows make two columns: one cut between the perakim, one through the second.
+    const { result, columns } = columnsOf([40, 80, 40]);
+    const continued = result.perekAnchors.filter((a) => a.continued);
+    const carriedOn = columns.slice(1).filter((col, c) => col[0][1] === columns[c].at(-1)![1]);
+    expect(carriedOn.length).toBeGreaterThan(0);
+    expect(carriedOn.length).toBeLessThan(columns.length - 1);
+    expect(continued).toHaveLength(carriedOn.length);
+    expect(continued.every((a) => a.topY === result.perekAnchors[0].topY)).toBe(true);
   });
 });

@@ -22,6 +22,8 @@ import {
   SEDER_GAP,
   TRACTATE_LABEL_HEIGHT,
   TRACTATE_WRAP_ROWS,
+  MIN_PEREK_STUB_ROWS,
+  COLUMN_HEIGHT_TOLERANCE,
   TRACTATE_COLUMN_GAP,
   POSITION_JITTER,
   SEDARIM,
@@ -92,6 +94,8 @@ export interface PerekAnchor {
   // The right edge and top of the perek's first row, in world coords.
   rightX: number;
   topY: number;
+  /** The perek began in the column before: this anchor is its continuation. */
+  continued: boolean;
 }
 
 /**
@@ -182,6 +186,7 @@ interface LocalPerekAnchor {
   // The right edge is the right edge of the column the perek starts in.
   rightX: number;
   topY: number;
+  continued: boolean;
 }
 
 interface LaidOutTractate {
@@ -197,50 +202,99 @@ interface LaidOutTractate {
 }
 
 /**
- * Distribute amud-rows into balanced columns when a tractate exceeds
- * TRACTATE_WRAP_ROWS rows. Returns one or more arrays of rows; each
- * sub-array becomes a vertical column inside the tractate block.
- *
- * Goals:
- * - Don't wrap short tractates at all (single column).
- * - For tall tractates, balance row count across columns so columns are
- *   close to equal height (rather than first column always full).
- * - Try to break between perakim when possible — if a candidate split
- *   point falls inside a perek, nudge it to the nearest perek boundary
- *   within ±TRACTATE_WRAP_SLACK rows.
+ * Distribute amud-rows into columns when a tractate exceeds TRACTATE_WRAP_ROWS rows: as few
+ * columns as fit, cut so the tallest is as short as it can be, then, among cuts within
+ * COLUMN_HEIGHT_TOLERANCE of that, the fewest through the middle of a perek, then the most even.
+ * A cut through a perek leaves at least MIN_PEREK_STUB_ROWS rows on each side.
  */
-const TRACTATE_WRAP_SLACK = 6;
-
 function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
   if (rows.length <= TRACTATE_WRAP_ROWS) return [rows];
   const numCols = Math.ceil(rows.length / TRACTATE_WRAP_ROWS);
-  const target = Math.ceil(rows.length / numCols);
+  const n = rows.length;
 
-  const columns: AmudRow[][] = [];
-  let cursor = 0;
-  for (let c = 0; c < numCols; c++) {
-    if (c === numCols - 1) {
-      columns.push(rows.slice(cursor));
-      break;
-    }
-    let split = cursor + target;
-    // Snap to nearest perek boundary within slack window.
-    const lo = Math.max(cursor + 1, split - TRACTATE_WRAP_SLACK);
-    const hi = Math.min(rows.length - 1, split + TRACTATE_WRAP_SLACK);
-    let best = split;
-    let bestDist = Infinity;
-    for (let i = lo; i <= hi; i++) {
-      if (rows[i].perekIdx !== rows[i - 1].perekIdx) {
-        const dist = Math.abs(i - split);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = i;
+  // changes[i]: how many perek changes lie between rows 0..i
+  const changes = [0];
+  for (let i = 1; i < n; i++) {
+    changes.push(changes[i - 1] + (rows[i].perekIdx !== rows[i - 1].perekIdx ? 1 : 0));
+  }
+  // Rows a..b-1 as one column: their squares, and the gap at each perek change inside.
+  const height = (a: number, b: number) =>
+    (b - a) * SEGMENT_SIZE + PEREK_GAP * (changes[b - 1] - changes[a]);
+  const startsPerek = (i: number) =>
+    i === 0 || i === n || rows[i].perekIdx !== rows[i - 1].perekIdx;
+  // The rows of the perek a cut at i falls in, either side of the cut.
+  const before = (i: number) => {
+    let k = i;
+    while (k > 0 && rows[k - 1].perekIdx === rows[i].perekIdx) k--;
+    return i - k;
+  };
+  const after = (i: number) => {
+    let k = i;
+    while (k < n && rows[k].perekIdx === rows[i - 1].perekIdx) k++;
+    return k - i;
+  };
+  const canCut = Array.from(
+    { length: n + 1 },
+    (_, i) =>
+      startsPerek(i) || (before(i) >= MIN_PEREK_STUB_ROWS && after(i) >= MIN_PEREK_STUB_ROWS),
+  );
+
+  interface Cell {
+    midPerekCuts: number;
+    sumOfSquares: number;
+    prev: number;
+  }
+  /** The best cuts into numCols columns none taller than `cap`, or null if there are none. */
+  const solve = (cap: number, preferWholePerakim: boolean) => {
+    const best: (Cell | null)[][] = Array.from({ length: numCols + 1 }, () =>
+      Array<Cell | null>(n + 1).fill(null),
+    );
+    best[0][0] = { midPerekCuts: 0, sumOfSquares: 0, prev: -1 };
+    for (let k = 1; k <= numCols; k++) {
+      for (let j = k; j <= n; j++) {
+        if (!canCut[j]) continue;
+        const midPerek = preferWholePerakim && !startsPerek(j) ? 1 : 0;
+        for (let i = k - 1; i < j; i++) {
+          const from = best[k - 1][i];
+          if (!from) continue;
+          const h = height(i, j);
+          if (h > cap) continue;
+          const cell = {
+            midPerekCuts: from.midPerekCuts + midPerek,
+            sumOfSquares: from.sumOfSquares + h * h,
+            prev: i,
+          };
+          const old = best[k][j];
+          if (
+            !old ||
+            cell.midPerekCuts < old.midPerekCuts ||
+            (cell.midPerekCuts === old.midPerekCuts && cell.sumOfSquares < old.sumOfSquares)
+          ) {
+            best[k][j] = cell;
+          }
         }
       }
     }
-    split = best;
-    columns.push(rows.slice(cursor, split));
-    cursor = split;
+    return best[numCols][n] ? best : null;
+  };
+
+  let lo = 0;
+  let hi = height(0, n);
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (solve(mid, false)) hi = mid;
+    else lo = mid + 1;
+  }
+  // Every 9 rows hold a place to cut, a perek start or a place deep enough in a long perek, so
+  // there are cuts for a column every TRACTATE_WRAP_ROWS rows.
+  const best = solve(lo + COLUMN_HEIGHT_TOLERANCE, true);
+  if (!best) throw new Error(`no way to cut ${n} rows into ${numCols} columns`);
+  const columns: AmudRow[][] = [];
+  let end = n;
+  for (let k = numCols; k >= 1; k--) {
+    const start = best[k][end]!.prev;
+    columns.unshift(rows.slice(start, end));
+    end = start;
   }
   return columns;
 }
@@ -271,6 +325,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     localPereks: LocalPerekAnchor[]; // anchors in column-local coords (rightX always 0)
     localDafs: Omit<DafRowAnchor, 'tractate'>[];
   }[] = [];
+  let previousColumnLastPerek = -1;
   for (const colRows of columns) {
     const colItems: TalmudLayoutItem[] = [];
     const colPereks: LocalPerekAnchor[] = [];
@@ -278,6 +333,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
     let y = 0;
     let lastPerekIdx = -1;
     let colMaxWidth = 0;
+    const continuedFrom = previousColumnLastPerek;
     for (const row of colRows) {
       if (lastPerekIdx !== -1 && row.perekIdx !== lastPerekIdx) {
         y += PEREK_GAP;
@@ -291,6 +347,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
           perekIdx: row.perekIdx,
           rightX: 0,
           topY: y,
+          continued: lastPerekIdx === -1 && row.perekIdx === continuedFrom,
         });
       }
       const amud = amudName(row);
@@ -325,6 +382,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
       }
       y += SEGMENT_SIZE;
     }
+    previousColumnLastPerek = lastPerekIdx;
     columnFrames.push({
       items: colItems,
       width: colMaxWidth,
@@ -354,6 +412,7 @@ function layoutTractate(tractate: TalmudTractate): LaidOutTractate {
         perekIdx: lp.perekIdx,
         rightX: columnRightEdge, // column right edge in tractate-local coords
         topY: lp.topY,
+        continued: lp.continued,
       });
     }
     for (const d of frame.localDafs) dafRows.push({ ...d, rightX: columnRightEdge });
@@ -464,6 +523,7 @@ export function computeTalmudLayout(structure: TalmudStructure): TalmudLayoutRes
           hebrewName: hebrew,
           rightX: tractateRightEdge + lp.rightX,
           topY: tractateTop + lp.topY,
+          continued: lp.continued,
         });
       }
 
