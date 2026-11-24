@@ -154,37 +154,31 @@ function focusEchoes(
   return verse && echoesOf(data, settings, verse);
 }
 
-// The scale from this share of the way up turns toward a dull red, fully red by the second: the
-// yellow is left to the matches.
-const REDDEN_FROM = 0.25;
-const REDDEN_FULL = 0.55;
-const MUTED_RED: Color = [0.5, 0.13, 0.1];
+// While a verse is focused, the others go this far toward a dark blue-grey: darker, duller and
+// cooler than any colour the focused verse and its matches wear.
+const OUT_OF_FOCUS: Color = [0.2, 0.24, 0.34];
+const OUT_OF_FOCUS_SHARE = 0.6;
 
-function mixToward(color: Color, target: Color, share: number): Color {
-  return color.map((c, i) => c + (target[i] - c) * share) as Color;
-}
-
-/** A scale colour for a verse out of focus: the low end as it is, the bright end turned toward red. */
-function muted(color: Color, position: number): Color {
-  const toward = Math.min(1, Math.max(0, (position - REDDEN_FROM) / (REDDEN_FULL - REDDEN_FROM)));
-  return mixToward(color, MUTED_RED, toward);
+/** A verse's colour while another verse is focused, in either analysis. */
+function outOfFocus(color: Color): Color {
+  // A distance colour can lie outside the screen's range.
+  return color.map((c, i) => {
+    const shown = Math.min(1, Math.max(0, c));
+    return shown + (OUT_OF_FOCUS[i] - shown) * OUT_OF_FOCUS_SHARE;
+  }) as Color;
 }
 
 function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: boolean): Color {
   const score = scoreAt(data, verse);
   if (score === null) return NO_DATA;
-  const { scale, low, high } = scaleOf(data);
-  const color = scale.colorOf(score);
-  return mute ? muted(color, (score - low) / (high - low)) : color;
+  const color = scaleOf(data).scale.colorOf(score);
+  return mute ? outOfFocus(color) : color;
 }
 
 // A verse without echoes keeps the map's grey pattern at this share of its brightness, so the
 // palest distance step stands out from it.
 const PLAIN_BRIGHTNESS = 0.6;
 const FOCUSED_VERSE: Color = [1, 1, 1];
-// How far the other verses with echoes fade toward the plain grey while one verse is focused,
-// pinned or hovered alike, so a pointer crossing the map does not change what they look like.
-const OTHERS_FADE = 0.5;
 
 /**
  * With a verse focused (hovered, else pinned), its echoes take the colour of their distance from
@@ -218,9 +212,7 @@ function echoColors(
   return items.map(({ id }, i) => {
     const color = colors.get(id);
     if (color) return color;
-    return echoesOfPosition(id).length
-      ? mixToward(farthestEchoOr(id, i), plain(i), OTHERS_FADE)
-      : plain(i);
+    return echoesOfPosition(id).length ? outOfFocus(farthestEchoOr(id, i)) : plain(i);
   });
 }
 

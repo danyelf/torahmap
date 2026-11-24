@@ -76,5 +76,5 @@
 }
 
 .parallel-list button.parallel-source {
-  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }

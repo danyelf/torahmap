@@ -64,10 +64,9 @@ describe('Text Analytics overlay', () => {
     });
     expect(colors[0]).toEqual(host().getItemColor(verse(1)));
     expect(colors[3]).toEqual(host().getItemColor(verse(4)));
-    // The verse at the top of the scale turns red; one without a score is left as it was.
-    const top = colors[1] as number[];
-    expect(top).not.toEqual(host().getItemColor(verse(2)));
-    expect(top[0]).toBeGreaterThan(top[2]);
+    // The verse at the top of the scale darkens; one without a score is left as it was.
+    const sum = (color: number[]) => color[0] + color[1] + color[2];
+    expect(sum(colors[1] as number[])).toBeLessThan(sum(host().getItemColor(verse(2)) as number[]));
     expect(colors[2]).toEqual(NO_DATA);
   });
 
@@ -301,8 +300,7 @@ describe('Text Analytics overlay', () => {
           focus: { hovered, pinned },
         });
       const [chapter, book, section, other] = DISTANCE_STEPS.map((step) => step.color);
-      const mixed = (color: Color, grey: Color): Color =>
-        color.map((c, i) => c + (grey[i] - c) * 0.5) as Color;
+      const light = (color: Color) => color[0] + color[1] + color[2];
 
       it('colours a verse by the distance of its farthest echo', () => {
         expect(paint({ 0: [1, 5] })[0]).toEqual(chapter);
@@ -316,13 +314,12 @@ describe('Text Analytics overlay', () => {
         expect(colors.slice(0, 6)).toEqual([[1, 1, 1], chapter, book, section, other, other]);
       });
 
-      it('fades other verses with echoes toward the plain grey, and leaves the rest plain', () => {
+      it('darkens other verses with echoes, and leaves the rest plain', () => {
         const echoes = { 0: [1, 5], 2: [3, 5] };
         const resting = paint(echoes);
         const faded = paint(echoes, null, places[0]);
-        const plain = brighten(getDefaultColor(2), 0.6);
-        expect(faded[2]).not.toEqual(resting[2]);
-        expect(faded[2]).toEqual(mixed(resting[2] as Color, plain));
+        expect(light(faded[2] as Color)).toBeLessThan(light(resting[2] as Color));
+        expect(faded[2]).not.toEqual(brighten(getDefaultColor(2), 0.6));
         expect(faded[4]).toEqual(brighten(getDefaultColor(4), 0.6));
       });
 
