@@ -226,10 +226,11 @@ describe('a tractate split into columns', () => {
       [27, 27, 27, 27, 27, 27, 27, 27],
     ]) {
       const { columns } = columnsOf(perekRows);
-      expect(columns.length).toBeGreaterThan(1);
+      const cutThrough = (c: number) => columns[c + 1][0][1] === columns[c].at(-1)![1];
+      expect(columns.slice(1).some((_, c) => cutThrough(c))).toBe(true);
       for (let c = 0; c < columns.length - 1; c++) {
         const lastPerek = columns[c].at(-1)![1];
-        if (columns[c + 1][0][1] !== lastPerek) continue;
+        if (!cutThrough(c)) continue;
         const rowsOf = (col: (typeof columns)[number]) =>
           col.filter(([, p]) => p === lastPerek).length;
         expect(rowsOf(columns[c])).toBeGreaterThanOrEqual(MIN_PEREK_STUB_ROWS);
@@ -246,9 +247,12 @@ describe('a tractate split into columns', () => {
   });
 
   it('marks a perek that carries on into the next column, and only that one', () => {
-    const { result, columns } = columnsOf([40, 40, 40]);
+    // 80 rows make two columns: one cut between the perakim, one through the second.
+    const { result, columns } = columnsOf([40, 80, 40]);
     const continued = result.perekAnchors.filter((a) => a.continued);
     const carriedOn = columns.slice(1).filter((col, c) => col[0][1] === columns[c].at(-1)![1]);
+    expect(carriedOn.length).toBeGreaterThan(0);
+    expect(carriedOn.length).toBeLessThan(columns.length - 1);
     expect(continued).toHaveLength(carriedOn.length);
     expect(continued.every((a) => a.topY === result.perekAnchors[0].topY)).toBe(true);
   });

@@ -205,8 +205,7 @@ interface LaidOutTractate {
  * Distribute amud-rows into columns when a tractate exceeds TRACTATE_WRAP_ROWS rows: as few
  * columns as fit, cut so the tallest is as short as it can be, then, among cuts within
  * COLUMN_HEIGHT_TOLERANCE of that, the fewest through the middle of a perek, then the most even.
- * A cut through a perek leaves at least MIN_PEREK_STUB_ROWS rows on each side; a tractate with too
- * few perakim for that is cut wherever evens the columns best.
+ * A cut through a perek leaves at least MIN_PEREK_STUB_ROWS rows on each side.
  */
 function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
   if (rows.length <= TRACTATE_WRAP_ROWS) return [rows];
@@ -234,8 +233,11 @@ function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
     while (k < n && rows[k].perekIdx === rows[i - 1].perekIdx) k++;
     return k - i;
   };
-  const canCut = (i: number, minStub: number) =>
-    i === n || startsPerek(i) || (before(i) >= minStub && after(i) >= minStub);
+  const canCut = Array.from(
+    { length: n + 1 },
+    (_, i) =>
+      startsPerek(i) || (before(i) >= MIN_PEREK_STUB_ROWS && after(i) >= MIN_PEREK_STUB_ROWS),
+  );
 
   interface Cell {
     midPerekCuts: number;
@@ -243,21 +245,22 @@ function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
     prev: number;
   }
   /** The best cuts into numCols columns none taller than `cap`, or null if there are none. */
-  const solve = (cap: number, minStub: number, preferWholePerakim: boolean) => {
+  const solve = (cap: number, preferWholePerakim: boolean) => {
     const best: (Cell | null)[][] = Array.from({ length: numCols + 1 }, () =>
       Array<Cell | null>(n + 1).fill(null),
     );
     best[0][0] = { midPerekCuts: 0, sumOfSquares: 0, prev: -1 };
     for (let k = 1; k <= numCols; k++) {
       for (let j = k; j <= n; j++) {
-        if (!canCut(j, minStub)) continue;
+        if (!canCut[j]) continue;
+        const midPerek = preferWholePerakim && !startsPerek(j) ? 1 : 0;
         for (let i = k - 1; i < j; i++) {
           const from = best[k - 1][i];
           if (!from) continue;
           const h = height(i, j);
           if (h > cap) continue;
           const cell = {
-            midPerekCuts: from.midPerekCuts + (preferWholePerakim && !startsPerek(j) ? 1 : 0),
+            midPerekCuts: from.midPerekCuts + midPerek,
             sumOfSquares: from.sumOfSquares + h * h,
             prev: i,
           };
@@ -275,26 +278,25 @@ function splitRowsIntoColumns(rows: AmudRow[]): AmudRow[][] {
     return best[numCols][n] ? best : null;
   };
 
-  for (const minStub of [MIN_PEREK_STUB_ROWS, 1]) {
-    let lo = 0;
-    let hi = height(0, n);
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (solve(mid, minStub, false)) hi = mid;
-      else lo = mid + 1;
-    }
-    const best = solve(lo + COLUMN_HEIGHT_TOLERANCE, minStub, true);
-    if (!best) continue;
-    const columns: AmudRow[][] = [];
-    let end = n;
-    for (let k = numCols; k >= 1; k--) {
-      const start = best[k][end]!.prev;
-      columns.unshift(rows.slice(start, end));
-      end = start;
-    }
-    return columns;
+  let lo = 0;
+  let hi = height(0, n);
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (solve(mid, false)) hi = mid;
+    else lo = mid + 1;
   }
-  return [rows];
+  // Every 9 rows hold a place to cut, a perek start or a place deep enough in a long perek, so
+  // there are cuts for a column every TRACTATE_WRAP_ROWS rows.
+  const best = solve(lo + COLUMN_HEIGHT_TOLERANCE, true);
+  if (!best) throw new Error(`no way to cut ${n} rows into ${numCols} columns`);
+  const columns: AmudRow[][] = [];
+  let end = n;
+  for (let k = numCols; k >= 1; k--) {
+    const start = best[k][end]!.prev;
+    columns.unshift(rows.slice(start, end));
+    end = start;
+  }
+  return columns;
 }
 
 /**
