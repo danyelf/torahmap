@@ -1,0 +1,288 @@
+# id|call|person|sure|note
+# call: R right, O another person Sefaria has, N another person with no Sefaria entry found, X not a patronymic (tag stays), U cannot say
+1|O|rav-hiyya-b-avin|sure|
+3|O|rabbah-b-rav-chanan|unsure|Not Rava. Sefaria has three entries for this name (rabba-b-rav-hanan, rabbah-b-rav-chanan, רבה-בר-רב-חנן-(ambiguous)); pick one.
+4|O|rabbah-b-rav-huna|sure|
+5|R||sure|Sefaria's second entry for the full name is an empty duplicate.
+6|R||sure|
+7|R||sure|
+8|O|rav-yitzhak-b-avudimi|sure|
+9|R||sure|
+10|O|rabbi-yehudah-b-pazi|sure|Same man as the current tag, which is an undated duplicate entry; this one has a generation.
+11|N||sure|Rav Yirmeya bar Tahlifa is a separate amora.
+12|R||unsure|Usually identified with the tanna Rabbi Yonatan. The father's tag (biblical Joseph) is wrong either way.
+14|N||sure|Yose ben Yo'ezer, not the biblical Joseph. Sefaria should have him; my search did not find the entry.
+15|R||sure|
+16|O|רשבג-(ambiguous)|unsure|Not bar Yochai. Which Shimon ben Gamliel (T2 or T5) depends on the passage.
+17|N||sure|
+20|O|rebbi-eleazar-b-thaddeus|unsure|Not ben Hyrcanus. The entry was found by loose spelling; check it is the same man.
+21|N||sure|Rabbi Levi bar Hama (also written bar Lahma) is a separate amora.
+22|N||sure|Neither the biblical Joseph nor Honi the Circle-Maker.
+23|X||sure|Verse: "Joseph is a fruitful bough". The tag on Joseph is right.
+24|R||sure|
+26|R||sure|
+27|R||sure|
+28|O|rabbah-b-avuha|sure|Rabba bar Avuha.
+30|N||sure|Same man as Rabbi Levi bar Hama.
+31|O|rebbi-nathan-b-hoshaiah|sure|
+32|N||sure|
+33|R||sure|
+34|N||sure|
+35|O|rabbi-yitzhak-nappaha|unsure|Sefaria lists ben Tavla as a name of Yitzhak Nappaha; I cannot confirm that identification.
+36|N||sure|
+37|N||sure|
+38|U||unsure|The current tag is an undated "Rebbi Tahlifa"; may or may not be this man.
+39|N||sure|
+40|X||sure|Verse: Amasa "son of a man whose name was Ithra". The tag on Amasa is right.
+43|N||unsure|Machir son of Ammiel (2 Samuel) is not Machir son of Manasseh.
+44|R||sure|
+45|N||sure|
+46|U||unsure|Not ben Hyrcanus. Probably Rabbi Eliezer son of Rabbi Yose the Galilean (tanna); Sefaria's match is an amora "Elazar b. Yose" (A5).
+47|N||sure|
+48|N||sure|
+49|N||sure|Rabbi Shimon Shezuri; Sefaria should have him, not found by name.
+50|O|rabbi-shimon-b-yehudah|sure|
+51|N||sure|
+52|N||sure|
+53|O|rabbi-yose-b-zevida|unsure|Found by loose spelling (Zavda / Zevida).
+54|N||sure|
+55|N||sure|
+56|N||sure|The father's tag is the biblical Pinchas.
+57|N||sure|
+58|N||sure|The father's tag is the biblical Jacob.
+59|O|ravin-b-rav-adda|sure|
+61|R||sure|
+62|N||sure|This is the father inside "Rav Yitzhak bar Ya'akov bar Giyorei", tagged as the biblical Jacob; the tag comes off.
+63|O|joshua-b-zeruz|sure|Tagged as the biblical Joshua.
+64|N||sure|Rabbi Yehuda bar Nahmani, Resh Lakish's speaker; tagged as the biblical Judah.
+65|O|rabbi-yehudah-b-bava|sure|Tagged as the biblical Judah.
+66|R||sure|Iddo is the prophet's grandfather; both tags right.
+68|X||sure|Verse: David "son of an Ephrathite". Tag right.
+69|X||sure|An age ("thirty years old").
+70|X||sure|An age ("sixty years old").
+71|X||unsure|"Rav Huna's son is a scholar", not a patronymic.
+72|O|רבה-בר-בר-חנן|unsure|Rabba bar bar Hana, not Rabba bar Nachmani. Sefaria probably has a fuller entry than this one.
+73|X||unsure|"Rabbi Ya'akov, his daughter's son" (Aher's grandson). Whether he is ben Korshai is a traditional identification.
+74|N||unsure|
+75|N||unsure|
+76|N||sure|
+77|U||unsure|
+78|O|abijah-the-son-of-jeroboam|sure|Resolves Sefaria's ambiguous Abijah.
+79|R||sure|Maacah is his mother.
+80|R||sure|
+81|R||sure|
+82|R||sure|
+83|R||sure|
+84|N||sure|Ahab son of Kolaiah, the false prophet, not King Ahab.
+85|R||sure|
+86|R||sure|
+88|R||unsure|
+89|R||unsure|
+90|R||sure|
+91|R||sure|
+92|R||unsure|
+93|R||sure|
+95|N||sure|A child in the siege story, not Doeg the Edomite; father tagged as biblical Joseph.
+96|O|rabbi-elazar-b-arakh|sure|Tagged as the biblical Elazar.
+97|O|rebbi-eleazar-b-matthias|sure|Tagged as the biblical Elazar.
+98|N||sure|A sage (of Bartota), tagged as the biblical Elazar and Judah.
+99|N||sure|Tagged as the biblical Elazar.
+100|R||sure|
+101|R||sure|
+102|N||sure|A sage, tagged as the biblical Eliezer. My matcher's suggestion was the modern lexicographer Eliezer Ben-Yehuda; ignore it.
+105|R||sure|
+106|R||sure|
+107|R||sure|
+108|R||sure|
+113|N||unsure|
+114|R||sure|
+115|R||sure|
+117|N||unsure|
+118|N||unsure|Obadiah son of Jehiel (Ezra 8) is not the prophet.
+119|R||sure|
+120|R||sure|
+121|R||sure|
+122|N||sure|
+123|N||sure|
+124|N||sure|
+125|N||sure|
+126|U||unsure|Sefaria's match is "Rebbi Abba b. Joseph / Rava b. Yosef"; unclear who is meant.
+127|N||sure|
+128|R||sure|
+129|N||unsure|
+130|O|rabbi-abba-b-r-hiyya-b-abba|unsure|
+131|N||sure|
+132|N||sure|
+134|N||sure|
+135|N||sure|
+136|N||sure|
+137|N||sure|Rabbi Elazar HaKappar; Sefaria should have him, not found by name.
+138|O|rebbi-eleazar-b-antigonos|unsure|Found by loose spelling.
+139|O|rebbi-eleazar-b-matthias|unsure|Found by loose spelling.
+140|O|rebbi-nathan-b-hoshaiah|unsure|Same name as "bar Hoshaya" above, spelled differently.
+141|N||sure|
+142|N||sure|
+143|N||sure|
+144|N||sure|
+145|O|rabbi-shimon-b-elazar|sure|
+146|O|rabbi-shimon-b-elazar|unsure|Eliezer / Elazar spelling.
+147|N||unsure|The Aramaic says Shimon bar Nahmani.
+148|N||sure|
+149|O|rabbi-shmuel-b-nahmani|sure|
+150|O|rabbi-shmuel-b-yitzhak|sure|
+151|N||unsure|
+152|N||unsure|
+153|U||unsure|
+154|N||unsure|
+155|N||sure|
+156|O|rebbi-jacob-b-immi|unsure|Found by loose spelling.
+157|N||sure|The father inside "Rav Yitzhak bar Ya'akov bar Giyorei"; the tag comes off.
+159|U||unsure|Possibly a spelling of ben Hananya.
+160|N||sure|
+161|R||sure|
+162|O|rebbi-yehudah-b-zebida|unsure|Found by loose spelling.
+163|O|rebbi-yehudah-b-zebida|sure|
+164|N||unsure|
+165|N||sure|
+166|N||sure|
+167|O|rabbi-yehudah-b-pazi|unsure|Sefaria's match is the undated duplicate rabbi-yehuda-b-rabbi-shimon.
+168|N||sure|
+170|N||sure|Rabbi Yishmael son of Rabbi Yohanan ben Beroka.
+171|N||sure|The father's tag is the biblical Jacob.
+172|N||sure|
+173|O|rabbi-yitzhak-nappaha|sure|
+174|N||sure|
+175|O|rav-yitzhak-b-yosef|sure|
+176|N||unsure|
+177|O|rebbi-yose-b-rebbu-abun|sure|
+178|O|rabbi-yose-b-chanina|sure|
+179|N||unsure|
+180|N||sure|
+181|O|rabbi-yose-b-dormasqit|sure|
+182|O|rebbi-yose-b-qasarta|sure|
+183|O|rabbi-yose-b-kisma|sure|
+184|O|rabbi-yose-b-zevida|unsure|Found by loose spelling.
+185|O|rabbi-yose-b-zevida|sure|
+186|N||unsure|
+187|O|rabbi-yohanan-b-nuri|sure|
+188|N||unsure|
+189|N||sure|
+190|N||unsure|
+191|N||unsure|
+192|N||sure|
+193|O|rav-hiyya-b-rav|unsure|If the text is "Hiyya bar Rav".
+195|O|rabbi-abba-b-yaakov|sure|
+196|U||unsure|
+197|U||unsure|
+198|N||unsure|
+199|N||unsure|
+200|N||sure|
+201|O|rav-aha-b-rav-iqa|sure|
+202|N||sure|
+203|O|rabbi-achai-b-yoshiah|sure|
+204|N||sure|
+205|N||sure|
+206|N||sure|
+207|O|rav-huna-b-chiyun|sure|
+208|N||sure|The Aramaic says Rav Kahana bar Manyumi.
+209|N||unsure|
+210|N||sure|
+211|N||sure|
+212|N||sure|
+214|N||sure|
+215|N||sure|
+216|O|pappa-b-abba|unsure|
+217|O|rav-pinehas-b-rav-ami|sure|
+218|N||unsure|
+219|O|rabbi-yaakov-b-acha|sure|
+220|N||unsure|
+221|N||sure|
+222|N||sure|
+223|O|yehudah-b-hiyya|sure|
+224|U||unsure|
+225|U||unsure|
+226|N||unsure|
+227|N||sure|The father's tag is the biblical Naftali.
+228|O|rav-yitzhak-b-yosef|sure|
+229|O|rav-yitzhak-b-rav-yehudah|sure|
+230|N||sure|
+231|N||sure|
+232|N||sure|
+233|N||sure|
+234|O|rebbi-hama-b-joseph|unsure|The father's tag is the biblical Joseph.
+235|N||unsure|
+236|N||unsure|
+237|N||sure|
+238|N||unsure|
+239|N||unsure|
+240|O|rav-chananiyah-b-shelemya|unsure|Found by loose spelling.
+241|N||sure|
+242|N||sure|
+243|N||sure|
+244|N||sure|
+245|O|rabbah-b-avuha|sure|
+246|O|rabbah-b-rav-huna|sure|The Aramaic says Rava bar Rav Huna.
+247|N||unsure|
+248|O|rabbah-b-rav-chanan|unsure|As Rava bar Rav Hanan above.
+249|N||sure|
+250|N||sure|
+251|N||sure|
+252|N||sure|
+253|N||sure|
+254|N||unsure|
+255|O|rabbi-shimon-b-menasya|sure|Tagged as the biblical Simeon.
+256|N||sure|
+257|O|rabbi-shmuel-b-nahmani|sure|
+258|N||sure|
+259|O|rebbi-samuel-b-inaya|unsure|
+260|N||unsure|Yehoram son of Ahab was king of Israel; the tag is the king of Judah.
+261|N||sure|Tagged as the biblical Judah.
+262|O|rav-yehudah-b-yechezkel|unsure|"Yehuda bar Shvisk'el", a nickname form of bar Yehezkel; tagged as the biblical Judah.
+263|N||sure|Tagged as the biblical Joseph.
+264|N||sure|Yosef ben Elem, tagged as the biblical Joseph.
+265|U||unsure|Isaiah 8:2; the Talmud discusses whether he is the prophet.
+266|R||sure|
+267|N||unsure|Zedekiah son of Maaseiah, the false prophet, if the tag is the king.
+269|X||sure|An age.
+270|X||unsure|Not a name.
+271|X||sure|"How old was Balaam".
+272|R||sure|
+273|X||unsure|
+274|X||sure|An age.
+275|X||sure|An age.
+276|R||sure|
+277|X||sure|Verse: "Jotham the king's son".
+278|X||sure|An age.
+279|X||sure|An age.
+280|U||unsure|
+281|X||sure|"His daughter's son" (Honi's grandson). Tag right.
+282|O|judah-the-son-of-converts|sure|Tagged as the biblical Judah.
+283|X||sure|Verse. Tag right.
+284|X||sure|An age.
+285|X||sure|An age.
+286|X||unsure|
+287|X||unsure|Verse: "Cush the Benjaminite".
+288|X||sure|"How old was Caleb".
+289|U||unsure|
+292|X||unsure|
+293|X||sure|An age.
+294|X||sure|"In its first year", not a name.
+295|X||sure|"Rav, the son of Rabbi Hiyya's brother". Tag right.
+296|X||unsure|"Son of the sister of..."; the tag may be wrong.
+297|X||unsure|"His daughter's son"; the tag may be wrong.
+298|X||unsure|
+299|R||sure|Rav Mari, son of Shmuel's daughter.
+300|R||sure|
+301|O|רבה-בר-בר-חנן|unsure|Rabba bar bar Hana.
+302|X||sure|"Bar samkha", a reliable authority. Tag right.
+303|X||sure|"Bar samkha". Tag right.
+304|N||unsure|
+305|X||unsure|
+306|X||sure|"Ben pekua" is a legal term.
+307|X||unsure|
+308|X||unsure|"His son's son", a grandson.
+309|X||sure|"His disputant".
+310|X||sure|"His son's son".
+311|X||unsure|
+312|X||unsure|
+42|R||sure|
