@@ -11,6 +11,7 @@ import {
   LINEAR,
   memoByValue,
 } from '@torahmap/utils';
+import { squareCentre } from '@torahmap/engine';
 import './text-analytics.css';
 import type { Overlay, Pointer, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
@@ -221,9 +222,7 @@ function echoPointers(
   focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
 ): Pointer[] {
   const { places, positions } = readingOrder(data.scores);
-  const centres = new Map(
-    items.map(({ id, x, y, size }) => [id, { x: x + size / 2, y: y + size / 2 }]),
-  );
+  const centres = new Map(items.map((item) => [item.id, squareCentre(item)]));
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
   const far = DISTANCE_STEPS.length - 1;
   const pointers: Pointer[] = [];
