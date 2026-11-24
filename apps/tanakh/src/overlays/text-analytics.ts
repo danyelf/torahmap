@@ -181,9 +181,9 @@ const PLAIN_BRIGHTNESS = 0.6;
 const FOCUSED_VERSE: Color = [1, 1, 1];
 
 /**
- * With a verse focused (hovered, else pinned), its echoes take the colour of their distance from
- * it and the verse is white. Other verses with echoes keep the colour of their farthest echo,
- * faded, so passages can be traced from one to the next. Verses without echoes keep the plain grey.
+ * A verse with echoes wears the colour of its farthest one, whatever is focused; one without keeps
+ * the plain grey. With a verse focused (hovered, else pinned), it is white and every verse but its
+ * echoes goes out of focus, so passages can still be traced from one to the next.
  */
 function echoColors(
   items: TanakhLayout[],
@@ -204,15 +204,11 @@ function echoColors(
   };
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
   if (!focused) return items.map(({ id }, i) => farthestEchoOr(id, i));
-  const from = places[positions.get(focused.id)!];
-  const colors = new Map<string, Color>([[focused.id, FOCUSED_VERSE]]);
-  for (const echo of echoesOf(data, settings, focused)!.places) {
-    colors.set(echo.id, DISTANCE_STEPS[distanceStep(from, echo)].color);
-  }
+  const lit = echoesOf(data, settings, focused)!.matches;
   return items.map(({ id }, i) => {
-    const color = colors.get(id);
-    if (color) return color;
-    return echoesOfPosition(id).length ? outOfFocus(farthestEchoOr(id, i)) : plain(i);
+    if (id === focused.id) return FOCUSED_VERSE;
+    const resting = farthestEchoOr(id, i);
+    return lit.has(id) || !echoesOfPosition(id).length ? resting : outOfFocus(resting);
   });
 }
 
@@ -361,8 +357,7 @@ export const textAnalyticsOverlay: Overlay<
       container.insertAdjacentHTML(
         'beforeend',
         [
-          `Colour shows how far an echo is from the selected verse; with none selected, a verse ` +
-            `takes the colour of its farthest echo`,
+          `Colour shows how far away a verse's farthest echo is`,
           `A verse with no echo is grey`,
           `Phrases that recur in many verses wherever they appear don't count`,
           `Hover or select a verse to light its parallels`,

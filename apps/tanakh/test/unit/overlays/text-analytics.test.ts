@@ -309,9 +309,11 @@ describe('Text Analytics overlay', () => {
         expect(paint({ 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5] })[0]).toEqual(other);
       });
 
-      it("colours a focused verse's echoes by their distance from it, and the verse white", () => {
-        const colors = paint({ 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5] }, places[0]);
-        expect(colors.slice(0, 6)).toEqual([[1, 1, 1], chapter, book, section, other, other]);
+      it("leaves a focused verse's echoes the colour they have at rest, and the verse white", () => {
+        const echoes = { 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5], 1: [5, 5] };
+        const colors = paint(echoes, places[0]);
+        expect(colors[0]).toEqual([1, 1, 1]);
+        expect(colors.slice(1)).toEqual(paint(echoes).slice(1));
       });
 
       it('darkens other verses with echoes, and leaves the rest plain', () => {
