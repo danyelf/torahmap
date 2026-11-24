@@ -11,6 +11,14 @@ export type { Credit } from '../credits.ts';
 /** The overlay id that stands for none: the picker's first option, and what telemetry records. */
 export const NO_OVERLAY = 'none';
 
+/** A tapered line from one map point toward another: `length` map units long, or all the way when null. */
+export interface Pointer {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  length: number | null;
+  color: Color;
+}
+
 /** The squares the reader has the pointer on and has pinned. */
 export interface Focus<T> {
   hovered: SpatialItem<T> | null;
@@ -132,6 +140,9 @@ interface OverlayMembers<T, S, D> {
   // Which of the items stand out, as a search match does: drawn over the rest and
   // never too small to see. For an overlay that can light only a few squares.
   standoutsFor?(args: ColorArgs<T, S, D>): boolean[];
+
+  // Short tapered lines from squares toward other squares, drawn over the map.
+  pointersFor?(args: ColorArgs<T, S, D>): Pointer[];
 
   // Which of the standouts also keep a faint halo when zoomed in, where a
   // standout is otherwise a plain square.

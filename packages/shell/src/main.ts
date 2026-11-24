@@ -101,6 +101,7 @@ import {
   NO_OVERLAY,
   type Focus,
   type Overlay,
+  type Pointer,
   type SettingsUpdate,
   type Tools,
 } from './overlays/types.ts';
@@ -127,6 +128,7 @@ import { createLoader } from './loader.ts';
 import { createViewFiles } from './viewFiles.ts';
 import { createPopupHold } from './popupHold.ts';
 import { isPhone } from './phone.ts';
+import { createPointerLayer } from './pointerLayer.ts';
 import { URL_UPDATE_DEBOUNCE_MS, SEARCH_NON_MATCH_DIM, MAP_FADE } from './constants.ts';
 import { stopLabel } from './scrollytelling/storyPanel';
 import { cameraSetting, listedStories, writeStopComment } from '@torahmap/stories';
@@ -279,6 +281,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     mapPoint(e.clientX, e.clientY, canvasOrigin);
 
   const renderState = createRenderState(renderContext, items, dpr);
+  const drawPointers = createPointerLayer(canvas);
 
   // The search and at most one overlay. Only setTools and leaveStory change it.
   let tools: ToolState<S> = emptyTools(searchTool);
@@ -729,10 +732,29 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     fadeMap(to, applyTools, { from: !out, to: out });
   }
 
+  // The pointers for the overlay, settings, data and focus they were last worked out for.
+  let pointersMade: { key: unknown[]; pointers: Pointer[] } = { key: [], pointers: [] };
+
+  /** The settled overlay's pointers, while exploring. */
+  function pointersNow(): Pointer[] {
+    const on = frame.mode === 'story' ? null : toolsNow().overlay;
+    if (!on?.tool.pointersFor) return [];
+    const focus = focusNow();
+    const key = [on.tool, on.settings, on.data, focus.hovered, focus.pinned];
+    if (key.some((part, i) => part !== pointersMade.key[i])) {
+      pointersMade = {
+        key,
+        pointers: on.tool.pointersFor({ items, settings: on.settings, data: on.data, focus }),
+      };
+    }
+    return pointersMade.pointers;
+  }
+
   function render(): void {
     syncRings();
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
     moveLabels(offset, camera.zoom);
+    drawPointers(pointersNow(), offset, camera.zoom);
   }
 
   // A square is six pixels across, so centring it while scaled out

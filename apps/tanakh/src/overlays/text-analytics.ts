@@ -12,7 +12,7 @@ import {
   memoByValue,
 } from '@torahmap/utils';
 import './text-analytics.css';
-import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import type { Overlay, Pointer, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
@@ -205,6 +205,50 @@ function echoColors(
   });
 }
 
+// How far a pointer reaches toward an echo, in map units (a square is 6): farther toward another
+// section of the Tanakh.
+const POINTER_LENGTH = 10;
+const POINTER_LENGTH_FAR = 14;
+
+/**
+ * A pointer from every verse toward each of its echoes, in the colour of its distance step; the
+ * focused verse's reach all the way.
+ */
+function echoPointers(
+  items: TanakhLayout[],
+  data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
+  focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
+): Pointer[] {
+  const { places, positions } = readingOrder(data.scores);
+  const centres = new Map(
+    items.map(({ id, x, y, size }) => [id, { x: x + size / 2, y: y + size / 2 }]),
+  );
+  const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
+  const far = DISTANCE_STEPS.length - 1;
+  const pointers: Pointer[] = [];
+  const full: Pointer[] = [];
+  for (const { id } of items) {
+    const position = positions.get(id)!;
+    const from = centres.get(id)!;
+    for (const [other] of echoesAt(data.echoes, position, settings.words)) {
+      const to = centres.get(places[other].id);
+      if (!to) continue;
+      const step = distanceStep(places[position], places[other]);
+      const color = DISTANCE_STEPS[step].color;
+      if (id === focused?.id) full.push({ from, to, length: null, color });
+      else
+        pointers.push({
+          from,
+          to,
+          length: step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH,
+          color,
+        });
+    }
+  }
+  return [...pointers, ...full];
+}
+
 /** Which of `items` are the focused verse or its echoes. */
 function matched(
   items: TanakhLayout[],
@@ -274,6 +318,10 @@ export const textAnalyticsOverlay: Overlay<
     if (settings.analysis === 'echoes') return echoColors(items, data, settings, focus);
     const lit = focusEchoes(data, settings, focus.hovered, focus.pinned)?.matches;
     return items.map((item) => repetitionColorAt(data, item, !!lit && !lit.has(item.id)));
+  },
+
+  pointersFor({ items, settings, data, focus }) {
+    return settings.analysis === 'echoes' ? echoPointers(items, data, settings, focus) : [];
   },
 
   // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
