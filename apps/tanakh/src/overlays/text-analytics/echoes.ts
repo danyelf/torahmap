@@ -55,9 +55,7 @@ const RUN_GAP = 5;
  * `position`; empty for a verse without echoes.
  */
 export function echoRun(file: EchoesFile, position: number, words: number): [number, number][] {
-  const pairs = bothWays(file);
-  const shares = (a: number, b: number) =>
-    (pairs.get(a) ?? []).some(([other, shared]) => other === b && shared >= words);
+  const shares = (a: number, b: number) => echoesAt(file, a, words).some(([other]) => other === b);
   // The next pair after (a, b) in direction `dir`, nearest first.
   const next = (a: number, b: number, dir: 1 | -1): [number, number] | null => {
     for (let reach = 2; reach <= 2 * (RUN_GAP + 1); reach++) {

@@ -207,17 +207,15 @@ function echoColors(
   });
 }
 
-// How far a pointer reaches toward an echo, in map units (a square is 6): farther toward another
+// How far a pointer reaches toward an echo, in map units (a cell is SQUARE_SIZE): farther toward another
 // section of the Tanakh.
 const POINTER_LENGTH = 10;
 const POINTER_LENGTH_FAR = 14;
 // The rest of the focused verse's run of parallels is drawn this much fainter than its own echoes.
 const RUN_OPACITY = 0.55;
+// The key of the pointer from one reading-order position toward another.
+const pairKey = (from: number, to: number) => `${from} ${to}`;
 
-/**
- * A pointer from every verse toward each of its echoes, in the colour of its distance step; the
- * focused verse's reach all the way.
- */
 /** Every echo's pointer, and where the one from each reading-order position to another sits in the list. */
 const echoPointerList = memoByValue((items: TanakhLayout[]) =>
   memoByValueAndKey((data: TextAnalyticsData, words: number) => {
@@ -232,7 +230,7 @@ const echoPointerList = memoByValue((items: TanakhLayout[]) =>
         const to = centres.get(places[other].id);
         if (!to) continue;
         const step = distanceStep(places[position], places[other]);
-        at.set(`${position} ${other}`, pointers.length);
+        at.set(pairKey(position, other), pointers.length);
         pointers.push({
           from: centres.get(id)!,
           to,
@@ -257,8 +255,8 @@ function grownEchoPointers(
   const focusedAt = readingOrder().positions.get(focused.id)!;
   const { at } = echoPointerList(items)(data, settings.words);
   return echoRun(data.echoes, focusedAt, settings.words).flatMap(([a, b]) => {
-    const opacity = a === focusedAt ? 1 : RUN_OPACITY;
-    return [at.get(`${a} ${b}`), at.get(`${b} ${a}`)]
+    const opacity = a === focusedAt || b === focusedAt ? 1 : RUN_OPACITY;
+    return [at.get(pairKey(a, b)), at.get(pairKey(b, a))]
       .filter((index) => index !== undefined)
       .map((index) => ({ index, opacity }));
   });

@@ -22,11 +22,11 @@ const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
  */
 export const SQUARE_GAP = 2;
 
-/** The middle of the square as drawn: the gap is left on its right and below it. */
+/** The middle of the square as drawn: nudged by its jitter, the gap left on its right and below it. */
 export function squareCentre(item: SpatialItem<unknown>): { x: number; y: number } {
   return {
-    x: item.x + ((item.width ?? item.size) - SQUARE_GAP) / 2,
-    y: item.y + (item.size - SQUARE_GAP) / 2,
+    x: item.x + (item.jitter?.x ?? 0) + ((item.width ?? item.size) - SQUARE_GAP) / 2,
+    y: item.y + (item.jitter?.y ?? 0) + (item.size - SQUARE_GAP) / 2,
   };
 }
 

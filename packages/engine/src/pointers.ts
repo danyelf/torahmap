@@ -290,5 +290,3 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
     },
   };
 }
-
-export type PointerRenderer = ReturnType<typeof createPointerRenderer>;
