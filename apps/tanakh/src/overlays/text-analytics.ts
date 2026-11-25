@@ -221,7 +221,7 @@ const RUN_OPACITY = 0.55;
 /** Every echo's pointer, and where the one from each reading-order position to another sits in the list. */
 const echoPointerList = memoByValue((items: TanakhLayout[]) =>
   memoByValueAndKey((data: TextAnalyticsData, words: number) => {
-    const { places, positions } = readingOrder(data.scores);
+    const { places, positions } = readingOrder();
     const centres = new Map(items.map((item) => [item.id, squareCentre(item)]));
     const far = DISTANCE_STEPS.length - 1;
     const pointers: Pointer[] = [];
@@ -254,7 +254,7 @@ function grownEchoPointers(
 ): GrownPointer[] {
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
   if (!focused) return [];
-  const focusedAt = readingOrder(data.scores).positions.get(focused.id)!;
+  const focusedAt = readingOrder().positions.get(focused.id)!;
   const { at } = echoPointerList(items)(data, settings.words);
   return echoRun(data.echoes, focusedAt, settings.words).flatMap(([a, b]) => {
     const opacity = a === focusedAt ? 1 : RUN_OPACITY;
