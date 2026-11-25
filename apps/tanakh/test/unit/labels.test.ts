@@ -4,8 +4,8 @@ import { createVerse } from '../helpers/index';
 import type { Book } from '../../src/types';
 
 const BOOKS: Book[] = [
-  { name: 'Genesis', hebrewName: 'בראשית', section: 'torah', chapters: [] },
-  { name: 'Joshua', hebrewName: 'יהושע', section: 'neviim', chapters: [] },
+  { name: 'Genesis', hebrewName: 'בראשית', section: 'torah', chapters: [], countedAs: 'Genesis' },
+  { name: 'Joshua', hebrewName: 'יהושע', section: 'neviim', chapters: [], countedAs: 'Joshua' },
 ];
 
 describe('bookBoxes', () => {

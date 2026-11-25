@@ -24,9 +24,27 @@ import { talmudFixture } from '../apps/talmud/test/helpers/talmudFixture.ts';
 
 const torahData: TorahData = {
   books: [
-    { name: 'Genesis', hebrewName: 'בראשית', section: 'torah', chapters: [3, 2] },
-    { name: 'I Samuel', hebrewName: 'שמואל א', section: 'neviim', chapters: [2] },
-    { name: 'Song of Songs', hebrewName: 'שיר השירים', section: 'ketuvim', chapters: [2] },
+    {
+      name: 'Genesis',
+      hebrewName: 'בראשית',
+      section: 'torah',
+      chapters: [3, 2],
+      countedAs: 'Genesis',
+    },
+    {
+      name: 'I Samuel',
+      hebrewName: 'שמואל א',
+      section: 'neviim',
+      chapters: [2],
+      countedAs: 'I Samuel',
+    },
+    {
+      name: 'Song of Songs',
+      hebrewName: 'שיר השירים',
+      section: 'ketuvim',
+      chapters: [2],
+      countedAs: 'Song of Songs',
+    },
   ],
   layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
 };

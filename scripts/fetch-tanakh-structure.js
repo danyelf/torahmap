@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 // Write public/data/tanakh-structure.json: each book's chapter lengths, read
-// from the downloaded Hebrew texts (scripts/download-texts.sh), plus the layout.
+// from the downloaded Hebrew texts (scripts/download-texts.sh), the book each counts as in the
+// traditional 24, and the layout.
 //
 // Usage: node scripts/fetch-tanakh-structure.js [texts-dir] > public/data/tanakh-structure.json
 
@@ -19,25 +20,25 @@ const TANAKH_BOOKS = {
   neviim: [
     { english: 'Joshua', hebrew: 'יהושע' },
     { english: 'Judges', hebrew: 'שופטים' },
-    { english: 'I Samuel', hebrew: 'שמואל א' },
-    { english: 'II Samuel', hebrew: 'שמואל ב' },
-    { english: 'I Kings', hebrew: 'מלכים א' },
-    { english: 'II Kings', hebrew: 'מלכים ב' },
+    { english: 'I Samuel', hebrew: 'שמואל א', countedAs: 'Samuel' },
+    { english: 'II Samuel', hebrew: 'שמואל ב', countedAs: 'Samuel' },
+    { english: 'I Kings', hebrew: 'מלכים א', countedAs: 'Kings' },
+    { english: 'II Kings', hebrew: 'מלכים ב', countedAs: 'Kings' },
     { english: 'Isaiah', hebrew: 'ישעיהו' },
     { english: 'Jeremiah', hebrew: 'ירמיהו' },
     { english: 'Ezekiel', hebrew: 'יחזקאל' },
-    { english: 'Hosea', hebrew: 'הושע' },
-    { english: 'Joel', hebrew: 'יואל' },
-    { english: 'Amos', hebrew: 'עמוס' },
-    { english: 'Obadiah', hebrew: 'עובדיה' },
-    { english: 'Jonah', hebrew: 'יונה' },
-    { english: 'Micah', hebrew: 'מיכה' },
-    { english: 'Nahum', hebrew: 'נחום' },
-    { english: 'Habakkuk', hebrew: 'חבקוק' },
-    { english: 'Zephaniah', hebrew: 'צפניה' },
-    { english: 'Haggai', hebrew: 'חגי' },
-    { english: 'Zechariah', hebrew: 'זכריה' },
-    { english: 'Malachi', hebrew: 'מלאכי' },
+    { english: 'Hosea', hebrew: 'הושע', countedAs: 'The Twelve' },
+    { english: 'Joel', hebrew: 'יואל', countedAs: 'The Twelve' },
+    { english: 'Amos', hebrew: 'עמוס', countedAs: 'The Twelve' },
+    { english: 'Obadiah', hebrew: 'עובדיה', countedAs: 'The Twelve' },
+    { english: 'Jonah', hebrew: 'יונה', countedAs: 'The Twelve' },
+    { english: 'Micah', hebrew: 'מיכה', countedAs: 'The Twelve' },
+    { english: 'Nahum', hebrew: 'נחום', countedAs: 'The Twelve' },
+    { english: 'Habakkuk', hebrew: 'חבקוק', countedAs: 'The Twelve' },
+    { english: 'Zephaniah', hebrew: 'צפניה', countedAs: 'The Twelve' },
+    { english: 'Haggai', hebrew: 'חגי', countedAs: 'The Twelve' },
+    { english: 'Zechariah', hebrew: 'זכריה', countedAs: 'The Twelve' },
+    { english: 'Malachi', hebrew: 'מלאכי', countedAs: 'The Twelve' },
   ],
   ketuvim: [
     { english: 'Psalms', hebrew: 'תהלים' },
@@ -49,10 +50,10 @@ const TANAKH_BOOKS = {
     { english: 'Ecclesiastes', hebrew: 'קהלת' },
     { english: 'Esther', hebrew: 'אסתר' },
     { english: 'Daniel', hebrew: 'דניאל' },
-    { english: 'Ezra', hebrew: 'עזרא' },
-    { english: 'Nehemiah', hebrew: 'נחמיה' },
-    { english: 'I Chronicles', hebrew: 'דברי הימים א' },
-    { english: 'II Chronicles', hebrew: 'דברי הימים ב' },
+    { english: 'Ezra', hebrew: 'עזרא', countedAs: 'Ezra–Nehemiah' },
+    { english: 'Nehemiah', hebrew: 'נחמיה', countedAs: 'Ezra–Nehemiah' },
+    { english: 'I Chronicles', hebrew: 'דברי הימים א', countedAs: 'Chronicles' },
+    { english: 'II Chronicles', hebrew: 'דברי הימים ב', countedAs: 'Chronicles' },
   ],
 };
 
@@ -85,6 +86,7 @@ const books = Object.entries(TANAKH_BOOKS).flatMap(([section, list]) =>
     hebrewName: book.hebrew,
     chapters: readChapters(book.english),
     section,
+    countedAs: book.countedAs ?? book.english,
   })),
 );
 

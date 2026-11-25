@@ -1,24 +1,31 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { initBookData } from '../../../src/books';
+import type { Book } from '../../../src/types';
 import { distanceStep } from '../../../src/overlays/text-analytics/distance';
 
 const at = (book: string, chapter = 1) => ({ id: `${book} ${chapter}`, book, chapter, verse: 1 });
 
 describe('distance between verses', () => {
   beforeAll(() => {
-    const sections = { Genesis: 'torah', Exodus: 'torah', Isaiah: 'neviim', Psalms: 'ketuvim' };
-    const books = [
-      ...Object.entries(sections),
-      ...['I Kings', 'II Kings', 'Hosea', 'Joel'].map((name) => [name, 'neviim']),
-    ];
+    const book = (name: string, section: Book['section'], countedAs = name): Book => ({
+      name,
+      hebrewName: '',
+      section,
+      chapters: [1],
+      countedAs,
+    });
     initBookData({
-      books: books.map(([name, section]) => ({
-        name,
-        hebrewName: '',
-        section: section as 'torah' | 'neviim' | 'ketuvim',
-        chapters: [1],
-      })),
-      layout: { minorProphetStacks: [['Hosea', 'Joel']], ketuvimStacks: [], multiColumnBooks: {} },
+      books: [
+        book('Genesis', 'torah'),
+        book('Exodus', 'torah'),
+        book('I Kings', 'neviim', 'Kings'),
+        book('II Kings', 'neviim', 'Kings'),
+        book('Isaiah', 'neviim'),
+        book('Hosea', 'neviim', 'The Twelve'),
+        book('Joel', 'neviim', 'The Twelve'),
+        book('Psalms', 'ketuvim'),
+      ],
+      layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
     });
   });
 

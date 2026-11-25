@@ -19,6 +19,7 @@ import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
 import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import { getDefaultColor } from '../baseColor.ts';
+import { readingOrder, type Place } from '../books.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
 import { verseRef } from '@torahmap/link/tanakh';
 import { ECHO_WORDS, TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
@@ -31,7 +32,6 @@ import {
   type ScoresFile,
 } from './text-analytics/scores.ts';
 import { ECHOES_FILE, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
-import { readingOrder, type Place } from './text-analytics/places.ts';
 import { DISTANCE_STEPS, distanceStep } from './text-analytics/distance.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
@@ -115,7 +115,7 @@ function echoesOf(
   const cache = echoesCache(data);
   const key = `${settings.analysis} ${settings.words} ${verse.id}`;
   if (cache.has(key)) return cache.get(key)!;
-  const { places: all, positions } = readingOrder(data.scores);
+  const { places: all, positions } = readingOrder();
   const position = positions.get(verse.id)!;
   const places = echoPositions(data, settings, verse, position).map((p) => all[p]);
   const found = places.length
@@ -186,7 +186,7 @@ function echoColors(
   settings: TextAnalyticsSettings,
   focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
 ): Color[] {
-  const { places, positions } = readingOrder(data.scores);
+  const { places, positions } = readingOrder();
   const farthestEcho = (id: string): Color | null => {
     const position = positions.get(id)!;
     const echoes = echoesAt(data.echoes, position, settings.words);
@@ -295,7 +295,7 @@ export const textAnalyticsOverlay: Overlay<
     heading.textContent = `Parallel verses (${found.places.length})`;
     const list = document.createElement('div');
     list.className = 'parallel-list';
-    const { positions } = readingOrder(data.scores);
+    const { positions } = readingOrder();
     const inOrder = [...found.places, ...(focus ? [focus] : [])].sort(
       (a, b) => positions.get(a.id)! - positions.get(b.id)!,
     );
@@ -388,7 +388,7 @@ export const textAnalyticsOverlay: Overlay<
     if (settings.analysis === 'echoes') {
       const count = echoesAt(
         data.echoes,
-        readingOrder(data.scores).positions.get(verse.id)!,
+        readingOrder().positions.get(verse.id)!,
         settings.words,
       ).length;
       if (count === 0) return null;

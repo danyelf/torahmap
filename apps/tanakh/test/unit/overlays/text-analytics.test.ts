@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { textAnalyticsOverlay, type TextAnalyticsData } from '../../../src/overlays/text-analytics';
 import { NO_DATA } from '../../../src/overlays/colors';
 import { brighten, type Color } from '@torahmap/utils';
@@ -43,6 +43,15 @@ const wording = { analysis: 'repetitive-wording' as const, words: 5 };
 const echoSettings = { analysis: 'echoes' as const, words: 5 };
 
 describe('Text Analytics overlay', () => {
+  beforeEach(() =>
+    initBookData({
+      books: [
+        { name: 'Genesis', hebrewName: '', section: 'torah', chapters: [4], countedAs: 'Genesis' },
+      ],
+      layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+    }),
+  );
+
   it('marks the repeated words of a verse, in its Hebrew text only', () => {
     const text = data.texts!.Genesis['1'][1].he;
     const h = host();
@@ -259,13 +268,14 @@ describe('Text Analytics overlay', () => {
 
     describe('by distance', () => {
       // In reading order: Genesis 1:1, Genesis 1:2, Genesis 2:1, Exodus 1:1, Isaiah 1:1, Psalms 1:1.
-      beforeAll(() =>
+      beforeEach(() =>
         initBookData({
           books: ['Genesis', 'Exodus', 'Isaiah', 'Psalms'].map((name, i) => ({
             name,
             hebrewName: '',
             section: (['torah', 'torah', 'neviim', 'ketuvim'] as const)[i],
-            chapters: [2],
+            chapters: name === 'Genesis' ? [2, 1] : [1],
+            countedAs: name,
           })),
           layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
         }),
@@ -278,18 +288,6 @@ describe('Text Analytics overlay', () => {
         createVerse({ book: 'Isaiah', chapter: 1, verse: 1 }),
         createVerse({ book: 'Psalms', chapter: 1, verse: 1 }),
       ];
-      const spread: TextAnalyticsData = {
-        ...data,
-        scores: {
-          ...data.scores,
-          repetition: {
-            Genesis: { '1': [0, 0], '2': [0] },
-            Exodus: { '1': [0] },
-            Isaiah: { '1': [0] },
-            Psalms: { '1': [0] },
-          },
-        },
-      };
       const paint = (
         echoes: TextAnalyticsData['echoes'],
         hovered: (typeof places)[number] | null = null,
@@ -298,7 +296,7 @@ describe('Text Analytics overlay', () => {
         textAnalyticsOverlay.colorsFor!({
           items: places,
           settings: echoSettings,
-          data: { ...spread, echoes },
+          data: { ...data, echoes },
           focus: { hovered, pinned },
         });
       const [chapter, book, section, other] = DISTANCE_STEPS.map((step) => step.color);

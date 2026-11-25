@@ -38,9 +38,9 @@ describe('resolveStops with a pinned verse', () => {
 describe('resolveStops with a camera naming places', () => {
   initBookData({
     books: [
-      { name: 'Genesis', hebrewName: '', section: 'torah', chapters: [1] },
-      { name: 'I Samuel', hebrewName: '', section: 'neviim', chapters: [1] },
-      { name: 'Psalms', hebrewName: '', section: 'ketuvim', chapters: [1] },
+      { name: 'Genesis', hebrewName: '', section: 'torah', chapters: [1], countedAs: 'Genesis' },
+      { name: 'I Samuel', hebrewName: '', section: 'neviim', chapters: [1], countedAs: 'I Samuel' },
+      { name: 'Psalms', hebrewName: '', section: 'ketuvim', chapters: [1], countedAs: 'Psalms' },
     ],
     layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
   });

@@ -1,21 +1,7 @@
 // How far apart two verses sit in the canon, and the colour of each distance.
 
 import { type Color, oklchToRgb } from '@torahmap/utils';
-import { getBookSection, isMinorProphet } from '../../books.ts';
-import type { Place } from './places.ts';
-
-/** Books counted as one, besides the Twelve Minor Prophets: a book split in two, a scroll shared. */
-const ONE_BOOK: string[][] = [
-  ['I Samuel', 'II Samuel'],
-  ['I Kings', 'II Kings'],
-  ['I Chronicles', 'II Chronicles'],
-  ['Ezra', 'Nehemiah'],
-];
-
-const sameBook = (a: string, b: string): boolean =>
-  a === b ||
-  (isMinorProphet(a) && isMinorProphet(b)) ||
-  ONE_BOOK.some((group) => group.includes(a) && group.includes(b));
+import { countedAs, getBookSection, type Place } from '../../books.ts';
 
 // The two palest steps lie a little outside the screen's range, and are shown at its edge.
 const onScreen = (lightness: number, chroma: number, hue: number): Color =>
@@ -32,6 +18,6 @@ export const DISTANCE_STEPS: readonly { name: string; color: Color }[] = [
 /** The index in DISTANCE_STEPS of how far verse `b` is from verse `a`. */
 export function distanceStep(a: Place, b: Place): number {
   if (a.book === b.book && a.chapter === b.chapter) return 0;
-  if (sameBook(a.book, b.book)) return 1;
+  if (countedAs(a.book) === countedAs(b.book)) return 1;
   return getBookSection(a.book) === getBookSection(b.book) ? 2 : 3;
 }
