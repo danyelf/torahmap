@@ -756,7 +756,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  // The next frame of pointers growing or shrinking, while there is one.
+  // The next frame of pointers growing or fading, while there is one.
   let growFrame: number | null = null;
 
   function render(): void {

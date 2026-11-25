@@ -1,6 +1,7 @@
 // Pointers: thin wedges from a square toward another square, drawn over the squares. A pointer
 // can grow from its resting length to halfway, flaring in to a hairline as it goes, so that two
-// pointing at each other meet as an hourglass, solid at both ends.
+// pointing at each other meet as an hourglass, solid at both ends. Let go, it is back at rest at
+// once, while a copy of it as grown fades out over it.
 
 import type { Color } from '@torahmap/utils';
 import { easingFunctions } from './interpolation.ts';
@@ -28,11 +29,12 @@ const HALF_WIDTH_HAIRLINE = 0.3;
 // How far along a grown pointer reaches the hairline: a quarter of its length, at most so many
 // CSS pixels.
 const FLARE_MAX = 40;
-// How long a pointer takes to grow all the way, or to shrink back.
-const GROW_MS = 450;
+// How long a pointer takes to grow all the way, and a grown one to fade.
+const GROW_MS = 300;
+const FADE_MS = 150;
 
 const FLOATS_PER_POINTER = 8; // from, to, length, colour
-const FLOATS_PER_STATE = 2; // grown, opacity
+const FLOATS_PER_STATE = 4; // grown and opacity, then the same for the copy fading out
 
 const VERTEX_SHADER = `#version 300 es
   uniform vec2 u_resolution;
@@ -40,8 +42,8 @@ const VERTEX_SHADER = `#version 300 es
   uniform float u_zoom;
   // Half widths in device pixels: at rest, grown, the hairline; then the longest flare.
   uniform vec4 u_widths;
-  // Which pass this is: the grown pointers, drawn over the rest, or the rest.
-  uniform bool u_drawingGrown;
+  // Which pass this is: 0 the pointers at rest, 1 the copies fading out over them, 2 the grown.
+  uniform int u_pass;
 
   in vec2 a_from;
   in vec2 a_to;
@@ -50,6 +52,8 @@ const VERTEX_SHADER = `#version 300 es
   // How far it has grown, 0 at rest and 1 at halfway.
   in float a_grown;
   in float a_opacity;
+  in float a_fadeGrown;
+  in float a_fadeOpacity;
 
   // A quad from the square to the tip, as wide as the widest the pointer gets.
   const vec2 CORNERS[6] = vec2[6](
@@ -67,16 +71,20 @@ const VERTEX_SHADER = `#version 300 es
     vec2 from = (a_from + u_pan) * u_zoom;
     vec2 to = (a_to + u_pan) * u_zoom;
     float d = length(to - from);
-    if (d == 0.0 || (a_grown > 0.0) != u_drawingGrown) {
+    bool fading = u_pass == 1;
+    float grown = fading ? a_fadeGrown : a_grown;
+    float opacity = fading ? a_fadeOpacity : a_opacity;
+    bool drawn = fading ? a_fadeOpacity > 0.0 : (a_grown > 0.0) == (u_pass == 2);
+    if (d == 0.0 || !drawn) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       return;
     }
     vec2 along = (to - from) / d;
     vec2 across = vec2(-along.y, along.x);
     float rest = min(a_length * u_zoom, d);
-    v_reach = mix(rest, max(d * 0.5, rest), a_grown);
-    v_grown = a_grown;
-    v_color = vec4(a_color, a_opacity);
+    v_reach = mix(rest, max(d * 0.5, rest), grown);
+    v_grown = grown;
+    v_color = vec4(a_color, opacity);
     // A pixel past each end and each side, to hold the antialiasing.
     vec2 corner = CORNERS[gl_VertexID];
     float halfWidth = max(u_widths.x, u_widths.y) + 1.0;
@@ -138,7 +146,7 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
     pan: uniform('u_pan'),
     zoom: uniform('u_zoom'),
     widths: uniform('u_widths'),
-    drawingGrown: uniform('u_drawingGrown'),
+    pass: uniform('u_pass'),
   };
   const pointerBuffer = gl.createBuffer();
   const stateBuffer = gl.createBuffer();
@@ -159,20 +167,30 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
   gl.bindBuffer(gl.ARRAY_BUFFER, stateBuffer);
   attribute('a_grown', 1, FLOATS_PER_STATE, 0);
   attribute('a_opacity', 1, FLOATS_PER_STATE, 1);
+  attribute('a_fadeGrown', 1, FLOATS_PER_STATE, 2);
+  attribute('a_fadeOpacity', 1, FLOATS_PER_STATE, 3);
   gl.bindVertexArray(null);
 
   let count = 0;
-  // Each pointer's progress toward grown before easing, where it is going, and its opacity grown:
-  // fully opaque at rest, it reaches that opacity as it reaches halfway.
+  // Each pointer's progress toward grown before easing, whether it is growing, and its opacity
+  // grown: fully opaque at rest, it reaches that opacity as it reaches halfway.
   let progress = new Float32Array(0);
-  let progressTo = new Float32Array(0);
+  let growing = new Uint8Array(0);
   let grownOpacity = new Float32Array(0);
+  // The copy fading out: how far it had grown when let go, its opacity then, and how much is left.
+  let fadeGrown = new Float32Array(0);
+  let fadeOpacity = new Float32Array(0);
+  let fadeLeft = new Float32Array(0);
+  const ease = easingFunctions['ease-out'];
+  const opacityAt = (i: number) => 1 + (grownOpacity[i] - 1) * progress[i];
   const upload = () => {
     const out = new Float32Array(count * FLOATS_PER_STATE);
-    const ease = easingFunctions['ease-out'];
     for (let i = 0; i < count; i++) {
-      out[i * FLOATS_PER_STATE] = ease(progress[i]);
-      out[i * FLOATS_PER_STATE + 1] = 1 + (grownOpacity[i] - 1) * progress[i];
+      const at = i * FLOATS_PER_STATE;
+      out[at] = ease(progress[i]);
+      out[at + 1] = opacityAt(i);
+      out[at + 2] = fadeGrown[i];
+      out[at + 3] = fadeOpacity[i] * fadeLeft[i];
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, stateBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, out, gl.DYNAMIC_DRAW);
@@ -191,21 +209,33 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
       gl.bindBuffer(gl.ARRAY_BUFFER, pointerBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
       progress = new Float32Array(count);
-      progressTo = new Float32Array(count);
+      growing = new Uint8Array(count);
       grownOpacity = new Float32Array(count).fill(1);
+      fadeGrown = new Float32Array(count);
+      fadeOpacity = new Float32Array(count);
+      fadeLeft = new Float32Array(count);
       upload();
       moving = false;
     },
 
-    /** Grows `grown` and shrinks every other pointer back to rest; at once when `snap`. */
+    /** Grows `grown` and puts every other pointer back at rest, fading; at once when `snap`. */
     grow(grown: readonly GrownPointer[], snap: boolean): void {
-      progressTo.fill(0);
+      const was = growing;
+      growing = new Uint8Array(count);
       for (const { index, opacity } of grown) {
-        progressTo[index] = 1;
+        growing[index] = 1;
         grownOpacity[index] = opacity;
       }
+      for (let i = 0; i < count; i++) {
+        if (!was[i] || growing[i]) continue;
+        fadeGrown[i] = ease(progress[i]);
+        fadeOpacity[i] = opacityAt(i);
+        fadeLeft[i] = 1;
+        progress[i] = 0;
+      }
       if (snap) {
-        progress.set(progressTo);
+        progress.set(growing);
+        fadeLeft.fill(0);
         upload();
         moving = false;
         return;
@@ -219,15 +249,18 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
       if (count === 0) return false;
       if (moving) {
         const now = performance.now();
-        const stepBy = (now - lastStep) / GROW_MS;
+        const elapsed = now - lastStep;
         lastStep = now;
         moving = false;
         for (let i = 0; i < count; i++) {
-          const p = progress[i];
-          const to = progressTo[i];
-          if (p === to) continue;
-          progress[i] = to > p ? Math.min(to, p + stepBy) : Math.max(to, p - stepBy);
-          if (progress[i] !== to) moving = true;
+          if (growing[i] && progress[i] < 1) {
+            progress[i] = Math.min(1, progress[i] + elapsed / GROW_MS);
+            if (progress[i] < 1) moving = true;
+          }
+          if (fadeLeft[i] > 0) {
+            fadeLeft[i] = Math.max(0, fadeLeft[i] - elapsed / FADE_MS);
+            if (fadeLeft[i] > 0) moving = true;
+          }
         }
         upload();
       }
@@ -247,8 +280,8 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
       gl.bindVertexArray(vertexArray);
       gl.enable(gl.BLEND);
       gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE);
-      for (const grown of [false, true]) {
-        gl.uniform1i(uniforms.drawingGrown, grown ? 1 : 0);
+      for (const pass of [0, 1, 2]) {
+        gl.uniform1i(uniforms.pass, pass);
         gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, count);
       }
       gl.disable(gl.BLEND);
