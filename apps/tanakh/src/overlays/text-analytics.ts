@@ -32,7 +32,7 @@ import {
   percentile,
   type ScoresFile,
 } from './text-analytics/scores.ts';
-import { ECHOES_FILE, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
+import { ECHOES_FILE, echoRun, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
 import { DISTANCE_STEPS, distanceStep } from './text-analytics/distance.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
@@ -210,6 +210,8 @@ function echoColors(
 // section of the Tanakh.
 const POINTER_LENGTH = 10;
 const POINTER_LENGTH_FAR = 14;
+// The rest of the focused verse's run of parallels is drawn this much fainter than its own echoes.
+const RUN_OPACITY = 0.55;
 
 /**
  * A pointer from every verse toward each of its echoes, in the colour of its distance step; the
@@ -224,28 +226,35 @@ function echoPointers(
   const { places, positions } = readingOrder(data.scores);
   const centres = new Map(items.map((item) => [item.id, squareCentre(item)]));
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
+  const focusedAt = focused && positions.get(focused.id)!;
+  const run = focusedAt === null ? [] : echoRun(data.echoes, focusedAt, settings.words);
+  const inRun = new Set(run.flatMap(([a, b]) => [`${a} ${b}`, `${b} ${a}`]));
   const far = DISTANCE_STEPS.length - 1;
   const pointers: Pointer[] = [];
-  const full: Pointer[] = [];
+  const between = (a: number, b: number) => ({
+    from: centres.get(places[a].id),
+    to: centres.get(places[b].id),
+    step: distanceStep(places[a], places[b]),
+  });
   for (const { id } of items) {
     const position = positions.get(id)!;
-    const from = centres.get(id)!;
     for (const [other] of echoesAt(data.echoes, position, settings.words)) {
-      const to = centres.get(places[other].id);
-      if (!to) continue;
-      const step = distanceStep(places[position], places[other]);
-      const color = DISTANCE_STEPS[step].color;
-      if (id === focused?.id) full.push({ from, to, length: null, color });
-      else
-        pointers.push({
-          from,
-          to,
-          length: step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH,
-          color,
-        });
+      if (inRun.has(`${position} ${other}`)) continue;
+      const { from, to, step } = between(position, other);
+      if (!from || !to) continue;
+      const length = step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH;
+      pointers.push({ from, to, length, color: DISTANCE_STEPS[step].color });
     }
   }
-  return [...pointers, ...full];
+  // The run reaches all the way, the focused verse's own echoes brightest, drawn last.
+  const full = run.map(([a, b]) => {
+    const { from, to, step } = between(a, b);
+    const opacity = a === focusedAt ? 1 : RUN_OPACITY;
+    return from && to
+      ? { from, to, length: null, color: DISTANCE_STEPS[step].color, opacity }
+      : null;
+  });
+  return [...pointers, ...full.filter((p) => p !== null).sort((p, q) => p.opacity - q.opacity)];
 }
 
 /** Which of `items` are the focused verse or its echoes. */

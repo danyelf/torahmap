@@ -49,7 +49,7 @@ export function createPointerLayer(map: HTMLCanvasElement) {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const width = layer.width / dpr;
     const height = layer.height / dpr;
-    // One path per colour, filled once.
+    // One path per colour and opacity, filled once.
     const paths = new Map<string, Path2D>();
     // From (x0, y0), half `w` wide, to a point at (x1, y1).
     const wedge = (path: Path2D, x0: number, y0: number, x1: number, y1: number, w: number) => {
@@ -78,7 +78,7 @@ export function createPointerLayer(map: HTMLCanvasElement) {
       path.quadraticCurveTo(...at(f * 0.3, -t), ...at(0, -w));
       path.closePath();
     };
-    for (const { from, to, length, color } of pointers) {
+    for (const { from, to, length, color, opacity = 1 } of pointers) {
       const x0 = (from.x + offset.x) * zoom;
       const y0 = (from.y + offset.y) * zoom;
       const x2 = (to.x + offset.x) * zoom;
@@ -90,7 +90,7 @@ export function createPointerLayer(map: HTMLCanvasElement) {
       const y1 = y0 + (y2 - y0) * t;
       if (Math.max(x0, x1) < 0 || Math.min(x0, x1) > width) continue;
       if (Math.max(y0, y1) < 0 || Math.min(y0, y1) > height) continue;
-      const key = colorToCss(color);
+      const key = `${colorToCss(color)} ${opacity}`;
       let path = paths.get(key);
       if (!path) paths.set(key, (path = new Path2D()));
       if (length !== null) wedge(path, x0, y0, x1, y1, HALF_WIDTH);
@@ -102,8 +102,11 @@ export function createPointerLayer(map: HTMLCanvasElement) {
       }
     }
     for (const [key, path] of paths) {
-      g.fillStyle = key;
+      const split = key.lastIndexOf(' ');
+      g.fillStyle = key.slice(0, split);
+      g.globalAlpha = Number(key.slice(split + 1));
       g.fill(path);
     }
+    g.globalAlpha = 1;
   };
 }

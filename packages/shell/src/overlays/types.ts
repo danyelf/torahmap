@@ -17,6 +17,8 @@ export interface Pointer {
   to: { x: number; y: number };
   length: number | null;
   color: Color;
+  /** From 0 to 1; fully opaque when left out. */
+  opacity?: number;
 }
 
 /** The squares the reader has the pointer on and has pinned. */
