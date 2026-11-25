@@ -12,3 +12,4 @@ export * from './rendering.ts';
 export * from './touchState.ts';
 export * from './types.ts';
 export * from './webgl.ts';
+export * from './pointers.ts';

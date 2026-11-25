@@ -37,12 +37,6 @@
   height: 100%;
 }
 
-/* An overlay's pointers, laid over the map by pointerLayer.ts. */
-#map-pointers {
-  position: fixed;
-  pointer-events: none;
-}
-
 /* The labels over the map, clipped to it, so a label beside it never shows
    through the panel or the sheet. */
 #map-labels {

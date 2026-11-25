@@ -10,10 +10,11 @@ import {
   scale,
   LINEAR,
   memoByValue,
+  memoByValueAndKey,
 } from '@torahmap/utils';
-import { squareCentre } from '@torahmap/engine';
+import { type GrownPointer, type Pointer, squareCentre } from '@torahmap/engine';
 import './text-analytics.css';
-import type { Overlay, Pointer, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
@@ -217,44 +218,50 @@ const RUN_OPACITY = 0.55;
  * A pointer from every verse toward each of its echoes, in the colour of its distance step; the
  * focused verse's reach all the way.
  */
-function echoPointers(
+/** Every echo's pointer, and where the one from each reading-order position to another sits in the list. */
+const echoPointerList = memoByValue((items: TanakhLayout[]) =>
+  memoByValueAndKey((data: TextAnalyticsData, words: number) => {
+    const { places, positions } = readingOrder(data.scores);
+    const centres = new Map(items.map((item) => [item.id, squareCentre(item)]));
+    const far = DISTANCE_STEPS.length - 1;
+    const pointers: Pointer[] = [];
+    const at = new Map<string, number>();
+    for (const { id } of items) {
+      const position = positions.get(id)!;
+      for (const [other] of echoesAt(data.echoes, position, words)) {
+        const to = centres.get(places[other].id);
+        if (!to) continue;
+        const step = distanceStep(places[position], places[other]);
+        at.set(`${position} ${other}`, pointers.length);
+        pointers.push({
+          from: centres.get(id)!,
+          to,
+          length: step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH,
+          color: DISTANCE_STEPS[step].color,
+        });
+      }
+    }
+    return { pointers, at };
+  }),
+);
+
+/** The focused verse's run of parallels, each pair grown to meet; its own echoes brightest. */
+function grownEchoPointers(
   items: TanakhLayout[],
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
   focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
-): Pointer[] {
-  const { places, positions } = readingOrder(data.scores);
-  const centres = new Map(items.map((item) => [item.id, squareCentre(item)]));
+): GrownPointer[] {
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
-  const focusedAt = focused && positions.get(focused.id)!;
-  const run = focusedAt === null ? [] : echoRun(data.echoes, focusedAt, settings.words);
-  const inRun = new Set(run.flatMap(([a, b]) => [`${a} ${b}`, `${b} ${a}`]));
-  const far = DISTANCE_STEPS.length - 1;
-  const pointers: Pointer[] = [];
-  const between = (a: number, b: number) => ({
-    from: centres.get(places[a].id),
-    to: centres.get(places[b].id),
-    step: distanceStep(places[a], places[b]),
-  });
-  for (const { id } of items) {
-    const position = positions.get(id)!;
-    for (const [other] of echoesAt(data.echoes, position, settings.words)) {
-      if (inRun.has(`${position} ${other}`)) continue;
-      const { from, to, step } = between(position, other);
-      if (!from || !to) continue;
-      const length = step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH;
-      pointers.push({ from, to, length, color: DISTANCE_STEPS[step].color });
-    }
-  }
-  // The run reaches all the way, the focused verse's own echoes brightest, drawn last.
-  const full = run.map(([a, b]) => {
-    const { from, to, step } = between(a, b);
+  if (!focused) return [];
+  const focusedAt = readingOrder(data.scores).positions.get(focused.id)!;
+  const { at } = echoPointerList(items)(data, settings.words);
+  return echoRun(data.echoes, focusedAt, settings.words).flatMap(([a, b]) => {
     const opacity = a === focusedAt ? 1 : RUN_OPACITY;
-    return from && to
-      ? { from, to, length: null, color: DISTANCE_STEPS[step].color, opacity }
-      : null;
+    return [at.get(`${a} ${b}`), at.get(`${b} ${a}`)]
+      .filter((index) => index !== undefined)
+      .map((index) => ({ index, opacity }));
   });
-  return [...pointers, ...full.filter((p) => p !== null).sort((p, q) => p.opacity - q.opacity)];
 }
 
 /** Which of `items` are the focused verse or its echoes. */
@@ -328,8 +335,14 @@ export const textAnalyticsOverlay: Overlay<
     return items.map((item) => repetitionColorAt(data, item, !!lit && !lit.has(item.id)));
   },
 
-  pointersFor({ items, settings, data, focus }) {
-    return settings.analysis === 'echoes' ? echoPointers(items, data, settings, focus) : [];
+  pointersFor({ items, settings, data }) {
+    return settings.analysis === 'echoes'
+      ? echoPointerList(items)(data, settings.words).pointers
+      : [];
+  },
+
+  grownPointersFor({ items, settings, data, focus }) {
+    return settings.analysis === 'echoes' ? grownEchoPointers(items, data, settings, focus) : [];
   },
 
   // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
