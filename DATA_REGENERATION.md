@@ -3,7 +3,7 @@
 Most data comes from [Sefaria](https://www.sefaria.org/):
 
 - **Verse texts**: the Sefaria export bucket, `gs://sefaria-export`
-- **Structure data**: chapter lengths counted from the downloaded Hebrew texts; the layout block is kept by hand in `scripts/fetch-tanakh-structure.js`
+- **Structure data**: chapter lengths counted from the downloaded Hebrew texts, and the book each counts as in the traditional 24; that list and the layout block are kept by hand in `scripts/fetch-tanakh-structure.js`
 - **Commentary links**: Sefaria Links CSV exports, from the same bucket
 
 Everything below reads from the bucket, which needs no credentials. The

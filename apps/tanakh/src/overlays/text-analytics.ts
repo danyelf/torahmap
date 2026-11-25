@@ -2,15 +2,25 @@
 // Tanakh the verses that share a phrase with it are; computed ahead of time by
 // scripts/overlays/text-analytics/generate.ts.
 
-import { type Color, type ColorStop, scale, LINEAR, memoByValue } from '@torahmap/utils';
+import {
+  type Color,
+  type ColorStop,
+  brighten,
+  colorToCss,
+  scale,
+  LINEAR,
+  memoByValue,
+} from '@torahmap/utils';
 import './text-analytics.css';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { axisGradient, legendCaption, renderAxis } from './legend.ts';
+import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
+import { getDefaultColor } from '../baseColor.ts';
+import { readingOrder, type Place } from '../books.ts';
 import { CONTROL } from '@torahmap/shell/panel.ts';
-import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
 import { verseRef } from '@torahmap/link/tanakh';
 import { ECHO_WORDS, TEXT_ANALYSES, TEXT_ANALYTICS } from '@torahmap/overlay-catalog';
 import {
@@ -22,15 +32,7 @@ import {
   type ScoresFile,
 } from './text-analytics/scores.ts';
 import { ECHOES_FILE, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
-import {
-  backdropOf,
-  readingOrder,
-  wheelOf,
-  wheelStops,
-  type Place,
-} from './text-analytics/wheel.ts';
-import { SECTION_NAMES } from '../labels.ts';
-import { getBookSection } from '../books.ts';
+import { DISTANCE_STEPS, distanceStep } from './text-analytics/distance.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { wordsRead } from '../search/dictionary.ts';
@@ -113,7 +115,7 @@ function echoesOf(
   const cache = echoesCache(data);
   const key = `${settings.analysis} ${settings.words} ${verse.id}`;
   if (cache.has(key)) return cache.get(key)!;
-  const { places: all, positions } = readingOrder(data.scores);
+  const { places: all, positions } = readingOrder();
   const position = positions.get(verse.id)!;
   const places = echoPositions(data, settings, verse, position).map((p) => all[p]);
   const found = places.length
@@ -123,12 +125,24 @@ function echoesOf(
   return found;
 }
 
-/** The echoes the map shows: the hovered verse's if it has any, else the pinned verse's. */
+/** The verse's id if it has echoes. */
 const echoKey = (
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
   verse: TanakhLayout | null,
 ): string | null => (verse && echoesOf(data, settings, verse) ? verse.id : null);
+
+/** The verse whose echoes the map shows: the hovered one if it has any, else the pinned one. */
+function focusedVerse(
+  data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
+  hovered: TanakhLayout | null,
+  pinned: TanakhLayout | null,
+): TanakhLayout | null {
+  if (hovered && echoesOf(data, settings, hovered)) return hovered;
+  if (pinned && echoesOf(data, settings, pinned)) return pinned;
+  return null;
+}
 
 function focusEchoes(
   data: TextAnalyticsData,
@@ -136,75 +150,59 @@ function focusEchoes(
   hovered: TanakhLayout | null,
   pinned: TanakhLayout | null,
 ): Echoes | null {
-  return (
-    (hovered && echoesOf(data, settings, hovered)) ||
-    (pinned && echoesOf(data, settings, pinned)) ||
-    null
-  );
+  const verse = focusedVerse(data, settings, hovered, pinned);
+  return verse && echoesOf(data, settings, verse);
 }
 
-// The scale from this share of the way up turns toward a dull red, fully red by the second: the
-// yellow is left to the matches.
-const REDDEN_FROM = 0.25;
-const REDDEN_FULL = 0.55;
-const MUTED_RED: Color = [0.5, 0.13, 0.1];
+// While a verse is focused, the others go this far toward a dark blue-grey.
+const OUT_OF_FOCUS: Color = [0.2, 0.24, 0.34];
+const OUT_OF_FOCUS_SHARE = 0.6;
 
-// How much of its own colour an echo-bearing verse out of focus loses to grey.
-const DIM_SHARE = 0.75;
-
-function mixToward(color: Color, target: Color, share: number): Color {
-  return color.map((c, i) => c + (target[i] - c) * share) as Color;
-}
-
-/** A scale colour for a verse out of focus: the low end as it is, the bright end turned toward red. */
-function muted(color: Color, position: number): Color {
-  const toward = Math.min(1, Math.max(0, (position - REDDEN_FROM) / (REDDEN_FULL - REDDEN_FROM)));
-  return mixToward(color, MUTED_RED, toward);
+/** A verse's colour while another verse is focused, in either analysis. */
+function outOfFocus(color: Color): Color {
+  return color.map((c, i) => c + (OUT_OF_FOCUS[i] - c) * OUT_OF_FOCUS_SHARE) as Color;
 }
 
 function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: boolean): Color {
   const score = scoreAt(data, verse);
   if (score === null) return NO_DATA;
-  const { scale, low, high } = scaleOf(data);
-  const color = scale.colorOf(score);
-  return mute ? muted(color, (score - low) / (high - low)) : color;
+  const color = scaleOf(data).scale.colorOf(score);
+  return mute ? outOfFocus(color) : color;
 }
+
+// A verse without echoes keeps the map's grey pattern at this share of its brightness, so the
+// palest distance step stands out from it.
+const PLAIN_BRIGHTNESS = 0.6;
+const FOCUSED_VERSE: Color = [1, 1, 1];
 
 /**
- * A verse with echoes is the wheel's colour where its farthest echo lies, fading to grey the
- * nearer that echo is; one without takes the
- * map's grey. Out of focus both dim: the grey to the dimmed grey, the colour toward it.
+ * A verse with echoes wears the colour of its farthest one, whatever is focused; one without keeps
+ * the plain grey. With a verse focused (hovered, else pinned), it is white and every verse but its
+ * echoes goes out of focus, so passages can still be traced from one to the next.
  */
-function echoColorAt(
-  data: TextAnalyticsData,
-  { words }: TextAnalyticsSettings,
-  wheel: ReturnType<typeof wheelOf>,
-  verse: TanakhLayout,
-  dim: boolean,
-): Color | null {
-  const { places, positions } = readingOrder(data.scores);
-  const position = positions.get(verse.id)!;
-  const echoes = echoesAt(data.echoes, position, words);
-  if (echoes.length === 0) return dim ? DIMMED_GREY : null;
-  const [farthest] = echoes.reduce((far, e) =>
-    Math.abs(e[0] - position) > Math.abs(far[0] - position) ? e : far,
-  );
-  const reach = wheel.distance(verse.id, places[farthest].id) ?? undefined;
-  const color = wheel.colorAt(places[farthest].id, reach);
-  if (!color) return dim ? DIMMED_GREY : null;
-  return dim ? mixToward(color, DIMMED_GREY, DIM_SHARE) : color;
-}
-
-function colorAt(
+function echoColors(
+  items: TanakhLayout[],
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
-  wheel: ReturnType<typeof wheelOf>,
-  verse: TanakhLayout,
-  mute = false,
-): Color | null {
-  return settings.analysis === 'echoes'
-    ? echoColorAt(data, settings, wheel, verse, mute)
-    : repetitionColorAt(data, verse, mute);
+  focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
+): Color[] {
+  const { places, positions } = readingOrder();
+  const farthestEcho = (id: string): Color | null => {
+    const position = positions.get(id)!;
+    const echoes = echoesAt(data.echoes, position, settings.words);
+    if (echoes.length === 0) return null;
+    const from = places[position];
+    const farthest = Math.max(...echoes.map(([other]) => distanceStep(from, places[other])));
+    return DISTANCE_STEPS[farthest].color;
+  };
+  const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
+  const lit = focused && echoesOf(data, settings, focused)!.matches;
+  return items.map(({ id }, i) => {
+    if (id === focused?.id) return FOCUSED_VERSE;
+    const color = farthestEcho(id);
+    if (!color) return brighten(getDefaultColor(i), PLAIN_BRIGHTNESS);
+    return !lit || lit.has(id) ? color : outOfFocus(color);
+  });
 }
 
 /** Which of `items` are the focused verse or its echoes. */
@@ -217,35 +215,6 @@ function matched(
 ): boolean[] {
   const matches = focusEchoes(data, settings, hovered ?? null, pinned ?? null)?.matches;
   return items.map((item) => !!matches?.has(item.id));
-}
-
-// How many colours a section's strip in the echoes legend shows.
-const STRIP_CELLS = 24;
-
-/** Each section's verses in reading order, as a strip of their own wheel colours. */
-function sectionStrips(scores: ScoresFile, items: readonly TanakhLayout[]): string {
-  const wheel = wheelOf(items);
-  const { places } = readingOrder(scores);
-  return Object.keys(SECTION_NAMES)
-    .map((section) => {
-      const verses = places.filter((place) => getBookSection(place.book) === section);
-      if (verses.length === 0) return '';
-      const cells = Array.from({ length: STRIP_CELLS }, (_, i) => {
-        const verse = verses[Math.floor(((i + 0.5) * verses.length) / STRIP_CELLS)];
-        const color = wheel.colorAt(verse.id) ?? NO_DATA;
-        const rgb = color.map((c) => Math.round(c * 255)).join(',');
-        const from = (i / STRIP_CELLS) * 100;
-        const to = ((i + 1) / STRIP_CELLS) * 100;
-        return `rgb(${rgb}) ${from}% ${to}%`;
-      });
-      return (
-        `<div class="echo-section"><div class="echo-section-name">${SECTION_NAMES[section].en}</div>` +
-        `<div class="echo-strip" style="background: linear-gradient(to right, ${cells.join(', ')})"></div>` +
-        `<div class="echo-strip-ends"><span>${verses[0].book}</span>` +
-        `<span>${verses[verses.length - 1].book}</span></div></div>`
-      );
-    })
-    .join('');
 }
 
 export const textAnalyticsOverlay: Overlay<
@@ -301,11 +270,10 @@ export const textAnalyticsOverlay: Overlay<
     container.querySelector('input')!.value = String(settings.words);
   },
 
-  // The focused verse with echoes keeps them and itself in full colour; the rest are muted.
   colorsFor({ items, settings, data, focus }) {
+    if (settings.analysis === 'echoes') return echoColors(items, data, settings, focus);
     const lit = focusEchoes(data, settings, focus.hovered, focus.pinned)?.matches;
-    const wheel = wheelOf(items);
-    return items.map((item) => colorAt(data, settings, wheel, item, !!lit && !lit.has(item.id)));
+    return items.map((item) => repetitionColorAt(data, item, !!lit && !lit.has(item.id)));
   },
 
   // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
@@ -320,15 +288,18 @@ export const textAnalyticsOverlay: Overlay<
   renderFocus(container, hovered, pinned, settings, data, travelTo) {
     const found = focusEchoes(data, settings, hovered, pinned);
     if (!found) return;
-    const focus = hovered && echoesOf(data, settings, hovered) ? hovered : pinned;
-    const focusText = focus ? textOf(data, focus) : '';
+    const focus = focusedVerse(data, settings, hovered, pinned);
     const note = document.createElement('div');
     note.className = 'parallel-verses';
     const heading = document.createElement('p');
     heading.textContent = `Parallel verses (${found.places.length})`;
     const list = document.createElement('div');
     list.className = 'parallel-list';
-    for (const place of found.places) {
+    const { positions } = readingOrder();
+    const inOrder = [...found.places, ...(focus ? [focus] : [])].sort(
+      (a, b) => positions.get(a.id)! - positions.get(b.id)!,
+    );
+    for (const place of inOrder) {
       const row = document.createElement('button');
       row.type = 'button';
       const ref = document.createElement('span');
@@ -338,13 +309,20 @@ export const textAnalyticsOverlay: Overlay<
       quote.className = 'parallel-quote';
       quote.dir = 'auto';
       const he = textOf(data, place);
+      // A parallel is marked against the focused verse, the focused verse against its parallels.
+      const partners = (place.id === focus?.id ? found.places : [focus!]).map((other) =>
+        textOf(data, other),
+      );
       quote.append(
         markStretches(
           he,
-          focusText && he ? sharedStretches(wordsOf(he), [wordsOf(focusText)], settings.words) : [],
+          he
+            ? sharedStretches(wordsOf(he), partners.filter(Boolean).map(wordsOf), settings.words)
+            : [],
         ),
       );
       row.append(ref, quote);
+      row.classList.toggle('parallel-source', place.id === focus?.id);
       row.addEventListener('click', () => travelTo(place.id));
       list.appendChild(row);
     }
@@ -361,23 +339,24 @@ export const textAnalyticsOverlay: Overlay<
     return echoKey(data, settings, before) !== echoKey(data, settings, after);
   },
 
-  renderLegend(container, settings, data, items = []) {
+  renderLegend(container, settings, data) {
     if (!data) {
       container.innerHTML = '';
       return;
     }
     if (settings.analysis === 'echoes') {
-      container.innerHTML =
-        sectionStrips(data.scores, items) +
+      container.replaceChildren(...swatchList(DISTANCE_STEPS));
+      container.insertAdjacentHTML(
+        'beforeend',
         [
-          `A verse that shares a phrase with others takes the colour of the place on the map of ` +
-            `the echo farthest from it`,
+          `Colour shows how far away a verse's farthest echo is`,
           `A verse with no echo is grey`,
           `Phrases that recur in many verses wherever they appear don't count`,
           `Hover or select a verse to light its parallels`,
         ]
           .map(legendCaption)
-          .join('');
+          .join(''),
+      );
       return;
     }
     const { scale, low, high } = scaleOf(data);
@@ -398,13 +377,9 @@ export const textAnalyticsOverlay: Overlay<
         .join('');
   },
 
-  backdrop({ items, settings }) {
-    return settings.analysis === 'echoes' ? backdropOf(items) : null;
-  },
-
   summary(settings, data) {
     if (settings.analysis === 'echoes') {
-      return { colors: wheelStops().filter((_, degree) => degree % 45 === 0) };
+      return { colors: DISTANCE_STEPS.map(({ color }) => colorToCss(color)) };
     }
     return { strip: { gradient: axisGradient(scaleOf(data).scale), ends: ENDS } };
   },
@@ -413,7 +388,7 @@ export const textAnalyticsOverlay: Overlay<
     if (settings.analysis === 'echoes') {
       const count = echoesAt(
         data.echoes,
-        readingOrder(data.scores).positions.get(verse.id)!,
+        readingOrder().positions.get(verse.id)!,
         settings.words,
       ).length;
       if (count === 0) return null;

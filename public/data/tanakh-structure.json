@@ -55,7 +55,8 @@
         33,
         26
       ],
-      "section": "torah"
+      "section": "torah",
+      "countedAs": "Genesis"
     },
     {
       "name": "Exodus",
@@ -102,7 +103,8 @@
         43,
         38
       ],
-      "section": "torah"
+      "section": "torah",
+      "countedAs": "Exodus"
     },
     {
       "name": "Leviticus",
@@ -136,7 +138,8 @@
         46,
         34
       ],
-      "section": "torah"
+      "section": "torah",
+      "countedAs": "Leviticus"
     },
     {
       "name": "Numbers",
@@ -179,7 +182,8 @@
         34,
         13
       ],
-      "section": "torah"
+      "section": "torah",
+      "countedAs": "Numbers"
     },
     {
       "name": "Deuteronomy",
@@ -220,7 +224,8 @@
         29,
         12
       ],
-      "section": "torah"
+      "section": "torah",
+      "countedAs": "Deuteronomy"
     },
     {
       "name": "Joshua",
@@ -251,7 +256,8 @@
         16,
         33
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Joshua"
     },
     {
       "name": "Judges",
@@ -279,7 +285,8 @@
         48,
         25
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Judges"
     },
     {
       "name": "I Samuel",
@@ -317,7 +324,8 @@
         31,
         13
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Samuel"
     },
     {
       "name": "II Samuel",
@@ -348,7 +356,8 @@
         39,
         25
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Samuel"
     },
     {
       "name": "I Kings",
@@ -377,7 +386,8 @@
         29,
         54
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Kings"
     },
     {
       "name": "II Kings",
@@ -409,7 +419,8 @@
         20,
         30
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Kings"
     },
     {
       "name": "Isaiah",
@@ -482,7 +493,8 @@
         25,
         24
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Isaiah"
     },
     {
       "name": "Jeremiah",
@@ -541,7 +553,8 @@
         64,
         34
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Jeremiah"
     },
     {
       "name": "Ezekiel",
@@ -596,7 +609,8 @@
         23,
         35
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "Ezekiel"
     },
     {
       "name": "Hosea",
@@ -617,7 +631,8 @@
         15,
         10
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Joel",
@@ -628,7 +643,8 @@
         5,
         21
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Amos",
@@ -644,7 +660,8 @@
         14,
         15
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Obadiah",
@@ -652,7 +669,8 @@
       "chapters": [
         21
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Jonah",
@@ -663,7 +681,8 @@
         10,
         11
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Micah",
@@ -677,7 +696,8 @@
         16,
         20
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Nahum",
@@ -687,7 +707,8 @@
         14,
         19
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Habakkuk",
@@ -697,7 +718,8 @@
         20,
         19
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Zephaniah",
@@ -707,7 +729,8 @@
         15,
         20
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Haggai",
@@ -716,7 +739,8 @@
         15,
         23
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Zechariah",
@@ -737,7 +761,8 @@
         9,
         21
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Malachi",
@@ -747,7 +772,8 @@
         17,
         24
       ],
-      "section": "neviim"
+      "section": "neviim",
+      "countedAs": "The Twelve"
     },
     {
       "name": "Psalms",
@@ -904,7 +930,8 @@
         9,
         6
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Psalms"
     },
     {
       "name": "Proverbs",
@@ -942,7 +969,8 @@
         33,
         31
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Proverbs"
     },
     {
       "name": "Job",
@@ -991,7 +1019,8 @@
         26,
         17
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Job"
     },
     {
       "name": "Song of Songs",
@@ -1006,7 +1035,8 @@
         14,
         14
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Song of Songs"
     },
     {
       "name": "Ruth",
@@ -1017,7 +1047,8 @@
         18,
         22
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Ruth"
     },
     {
       "name": "Lamentations",
@@ -1029,7 +1060,8 @@
         22,
         22
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Lamentations"
     },
     {
       "name": "Ecclesiastes",
@@ -1048,7 +1080,8 @@
         10,
         14
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Ecclesiastes"
     },
     {
       "name": "Esther",
@@ -1065,7 +1098,8 @@
         32,
         3
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Esther"
     },
     {
       "name": "Daniel",
@@ -1084,7 +1118,8 @@
         45,
         13
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Daniel"
     },
     {
       "name": "Ezra",
@@ -1101,7 +1136,8 @@
         15,
         44
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Ezra–Nehemiah"
     },
     {
       "name": "Nehemiah",
@@ -1121,7 +1157,8 @@
         47,
         31
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Ezra–Nehemiah"
     },
     {
       "name": "I Chronicles",
@@ -1157,7 +1194,8 @@
         21,
         30
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Chronicles"
     },
     {
       "name": "II Chronicles",
@@ -1200,7 +1238,8 @@
         27,
         23
       ],
-      "section": "ketuvim"
+      "section": "ketuvim",
+      "countedAs": "Chronicles"
     }
   ],
   "layout": {

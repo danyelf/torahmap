@@ -6,6 +6,8 @@ export interface Book {
   hebrewName: string;
   section: 'torah' | 'neviim' | 'ketuvim';
   chapters: number[];
+  /** The book it counts as in the traditional 24: Samuel, Kings, Chronicles, Ezra–Nehemiah, The Twelve, or its own name. */
+  countedAs: string;
 }
 
 export interface LayoutConfig {

@@ -7,7 +7,6 @@
     "./app/page.ts": "./src/app/page.ts",
     "./app/search.ts": "./src/app/search.ts",
     "./app/text.ts": "./src/app/text.ts",
-    "./backdrop.ts": "./src/backdrop.ts",
     "./constants.ts": "./src/constants.ts",
     "./covers.ts": "./src/covers.ts",
     "./dataFiles.ts": "./src/dataFiles.ts",
