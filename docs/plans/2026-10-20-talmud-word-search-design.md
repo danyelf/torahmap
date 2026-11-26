@@ -1,7 +1,7 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Draft — findings. Issue #382. Nothing here is built, and nothing
-derived from Sefaria's table ships until Sefaria says how it may be used.
+**Status:** Findings; option 2 chosen, to be built on its own branch. Issue #382.
+Nothing derived from Sefaria's table ships until Sefaria says how it may be used.
 
 ## The problem
 
@@ -174,6 +174,12 @@ one.
 A tagger of our own (Dicta's vowel points with BEREL, #382's option 2) is what
 would do better than 56% on ambiguity; it is a research project and not costed
 here.
+
+## Decisions
+
+- Build option 2 first; hand entries can follow.
+- After the search: Jastrow's definitions in the word popup (#659) and a
+  Hebrew/Aramaic overlay (#660), both wanted, neither yet.
 
 ## Open questions
 
