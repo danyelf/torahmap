@@ -7,20 +7,12 @@ import { MAX_WORDS, MIN_WORDS } from '@torahmap/tanakh/overlays/text-analytics/e
 import type { ParsedBook } from './measures.ts';
 
 /**
- * A run found in more verses than this pairs no verses. No limit: the ten formulas a limit of
- * fifteen sets aside ("and the LORD spoke to Moses, saying", in 70 verses) more than double the
- * pairs; formulas-report.ts lists them.
- */
-export const MAX_VERSES_PER_RUN = Infinity;
-
-/**
  * For each verse, counted from the first verse of the first book, the other verses it shares a run
  * with, as pairs of position and words in the longest such run (at most MAX_WORDS), by position.
+ * A run pairs every verse it is in, however many: the formulas ("and the LORD spoke to Moses,
+ * saying", in 70 verses) more than double the pairs, and formulas-report.ts lists them.
  */
-export function echoesAnywhere(
-  books: ParsedBook[],
-  maxVerses = MAX_VERSES_PER_RUN,
-): [other: number, words: number][][] {
+export function echoesAnywhere(books: ParsedBook[]): [other: number, words: number][][] {
   const verses = books.flatMap(({ verses }) => verses);
   const longest = verses.map(() => new Map<number, number>());
   for (let n = MIN_WORDS; n <= MAX_WORDS; n++) {
@@ -33,7 +25,7 @@ export function echoesAnywhere(
       }
     });
     for (const sharing of at.values()) {
-      if (sharing.size < 2 || sharing.size > maxVerses) continue;
+      if (sharing.size < 2) continue;
       for (const a of sharing) for (const b of sharing) if (a !== b) longest[a].set(b, n);
     }
   }

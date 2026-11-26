@@ -175,7 +175,8 @@ function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: b
 // A verse without echoes keeps the map's grey pattern at this share of its brightness, so the
 // palest distance step stands out from it.
 const PLAIN_BRIGHTNESS = 0.6;
-const FOCUSED_VERSE: Color = [1, 1, 1];
+// Short of full white, which outshines the verse's lit echoes.
+const FOCUSED_VERSE: Color = [0.85, 0.85, 0.85];
 
 // The focused verse's echoes go this far toward white, so the darkest distance step still stands out.
 const LIT_SHARE = 0.35;
