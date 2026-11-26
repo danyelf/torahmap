@@ -19,7 +19,7 @@ off screen; the panel, the zoom buttons and the verse popup clear of each other,
 clear of the map; no clipped text; on the touch screens (tablet and phone), touch targets at least
 24×24 (WCAG 2.2 AA); the elements each state must show, shown in full; and, on the few checks
 that read pixels, a map that actually drew. Text ending in a deliberate ellipsis counts as fitting. `test/layout/known.ts` lists the
-failures accepted for now, what each measures and why. `npm run test:layout:shots` draws the real map with software WebGL and writes
+failures accepted for now and why. `npm run test:layout:shots` draws the real map with software WebGL and writes
 `layout-report/index.html`, every state at every size side by side.
 
 It runs on four workers, and is not part of the pre-commit hook.
