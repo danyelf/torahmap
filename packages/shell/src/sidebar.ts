@@ -182,10 +182,6 @@ function comparedBlock<I extends MapItem>(
   words.className = 'compared-hebrew';
   words.append(hebrew ?? text.hebrew);
   if (!comparison.held) return [heading, words];
-  const tag = document.createElement('span');
-  tag.className = 'compared-tag';
-  tag.textContent = 'compared';
-  heading.append(tag);
   const actions = document.createElement('div');
   actions.className = 'compared-actions';
   actions.append(

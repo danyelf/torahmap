@@ -147,24 +147,12 @@
 
 /* The square the pinned one is compared with, under it. */
 #popup .compared-ref {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   padding: 10px 14px;
   background: rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   font-family: var(--heading-font);
   font-size: 14px;
   font-weight: 600;
-}
-
-#popup .compared-tag {
-  padding: 1px 7px;
-  border: 1px solid rgba(106, 176, 243, 0.4);
-  border-radius: 10px;
-  color: #9ab;
-  font-size: 11px;
-  font-weight: 400;
 }
 
 #popup .compared-actions {
