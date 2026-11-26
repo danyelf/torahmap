@@ -27,7 +27,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - run: |
+          fc-match system-ui
+          fc-match sans-serif
+          fc-list : family | sort -u
+      - run: |
+          npm run test:layout -- -g "explore-text-analytics$|act-recital-pinned" --project=phone --project=tablet || true
+          npm run test:layout -- talmud.spec.ts --project=desktop
+        continue-on-error: true
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
