@@ -144,7 +144,17 @@ describe('Text Analytics overlay', () => {
     expect(colors).toEqual(items.map((item) => host().getItemColor(item)));
   });
 
-  it("shows a pinned verse's echoes until a hovered verse with echoes of its own takes over", () => {
+  it('keeps a pinned verse in focus under the pointer, and compares it with its echo alone', () => {
+    const panel = document.createElement('div');
+    textAnalyticsOverlay.renderFocus!(panel, verse(4), verse(1), wording, data, () => {});
+    expect(panel.querySelector('.parallel-source .parallel-ref')!.textContent).toBe('Genesis 1:1');
+    const { comparesWith } = textAnalyticsOverlay;
+    expect(comparesWith!(verse(1), verse(4), wording, data)).toBe(true);
+    expect(comparesWith!(verse(1), verse(2), wording, data)).toBe(false);
+    expect(comparesWith!(verse(1), verse(1), wording, data)).toBe(false);
+  });
+
+  it("shows a pinned verse's echoes while the pointer is on a verse with none", () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
     const plain = items.map((item) => host().getItemColor(item));

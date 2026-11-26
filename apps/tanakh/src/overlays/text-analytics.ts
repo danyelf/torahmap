@@ -135,9 +135,8 @@ const echoKey = (
 ): string | null => (verse && echoesOf(data, settings, verse) ? verse.id : null);
 
 /**
- * The verse whose echoes the map shows, of the hovered and the pinned one. Among the echoes a
- * pinned verse keeps the focus, and the pointer compares it with one of its echoes; in the other
- * analysis the hovered verse takes it.
+ * The verse whose echoes the map shows, of the hovered and the pinned one. A pinned verse keeps
+ * the focus, and the pointer compares it with one of its echoes.
  */
 function focusedVerse(
   data: TextAnalyticsData,
@@ -147,9 +146,7 @@ function focusedVerse(
 ): TanakhLayout | null {
   const withEchoes = (verse: TanakhLayout | null) =>
     verse && echoesOf(data, settings, verse) ? verse : null;
-  return settings.analysis === 'echoes'
-    ? (withEchoes(pinned) ?? withEchoes(hovered))
-    : (withEchoes(hovered) ?? withEchoes(pinned));
+  return withEchoes(pinned) ?? withEchoes(hovered);
 }
 
 function focusEchoes(
@@ -399,7 +396,7 @@ export const textAnalyticsOverlay: Overlay<
       return;
     }
     // A click on a parallel of the pinned verse holds the two for comparison before it travels.
-    const compares = compare && pinned?.id === focus.id && settings.analysis === 'echoes';
+    const compares = compare && pinned?.id === focus.id;
     const drawnFor = [
       focus.id,
       settings.analysis,
@@ -454,8 +451,7 @@ export const textAnalyticsOverlay: Overlay<
         [
           `Colour shows how far away a verse's farthest echo is`,
           `A verse with no echo is grey`,
-          `Hover or select a verse to light its parallels`,
-          `With a verse selected, hover or click a parallel to compare the two`,
+          ...FOCUS_CAPTIONS,
         ]
           .map(legendCaption)
           .join(''),
@@ -474,7 +470,7 @@ export const textAnalyticsOverlay: Overlay<
           `or more books) don't count`,
         `Blue = ${ENDS[0]} wording · Yellow = ${ENDS[1]} wording`,
         `Verses under ${p.minWords} words are not coloured`,
-        `Hover or select a verse to light its parallels`,
+        ...FOCUS_CAPTIONS,
       ]
         .map(legendCaption)
         .join('');
@@ -508,54 +504,51 @@ export const textAnalyticsOverlay: Overlay<
 
   // One colour for every repeated word; the stretch is marked whole, spaces and all.
   highlightItemText(verse, text: string, language: TextLanguage, settings, data): DocumentFragment {
-    if (language !== HEBREW) return markStretches(text, []);
-    if (settings.analysis !== 'echoes') {
-      return markStretches(
-        text,
-        data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? [],
-      );
-    }
-    return markStretches(
-      text,
-      sharedStretches(wordsOf(text), echoWords(data, settings, verse), settings.words),
-    );
+    return markStretches(text, language === HEBREW ? repeatedIn(verse, text, settings, data) : []);
   },
 
   comparesWith(pinned, other, settings, data) {
-    return (
-      settings.analysis === 'echoes' &&
-      other.id !== pinned.id &&
-      !!echoesOf(data, settings, pinned)?.matches.has(other.id)
-    );
+    return other.id !== pinned.id && !!echoesOf(data, settings, pinned)?.matches.has(other.id);
   },
 
-  // The phrase the two share is marked in both; what the pinned verse shares with its other
-  // echoes keeps a fainter mark.
-  compareTexts(pinned, compared, [pinnedText, comparedText], settings, data) {
+  // The phrase the two share is marked in both; what else the pinned verse repeats keeps a
+  // fainter mark.
+  compareTexts(pinned, _compared, [pinnedText, comparedText], settings, data) {
     const [ours, theirs] = [wordsOf(pinnedText), wordsOf(comparedText)];
+    const run = phraseWords(settings, data);
     return [
       markStretches(
         pinnedText,
-        sharedStretches(ours, [theirs], settings.words),
-        sharedStretches(ours, echoWords(data, settings, pinned, compared), settings.words),
+        sharedStretches(ours, [theirs], run),
+        repeatedIn(pinned, pinnedText, settings, data),
       ),
-      markStretches(comparedText, sharedStretches(theirs, [ours], settings.words)),
+      markStretches(comparedText, sharedStretches(theirs, [ours], run)),
     ];
   },
 };
 
-/** The words of each of a verse's echoes whose text is in, but for `except`. */
-function echoWords(
-  data: TextAnalyticsData,
-  settings: TextAnalyticsSettings,
+const FOCUS_CAPTIONS = [
+  `Hover or select a verse to light its parallels`,
+  `With a verse selected, hover or click a parallel to compare the two`,
+];
+
+/** How many words in a row make a shared phrase in the analysis shown. */
+const phraseWords = (settings: TextAnalyticsSettings, data: TextAnalyticsData): number =>
+  settings.analysis === 'echoes' ? settings.words : data.scores.parameters.runWords;
+
+/** The stretches of a verse's Hebrew that the analysis shown counts as repeated. */
+function repeatedIn(
   verse: TanakhLayout,
-  except?: TanakhLayout,
-): string[][] {
-  return (echoesOf(data, settings, verse)?.places ?? [])
-    .filter(({ id }) => id !== verse.id && id !== except?.id)
-    .map((place) => textOf(data, place))
-    .filter(Boolean)
-    .map(wordsOf);
+  text: string,
+  settings: TextAnalyticsSettings,
+  data: TextAnalyticsData,
+): readonly number[] {
+  if (settings.analysis !== 'echoes') {
+    return data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? [];
+  }
+  const echoes = echoesOf(data, settings, verse)?.places ?? [];
+  const others = echoes.map((place) => textOf(data, place)).filter(Boolean);
+  return sharedStretches(wordsOf(text), others.map(wordsOf), settings.words);
 }
 
 const COMPARED_ROW = 'parallel-compared';
@@ -604,7 +597,11 @@ function parallelList(
       markStretches(
         he,
         he
-          ? sharedStretches(wordsOf(he), partners.filter(Boolean).map(wordsOf), settings.words)
+          ? sharedStretches(
+              wordsOf(he),
+              partners.filter(Boolean).map(wordsOf),
+              phraseWords(settings, data),
+            )
           : [],
       ),
     );
