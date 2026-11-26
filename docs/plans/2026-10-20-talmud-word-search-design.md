@@ -1,6 +1,6 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; how the pilot in decision 10 runs is open. Issue #382.
+**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 is open. Issue #382.
 Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
@@ -410,9 +410,94 @@ Choices:
   of occurrences cheaply; the model reads only the rest, about 400,000.
 
 **Decided: 10b,** on 2026-11-25, through Claude Code's own Haiku agents, which
-suit 200 segments but not 16,000 requests. Open: whether the pilot runs both
-versions on the same 200 segments, which would say what the word list adds, or
-only the one without it.
+suit 200 segments but not 16,000 requests. Both versions ran on the same 200
+segments, and the version without the word list was not shown Sefaria's picks.
+
+### What the pilot found
+
+`scripts/talmud/model-pilot.ts` drew 200 segments at random from the 7,402
+where Jastrow quotes at least one occurrence that the list gives several
+entries for. They hold 6,248 words of two letters or more. Haiku agents
+answered them in batches of 20 segments. The version without the list ran in
+two rounds: first naming each word's dictionary form, then, where several of
+Jastrow's entries share that form, choosing among them.
+
+The test is the 418 occurrences in these segments that Jastrow quotes under one
+entry. For 324 of them the list gives several entries, so something has to
+choose:
+
+| On the 324 | right | wrong: an entry with the same letters as the right one | wrong: another entry | no entry given |
+|---|---|---|---|---|
+| Rules (Sefaria's pick, else the vowels) | 42.6% | 6.5% | 2.2% | 48.8% left undecided |
+| Model, with the word list | 78.1% | 17.6% | 4.0% | 0.3% |
+| Model, without the word list | 71.3% | 16.0% | 10.8% | 1.8% |
+
+What this says:
+
+- **The model decides everything, about as well as the rules decide half.**
+  Where the rules decide, they are right 83% of the time; but they leave half
+  undecided. The model with the list is right 78% of the time on all of them.
+- **The word list adds seven points.** Both versions make the same kind of
+  mistake about as often; the version without the list makes nearly three times
+  as many of the other kind (below).
+- **Most mistakes pick a twin of the right entry,** one spelled with the same
+  letters: Jastrow's numbered entries (חָמֵץ I or II, חוּץ I or II), or the
+  Hebrew and Aramaic entries of one word (אָמַר I for אֲמַר, לָא I for לֹא).
+  Counted as right, that would give 95.7% with the list and 87.3% without. But
+  not every pair of twins is one word: שְׁמַע I is "to hear", שְׁמַע II is "the
+  Shema". This is Decision 7b's question,
+  which entries belong together, met from the other side.
+- **Without the list, the model often names a neighbour of Jastrow's entry:**
+  the Hebrew word where Jastrow has a separate Aramaic one (הֲלָכָה for
+  הִלְכְתָא, אוֹנֶס for אוּנְסָא), or the root where Jastrow has the noun (צָנַן
+  for צוֹנָן). Of the forms it named that are no headword at all, the commonest
+  are לֵיהּ (40 times; Jastrow files it under לְ־), causative verbs given as
+  they stand (הֵבִיא, הוֹדִיעַ; Jastrow files them under the root) and words with
+  a prefix left on (מִשּׁוּם).
+- **The two versions agree on 70.3%** of the 5,193 words the list has.
+- **Without the list, the model reaches words the list lacks.** In these
+  segments the list lacks 1,055 of the 6,248 words (16.9%); the version
+  without it names an entry for 88% of them. Nothing checks those answers:
+  Jastrow quotes under an entry only words the list has.
+
+How far to trust this:
+
+- The test is small, and some words repeat in it: חָמֵץ in Pesachim 28b:3
+  counts four times. A few words move these figures by points.
+- The segments were picked because Jastrow quotes them, and his quotations lean
+  to rarer, harder words. The Talmud as a whole has more easy words.
+- The test is sometimes wrong itself: מֶלֶךְ "king" in Megillah 11a:7 is filed
+  under the verb מָלַךְ, and הֵם "they" under הוּא. In Berakhot 2a:8, קְרִיאַת שְׁמַע "the
+  reading of the Shema", it files שְׁמַע under I, "to hear"; both versions chose
+  II.
+- Only Haiku ran. Opus, which the plan above meant to run alongside it, did
+  not.
+- **The cost estimate above is probably low.** The agents used about 1.6
+  million tokens for the 3,633 words the version with the list chose among,
+  about 430 a word, against the 70 to 90 assumed above. Those counts include
+  each agent's own instructions, so they overstate what the API would charge,
+  but probably not by five times. On Haiku the whole run would still cost tens
+  of dollars, not hundreds; a count through the API's token counter would
+  settle it.
+
+### Decision 11. What next?
+
+- **11a. Run the version with the word list over the whole Talmud.** The most
+  accurate. Like everything built on the list, it waits on Sefaria's answer.
+- **11b. Run the version without the word list.** Seven points less accurate
+  on the hard words, but it reaches the 17% the list lacks, and it uses only
+  Jastrow, which is out of copyright, so it need not wait on Sefaria's answer
+  about the list. (Whether Sefaria's digital copy of Jastrow carries terms of
+  its own is not checked.)
+- **11c. Settle which twins are one word first** (Decision 7b), then run
+  whichever version. Most of the model's mistakes are between twins, so this
+  decides how much of what is left matters to a reader.
+- **11d. Have a reader of the Talmud judge 100 occurrences first,** as step 3
+  above planned, before anything runs at scale. The test here only covers
+  words Jastrow quotes.
+
+My recommendation: 11d, then 11b. A reader's judgement is what the test set
+cannot give, and 11b both reaches more words and does not wait on Sefaria.
 
 ## The plan
 

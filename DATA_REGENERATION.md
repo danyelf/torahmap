@@ -307,6 +307,9 @@ tar -xzf dump_small.tar.gz ./dump/sefaria/word_form.bson ./dump/sefaria/lexicon_
 cd - && npx tsx scripts/talmud/word-forms-report.ts
 ```
 
+`scripts/talmud/model-pilot.ts` reads the same two files for the model pilot in
+the word search plan; its header gives the steps.
+
 ## AI Act
 
 The AI Act is parsed from its EUR-Lex pages in `experiments/eu-ai-act/`: `parse.py`
