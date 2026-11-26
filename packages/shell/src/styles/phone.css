@@ -182,9 +182,9 @@
     display: none;
   }
 
-  /* Room for the two Hebrew texts, one under the other. */
+  /* Room for the two Hebrew texts, one under the other, as far as the sheet below leaves any. */
   #popup.comparing {
-    max-height: 300px;
+    max-height: min(300px, 100dvh - var(--sheet-shown) - var(--legend-shown) - 20px);
   }
 
   #popup.comparing .popup-english {
