@@ -177,10 +177,15 @@ function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: b
 const PLAIN_BRIGHTNESS = 0.6;
 const FOCUSED_VERSE: Color = [1, 1, 1];
 
+// The focused verse's echoes go this far toward white, so the darkest distance step still stands out.
+const LIT_SHARE = 0.35;
+
+const lit = (color: Color): Color => color.map((c) => c + (1 - c) * LIT_SHARE) as Color;
+
 /**
- * A verse with echoes wears the colour of its farthest one, whatever is focused; one without keeps
- * the plain grey. With a verse focused (hovered, else pinned), it is white and every verse but its
- * echoes goes out of focus, so passages can still be traced from one to the next.
+ * A verse with echoes wears the colour of its farthest one; one without keeps the plain grey. With
+ * a verse focused (hovered, else pinned), it is white, its echoes are lit and every other verse
+ * goes out of focus.
  */
 function echoColors(
   items: TanakhLayout[],
@@ -198,12 +203,13 @@ function echoColors(
     return DISTANCE_STEPS[farthest].color;
   };
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
-  const lit = focused && echoesOf(data, settings, focused)!.matches;
+  const matches = focused && echoesOf(data, settings, focused)!.matches;
   return items.map(({ id }, i) => {
     if (id === focused?.id) return FOCUSED_VERSE;
     const color = farthestEcho(id);
     if (!color) return brighten(getDefaultColor(i), PLAIN_BRIGHTNESS);
-    return !lit || lit.has(id) ? color : outOfFocus(color);
+    if (!matches) return color;
+    return matches.has(id) ? lit(color) : outOfFocus(color);
   });
 }
 
@@ -211,9 +217,9 @@ function echoColors(
 // section of the Tanakh.
 const POINTER_LENGTH = 10;
 const POINTER_LENGTH_FAR = 14;
-// An echo in the same chapter gets no pointer: it would lie along the chapter's row of verses.
+// A pointer toward an echo in the same chapter never grows: grown, it lies along the chapter's row of verses.
 const SAME_CHAPTER = 0;
-// A verse with more pointers than this draws them shorter, by the square root of how many more, so a
+// A verse with more pointers than this draws them shorter, by the fourth root of how many more, so a
 // formula's fan of seventy does not drown the verses with one or two.
 const FULL_LENGTH_POINTERS = 12;
 // The rest of the focused verse's run of parallels is drawn this much fainter than its own echoes.
@@ -221,7 +227,7 @@ const RUN_OPACITY = 0.55;
 // The key of the pointer from one reading-order position toward another.
 const pairKey = (from: number, to: number) => `${from} ${to}`;
 
-/** Every echo's pointer, and where the one from each reading-order position to another sits in the list. */
+/** Every echo's pointer, and where each one that can grow sits in the list, by the positions it joins. */
 const echoPointerList = memoByValue((items: TanakhLayout[]) =>
   memoByValueAndKey((data: TextAnalyticsData, words: number) => {
     const { places, positions } = readingOrder();
@@ -237,10 +243,10 @@ const echoPointerList = memoByValue((items: TanakhLayout[]) =>
           to: centres.get(places[other].id),
           step: distanceStep(places[position], places[other]),
         }))
-        .filter(({ to, step }) => to && step !== SAME_CHAPTER);
-      const shorter = Math.min(1, Math.sqrt(FULL_LENGTH_POINTERS / drawn.length));
+        .filter(({ to }) => to);
+      const shorter = Math.min(1, (FULL_LENGTH_POINTERS / drawn.length) ** 0.25);
       for (const { other, to, step } of drawn) {
-        at.set(pairKey(position, other), pointers.length);
+        if (step !== SAME_CHAPTER) at.set(pairKey(position, other), pointers.length);
         pointers.push({
           from: centres.get(id)!,
           to: to!,

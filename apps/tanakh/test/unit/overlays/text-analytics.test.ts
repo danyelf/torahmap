@@ -309,11 +309,14 @@ describe('Text Analytics overlay', () => {
         expect(paint({ 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5] })[0]).toEqual(other);
       });
 
-      it("leaves a focused verse's echoes the colour they have at rest, and the verse white", () => {
+      it("lights a focused verse's echoes, and turns the verse white", () => {
         const echoes = { 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5], 1: [5, 5] };
+        const resting = paint(echoes);
         const colors = paint(echoes, places[0]);
         expect(colors[0]).toEqual([1, 1, 1]);
-        expect(colors.slice(1)).toEqual(paint(echoes).slice(1));
+        colors.slice(1).forEach((color, i) => {
+          expect(light(color as Color)).toBeGreaterThan(light(resting[i + 1] as Color));
+        });
       });
 
       it('darkens other verses with echoes, and leaves the rest plain', () => {
@@ -342,9 +345,18 @@ describe('Text Analytics overlay', () => {
           data: { ...data, echoes },
         });
 
-      it('points toward an echo in another chapter, and not toward one in the same chapter', () => {
-        const drawn = pointers(places, { 0: [1, 5, 2, 5] });
-        expect(drawn.map((p) => p.color)).toEqual([book, book]);
+      it('grows the pointers toward echoes in other chapters, and not the one within the chapter', () => {
+        const echoes = { 0: [1, 5, 2, 5] };
+        const drawn = pointers(places, echoes);
+        const grown = textAnalyticsOverlay.grownPointersFor!({
+          items: places,
+          settings: echoSettings,
+          data: { ...data, echoes },
+          focus: { hovered: places[0], pinned: null },
+        });
+        expect(drawn.map((p) => p.color)).toContainEqual(chapter);
+        expect(grown.length).toBeGreaterThan(0);
+        expect(grown.map(({ index }) => drawn[index].color)).not.toContainEqual(chapter);
       });
 
       it('draws the pointers of a verse with many echoes shorter', () => {
