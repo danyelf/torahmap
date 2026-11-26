@@ -1,6 +1,6 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Plan. Danyel took decisions 1 to 9 on 2026-11-25; decision 10 is open. Issue #382.
+**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; how the pilot in decision 10 runs is open. Issue #382.
 Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
@@ -384,6 +384,24 @@ What it does not change:
   off, which is Decision 8c with a reader in place of the rule. That is a
   second step, scored the same way.
 
+**Without the word list.** The model can also work from Jastrow alone. It reads
+the passage and names, for each word, its dictionary form with vowels and a
+gloss (אוֹמֵר → אָמַר "to say"). A script looks that form up among Jastrow's
+headwords, which are in Sefaria's download apart from the word list; where
+several headwords share it, the model chooses among them with their
+definitions, as above. This differs from the version above in three ways:
+
+- It needs nothing from the word list, so the program-made links (the first
+  kind, the ones that are often wrong) never enter. The hand-picked entries
+  could still be shown to it as a hint, or left out.
+- It reaches the 22% the list misses (Decision 8) in the same run, since the
+  model names the dictionary form whether or not the list has the spelling.
+- It can fail in a way the list cannot: a dictionary form spelled or vowelled
+  differently from Jastrow's headword finds nothing, and a model can name a
+  word that is not there. How often is what a pilot measures.
+
+The test set from Jastrow's quotations serves both versions.
+
 Choices:
 
 - **10a. Keep the rules** (Decisions 3 to 5 and 9b) and stop there.
@@ -391,9 +409,10 @@ Choices:
 - **10c. Rules first, model for what they leave open.** The rules settle 73%
   of occurrences cheaply; the model reads only the rest, about 400,000.
 
-**I recommend 10b.** The pilot costs well under a dollar; it needs an API key
-here (there is none on this machine) or can run through Claude Code's own
-Haiku agents, which suits 200 segments but not 16,000 requests.
+**Decided: 10b,** on 2026-11-25, through Claude Code's own Haiku agents, which
+suit 200 segments but not 16,000 requests. Open: whether the pilot runs both
+versions on the same 200 segments, which would say what the word list adds, or
+only the one without it.
 
 ## The plan
 
