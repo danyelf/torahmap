@@ -211,6 +211,11 @@ function echoColors(
 // section of the Tanakh.
 const POINTER_LENGTH = 10;
 const POINTER_LENGTH_FAR = 14;
+// An echo in the same chapter gets no pointer: it would lie along the chapter's row of verses.
+const SAME_CHAPTER = 0;
+// A verse with more pointers than this draws them shorter, by the square root of how many more, so a
+// formula's fan of seventy does not drown the verses with one or two.
+const FULL_LENGTH_POINTERS = 12;
 // The rest of the focused verse's run of parallels is drawn this much fainter than its own echoes.
 const RUN_OPACITY = 0.55;
 // The key of the pointer from one reading-order position toward another.
@@ -226,15 +231,20 @@ const echoPointerList = memoByValue((items: TanakhLayout[]) =>
     const at = new Map<string, number>();
     for (const { id } of items) {
       const position = positions.get(id)!;
-      for (const [other] of echoesAt(data.echoes, position, words)) {
-        const to = centres.get(places[other].id);
-        if (!to) continue;
-        const step = distanceStep(places[position], places[other]);
+      const drawn = echoesAt(data.echoes, position, words)
+        .map(([other]) => ({
+          other,
+          to: centres.get(places[other].id),
+          step: distanceStep(places[position], places[other]),
+        }))
+        .filter(({ to, step }) => to && step !== SAME_CHAPTER);
+      const shorter = Math.min(1, Math.sqrt(FULL_LENGTH_POINTERS / drawn.length));
+      for (const { other, to, step } of drawn) {
         at.set(pairKey(position, other), pointers.length);
         pointers.push({
           from: centres.get(id)!,
-          to,
-          length: step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH,
+          to: to!,
+          length: (step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH) * shorter,
           color: DISTANCE_STEPS[step].color,
         });
       }

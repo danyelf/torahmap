@@ -334,6 +334,40 @@ describe('Text Analytics overlay', () => {
         const echoes = { 0: [1, 5], 2: [3, 5] };
         expect(paint(echoes, places[5], places[0])).toEqual(paint(echoes, null, places[0]));
       });
+
+      const pointers = (items: typeof places, echoes: TextAnalyticsData['echoes']) =>
+        textAnalyticsOverlay.pointersFor!({
+          items,
+          settings: echoSettings,
+          data: { ...data, echoes },
+        });
+
+      it('points toward an echo in another chapter, and not toward one in the same chapter', () => {
+        const drawn = pointers(places, { 0: [1, 5, 2, 5] });
+        expect(drawn.map((p) => p.color)).toEqual([book, book]);
+      });
+
+      it('draws the pointers of a verse with many echoes shorter', () => {
+        const chapters = 15;
+        initBookData({
+          books: [
+            {
+              name: 'Genesis',
+              hebrewName: '',
+              section: 'torah',
+              chapters: new Array(chapters).fill(1),
+              countedAs: 'Genesis',
+            },
+          ],
+          layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+        });
+        const verses = Array.from({ length: chapters }, (_, c) =>
+          createVerse({ book: 'Genesis', chapter: c + 1, verse: 1 }),
+        );
+        const toEveryOther = verses.slice(1).flatMap((_, i) => [i + 1, 5]);
+        const [fromTheMany, ...rest] = pointers(verses, { 0: toEveryOther });
+        expect(fromTheMany.length).toBeLessThan(rest.at(-1)!.length);
+      });
     });
 
     describe('marking the shared phrase', () => {
