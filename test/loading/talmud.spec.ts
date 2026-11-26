@@ -142,15 +142,15 @@ test("a link's search reaches the Talmud's own search, not the Tanakh's", async 
 test.describe('the drawn map', () => {
   test.use({ realMap: true });
 
-  test('a returning reader on the bare address gets the map in its colours, not a plain grey', async ({
+  test('a returning reader on the bare address gets the map in its colors, not a plain gray', async ({
     page,
   }) => {
     await page.addInitScript(() => localStorage.setItem('torahMap.visited', 'true'));
     await page.goto(TALMUD_PATH);
     await allLoaded(page);
-    // The Talmud's tan and violet count as coloured; the plain grey does not.
+    // The Talmud's tan and violet count as colored; the plain gray does not.
     await expect
-      .poll(async () => (await pixelCounts(page, await canvasShot(page))).coloured)
+      .poll(async () => (await pixelCounts(page, await canvasShot(page))).colored)
       .toBeGreaterThan(DRAWN_FLOOR);
   });
 });

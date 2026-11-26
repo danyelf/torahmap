@@ -7,7 +7,7 @@ Run with:  python3 -m pytest scripts/overlays/commentary/test_process_sefaria_li
 The interesting cases are all about ranges. A citation can name one verse
 ("Genesis 1:2"), a short passage ("Deuteronomy 6:4-9"), or an entire weekly
 portion ("Genesis 1:1-6:8"). The first two are claims about specific verses.
-The third is a catalogue entry, and crediting it to any single verse invents a
+The third is a catalog entry, and crediting it to any single verse invents a
 concentration of commentary that is not there.
 """
 
@@ -199,7 +199,7 @@ def test_a_book_name_is_only_a_book_when_it_is_the_whole_title():
     assert resolve_shelf("Esther Rabbah", "Midrash", INDEX) == "Midrash"
 
 
-# Which category a link counts towards.
+# Which category a link counts toward.
 #
 # Two questions, two different sources. Whether a work is a commentary at all
 # comes from the index, above. Whether *this particular link* is a comment on

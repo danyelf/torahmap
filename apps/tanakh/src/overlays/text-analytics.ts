@@ -1,4 +1,4 @@
-// Text Analytics: each verse coloured by how much of its wording repeats nearby, or by where in the
+// Text Analytics: each verse colored by how much of its wording repeats nearby, or by where in the
 // Tanakh the verses that share a phrase with it are; computed ahead of time by
 // scripts/overlays/text-analytics/generate.ts.
 
@@ -12,7 +12,7 @@ import {
   memoByValue,
   memoByValueAndKey,
 } from '@torahmap/utils';
-import { type GrownPointer, type Pointer, squareCentre } from '@torahmap/engine';
+import { type GrownPointer, type Pointer, squareCenter } from '@torahmap/engine';
 import './text-analytics.css';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
@@ -40,8 +40,8 @@ import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { wordsRead } from '../search/dictionary.ts';
 import { sharedStretches, words as wordsOf } from './text-analytics/words.ts';
 
-// Cividis, slate blue through grey to yellow: even in lightness, made to read
-// the same with red-green colour blindness, and unlike any other overlay's
+// Cividis, slate blue through gray to yellow: even in lightness, made to read
+// the same with red-green color blindness, and unlike any other overlay's
 // scale. Its darkest quarter, navy, is left off: on the dark map it is hard to
 // tell from a verse with no score.
 const CIVIDIS_STOPS: ColorStop[] = [
@@ -63,7 +63,7 @@ export interface TextAnalyticsSettings {
 export interface TextAnalyticsData {
   scores: ScoresFile;
   echoes: EchoesFile;
-  // Only the hover's word count needs the texts; the colours come before them.
+  // Only the hover's word count needs the texts; the colors come before them.
   texts: VerseTexts | null;
 }
 
@@ -71,7 +71,7 @@ function scoreAt(data: TextAnalyticsData, verse: TanakhLayout): number | null {
   return data.scores.repetition[verse.book]?.[verse.chapter]?.[verse.verse - 1] ?? null;
 }
 
-/** The colour scale and its ends, once per data value. */
+/** The color scale and its ends, once per data value. */
 const scaleOf = memoByValue((data: TextAnalyticsData) => {
   const values = Object.values(data.scores.repetition)
     .flatMap((chapters) => Object.values(chapters).flat())
@@ -156,11 +156,11 @@ function focusEchoes(
   return verse && echoesOf(data, settings, verse);
 }
 
-// While a verse is focused, the others go this far toward a dark blue-grey.
+// While a verse is focused, the others go this far toward a dark blue-gray.
 const OUT_OF_FOCUS: Color = [0.2, 0.24, 0.34];
 const OUT_OF_FOCUS_SHARE = 0.6;
 
-/** A verse's colour while another verse is focused, in either analysis. */
+/** A verse's color while another verse is focused, in either analysis. */
 function outOfFocus(color: Color): Color {
   return color.map((c, i) => c + (OUT_OF_FOCUS[i] - c) * OUT_OF_FOCUS_SHARE) as Color;
 }
@@ -172,14 +172,14 @@ function repetitionColorAt(data: TextAnalyticsData, verse: TanakhLayout, mute: b
   return mute ? outOfFocus(color) : color;
 }
 
-// A verse without echoes keeps the map's grey pattern at this share of its brightness, so the
+// A verse without echoes keeps the map's gray pattern at this share of its brightness, so the
 // palest distance step stands out from it.
 const PLAIN_BRIGHTNESS = 0.6;
 const FOCUSED_VERSE: Color = [1, 1, 1];
 
 /**
- * A verse with echoes wears the colour of its farthest one, whatever is focused; one without keeps
- * the plain grey. With a verse focused (hovered, else pinned), it is white and every verse but its
+ * A verse with echoes wears the color of its farthest one, whatever is focused; one without keeps
+ * the plain gray. With a verse focused (hovered, else pinned), it is white and every verse but its
  * echoes goes out of focus, so passages can still be traced from one to the next.
  */
 function echoColors(
@@ -220,19 +220,19 @@ const pairKey = (from: number, to: number) => `${from} ${to}`;
 const echoPointerList = memoByValue((items: TanakhLayout[]) =>
   memoByValueAndKey((data: TextAnalyticsData, words: number) => {
     const { places, positions } = readingOrder();
-    const centres = new Map(items.map((item) => [item.id, squareCentre(item)]));
+    const centers = new Map(items.map((item) => [item.id, squareCenter(item)]));
     const far = DISTANCE_STEPS.length - 1;
     const pointers: Pointer[] = [];
     const at = new Map<string, number>();
     for (const { id } of items) {
       const position = positions.get(id)!;
       for (const [other] of echoesAt(data.echoes, position, words)) {
-        const to = centres.get(places[other].id);
+        const to = centers.get(places[other].id);
         if (!to) continue;
         const step = distanceStep(places[position], places[other]);
         at.set(pairKey(position, other), pointers.length);
         pointers.push({
-          from: centres.get(id)!,
+          from: centers.get(id)!,
           to,
           length: step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH,
           color: DISTANCE_STEPS[step].color,
@@ -416,8 +416,8 @@ export const textAnalyticsOverlay: Overlay<
       container.insertAdjacentHTML(
         'beforeend',
         [
-          `Colour shows how far away a verse's farthest echo is`,
-          `A verse with no echo is grey`,
+          `Color shows how far away a verse's farthest echo is`,
+          `A verse with no echo is gray`,
           `Phrases that recur in many verses wherever they appear don't count`,
           `Hover or select a verse to light its parallels`,
         ]
@@ -429,7 +429,7 @@ export const textAnalyticsOverlay: Overlay<
     const { scale, low, high } = scaleOf(data);
     const p = data.scores.parameters;
     container.innerHTML =
-      // Scores above the top of the scale are drawn in its colour too.
+      // Scores above the top of the scale are drawn in its color too.
       renderAxis(scale, [low, high], (v) => (v === high ? `${percent(v)} or more` : percent(v))) +
       [
         `The share of a verse's words that belong to a ${p.runWords}-word phrase the book uses ` +
@@ -437,7 +437,7 @@ export const textAnalyticsOverlay: Overlay<
         `Common idioms such as "thus says the LORD, God of Israel" (found in ${p.formulaBooks} ` +
           `or more books) don't count`,
         `Blue = ${ENDS[0]} wording · Yellow = ${ENDS[1]} wording`,
-        `Verses under ${p.minWords} words are not coloured`,
+        `Verses under ${p.minWords} words are not colored`,
         `Hover or select a verse to light its parallels`,
       ]
         .map(legendCaption)
@@ -470,7 +470,7 @@ export const textAnalyticsOverlay: Overlay<
     return `${repeated} of its ${words} words ${repeated === 1 ? 'repeats' : 'repeat'} nearby`;
   },
 
-  // One colour for every repeated word; the stretch is marked whole, spaces and all.
+  // One color for every repeated word; the stretch is marked whole, spaces and all.
   highlightItemText(verse, text: string, language: TextLanguage, settings, data): DocumentFragment {
     if (language !== HEBREW) return markStretches(text, []);
     if (settings.analysis !== 'echoes') {

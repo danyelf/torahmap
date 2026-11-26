@@ -13,14 +13,14 @@ const shade = (css: string) => {
 };
 
 describe('pieceStrip', () => {
-  it('draws one piece for each of the paper’s, in its section’s colour', () => {
+  it('draws one piece for each of the paper’s, in its section’s color', () => {
     const strip = pieceStrip('aif', 1);
     expect(pieces(strip).map((p) => p.style.background)).toEqual(
       [SECTIONS.a.color, SECTIONS.i.color, SECTIONS.f.color].map((c) => shade(colorToCss(c))),
     );
   });
 
-  it('draws a paper with no text in the placeholder ring’s colour', () => {
+  it('draws a paper with no text in the placeholder ring’s color', () => {
     expect(pieces(pieceStrip('xx', 0))[0].style.background).toBe(
       shade(colorToCss(PLACEHOLDER_RING)),
     );

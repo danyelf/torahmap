@@ -113,10 +113,10 @@ reports it (with `jq` over `public/data/`), not recalled.
   on, not two unrelated words. "He laughed" is right only for Genesis 17:17.
   Saying so is where the maker's understanding shows; leaving it out is where
   a knowledgeable viewer finds the reel glib. On screen both meanings share a
-  colour, so the split shows by *unticking* one: untick "Isaac" and the twelve
+  color, so the split shows by *unticking* one: untick "Isaac" and the twelve
   "laugh" verses remain, clustered in Genesis 17–21.
 - **Shoot the rings close.** At whole-map zoom a square is too small to leave
-  the hole that shows the overlay's colour inside the ring.
+  the hole that shows the overlay's color inside the ring.
 - **Chapters over 50 verses wrap to a second row** (Genesis 24, Numbers 7), so
   frame the "each row a chapter" shot where none do.
 - **Numbers 33:1 has an inflated commentary count** (1,120, almost all one
@@ -156,7 +156,7 @@ reports it (with `jq` over `public/data/`), not recalled.
 | Variant | Opens on | Strongest beat | Main risk |
 |---|---|---|---|
 | **Lead with a finding** — "the book that never mentions God" | Two dark books in a lit field | Absence, then the paradox: no God, heavy commentary | "Never mentions God" read as a jab; needs its commentary beat |
-| **Abstract to figurative** | Colour fields with no labels, like generative art | The reveal: marks → verses → traditions of reading; ends on a readable verse | Opening mistaken for a screensaver |
+| **Abstract to figurative** | Color fields with no labels, like generative art | The reveal: marks → verses → traditions of reading; ends on a readable verse | Opening mistaken for a screensaver |
 | **A curious outsider's questions** | The plain map | Trop: three books go dark, Job's prose frame lit | Least interaction; no search |
 | **Layers as geology** | Exodus 34:6 close up, a date stamp in the corner | Strata in true historical order, the stamp ticking forward | Five layer swaps in a row feel like a slideshow |
 | **One continuous session** | Genesis 1:1, then arrow keys | Untick "Isaac" and the laughter remains | Clicks without a pointer look automated |
@@ -166,11 +166,11 @@ reports it (with `jq` over `public/data/`), not recalled.
 
 - **The opening is too quiet.** A close-up of Hebrew reads to a secular viewer
   as religious content, and they scroll on before the pull-back pays off. Open
-  on something visually striking — a lit layer, a dark gap, a colour field —
+  on something visually striking — a lit layer, a dark gap, a color field —
   with two to four seconds of image before words.
 - **The three-layer montage is the weakest stretch.** A heatmap cannot be read
   in four seconds at feed size. Show fewer layers, each with one pattern the
-  caption names ("Gold: a chant mark almost never used", "Same colour: read on
+  caption names ("Gold: a chant mark almost never used", "Same color: read on
   the same Sabbath").
 - **Keep the fixed camera when layers change** — dissolves in which no square
   moves prove the layout's point without a caption.
@@ -180,7 +180,7 @@ reports it (with `jq` over `public/data/`), not recalled.
   shows.
 - **Keep:** the pull-back from one verse, "Each column a book. Each row a
   chapter.", the Isaac beat (corrected), and the understated ending — on a
-  fully coloured frame.
+  fully colored frame.
 - **Collapse the side panel except where the interface is the point**; at
   1080×1080 it takes a third of the frame.
 
@@ -225,9 +225,9 @@ they are worth.
 | 2 | 8–18 s | Search Abraham, Isaac, Jacob, Moses, David (in English); into Genesis, out to the Torah, down to Samuel | *Search five names.* · *Genesis: Abraham, then Isaac, then Jacob.* · *Then Moses, through four books.* · *Then David, in Samuel.* |
 | 3 | 18–24 s | Back to Genesis, sidebar in: יצחק searched twice, one term narrowed to Isaac (101 verses), one to laugh (12, in Genesis 17–21) | *Same letters: "Isaac," or "laughed."* · *The text names him for the laughter.* |
 | 4 | 24–30 s | Commentary on Genesis close, then pull back to the whole map | *How much has been written on each.* · *Half of all commentary: the first five books.* |
-| 5 | 30–36 s | Haftarah, whole map, then in to Isaiah | *Same colour: read aloud together.* · *Isaiah: 15 weekly readings, and 5 special days.* |
+| 5 | 30–36 s | Haftarah, whole map, then in to Isaiah | *Same color: read aloud together.* · *Isaiah: 15 weekly readings, and 5 special days.* |
 | 6 | 36–46 s | Verse length, whole map; glide into the stacked Writings; close on Lamentations | *Purple: short verses. Orange: long.* · *Story and poetry each have a shape.* · *Chapter 3: the alphabet, three times over.* |
-| 7 | 46–50 s | Pull back while the colour drains, to the plain map and its title card | *torahmap.org* |
+| 7 | 46–50 s | Pull back while the color drains, to the plain map and its title card | *torahmap.org* |
 
 Facts checked for the captions: the Torah holds 53% of Sefaria's commentary
 links for 25% of the verses; in Ashkenazi custom 15 of the 54 weekly portions
@@ -246,4 +246,4 @@ What the renderer needs for it:
   a closed state in the app itself).
 - The branch brought up to date with main: search's own URL keys (`search`,
   `mode`, `m` — meaning keys carry a language suffix, `YXQ[@heb`), stories in
-  `src/stories/`, and a camera that names the centre of the screen.
+  `src/stories/`, and a camera that names the center of the screen.

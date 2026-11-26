@@ -127,7 +127,7 @@ export function cameraOf(params: Record<string, string>): Camera | null {
 
 /**
  * The URL query for `scene`, its camera `p` of the way from `from` to `to`. A
- * pinned verse centres the camera on itself, so the verse is held back until
+ * pinned verse centers the camera on itself, so the verse is held back until
  * the camera has arrived.
  */
 export function viewQuery(scene: ViewScene, from: Camera | null, to: Camera, p: number): string {

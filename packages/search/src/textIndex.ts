@@ -88,7 +88,7 @@ export interface SearchResult {
  * by its extra mode, is the caller's.
  *
  * A term with no hits simply contributes nothing; term indices are positions
- * in the caller's list, so the gap keeps every other term's colour in place.
+ * in the caller's list, so the gap keeps every other term's color in place.
  */
 export function resultsForItemSets(
   index: TextIndex,

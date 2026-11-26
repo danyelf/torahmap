@@ -18,9 +18,9 @@ every change what the change meant:
   `toUrl`.
 - **The story blend works out the tools a second time.** `pictureForStop`
   (`scrollytelling/overlayBlender.ts`) rebuilds each stop's settings from its link parameters and
-  applies the colour rule itself.
+  applies the color rule itself.
 
-The refactor changes nothing a reader can see. Where today's behaviour looks accidental, this plan
+The refactor changes nothing a reader can see. Where today's behavior looks accidental, this plan
 keeps it and names it. The one exception is a text opening an overlay, which becomes one step
 where today it is two, with no visible difference.
 
@@ -48,9 +48,9 @@ Everything else is a function of the value, given the text's search and overlays
   `withReset(state, overlay)`. An id the text doesn't have, or `none`, makes `active` null, as
   `switchTo` does today.
 
-The colour rule runs only when settings are written, as it does today. An overlay's new settings
-avoid the search's colours, and the search's avoid the overlay's. Switching to an overlay keeps
-the settings it holds as they are, even if the search's colours changed since.
+The color rule runs only when settings are written, as it does today. An overlay's new settings
+avoid the search's colors, and the search's avoid the overlay's. Switching to an overlay keeps
+the settings it holds as they are, even if the search's colors changed since.
 
 A settings update already takes the current settings and returns the next ones, so overlays don't
 change. The value relies on updates returning a new object, and the blend's cache relies on values
@@ -63,15 +63,15 @@ and in the browser.
 - **`toLink(state)`** writes the active overlay, its settings and the search's settings, leaving
   out values at their default.
 - **`fromLink(link, base)`** applies a link on top of `base`. The search's settings come first,
-  then the named overlay's, chosen to avoid the search's colours. A link that names no overlay
+  then the named overlay's, chosen to avoid the search's colors. A link that names no overlay
   makes `active` null. Every other overlay keeps what `base` held.
 
 `fromLink(link, emptyTools(search))` is what a link preview would draw (#565).
 
 **Leaving a story trims the overlay only:** `withOverlayTrimmed(state)` keeps of the active overlay
 what a link carries, as `keepOnlyLinked` does today. The search stays exactly as it is, because a
-link doesn't record which word has which colour, so passing the search through a link could swap
-its colours. With no overlay on, the value comes back unchanged.
+link doesn't record which word has which color, so passing the search through a link could swap
+its colors. With no overlay on, the value comes back unchanged.
 
 ## Stories
 
@@ -84,7 +84,7 @@ the shell:
   itself, so a frame doesn't work out the link text again. Stops that only move
   the camera are common, and each would otherwise compute the same picture again.
 - **The blend's picture cache** keeps its nesting by squares and loaded files. Its inner map is
-  keyed by the value instead of a string. The blend's own call to the colour rule goes.
+  keyed by the value instead of a string. The blend's own call to the color rule goes.
 - **For arriving at a stop,** `fromLink(stop, state)`, so the reader's other overlays keep their
   settings, as now.
 - **Hot reload on the dev server** re-resolves the stories into new stop objects, which find their

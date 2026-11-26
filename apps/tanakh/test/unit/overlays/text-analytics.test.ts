@@ -62,7 +62,7 @@ describe('Text Analytics overlay', () => {
     expect(h.highlightItemText(verse(2), text, HEBREW).querySelector('mark')).toBeNull();
   });
 
-  it("keeps a focused verse and its echoes in the scale's colours and mutes the rest", () => {
+  it("keeps a focused verse and its echoes in the scale's colors and mutes the rest", () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
     const colors = textAnalyticsOverlay.colorsFor!({
@@ -112,14 +112,14 @@ describe('Text Analytics overlay', () => {
 
   it('travels to a parallel verse from its link in the panel', () => {
     const panel = document.createElement('div');
-    const travelled: string[] = [];
+    const traveled: string[] = [];
     textAnalyticsOverlay.renderFocus!(panel, verse(1), null, wording, data, (id) =>
-      travelled.push(id),
+      traveled.push(id),
     );
     [...panel.querySelectorAll('button')]
       .find((b) => b.textContent!.includes('Genesis 1:4'))!
       .click();
-    expect(travelled).toEqual([verse(4).id]);
+    expect(traveled).toEqual([verse(4).id]);
   });
 
   it('lists the focused verse among its parallels, in canonical order', () => {
@@ -132,7 +132,7 @@ describe('Text Analytics overlay', () => {
     expect(refs(4)).toEqual(['Genesis 1:1', 'Genesis 1:4']);
   });
 
-  it('colours the map as usual when neither the hovered nor the pinned verse has echoes', () => {
+  it('colors the map as usual when neither the hovered nor the pinned verse has echoes', () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
     const colors = textAnalyticsOverlay.colorsFor!({
@@ -189,12 +189,12 @@ describe('Text Analytics overlay', () => {
     expect(h.hoverChangesColors(verse(2), null)).toBe(false);
   });
 
-  it('colours each verse by its score', () => {
+  it('colors each verse by its score', () => {
     const h = host();
     expect(h.getItemColor(verse(1))).not.toEqual(h.getItemColor(verse(2)));
   });
 
-  it('leaves a verse without a score, or outside the file, uncoloured', () => {
+  it('leaves a verse without a score, or outside the file, uncolored', () => {
     const h = host();
     expect(h.getItemColor(verse(3))).toEqual(NO_DATA);
     expect(h.getItemColor(createVerse({ book: 'Exodus', chapter: 1, verse: 1 }))).toEqual(NO_DATA);
@@ -238,7 +238,7 @@ describe('Text Analytics overlay', () => {
         focus: { hovered, pinned: null },
       });
 
-    it('shows a verse without echoes in a darker map grey', () => {
+    it('shows a verse without echoes in a darker map gray', () => {
       const [first, second] = colors({ 0: [3, 5] }, null);
       expect(first).not.toEqual(brighten(getDefaultColor(0), 0.6));
       expect(second).toEqual(brighten(getDefaultColor(1), 0.6));
@@ -302,14 +302,14 @@ describe('Text Analytics overlay', () => {
       const [chapter, book, section, other] = DISTANCE_STEPS.map((step) => step.color);
       const light = (color: Color) => color[0] + color[1] + color[2];
 
-      it('colours a verse by the distance of its farthest echo', () => {
+      it('colors a verse by the distance of its farthest echo', () => {
         expect(paint({ 0: [1, 5] })[0]).toEqual(chapter);
         expect(paint({ 0: [1, 5, 2, 5] })[0]).toEqual(book);
         expect(paint({ 0: [1, 5, 2, 5, 3, 5] })[0]).toEqual(section);
         expect(paint({ 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5] })[0]).toEqual(other);
       });
 
-      it("leaves a focused verse's echoes the colour they have at rest, and the verse white", () => {
+      it("leaves a focused verse's echoes the color they have at rest, and the verse white", () => {
         const echoes = { 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5], 1: [5, 5] };
         const colors = paint(echoes, places[0]);
         expect(colors[0]).toEqual([1, 1, 1]);

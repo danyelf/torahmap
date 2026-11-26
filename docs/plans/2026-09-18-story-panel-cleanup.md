@@ -16,7 +16,7 @@ on a real phone:
 - Each new stop eases in over 1.5s (`SWIPE_EASE_MS`).
 - A folded story on a phone is reopened from "Return to story" in the footer.
 - "No overlay" fades out while the story drives with no overlay on.
-- The story centres verses 40% of the way down the map (`PHONE_STORY_FOCUS`).
+- The story centers verses 40% of the way down the map (`PHONE_STORY_FOCUS`).
 - A "more story" cue: a down chevron on desktop, a tall bracket on a phone.
 
 Every commit passes the hook (1823 tests). Danyel has approved the look and
@@ -37,7 +37,7 @@ on every hover, only knows `transition`, so hovering during an ease flashes
 the overlay for a frame. `driver`, `rejoin` and `transition` are set together
 by hand in about seven places; set `driver` without `rejoin` and the ease is
 skipped and the map cuts. `beginSwipe` and `beginRejoin` are near-copies, and
-"colours partway through the ease" is written twice. Fix: put the ease's
+"colors partway through the ease" is written twice. Fix: put the ease's
 endpoints in the `rejoining` case of `Driver` (`driver.ts`), have one
 begin-ease function, and have one value that `repaint` and `paintStoryFrame`
 both read. Also have a new ease cancel `animateCameraTo`'s glide
@@ -46,14 +46,14 @@ both read. Also have a new ease cancel `animateCameraTo`'s glide
 **b. One redraw point for overlay changes.** `renderOverlayUi` and
 `changeSettings` each list legend, controls, summary and popup separately.
 `updateSummaryShown` is called from five places. The summary line gets search
-colours by reading swatches off the page (`drawnColors`,
+colors by reading swatches off the page (`drawnColors`,
 `panelSummary.ts`), not from the search settings. A one-letter search word
 is dropped from the search but its swatch is still drawn, so the other words
-take the wrong colours. Fix: one `overlayChanged()`; build the summary, and
+take the wrong colors. Fix: one `overlayChanged()`; build the summary, and
 whether it is shown, from settings and state rather than from the page.
 
 **c. One way to open the story, and one record of where it is.** The story is
-opened by `openStory` (which waits for the story to finish growing, cancelled
+opened by `openStory` (which waits for the story to finish growing, canceled
 by nothing) and directly by `applyViewState` (which does not wait). So Back
 or Forward into a story link while it is folded lands on the wrong stop, and
 unfolding then folding within about 250ms loses the reader's place. The
@@ -75,7 +75,7 @@ a story URL and a controls URL from `driver` and `storyOpen`, called once
 per settled change, and put "story open" into the URL so `AppMode`
 (`viewState.ts`) stops guessing it. Do this together with (c).
 
-**e. One source for the breakpoint, timing, and centre point.**
+**e. One source for the breakpoint, timing, and center point.**
 - **Reduced motion is ignored on phones.** The phone block of
   `right-panel.css` restates the panel's `transition` after the
   reduced-motion rule, and wins. Put every duration behind one variable that
@@ -88,7 +88,7 @@ per settled change, and put "story open" into the URL so `AppMode`
   relies on a variable only `right-panel.css` defines.
 - **The 400ms fallback in `openStory` silently depends on the 250ms
   `--accordion-duration`.** Derive the fallback from the duration.
-- **Two ideas of the map's centre.** The story places a verse against the
+- **Two ideas of the map's center.** The story places a verse against the
   canvas (`storyFocus`, `cameraForVerse`), while `centerOnVerse`,
   `glideToVerse` and a link's verse (`cameraForView`) use the whole window.
   They are 190px apart on desktop, and a phone search result lands behind the

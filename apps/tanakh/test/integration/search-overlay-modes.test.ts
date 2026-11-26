@@ -572,7 +572,7 @@ describe('Search Overlay - Hebrew Mode Integration', () => {
       searchOverlay.restore(new URLSearchParams('search=אברהם,אברם&mode=w,w'));
       searchOverlay.renderControls?.(container);
 
-      // Genesis 17:5 holds both names, so it carries both colours even though
+      // Genesis 17:5 holds both names, so it carries both colors even though
       // the list is narrowed to one of them.
       expect(refs()[0]).toBe('Genesis 17:5');
       expect(dotsOn(0)).toBe(2);

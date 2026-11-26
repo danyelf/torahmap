@@ -1,4 +1,4 @@
-// The trop overlay: colours, the mark chart, and marking a mark inside a verse.
+// The trop overlay: colors, the mark chart, and marking a mark inside a verse.
 //
 // The presentation half of the trop feature. What the marks are and which
 // verses carry them is in trop/marks.ts.
@@ -90,7 +90,7 @@ function stepFor(count: number): Color {
 // A mark drawn as present or absent, and the verse highlight, are the brightest step.
 export const RARE_MATCH_COLOR: Color = COUNT_STEPS[COUNT_STEPS.length - 1].color;
 
-/** The key: "contains" and "does not" swatches in colours, or the count steps with CSS colours. */
+/** The key: "contains" and "does not" swatches in colors, or the count steps with CSS colors. */
 type TropLegend =
   | { kind: 'swatches'; contains: Color; without: Color }
   | { kind: 'steps'; steps: { color: string; label: string; glows?: boolean }[] };
@@ -112,12 +112,12 @@ interface TropDerivation {
   /** A verse keeps a faint halo at every zoom from this many; a rare mark has none. */
   haloFrom: number;
   verseLookup: Map<string, number>;
-  /** A verse's colour, from how many times it carries the mark. */
+  /** A verse's color, from how many times it carries the mark. */
   colorOf: (count: number) => Color;
   legend: TropLegend;
 }
 
-/** The colours and lookup table for one trop mark, named by its URL slug. */
+/** The colors and lookup table for one trop mark, named by its URL slug. */
 function deriveTrop(data: TropData, mark: string | null): TropDerivation | null {
   const entry = entryFor(data, mark);
   if (!entry) return null;

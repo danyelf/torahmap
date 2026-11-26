@@ -3,30 +3,30 @@
 import { optional } from '../src/dataFiles.ts';
 import type { Overlay } from '../src/overlays/types.ts';
 
-const colour = { colorsFor: () => [] };
+const color = { colorsFor: () => [] };
 
 // @ts-expect-error An overlay that takes data names its files.
 export const takesDataNamesNone: Overlay<unknown, void, { texts: string[] }> = {
   id: 'a',
   name: 'A',
-  ...colour,
+  ...color,
 };
 
 export const takesDataNamesThem: Overlay<unknown, void, { texts: string[] }> = {
   id: 'b',
   name: 'B',
   data: { texts: 'all-texts.json' },
-  ...colour,
+  ...color,
 };
 
-export const takesNoData: Overlay<unknown, void, void> = { id: 'c', name: 'C', ...colour };
+export const takesNoData: Overlay<unknown, void, void> = { id: 'c', name: 'C', ...color };
 
 export const takesNoDataNamesOne: Overlay<unknown, void, void> = {
   id: 'd',
   name: 'D',
   // @ts-expect-error An overlay that takes no data names no files.
   data: { texts: 'all-texts.json' },
-  ...colour,
+  ...color,
 };
 
 interface WithParse {
@@ -38,7 +38,7 @@ export const namesAnOptionalFile: Overlay<unknown, void, WithParse> = {
   id: 'e',
   name: 'E',
   data: { texts: 'a.json', parse: optional('b.json') },
-  ...colour,
+  ...color,
 };
 
 export const waitsForAFileItCanDoWithout: Overlay<unknown, void, WithParse> = {
@@ -46,7 +46,7 @@ export const waitsForAFileItCanDoWithout: Overlay<unknown, void, WithParse> = {
   name: 'F',
   // @ts-expect-error A file the overlay takes as T | null is named with optional().
   data: { texts: 'a.json', parse: 'b.json' },
-  ...colour,
+  ...color,
 };
 
 export const doesWithoutAFileItNeeds: Overlay<unknown, void, WithParse> = {
@@ -54,7 +54,7 @@ export const doesWithoutAFileItNeeds: Overlay<unknown, void, WithParse> = {
   name: 'G',
   // @ts-expect-error A file the overlay cannot do without is named by its path.
   data: { texts: optional('a.json'), parse: optional('b.json') },
-  ...colour,
+  ...color,
 };
 
 // Any overlay, with or without data, is an Overlay.

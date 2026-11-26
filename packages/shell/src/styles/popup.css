@@ -134,7 +134,7 @@
   color: #fff;
 }
 
-/* Under a search mark, the mark's own text colour. */
+/* Under a search mark, the mark's own text color. */
 #popup .popup-english mark :is(b, i) {
   color: inherit;
 }

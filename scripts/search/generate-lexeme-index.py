@@ -566,7 +566,7 @@ def main():
 
     # ---- do the words line up with the text the app shows? --------------
     # A verse one word out would give every word after the discrepancy its
-    # neighbour's dictionary entry -- wrong, and plausible enough to go
+    # neighbor's dictionary entry -- wrong, and plausible enough to go
     # unnoticed. So the words counted here are checked against the Hebrew the
     # app actually displays, and the verses that disagree are lined up by
     # letter instead.

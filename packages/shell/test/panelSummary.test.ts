@@ -14,7 +14,7 @@ const swatches = (html: string): HTMLElement[] => [
 ];
 
 describe('summaryHtml', () => {
-  it('shows each term in its own colour', () => {
+  it('shows each term in its own color', () => {
     const html = summaryHtml('Text Search', {
       terms: [
         { text: 'אברם', color: 'rgb(0, 170, 200)' },
@@ -28,13 +28,13 @@ describe('summaryHtml', () => {
     ]);
   });
 
-  it('shows a detail and colours after the name', () => {
+  it('shows a detail and colors after the name', () => {
     const html = summaryHtml('Commentary', { detail: 'midrash', colors: ['red', 'blue'] });
     expect(text(html)).toBe('Commentary·midrash');
     expect(swatches(html).map((el) => el.style.background)).toEqual(['red', 'blue']);
   });
 
-  it('shows colours in groups, each its own run of squares', () => {
+  it('shows colors in groups, each its own run of squares', () => {
     const html = summaryHtml('Dating', { groups: [['red'], ['orange', 'yellow'], ['blue']] });
     const groups = [...parse(html).querySelectorAll('.summary-group')];
     expect(groups.map((g) => g.querySelectorAll('.summary-swatch').length)).toEqual([1, 2, 1]);
@@ -54,13 +54,13 @@ describe('summaryHtml', () => {
     expect(order).toEqual(['low', 'strip', 'high']);
   });
 
-  it('draws colours as squares, with no ends', () => {
+  it('draws colors as squares, with no ends', () => {
     const html = summaryHtml('Trop', { colors: ['red', 'blue'] });
     expect(swatches(html).some((el) => el.classList.contains('strip'))).toBe(false);
     expect(parse(html).querySelector('.summary-end')).toBeNull();
   });
 
-  it('keeps the line short when there are many colours', () => {
+  it('keeps the line short when there are many colors', () => {
     const many = Array.from({ length: 10 }, (_, i) => `rgb(${i}, 0, 0)`);
     expect(swatches(summaryHtml('Text Dating', { colors: many }))).toHaveLength(6);
   });

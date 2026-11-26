@@ -41,7 +41,7 @@ describe('haftarahSheet', () => {
     expect(sheet.verses.some((v) => v.fills.length > 1)).toBe(true);
   });
 
-  it('lists every reading in the key exactly once, in the colour it has on the map', async () => {
+  it('lists every reading in the key exactly once, in the color it has on the map', async () => {
     const rows = sheet.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
     const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
     expect(rows.map((r) => r.en).sort()).toEqual(derived.items.map((i) => i.name).sort());
@@ -80,7 +80,7 @@ describe('searchSheet', () => {
     expect(() => nameVerses(dictionary, 'אברהם', 'Abram the Unknown')).toThrow(/Abram the Unknown/);
   });
 
-  it('gives each name one colour and a key row', async () => {
+  it('gives each name one color and a key row', async () => {
     const sheet = await searchSheet(structure, false);
     const rows = sheet.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
     expect(rows.map((r) => r.en)).toEqual(['Abraham', 'Isaac', 'Jacob', 'Moses', 'David']);

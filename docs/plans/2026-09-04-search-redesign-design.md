@@ -145,7 +145,7 @@ Normalization for lookup already exists as `normalizeHebrewForSearch()`.
 This makes root search reachable without typing. Click a word, look it up, and
 paint every verse in the Tanakh sharing that root. The related-root chips
 already computed by `getRelatedRoots()` become the way a reader walks from one
-root to a neighbouring one.
+root to a neighboring one.
 
 ### Clicking a word opens a menu, it does not leap
 
@@ -193,10 +193,10 @@ scrollytelling work. They are grouped by book.
 Clicking a word adds it to the search rather than replacing what is there.
 
 Most of this already works. `parseSearchTerms()` splits a multi-term query,
-each term is painted its own colour, and result rows already carry a coloured
+each term is painted its own color, and result rows already carry a colored
 dot per matching term. Clicking a word is a new caller for machinery that
-exists, not new machinery. Adding rather than replacing is also the behaviour
-that suits a map: two roots in two colours on one substrate is the comparison
+exists, not new machinery. Adding rather than replacing is also the behavior
+that suits a map: two roots in two colors on one substrate is the comparison
 the app is for.
 
 Replacing the search needs to stay available and obvious, since add-by-default
@@ -204,9 +204,9 @@ is only pleasant if it is easy to undo. Individual terms are removable.
 
 Results for a multi-term search are interleaved in book order, not separated
 by term and not ranked. Splitting terms into tabs is a later question; the
-colour coding already distinguishes them without it.
+color coding already distinguishes them without it.
 
-The existing per-term colour palette holds five terms. That is the practical
+The existing per-term color palette holds five terms. That is the practical
 ceiling on how many words can be added before the map stops being readable,
 and the interface should not pretend otherwise.
 
@@ -223,16 +223,16 @@ what is listed.
 Two filters come from data already on disk: which root is selected, and which
 related roots are included. Both change the painting and the list together.
 
-### Colour belongs to the word; meaning is a filter inside it
+### Color belongs to the word; meaning is a filter inside it
 
-Each search term gets its own colour, as it does today. Senses do not get
-colours. Within a single term, the reader may optionally narrow which of its
+Each search term gets its own color, as it does today. Senses do not get
+colors. Within a single term, the reader may optionally narrow which of its
 verses are painted by choosing among that word's meanings.
 
 This matters because the two models behave completely differently at the edges.
-Colouring by sense exhausts the palette immediately — שלם carries ten senses
-against five available colours. Filtering within a term does not: ten senses
-still paint one colour, and the filter only decides which verses that colour
+Coloring by sense exhausts the palette immediately — שלם carries ten senses
+against five available colors. Filtering within a term does not: ten senses
+still paint one color, and the filter only decides which verses that color
 covers. The palette limit applies to how many words can be compared at once,
 which is the thing it should limit.
 
@@ -249,7 +249,7 @@ carry that lemma.
 What verse-level data cannot do is say which word in a verse carries which
 sense. A verse's lexeme count matches its word count in only about a quarter of
 verses. That limits highlighting the right word inside a result snippet; it does
-not limit painting the map, because the map colours whole verses. Per-token
+not limit painting the map, because the map colors whole verses. Per-token
 identification removes the limit.
 
 An earlier prototype appeared to show this filtering was impossible, painting
@@ -318,7 +318,7 @@ Because this changes the UI, it is not complete until Danyel has looked at it.
 ## Assumptions and open questions
 
 Results are ordered by book, never by relevance. This is a decision, not an
-assumption: applying a relevance score to scripture is a judgement the app
+assumption: applying a relevance score to scripture is a judgment the app
 declines to make. It also settles the multi-term case, which interleaves in
 book order for the same reason.
 
@@ -330,7 +330,7 @@ Remaining open questions:
 
 - The order of the items in the word menu, and which one reads as the obvious
   default. Both the written form and the root are offered; which sits first is
-  a judgement to make against the real thing rather than on paper.
+  a judgment to make against the real thing rather than on paper.
 - Whether the menu should appear on a plain click or need a deliberate gesture
   such as a long press or a modifier. A plain click is more discoverable and
   more likely to be triggered by accident; a dismissable menu makes the

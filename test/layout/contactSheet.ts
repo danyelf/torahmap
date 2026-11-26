@@ -12,7 +12,7 @@ interface Cell {
 const esc = (s: string): string =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-// A test's own errors carry ANSI colour codes from Playwright's terminal reporter.
+// A test's own errors carry ANSI color codes from Playwright's terminal reporter.
 const stripAnsi = (s: string): string => s.replace(/\u001b\[[0-9;]*m/g, '');
 
 const sanitizeFilename = (s: string): string => s.replace(/[^A-Za-z0-9._-]/g, '-');

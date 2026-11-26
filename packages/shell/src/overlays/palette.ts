@@ -1,10 +1,10 @@
-// The colours the map lights words and picks in: one set for search terms, one for picks, so the
-// two never share a colour or step round each other.
+// The colors the map lights words and picks in: one set for search terms, one for picks, so the
+// two never share a color or step round each other.
 
 import { maxChroma, oklchToRgb, type Color } from '@torahmap/utils';
 
 /**
- * Every colour is this light, so none looks brighter than another on the dark map, and no more
+ * Every color is this light, so none looks brighter than another on the dark map, and no more
  * saturated than `CHROMA_CAP`, which holds the greens and yellows back to the strength the blues
  * and reds can reach.
  */

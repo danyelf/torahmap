@@ -60,7 +60,7 @@ fi
 # Only the staged files are checked, not the whole tree, so that a branch which
 # predates the bulk reformat can still commit the files it actually touches.
 # --ignore-unknown skips anything prettier has no parser for (images, .sh, and
-# so on) and honours .prettierignore, so the list can be passed in raw.
+# so on) and honors .prettierignore, so the list can be passed in raw.
 #
 # Prettier reads the working tree rather than the index, so a file staged in
 # part is judged on the version on disk. That is the version you are about to

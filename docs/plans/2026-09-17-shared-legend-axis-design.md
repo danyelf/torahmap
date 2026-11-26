@@ -5,7 +5,7 @@
 
 ## Problem
 
-Commentary and Verse Length both draw a colour scale, and they do it in
+Commentary and Verse Length both draw a color scale, and they do it in
 unrelated ways. The duplication has already caused two defects.
 
 **Verse Length's legend is broken on main.** `#overlay-legend .legend-row` is
@@ -14,7 +14,7 @@ children — a gradient bar, and the min and max labels beneath it. As a flex ro
 they sit side by side, so the bar takes the width and the labels are crushed
 into a column at the right, reading as "2 36 / words words".
 
-**Commentary's legend shows colours its map does not use.** Verses are coloured
+**Commentary's legend shows colors its map does not use.** Verses are colored
 by `heatmapColor`: dark blue, light blue, teal, orange, red. The strip above the
 tick labels comes from a fixed `linear-gradient` in `commentary.css` — navy
 through to pink, with no teal or orange in it. The two are never seen side by
@@ -22,7 +22,7 @@ side, so nobody noticed.
 
 Two more faults are visible in Commentary's legend:
 
-- A tick label is centred on its position, so the labels at 0% and 100% hang
+- A tick label is centered on its position, so the labels at 0% and 100% hang
   half of themselves off the strip.
 - Ticks are the powers of ten with the maximum added on the end, and on a log
   scale the maximum often lands almost on the last power of ten. On Halakhah
@@ -34,7 +34,7 @@ Two more faults are visible in Commentary's legend:
 ## The scale
 
 One value carries what an overlay knows about its numbers, and both the verse
-colours and the legend read it.
+colors and the legend read it.
 
 ```ts
 scale(low, high, transform, palette) -> {
@@ -54,14 +54,14 @@ export const LOG = (v: number) => Math.log(v + 1);
 export const SQRT = Math.sqrt;
 ```
 
-This reproduces both overlays exactly, which is why no verse changes colour:
+This reproduces both overlays exactly, which is why no verse changes color:
 
 - `scale(0, max, LOG, …)` gives `log(v+1) / log(max+1)`, which is what
   `scaleToGradient(…, { useLog: true })` computes today.
 - `scale(min, max, SQRT, …)` gives `(√v − √min) / (√max − √min)`, which is what
   `getVerseColorForWordCount` computes today.
 
-A verse with nothing to show — no links, no words — is dark grey. That is a
+A verse with nothing to show — no links, no words — is dark gray. That is a
 statement about absent data, not about the scale, so it stays in each overlay's
 `getVerseColor`.
 
@@ -74,7 +74,7 @@ calls it, and is deleted. Its tests move onto the scale.
 labels. It owns the four things each caller would otherwise decide for itself:
 
 - **The strip.** Sampled from the scale's palette, so it cannot drift from the
-  colours on the map.
+  colors on the map.
 - **Formatting.** `toLocaleString()`, so 1015 reads `1,015`. A caller that needs
   a unit passes its own formatter; Verse Length prints "36 words".
 - **The two end labels.** The first aligns from its left edge and the last from
@@ -110,5 +110,5 @@ formatter, the crowding rule in both directions, and the end-label classes. The
 scale is tested for the two mappings above and for the palette it hands back.
 
 Each overlay keeps a test that it feeds the axis the right ticks, and one that
-pins its verse colours, since the point of the scale's algebra is that those do
+pins its verse colors, since the point of the scale's algebra is that those do
 not move.

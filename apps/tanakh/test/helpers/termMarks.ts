@@ -1,11 +1,11 @@
 import { addTerm, heldColors, type SearchTerm } from '@torahmap/search';
 import { TERM_PALETTE } from '@torahmap/shell/overlays/palette.ts';
 
-/** The channels of a TERM_PALETTE colour as CSS writes them in a colour: `r, g, b`. */
+/** The channels of a TERM_PALETTE color as CSS writes them in a color: `r, g, b`. */
 export const channelsOf = (place: number): string =>
   TERM_PALETTE[place].map((channel) => Math.round(channel * 255)).join(', ');
 
-/** The place in TERM_PALETTE a search mark is coloured with, or -1 if it is none of them. */
+/** The place in TERM_PALETTE a search mark is colored with, or -1 if it is none of them. */
 export const placeOfMark = (mark: HTMLElement): number =>
   TERM_PALETTE.findIndex((_, place) => mark.style.background.includes(channelsOf(place)));
 
@@ -15,10 +15,10 @@ export const placesOf = (...words: string[]): number[] =>
     .reduce((terms, word) => addTerm(terms, word), [] as SearchTerm[])
     .map((term) => term.colorIndex);
 
-/** The colours the words get when searched for one after another. */
+/** The colors the words get when searched for one after another. */
 export const colorsOf = (...words: string[]) =>
   placesOf(...words).map((place) => TERM_PALETTE[place]);
 
-/** The colours the terms hold, in order. */
+/** The colors the terms hold, in order. */
 export const colorsHeld = (terms: SearchTerm[]) =>
   heldColors(terms).map((place) => TERM_PALETTE[place]);

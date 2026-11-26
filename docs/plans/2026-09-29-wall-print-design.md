@@ -36,13 +36,13 @@ be readable, not general.
   default: they must sit outside the bleed, on a larger page, and many
   large-format shops want bleed alone. The cream is printed as a tint over the
   whole sheet rather than left to the paper, so the files print the same on any
-  stock. Colours are sRGB values. Neither Chromium's PDF nor `pdftoppm`'s PNG
+  stock. Colors are sRGB values. Neither Chromium's PDF nor `pdftoppm`'s PNG
   embeds a profile saying so, but sRGB is what a shop assumes of an untagged
   file. An inkjet shop's own software
   converts them for its printer and paper, and a CMYK file would only narrow
   what that printer can reach. The one exception is a shop that demands
   PDF/X-1a, a CMYK-only standard; the file would be converted with that shop's
-  colour profile at the end.
+  color profile at the end.
 - **What is duplicated is small, and knowingly so.** The rule for which reading
   a verse shows (about 20 lines of `colorAt` in `src/overlays/haftarah.ts`),
   and the placing of book and section titles (`src/labels.ts`), are rewritten in
@@ -54,21 +54,21 @@ be readable, not general.
   name for Figma. Inter is close to it, and Figma has it built in. Both faces
   come from Google Fonts; the PDF embeds them.
 
-## Colour
+## Color
 
-Every colour is chosen for ink on paper, not taken from the screen. Printed on
-cream, the site's colour wheel glares in yellow and green and goes dark in blue
-and violet. Its colours are evenly spaced by the numbers, not by how bright
+Every color is chosen for ink on paper, not taken from the screen. Printed on
+cream, the site's color wheel glares in yellow and green and goes dark in blue
+and violet. Its colors are evenly spaced by the numbers, not by how bright
 they look.
 
 - **Paper:** `#f3ecdc`. **Titles:** `#3a2e24`, with `#7a6a58` for the quieter
   text.
 - **Haftarah print.** Verses in no reading are walnut brown: hue 31°, 28%
   saturation, lightness varying per verse between 34% and 47%. The variation
-  plays the part the site's random grey does. Readings keep the site's order
+  plays the part the site's random gray does. Readings keep the site's order
   around the wheel, starting from red at Bereshit. They are computed in OKLCH,
-  a colour space in which equal numbers look equally bright, at lightness 0.64
-  and chroma 0.16. Chroma is lowered, colour by colour, until the colour fits
+  a color space in which equal numbers look equally bright, at lightness 0.64
+  and chroma 0.16. Chroma is lowered, color by color, until the color fits
   sRGB. Hue starts at 29° and steps by 360/83 per reading.
 - **Search print.** Verses naming no one are a pale taupe: hue 37°, 13%
   saturation, lightness 66–73%. The names are dark inks at OKLCH lightness 0.5
@@ -89,7 +89,7 @@ they look.
 
 ![The search print's palette: whole sheet, then Genesis 22–32 and Samuel at print size](images/2026-09-29-wall-print/search-palette.png)
 
-The screen is only a guide to these colours. A proof print settles them (see
+The screen is only a guide to these colors. A proof print settles them (see
 *Proof sheet*).
 
 ## Layout
@@ -106,9 +106,9 @@ the one agreed.
   in two as the site does, and the second, holding chapters 101–150, becomes
   the third column. Afterwards the script renames the second part back to
   Psalms and shifts its chapter numbers. The site's layout is untouched.
-- **The logo sits where the site puts it:** centred in the empty corner left
+- **The logo sits where the site puts it:** centered in the empty corner left
   of the Torah, 929 map units wide, its top 28 units above the Torah's first
-  row. The artwork is `src/mapTitle.svg`, recoloured to the title inks, without
+  row. The artwork is `src/mapTitle.svg`, recolored to the title inks, without
   its drop shadow, its tagline in Inter semibold: regular Inter was the one
   light line on the sheet, and looked it.
 - **Book titles** sit right-aligned over each book, the Hebrew in David Libre
@@ -130,7 +130,7 @@ the one agreed.
 It follows the key in the site's panel, in more detail:
 
 - a title, הפטרות Haftarot, and two lines explaining that a portion and its
-  haftarah share a colour, that a verse in several readings is split, that brown
+  haftarah share a color, that a verse in several readings is split, that brown
   means no reading, and that the custom is Ashkenazi;
 - five columns, one per book of the Torah, listing each portion with its
   swatch, Hebrew name and English name;
@@ -148,7 +148,7 @@ In points on the trimmed sheet (2592 × 1728). The script that draws it is in
 
 | Element | Setting |
 | --- | --- |
-| Map | top 34 below the margin; width the sheet's less the margins and 50 for the section titles; centred |
+| Map | top 34 below the margin; width the sheet's less the margins and 50 for the section titles; centered |
 | Book title | Hebrew 15, English 13, both bold, 5 apart; baseline 9 above the book's first row; the Hebrew shrinks no smaller than 9 |
 | Section title | Hebrew 25.3, English 22, both bold, quieter ink; 8 right of the section, starting 26 above its first row |
 | Hairline | 0.75, quieter ink, 50 below the map, across the map's width |
@@ -166,16 +166,16 @@ The names alone: five rows of swatch, Hebrew and English, with no title, notes
 or counts, at twice the haftarah key's size (Hebrew 23, English 20 in regular
 weight). It sits with no rule in the empty ground under the lower-left corner
 of II Chronicles, the last book of the Writings. With no band to leave room
-for, the map is centred on the sheet.
+for, the map is centered on the sheet.
 
 ![The search print](images/2026-09-29-wall-print/search-sheet.png)
 
 ## Proof sheet
 
 Beside the two prints, the script writes a letter-size proof: two patches of
-the map at full print scale, one from each print, and a swatch of every colour
-used, each labelled with its value. It costs a few dollars at the shop that
-will make the prints, and it is the only reliable way to judge these colours
+the map at full print scale, one from each print, and a swatch of every color
+used, each labeled with its value. It costs a few dollars at the shop that
+will make the prints, and it is the only reliable way to judge these colors
 on the paper.
 
 ## Checks
@@ -192,4 +192,4 @@ on the paper.
 
 - **The search key's design,** above.
 - **The shop.** Nothing in the files depends on it, unless it demands PDF/X-1a
-  or supplies a colour profile worth previewing against.
+  or supplies a color profile worth previewing against.

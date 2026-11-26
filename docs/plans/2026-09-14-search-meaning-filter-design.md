@@ -3,7 +3,7 @@
 **Date:** 2026-09-14
 **Status:** Shipped — `src/search/terms.ts`, `src/search/dictionary.ts`.
 **Issues:** #94, and the "which default" half of #92
-**Supersedes:** the "colour belongs to the word; meaning is a filter inside it"
+**Supersedes:** the "color belongs to the word; meaning is a filter inside it"
 section of `2026-09-04-search-redesign-design.md`, and that document's
 assessment that filtering by meaning needs data we do not have
 
@@ -112,7 +112,7 @@ A form absent from the table falls back to the prefix stripping already in
 So the first word of Genesis resolves to one meaning and the reader sees no
 control at all. What per-word data would add is knowing which word *inside* a
 matched verse carries the chosen meaning, which matters for highlighting a
-result snippet and for nothing here. The map colours whole verses and never asks
+result snippet and for nothing here. The map colors whole verses and never asks
 the question.
 
 
@@ -172,7 +172,7 @@ interface SearchTerm {
 would read as "none".
 
 `colorIndex` is allocated from the unused entries of `SEARCH_COLORS` and held
-for the term's life, so removing a term does not recolour the map beneath the
+for the term's life, so removing a term does not recolor the map beneath the
 surviving ones.
 
 `parseSearchTerms()` survives as the URL deserializer. Positional addressing is
@@ -181,7 +181,7 @@ only live editing that needs identity.
 
 ### One row per term
 
-Each term is a row carrying its colour swatch, its input, its verse count and a
+Each term is a row carrying its color swatch, its input, its verse count and a
 button to remove it, with its meanings nested beneath. Every meaning carries its
 dictionary form, its part of speech, its gloss and its own verse count:
 
@@ -223,7 +223,7 @@ Likelihood order does bury a much larger meaning at row three or below for 75
 forms — אמרי shows "Amorite, 86" on top with "say, 4,336" at row three, and אלה
 puts אֱלֹהִים at 2,248 verses at row seven of ten, under "Elah" at 12. But the
 count sits on the row already, so a second signal restates what the first one
-says. Danyel's judgement on 2026-09-14: the only shape where a number genuinely
+says. Danyel's judgment on 2026-09-14: the only shape where a number genuinely
 hides is one like (1, 1, 1, 1, 1, 1, 1, 2033), and that is worth seeing in the
 real thing before styling for it.
 
@@ -256,7 +256,7 @@ disables. A term matching nothing by construction is a dead state with no
 reading.
 
 **Adding a word disables at five terms.** `SEARCH_COLORS` is indexed modulo its
-length, so a sixth term repeats the first one's colour and the map can no longer
+length, so a sixth term repeats the first one's color and the map can no longer
 say which word is which. The comma box made a sixth term awkward enough to be
 rare; a button makes it one click, so the limit now has to be stated rather than
 left to friction.
@@ -293,7 +293,7 @@ empty entry.
 reads as: burnt-offering only for עלה, everything for מלך.
 
 `m` is omitted entirely when no term is narrowed, and when the mode is not
-`root`. An unrecognised key is dropped, and if that leaves a term with nothing
+`root`. An unrecognized key is dropped, and if that leaves a term with nothing
 selected the term falls back to all its meanings and the legend says so.
 
 Following the decision in this document's questions, an absent `hm` means the
@@ -313,8 +313,8 @@ Against the seam, not the UI, wherever a pure function will do:
 
 On the term model:
 
-- Editing one term leaves another term's selection and colour untouched.
-- Removing a term does not change the colour of the terms that remain.
+- Editing one term leaves another term's selection and color untouched.
+- Removing a term does not change the color of the terms that remain.
 - The last checked meaning cannot be unchecked.
 
 On the URL, a round trip through `getUrlParams` and `applyUrlParams`, including
@@ -342,7 +342,7 @@ Recorded as they are made, for a cleanup pass before the PR leaves draft.
 - The count on a row is verses, not occurrences. Verses are the unit the map
   paints in.
 - Five terms is a cap, not an assumption. `SEARCH_COLORS` is indexed modulo its
-  length, so a sixth term repeats the first term's colour and the map stops
+  length, so a sixth term repeats the first term's color and the map stops
   saying which word is which. "Add a word" disables at five.
 
 **Open:**
@@ -355,4 +355,4 @@ Recorded as they are made, for a cleanup pass before the PR leaves draft.
 - The hit-counts-per-mode half of #92.
 - Whether `getRelatedRoots()`, removed in #71, is missed. Both the earlier
   design document and #94 assumed walking between related words mattered;
-  Danyel's judgement on 2026-09-14 was that it does not.
+  Danyel's judgment on 2026-09-14 was that it does not.

@@ -45,7 +45,7 @@ const dating: TalmudDating = {
 const item = (id: string) => ({ id, x: 0, y: 0, size: 6 }) as never;
 const base = () => [0.6, 0.5, 0.4] as [number, number, number];
 const overlay = datingOverlay(base);
-const colour = (id: string) =>
+const color = (id: string) =>
   overlay.colorsFor({
     items: [item(id)],
     settings: undefined as never,
@@ -70,10 +70,10 @@ describe('the dating overlay', () => {
     expect(box.textContent).not.toContain('?');
   });
 
-  it('gives each generation its own colour', () => {
-    const colours = ['A.2a.1', 'A.2a.2'].map(colour);
-    expect(colours[0]).not.toEqual(colours[1]);
-    expect(colours[0]).toEqual(generationColor('T5'));
+  it('gives each generation its own color', () => {
+    const colors = ['A.2a.1', 'A.2a.2'].map(color);
+    expect(colors[0]).not.toEqual(colors[1]);
+    expect(colors[0]).toEqual(generationColor('T5'));
   });
 
   const eras = [
@@ -99,20 +99,20 @@ describe('the dating overlay', () => {
     }
   });
 
-  it('makes an uncertain segment its era’s colour washed out', () => {
-    expect(colour('A.2a.3')).toEqual(uncertainColor(generationColor('A2')));
-    expect(colour('A.2a.3')).not.toEqual(generationColor('A2'));
+  it('makes an uncertain segment its era’s color washed out', () => {
+    expect(color('A.2a.3')).toEqual(uncertainColor(generationColor('A2')));
+    expect(color('A.2a.3')).not.toEqual(generationColor('A2'));
   });
 
-  it('tints a segment that names no rabbi faintly with its usual colour', () => {
-    const [r, g, b] = colour('A.2a.9');
+  it('tints a segment that names no rabbi faintly with its usual color', () => {
+    const [r, g, b] = color('A.2a.9');
     expect(r).toBeGreaterThan(MAP_BACKGROUND[0]);
     expect(r).toBeLessThan(base()[0]);
     expect(g).toBeLessThan(base()[1]);
     expect(b).toBeLessThan(base()[2]);
   });
 
-  it('colours many segments as it colours one', () => {
+  it('colors many segments as it colors one', () => {
     const ids = ['A.2a.1', 'A.2a.3', 'A.2a.9'];
     expect(
       overlay.colorsFor({
@@ -121,7 +121,7 @@ describe('the dating overlay', () => {
         data: { dating },
         focus: { hovered: null, pinned: null },
       }),
-    ).toEqual(ids.map(colour));
+    ).toEqual(ids.map(color));
   });
 
   it('gives its key one row for each generation that occurs, and one more', () => {
@@ -134,7 +134,7 @@ describe('the dating overlay', () => {
     expect(new Set(swatches).size).toBe(swatches.length);
   });
 
-  it('shows in its chip a group of colours for each era, the transition with the Tannaim', () => {
+  it('shows in its chip a group of colors for each era, the transition with the Tannaim', () => {
     const generations = ['Z1', 'Z4', 'T1', 'T4', 'T6', 'TA', 'A1', 'A3', 'A6'].map((code) => ({
       code,
 

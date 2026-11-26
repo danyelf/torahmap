@@ -32,7 +32,7 @@ describe('storyStopLine', () => {
     expect(stop.camera).toEqual({ x: 1, y: 2, zoom: 1 });
   });
 
-  it('centres a pinned verse, as the app does, at the zoom the URL holds', () => {
+  it('centers a pinned verse, as the app does, at the zoom the URL holds', () => {
     const line = storyStopLine('call', queryOf({ verse: 'Genesis.12.1', zoom: '2.5' }));
     expect(line).toBe(
       '<!-- stop: call | camera: Genesis.12.1 | zoom: 2.5 | pin: Genesis.12.1 -->\n\n',

@@ -109,7 +109,7 @@ export const textDatingOverlay: Overlay<TanakhIdentity, void, TextDatingData> = 
   id: 'text-dating',
   name: 'Text Dating',
   description:
-    'Colours each passage by the period scholars date it to, from before the monarchy ' +
+    'Colors each passage by the period scholars date it to, from before the monarchy ' +
     'through the Hellenistic era. A pinned verse shows the estimate it was given and ' +
     'the reasoning behind it.',
   credits: [

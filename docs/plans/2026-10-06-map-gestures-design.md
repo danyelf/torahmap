@@ -81,7 +81,7 @@ function createMapGestures<I extends MapItem>(options: {
 ### What stays in the shell
 
 - **The camera's rules**: turning a pan in pixels into map units, clamping
-  zoom, `zoomAtPoint`, cancelling a glide.
+  zoom, `zoomAtPoint`, canceling a glide.
 - **Hovered and pinned squares.** `hoveredVerse` moves out of `mouseState` into
   a plain shell variable beside `pinnedVerse`, since render, repaint, the
   popup and the Sefaria link all read it.
@@ -90,12 +90,12 @@ function createMapGestures<I extends MapItem>(options: {
 - The popup's close button and the dev-only Ctrl+Shift+C capture key, which
   are not gestures on the map.
 
-## Every current behaviour, and its intent
+## Every current behavior, and its intent
 
 | Today | Intent | Shell answers |
 | --- | --- | --- |
 | Wheel zooms around the cursor, one fixed step per event | `zoom`, then `moveEnded` | cancel glide, `zoomAt` |
-| Zoom buttons zoom around the canvas centre | `zoom`, then `moveEnded` | cancel glide, `zoomAt` |
+| Zoom buttons zoom around the canvas center | `zoom`, then `moveEnded` | cancel glide, `zoomAt` |
 | Two fingers pinch around their midpoint | `zoom` per move; `moveEnded` when a finger lifts, from its pointer release | `zoomAt` |
 | Pointer down lifts the menu, folds a phone's sheet, stops a glide | `grab` | `dispatch({ type: 'map-touched' })`, cancel glide |
 | Drag (mouse or one finger) pans; takes the map only if it moved | `pan`, only when non-zero; `moveEnded` on release | `takeOver`, move camera, render |
@@ -108,7 +108,7 @@ function createMapGestures<I extends MapItem>(options: {
 | Cursor after a drag ends | inside the module, via `clickable` | — |
 | Story scroll moves the map under a still mouse | `squareUnderMouse()`, called from the frame loop as now | set hover |
 | Escape closes the menu, else unpins, else closes the panel or story | `escape(inField)` | the same order, but never unpins from a field |
-| Arrow keys step the pinned verse and centre on it | `step` | step if pinned |
+| Arrow keys step the pinned verse and center on it | `step` | step if pinned |
 | `touchcancel` forgets every touch | inside the module | — |
 
 ## Fixed in passing

@@ -49,14 +49,14 @@ stages, each starting when the one before has settled:
   of its overlay, search's files if it searches, and the texts if it pins a
   verse. The bare address opens the tour's first stop, which needs nothing, so
   it goes straight to stage 3.
-- What this buys: on a bandwidth-bound connection a commentary link colours in
+- What this buys: on a bandwidth-bound connection a commentary link colors in
   the time of its own 0.32 MB rather than of 3.9 MB. For a search link it buys
   little, since search needs the texts.
 - The choice of files is a plain function, `filesFirst(view, overlays)`, tested
   on its own.
 
 `fetch`'s `priority` option would get much of this without ordering anything,
-but browsers differ in whether they honour it.
+but browsers differ in whether they honor it.
 
 ## When a file lands
 
@@ -112,7 +112,7 @@ Playwright suite drives.
 
 `pictureForStop` keeps a stop's picture only once every tool the stop shows has
 its data (step 1). A story scrolled before the data shows plain stops; the frame
-after a file lands picks up the new colours, mid-scroll by the next scroll frame
+after a file lands picks up the new colors, mid-scroll by the next scroll frame
 and at rest through the cases above.
 
 ## Failure of a download
@@ -173,7 +173,7 @@ focus, the address keeps a parameter, no page errors.
 | Overlay link | commentary | map drawn and plain; picker shows commentary; legend row says it is loading | map changed; legend row shows the overlay; address unchanged |
 | Search link | texts, dictionary | map drawn and plain; search box holds the word | map changed; results listed; address unchanged |
 | Narrowed search link | dictionary | address still has `m` | exactly the linked meaning checked; address unchanged |
-| Pinned verse | texts | popup says it is loading; map centred on the verse | popup open for the verse |
+| Pinned verse | texts | popup says it is loading; map centered on the verse | popup open for the verse |
 | Overlay picked early | commentary | pick it in the panel; map stays plain | map changed; picker unchanged; address has the overlay |
 | Search typed early | texts, dictionary | type a word; it keeps focus | results listed; box keeps value and focus; address has the search |
 | Story scrolled early | texts, dictionary | scroll to a stop with a search | map changed; search legend row shown |
@@ -258,8 +258,8 @@ Decisions made while implementing step 3, newest last.
   250 ms; `FRONT_FADE` becomes `MAP_FADE`, and `cancelFrontFade` `cancelFade`.
 - **2026-10-01 (plan)** An ease is restarted only while it has time left; at
   its last frame the story paints the stop with the new data anyway.
-- **2026-10-01 (plan)** "Plain" in the suite means fewer coloured (non-grey)
-  canvas pixels than a small floor; the plain map is grey.
+- **2026-10-01 (plan)** "Plain" in the suite means fewer colored (non-gray)
+  canvas pixels than a small floor; the plain map is gray.
 - **2026-10-01 (plan)** `loadFiles` loses its per-file callback;
   `downloadFiles(paths, { landed, failed })` reports each file as it settles.
 - **2026-10-01 (plan)** The layout and loading suites share the software-WebGL
@@ -272,7 +272,7 @@ Decisions made while implementing step 3, newest last.
 - **2026-10-01 (Task 1 review)** The overlay-and-search case waits for
   search to be in, with the overlay row still loading, before it takes the
   picture to compare against; otherwise search landing alone would change the
-  map and pass the case with commentary never coloured.
+  map and pass the case with commentary never colored.
 - **2026-10-01 (Task 4)** The downloads test takes `HAFTARAH_FILES` from
   `src/overlays/haftarah/readings.ts`, where it lives; `haftarah.ts` imports
   it without exporting it. The `stopTools` test helper defaults `overlay` to
@@ -285,7 +285,7 @@ Decisions made while implementing step 3, newest last.
   landing: measured with the box focused before the shot and not after, and
   focus kept across the landing when no shot was taken. The app's only focus
   listener asks for the typing frame the box already put it in.
-  `COLOURED_FLOOR` needed no change: every case passes at 100.
+  `COLORED_FLOOR` needed no change: every case passes at 100.
 - **2026-10-01 (Task 7 review, Danyel's intent)** A file landing during a
   timed story ease re-aims the ease at the picture with the data
   (`driverAfterLanding`), keeping its camera, start and length. Starting the ease again

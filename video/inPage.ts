@@ -14,8 +14,8 @@ export function restingScrollTops(doc: Document = document): Record<string, numb
   const max = content.scrollHeight - content.clientHeight;
   const tops: Record<string, number> = {};
   for (const el of content.querySelectorAll<HTMLElement>('.story-stop')) {
-    const centre = el.offsetTop + el.offsetHeight / 2 - content.clientHeight / 2;
-    tops[el.dataset.stopId ?? ''] = Math.max(0, Math.min(max, centre));
+    const center = el.offsetTop + el.offsetHeight / 2 - content.clientHeight / 2;
+    tops[el.dataset.stopId ?? ''] = Math.max(0, Math.min(max, center));
   }
   return tops;
 }

@@ -131,14 +131,14 @@ const VERTEX_SHADER = `#version 300 es
     vec4 rect = a_rect + vec4(nudge - grow, nudge + grow);
     rect.z = max(rect.z, a_rect.z + nudge.x + ${SQUARE_GAP.toFixed(4)} * widen);
     rect.zw = max(rect.zw, rect.xy + 1.0 / u_zoom);
-    // A standout smaller than u_standoutSide is a glowing dot around its own centre.
+    // A standout smaller than u_standoutSide is a glowing dot around its own center.
     v_glow = 0.0;
     if (side + 2.0 * grow * u_zoom < u_standoutSide) {
-      vec2 centre = (a_rect.xy + a_rect.zw) * 0.5 + nudge;
+      vec2 center = (a_rect.xy + a_rect.zw) * 0.5 + nudge;
       // Its core is never smaller than the square itself.
       float core = max(u_standoutSide * ${(STANDOUT_GLOW.CORE_PX / STANDOUT_MIN_PX).toFixed(4)}, side);
       float halfSide = core * ${(STANDOUT_GLOW.SIDE_PX / STANDOUT_GLOW.CORE_PX / 2).toFixed(4)} / u_zoom;
-      rect = mix(rect, vec4(centre - halfSide, centre + halfSide), standsOut);
+      rect = mix(rect, vec4(center - halfSide, center + halfSide), standsOut);
       v_glow = standsOut;
     }
     // A standout with a halo, once it is big enough to be drawn as itself, is
@@ -160,7 +160,7 @@ const VERTEX_SHADER = `#version 300 es
     v_nextRing = a_nextRing;
     v_counts = ivec4(a_shape.x, a_shape.z, a_nextShape.x, a_nextShape.z);
     v_hover = gl_InstanceID == u_hovered
-      ? 1 + (ivec2(a_shape.w, a_nextShape.w) & ${SHAPE_FLAGS.UNCOLOURED})
+      ? 1 + (ivec2(a_shape.w, a_nextShape.w) & ${SHAPE_FLAGS.UNCOLORED})
       : ivec2(0);
     v_side = holes ? (rect.zw - rect.xy) * u_zoom : vec2(0.0);
     v_round = holes ? isRound(a_shape) : 0.0;
@@ -221,8 +221,8 @@ const FRAGMENT_SHADER = `#version 300 es
 
   // Several colors split the square into bands running corner to corner, one
   // per color. A diagonal cut keeps a two-color square from reading as two
-  // neighbouring squares, as a vertical split does. Each band slides a little
-  // along the cut, centred on the square, so the bands read as separate
+  // neighboring squares, as a vertical split does. Each band slides a little
+  // along the cut, centered on the square, so the bands read as separate
   // pieces. hole: 0 anywhere, 1 outside the hole, 2 inside it. Alpha 0 where
   // no band covers p.
   vec4 stripes(highp vec4 colors, int count, vec2 p, int hole) {
@@ -240,8 +240,8 @@ const FRAGMENT_SHADER = `#version 300 es
     return vec4(0.0);
   }
 
-  // A fill under the hover: 1 brightens it, 2 (an uncoloured square) paints it
-  // the highlight colour, 0 leaves it.
+  // A fill under the hover: 1 brightens it, 2 (an uncolored square) paints it
+  // the highlight color, 0 leaves it.
   vec4 lit(vec4 fill, int hover) {
     if (hover == 0 || fill.a == 0.0) return fill;
     if (hover == 2) return vec4(${glslVec3(HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR)}, 1.0);
@@ -306,7 +306,7 @@ const OUTLINE_VERTEX_SHADER = `#version 300 es
 const OUTLINE_FRAGMENT_SHADER = `#version 300 es
   precision mediump float;
   uniform vec3 u_color;
-  // A round square's centre and its band's inner and outer radius; an outer radius of 0 for a square.
+  // A round square's center and its band's inner and outer radius; an outer radius of 0 for a square.
   uniform vec4 u_disc;
   in vec2 v_world;
   out vec4 fragColor;

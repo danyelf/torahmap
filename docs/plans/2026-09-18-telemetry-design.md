@@ -80,9 +80,9 @@ names it in `page_view`, so it does not look like one that scrolled there.
 `word_menu_open` records whether the word limit was reached, since a full
 palette refuses the choice.
 
-The centre book in `view_settled` is the book under the middle of the screen,
+The center book in `view_settled` is the book under the middle of the screen,
 or the nearest one when the middle falls between books. At far zoom most of
-the Tanakh is on screen and the centre book says little; analysis should group
+the Tanakh is on screen and the center book says little; analysis should group
 by zoom band.
 
 ## Reading the data

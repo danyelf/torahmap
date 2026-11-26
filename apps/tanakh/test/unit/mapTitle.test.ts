@@ -3,7 +3,7 @@ import { createMapTitle, updateMapTitlePosition, type MapTitle } from '../../src
 import { createVerse } from '../helpers/index';
 
 // A Torah row starting at x=1000 above a Prophets row reaching back to x=0:
-// the empty corner is 0..1000 wide, so the title centres on x=500.
+// the empty corner is 0..1000 wide, so the title centers on x=500.
 const VERSES = [
   createVerse({ book: 'Genesis', x: 1400, y: 0 }),
   createVerse({ book: 'Deuteronomy', x: 1000, y: 40 }),
@@ -42,8 +42,8 @@ describe('mapTitle', () => {
       expect(lines).toEqual(['מפת התנ״ך', 'Torahmap', 'A visual concordance to the Hebrew Bible']);
     });
 
-    it('centres on the gap between the map’s left edge and the Torah’s', () => {
-      expect(title.centreX).toBe(500);
+    it('centers on the gap between the map’s left edge and the Torah’s', () => {
+      expect(title.centerX).toBe(500);
     });
 
     it('sits above the Torah', () => {
@@ -53,7 +53,7 @@ describe('mapTitle', () => {
     it('survives an empty layout', () => {
       const empty = createMapTitle([], container, isTorah);
 
-      expect(empty.centreX).toBe(0);
+      expect(empty.centerX).toBe(0);
       expect(Number.isFinite(empty.topY)).toBe(true);
     });
   });

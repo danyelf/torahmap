@@ -63,7 +63,7 @@ const list = (cs: typeof chapters) => cs.map((c) => `${c.name} (${percent(c.mean
 const sorted = [...ys].sort((a, b) => a - b);
 const at = (q: number) => percent(percentile(sorted, q));
 console.log(`Verses scored: ${ys.length}`);
-console.log(`Colour scale from ${at(LOW_PERCENTILE)} to ${at(HIGH_PERCENTILE)}; median ${at(0.5)}`);
+console.log(`Color scale from ${at(LOW_PERCENTILE)} to ${at(HIGH_PERCENTILE)}; median ${at(0.5)}`);
 console.log(`Correlation with verse length: ${correlation(xs, ys).toFixed(2)}`);
 console.log(`Highest chapters: ${list(chapters.slice(0, 20))}`);
 console.log(`Lowest chapters: ${list(chapters.slice(-12).reverse())}`);

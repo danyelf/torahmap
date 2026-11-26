@@ -44,43 +44,43 @@ const base = () => [0.6, 0.5, 0.4] as [number, number, number];
 const link: { open?: (id: string) => void } = {};
 const overlay = rabbisOverlay(base, link);
 const picking = (...picked: string[]): PickSettings => ({ picked });
-const colours = (settings: PickSettings, ...ids: string[]) =>
+const colors = (settings: PickSettings, ...ids: string[]) =>
   overlay.colorsFor({
     items: ids.map(item),
     settings,
     data,
     focus: { hovered: null, pinned: null },
   });
-const unlitColour = colours(picking('lakish'), 'A.2a.4')[0];
+const unlitColor = colors(picking('lakish'), 'A.2a.4')[0];
 
-describe('the rabbis overlay colours', () => {
+describe('the rabbis overlay colors', () => {
   it('shows the plain map while nothing is picked', () => {
-    expect(colours(picking(), 'A.2a.1', 'A.2a.4')).toEqual([base(), base()]);
+    expect(colors(picking(), 'A.2a.1', 'A.2a.4')).toEqual([base(), base()]);
   });
 
-  it('keeps a rabbi in his colour when an earlier pick is removed', () => {
-    const [lit] = colours(picking('', 'lakish'), 'A.2a.2');
+  it('keeps a rabbi in his color when an earlier pick is removed', () => {
+    const [lit] = colors(picking('', 'lakish'), 'A.2a.2');
     expect(lit).toEqual(pickColors([1])[0]);
   });
 
   it('lights the passages naming a picked rabbi and dims the rest', () => {
-    const [lit, other, unlit] = colours(picking('lakish'), 'A.2a.2', 'A.2a.3', 'A.2a.4');
+    const [lit, other, unlit] = colors(picking('lakish'), 'A.2a.2', 'A.2a.3', 'A.2a.4');
     expect(lit).toEqual(pickColors([0])[0]);
-    expect(other).toEqual(unlitColour);
-    expect(unlit).toEqual(unlitColour);
-    expect(unlitColour).not.toEqual(base());
+    expect(other).toEqual(unlitColor);
+    expect(unlit).toEqual(unlitColor);
+    expect(unlitColor).not.toEqual(base());
   });
 
-  it('splits a passage naming two picked rabbis between their colours', () => {
-    const [both] = colours(picking('lakish', 'yochanan'), 'A.2a.1');
+  it('splits a passage naming two picked rabbis between their colors', () => {
+    const [both] = colors(picking('lakish', 'yochanan'), 'A.2a.1');
     const expected = pickColors([0, 1]);
     expect(both).toEqual(expected);
     expect(expected[0]).not.toEqual(expected[1]);
   });
 
   it('fades a passage where a name only might be the rabbi', () => {
-    const [sure] = colours(picking('gamliel-a', 'lakish'), 'A.2a.2');
-    const [maybe] = colours(picking('gamliel-a'), 'A.2a.3');
+    const [sure] = colors(picking('gamliel-a', 'lakish'), 'A.2a.2');
+    const [maybe] = colors(picking('gamliel-a'), 'A.2a.3');
     const solid = pickColors([0])[0];
     expect(sure).toEqual(pickColors([0, 1])[1]);
     expect(maybe).toEqual(fadeTo(solid, 0.8));
@@ -97,7 +97,7 @@ describe('the rabbis overlay colours', () => {
   });
 
   it('ignores a pick the data does not hold', () => {
-    expect(colours(picking('nobody'), 'A.2a.1')).toEqual([base()]);
+    expect(colors(picking('nobody'), 'A.2a.1')).toEqual([base()]);
   });
 });
 
@@ -129,7 +129,7 @@ describe('the pinned passage', () => {
     link.open = undefined;
   });
 
-  it('shows the colour of a picked rabbi beside his name', () => {
+  it('shows the color of a picked rabbi beside his name', () => {
     const box = info('A.2a.1');
     expect(box.querySelectorAll('.picked .swatch')).toHaveLength(1);
     expect(box.querySelectorAll('.rabbi-entry')).toHaveLength(2);
@@ -284,7 +284,7 @@ describe('the finder', () => {
     expect(finder.changes).toEqual([picking('gamliel-a')]);
   });
 
-  it('shows a picked rabbi with his colour and unpicks him', () => {
+  it('shows a picked rabbi with his color and unpicks him', () => {
     const finder = open(picking('lakish'));
     expect(finder.container.querySelectorAll('.pick-picked-row .swatch')).toHaveLength(1);
     finder.container.querySelector<HTMLButtonElement>('.pick-picked-row button')!.click();
@@ -357,7 +357,7 @@ describe('the shipped rabbis', () => {
     }
   });
 
-  it('leaves the undated out of the generations Dating colours', () => {
+  it('leaves the undated out of the generations Dating colors', () => {
     expect(shipped.generations.map((g) => g.code)).not.toContain(UNDATED);
     expect(shipped.rabbis.some((r) => r.gen === UNDATED)).toBe(true);
   });

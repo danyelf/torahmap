@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildItemGeometry,
   buildOutlineGeometry,
-  centreForFocus,
+  centerForFocus,
   findExactHit,
   findNearestItem,
   ITEM_OFFSETS,
@@ -32,15 +32,15 @@ describe('an item wider than tall', () => {
     expect(findExactHit([tile], 112, 203)).toBeNull();
   });
 
-  it('has its centre in the middle of its width', () => {
+  it('has its center in the middle of its width', () => {
     const other = createItem({ id: 'other', x: 118, y: 200, size: 6 });
     // x = 113 is 7 from the tile's middle (106) and 8 from other's (121); it
-    // would be 10 from the tile's centre were the tile square (103).
+    // would be 10 from the tile's center were the tile square (103).
     expect(findNearestItem([tile, other], 113, 203)?.id).toBe('tile');
   });
 
-  it('is centred on screen at the middle of its width', () => {
-    expect(centreForFocus(tile, 1, middle, viewport)).toEqual({ x: 106, y: 203 });
+  it('is centered on screen at the middle of its width', () => {
+    expect(centerForFocus(tile, 1, middle, viewport)).toEqual({ x: 106, y: 203 });
   });
 
   it('is outlined across its whole width', () => {
@@ -49,10 +49,10 @@ describe('an item wider than tall', () => {
 });
 
 describe('an item with no width', () => {
-  it('is drawn, hit and centred as a square', () => {
+  it('is drawn, hit and centered as a square', () => {
     expect(rect(square)).toEqual([100, 200, 100 + 6 - SQUARE_GAP, 200 + 6 - SQUARE_GAP]);
     expect(findExactHit([square], 105, 203)?.id).toBe('square');
     expect(findExactHit([square], 106, 203)).toBeNull();
-    expect(centreForFocus(square, 1, middle, viewport)).toEqual({ x: 103, y: 203 });
+    expect(centerForFocus(square, 1, middle, viewport)).toEqual({ x: 103, y: 203 });
   });
 });

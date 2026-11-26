@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # status — every open PR with its review freshness, whether it has merge conflicts
-# and its branch preview; then the issues labelled in-progress, and the worktrees whose
+# and its branch preview; then the issues labeled in-progress, and the worktrees whose
 # branch has no open PR.
 
 set -euo pipefail
@@ -20,7 +20,7 @@ jq -r '.[] | [.number, .title + (if .isDraft then " (draft)" else "" end), ({MER
   done
 
 echo
-echo "Issues labelled in-progress"
+echo "Issues labeled in-progress"
 gh issue list --label in-progress --json number,title --jq '.[] | "#\(.number) \(.title)"'
 
 echo

@@ -19,7 +19,7 @@ export interface TermMatcher {
 
 const MARK_ALPHA = 0.4;
 
-/** A term's mark, in the term's colour. Both highlighters in this file go through here. */
+/** A term's mark, in the term's color. Both highlighters in this file go through here. */
 export function mark(text: string, colorIndex: number): HTMLElement {
   const element = document.createElement('mark');
   element.style.background = colorToCssAlpha(TERM_PALETTE[colorIndex], MARK_ALPHA);

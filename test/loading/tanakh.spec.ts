@@ -209,7 +209,7 @@ test.describe('the drawn map', () => {
     expect(errors).toEqual([]);
   });
 
-  test('an overlay link draws a plain map, says it is loading, and colours in when its file lands', async ({
+  test('an overlay link draws a plain map, says it is loading, and colors in when its file lands', async ({
     page,
   }) => {
     const { release, errors } = await open(page, 'overlay=commentary', [COMMENTARY]);
@@ -252,7 +252,7 @@ test.describe('the drawn map', () => {
     expect(errors).toEqual([]);
   });
 
-  test('a pinned verse is centred at once, and its popup fills in when the texts land', async ({
+  test('a pinned verse is centered at once, and its popup fills in when the texts land', async ({
     page,
   }) => {
     const link = 'verse=Genesis.12.1';
@@ -260,7 +260,7 @@ test.describe('the drawn map', () => {
     await expect(page.locator('#popup.visible .load-notice[data-state="loading"]')).toBeVisible();
     await expect(page.locator('#popup .popup-word')).toHaveCount(0);
 
-    // Centred where it is with every file in: the same plain map, the same pin.
+    // Centered where it is with every file in: the same plain map, the same pin.
     const settled = await page.context().newPage();
     await settled.goto(`/?${link}`);
     await allLoaded(settled);
@@ -274,7 +274,7 @@ test.describe('the drawn map', () => {
     expect(errors).toEqual([]);
   });
 
-  test('an overlay picked before its file lands colours in when it does', async ({ page }) => {
+  test('an overlay picked before its file lands colors in when it does', async ({ page }) => {
     const { release, errors } = await open(page, 'story=tour&stop=intro', [COMMENTARY]);
     await page.keyboard.press('Escape');
     await viaMenu(page, 'overlay');

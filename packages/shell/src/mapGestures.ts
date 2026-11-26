@@ -103,7 +103,7 @@ export function createMapGestures<I extends MapItem>(options: {
   const mac = options.mac ?? onMac(navigator.platform);
 
   const touches = createTouchState();
-  // Where a press went down and when, until it is released or cancelled.
+  // Where a press went down and when, until it is released or canceled.
   let press: (ScreenPoint & { time: number }) | null = null;
   // Where a drag last reported, while one is under way.
   let dragFrom: ScreenPoint | null = null;
@@ -158,9 +158,9 @@ export function createMapGestures<I extends MapItem>(options: {
       }
       if (touches.activeTouches.size < 2) return;
       const distance = getPinchDistance(touches);
-      const centre = getPinchCenter(touches);
-      if (distance && centre && touches.lastPinchDistance) {
-        intents.zoom(distance / touches.lastPinchDistance, centre);
+      const center = getPinchCenter(touches);
+      if (distance && center && touches.lastPinchDistance) {
+        intents.zoom(distance / touches.lastPinchDistance, center);
       }
       touches.lastPinchDistance = distance;
     },

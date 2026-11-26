@@ -144,7 +144,7 @@ export function sameMeaning(meaning: Meaning, keys: readonly string[]): boolean 
  * "Likeliest" means how often that spelling is read as that word, which is not
  * the same as `verseCount` — that counts the word across all of its spellings.
  * The two disagree for about a third of ambiguous forms, so a list ordered one
- * way and labelled the other can look mis-sorted. It is not.
+ * way and labeled the other can look mis-sorted. It is not.
  *
  * Kept per dictionary and form, so a panel drawing a term's rows is handed the
  * same objects every time. Callers must not change them.
@@ -368,7 +368,7 @@ function withoutKetiv(hebrew: string): string {
  * at its position; where it does not, the file says which words each shown
  * word is, lined up by letter. Null rather than a partial answer when the count
  * disagrees anyway, because a position one word out labels every word after it
- * with its neighbour's dictionary entry — wrong, and plausible enough to go
+ * with its neighbor's dictionary entry — wrong, and plausible enough to go
  * unnoticed.
  */
 function namedWords(

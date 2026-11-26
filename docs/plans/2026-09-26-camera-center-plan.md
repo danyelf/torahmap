@@ -1,29 +1,29 @@
-# The Camera Names the Centre — Implementation Plan
+# The Camera Names the Center — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** `camera.x`, `camera.y` become the map point at the centre of the canvas, so links name what is in the middle of the screen and glides keep the middle on a straight path, with zoom blended by its logarithm.
+**Goal:** `camera.x`, `camera.y` become the map point at the center of the canvas, so links name what is in the middle of the screen and glides keep the middle on a straight path, with zoom blended by its logarithm.
 
 **Architecture:** `src/camera.ts` owns every conversion between map and screen. Everything that positions by the old top-left offset (the shaders, the book labels, the map title) gets that offset from one function, `viewOffset`, and needs no other change. The Talmud page changes only enough to compile.
 
 **Tech Stack:** TypeScript, Vite, WebGL 2, Vitest.
 
-**Spec:** `docs/plans/2026-09-26-camera-centre.md`
+**Spec:** `docs/plans/2026-09-26-camera-center.md`
 
 ## Global Constraints
 
-- `Camera` stays `{ x, y, zoom }`; `x`, `y` are the map point at the centre of the canvas, in map units.
-- The canvas centre on every device, phone included. The canvas is `#canvas`, whose CSS size is `canvas.clientWidth × canvas.clientHeight` (desktop: window width minus the 380 px panel).
+- `Camera` stays `{ x, y, zoom }`; `x`, `y` are the map point at the center of the canvas, in map units.
+- The canvas center on every device, phone included. The canvas is `#canvas`, whose CSS size is `canvas.clientWidth × canvas.clientHeight` (desktop: window width minus the 380 px panel).
 - URL keys stay `x`, `y`, `zoom`. No reading of old links.
-- `createCamera` keeps today's opening placement exactly: Genesis 1:1's right edge at screen x `windowWidth − 320`, the map's top at screen y 40. (On desktop this sits 60 px under the 380 px panel. That is existing behaviour, reported to Danyel, not fixed here.)
+- `createCamera` keeps today's opening placement exactly: Genesis 1:1's right edge at screen x `windowWidth − 320`, the map's top at screen y 40. (On desktop this sits 60 px under the 380 px panel. That is existing behavior, reported to Danyel, not fixed here.)
 - Comments in the present tense; no ticket or stage references in code (AGENTS.md).
 - `npm test`, the typecheck and Prettier run in the pre-commit hook; every commit must pass it.
 
 ## Review Focus
 
-1. **Canvas narrower than the window (desktop).** Hover and click must use the canvas size, not the window's; with the centre model a wrong width shifts every hit by half the panel. Pinned by the hit-detection test in Task 2 that uses an 800-wide viewport.
-2. **Phone focus point.** A story verse lands at the raised focus (below centre), not at the centre. Pinned by the `centreForFocus` off-centre test in Task 1.
-3. **Zoom buttons.** Zooming about the canvas centre leaves `x`, `y` unchanged. Pinned in Task 1.
+1. **Canvas narrower than the window (desktop).** Hover and click must use the canvas size, not the window's; with the center model a wrong width shifts every hit by half the panel. Pinned by the hit-detection test in Task 2 that uses an 800-wide viewport.
+2. **Phone focus point.** A story verse lands at the raised focus (below center), not at the center. Pinned by the `centerForFocus` off-center test in Task 1.
+3. **Zoom buttons.** Zooming about the canvas center leaves `x`, `y` unchanged. Pinned in Task 1.
 4. **Resize.** The same camera at a new canvas size keeps the same map point in the middle. Pinned by the `viewOffset` test in Task 1; checked by eye in Task 4.
 5. **Pinned verse on load.** A link with both a verse and a zoom puts the verse at the focus at that zoom. Pinned by the `view-state-restore` test in Task 2.
 
@@ -44,7 +44,7 @@ Additive: new functions beside the old ones, so everything still compiles and ru
   - `screenToWorld(p: ScreenPoint, camera: Camera, viewport: Viewport): { x: number; y: number }`
   - `viewOffset(camera: Camera, viewport: Viewport): { x: number; y: number }` — what the shaders and labels call `pan`
   - `zoomAtPoint(camera: Camera, newZoom: number, point: ScreenPoint, viewport: Viewport): Camera`
-  - `centreForFocus(item: { x: number; y: number; size: number }, zoom: number, focus: ScreenPoint, viewport: Viewport): { x: number; y: number }`
+  - `centerForFocus(item: { x: number; y: number; size: number }, zoom: number, focus: ScreenPoint, viewport: Viewport): { x: number; y: number }`
 
 - [ ] **Step 1: Write the failing tests** — append to `src/__tests__/unit/camera.test.ts`, and add the new names to its import from `'../../camera'`:
 
@@ -92,22 +92,22 @@ describe('zoomAtPoint', () => {
     expect(after.y).toBeCloseTo(before.y, 10);
   });
 
-  it('leaves the centre alone when zooming about the middle', () => {
+  it('leaves the center alone when zooming about the middle', () => {
     const zoomed = zoomAtPoint(camera, 0.4, { x: 400, y: 300 }, view);
     expect(zoomed.x).toBeCloseTo(1000, 10);
     expect(zoomed.y).toBeCloseTo(400, 10);
   });
 });
 
-describe('centreForFocus', () => {
+describe('centerForFocus', () => {
   const view = { width: 800, height: 600 };
   const item = { x: 400, y: 300, size: 6 };
 
   it('puts the item at a focus away from the middle', () => {
-    // The phone centres verses above the middle, clear of the story sheet.
+    // The phone centers verses above the middle, clear of the story sheet.
     const focus = { x: 400, y: 228 };
-    const centre = centreForFocus(item, 2.5, focus, view);
-    const screen = worldToScreen({ x: 403, y: 303 }, { ...centre, zoom: 2.5 }, view);
+    const center = centerForFocus(item, 2.5, focus, view);
+    const screen = worldToScreen({ x: 403, y: 303 }, { ...center, zoom: 2.5 }, view);
     expect(screen.x).toBeCloseTo(focus.x, 10);
     expect(screen.y).toBeCloseTo(focus.y, 10);
   });
@@ -177,12 +177,12 @@ export function zoomAtPoint(
 }
 
 /**
- * The centre that puts an item at `focus`.
+ * The center that puts an item at `focus`.
  *
  * Takes the zoom rather than reading it, because moving and zooming at once
  * has to aim at where the item will be, not where it is now.
  */
-export function centreForFocus(
+export function centerForFocus(
   item: { x: number; y: number; size: number },
   zoom: number,
   focus: ScreenPoint,
@@ -204,12 +204,12 @@ Expected: PASS.
 
 ```bash
 git add src/camera.ts src/__tests__/unit/camera.test.ts
-git commit -m "Add map-to-screen conversions for a camera that names the centre"
+git commit -m "Add map-to-screen conversions for a camera that names the center"
 ```
 
 ---
 
-### Task 2: Switch the app to the centre
+### Task 2: Switch the app to the center
 
 One commit, because the meaning of `camera.x`/`camera.y` changes for every reader at once; a half-switched tree compiles but draws in the wrong place.
 
@@ -224,7 +224,7 @@ One commit, because the meaning of `camera.x`/`camera.y` changes for every reade
 - Consumes: everything Task 1 produced.
 - Produces:
   - `createCamera(viewport: Viewport, bounds: Bounds, windowWidth: number = viewport.width): Camera`
-  - `cameraToFit(box: WorldBox, width: number, height: number, zoom?: number): Camera` — same signature, returns a centre
+  - `cameraToFit(box: WorldBox, width: number, height: number, zoom?: number): Camera` — same signature, returns a center
   - `viewFocusedOn(item, currentZoom: number, minZoom: number, focus: ScreenPoint, viewport: Viewport): Camera`
   - `findItemAtPoint<T>(verses: SpatialItem<T>[], camera: Camera, viewport: Viewport, screenX: number, screenY: number): SpatialItem<T> | null`
   - `updateMapTitlePosition(title: MapTitle, offset: { x: number; y: number }, zoom: number): void`
@@ -272,7 +272,7 @@ and pass the same width and height each test gives `cameraToFit`, e.g. `onScreen
 `camera-glide.test.ts`:
 - Add `const VIEW = { width: 800, height: 600 };`.
 - `screenPosition` becomes `worldToScreen({ x: item.x + item.size / 2, y: 0 }, camera, VIEW).x`.
-- The two `panToFocus` tests call `centreForFocus(VERSE, zoom, FOCUS, VIEW)`; rename the block `describe('centreForFocus', …)`.
+- The two `panToFocus` tests call `centerForFocus(VERSE, zoom, FOCUS, VIEW)`; rename the block `describe('centerForFocus', …)`.
 - Every `viewFocusedOn(…, FOCUS)` gains `, VIEW`.
 - Add, inside `describe('animateCameraTo', …)`:
 
@@ -357,12 +357,12 @@ Delete `panForZoom` and `panToFocus` with their comments. In `cameraToFit` repla
 ```ts
   return {
     x: box.minX + boxWidth / 2,
-    y: box.minY + boxHeight / 2 - (centreY - height / 2) / z,
+    y: box.minY + boxHeight / 2 - (centerY - height / 2) / z,
     zoom: z,
   };
 ```
 
-`viewFocusedOn` gains `viewport: Viewport` as its last parameter and returns `{ ...centreForFocus(item, zoom, focus, viewport), zoom }`. Move the `Viewport` interface above `createCamera` so it is declared before use.
+`viewFocusedOn` gains `viewport: Viewport` as its last parameter and returns `{ ...centerForFocus(item, zoom, focus, viewport), zoom }`. Move the `Viewport` interface above `createCamera` so it is declared before use.
 
 - [ ] **Step 4: `src/hitDetection.ts`**
 
@@ -402,9 +402,9 @@ In `renderOutline`: `const offset = offsetFor(canvas, dpr, camera);` and `gl.uni
 
 - [ ] **Step 6: `src/viewState.ts` and `src/scrollytelling/storyPanel.ts`**
 
-`viewState.ts`: import `centreForFocus, type Camera, type ScreenPoint, type Viewport`; `cameraForView` gains `viewport: Viewport` and returns `{ ...centreForFocus(verse, camera.zoom, focus, viewport), zoom: camera.zoom }`.
+`viewState.ts`: import `centerForFocus, type Camera, type ScreenPoint, type Viewport`; `cameraForView` gains `viewport: Viewport` and returns `{ ...centerForFocus(verse, camera.zoom, focus, viewport), zoom: camera.zoom }`.
 
-`storyPanel.ts`: import `centreForFocus` in place of `panToFocus`. `cameraForVerse` takes `mapSize: MapSize` last and returns `{ ...centreForFocus(verse, zoom, focus, mapSize), zoom }`; its comment becomes `/** The camera that puts a verse at \`focus\`. */`. In `resolveStops`, both verse branches require `mapSize` alongside `focus` (`verseLayout && focus && mapSize`, `stop.verse && verses && focus && mapSize`) and pass it on.
+`storyPanel.ts`: import `centerForFocus` in place of `panToFocus`. `cameraForVerse` takes `mapSize: MapSize` last and returns `{ ...centerForFocus(verse, zoom, focus, mapSize), zoom }`; its comment becomes `/** The camera that puts a verse at \`focus\`. */`. In `resolveStops`, both verse branches require `mapSize` alongside `focus` (`verseLayout && focus && mapSize`, `stop.verse && verses && focus && mapSize`) and pass it on.
 
 - [ ] **Step 7: `src/main.ts`**
 
@@ -418,15 +418,15 @@ function mapViewport(): Viewport {
 
 Then, by line in today's file:
 - 317: `const camera = createCamera(mapViewport(), bounds, window.innerWidth);`
-- 493 `centerOnVerse`: `Object.assign(camera, centreForFocus(verse, camera.zoom, mapFocus(), mapViewport()));`
+- 493 `centerOnVerse`: `Object.assign(camera, centerForFocus(verse, camera.zoom, mapFocus(), mapViewport()));`
 - 518: `viewFocusedOn(verse, camera.zoom, RESULT_CLICK_ZOOM, mapFocus(), mapViewport())`
 - 549–557 `zoomAt`: replace the `panForZoom` lines with `Object.assign(camera, zoomAtPoint(camera, clampZoom(camera.zoom * factor), { x: screenX, y: screenY }, mapViewport()));`
 - 565–567: `const offset = viewOffset(camera, mapViewport());` then `updateLabelPositions(window.bookLabels, offset, camera.zoom);` and `updateMapTitlePosition(window.mapTitle, offset, camera.zoom);`
 - 656–657 drag: `camera.x -= dx / camera.zoom;` and `camera.y -= dy / camera.zoom;`
 - Every `findItemAtPoint(verses, camera, …)` (676, 691, 799, 1362): insert `mapViewport()` after `camera`.
-- 767: `const book = findNearestItem(verses, camera.x, camera.y)?.book ?? '';` and delete the `centre` line.
+- 767: `const book = findNearestItem(verses, camera.x, camera.y)?.book ?? '';` and delete the `center` line.
 - 1420: `cameraForView(next.camera, verse, mapFocus(), mapViewport())`.
-- Imports: drop `panForZoom`, `panToFocus`, and `screenToWorld` from `./hitDetection.ts`; add `centreForFocus`, `zoomAtPoint`, `viewOffset`, `type Viewport` from `./camera.ts`.
+- Imports: drop `panForZoom`, `panToFocus`, and `screenToWorld` from `./hitDetection.ts`; add `centerForFocus`, `zoomAtPoint`, `viewOffset`, `type Viewport` from `./camera.ts`.
 
 Run `npx tsc --noEmit` and fix any caller the list above missed the same way.
 
@@ -449,7 +449,7 @@ Expected: no type errors; all tests PASS.
 
 ```bash
 git add -A src
-git commit -m "Make the camera name the map point at the centre of the canvas"
+git commit -m "Make the camera name the map point at the center of the canvas"
 ```
 
 ---
@@ -528,7 +528,7 @@ git commit -m "Blend glide zoom by its logarithm"
 
 ```bash
 git push -u origin "$(git branch --show-current)"
-gh pr create --base main --title "The camera names the centre of the screen" --body "…"
+gh pr create --base main --title "The camera names the center of the screen" --body "…"
 ```
 
 The body starts with `🤖 Claude:`, explains the change in plain English, links the spec, notes the opening camera sits 60 px under the panel (unchanged, flagged), embeds the layout shots for the story start and one explore state by commit-pinned URL, says what to look at on the `workers.dev` preview (a story glide; one link opened at two window sizes), and ends with the Claude Code attribution line.

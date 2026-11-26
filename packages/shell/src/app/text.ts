@@ -65,7 +65,7 @@ export interface MapText<I extends MapItem, S = unknown> {
 interface OpenText<I extends MapItem, S = unknown> {
   items: I[];
   startCamera(viewport: Viewport): Camera;
-  /** A square's colour while no tool colours it. */
+  /** A square's color while no tool colors it. */
   baseColor(item: I, index: number): ItemColor;
   /** A square's ring while no tool rings it or makes it stand out, or null for none. */
   baseRing?(item: I, index: number): ItemColor | null;
@@ -74,7 +74,7 @@ interface OpenText<I extends MapItem, S = unknown> {
    * square `passageOf` gives its index, or stays as it is for null.
    */
   ringsFrom?: { zoom: number; passageOf(item: I, index: number): number | null };
-  /** While search alone is on, how much of its base colour a square it does not find keeps; without it, the square goes grey. */
+  /** While search alone is on, how much of its base color a square it does not find keeps; without it, the square goes gray. */
   searchKeepsBase?: number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
   labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;

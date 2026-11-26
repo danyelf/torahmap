@@ -107,13 +107,13 @@ const wordsOf = (title: string): string[] => title.normalize('NFKC').match(/[\p{
 /**
  * The reference entries in `text` that are one of `titles`: each from its "[n]" or its line to the
  * next entry. A title is matched as the scrape matches it: whole words, in any case and punctuation,
- * after NFKC normalisation.
+ * after NFKC normalization.
  */
 export function entriesOf(
   text: string,
   titles: readonly string[],
 ): { start: number; end: number }[] {
-  // Normalising keeps each letter's place unless a character expands, then the text is read as it is.
+  // Normalizing keeps each letter's place unless a character expands, then the text is read as it is.
   const normal = text.normalize('NFKC');
   const haystack = normal.length === text.length ? normal : text;
   const found: { start: number; end: number }[] = [];

@@ -49,7 +49,7 @@ export async function openMap(
 
 /**
  * The camera each view scene ends on. A scene that pins a verse leaves x and y
- * to the app, which centres the verse; unpinning it with Escape makes the app
+ * to the app, which centers the verse; unpinning it with Escape makes the app
  * write the camera it chose into the URL.
  */
 export async function measureCameras(
@@ -74,7 +74,7 @@ export async function measureCameras(
       continue;
     }
     if (!scene.params.verse) {
-      throw new Error(`scene "${scene.id}" needs x and y, or a verse to centre on`);
+      throw new Error(`scene "${scene.id}" needs x and y, or a verse to center on`);
     }
     page ??= await openMap(browser, baseUrl, script.width, script.height, false);
     await page.evaluate(showView, new URLSearchParams(scene.params).toString());

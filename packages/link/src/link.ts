@@ -123,7 +123,7 @@ export function writeLink(state: UrlState, keys: LinkKeys): string {
     if (value) params.set(key, value);
   }
 
-  // A square centres the map, so a link that names one carries no pan.
+  // A square centers the map, so a link that names one carries no pan.
   const view = state.square ? { ...state, x: undefined, y: undefined } : state;
   writeKeys(params, view, TEXT_KEYS);
   const square = view.square && SQUARE_ID.format(view.square);

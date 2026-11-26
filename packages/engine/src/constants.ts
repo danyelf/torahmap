@@ -11,7 +11,7 @@ export const HIGHLIGHT_CONSTANTS = {
   HIGHLIGHT_COLOR: [0.2, 0.9, 1.0] as Color,
 
   // Outline color for pinned squares. Violet, a hue (200-310 degrees) the
-  // search colours keep clear of, and neither the white nor the gold of hover.
+  // search colors keep clear of, and neither the white nor the gold of hover.
   PINNED_OUTLINE_COLOR: [0.72, 0.55, 1.0] as Color,
 
   // Outline color for hovered squares
@@ -40,8 +40,8 @@ export const RINGS = {
   RING_OUTSIDE_PX: 1.5,
   RING_INSIDE_PX: 1,
   // A square smaller than this on screen has no room for a hole and is filled
-  // with its ring colour. Rings can touch where layout jitter brings squares
-  // close, as the multi-colour growth already can.
+  // with its ring color. Rings can touch where layout jitter brings squares
+  // close, as the multi-color growth already can.
   RING_MIN_SQUARE_PX: 8,
 } as const;
 
@@ -51,7 +51,7 @@ export const hasRingRoom = (side: number, zoom: number): boolean =>
 
 /**
  * Squares smaller than START_PX on screen start widening into bars, and reach
- * their row neighbour at FULL_PX. In device pixels, as the flicker and merging
+ * their row neighbor at FULL_PX. In device pixels, as the flicker and merging
  * that bars replace come from the pixel grid.
  */
 export const BARS = {

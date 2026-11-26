@@ -73,7 +73,7 @@ function pieces(): Piece[] {
   ]);
 }
 
-/** The shaped voice from input `input`, labelled [voice]. */
+/** The shaped voice from input `input`, labeled [voice]. */
 function shaped(input: number): string {
   const parts = pieces();
   const length = parts.reduce(

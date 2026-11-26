@@ -71,7 +71,7 @@ highest count per category — it works out from `D` and keeps per data value, s
 it is dropped with the data.
 
 **An overlay may offer `prebuild(data: D)`**, to work out what it derives ahead
-of first use. Main calls it when the browser is idle. A colour asked for before
+of first use. Main calls it when the browser is idle. A color asked for before
 prebuild has run works out the same thing on demand, so prebuild changes when
 the work happens, never the result.
 
@@ -117,7 +117,7 @@ or `null` until every file it named is in.
 **`toolsShown` takes `loaded`** and returns each tool with its data,
 `{ tool, settings, data }`, leaving out a tool whose data is missing. It reads
 nothing else, so it is a plain function of what it is handed. Everything that
-draws a tool takes the data from that entry: the map colours, the hover check,
+draws a tool takes the data from that entry: the map colors, the hover check,
 the map legend's summary, the verse popup.
 
 **The panel** is drawn with `dataFor(currentOverlay, loaded)`, which may be
@@ -143,7 +143,7 @@ time, which moves trop's and verse length's index building out of startup.
 
 ## The open pull requests
 
-- **#320** stays open as the reference for behaviour until step 3 lands, then
+- **#320** stays open as the reference for behavior until step 3 lands, then
   is closed unmerged.
 - **#328** (`loadJson` fails loudly) is closed: `loadJson` goes away in step 1.
   #327 stays open until step 1 lands, since step 1 is what fixes it.
@@ -182,7 +182,7 @@ Decisions made while implementing step 1, newest last.
 - **2026-09-30 (plan)** The print script loads haftarah's files through the
   loader in the same task that removes `loadReadings`, since that task cannot
   compile otherwise.
-- **2026-10-01 (Task 0)** The layout screenshots are not byte-identical between two runs on unchanged code: eight phone shots differ, six by at most 2 colour levels on about 1,200 pixels, and the overlay panel's two by up to 21 levels on about 9,000. Tasks compare against that measured noise rather than byte for byte.
+- **2026-10-01 (Task 0)** The layout screenshots are not byte-identical between two runs on unchanged code: eight phone shots differ, six by at most 2 color levels on about 1,200 pixels, and the overlay panel's two by up to 21 levels on about 9,000. Tasks compare against that measured noise rather than byte for byte.
 - **2026-10-01 (Task 2)** Whether an overlay declares `data` follows from `D`:
   `D = void` forbids it, an object `D` requires it, and `D = unknown` (code
   handling any overlay) allows either. With a plain union of the two shapes,
@@ -229,10 +229,10 @@ test used `configureVerseLength`.
   `parshiot` goes with `mappings()`, as the plan says: such a file now throws
   in `deriveHaftarah` instead of drawing no key.
 - **2026-10-01 (Task 10)** `prefetchMorphology` keeps its name and its doc comment
-  about the memoised fetch; only the scheduling moves to `whenIdle`, which the
+  about the memoized fetch; only the scheduling moves to `whenIdle`, which the
   prebuild shares.
 - **2026-10-01 (fix wave 1)** `loadNamedFiles` is added to `src/dataFiles.ts` and used by the print script (the haftarah sheet loads only the mappings file, and takes the structure it is handed) and by `story-file.test.ts`. `loadHaftarahData` in the print script now takes the structure. Neither list has a fallback: the type requires both. `renderLegend`/`renderControls` keep their `if (!data)` guards.
 - **2026-10-01 (fix wave 2)** The story blender's picture cache is keyed on the `loaded` value inside the verses array, so a new `loaded` value gets fresh pictures. Main hands one `loaded` value for the life of the page.
 - **2026-10-01 (fix wave 2)** Main's two files are read through `structureFrom` and `textsFrom` in `src/verseTexts.ts`, two functions because the test harness needs only the texts.
-- **2026-10-01 (fix wave 3)** `memoByValueAndKey` in `src/overlays/memo.ts` serves commentary's per-category maximum and haftarah's per-custom derivation; trop's nested `memoByValue` stays, because its second key is a settings object. Verse length keeps its colour scale in `WordCounts`.
+- **2026-10-01 (fix wave 3)** `memoByValueAndKey` in `src/overlays/memo.ts` serves commentary's per-category maximum and haftarah's per-custom derivation; trop's nested `memoByValue` stays, because its second key is a settings object. Verse length keeps its color scale in `WordCounts`.
 - **2026-10-01 (main's telemetry)** Main's error telemetry (#318) moved `loadJson` and made it report each failed download. `loadJson` stays deleted; `loadFile` in `src/dataFiles.ts` reports instead, through the same `reportError`, as `reportError('loadFiles', status or error, 'Failed to load <path>')`, which also logs it, so the earlier `console.warn` is gone. The error source `loadJson` is renamed `loadFiles`. Main's load timing (#322) stamps `texts_in` when the texts file arrives, through a per-file callback `loadFiles` takes.

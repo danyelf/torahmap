@@ -12,8 +12,8 @@ import {
   pixelCounts,
 } from '../browser/page.ts';
 
-/** The plain map is grey; a few coloured pixels still count as plain. */
-const COLOURED_FLOOR = 100;
+/** The plain map is gray; a few colored pixels still count as plain. */
+const COLORED_FLOOR = 100;
 
 /**
  * A slow phone: the suite's server sends files uncompressed, about four times
@@ -88,13 +88,13 @@ export async function open(
   return { release, errors };
 }
 
-/** The map has drawn, and nothing on it is coloured. */
+/** The map has drawn, and nothing on it is colored. */
 export async function expectPlainMap(page: Page): Promise<void> {
-  let counts = { drawn: 0, coloured: 0 };
+  let counts = { drawn: 0, colored: 0 };
   await expect
     .poll(async () => (counts = await pixelCounts(page, await canvasShot(page))).drawn)
     .toBeGreaterThan(DRAWN_FLOOR);
-  expect(counts.coloured).toBeLessThan(COLOURED_FLOOR);
+  expect(counts.colored).toBeLessThan(COLORED_FLOOR);
 }
 
 /** The canvas once two shots in a row agree: an ease or a glide in progress has finished. */

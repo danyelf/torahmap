@@ -22,8 +22,8 @@ SOFTWARE.
 
 ---
 
-This licence covers the code. It does not cover the texts and datasets under
-data/ and public/data/, which remain under their sources' own licences —
+This license covers the code. It does not cover the texts and datasets under
+data/ and public/data/, which remain under their sources' own licenses —
 among them CC BY-SA 4.0 (the Hebrew text, from Wikisource), CC BY-NC 4.0 (the
 JPS English translation and the ETCBC BHSA lexeme data) and BSD 2-Clause
-(hebcal's haftarah tables). The app's credits name each source and its licence.
+(hebcal's haftarah tables). The app's credits name each source and its license.

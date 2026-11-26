@@ -14,15 +14,15 @@ const item = (id: string): ActItem => ({
   chapter: 'I',
 });
 
-describe('a square’s base colour', () => {
+describe('a square’s base color', () => {
   it('varies by square, within the brightness range, the same every time', () => {
-    const colours = ['1', '2', '3', '4', '5'].map((id) => layerColor(item(id)));
-    expect(new Set(colours.map((c) => c[0])).size).toBeGreaterThan(1);
-    for (const c of colours) {
+    const colors = ['1', '2', '3', '4', '5'].map((id) => layerColor(item(id)));
+    expect(new Set(colors.map((c) => c[0])).size).toBeGreaterThan(1);
+    for (const c of colors) {
       const f = c[0] / ARTICLE[0];
       expect(f).toBeGreaterThanOrEqual(1 - BRIGHTNESS_JITTER - 1e-9);
       expect(f).toBeLessThanOrEqual(1 + BRIGHTNESS_JITTER + 1e-9);
     }
-    expect(layerColor(item('1'))).toEqual(colours[0]);
+    expect(layerColor(item('1'))).toEqual(colors[0]);
   });
 });

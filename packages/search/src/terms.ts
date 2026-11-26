@@ -22,7 +22,7 @@ export interface SearchTerm {
   /** What the reader typed. */
   text: string;
   /**
-   * Place in TERM_PALETTE: the colour the first letter of the term's plain form hashes to, or the
+   * Place in TERM_PALETTE: the color the first letter of the term's plain form hashes to, or the
    * next free one. Kept while the first letter stays and when other terms are removed; a link
    * carries only the order, so opening it chooses again.
    */
@@ -44,19 +44,19 @@ export interface SearchTerm {
   chosen: string[] | null;
 }
 
-/** One colour per term. */
+/** One color per term. */
 export const MAX_TERMS = TERM_PALETTE.length;
 
 let nextId = 0;
 
-/** The colours the terms hold. */
+/** The colors the terms hold. */
 export const heldColors = (terms: SearchTerm[]): number[] => terms.map((t) => t.colorIndex);
 
 const firstLetter = (text: string): string => [...plainName(text)][0] ?? '';
 
 /**
  * FNV-1a of the first letter, as a place in TERM_PALETTE to start looking from. A hash rather than
- * the code point, so that neighbouring Hebrew letters do not get neighbouring colours.
+ * the code point, so that neighboring Hebrew letters do not get neighboring colors.
  */
 function hashedStart(letter: string): number {
   let hash = 0x811c9dc5;
@@ -64,11 +64,11 @@ function hashedStart(letter: string): number {
   return (hash >>> 0) % TERM_PALETTE.length;
 }
 
-/** The colour for `text`'s first letter, or the next free one after it. */
+/** The color for `text`'s first letter, or the next free one after it. */
 const colorFor = (text: string, held: number[]): number =>
   freeColor(held, TERM_PALETTE.length, hashedStart(firstLetter(text)));
 
-/** The terms with one more, in the colour its first letter gives it. */
+/** The terms with one more, in the color its first letter gives it. */
 export function addTerm(terms: SearchTerm[], text: string): SearchTerm[] {
   if (terms.length >= MAX_TERMS) return terms;
   const colorIndex = colorFor(text, heldColors(terms));
@@ -102,7 +102,7 @@ export function setTermText(terms: SearchTerm[], id: string, text: string): Sear
   const index = terms.findIndex((t) => t.id === id);
   if (index === -1) return terms;
 
-  // The first part stays this term, so its id survives the edit; its colour does too until the
+  // The first part stays this term, so its id survives the edit; its color does too until the
   // first letter changes.
   const old = terms[index];
   const colorIndex =
@@ -112,7 +112,7 @@ export function setTermText(terms: SearchTerm[], id: string, text: string): Sear
   const edited = { ...old, text: replacement[0], colorIndex, chosen: null };
   let out = [...terms.slice(0, index), edited, ...terms.slice(index + 1)];
 
-  // Any further parts become terms of their own, until the colours run out.
+  // Any further parts become terms of their own, until the colors run out.
   for (const extra of replacement.slice(1)) {
     const grown = addTerm(out, extra);
     if (grown.length === out.length) break;
@@ -130,12 +130,12 @@ export function parseSearchTerms(query: string): string[] {
 }
 
 /**
- * The colour slot occupied by the term at this position among the searched terms.
+ * The color slot occupied by the term at this position among the searched terms.
  *
  * A result, a snippet and a highlight all name a term by its position in the
- * searched list; the swatch and the map ask the term itself. A term's colour
- * survives its neighbours being edited — delete the first of two terms and the
- * survivor keeps colour 1 at position 0 — so the translation belongs in one
+ * searched list; the swatch and the map ask the term itself. A term's color
+ * survives its neighbors being edited — delete the first of two terms and the
+ * survivor keeps color 1 at position 0 — so the translation belongs in one
  * place.
  */
 export function colorIndexAt(terms: SearchTerm[], position: number): number {
@@ -215,7 +215,7 @@ export function encodeModes<X>(terms: SearchTerm[], extra?: ExtraMode<X>): strin
 /**
  * Apply a `mode` parameter to a freshly built term list.
  *
- * An entry that is empty or unrecognised leaves that term on its default,
+ * An entry that is empty or unrecognized leaves that term on its default,
  * rather than discarding the term or the search.
  */
 export function applyModes<X>(

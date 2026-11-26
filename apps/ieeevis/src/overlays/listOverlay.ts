@@ -1,5 +1,5 @@
 // An overlay that lights the papers listed under the authors, keywords, cited people or cited works a reader picks,
-// each pick in a colour of its own.
+// each pick in a color of its own.
 
 import type { FileNames, Overlay, SettingsUpdate } from '@torahmap/shell/overlays/types.ts';
 import {
@@ -41,9 +41,9 @@ import {
   type Picked,
 } from './listPicks.ts';
 
-/** How much of its colour a paper keeps when it is under none of the picks. */
+/** How much of its color a paper keeps when it is under none of the picks. */
 const UNLIT_KEEPS = 0.35;
-/** How much of its pick's colour a lit paper keeps where it has no text, so it still reads as missing. */
+/** How much of its pick's color a lit paper keeps where it has no text, so it still reads as missing. */
 const PLACEHOLDER_KEEPS = 0.6;
 
 const paperCount = (n: number) => `${n} paper${n === 1 ? '' : 's'}`;
@@ -112,7 +112,7 @@ export function listOverlay<D extends ListData>(
     return litBy(picked, item.paper, item.id, data).map((i) => picked[i]);
   };
 
-  /** The entries of the picked names' works in a reference list's `text`, in order, each with its pick's colour. */
+  /** The entries of the picked names' works in a reference list's `text`, in order, each with its pick's color. */
   function entrySpans(item: PieceItem, text: string, settings: ListSettings, data: D) {
     if (item.section !== REFERENCES_SECTION) return [];
     const picked = picks.picked(settings, data);

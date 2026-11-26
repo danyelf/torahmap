@@ -8,11 +8,11 @@ plus a letter-size proof sheet.
 
 **Architecture:** Node code in `scripts/print/` works out what every verse
 shows. It computes the positions with the site's own layout (Psalms rearranged
-into three columns), the colours from the agreed palettes, and the titles and
+into three columns), the colors from the agreed palettes, and the titles and
 key. The result is a plain JSON input. One self-contained page function,
 `draw`, turns that input into an SVG inside headless Chromium, which has the
 real fonts to measure text with. Chromium prints the SVG to PDF, and
-`pdftoppm` rasterises the PDF to PNG. Nothing under `src/`, `packages/` or
+`pdftoppm` rasterizes the PDF to PNG. Nothing under `src/`, `packages/` or
 `public/` changes.
 
 **Tech Stack:** TypeScript run by Node 24's type stripping; Playwright's
@@ -37,7 +37,7 @@ prototype that drew it is in `scripts/print/prototype/`. Read
 - Paper `#f3ecdc`; ink `#3a2e24`; quieter ink `#7a6a58`.
 - Haftarah: unread verses `hsl(31°, 28%, 34–47%)`, varying per verse by
   `seededRandom(verseIndex * 3)`; readings OKLCH L 0.64, C 0.16, hue
-  `29 + i/count·360`, chroma lowered in 0.005 steps until the colour is in
+  `29 + i/count·360`, chroma lowered in 0.005 steps until the color is in
   sRGB.
 - Search: verses naming no one `hsl(37°, 13%, 66–73%)`, same seed; names
   OKLCH L 0.5, C 0.15, hues Abraham 215, Isaac 50, Jacob 135, Moses 355,
@@ -54,7 +54,7 @@ prototype that drew it is in `scripts/print/prototype/`. Read
   baseline 9 above the book's first row, Hebrew shrinking to no less than 9;
   section title Hebrew 25.3 / English 22 bold, quieter ink, 8 right of the
   section, starting 26 above its first row, turned to read downward; map top
-  34 below the margin, width the trim less both margins and 50, centred;
+  34 below the margin, width the trim less both margins and 50, centered;
   hairline 0.75, quieter ink, 50 below the map, across the map's width; key
   title Hebrew 23 bold / English 20 semibold, baseline 56 below the hairline;
   key notes 11, quieter ink, 15 apart; portion columns 170 wide, heading
@@ -62,13 +62,13 @@ prototype that drew it is in `scripts/print/prototype/`. Read
   10; occasion columns 270 wide, 20 after the portions, kind headings 10
   semibold; credits 9, quieter ink, right-aligned, baseline 54 above the
   trim's bottom edge.
-- Logo: the text of `src/mapTitle.svg`, without its filter, recoloured
+- Logo: the text of `src/mapTitle.svg`, without its filter, recolored
   (Hebrew and tagline quieter ink, name ink), tagline in Inter; 929 map units
-  wide, centred between the map's left edge and the Torah's, top 28 map units
+  wide, centered between the map's left edge and the Torah's, top 28 map units
   above the Torah's first row.
-- No signature. Colours are sRGB values; do not convert to CMYK.
+- No signature. Colors are sRGB values; do not convert to CMYK.
 - Code style: see `AGENTS.md`. Comments say what the code cannot; no ticket or
-  stage labels; tests assert behaviour, never counts taken from the shipped
+  stage labels; tests assert behavior, never counts taken from the shipped
   data or text a reader sees.
 
 ## Review Focus
@@ -96,7 +96,7 @@ prototype that drew it is in `scripts/print/prototype/`. Read
 | File | Responsibility |
 | --- | --- |
 | `scripts/print/layout.ts` | The site's layout with Psalms in three columns |
-| `scripts/print/colour.ts` | The print palettes |
+| `scripts/print/color.ts` | The print palettes |
 | `scripts/print/types.ts` | The JSON input `draw` takes (types only) |
 | `scripts/print/views.ts` | Builds the haftarah, search and proof inputs |
 | `scripts/print/draw.ts` | The page function: input → SVG |
@@ -285,20 +285,20 @@ git commit -m "Lay the wall print out with Psalms in three columns"
 ### Task 2: The print palettes
 
 **Files:**
-- Create: `scripts/print/colour.ts`, `scripts/print/__tests__/colour.test.ts`
+- Create: `scripts/print/color.ts`, `scripts/print/__tests__/color.test.ts`
 
 **Interfaces:**
 - Produces: `PAPER`, `INK`, `INK_SOFT: string`;
   `oklch(L: number, C: number, hue: number): string` (hex, in gamut);
   `oklabLightness(hex: string): number`;
-  `readingColours(count: number): string[]`;
+  `readingColors(count: number): string[]`;
   `walnut(verseIndex: number): string`;
   `paleTaupe(verseIndex: number): string`;
   `NAME_HUES: readonly number[]`; `nameInk(i: number): string`.
 
 - [ ] **Step 1: Write the failing test**
 
-`scripts/print/__tests__/colour.test.ts`:
+`scripts/print/__tests__/color.test.ts`:
 
 ```ts
 import { describe, expect, it } from 'vitest';
@@ -308,9 +308,9 @@ import {
   oklabLightness,
   oklch,
   paleTaupe,
-  readingColours,
+  readingColors,
   walnut,
-} from '../colour.ts';
+} from '../color.ts';
 
 const HEX = /^#[0-9a-f]{6}$/;
 const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -327,23 +327,23 @@ describe('oklch', () => {
   });
 });
 
-describe('readingColours', () => {
-  const colours = readingColours(83);
+describe('readingColors', () => {
+  const colors = readingColors(83);
 
-  it('gives every reading its own colour, all equally light', () => {
-    expect(new Set(colours).size).toBe(83);
-    for (const c of colours) expect(oklabLightness(c)).toBeCloseTo(0.64, 2);
+  it('gives every reading its own color, all equally light', () => {
+    expect(new Set(colors).size).toBe(83);
+    for (const c of colors) expect(oklabLightness(c)).toBeCloseTo(0.64, 2);
   });
 
   it('starts from red, as the site does', () => {
-    const [r, g, b] = rgb(colours[0]);
+    const [r, g, b] = rgb(colors[0]);
     expect(r).toBeGreaterThan(g);
     expect(r).toBeGreaterThan(b);
   });
 });
 
 describe('unread verses', () => {
-  it('vary by verse, but the same verse always gets the same colour', () => {
+  it('vary by verse, but the same verse always gets the same color', () => {
     expect(walnut(7)).toBe(walnut(7));
     expect(new Set([0, 1, 2, 3, 4].map(walnut)).size).toBeGreaterThan(1);
   });
@@ -366,15 +366,15 @@ describe('nameInk', () => {
 
 - [ ] **Step 2: Run it to see it fail**
 
-Run: `npx vitest run scripts/print/__tests__/colour.test.ts`
-Expected: FAIL, cannot resolve `../colour.ts`.
+Run: `npx vitest run scripts/print/__tests__/color.test.ts`
+Expected: FAIL, cannot resolve `../color.ts`.
 
 - [ ] **Step 3: Implement**
 
-`scripts/print/colour.ts`:
+`scripts/print/color.ts`:
 
 ```ts
-// Colours for ink on cream paper. The site's colour wheel is evenly spaced by
+// Colors for ink on cream paper. The site's color wheel is evenly spaced by
 // the numbers, so on paper its yellows glare and its blues go dark; the
 // readings here are evenly spaced in OKLCH, where equal numbers look equally
 // bright.
@@ -416,7 +416,7 @@ function oklchToSrgb(L: number, C: number, hue: number): number[] {
   ].map(toSrgb);
 }
 
-/** An OKLCH colour as hex, its chroma lowered until sRGB can show it. */
+/** An OKLCH color as hex, its chroma lowered until sRGB can show it. */
 export function oklch(L: number, C: number, hue: number): string {
   let rgb = oklchToSrgb(L, C, hue);
   while (rgb.some((c) => c < 0 || c > 1) && C > 0) {
@@ -426,9 +426,9 @@ export function oklch(L: number, C: number, hue: number): string {
   return hex(rgb);
 }
 
-/** OKLab lightness of a hex colour: how light it looks, 0 to 1. */
-export function oklabLightness(colour: string): number {
-  const [r, g, b] = [1, 3, 5].map((i) => toLinear(parseInt(colour.slice(i, i + 2), 16) / 255));
+/** OKLab lightness of a hex color: how light it looks, 0 to 1. */
+export function oklabLightness(color: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => toLinear(parseInt(color.slice(i, i + 2), 16) / 255));
   const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
   const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
   const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
@@ -436,11 +436,11 @@ export function oklabLightness(colour: string): number {
 }
 
 /** The readings in the site's order around the wheel, from red. */
-export function readingColours(count: number): string[] {
+export function readingColors(count: number): string[] {
   return Array.from({ length: count }, (_, i) => oklch(0.64, 0.16, 29 + (i / count) * 360));
 }
 
-// Unread verses vary in depth by verse, as the site's grey does, from the same seed.
+// Unread verses vary in depth by verse, as the site's gray does, from the same seed.
 const vary = (verseIndex: number) => seededRandom(verseIndex * 3);
 
 /** A verse in no reading, on the haftarah print. */
@@ -467,7 +467,7 @@ export function nameInk(i: number): string {
 
 - [ ] **Step 4: Run the test**
 
-Run: `npx vitest run scripts/print/__tests__/colour.test.ts`
+Run: `npx vitest run scripts/print/__tests__/color.test.ts`
 Expected: PASS. If a lightness assertion fails at the second decimal place,
 check the matrices against https://bottosson.github.io/posts/oklab/ before
 loosening the test.
@@ -475,7 +475,7 @@ loosening the test.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add scripts/print/colour.ts scripts/print/__tests__/colour.test.ts
+git add scripts/print/color.ts scripts/print/__tests__/color.test.ts
 git commit -m "Add the wall print's palettes"
 ```
 
@@ -488,7 +488,7 @@ git commit -m "Add the wall print's palettes"
   `scripts/print/__tests__/views.test.ts`
 
 **Interfaces:**
-- Consumes: `printLayout` (Task 1); everything in `colour.ts` (Task 2).
+- Consumes: `printLayout` (Task 1); everything in `color.ts` (Task 2).
 - Produces, in `types.ts` (types only; `draw.ts` imports them with
   `import type`):
 
@@ -499,7 +499,7 @@ export interface PrintVerse {
   y: number;
   /** Side of the drawn square, before any growth. */
   side: number;
-  /** One colour, or one per band. */
+  /** One color, or one per band. */
   fills: string[];
 }
 
@@ -570,8 +570,8 @@ export interface SheetInput {
 export interface ProofPatch {
   title: string;
   verses: PrintVerse[];
-  /** The map point at the patch's centre. */
-  centre: { x: number; y: number };
+  /** The map point at the patch's center. */
+  center: { x: number; y: number };
 }
 
 export interface ProofInput {
@@ -603,7 +603,7 @@ export interface DrawResult {
   `nameVerses(he: string, gloss: string): Set<string>` (after
   `loadLexiconData`); `proofInput(haftarah: SheetInput, search: SheetInput, scale: number): ProofInput`;
   `OCCASION_COLUMNS: string[][]`;
-  `haftarahKey(derived: HaftarahDerivation, colours: string[], torah: Book[]): Key`.
+  `haftarahKey(derived: HaftarahDerivation, colors: string[], torah: Book[]): Key`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -633,7 +633,7 @@ describe('haftarahSheet', () => {
     expect(sheet.verses.some((v) => v.fills.length > 1)).toBe(true);
   });
 
-  it('lists every reading in the key exactly once, in the colour it has on the map', () => {
+  it('lists every reading in the key exactly once, in the color it has on the map', () => {
     const rows = sheet.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
     const derived = deriveHaftarah('ashkenazi');
     expect(rows.map((r) => r.en).sort()).toEqual(derived.items.map((i) => i.name).sort());
@@ -673,7 +673,7 @@ describe('searchSheet', () => {
     expect(() => nameVerses('אברהם', 'Abram the Unknown')).toThrow(/Abram the Unknown/);
   });
 
-  it('gives each name one colour and a key row', async () => {
+  it('gives each name one color and a key row', async () => {
     const sheet = await searchSheet(structure, false);
     const rows = sheet.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
     expect(rows.map((r) => r.en)).toEqual(['Abraham', 'Isaac', 'Jacob', 'Moses', 'David']);
@@ -701,7 +701,7 @@ Exactly the interfaces listed under **Interfaces** above, headed by one line:
 - [ ] **Step 4: Implement `views.ts`**
 
 ```ts
-// What each print shows: every verse's position and colours, the titles, and
+// What each print shows: every verse's position and colors, the titles, and
 // the key, as plain data for draw().
 
 import { readFileSync } from 'node:fs';
@@ -714,7 +714,7 @@ import {
 } from '../../src/overlays/haftarah/readings.ts';
 import { findLexemesForWord, getLexeme, loadLexiconData, searchByLexemes } from '../../src/search.ts';
 import { tanakhKey, type Book, type TanakhLayout, type TorahData } from '../../src/types.ts';
-import { INK, INK_SOFT, nameInk, NAME_HUES, PAPER, paleTaupe, readingColours, walnut } from './colour.ts';
+import { INK, INK_SOFT, nameInk, NAME_HUES, PAPER, paleTaupe, readingColors, walnut } from './color.ts';
 import { printLayout } from './layout.ts';
 import type { BookTitle, Key, KeyColumn, KeyRow, ProofInput, SectionTitle, SheetInput } from './types.ts';
 
@@ -804,9 +804,9 @@ export const OCCASION_COLUMNS = [
   ['fast-days', 'rosh-chodesh'],
 ];
 
-export function haftarahKey(derived: HaftarahDerivation, colours: string[], torah: Book[]): Key {
+export function haftarahKey(derived: HaftarahDerivation, colors: string[], torah: Book[]): Key {
   const row = (item: HaftarahItem): KeyRow => ({
-    swatch: colours[derived.items.indexOf(item)],
+    swatch: colors[derived.items.indexOf(item)],
     he: item.hebrewName,
     en: item.name,
   });
@@ -833,7 +833,7 @@ export function haftarahKey(derived: HaftarahDerivation, colours: string[], tora
     he: 'הפטרות',
     en: 'Haftarot · the prophetic readings',
     notes: [
-      'Each week’s Torah portion and the passage from the Prophets read after it share a colour; the holidays and special Sabbaths continue around the wheel.',
+      'Each week’s Torah portion and the passage from the Prophets read after it share a color; the holidays and special Sabbaths continue around the wheel.',
       'A verse read on more than one occasion is split corner to corner, one band for each reading. Verses in no reading are brown. Ashkenazi custom.',
     ],
     columns: [...portions, ...occasionColumns],
@@ -844,8 +844,8 @@ export async function haftarahSheet(structure: TorahData, marks: boolean): Promi
   await loadReadings();
   const derived = deriveHaftarah('ashkenazi');
   if (derived.items.length === 0) throw new Error('The haftarah readings did not load.');
-  const colours = readingColours(derived.items.length);
-  const colourOf = (item: HaftarahItem) => colours[derived.items.indexOf(item)];
+  const colors = readingColors(derived.items.length);
+  const colorOf = (item: HaftarahItem) => colors[derived.items.indexOf(item)];
   const layout = printLayout(structure);
   // As colorAt in src/overlays/haftarah.ts: a Torah verse shows its portion,
   // any other verse every reading it is part of.
@@ -853,13 +853,13 @@ export async function haftarahSheet(structure: TorahData, marks: boolean): Promi
     const key = tanakhKey(v.book, v.chapter, v.verse);
     const parsha = derived.torahVerseToParsha.get(key);
     const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
-    return items.length ? items.map(colourOf) : [walnut(i)];
+    return items.length ? items.map(colorOf) : [walnut(i)];
   };
   return sheet(
     layout,
     structure,
     fillsOf,
-    haftarahKey(derived, colours, structure.books.filter((b) => b.section === 'torah')),
+    haftarahKey(derived, colors, structure.books.filter((b) => b.section === 'torah')),
     'torahmap.org · Text of the Tanakh from Sefaria · Haftarah tables from hebcal',
     marks,
   );
@@ -896,7 +896,7 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
     he: 'אבות ומנהיגים',
     en: 'Five names',
     notes: [
-      'Every verse that names each of them is marked in their colour; a verse naming two is split corner to corner, one band each.',
+      'Every verse that names each of them is marked in their color; a verse naming two is split corner to corner, one band each.',
       'Only the names: יצחק is never “laugh” here, nor דוד “beloved”.',
     ],
     columns: [
@@ -925,7 +925,7 @@ export async function searchSheet(structure: TorahData, marks: boolean): Promise
   );
 }
 
-/** Two patches of the map at print scale, and every colour the prints use. */
+/** Two patches of the map at print scale, and every color the prints use. */
 export function proofInput(haftarah: SheetInput, search: SheetInput, scale: number): ProofInput {
   const readings = haftarah.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
   const names = search.key.columns.flatMap((c) => c.groups.flatMap((g) => g.rows));
@@ -934,8 +934,8 @@ export function proofInput(haftarah: SheetInput, search: SheetInput, scale: numb
     palette: PALETTE,
     scale,
     patches: [
-      { title: 'Haftarah · Isaiah 40–60', verses: haftarah.verses, centre: { x: 1400, y: 880 } },
-      { title: 'Five names · Genesis 22–32', verses: search.verses, centre: { x: 3200, y: 220 } },
+      { title: 'Haftarah · Isaiah 40–60', verses: haftarah.verses, center: { x: 1400, y: 880 } },
+      { title: 'Five names · Genesis 22–32', verses: search.verses, center: { x: 3200, y: 220 } },
     ],
     swatches: [
       { fill: PAPER, label: `paper ${PAPER}` },
@@ -979,7 +979,7 @@ git commit -m "Build the haftarah and search print inputs"
 **Interfaces:**
 - Consumes: `SheetInput`, `ProofInput`, `DrawResult` (Task 3, types only).
 - Produces: `draw(input: SheetInput | ProofInput): DrawResult`. It replaces
-  the page's body with one `<svg>` and returns it serialised. **It must be
+  the page's body with one `<svg>` and returns it serialized. **It must be
   self-contained:** Playwright's `page.evaluate` sends a function as its
   source text, as in `video/inPage.ts`. So every helper is declared inside
   `draw`, and the module has only `import type` lines. The proof branch is a
@@ -1053,11 +1053,11 @@ describe('draw', () => {
     expect(svgOf(marked).querySelectorAll('.crop-mark')).toHaveLength(8);
   });
 
-  it('draws one band per colour of a split verse, each slid along the cut', () => {
+  it('draws one band per color of a split verse, each slid along the cut', () => {
     const svg = svgOf(draw(input()));
     const bands = [...svg.querySelectorAll('.verses polygon')];
     expect(bands).toHaveLength(5);
-    // The two-colour verse grows 0.75 on every side, to a side of 5.5 from
+    // The two-color verse grows 0.75 on every side, to a side of 5.5 from
     // (5.25, -0.75). Its first band is the triangle above the cut, slid by
     // -0.5 * 0.08 * 5.5 = -0.22 along (+1, -1).
     const first = bands[0]
@@ -1331,7 +1331,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
     el(t, 'tspan', { 'font-family': LATIN, 'font-weight': 700, 'font-size': 22, dx: 8 }, s.en);
   }
 
-  // The site's title artwork, recoloured for paper and without its shadow.
+  // The site's title artwork, recolored for paper and without its shadow.
   const art = new DOMParser().parseFromString(input.logoSvg, 'image/svg+xml').documentElement;
   const box = art.getAttribute('viewBox')!.split(/\s+/).map(Number);
   const logoW = 929 * scale;
@@ -1377,7 +1377,7 @@ in Task 5:
 
 Run: `npx vitest run scripts/print/__tests__/draw.test.ts`
 Expected: PASS. If happy-dom lacks `DOMParser` for SVG or
-`createElementNS` serialisation, say so and stop. Do not switch the test
+`createElementNS` serialization, say so and stop. Do not switch the test
 environment for the whole suite.
 
 - [ ] **Step 5: Format, typecheck, commit**
@@ -1598,8 +1598,8 @@ describe('draw, proof', () => {
     palette: { paper: '#f3ecdc', ink: '#3a2e24', inkSoft: '#7a6a58' },
     scale: 0.7,
     patches: [
-      { title: 'A', verses: [{ x: 100, y: 100, side: 4, fills: ['#aa0000'] }], centre: { x: 100, y: 100 } },
-      { title: 'B', verses: [{ x: 100, y: 100, side: 4, fills: ['#00aa00'] }], centre: { x: 100, y: 100 } },
+      { title: 'A', verses: [{ x: 100, y: 100, side: 4, fills: ['#aa0000'] }], center: { x: 100, y: 100 } },
+      { title: 'B', verses: [{ x: 100, y: 100, side: 4, fills: ['#00aa00'] }], center: { x: 100, y: 100 } },
     ],
     swatches: [
       { fill: '#aa0000', label: 'red #aa0000' },
@@ -1641,7 +1641,7 @@ In `draw.ts`, replace `throw new Error('proof: Task 7');` with:
     const svg = newPage(W, H);
     el(svg, 'rect', { width: W, height: H, fill: paper });
     el(svg, 'text', { x: 36, y: 30, 'font-family': LATIN, 'font-size': 10, fill: ink },
-      'Torahmap wall print · proof at full scale · colours as sent to the printer');
+      'Torahmap wall print · proof at full scale · colors as sent to the printer');
     input.patches.forEach((patch, i) => {
       const x = 36 + i * (P + 18);
       const y = 44;
@@ -1650,8 +1650,8 @@ In `draw.ts`, replace `throw new Error('proof: Task 7');` with:
       const cp = el(el(svg, 'defs'), 'clipPath', { id: clipId });
       el(cp, 'rect', { x, y, width: P, height: P });
       const inner = el(g, 'g', { 'clip-path': `url(#${clipId})` });
-      const tx = x + P / 2 - patch.centre.x * input.scale;
-      const ty = y + P / 2 - patch.centre.y * input.scale;
+      const tx = x + P / 2 - patch.center.x * input.scale;
+      const ty = y + P / 2 - patch.center.y * input.scale;
       drawVerses(
         el(inner, 'g', { class: 'verses', transform: `translate(${tx},${ty}) scale(${input.scale})` }),
         patch.verses,
@@ -1672,7 +1672,7 @@ In `draw.ts`, replace `throw new Error('proof: Task 7');` with:
     return { svg: svg.outerHTML, width: W, height: H, scale: input.scale, overflows: [] };
 ```
 
-With 83 readings, 5 names and 9 other colours, the swatches fill 7 rows,
+With 83 readings, 5 names and 9 other colors, the swatches fill 7 rows,
 ending about 44 + 252 + 30 + 7 × 36 = 578 pt down, inside the 612 pt page.
 
 - [ ] **Step 4: Wire it into `print.ts`**
@@ -1693,11 +1693,11 @@ Add `proofInput` to the import from `./views.ts`.
 - [ ] **Step 5: Run the tests and the prints; look at the proof**
 
 Run: `npx vitest run scripts/print/__tests__/draw.test.ts`, expect PASS. Then
-run `npm run print`, and rasterise and read the proof:
+run `npm run print`, and rasterize and read the proof:
 `pdftoppm -r 100 -png -singlefile scripts/print/out/proof.pdf /tmp/proof`,
 then read `/tmp/proof.png`. Check two things. Both patches should show verses
 at print size, the same size as the 1:1 crops of the sheets. No swatch label
-should run into its neighbour.
+should run into its neighbor.
 
 - [ ] **Step 6: Commit**
 

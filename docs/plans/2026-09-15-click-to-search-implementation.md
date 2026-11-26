@@ -32,10 +32,10 @@ did not exist when the design was written.
   pre-commit hook rejects unformatted staged files.
 - **Every commit runs the gate.** The pre-commit hook runs format check,
   `npm run typecheck` and the full test suite, about six seconds.
-- **No ticket or phase references in code.** Describe behaviour in plain terms
+- **No ticket or phase references in code.** Describe behavior in plain terms
   in comments and docstrings. Issue numbers belong in commit messages.
 - **No `@ts-ignore`.** Fix types properly.
-- **Tests assert behaviour, not rates.** Corpus-wide coverage numbers move when
+- **Tests assert behavior, not rates.** Corpus-wide coverage numbers move when
   the lexeme index is regenerated, which is a change we want. Assert properties
   that survive regeneration; print coverage rather than gating on it.
 - **UI work is not complete until Danyel has looked at it.** That is the last
@@ -124,7 +124,7 @@ Expected: PASS
 - [ ] **Step 5: Run the whole suite**
 
 Run: `npm test`
-Expected: PASS. If a test asserted the old behaviour, read it before changing
+Expected: PASS. If a test asserted the old behavior, read it before changing
 it — it may be pinning something else.
 
 - [ ] **Step 6: Commit**
@@ -265,7 +265,7 @@ export function getVerseLexemes(verseKey: string): LexemeId[] | null {
 
 In `src/search/dictionary.ts`, pull the row-merging out of `meaningsFor` so both
 entry points share it, then add the new question. `meaningsFor` keeps its
-current behaviour exactly.
+current behavior exactly.
 
 ```ts
 import { findLexemesForWord, getVerseLexemes, /* ...existing... */ } from '../search.ts';
@@ -431,7 +431,7 @@ rule, and a disagreement puts every lookup on the wrong word.
 
 Two things in the displayed text are not words. `{ס}` and `{פ}` are paragraph
 markers, 3,552 of them, and must never be clickable. Sefaria also writes
-parenthesised alternates such as `(לא)`, which are words and stay clickable
+parenthesized alternates such as `(לא)`, which are words and stay clickable
 with the parentheses stripped for lookup.
 
 **Files:**
@@ -497,7 +497,7 @@ describe('splitting a verse', () => {
     expect(pieces.filter((p) => p.kind === 'marker').map((p) => p.text)).toEqual(['{פ}']);
   });
 
-  it('keeps a parenthesised alternate as a word', () => {
+  it('keeps a parenthesized alternate as a word', () => {
     expect(words('(לא) אליו')).toEqual(['(לא)', 'אליו']);
   });
 
@@ -1075,7 +1075,7 @@ export interface WordMenuOptions {
   anchor: HTMLElement;
   /** Named when picking will destroy another overlay; null when it will not. */
   replacesOverlay: string | null;
-  /** True when five words are already searched and no colour is left. */
+  /** True when five words are already searched and no color is left. */
   paletteFull: boolean;
   /** null for "search the spelling as written". */
   onChoose: (meaning: Meaning | null) => void;
@@ -1320,7 +1320,7 @@ export function openWordMenu(options: WordMenuOptions): void {
   menu.setAttribute('role', 'dialog');
 
   if (options.paletteFull) {
-    // Five colours, five words. A sixth would repeat a colour and the map could
+    // Five colors, five words. A sixth would repeat a color and the map could
     // no longer say which word is which, so this says so rather than offering a
     // button that would decline.
     const note = document.createElement('div');
@@ -1478,7 +1478,7 @@ git commit -m "Add the panel that names the word before anything happens"
 
 The search overlay gains one entry point: search for this word, narrowed to
 this meaning. It adds a term rather than replacing the search, keeping the
-terms and colours already there, because two words in two colours on one map is
+terms and colors already there, because two words in two colors on one map is
 the comparison this app exists for.
 
 A click searches by meaning, which is root mode. If the reader had set
@@ -1511,7 +1511,7 @@ presenting a button that would do nothing.
 // Turning a clicked word into a search term.
 //
 // Clicking adds to the search rather than replacing it: the map is for
-// comparing, and two words in two colours is the comparison.
+// comparing, and two words in two colors is the comparison.
 
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { registerAllOverlays, getOverlay } from '../../../overlays/index';
@@ -1618,7 +1618,7 @@ In `src/overlays/search.ts`, after `runSearch()`:
  * Search for a word a reader clicked, narrowed to one of its meanings.
  *
  * Adds a term rather than replacing the search: the existing words keep their
- * colours, which is what makes two words comparable on one map. Returns false
+ * colors, which is what makes two words comparable on one map. Returns false
  * when the palette is full, so the caller can say so rather than dropping the
  * click silently.
  *
@@ -1651,7 +1651,7 @@ export function searchForMeaning(text: string, meaningKey: string | null): boole
 }
 
 /**
- * Is there a colour left for another word?
+ * Is there a color left for another word?
  *
  * Asked before a click is offered, so the panel can say the palette is full
  * rather than showing a button that would quietly do nothing.
@@ -1782,7 +1782,7 @@ Then check, in a fresh tab:
 5. Press Escape, and click elsewhere — the panel goes away and nothing changed.
 6. Switch to the Haftarah overlay, pin a verse, click a word — the panel says
    the Haftarah view will be replaced. Dismiss it; the view is still there.
-7. Search for one word, then click another — two terms, two colours.
+7. Search for one word, then click another — two terms, two colors.
 8. Confirm `{פ}` at the end of Genesis 1:5 is not clickable.
 
 - [ ] **Step 5: Commit**
@@ -1820,7 +1820,7 @@ Expected: all four clean.
 Anything found and not fixed goes to an issue rather than a comment. Candidates
 seen while planning:
 
-- Sefaria writes parenthesised alternates such as `(לא)` and `(אנתה)`; they are
+- Sefaria writes parenthesized alternates such as `(לא)` and `(אנתה)`; they are
   treated as words here, and whether the parentheses should be stripped for
   lookup is untested.
 - 2,291 empty tokens exist in the displayed Hebrew, from doubled spaces.

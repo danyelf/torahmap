@@ -17,7 +17,7 @@ thrown away. The reason is evidence, not preference:
   shell's search, popup and story are used as the other texts use them. There is no second pipeline
   and no abandoned option except the layout's `?fill=` experiment, which no link carried.
 - **The flip-flops were in the shared code, and they are out of the folder.** What the spike changed
-  its mind about (the picker, the colour rules, the Worker route) lived outside `apps/ieeevis/`.
+  its mind about (the picker, the color rules, the Worker route) lived outside `apps/ieeevis/`.
   Those pieces are now their own pull requests, each reviewed alone (#493, #496, #497, #498). What the
   VIS pull request holds outside its folder is wiring and the label options (`wrap`, `sectionSide`,
   `sectionClear`) that only this map uses.
@@ -36,7 +36,7 @@ cleaned code found what was left over. Fixed:
 - `?fill=rows|columns|sections` was an experiment: it was read from the address once, was not a link
   parameter, so the first pan or zoom wrote a link without it, and nothing linked to it. It is gone;
   pieces fill in rows, as the default did. The `columns` and `sections` fills are in #471's history.
-- `hex` (a colour from `#9aa3ad`) and `idHash` (a square id's jitter seed) were copied from the AI Act's
+- `hex` (a color from `#9aa3ad`) and `idHash` (a square id's jitter seed) were copied from the AI Act's
   code. Both now live in `packages/utils` (#498).
 - `covers.ts`, the tinted panel behind a group of squares, sat in `packages/shell` with a comment
   saying the Talmud used it; the Talmud has its own. It is now in the VIS folder.
@@ -46,7 +46,7 @@ cleaned code found what was left over. Fixed:
   link keys now ask the overlay list.
 - The panel's padding was applied twice, in `text.ts`, with a comment tying it to the gap between
   days. `layout.ts` now returns padded panels and exports the padding once.
-- The picked entries and their colour places were two calls zipped back together; one call returns both.
+- The picked entries and their color places were two calls zipped back together; one call returns both.
 - The three walks over days, sessions and papers (layout, search, the pickers) share `papersOf`.
 - `https://ieeevis.org/` was written three times; the page's `textUrl` is read instead. `'kinds'` was
   written in the story and in the overlay; the overlay's id is exported.
@@ -59,7 +59,7 @@ Two real faults, both in the spike too:
   with no text) each matched a search for "text", "yet" or "no". A search for "yet" lit 2,671 pieces;
   it lights 710. Search now reads only a piece's own words; the popup still says "No text yet."
   for a placeholder, and says nothing while the file is on its way or has failed, as the AI Act's does.
-- Title Case capitalised the small words inside a hyphenated one ("State-Of-The-Art"); it now keeps
+- Title Case capitalized the small words inside a hyphenated one ("State-Of-The-Art"); it now keeps
   them lower case ("State-of-the-Art").
 
 ## What the map shows
@@ -73,25 +73,25 @@ Two real faults, both in the spike too:
   for its width (the workshop titles). Papers in rows of eight under the session.
 - **A paper is a block of squares**, four across, one for each piece of about 250 words in order. A paper
   with no text at all (18 of 488) is a block of dark squares with a dim ring, sized by its kind of paper.
-- **Opening colouring: Paper type.** The story's first stop names that overlay, so a first-time
+- **Opening coloring: Paper type.** The story's first stop names that overlay, so a first-time
   visitor sees it. A returning reader, who skips the story, opens with no overlay.
 
 ## What a reader can do
 
 - **Overlays.**
-  - *Sections*: colours each piece by the part of its paper it falls in (abstract, introduction,
+  - *Sections*: colors each piece by the part of its paper it falls in (abstract, introduction,
     related work, method, evaluation, discussion, conclusion, references, other). Dark squares have no text.
   - *Paper type*: full VIS paper, journal paper (TVCG, CG&A), short paper, workshop paper, poster,
     challenge contribution, arts program or talk.
   - *Authors* and *Keywords*: pick names, with suggestions as you type and a list of the 18 with the
-    most papers as chips. Papers by a picked name light up in its colour (a paper by two is split between
+    most papers as chips. Papers by a picked name light up in its color (a paper by two is split between
     them); every other square dims. At most four picks. Clicking a picked chip again unpicks it. Keywords are
     shown in Title Case (acronyms and words with a digit or an inner capital are kept, short joining words
     stay lower case); they are matched and linked as written. The legend says how many papers list keywords
     (316 of 488).
 - **Search** over every paper's title, authors and full text, with the shell's word and substring modes.
-  A paper's title is found on its first piece only. Matches take colours from the same nine as the picks, so
-  a word and a pick never share one (see the colour rules below).
+  A paper's title is found on its first piece only. Matches take colors from the same nine as the picks, so
+  a word and a pick never share one (see the color rules below).
 - **A popup** for a piece: the paper's title (cut at 32 characters) and the piece's place ("3/15"), a link
   out to the conference site, and the piece's text, with the authors first on a paper's first piece. A
   piece in the References section shows each numbered entry on its own line.
@@ -123,12 +123,12 @@ The map opens on `structure.json` alone; the popup and search ask for `texts.jso
 | `search`, `mode` | The search words and how each is matched, as for the other texts. |
 | `story`, `stop` | While reading the one story. |
 
-## Colour rules for picks and search words
+## Color rules for picks and search words
 
-Search words and picks have colours of their own (`packages/shell/src/overlays/palette.ts`; #497): five for
-words, four for picks, so the two never share or step round each other. A word's colour comes from the first
-letter of its plain form, or the next free word colour when that is held; it changes only when the first letter
-does. A pick takes the first free pick colour and keeps it. A link carries no colours. At most five words and
+Search words and picks have colors of their own (`packages/shell/src/overlays/palette.ts`; #497): five for
+words, four for picks, so the two never share or step round each other. A word's color comes from the first
+letter of its plain form, or the next free word color when that is held; it changes only when the first letter
+does. A pick takes the first free pick color and keeps it. A link carries no colors. At most five words and
 four picks.
 
 ## Hard-won fixes
@@ -156,7 +156,7 @@ four picks.
   Rabbis finder does the same (#492).
 - Putting the page live: `live: false` in `build.ts` keeps it out of torahmap.org.
 - Two spellings of one author's name count as two authors; the program gives no author ids.
-- Smaller grey time-slot labels.
+- Smaller gray time-slot labels.
 - A session name of three lines runs into the squares above it (#499); the spike did the same.
 - Search is disabled, with a notice, while `texts.json` has not loaded or has failed; titles and authors
   are not searched without it.

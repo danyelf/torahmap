@@ -20,7 +20,7 @@
 - An overlay names its files as `data: { <its own name>: '<path under public/data>' }`; it never fetches.
 - Data is always a member's last argument. Members that draw the map and members that read a verse take `data: D`; `renderControls` and `renderLegend` take `data: D | null`.
 - An overlay that names no files is handed `undefined` wherever data is handed, as an overlay without settings is handed `undefined` settings.
-- Tests check behaviour: no assertions on wording readers see, on counts taken from shipped data, or on timings. No download mocks in overlay unit tests.
+- Tests check behavior: no assertions on wording readers see, on counts taken from shipped data, or on timings. No download mocks in overlay unit tests.
 - Comments describe the code as it is now; no ticket numbers, dates, step numbers or "used to" in code, test names or comments (AGENTS.md).
 - Use `npm` (the repo has `package-lock.json`). Imports reachable from `scripts/print/` use explicit `.ts` extensions, `import type` for types, and no CSS (it runs under plain `node`).
 
@@ -28,7 +28,7 @@
 
 1. **A caller the type checker cannot see.** Most tests are not typechecked (#329). Data is always the last argument, so no existing argument moves: a call not yet updated passes no data rather than a value in the wrong slot. `test-harness/main.ts` is typechecked by `npm run typecheck`. Expected: the harness still types and searches; checked in a browser in Task 2, Step 13.
 2. **The same `loaded` must give the same data object.** Overlays keep what they derive per data value; if `dataFor` built a fresh object per call, trop would rebuild its index on every paint (a frozen map) and `prebuild` would warm nothing. Expected: `dataFor(o, loaded) === dataFor(o, loaded)`. Pinned in Task 2, Step 1.
-3. **New data, stale derivation.** When an overlay is handed a different data value, its colours, legend and key follow the new value, not what was derived from the old. Pinned in each overlay task (commentary's maximum, verse length's range, trop's marks, haftarah's readings).
+3. **New data, stale derivation.** When an overlay is handed a different data value, its colors, legend and key follow the new value, not what was derived from the old. Pinned in each overlay task (commentary's maximum, verse length's range, trop's marks, haftarah's readings).
 4. **Missing data in the panel.** `renderControls`/`renderLegend` with `null` must not throw, and controls drawn first with `null` must fill in when drawn again with data (trop's chart and haftarah's key are built once per container). Pinned in Tasks 4–8.
 5. **A story stop drawn before its data.** A stop's picture made while its overlay's files are missing must not be cached, or the stop shows without its overlay forever after. Pinned in Task 2, Step 1 (blender test).
 
@@ -284,7 +284,7 @@ In `src/overlays/memo.ts` rename `memoBySettings` to `memoByValue`, its type par
 
 ```ts
 /**
- * `derive`, worked out once per value and kept. An overlay's colours are asked
+ * `derive`, worked out once per value and kept. An overlay's colors are asked
  * for once per verse, 23,000 times a paint, all with one settings value and
  * one data value.
  *
@@ -471,7 +471,7 @@ describe('a stop whose overlay data is missing', () => {
 - [ ] **Step 2: Run them to see them fail**
 
 Run: `npx vitest run src/__tests__/unit/dataFiles.test.ts src/__tests__/unit/tools.test.ts src/scrollytelling/__tests__/overlayBlender.test.ts`
-Expected: FAIL — `dataFor`/`overlayFiles` not exported; `toolsShown` has no `data`; the late stop keeps a cached picture or colours without data.
+Expected: FAIL — `dataFor`/`overlayFiles` not exported; `toolsShown` has no `data`; the late stop keeps a cached picture or colors without data.
 
 - [ ] **Step 3: Change the type** (`src/overlays/types.ts`)
 
@@ -577,7 +577,7 @@ function withData(tool: Overlay, settings: unknown, loaded: Loaded): ToolOnMap |
 }
 ```
 
-- [ ] **Step 6: Colours and the hover check** (`src/itemColoring.ts`)
+- [ ] **Step 6: Colors and the hover check** (`src/itemColoring.ts`)
 
 ```ts
 export function overlayColorsFor<T, S, D>(
@@ -818,7 +818,7 @@ Expected: only `src/main.ts` and `src/verseTexts.ts`. (`loadAllVerseTexts` stays
 
 Imports: `STRUCTURE_FILE, TEXTS_FILE, type VerseTexts` from `./verseTexts.ts` (drop `loadTanakhStructure`, `loadAllVerseTexts`); `type TorahData` from `./types.ts` if not already imported. Delete `loadTanakhStructure` from `src/verseTexts.ts`.
 
-This keeps today's behaviour on failure: a missing structure stops startup with an error, missing texts leave an empty text set.
+This keeps today's behavior on failure: a missing structure stops startup with an error, missing texts leave an empty text set.
 
 - [ ] **Step 3: Verify one download each**
 
@@ -990,7 +990,7 @@ describe('data', () => {
     expect(overlay.data).toEqual({ texts: 'all-texts.json' });
   });
 
-  it('colours by the texts it is handed now', () => {
+  it('colors by the texts it is handed now', () => {
     const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
     const before = verseLengthOverlay.getVerseColor(verse);
     const shorter = structuredClone(testVerseTexts);
@@ -999,7 +999,7 @@ describe('data', () => {
     expect(verseLengthOverlay.getVerseColor(verse)).not.toEqual(before);
   });
 
-  it('colours the same whether or not prebuild ran first', () => {
+  it('colors the same whether or not prebuild ran first', () => {
     const fresh = { texts: structuredClone(testVerseTexts) };
     const verses = [createVerse({ book: 'Genesis', chapter: 1, verse: 1 }), createVerse({ book: 'Exodus', chapter: 1, verse: 2 })];
     const onDemand = overlay.colorsFor(verses, undefined, null, { texts: structuredClone(testVerseTexts) });
@@ -1019,7 +1019,7 @@ describe('data', () => {
 - [ ] **Step 2: Run them to see them fail**
 
 Run: `npx vitest run src/__tests__/unit/overlays/verse-length.test.ts`
-Expected: FAIL — no `data`, no `prebuild`, colours follow the module's configured texts.
+Expected: FAIL — no `data`, no `prebuild`, colors follow the module's configured texts.
 
 - [ ] **Step 3: Convert the overlay**
 
@@ -1065,7 +1065,7 @@ function wordCountAt(data: VerseLengthData, verse: TanakhIdentity): number | und
 }
 ```
 
-Keep `wordCountScale`'s existing doc comment. The overlay: type `Overlay<TanakhIdentity, void, VerseLengthData>`; `data: { texts: TEXTS_FILE }`; `prebuild(data) { wordCountsOf(data); }`; `getVerseColor(verse, _settings, data)` and `colorsFor(items, _settings, _hovered, data)` colour from `wordCountAt(data, verse)` (zero or missing → `NO_DATA`, else `wordCountScale(wordCountsOf(data)).colorOf(n)`); `renderLegend(container, _settings, data)` returns an empty container for `null` and otherwise uses `wordCountsOf(data)` for the scale and `[min, max]`; `summary(_settings, data)`; `getHoverInfo(verse, _settings, data)` and `renderSidebarInfo(verse, _isPinned, _settings, data)` read `wordCountAt(data, verse)`. Imports: `memoByValue` from `./memo.ts`, `TEXTS_FILE` from `../verseTexts.ts`.
+Keep `wordCountScale`'s existing doc comment. The overlay: type `Overlay<TanakhIdentity, void, VerseLengthData>`; `data: { texts: TEXTS_FILE }`; `prebuild(data) { wordCountsOf(data); }`; `getVerseColor(verse, _settings, data)` and `colorsFor(items, _settings, _hovered, data)` color from `wordCountAt(data, verse)` (zero or missing → `NO_DATA`, else `wordCountScale(wordCountsOf(data)).colorOf(n)`); `renderLegend(container, _settings, data)` returns an empty container for `null` and otherwise uses `wordCountsOf(data)` for the scale and `[min, max]`; `summary(_settings, data)`; `getHoverInfo(verse, _settings, data)` and `renderSidebarInfo(verse, _isPinned, _settings, data)` read `wordCountAt(data, verse)`. Imports: `memoByValue` from `./memo.ts`, `TEXTS_FILE` from `../verseTexts.ts`.
 
 Remove `configure as configureVerseLength` from `src/overlays/index.ts` and `configureVerseLength` from `src/main.ts`.
 
@@ -1109,7 +1109,7 @@ describe('data', () => {
     expect(after).toBeLessThan(before);
   });
 
-  it('colours the same whether or not prebuild ran first', () => {
+  it('colors the same whether or not prebuild ran first', () => {
     const settings = { mark: 'tipcha', preview: null };
     const onDemand = tropOverlay.colorsFor(testVerses, settings, null, { texts: structuredClone(testVerseTexts) });
     const fresh = { texts: structuredClone(testVerseTexts) };
@@ -1225,7 +1225,7 @@ describe('data', () => {
 });
 ```
 
-(Import the overlay itself as `overlay` beside the host.) The existing Rosh Chodesh tests already check that colours follow new data; keep them.
+(Import the overlay itself as `overlay` beside the host.) The existing Rosh Chodesh tests already check that colors follow new data; keep them.
 
 In `story-file.test.ts` replace `beforeAll(() => haftarahOverlay.init?.())` and `deriveHaftarah(custom)` with:
 
@@ -1462,7 +1462,7 @@ export function whenIdle(run: () => void): void {
 const IDLE_TIMEOUT_MS = 2000;
 ```
 
-`prefetchMorphology()` becomes `whenIdle(() => void loadMorphology());` with its doc comment reduced to the part about the memoised fetch ("a verse opened before this fires still fetches exactly once"); delete `PREFETCH_TIMEOUT_MS`.
+`prefetchMorphology()` becomes `whenIdle(() => void loadMorphology());` with its doc comment reduced to the part about the memoized fetch ("a verse opened before this fires still fetches exactly once"); delete `PREFETCH_TIMEOUT_MS`.
 
 - [ ] **Step 4: Write `src/overlays/prebuild.ts`**
 

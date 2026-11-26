@@ -75,12 +75,12 @@ export function zoomAtPoint(
 }
 
 /**
- * The centre that puts an item at `focus`.
+ * The center that puts an item at `focus`.
  *
  * Takes the zoom rather than reading it, because moving and zooming at once
  * has to aim at where the item will be, not where it is now.
  */
-export function centreForFocus(
+export function centerForFocus(
   item: ItemBox,
   zoom: number,
   focus: ScreenPoint,
@@ -114,7 +114,7 @@ export function boxAround(items: readonly ItemBox[]): WorldBox {
 export const FIT_MARGIN = 16;
 
 /**
- * The camera that centres `box` on a `width` × `height` canvas, `top` pixels clear above it, at
+ * The camera that centers `box` on a `width` × `height` canvas, `top` pixels clear above it, at
  * `zoom` or else the largest zoom that fits it inside the margins.
  */
 export function cameraToFit(
@@ -131,10 +131,10 @@ export function cameraToFit(
     (height - FIT_MARGIN - top) / boxHeight,
   );
   const z = clampZoom(zoom ?? fitted, range);
-  const centreY = top + (height - FIT_MARGIN - top) / 2;
+  const centerY = top + (height - FIT_MARGIN - top) / 2;
   return {
     x: box.minX + boxWidth / 2,
-    y: box.minY + boxHeight / 2 - (centreY - height / 2) / z,
+    y: box.minY + boxHeight / 2 - (centerY - height / 2) / z,
     zoom: z,
   };
 }
@@ -155,7 +155,7 @@ export function viewFocusedOn(
   range: ZoomRange,
 ): Camera {
   const zoom = clampZoom(Math.max(currentZoom, minZoom), range);
-  return { ...centreForFocus(item, zoom, focus, viewport), zoom };
+  return { ...centerForFocus(item, zoom, focus, viewport), zoom };
 }
 
 const easeInOutCubic = (t: number): number => (t < 0.5 ? 4 * t ** 3 : 1 - (-2 * t + 2) ** 3 / 2);
@@ -168,7 +168,7 @@ export interface GlideOptions {
   minZoom: number;
   /** Another move was still running when this one began: it eases out only, or a held key would stall on each slow start. */
   interrupting?: boolean;
-  /** Snap to the target instead of travelling. */
+  /** Snap to the target instead of traveling. */
   reducedMotion?: boolean;
   /** Called once the camera has arrived, but not when the glide is stopped. */
   onDone?: () => void;

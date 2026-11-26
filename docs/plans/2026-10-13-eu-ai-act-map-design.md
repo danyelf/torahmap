@@ -63,7 +63,7 @@ into columns:
 Torah, Prophets and Writings stack. A recital is a 2×1 tile, wider than a
 square but no taller: it is a paragraph, and runs to about 154 words against a
 square's 34. Annexes are blue, so nothing mistakes them for articles. Here the
-articles are coloured by the 2026 amendment: orange inserted, yellow replaced.
+articles are colored by the 2026 amendment: orange inserted, yellow replaced.
 
 ![Recitals, articles, annexes](images/2026-10-13-eu-ai-act-map/5-three-layers.png)
 
@@ -110,7 +110,7 @@ student trying to understand the Act; a policymaker comparing versions.
 
 ## Possible overlays
 
-Each colours the squares by one fact about them. "Have" means the data is in
+Each colors the squares by one fact about them. "Have" means the data is in
 `experiments/eu-ai-act/` now; "from the text" means a script can derive it from
 the wording; "research" means a person must decide it.
 

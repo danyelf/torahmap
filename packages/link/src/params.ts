@@ -14,7 +14,7 @@ import type { ZoomRange } from '@torahmap/engine';
  * The difference between `text` and `names` is what the value is for, and it
  * decides whether HTML tags are stripped out of it. A search query is shown
  * back to the reader, so it is stripped. A list of names is split apart and
- * looked up in a table, and anything unrecognised is dropped long before it
+ * looked up in a table, and anything unrecognized is dropped long before it
  * could reach the page — so stripping buys nothing, and it does real harm:
  * ETCBC spells ayin `<` and aleph `>`, so two lexeme names side by side read
  * as a tag and everything between them would be deleted.

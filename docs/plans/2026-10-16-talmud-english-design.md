@@ -25,7 +25,7 @@ tractates. Two checks:
   have no English: 215 are empty strings, and 97 are the last segment of an amud, which the
   English array simply leaves off.
 - **Content.** Where the Hebrew opens a Mishnah or Gemara (`מתני׳`, `גמ׳`), the English segment at
-  the same place says MISHNA or GEMARA: 4,207 places agree. The 11 that do not are labelling
+  the same place says MISHNA or GEMARA: 4,207 places agree. The 11 that do not are labeling
   quirks, with the right text in the right place: Tamid's last chapters number each mishnah in
   English but not in Hebrew (8), and three segments where one edition labels a Gemara and the
   other does not (Sotah 49b:4, Keritot 14b:1, Meilah 14a:1).
@@ -33,7 +33,7 @@ tractates. Two checks:
 So the English can be stored segment for segment beside the Hebrew, with an empty string for the
 Hadran lines.
 
-The licence is CC-BY-NC, so the credit line the Davidson Aramaic already has (commit 37183eca)
+The license is CC-BY-NC, so the credit line the Davidson Aramaic already has (commit 37183eca)
 needs to name the English too.
 
 ## Showing the bold
@@ -132,7 +132,7 @@ in variable-length bytes. The vocabulary is 31,415 words, a third of them in one
   What is lost is a substring that crosses a space.
 - *Phrases become "all these words in one segment".* For `rabbi yoḥanan` that finds 5,377
   segments against 5,172 that hold the phrase; for `ox that gored` (with `that` dropped), 142
-  against 34. An index of every pair of neighbouring words would fix two-word phrases, but it
+  against 34. An index of every pair of neighboring words would fix two-word phrases, but it
   measures 12.27 MB, more than the full text.
 - *Snippets need the text.* The results list quotes each hit. With only an index, it can quote
   hits in tractates whose popup file is loaded, and list the rest by reference, which the list

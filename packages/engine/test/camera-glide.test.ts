@@ -1,8 +1,8 @@
-// Travelling to a square: where the camera should end up, and how it gets there.
+// Traveling to a square: where the camera should end up, and how it gets there.
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
-  centreForFocus,
+  centerForFocus,
   viewFocusedOn,
   animateCameraTo,
   planGlide,
@@ -23,18 +23,18 @@ function screenPosition(item: { x: number; size: number }, camera: Camera): numb
   return worldToScreen({ x: item.x + item.size / 2, y: 0 }, camera, VIEW).x;
 }
 
-describe('centreForFocus', () => {
+describe('centerForFocus', () => {
   it('puts the item at the focus', () => {
-    const centre = centreForFocus(ITEM, 1, FOCUS, VIEW);
+    const center = centerForFocus(ITEM, 1, FOCUS, VIEW);
 
-    expect(screenPosition(ITEM, { ...centre, zoom: 1 })).toBeCloseTo(FOCUS.x);
+    expect(screenPosition(ITEM, { ...center, zoom: 1 })).toBeCloseTo(FOCUS.x);
   });
 
   it('aims at the zoom it is given, not the one in the camera', () => {
     // Moving and zooming at once has to aim where the square will be.
-    const centre = centreForFocus(ITEM, 4, FOCUS, VIEW);
+    const center = centerForFocus(ITEM, 4, FOCUS, VIEW);
 
-    expect(screenPosition(ITEM, { ...centre, zoom: 4 })).toBeCloseTo(FOCUS.x);
+    expect(screenPosition(ITEM, { ...center, zoom: 4 })).toBeCloseTo(FOCUS.x);
   });
 });
 
@@ -53,10 +53,10 @@ describe('viewFocusedOn', () => {
     expect(view.zoom).toBe(6);
   });
 
-  it('centres at the zoom it settles on, not the one it started from', () => {
+  it('centers at the zoom it settles on, not the one it started from', () => {
     const view = viewFocusedOn(ITEM, 0.1, 2.5, FOCUS, VIEW, ZOOM);
 
-    // The trap: centre at 0.1 and then zoom to 2.5 and the square flies away.
+    // The trap: center at 0.1 and then zoom to 2.5 and the square flies away.
     expect(screenPosition(ITEM, view)).toBeCloseTo(FOCUS.x);
   });
 
@@ -136,7 +136,7 @@ describe('animateCameraTo', () => {
     }
   });
 
-  it('stops where it is when cancelled, and never reaches the target', () => {
+  it('stops where it is when canceled, and never reaches the target', () => {
     mockClock();
     const camera: Camera = { x: 0, y: 0, zoom: 1 };
 
@@ -232,7 +232,7 @@ describe('planGlide', () => {
     expect(Math.min(...zooms)).toBeLessThan(floor * 1.1);
   });
 
-  it('pans without travelling on a map with no width', () => {
+  it('pans without traveling on a map with no width', () => {
     const glide = planGlide(start, far, 0, MIN_ZOOM);
 
     expect(glide.durationMs).toBe(0);

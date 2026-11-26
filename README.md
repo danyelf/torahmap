@@ -9,7 +9,7 @@ The Tanakh -- the Jewish Bible -- is a rich and deep text, with years of study a
 
 The map is at **[torahmap.org](https://torahmap.org)**. It opens on a short story that walks you through it; fold the story away and the whole map is yours to explore.
 
-**Search** — every verse holding the word you type, in the Hebrew or in the English. A Hebrew word is looked up as a dictionary word by default, so every form it takes is found. It sits beside the overlays: search with one on, and each match rings the overlay's colour.
+**Search** — every verse holding the word you type, in the Hebrew or in the English. A Hebrew word is looked up as a dictionary word by default, so every form it takes is found. It sits beside the overlays: search with one on, and each match rings the overlay's color.
 
 Overlays, in the order the map offers them:
 
@@ -17,4 +17,4 @@ Overlays, in the order the map offers them:
 - **Trop** — the cantillation marks that say how the Hebrew is chanted. Pick one to see which verses carry it, and how often.
 - **Haftarah** — each weekly Torah portion and the passage from the Prophets read after it, in Ashkenazi or Sephardi custom.
 - **Verse Length** — how many Hebrew words each verse has.
-- **Text Analytics** — how much of each verse repeats wording from nearby, or which verses anywhere in the Tanakh share a phrase, coloured by where they are.
+- **Text Analytics** — how much of each verse repeats wording from nearby, or which verses anywhere in the Tanakh share a phrase, colored by where they are.

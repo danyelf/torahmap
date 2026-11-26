@@ -1,4 +1,4 @@
-// Colours each segment by the generation of the latest rabbi it names, so that a discussion reads
+// Colors each segment by the generation of the latest rabbi it names, so that a discussion reads
 // from its early voices to its late ones.
 
 import { MAP_BACKGROUND } from '@torahmap/engine';
@@ -54,15 +54,15 @@ const HSL: Record<string, { h: number; l: number }> = Object.fromEntries(
   ),
 );
 
-/** The era a generation's colour belongs to; the transitional generation is counted with the Tannaim. */
+/** The era a generation's color belongs to; the transitional generation is counted with the Tannaim. */
 export const eraOf = (code: string): string =>
   ERAS.find((e) => e.bands.some((b) => (b.codes as readonly string[]).includes(code)))!.name;
 
-/** How far an uncertain segment's colour is washed out toward grey. */
+/** How far an uncertain segment's color is washed out toward gray. */
 const WASHED_OUT = 0.9;
-/** What the wash leaves of an uncertain segment's colour is almost this grey, which the key shows. */
-const GREY: Color = [0.62, 0.62, 0.62];
-/** How much of its usual colour a segment that names no rabbi keeps. */
+/** What the wash leaves of an uncertain segment's color is almost this gray, which the key shows. */
+const GRAY: Color = [0.62, 0.62, 0.62];
+/** How much of its usual color a segment that names no rabbi keeps. */
 const FAINT = 0.3;
 
 const mix = (a: readonly number[], b: readonly number[], toward: number): Color => [
@@ -73,12 +73,12 @@ const mix = (a: readonly number[], b: readonly number[], toward: number): Color 
 
 export const generationColor = (code: string): Color => {
   const step = HSL[code];
-  if (!step) throw new Error(`No colour for generation ${code}`);
+  if (!step) throw new Error(`No color for generation ${code}`);
   return hslToRgb({ ...step, s: 0.75 });
 };
 
-/** An uncertain segment: its era's colour so washed out that it reads as not sure, not as a generation. */
-export const uncertainColor = (color: Color): Color => mix(color, GREY, WASHED_OUT);
+/** An uncertain segment: its era's color so washed out that it reads as not sure, not as a generation. */
+export const uncertainColor = (color: Color): Color => mix(color, GRAY, WASHED_OUT);
 
 /** "320–350", "100–60 BCE", "30 BCE–20 CE"; `ce` adds CE where both ends are plainly CE. */
 export function yearsShort({ from, to }: Generation, ce = false): string {
@@ -116,7 +116,7 @@ export const fadeTo = (color: readonly number[], keeps: number): Color =>
 
 const faint = (color: readonly number[]): Color => fadeTo(color, FAINT);
 
-/** A generation's colour, washed out where only a shared name gives it. */
+/** A generation's color, washed out where only a shared name gives it. */
 const shade = (code: string, uncertain: boolean): Color =>
   uncertain ? uncertainColor(generationColor(code)) : generationColor(code);
 
@@ -145,7 +145,7 @@ export function nameFor(label: string, id: string | null, link: RabbiLink): Node
 
 /**
  * `fragment` with each name in `spans` (a segment's, as dating.json gives them) marked in the
- * colour `colorOf` gives its person, or left plain where that is null.
+ * color `colorOf` gives its person, or left plain where that is null.
  */
 export function markNames(
   fragment: DocumentFragment,
@@ -167,7 +167,7 @@ export function markNames(
   });
 }
 
-/** The overlay for a Talmud whose segments `base` colours when no tool does. */
+/** The overlay for a Talmud whose segments `base` colors when no tool does. */
 export function datingOverlay(
   base: (item: TalmudLayoutItem) => Color,
   link: RabbiLink = {},
@@ -222,11 +222,11 @@ export function datingOverlay(
       });
       container.replaceChildren(
         ...sections,
-        swatchRow(GREY, 'Uncertain: the name could be several rabbis'),
+        swatchRow(GRAY, 'Uncertain: the name could be several rabbis'),
       );
     },
 
-    // One square for each colour band that occurs, in a group for each era.
+    // One square for each color band that occurs, in a group for each era.
     summary: (_settings, { dating }) => ({
       groups: ERAS.map(({ name }) => [
         ...new Set(

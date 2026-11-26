@@ -3,7 +3,7 @@
    drops the menu, so the map never moves or changes width when the mode does;
    closing the tool gives the column to the map. The map starts
    at --map-left (main.css), which the canvas and the labels
-   read. What colours the map is named on the map, in the legend
+   read. What colors the map is named on the map, in the legend
    card. On a phone the panel is a sheet along the bottom and the ☰ floats in
    the top-left corner. The mode and the open panel are data- attributes on
    <body>, set by main.ts from ../frame.ts. */
@@ -349,7 +349,7 @@ body[data-menu] #story-cue {
   display: none;
 }
 
-/* Paragraphs sit half a panel apart, so when one is centred the next starts
+/* Paragraphs sit half a panel apart, so when one is centered the next starts
    at the bottom edge. The first starts mid-panel and the last can scroll up
    to it. cqh is the story's height, not the window's. */
 .story-stop {
@@ -457,7 +457,7 @@ body[data-open='about'] #about-panel {
 
 /* Search and an overlay's picked list choose, then list what they chose: the
    choosing stays short at the top and the list fills what the panel has, in
-   its own scroll, so the overlay's colour key stays in view below it. The
+   its own scroll, so the overlay's color key stays in view below it. The
    chain of boxes down to the list takes the height. The panel never shrinks
    below the choosing and a short list, so on a small sheet #panel-body scrolls
    instead. */
@@ -571,7 +571,7 @@ body[data-open='about'] #about-panel {
   gap: 8px;
 }
 
-/* What colours the map, named on the map: one row per thing that is on, each
+/* What colors the map, named on the map: one row per thing that is on, each
    opening its tool. Top-left of the map on a desktop, whatever is open. */
 #map-legend {
   position: fixed;

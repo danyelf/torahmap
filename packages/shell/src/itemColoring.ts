@@ -1,10 +1,10 @@
-// Colour computation for spatial items
+// Color computation for spatial items
 
 import { type SpatialItem, type ItemColor, type Picture, sameItem } from '@torahmap/engine';
 import { type Color, brighten } from '@torahmap/utils';
 import type { ColorArgs, Focus, Overlay, ToolOnMap, Tools } from './overlays/types';
 import type { ColorSource } from './scrollytelling/driver';
-import { SEARCH_NON_MATCH_DIM, DIMMED_GREY } from './constants';
+import { SEARCH_NON_MATCH_DIM, DIMMED_GRAY } from './constants';
 
 function brightenBands(color: ItemColor, factor: number): ItemColor {
   const one = (c: Color): Color => brighten(c, factor);
@@ -12,16 +12,16 @@ function brightenBands(color: ItemColor, factor: number): ItemColor {
 }
 
 /**
- * The map's colours from its two layers, search over overlay. `search` is null
- * with no search on and `overlay` null with no overlay; a null colour is
- * painted its base colour by fillDefaultColors.
+ * The map's colors from its two layers, search over overlay. `search` is null
+ * with no search on and `overlay` null with no overlay; a null color is
+ * painted its base color by fillDefaultColors.
  *
- * `nonMatchDim` is how much of the overlay colour a non-match keeps when both
+ * `nonMatchDim` is how much of the overlay color a non-match keeps when both
  * layers are on: `SEARCH_NON_MATCH_DIM` (the default) while
  * search leads, 1 while the overlay leads; it does nothing with search alone.
- * With both on, a square neither colours dims from its `base` colour. With
+ * With both on, a square neither colors dims from its `base` color. With
  * search alone, a square it does not find keeps `keepsBase` of its base
- * colour, or goes grey without it. Every match stands out, so it shows at any
+ * color, or goes gray without it. Every match stands out, so it shows at any
  * zoom, and so does every square `overlayStandout` marks; `overlayHalo` keeps a
  * faint glow on some of those at every zoom.
  */
@@ -47,7 +47,7 @@ export function combineLayers(
       colors[i] = under;
     } else if (!overlay) {
       colors[i] =
-        match ?? (keepsBase === undefined ? DIMMED_GREY : brightenBands(base(i), keepsBase));
+        match ?? (keepsBase === undefined ? DIMMED_GRAY : brightenBands(base(i), keepsBase));
     } else if (match) {
       colors[i] = under;
       rings[i] = match;
@@ -63,11 +63,11 @@ export function combineLayers(
 }
 
 /**
- * `picture` with every null colour replaced by its square's base colour, and
- * marked `uncoloured` for the hover. A cross-fade needs them so a still-uncoloured square blends from its
- * own colour rather than mergePictures's placeholder for "nothing here".
+ * `picture` with every null color replaced by its square's base color, and
+ * marked `uncolored` for the hover. A cross-fade needs them so a still-uncolored square blends from its
+ * own color rather than mergePictures's placeholder for "nothing here".
  * With `baseRing`, a square the picture gives no ring takes its base ring, unless it stands out,
- * since a small square is all ring and would hide its colour.
+ * since a small square is all ring and would hide its color.
  */
 export function fillDefaultColors(
   picture: Picture<ItemColor | null>,
@@ -82,13 +82,13 @@ export function fillDefaultColors(
       ),
     }),
     colors: picture.colors.map((c, i) => c ?? base(i)),
-    uncoloured: picture.colors.map((c) => c === null),
+    uncolored: picture.colors.map((c) => c === null),
   };
 }
 
 /**
- * `picture` with each square `passageOf` names drawn as its passage's square: its colour, its
- * ring and its stripes. The ring is the passage's colour where it has none, so the square stays
+ * `picture` with each square `passageOf` names drawn as its passage's square: its color, its
+ * ring and its stripes. The ring is the passage's color where it has none, so the square stays
  * solid when blended with one that has a ring.
  */
 export function takePassageLook(
@@ -97,18 +97,18 @@ export function takePassageLook(
 ): Picture<ItemColor> {
   const colors = [...picture.colors];
   const rings = picture.colors.map((_, i) => picture.rings?.[i] ?? null);
-  const uncoloured = picture.uncoloured && [...picture.uncoloured];
+  const uncolored = picture.uncolored && [...picture.uncolored];
   colors.forEach((_, i) => {
     const j = passageOf(i);
     if (j === null) return;
     colors[i] = picture.colors[j];
     rings[i] = picture.rings?.[j] ?? picture.colors[j];
-    if (uncoloured) uncoloured[i] = uncoloured[j];
+    if (uncolored) uncolored[i] = uncolored[j];
   });
-  return { ...picture, colors, rings, ...(uncoloured && { uncoloured }) };
+  return { ...picture, colors, rings, ...(uncolored && { uncolored }) };
 }
 
-/** A settled overlay's colours, one entry per item. */
+/** A settled overlay's colors, one entry per item. */
 export function overlayColorsFor<T, S, D>(
   overlay: Overlay<T, S, D> | null,
   args: ColorArgs<T, S, D>,
@@ -116,7 +116,7 @@ export function overlayColorsFor<T, S, D>(
   return overlay ? overlay.colorsFor(args) : args.items.map(() => null);
 }
 
-/** The map's colours for the tools a view shows. The colour arguments pass through to combineLayers. */
+/** The map's colors for the tools a view shows. The color arguments pass through to combineLayers. */
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
@@ -141,9 +141,9 @@ export function toolsPicture<T>(
 }
 
 /**
- * Which colour layer a move of the hovered or pinned square makes stale: a story
- * transition's blend (which ignores the pin), the settled overlay's colours if
- * they depend on what moved, or neither. A timed ease blends colours captured
+ * Which color layer a move of the hovered or pinned square makes stale: a story
+ * transition's blend (which ignores the pin), the settled overlay's colors if
+ * they depend on what moved, or neither. A timed ease blends colors captured
  * when it began, so it recomputes nothing.
  */
 export function layerToRecompute<T>(

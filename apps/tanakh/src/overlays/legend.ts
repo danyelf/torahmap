@@ -57,7 +57,7 @@ export function buildLegendGradient(samples: number, colorAt: (index: number) =>
   return `linear-gradient(to right, ${parts.join(', ')})`;
 }
 
-/** A continuous scale's colours as a CSS gradient. */
+/** A continuous scale's colors as a CSS gradient. */
 export function axisGradient(scale: Scale): string {
   return buildLegendGradient(GRADIENT_SAMPLES, (i) =>
     interpolateGradient(i / (GRADIENT_SAMPLES - 1), scale.palette),
@@ -81,7 +81,7 @@ function spaceOut(ticks: PlacedTick[]): PlacedTick[] {
   return kept.reverse();
 }
 
-/** A line of small grey text under a legend. */
+/** A line of small gray text under a legend. */
 export function legendCaption(text: string): string {
   return `<div class="legend-caption">${text}</div>`;
 }

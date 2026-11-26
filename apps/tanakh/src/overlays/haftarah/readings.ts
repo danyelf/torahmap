@@ -1,4 +1,4 @@
-// The readings the haftarah overlay colours: the weekly portions and the special
+// The readings the haftarah overlay colors: the weekly portions and the special
 // occasions, as handed in, and for each custom the lookups from a verse to the
 // readings it belongs to.
 
@@ -26,7 +26,7 @@ export interface ParshaData {
   haftarah: Record<Custom, VerseRange[]>;
 }
 
-/** In the order the legend lists them, and the order their colours step through. */
+/** In the order the legend lists them, and the order their colors step through. */
 export const OCCASION_CATEGORIES = [
   'high-holidays',
   'sukkot',
@@ -70,10 +70,10 @@ export interface HaftarahData {
   structure: TorahData;
 }
 
-// Each Torah book has a hue band, centred where the books stay apart on the colour wheel and
+// Each Torah book has a hue band, centered where the books stay apart on the color wheel and
 // clear of the holidays' magenta. A portion's place in its book moves it across the band, so a
 // run of portions reads as one family; its place in a lightness ramp is a second cue, and
-// alternating light and dark tells neighbours apart. Per-book lightness offsets keep the books
+// alternating light and dark tells neighbors apart. Per-book lightness offsets keep the books
 // apart for a reader who cannot tell their hues.
 const BOOK_HUES: Record<string, { hue: number; lightness: number }> = {
   Genesis: { hue: 15, lightness: -0.05 },
@@ -84,7 +84,7 @@ const BOOK_HUES: Record<string, { hue: number; lightness: number }> = {
 };
 const BOOK_HUE_SPAN = 50;
 const BOOK_LIGHTNESS_RAMP = 0.12;
-const NEIGHBOUR_LIGHTNESS = 0.08;
+const NEIGHBOR_LIGHTNESS = 0.08;
 const BASE_LIGHTNESS = 0.57;
 
 // The holidays take magenta, which no book does and the map's background is not. Each category
@@ -98,7 +98,7 @@ function along(index: number, count: number): number {
   return count > 1 ? index / (count - 1) : 0.5;
 }
 
-/** A reading's colour from its place among the readings of its book (a portion) or its category (an occasion). */
+/** A reading's color from its place among the readings of its book (a portion) or its category (an occasion). */
 export function readingColor(item: HaftarahItem, data: HaftarahMappings): Color {
   if (isParsha(item)) {
     const book = item.torah.book;
@@ -113,7 +113,7 @@ export function readingColor(item: HaftarahItem, data: HaftarahMappings): Color 
         BASE_LIGHTNESS +
         lightness +
         t * BOOK_LIGHTNESS_RAMP +
-        (k % 2 === 0 ? -NEIGHBOUR_LIGHTNESS : NEIGHBOUR_LIGHTNESS),
+        (k % 2 === 0 ? -NEIGHBOR_LIGHTNESS : NEIGHBOR_LIGHTNESS),
     });
   }
   const mates = data.specialOccasions.filter((o) => o.category === item.category);

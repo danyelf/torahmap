@@ -48,15 +48,15 @@ describe('renderCreditBlock', () => {
     expect(el.querySelectorAll('a')).toHaveLength(0);
   });
 
-  it('shows the licence when there is one and omits the pill when there is not', () => {
-    const withLicence = block([{ source: 'S', license: 'CC BY-SA' }]);
-    expect(withLicence).toContain('CC BY-SA');
-    expect(withLicence).toContain('credit-license');
+  it('shows the license when there is one and omits the pill when there is not', () => {
+    const withLicense = block([{ source: 'S', license: 'CC BY-SA' }]);
+    expect(withLicense).toContain('CC BY-SA');
+    expect(withLicense).toContain('credit-license');
 
     expect(block([{ source: 'S' }])).not.toContain('credit-license');
   });
 
-  it('links the licence when a deed url is given', () => {
+  it('links the license when a deed url is given', () => {
     const el = document.createElement('div');
     el.innerHTML = block([
       { source: 'S', license: 'CC BY-SA 4.0', licenseUrl: 'https://example.test/by-sa/4.0/' },
@@ -68,7 +68,7 @@ describe('renderCreditBlock', () => {
     expect(pill!.getAttribute('rel')).toBe('noopener noreferrer');
   });
 
-  it('leaves the licence as plain text when no deed url is given', () => {
+  it('leaves the license as plain text when no deed url is given', () => {
     const el = document.createElement('div');
     el.innerHTML = block([{ source: 'S', license: 'CC BY-NC' }]);
 
@@ -163,8 +163,8 @@ describe('the credits the app ships', () => {
     expect(bad).toEqual([]);
   });
 
-  it('links the deed for every licence that states a version', () => {
-    // Creative Commons 4.0 asks for a link to the licence alongside the
+  it('links the deed for every license that states a version', () => {
+    // Creative Commons 4.0 asks for a link to the license alongside the
     // attribution. A version we are confident enough to print is a version we
     // are confident enough to link.
     const unlinked = everyCredit()

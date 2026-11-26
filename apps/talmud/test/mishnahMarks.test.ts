@@ -37,9 +37,9 @@ describe('mishnahMarks', () => {
   });
 });
 
-describe('the Mishnah’s colour', () => {
+describe('the Mishnah’s color', () => {
   const mishnah = { tractate: 'TractA', daf: 2, amud: 'a' as const, segment: 1 };
-  /** The colour's channels over a base colour's: equal when only the brightness was jittered. */
+  /** The color's channels over a base color's: equal when only the brightness was jittered. */
   const hueOf = (color: readonly number[], base: readonly number[]) =>
     color.map((c, i) => c / base[i]);
 
@@ -49,7 +49,7 @@ describe('the Mishnah’s colour', () => {
     expect(b).toBeCloseTo(r, 5);
   });
 
-  it('is the Gemara’s colour under a tool', () => {
+  it('is the Gemara’s color under a tool', () => {
     const [r, g, b] = hueOf(mishnahOrGemaraColor(fixture, mishnah, true), GEMARA_BASE_COLOR);
     expect(g).toBeCloseTo(r, 5);
     expect(b).toBeCloseTo(r, 5);

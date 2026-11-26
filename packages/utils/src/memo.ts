@@ -1,5 +1,5 @@
 /**
- * `derive`, worked out once per value and kept. An overlay's colours are asked
+ * `derive`, worked out once per value and kept. An overlay's colors are asked
  * for once per square, 23,000 times a paint on the Tanakh, all with one settings value and
  * one data value.
  *

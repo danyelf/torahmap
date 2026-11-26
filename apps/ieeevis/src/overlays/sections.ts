@@ -1,4 +1,4 @@
-// Colours each piece by the section of its paper it falls in. Placeholders stay dark.
+// Colors each piece by the section of its paper it falls in. Placeholders stay dark.
 
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import { colorToCss, hex, type Color } from '@torahmap/utils';
@@ -33,6 +33,6 @@ export const sectionsOverlay: Overlay<PieceItem> = {
   renderLegend(container) {
     container.replaceChildren(...swatchList(Object.values(SECTIONS)));
   },
-  // A group is not cut at six swatches, as the plain colours list is.
+  // A group is not cut at six swatches, as the plain colors list is.
   summary: () => ({ groups: [Object.values(SECTIONS).map(({ color }) => colorToCss(color))] }),
 };

@@ -379,7 +379,7 @@ describe('rgbToHsl and hslToRgb roundtrip', () => {
 });
 
 describe('OKLCH', () => {
-  it('converts a colour there and back', () => {
+  it('converts a color there and back', () => {
     const color: Color = [0.195, 0.517, 0.885];
     const { l, c, h } = rgbToOklch(color);
     const back = oklchToRgb(l, c, h);

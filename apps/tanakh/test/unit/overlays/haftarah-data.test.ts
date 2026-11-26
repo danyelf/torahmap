@@ -230,7 +230,7 @@ describe('the haftarah readings the app ships', () => {
     });
   });
 
-  describe('Colours', () => {
+  describe('Colors', () => {
     const all = mappings as unknown as HaftarahMappings;
     const readings = [...all.parshiot, ...all.specialOccasions];
 
@@ -245,7 +245,7 @@ describe('the haftarah readings the app ships', () => {
       return byGroup;
     }
 
-    it('gives no two readings of one book or one category the same colour', () => {
+    it('gives no two readings of one book or one category the same color', () => {
       for (const [group, colors] of groups()) {
         expect(new Set(colors).size, group).toBe(colors.length);
       }
