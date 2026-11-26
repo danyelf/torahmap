@@ -80,7 +80,7 @@ export const tanakhSearch = createTermSearch<TanakhLayout, SearchData, MeaningsD
   credits: [
     {
       source:
-        'Eep Talstra Centre for Bible and Computer, ' +
+        'Eep Talstra Center for Bible and Computer, ' +
         'Biblia Hebraica Stuttgartensia Amstelodamensis (2021)',
       url: 'https://doi.org/10.17026/dans-z6y-skyh',
       license: 'CC BY-NC 4.0',
@@ -112,7 +112,7 @@ export function configure(config: {
  * than dropping the click silently.
  *
  * Adds a term rather than replacing the search: the existing words keep their
- * colours, which is what makes two words comparable on one map.
+ * colors, which is what makes two words comparable on one map.
  *
  * The click settles how that word is matched, and only that word: a meaning in
  * meanings mode, and the written form as a whole word, since substring would

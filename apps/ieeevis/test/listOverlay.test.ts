@@ -53,7 +53,7 @@ const recording = () => {
     return send.mock.calls.map(([body]) => JSON.parse(body).fields);
   };
 };
-const colours = (picked: string[], ...papers: number[]) =>
+const colors = (picked: string[], ...papers: number[]) =>
   authorsOverlay.colorsFor({
     items: squares(...papers) as never,
     settings: { picked },
@@ -63,19 +63,19 @@ const colours = (picked: string[], ...papers: number[]) =>
 
 describe('the authors overlay', () => {
   it('lights an author’s papers and dims the rest', () => {
-    const [mine, other] = colours(['Bei Wang'], 1, 2);
+    const [mine, other] = colors(['Bei Wang'], 1, 2);
     expect(mine).toEqual(pickColors([0])[0]);
     expect(other).not.toEqual(mine);
   });
 
   it('lights a paper’s squares that have no text dimmer than its text', () => {
-    const [missing] = colours(['José Núñez'], 2) as [number, number, number][];
+    const [missing] = colors(['José Núñez'], 2) as [number, number, number][];
     const full = pickColors([0])[0] as [number, number, number];
     missing.forEach((c, i) => expect(c).toBeLessThan(full[i]));
   });
 
-  it('splits a paper by two picked authors between their colours', () => {
-    const [both] = colours(['Ana Silva', 'Bei Wang'], 0);
+  it('splits a paper by two picked authors between their colors', () => {
+    const [both] = colors(['Ana Silva', 'Bei Wang'], 0);
     expect(both).toEqual(pickColors([0, 1]));
   });
 
@@ -91,8 +91,8 @@ describe('the authors overlay', () => {
   });
 
   it('ignores an author the program does not hold', () => {
-    const [plain] = colours([], 2);
-    expect(colours(['Nobody'], 2)[0]).toEqual(plain);
+    const [plain] = colors([], 2);
+    expect(colors(['Nobody'], 2)[0]).toEqual(plain);
   });
 
   it('comes back from a link as the same picks', () => {
@@ -122,7 +122,7 @@ describe('finding an author', () => {
 });
 
 describe('the keywords overlay', () => {
-  const colourOf = (picked: string[], ...papers: number[]) =>
+  const colorOf = (picked: string[], ...papers: number[]) =>
     keywordsOverlay.colorsFor({
       items: squares(...papers) as never,
       settings: { picked },
@@ -131,13 +131,13 @@ describe('the keywords overlay', () => {
     });
 
   it('lights the papers that list a keyword, and dims the ones that list none', () => {
-    const [listed, none] = colourOf(['Visual analytics'], 1, 2);
+    const [listed, none] = colorOf(['Visual analytics'], 1, 2);
     expect(listed).toEqual(pickColors([0])[0]);
     expect(none).not.toEqual(listed);
   });
 
-  it('splits a paper listing two picked keywords between their colours', () => {
-    expect(colourOf(['Visual analytics', 'Uncertainty'], 0)[0]).toEqual(pickColors([0, 1]));
+  it('splits a paper listing two picked keywords between their colors', () => {
+    expect(colorOf(['Visual analytics', 'Uncertainty'], 0)[0]).toEqual(pickColors([0, 1]));
   });
 });
 

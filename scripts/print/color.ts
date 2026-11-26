@@ -1,4 +1,4 @@
-// Colours for ink on cream paper. The site's colour wheel is evenly spaced by
+// Colors for ink on cream paper. The site's color wheel is evenly spaced by
 // the numbers, so on paper its yellows glare and its blues go dark; the
 // readings here are evenly spaced in OKLCH, where equal numbers look equally
 // bright.
@@ -39,7 +39,7 @@ function oklchToSrgb(L: number, C: number, hue: number): number[] {
   ].map(toSrgb);
 }
 
-/** An OKLCH colour as hex, its chroma lowered until sRGB can show it. */
+/** An OKLCH color as hex, its chroma lowered until sRGB can show it. */
 export function oklch(L: number, C: number, hue: number): string {
   let rgb = oklchToSrgb(L, C, hue);
   while (rgb.some((c) => c < 0 || c > 1) && C > 0) {
@@ -49,9 +49,9 @@ export function oklch(L: number, C: number, hue: number): string {
   return hex(rgb);
 }
 
-/** OKLab lightness of a hex colour: how light it looks, 0 to 1. */
-export function oklabLightness(colour: string): number {
-  const [r, g, b] = [1, 3, 5].map((i) => toLinear(parseInt(colour.slice(i, i + 2), 16) / 255));
+/** OKLab lightness of a hex color: how light it looks, 0 to 1. */
+export function oklabLightness(color: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => toLinear(parseInt(color.slice(i, i + 2), 16) / 255));
   const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
   const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
   const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
@@ -59,11 +59,11 @@ export function oklabLightness(colour: string): number {
 }
 
 /** The readings in the site's order around the wheel, from red. */
-export function readingColours(count: number): string[] {
+export function readingColors(count: number): string[] {
   return Array.from({ length: count }, (_, i) => oklch(0.64, 0.16, 29 + (i / count) * 360));
 }
 
-// Unread verses vary in depth by verse, as the site's grey does, from the same seed.
+// Unread verses vary in depth by verse, as the site's gray does, from the same seed.
 const vary = (verseIndex: number) => seededRandom(verseIndex * 3);
 
 /** A verse in no reading, on the haftarah print. */

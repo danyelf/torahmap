@@ -83,7 +83,7 @@ test.describe('on a dense screen', () => {
           const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
           return Math.abs(r - cr) + Math.abs(g - cg) + Math.abs(b - cb) < 60;
         };
-        // From the recital's middle outward: its fill, then its ring, a run of the search's colour.
+        // From the recital's middle outward: its fill, then its ring, a run of the search's color.
         const run = (step: (i: number) => [number, number]) => {
           let i = 0;
           while (i < 2000 && !ring(...step(i))) i++;

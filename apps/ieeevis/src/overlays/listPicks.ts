@@ -35,7 +35,7 @@ export interface Entry {
   papers: number;
 }
 
-/** A picked entry and its place among the picks, which sets its colour. */
+/** A picked entry and its place among the picks, which sets its color. */
 export type Picked = Entry & { slot: number };
 
 /** The ways to find papers by what they list, for one kind of name. */

@@ -33,7 +33,7 @@
   background: #666;
 }
 
-/* A label centred on the 0% or 100% position hangs half of itself off the
+/* A label centered on the 0% or 100% position hangs half of itself off the
    strip, so the outermost two align inwards while their marks stay on the
    position they name. Must follow .tick: same specificity, so order decides. */
 #overlay-legend .tick-start {

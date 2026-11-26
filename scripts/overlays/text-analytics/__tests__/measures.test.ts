@@ -112,7 +112,7 @@ describe('repetitionScores', () => {
     expect(scores[1]).not.toBeNull();
   });
 
-  it('scores a verse alone, whatever its neighbours repeat', () => {
+  it('scores a verse alone, whatever its neighbors repeat', () => {
     const verses = [
       [...phrase, ...fresh(8 - RUN_WORDS)],
       fresh(8),

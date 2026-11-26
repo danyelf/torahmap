@@ -4,7 +4,7 @@
 // The app fetches its data with a relative URL (`fetchData` in
 // packages/shell/src/dataFiles.ts asks for `/data/<file>`). happy-dom resolves relative
 // URLs against the test environment's base, http://localhost:3000, so every
-// test that initialises a data-loading overlay was making a real HTTP request
+// test that initializes a data-loading overlay was making a real HTTP request
 // to a dev server that is not running. Each one failed with ECONNREFUSED, the
 // overlay's own try/catch swallowed it, and the test passed — while exercising
 // the missing-data path rather than the real one, printing a stack trace per

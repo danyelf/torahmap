@@ -26,7 +26,7 @@ for today:
   leafage beside עלה as "go up"
 
 That last one matters more than it looks, because it is the shape the panel is
-built for: two rows, two colours, one map.
+built for: two rows, two colors, one map.
 
 This is the third setting to have the same defect. Language was one value for
 the whole search until #111, and was read off the first term, so an English word
@@ -148,7 +148,7 @@ So the row collapses. Root is the only mode with sub-choices, which makes the
 meaning list the thing most worth hiding, and hiding it is what buys the space
 for the control.
 
-**A collapsed row is one line:** the colour swatch, the word, a grey summary,
+**A collapsed row is one line:** the color swatch, the word, a gray summary,
 the hit count, and the × that removes it. The summary always names the mode,
 then what it is doing about meanings. Naming the mode even when it is the
 default is what makes the column scannable, and naming the meanings is
@@ -241,7 +241,7 @@ input survives every render that matters.
 Eight test files hold 58 references that drive the radios and the checkbox
 through the real DOM; `integration/search-overlay-modes.test.ts` carries 30 of
 them. Those are rewritten against the row controls rather than deleted — what
-they assert about matching behaviour is still true, only the control that sets
+they assert about matching behavior is still true, only the control that sets
 it has moved.
 
 New coverage:
@@ -249,7 +249,7 @@ New coverage:
 - `effectiveMode` — the default by language, the clamp that keeps English off
   root, and the restoration when the text goes back to Hebrew
 - the `mode` parameter round-tripping, including an empty entry, a short list,
-  and an unrecognised letter
+  and an unrecognized letter
 - two terms searching in different modes in one search, with each row's count
   describing its own term
 - `searchForMeaning` setting only the mode of the term it created, leaving a
@@ -312,7 +312,7 @@ Driven by hand at 380px against the running app, with no console errors:
 - A third row holding `light` offered substring and whole word only.
 - Reloading the URL restored all three rows with their modes and narrowing.
 - עלה beside עלה, one narrowed to leafage and one to ascend, painted the map in
-  two colours from one written form — the comparison this change exists for.
+  two colors from one written form — the comparison this change exists for.
 
 ### Still open
 

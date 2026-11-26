@@ -35,7 +35,7 @@ A throwaway branch (`spike/talmud-shell`, local) hacked `main.ts` into
 `createApp(text)` and booted both texts through it in about twenty minutes,
 using 28 marked shortcuts. Findings:
 
-- The renderer, camera, hit testing, colour layers and cross-fade needed no
+- The renderer, camera, hit testing, color layers and cross-fade needed no
   change; the Talmud's 81,793 squares drew through the same code as the
   Tanakh's 23,206. The panels, menu, legend and address-bar handling worked
   untouched.
@@ -78,7 +78,7 @@ interface MapItem { id: string; x: number; y: number; size: number }
 | `site` | today's name, About, credits, `describeLink` | its own |
 | `firstFiles`, `layout` | `tanakh-structure.json`, `layout.ts` | `talmud/structure.json`, `talmud/layout.ts` |
 | `startCamera` | pinned to the map's right edge | fit the map |
-| `baseColor` | none: the shell's grey | Mishnah or Gemara |
+| `baseColor` | none: the shell's gray | Mishnah or Gemara |
 | `labels` | `labels.ts`, `mapTitle.ts` | `talmudLabels.ts` |
 | `link` | `verse`, `Genesis.1.1` | `at`, `Berakhot.2a.1` |
 | `name` | `Genesis 1:1` | `Berakhot 2a:1` |
@@ -114,7 +114,7 @@ Notes on the slots:
   reader is in the stories, lives in `src/scrollytelling/storyColumn.ts` (see
   `2026-10-06-story-mode-design.md`).
 - **Generic types** stop at the edge: `createApp` and overlays are typed by the
-  text's square; the renderer, camera, hit testing and colour layers see
+  text's square; the renderer, camera, hit testing and color layers see
   `MapItem` only. No shared type defaults to `TanakhIdentity`.
 
 ### What the shell takes on
@@ -165,7 +165,7 @@ the Tanakh's moved into `src/tanakh/search/`; the story column out of `main.ts`.
 **`createApp`, with both texts booting.** `main.ts` becomes
 `createApp(text)`, called by `main-tanakh.ts` and a dev-only `main-talmud.ts`.
 The Talmud supplies what it already has: its layout, labels, ids, Mishnah and
-Gemara as its base colour, and its text in the popup, one tractate at a time
+Gemara as its base color, and its text in the popup, one tractate at a time
 through the download manager. Where a slot isn't built yet, a **shortcut**
 stands in: the plainest code that lets the Talmud boot without the slot, with a
 comment saying in the present tense what is missing, and a line in #342's
@@ -226,7 +226,7 @@ Tests move with their code into the package's `test/` folder.
    kinds it records moves in with it.
 5. **`packages/shell`**: `createApp` and the panels, menu, story column,
    links, popup, gestures (`mapGestures`), downloads, overlay machinery, how
-   the map is coloured (`itemColoring`: the engine draws a picture, the shell
+   the map is colored (`itemColoring`: the engine draws a picture, the shell
    decides it) and the page's half of telemetry.
 6. **The apps.** `apps/tanakh`, `apps/talmud` and `apps/worker`, and two
    Tanakh components the app shares with others:
@@ -250,7 +250,7 @@ needs them.
 
 ## Projects 3 and 4
 
-Project 3: the Talmud's layout, starting view, colours and label behaviour; a
+Project 3: the Talmud's layout, starting view, colors and label behavior; a
 first new overlay; fixing the data, in which about 20 of the 37 tractates tag
 their opening Mishnah as Gemara (`scripts/talmud/bundle.ts` starts its walk in
 Gemara); serving `/talmud/` from the Worker with its own link previews;

@@ -31,10 +31,10 @@ interface StoryBlend {
 
 export type Driver =
   | { by: 'story'; blend: StoryBlend | null }
-  | { by: 'reader'; lastScrollTop: number; travelled: number }
+  | { by: 'reader'; lastScrollTop: number; traveled: number }
   // The pictures at both ends are captured when the ease starts, so each frame
-  // fades between them instead of re-running the overlays' colouring. The camera
-  // eases towards wherever the story is on each frame.
+  // fades between them instead of re-running the overlays' coloring. The camera
+  // eases toward wherever the story is on each frame.
   | {
       by: 'rejoining';
       since: number;
@@ -56,7 +56,7 @@ export function driverKind(driver: Driver): DriverKind {
 }
 
 export function readerTakesOver(scrollTop: number): ReaderDriving {
-  return { by: 'reader', lastScrollTop: scrollTop, travelled: 0 };
+  return { by: 'reader', lastScrollTop: scrollTop, traveled: 0 };
 }
 
 export function rejoin(
@@ -92,14 +92,14 @@ export function driverAfterLanding<D extends Driver>(
 }
 
 /**
- * A scroll while the reader drives only counts towards handing the map back,
+ * A scroll while the reader drives only counts toward handing the map back,
  * and returns 'rejoin' once it has. Counts distance, not events: a trackpad
  * fires many small scroll events where a wheel fires few large ones.
  */
 export function storyScrolled(driver: ReaderDriving, scrollTop: number): ReaderDriving | 'rejoin' {
-  const travelled = driver.travelled + Math.abs(scrollTop - driver.lastScrollTop);
-  if (travelled >= REJOIN_SCROLL_PX) return 'rejoin';
-  return { by: 'reader', lastScrollTop: scrollTop, travelled };
+  const traveled = driver.traveled + Math.abs(scrollTop - driver.lastScrollTop);
+  if (traveled >= REJOIN_SCROLL_PX) return 'rejoin';
+  return { by: 'reader', lastScrollTop: scrollTop, traveled };
 }
 
 /** How far through the ease, 0 to 1. */
@@ -113,10 +113,10 @@ export function settle(driver: StoryHasMap, now: number): StoryHasMap {
   return driver.by === 'rejoining' && rejoinProgress(driver, now) >= 1 ? STORY_DRIVING : driver;
 }
 
-/** What the colour layer is drawn from: the tools, a story blend, or a timed ease. */
+/** What the color layer is drawn from: the tools, a story blend, or a timed ease. */
 export type ColorSource = 'overlay' | 'blend' | 'ease';
 
-/** What the colour layer is drawn from, for deciding what a hover or a landing makes stale. */
+/** What the color layer is drawn from, for deciding what a hover or a landing makes stale. */
 export function colorSource(driver: Driver): ColorSource {
   if (driver.by === 'rejoining') return 'ease';
   return driver.by === 'story' && driver.blend ? 'blend' : 'overlay';

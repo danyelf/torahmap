@@ -131,7 +131,7 @@ export function createStoryColumn(
   const stopIndex = (): number => held ?? stops.indexOf(nearerStop(view()));
 
   function show(index: number): void {
-    // Centred, where the story holds a stop still; top-aligned, a stop shorter
+    // Centered, where the story holds a stop still; top-aligned, a stop shorter
     // than the story settles partway into the next.
     elements[index]?.scrollIntoView(
       sideways() ? { block: 'nearest', inline: 'center' } : { block: 'center' },

@@ -100,7 +100,7 @@ for (const zoom of [0.4, 1, 2]) {
   });
 }
 
-for (const [zoom, labelled] of [
+for (const [zoom, labeled] of [
   [0.6, false],
   [0.8, true],
 ] as const) {
@@ -109,8 +109,8 @@ for (const [zoom, labelled] of [
   }) => {
     desktopAndPhoneOnly();
     await openMap(page, `at=Berakhot.2a.1&zoom=${zoom}`, TALMUD);
-    expect((await boxes(page, '#talmud-daf-labels .row-number')).length > 0).toBe(labelled);
-    expect((await boxes(page, '#talmud-perek-labels > *')).length > 0).toBe(labelled);
+    expect((await boxes(page, '#talmud-daf-labels .row-number')).length > 0).toBe(labeled);
+    expect((await boxes(page, '#talmud-perek-labels > *')).length > 0).toBe(labeled);
   });
 }
 
@@ -229,7 +229,7 @@ test("the Talmud's search card's × clears the search, and Back brings it back",
   await closeFromLegend(page, 'search');
 });
 
-test('a long list of passages scrolls on its own and leaves the colour key in view', async ({
+test('a long list of passages scrolls on its own and leaves the color key in view', async ({
   page,
 }) => {
   desktopOnly('a phone sheet is half the screen, too short to hold both');

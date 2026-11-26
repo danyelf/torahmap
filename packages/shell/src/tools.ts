@@ -206,7 +206,7 @@ export function toLink<T, S>(state: ToolState<S>, tools: TextTools<T, S>): Tools
 
 /**
  * Keep of the overlay only what a link carries. The search stays as it is: a link doesn't record
- * which word has which colour, so passing the search through one could swap them.
+ * which word has which color, so passing the search through one could swap them.
  */
 export function withOverlayTrimmed<T, S>(
   state: ToolState<S>,

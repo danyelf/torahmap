@@ -74,13 +74,13 @@ describe('the search and the highlighter agree', () => {
     expect(marked(LEVITICUS_1_1, 'he').map((m) => m.replace(/[^א-ת]/g, ''))).toEqual(['ויקר']);
   });
 
-  it('on where the result row centres a phrase', () => {
+  it('on where the result row centers a phrase', () => {
     const result = { id: 'Leviticus.1.1' };
     const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהוה', 'word', data)!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהוה');
   });
 
-  it('on where the result row centres a phrase cut off mid-word, in substring mode', () => {
+  it('on where the result row centers a phrase cut off mid-word, in substring mode', () => {
     const result = { id: 'Leviticus.1.1' };
     const { snippet, matchStart, matchEnd } = excerptOf(result, 'וידבר יהו', 'substring', data)!;
     expect(snippet.slice(matchStart, matchEnd).replace(/[^א-ת ]/g, '')).toBe('וידבר יהו');

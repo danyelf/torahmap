@@ -8,12 +8,12 @@ export const ZOOM_IN_FACTOR = 1.1; // 10% zoom in per wheel tick
 // Debounced so pan/zoom doesn't flood browser history with replaceState calls
 export const URL_UPDATE_DEBOUNCE_MS = 300;
 
-/** The grey of a square left out. */
-export const DIMMED_GREY: Color = [0.18, 0.18, 0.18];
+/** The gray of a square left out. */
+export const DIMMED_GRAY: Color = [0.18, 0.18, 0.18];
 
 /**
- * What a square a search does not match keeps of its overlay colour, judged by
- * eye on the map: above about half, a warm search colour is lost among
+ * What a square a search does not match keeps of its overlay color, judged by
+ * eye on the map: above about half, a warm search color is lost among
  * Haftarah's stripes.
  */
 export const SEARCH_NON_MATCH_DIM = 0.45;

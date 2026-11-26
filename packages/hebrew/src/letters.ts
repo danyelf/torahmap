@@ -117,7 +117,7 @@ export function mapStrippedToOriginal(original: string, strippedPos: number): nu
 /**
  * Where a stretch of nikkud-stripped text falls in the text it came from: from
  * its first letter to past the points and accents on its last, so a mark
- * carries every point of the letters it covers and none of its neighbours'.
+ * carries every point of the letters it covers and none of its neighbors'.
  */
 export function mapStrippedRangeToOriginal(original: string, { start, end }: TextRange): TextRange {
   if (end <= start) {

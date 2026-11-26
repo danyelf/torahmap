@@ -11,7 +11,7 @@ overlay, never both. Picking a search throws away the overlay the reader had;
 picking an overlay clears the search. A question like "which verses with
 אברהם are in the haftarot?" cannot be asked on one map.
 
-The code assumes one overlay throughout: the colour pipeline takes one colour
+The code assumes one overlay throughout: the color pipeline takes one color
 layer, the URL reads only the active overlay's keys, a story stop names one
 overlay, and the verse popup, hover and telemetry each ask "the" overlay.
 
@@ -20,32 +20,32 @@ overlay, and the verse popup, hover and telemetry each ask "the" overlay.
 Search leaves the overlay list and becomes a tool beside it. Either, both or
 neither can be on.
 
-### How a verse is coloured
+### How a verse is colored
 
-Three layers, top to bottom: search, the overlay, grey. Each gives a colour
+Three layers, top to bottom: search, the overlay, gray. Each gives a color
 for a verse or passes it down.
 
-- **A match with an overlay on** is a donut: the search colour as a ring, the
-  overlay's colour in the hole at full strength. The ring is 1.5px outside the
+- **A match with an overlay on** is a donut: the search color as a ring, the
+  overlay's color in the hole at full strength. The ring is 1.5px outside the
   square and 1px inside it, in screen pixels, so it does not thin as the map
   zooms out.
 - **When the square is too small on screen to leave a hole**, the match is
-  filled whole in its search colour, and the overlay's colour for that verse is
-  lost. Zoomed out, the search colour does the work; the overlay's value
+  filled whole in its search color, and the overlay's color for that verse is
+  lost. Zoomed out, the search color does the work; the overlay's value
   matters when zoomed in, where there is room for the hole. A reader who wants
   the overlay back turns the search off.
 - **A verse that does not match**, while a search is on, shows the overlay's
-  colour (or grey, with no overlay) dimmed by a smidge. The amount is one
+  color (or gray, with no overlay) dimmed by a smidge. The amount is one
   variable, to be tuned by eye.
 - **The dimming follows the tool in front**: the one whose panel was opened most
   recently, Search or Overlay (a legend row opens its panel, so the legend is
   the switch; a story stop with a search puts search in front). With search in
-  front, non-matches dim; with the overlay in front they keep its full colour,
+  front, non-matches dim; with the overlay in front they keep its full color,
   and matches still show. A switch fades over about 250ms in three steps, or
   snaps under reduced motion.
-- **A match with no overlay** is filled in its search colour, and non-matches
-  are dimmed grey: search on its own looks as it does today.
-- **With no search on**, the overlay's colours pass through unchanged.
+- **A match with no overlay** is filled in its search color, and non-matches
+  are dimmed gray: search on its own looks as it does today.
+- **With no search on**, the overlay's colors pass through unchanged.
 - **A verse several words match** splits into corner-to-corner bands and grows
   slightly, as #246 settled (`2026-09-24-multi-hit-verses.md`). As a donut its
   ring splits the same way.
@@ -55,7 +55,7 @@ rejection of rings stand corrected: the rings were rejected for thinning to
 nothing zoomed out, which screen-pixel widths and the full-square fallback
 answer.
 
-A stricter view, the overlay colouring only the matches, is not part of this
+A stricter view, the overlay coloring only the matches, is not part of this
 step.
 
 ### The URL and story stops
@@ -109,23 +109,23 @@ overlay, as now.
 
 - **Search keeps its module** (`src/overlays/search/`: settings, controls,
   results, summary, popup highlighting) but leaves the overlay registry. The
-  app holds the current overlay and the search as two slots. Search's colour
-  function gives a match's colour or nothing.
-- **Each verse has a fill and a ring colour.** A verse without a ring has its
+  app holds the current overlay and the search as two slots. Search's color
+  function gives a match's color or nothing.
+- **Each verse has a fill and a ring color.** A verse without a ring has its
   ring equal to its fill, and draws as today. A pure function in
   `src/itemColoring.ts`, ahead of the existing two passes, combines the search
   and overlay layers into fills and rings, applying the dimming. It takes and
   returns plain arrays, and gets unit tests.
 - **The renderer** (`src/rendering.ts`, instanced since #258) takes the ring
-  colour per verse and the ring widths as uniforms, draws the donut, and fills
-  the square with the ring colour when it is too small on screen for a hole.
+  color per verse and the ring widths as uniforms, draws the donut, and fills
+  the square with the ring color when it is too small on screen for a hole.
   The outside width must stay under half the 2-unit gap between squares at the
   zooms where donuts show, so rings never touch.
 - **Story blending** cross-fades whole pictures between stops (#260), and
   each picture carries its rings, so a donut fades in with the rest of the
   picture. A stop's picture comes from its search and its overlay, and the
   per-stop cache is keyed by both.
-- **Everything else that asked "the overlay"** asks both: hover recolouring
+- **Everything else that asked "the overlay"** asks both: hover recoloring
   (`layerToRecompute`), the verse popup (`src/sidebar.ts`), the URL writer and
   reader (`src/urlState.ts`, `src/viewState.ts`), the dev capture tool, and
   the word-click handler, whose workaround for losing the overlay goes.

@@ -6,7 +6,7 @@ import { writeStopComment } from '@torahmap/stories';
 /**
  * A story.md stop showing what the URL shows, with an empty line for its text;
  * null for a URL that is the story itself. A pinned verse leaves the camera
- * out of the URL, so the stop centres the verse, as the app does.
+ * out of the URL, so the stop centers the verse, as the app does.
  */
 export function storyStopLine(name: string, query: string): string | null {
   const params = new URLSearchParams(query);

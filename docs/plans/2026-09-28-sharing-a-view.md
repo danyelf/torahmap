@@ -28,7 +28,7 @@ link previews as what it points to.
 
 The view moves from the hash to the query string: `?verse=Genesis.12.1&…`,
 with the keys as they are now. Nothing reads `#` links; the site is not yet
-released, so there are none to honour. The Talmud page keeps its own hash
+released, so there are none to honor. The Talmud page keeps its own hash
 links.
 
 **What is on screen decides the link.** While a story drives the map, the
@@ -110,7 +110,7 @@ Only these four. Splitting the rest of the codebase is not part of this.
 
 Columns go in `src/telemetry/schema.ts` as usual.
 
-- **`share`** — `how` (`copied`, `share_sheet`, `cancelled`, `failed`),
+- **`share`** — `how` (`copied`, `share_sheet`, `canceled`, `failed`),
   `what` (`nothing`, `view`, `stop`), `story`, `stop_id`, `overlay` (`none` when the link names none), and whether a search
   is on and a verse pinned.
 - **`page_view`** gains `arrived_with` (`nothing`, `view`, `stop`): what the

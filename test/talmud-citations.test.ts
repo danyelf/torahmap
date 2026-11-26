@@ -50,7 +50,7 @@ describe("the Talmud's citations of the Tanakh", () => {
   );
 
   it.each(tractates)(
-    "in %s's English name real verses, each on a parenthesised reference of its segment",
+    "in %s's English name real verses, each on a parenthesized reference of its segment",
     (file) => {
       const text: TalmudTractateText = read(`talmud/texts/${file}`);
       const english: string[][] = read(`talmud/english/${file}`);

@@ -1,4 +1,4 @@
-// What each print shows: every verse's position and colours, the titles, and
+// What each print shows: every verse's position and colors, the titles, and
 // the key, as plain data for draw().
 
 import { BAND_OFFSET, MULTICOLOR_GROWTH, SQUARE_GAP } from '@torahmap/engine';
@@ -28,9 +28,9 @@ import {
   NAME_HUES,
   PAPER,
   paleTaupe,
-  readingColours,
+  readingColors,
   walnut,
-} from './colour.ts';
+} from './color.ts';
 import { HEBREW, LATIN } from './fonts.ts';
 import { printLayout } from './layout.ts';
 import type {
@@ -142,9 +142,9 @@ export const OCCASION_COLUMNS = [
   ['fast-days', 'rosh-chodesh'],
 ];
 
-export function haftarahKey(derived: HaftarahDerivation, colours: string[], torah: Book[]): Key {
+export function haftarahKey(derived: HaftarahDerivation, colors: string[], torah: Book[]): Key {
   const row = (item: HaftarahItem): KeyRow => ({
-    swatch: colours[derived.items.indexOf(item)],
+    swatch: colors[derived.items.indexOf(item)],
     he: item.hebrewName,
     en: item.name,
   });
@@ -175,7 +175,7 @@ export function haftarahKey(derived: HaftarahDerivation, colours: string[], tora
     he: 'הפטרות',
     en: 'Haftarot · the prophetic readings',
     notes: [
-      'Each week’s Torah portion and the passage from the Prophets read after it share a colour; the holidays and special Sabbaths continue around the wheel.',
+      'Each week’s Torah portion and the passage from the Prophets read after it share a color; the holidays and special Sabbaths continue around the wheel.',
       'A verse read on more than one occasion is split corner to corner, one band for each reading. Verses in no reading are brown. Ashkenazi custom.',
     ],
     columns: [...portions, ...occasionColumns],
@@ -192,15 +192,15 @@ export async function loadHaftarahData(structure: TorahData): Promise<HaftarahDa
 
 export async function haftarahSheet(structure: TorahData, marks: boolean): Promise<SheetInput> {
   const derived = deriveHaftarah(await loadHaftarahData(structure), 'ashkenazi');
-  const colours = readingColours(derived.items.length);
-  const colourOf = (item: HaftarahItem) => colours[derived.items.indexOf(item)];
+  const colors = readingColors(derived.items.length);
+  const colorOf = (item: HaftarahItem) => colors[derived.items.indexOf(item)];
   // As colorAt in apps/tanakh/src/overlays/haftarah.ts: a Torah verse shows its portion,
   // any other verse every reading it is part of.
   const fillsOf = (v: TanakhLayout, i: number) => {
     const key = v.id;
     const parsha = derived.torahVerseToParsha.get(key);
     const items = parsha ? [parsha] : (derived.haftarahVerseToItem.get(key) ?? []);
-    return items.length ? items.map(colourOf) : [walnut(i)];
+    return items.length ? items.map(colorOf) : [walnut(i)];
   };
   return sheet(
     printLayout(structure),
@@ -208,7 +208,7 @@ export async function haftarahSheet(structure: TorahData, marks: boolean): Promi
     fillsOf,
     haftarahKey(
       derived,
-      colours,
+      colors,
       structure.books.filter((b) => b.section === 'torah'),
     ),
     'torahmap.org · Text of the Tanakh from Sefaria · Haftarah tables from hebcal',
@@ -303,11 +303,11 @@ function microtextPatch(haftarah: SheetInput, structure: TorahData): ProofInput[
     verses: haftarah.verses,
     words: layout.map((v) => openingLetters(texts[v.book]?.[v.chapter]?.[v.verse]?.he ?? '')),
     // Genesis runs right to left, so its first verse is at the patch's top right.
-    centre: { x: start.x + start.side - 120, y: start.y + 45 },
+    center: { x: start.x + start.side - 120, y: start.y + 45 },
   };
 }
 
-/** Patches of the map at print scale, and every colour the prints use. */
+/** Patches of the map at print scale, and every color the prints use. */
 export function proofInput(
   haftarah: SheetInput,
   search: SheetInput,
@@ -322,8 +322,8 @@ export function proofInput(
     fonts: FONTS,
     scale,
     patches: [
-      { title: 'Haftarah · Isaiah 40–60', verses: haftarah.verses, centre: { x: 1400, y: 880 } },
-      { title: 'Five names · Genesis 22–32', verses: search.verses, centre: { x: 3200, y: 220 } },
+      { title: 'Haftarah · Isaiah 40–60', verses: haftarah.verses, center: { x: 1400, y: 880 } },
+      { title: 'Five names · Genesis 22–32', verses: search.verses, center: { x: 3200, y: 220 } },
     ],
     microtext: microtextPatch(haftarah, structure),
     swatches: [

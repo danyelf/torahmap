@@ -6,7 +6,7 @@ import {
   screenToWorld,
   viewOffset,
   zoomAtPoint,
-  centreForFocus,
+  centerForFocus,
   type Camera,
   worldToScreen,
 } from '../src/index.ts';
@@ -45,14 +45,14 @@ describe('cameraToFit', () => {
   const onScreen = (x: number, y: number, c: Camera, width: number, height: number) =>
     worldToScreen({ x, y }, c, { width, height });
 
-  it('fits a wide box to the width, centred', () => {
+  it('fits a wide box to the width, centered', () => {
     const c = cameraToFit(box, 832, 1000, ZOOM);
     expect(c.zoom).toBeCloseTo(2);
     const topLeft = onScreen(box.minX, box.minY, c, 832, 1000);
     const bottomRight = onScreen(box.maxX, box.maxY, c, 832, 1000);
     expect(topLeft.x).toBeCloseTo(16);
     expect(bottomRight.x).toBeCloseTo(816);
-    // Centred below the room kept for book labels.
+    // Centered below the room kept for book labels.
     expect(topLeft.y - 40).toBeCloseTo(1000 - 16 - bottomRight.y);
   });
 
@@ -64,7 +64,7 @@ describe('cameraToFit', () => {
     expect(onScreen(300, 150, c, 4000, 256).x).toBeCloseTo(2000);
   });
 
-  it('keeps the box centred at a given zoom', () => {
+  it('keeps the box centered at a given zoom', () => {
     const c = cameraToFit(box, 832, 1000, ZOOM, { zoom: 0.5 });
     expect(c.zoom).toBe(0.5);
     expect(onScreen(300, 150, c, 832, 1000).x).toBeCloseTo(416);
@@ -121,22 +121,22 @@ describe('zoomAtPoint', () => {
     expect(after.y).toBeCloseTo(before.y, 10);
   });
 
-  it('leaves the centre alone when zooming about the middle', () => {
+  it('leaves the center alone when zooming about the middle', () => {
     const zoomed = zoomAtPoint(camera, 0.4, { x: 400, y: 300 }, view);
     expect(zoomed.x).toBeCloseTo(1000, 10);
     expect(zoomed.y).toBeCloseTo(400, 10);
   });
 });
 
-describe('centreForFocus', () => {
+describe('centerForFocus', () => {
   const view = { width: 800, height: 600 };
   const item = { x: 400, y: 300, size: 6 };
 
   it('puts the item at a focus away from the middle', () => {
-    // The phone centres squares above the middle, clear of the story sheet.
+    // The phone centers squares above the middle, clear of the story sheet.
     const focus = { x: 400, y: 228 };
-    const centre = centreForFocus(item, 2.5, focus, view);
-    const screen = worldToScreen({ x: 403, y: 303 }, { ...centre, zoom: 2.5 }, view);
+    const center = centerForFocus(item, 2.5, focus, view);
+    const screen = worldToScreen({ x: 403, y: 303 }, { ...center, zoom: 2.5 }, view);
     expect(screen.x).toBeCloseTo(focus.x, 10);
     expect(screen.y).toBeCloseTo(focus.y, 10);
   });

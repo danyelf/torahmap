@@ -17,7 +17,7 @@
 - npm only (`package-lock.json`). `npx`, never `pnpm`.
 - No ticket or stage references in code, tests or comments. Ticket numbers belong in commit messages and the PR.
 - Comments say what the code cannot: a measured number, a decision and why, a constraint not visible locally. Present tense, never history. Shorter is better.
-- Tests check behaviour: no assertions on text readers see, on counts taken from the shipped data, or on timings. A check that the shipped data is valid is a test.
+- Tests check behavior: no assertions on text readers see, on counts taken from the shipped data, or on timings. A check that the shipped data is valid is a test.
 - Python: standard library only, run as `python3 -I`, scripts written to files, never heredocs.
 - A search term of one letter is never a word: never searched, returned or clickable.
 - Links need no backward compatibility.
@@ -32,13 +32,13 @@
 
 Inputs the spec implies but no task's own happy path covers; each has a test in the task that owns the code.
 
-1. A recital tile (`width` 2×`size`): clicking its right half pins it; arrow-key and search-result travel centre on its middle, not its left half (Task 1).
+1. A recital tile (`width` 2×`size`): clicking its right half pins it; arrow-key and search-result travel center on its middle, not its left half (Task 1).
 2. An item with no `width` behaves exactly as before: rectangle, hit, nearest and outline are unchanged (Task 1).
 3. A live build contains no page and no data folder of an unpublished text, however many pages exist; flipping one page's flag publishes that page alone (Task 2).
 4. Every cross-reference in the shipped data names a square that exists, including the whole-annex references (`Annex III`) and paragraph-level ones (`6(2)`) (Task 3).
 5. A link to a square that does not exist pins nothing and does not throw (Task 9).
 6. The page for a text with no Hebrew shows no "Hide Hebrew" control and never writes the Hebrew choice to storage (Task 5).
-7. A search of a single letter finds nothing; a search of a word in a recital and in an article colours both (Task 8).
+7. A search of a single letter finds nothing; a search of a word in a recital and in an article colors both (Task 8).
 
 ---
 
@@ -77,7 +77,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildItemGeometry,
   buildOutlineGeometry,
-  centreForFocus,
+  centerForFocus,
   findExactHit,
   findNearestItem,
   SQUARE_GAP,
@@ -103,16 +103,16 @@ describe('an item wider than tall', () => {
     expect(findExactHit([tile], 112, 203)).toBeNull();
   });
 
-  it('has its centre in the middle of its width', () => {
+  it('has its center in the middle of its width', () => {
     const other = createItem({ id: 'other', x: 130, y: 200, size: 6 });
     expect(findNearestItem([tile, other], 106, 203)?.id).toBe('tile');
     expect(findNearestItem([tile, other], 118, 203)?.id).toBe('tile');
   });
 
-  it('is centred on screen at the middle of its width', () => {
+  it('is centered on screen at the middle of its width', () => {
     const viewport = { width: 800, height: 600 };
-    const centre = centreForFocus(tile, 1, { x: 400, y: 300 }, viewport);
-    expect(centre).toEqual({ x: 106, y: 203 });
+    const center = centerForFocus(tile, 1, { x: 400, y: 300 }, viewport);
+    expect(center).toEqual({ x: 106, y: 203 });
   });
 
   it('is outlined across its whole width', () => {
@@ -125,12 +125,12 @@ describe('an item wider than tall', () => {
 });
 
 describe('an item with no width', () => {
-  it('is drawn, hit and centred as a square', () => {
+  it('is drawn, hit and centered as a square', () => {
     expect(rect(square)).toEqual([100, 200, 100 + 6 - SQUARE_GAP, 200 + 6 - SQUARE_GAP]);
     expect(findExactHit([square], 105, 203)?.id).toBe('square');
     expect(findExactHit([square], 106, 203)).toBeNull();
     expect(
-      centreForFocus(square, 1, { x: 400, y: 300 }, { width: 800, height: 600 }),
+      centerForFocus(square, 1, { x: 400, y: 300 }, { width: 800, height: 600 }),
     ).toEqual({ x: 103, y: 203 });
   });
 });
@@ -154,11 +154,11 @@ Expected: the "wider than tall" cases FAIL (the rectangle is 4 wide; the hit at 
 
 `hitDetection.ts`: in `isPointInItem` use `worldX < item.x + (item.width ?? item.size) &&`; in `findNearestItem` use `const centerX = v.x + (v.width ?? v.size) / 2;`.
 
-`camera.ts`: change both `{ x: number; y: number; size: number }` parameter types (in `centreForFocus` and `viewFocusedOn`) to `Pick<MapItem, 'x' | 'y' | 'size' | 'width'>` (import `MapItem` from `./types.ts` if not already imported), and in `centreForFocus` use `item.x + (item.width ?? item.size) / 2`.
+`camera.ts`: change both `{ x: number; y: number; size: number }` parameter types (in `centerForFocus` and `viewFocusedOn`) to `Pick<MapItem, 'x' | 'y' | 'size' | 'width'>` (import `MapItem` from `./types.ts` if not already imported), and in `centerForFocus` use `item.x + (item.width ?? item.size) / 2`.
 
 `outline.ts`: `OutlineBounds = Pick<MapItem, 'x' | 'y' | 'size' | 'width' | 'jitter'>` and `const x1 = left + (bounds.width ?? bounds.size) - SQUARE_GAP + thickness;`.
 
-`packages/shell/src/viewState.ts:66` takes `{ x, y, size }` and passes it to `centreForFocus`; change its type to `Pick<MapItem, 'x' | 'y' | 'size' | 'width'> | null` (import the type from `@torahmap/engine`) so the width reaches the camera.
+`packages/shell/src/viewState.ts:66` takes `{ x, y, size }` and passes it to `centerForFocus`; change its type to `Pick<MapItem, 'x' | 'y' | 'size' | 'width'> | null` (import the type from `@torahmap/engine`) so the width reaches the camera.
 
 - [ ] **Step 4: Run the engine and shell tests**
 
@@ -178,7 +178,7 @@ git add packages/engine packages/shell/src/viewState.ts
 git commit -m "Squares may be wider than tall
 
 An optional width on MapItem, defaulting to size, read where a square's
-rectangle, hit, centre and outline are worked out.
+rectangle, hit, center and outline are worked out.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01PuNHFLh8NB9vxtScbcui5J"
@@ -353,7 +353,7 @@ export function unpublished(live: boolean, pages: readonly ExtraPage[] = EXTRA_P
 }
 ```
 
-- [ ] **Step 5: Register the page and generalise the address plugin**
+- [ ] **Step 5: Register the page and generalize the address plugin**
 
 `pages.ts`: add `import { EUAIACT_PAGE, EUAIACT_PATH } from '@torahmap/euaiact/page.ts';` and a third entry
 `{ path: EUAIACT_PATH, copy: EUAIACT_PAGE, entry: '/apps/euaiact/src/main.ts' },`; update the doc comment to "the Talmud's at /talmud/, the Act's at /euaiact/".
@@ -781,7 +781,7 @@ export function positionJitter(seed: number, range: number): { x: number; y: num
   };
 }
 
-/** The colour up to ±range lighter or darker; multiplied, so the hue holds. */
+/** The color up to ±range lighter or darker; multiplied, so the hue holds. */
 export function brightnessJitter(color: Color, seed: number, range: number): Color {
   const f = 1 + (seededRandom(seed) - 0.5) * 2 * range;
   return color.map((c) => Math.max(0, Math.min(1, c * f))) as Color;
@@ -1407,18 +1407,18 @@ export const euaiactSite: Site = {
 
 Check `viewTitle`'s signature in `packages/site` and `Credit`'s fields in `packages/shell/src/credits.ts`; match them exactly.
 
-- [ ] **Step 2: Base colour**
+- [ ] **Step 2: Base color**
 
 ```ts
 // apps/euaiact/src/baseColor.ts
-// A square's colour while no tool colours it: its layer.
+// A square's color while no tool colors it: its layer.
 
 import { brightnessJitter, type Color } from '@torahmap/utils';
 import { BRIGHTNESS_JITTER } from './constants.ts';
 import { idHash } from './ids.ts';
 import type { ActItem } from './layout.ts';
 
-/** A colour from its hex digits. */
+/** A color from its hex digits. */
 export const hex = (rgb: string): Color => [
   parseInt(rgb.slice(1, 3), 16) / 255,
   parseInt(rgb.slice(3, 5), 16) / 255,
@@ -1448,16 +1448,16 @@ const item = (id: string): ActItem => ({
   id, x: 0, y: 0, size: 6, layer: 'article', origin: 'B', lead: false, chapter: 'I',
 });
 
-describe('a square’s base colour', () => {
+describe('a square’s base color', () => {
   it('varies by square, within the brightness range, the same every time', () => {
-    const colours = ['1', '2', '3', '4', '5'].map((id) => layerColor(item(id)));
-    expect(new Set(colours.map((c) => c[0])).size).toBeGreaterThan(1);
-    for (const c of colours) {
+    const colors = ['1', '2', '3', '4', '5'].map((id) => layerColor(item(id)));
+    expect(new Set(colors.map((c) => c[0])).size).toBeGreaterThan(1);
+    for (const c of colors) {
       const f = c[0] / ARTICLE[0];
       expect(f).toBeGreaterThanOrEqual(1 - BRIGHTNESS_JITTER - 1e-9);
       expect(f).toBeLessThanOrEqual(1 + BRIGHTNESS_JITTER + 1e-9);
     }
-    expect(layerColor(item('1'))).toEqual(colours[0]);
+    expect(layerColor(item('1'))).toEqual(colors[0]);
   });
 });
 ```
@@ -1686,18 +1686,18 @@ const item = (id: string, over: Partial<ActItem> = {}): ActItem => ({
 });
 
 describe('the amendment overlay', () => {
-  it('colours text inserted and replaced in 2026 differently from the rest', () => {
-    const colour = (origin: ActItem['origin']) =>
+  it('colors text inserted and replaced in 2026 differently from the rest', () => {
+    const color = (origin: ActItem['origin']) =>
       amendmentOverlay.getItemColor(item('1', { origin }), undefined as never, undefined as never);
-    expect(colour('M1 inserted')).not.toEqual(colour('B'));
-    expect(colour('M1 replaced')).not.toEqual(colour('B'));
-    expect(colour('M1 replaced')).not.toEqual(colour('M1 inserted'));
+    expect(color('M1 inserted')).not.toEqual(color('B'));
+    expect(color('M1 replaced')).not.toEqual(color('B'));
+    expect(color('M1 replaced')).not.toEqual(color('M1 inserted'));
   });
 
   it('draws a list’s lead-in darker than its points', () => {
-    const colour = (lead: boolean) =>
+    const color = (lead: boolean) =>
       amendmentOverlay.getItemColor(item('1', { lead }), undefined as never, undefined as never);
-    expect(colour(true)).not.toEqual(colour(false));
+    expect(color(true)).not.toEqual(color(false));
   });
 });
 
@@ -1710,29 +1710,29 @@ describe('the what-points-here overlay', () => {
     ['40', '6'],
     ['6(1)', '6(2)'],
   ];
-  const colours = (squares: ActItem[], article = '6') =>
+  const colors = (squares: ActItem[], article = '6') =>
     referencesOverlay.colorsFor(squares, { article }, null, { refs });
 
   it('marks the article itself', () => {
-    expect(colours([item('6(2)')])[0]).toEqual(FOCUS);
+    expect(colors([item('6(2)')])[0]).toEqual(FOCUS);
   });
 
   it('marks what the article cites, down to the paragraph and point', () => {
-    expect(colours([item('5(1)'), item('5(1)(a)'), item('5(2)')])).toEqual([CITES, CITES, QUIET]);
+    expect(colors([item('5(1)'), item('5(1)(a)'), item('5(2)')])).toEqual([CITES, CITES, QUIET]);
   });
 
   it('marks a whole annex the article cites, and no other', () => {
     const annex = (n: string) => item(`Annex.${n}.1.1`, { layer: 'annex' });
-    expect(colours([annex('III'), annex('IV')])).toEqual([CITES, QUIET]);
+    expect(colors([annex('III'), annex('IV')])).toEqual([CITES, QUIET]);
   });
 
   it('marks what cites the article', () => {
-    expect(colours([item('9(2)'), item('9(3)')])).toEqual([CITED_BY, QUIET]);
-    expect(colours([item('40')])[0]).toEqual(CITED_BY);
+    expect(colors([item('9(2)'), item('9(3)')])).toEqual([CITED_BY, QUIET]);
+    expect(colors([item('40')])[0]).toEqual(CITED_BY);
   });
 
-  it('colours no recital', () => {
-    expect(colours([item('Recital.3', { layer: 'recital' })])[0]).toEqual(QUIET);
+  it('colors no recital', () => {
+    expect(colors([item('Recital.3', { layer: 'recital' })])[0]).toEqual(QUIET);
   });
 
   it('reads its article from a link and writes it back, leaving the default out', () => {
@@ -1750,7 +1750,7 @@ describe('the what-points-here overlay', () => {
 
 ```ts
 // apps/euaiact/src/overlays/amendment.ts
-// Colours each article square by whether the 2026 amendment inserted or replaced its text.
+// Colors each article square by whether the 2026 amendment inserted or replaced its text.
 
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';
 import type { Color } from '@torahmap/utils';
@@ -1869,7 +1869,7 @@ function colorOf(items: ActItem[], { article }: ReferenceSettings, { refs }: Ref
 }
 ```
 
-If `Overlay`'s `renderControls` signature or the `data` typing rejects this, follow the compiler and `verse-length.ts`, not the sketch. The article box is free text on purpose: an article that does not exist colours everything quiet.
+If `Overlay`'s `renderControls` signature or the `data` typing rejects this, follow the compiler and `verse-length.ts`, not the sketch. The article box is free text on purpose: an article that does not exist colors everything quiet.
 
 - [ ] **Step 5: Register them**
 
@@ -1932,29 +1932,29 @@ const texts = {
   '9(2)': 'The provider shall keep records of the system.',
   '9(3)': 'Nothing here.',
 };
-const colours = (text: string) =>
+const colors = (text: string) =>
   actSearch.colorsFor([item('Recital.1', 'recital'), item('9(2)'), item('9(3)')], { text }, null, { texts });
 
 describe('searching the Act for a word', () => {
-  it('colours every paragraph that has the word, in a recital or an article', () => {
-    const [recital, article, none] = colours('records');
+  it('colors every paragraph that has the word, in a recital or an article', () => {
+    const [recital, article, none] = colors('records');
     expect(recital).not.toBeNull();
     expect(article).not.toBeNull();
     expect(none).toBeNull();
   });
 
   it('matches a whole word, in any case', () => {
-    expect(colours('RECORD').every((c) => c === null)).toBe(true);
-    expect(colours('Provider')[1]).not.toBeNull();
+    expect(colors('RECORD').every((c) => c === null)).toBe(true);
+    expect(colors('Provider')[1]).not.toBeNull();
   });
 
   it('finds nothing for a single letter', () => {
-    expect(colours('a').every((c) => c === null)).toBe(true);
+    expect(colors('a').every((c) => c === null)).toBe(true);
     expect(actSearch.isSearching({ text: 'a' })).toBe(false);
   });
 
   it('treats what a reader types as letters, not as a pattern', () => {
-    expect(() => colours('(a')).not.toThrow();
+    expect(() => colors('(a')).not.toThrow();
     expect(wordMatcher('a.b')?.test('a-b')).toBe(false);
   });
 
@@ -2052,7 +2052,7 @@ export const actSearch: SearchTool<ActItem, ActSearchSettings, ActSearchData> = 
 
 - [ ] **Step 4: Run, typecheck, look**
 
-Run: `npx vitest run` and `npm run typecheck`. In the dev page open `…/euaiact/?search=deployer`; Read a screenshot: squares in all three layers coloured. Open the search panel: the count shows. Check the network panel or `read_network_requests`: `texts.json` is fetched once for search and the popup, not twice.
+Run: `npx vitest run` and `npm run typecheck`. In the dev page open `…/euaiact/?search=deployer`; Read a screenshot: squares in all three layers colored. Open the search panel: the count shows. Check the network panel or `read_network_requests`: `texts.json` is fetched once for search and the popup, not twice.
 
 - [ ] **Step 5: Format and commit**
 
@@ -2176,6 +2176,6 @@ Base it on `eu-ai-act-map` (#372), since it stacks on that branch; say so at the
 
 **Spec coverage.** Shape (Tasks 2, 4, 6); data shipped as JSON with the Python beside `scripts/` (Task 3); per-page flag and its test (Task 2); first version's layout, labels, popup, two overlays, plain-word search and one story (Tasks 4, 6, 7, 8); optional `width` in six places with the unchanged-for-others test (Task 1); the assumptions table filled in (Task 9); layout and loading tests, pictures (Task 9). Open questions (address, "What points here" as overlay or mode) are carried, not decided: the address stays a placeholder and the overlay is a menu entry.
 
-**Placeholders.** Three places say "read X and match it" where the right form depends on code not reproduced here (`viewTitle`/`Credit` shapes in Task 6, the legend markup and `renderControls` typing in Task 7, the `importProblems` table in Task 6). Each names the file to read and the rule to follow; none leaves behaviour open. The Task 1 and Task 4 test snippets contain two sentences telling the engineer to correct a line before running; they were left explicit rather than silently fixed so the reason is visible.
+**Placeholders.** Three places say "read X and match it" where the right form depends on code not reproduced here (`viewTitle`/`Credit` shapes in Task 6, the legend markup and `renderControls` typing in Task 7, the `importProblems` table in Task 6). Each names the file to read and the rule to follow; none leaves behavior open. The Task 1 and Task 4 test snippets contain two sentences telling the engineer to correct a line before running; they were left explicit rather than silently fixed so the reason is visible.
 
-**Type consistency.** `ActCell`, `ActGroup`, `ActBlock`, `ActColumn`, `ActChapter`, `ActAnnex`, `ActStructure`, `ActTexts`, `ActRef` are defined in Task 3 and used with those names after; `ActItem` in Task 4; `ownerOf`, `layerOf`, `actRef`, `sourceUrl` in Task 3; `hex` and the layer colours in Task 6 and reused in Tasks 7 and 8; `EXTRA_PAGES` in Task 2.
+**Type consistency.** `ActCell`, `ActGroup`, `ActBlock`, `ActColumn`, `ActChapter`, `ActAnnex`, `ActStructure`, `ActTexts`, `ActRef` are defined in Task 3 and used with those names after; `ActItem` in Task 4; `ownerOf`, `layerOf`, `actRef`, `sourceUrl` in Task 3; `hex` and the layer colors in Task 6 and reused in Tasks 7 and 8; `EXTRA_PAGES` in Task 2.

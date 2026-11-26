@@ -25,7 +25,7 @@ function growthAt(picture: Picture, i: number, stripes: number): number {
 /**
  * One picture `t` of the way between two, blended stripe by stripe.
  *
- * The side with fewer stripes is stretched to match, each of its colours
+ * The side with fewer stripes is stretched to match, each of its colors
  * covering the stripes nearest where its band lay. A square whose stripe count
  * differs between the two therefore changes its stripe widths, which the
  * shader's fade between whole pictures avoids; this is only for collapsing a
@@ -88,7 +88,7 @@ function mergeStripes(from: Color[], to: Color[], t: number): Color | Color[] {
 
 const EMPTY_SLOT: Color = [0.15, 0.15, 0.15];
 
-// The colour at slot `j` of `slots` spread over `count` equal bands.
+// The color at slot `j` of `slots` spread over `count` equal bands.
 function stretched(slots: Color[], j: number, count: number): Color {
   if (slots.length === 0) return EMPTY_SLOT;
   return slots[Math.floor((j * slots.length) / count)];

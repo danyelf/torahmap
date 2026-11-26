@@ -204,19 +204,19 @@ describe('Trop Overlay', () => {
     });
 
     describe('previewing a mark by hovering', () => {
-      const colours = (host: ReturnType<typeof makeHost>) =>
+      const colors = (host: ReturnType<typeof makeHost>) =>
         testVerses.map((v) => host.getItemColor(v));
 
-      /** The map's colours with `button` clicked, from a host of its own. */
-      function coloursClicked(index: number) {
+      /** The map's colors with `button` clicked, from a host of its own. */
+      function colorsClicked(index: number) {
         const host = makeHost();
         (
           host.renderControls().querySelectorAll('.trop-grid button')[index] as HTMLButtonElement
         ).click();
-        return colours(host);
+        return colors(host);
       }
 
-      it('colours the map for a hovered mark without selecting it', () => {
+      it('colors the map for a hovered mark without selecting it', () => {
         const host = makeHost();
         const button = host
           .renderControls()
@@ -224,13 +224,13 @@ describe('Trop Overlay', () => {
 
         button.dispatchEvent(new MouseEvent('mouseenter'));
 
-        expect(colours(host)).toEqual(coloursClicked(0));
+        expect(colors(host)).toEqual(colorsClicked(0));
         expect(host.settings.mark).toBeNull();
         expect(button.classList.contains('selected')).toBe(false);
         expect(host.toUrl()).toEqual({});
       });
 
-      it('returns to no colouring on leaving when nothing is clicked', () => {
+      it('returns to no coloring on leaving when nothing is clicked', () => {
         const host = makeHost();
         const button = host
           .renderControls()
@@ -240,7 +240,7 @@ describe('Trop Overlay', () => {
         button.dispatchEvent(new MouseEvent('mouseleave'));
         vi.runAllTimers();
 
-        expect(colours(host).every((c) => c === null)).toBe(true);
+        expect(colors(host).every((c) => c === null)).toBe(true);
       });
 
       it('returns to the clicked mark on leaving another', () => {
@@ -251,12 +251,12 @@ describe('Trop Overlay', () => {
         first.click();
 
         second.dispatchEvent(new MouseEvent('mouseenter'));
-        expect(colours(host)).toEqual(coloursClicked(1));
+        expect(colors(host)).toEqual(colorsClicked(1));
         expect(host.toUrl()).toEqual({ trop: first.dataset.slug });
 
         second.dispatchEvent(new MouseEvent('mouseleave'));
         vi.runAllTimers();
-        expect(colours(host)).toEqual(coloursClicked(0));
+        expect(colors(host)).toEqual(colorsClicked(0));
       });
 
       it('goes straight from one hovered mark to the next, never through no mark', () => {
@@ -267,11 +267,11 @@ describe('Trop Overlay', () => {
 
         first.dispatchEvent(new MouseEvent('mouseenter'));
         first.dispatchEvent(new MouseEvent('mouseleave'));
-        expect(colours(host)).toEqual(coloursClicked(0));
+        expect(colors(host)).toEqual(colorsClicked(0));
 
         second.dispatchEvent(new MouseEvent('mouseenter'));
         vi.runAllTimers();
-        expect(colours(host)).toEqual(coloursClicked(1));
+        expect(colors(host)).toEqual(colorsClicked(1));
       });
 
       it('names the hovered mark in the legend', () => {
@@ -292,7 +292,7 @@ describe('Trop Overlay', () => {
           host.renderControls().querySelector('.trop-grid button') as HTMLButtonElement
         ).dispatchEvent(new MouseEvent('mouseenter'));
         host.restore({});
-        expect(colours(host).every((c) => c === null)).toBe(true);
+        expect(colors(host).every((c) => c === null)).toBe(true);
       });
     });
 
@@ -384,7 +384,7 @@ describe('Trop Overlay', () => {
       expect(host.getItemColor(verse)).toEqual(host.getItemColor(verse));
     });
 
-    it('colorsFor gives a verse the same colour alone as in a batch', () => {
+    it('colorsFor gives a verse the same color alone as in a batch', () => {
       const host = makeHost();
       selectFirstMark(host);
 
@@ -466,7 +466,7 @@ describe('Trop Overlay', () => {
       expect(strip).toBeUndefined();
     });
 
-    it('shows a rare mark by the colour of the verses that carry it, with no ends', () => {
+    it('shows a rare mark by the color of the verses that carry it, with no ends', () => {
       const host = makeHost();
       const rare = host.renderControls().querySelector<HTMLButtonElement>('[data-slug="tipcha"]')!;
       rare.click();
@@ -548,7 +548,7 @@ describe('Trop Overlay', () => {
       expect(host.settings.mark).toBeNull();
     });
 
-    it('colours nothing for a slug no mark answers to', () => {
+    it('colors nothing for a slug no mark answers to', () => {
       const host = makeHost();
       host.restore({ trop: 'not-a-real-mark' });
 
@@ -673,7 +673,7 @@ describe('Trop Overlay', () => {
   });
 
   describe('data', () => {
-    it('colours the same whether or not prebuild ran first', () => {
+    it('colors the same whether or not prebuild ran first', () => {
       const settings: TropSettings = { tab: 'prose', mark: 'tipcha', preview: null };
       const onDemand = tropOverlay.colorsFor!({
         items: testVerses,
@@ -740,7 +740,7 @@ describe('Trop Overlay', () => {
       }
     });
 
-    it('colours by the settings handed in, not by anything left over from a previous host', () => {
+    it('colors by the settings handed in, not by anything left over from a previous host', () => {
       const first = makeHost();
       selectFirstMark(first);
 
@@ -748,7 +748,7 @@ describe('Trop Overlay', () => {
       expect(second.getItemColor(testVerses[0])).toBeNull();
     });
 
-    it('survives destroy: colours still come from the settings, not module state', () => {
+    it('survives destroy: colors still come from the settings, not module state', () => {
       const host = makeHost();
       selectFirstMark(host);
       const verse = testVerses[0];

@@ -4,15 +4,15 @@ import { expect, test, type Page } from '@playwright/test';
 import { MAP_BACKGROUND } from '../../packages/engine/src/constants.ts';
 import { isFake } from './fakeMap.ts';
 
-/** The canvas's clear colour and the page's background, as a 0 to 255 channel. */
+/** The canvas's clear color and the page's background, as a 0 to 255 channel. */
 const BACKGROUND = Math.round(MAP_BACKGROUND[0] * 255);
 /** A channel this far from the background counts as drawn. */
 const DRAWN_DELTA = 12;
 /** Fewer drawn pixels than this is a map that did not draw. */
 export const DRAWN_FLOOR = 1000;
 
-/** A pixel whose channels spread this far apart is coloured rather than grey. */
-export const COLOURED_SPREAD = 24;
+/** A pixel whose channels spread this far apart is colored rather than gray. */
+export const COLORED_SPREAD = 24;
 
 /** Waits for the first frame: the map drawn before any file but the structure. */
 export async function firstFrame(page: Page, timeout = 30_000): Promise<void> {
@@ -95,7 +95,7 @@ export async function canvasShot(page: Page): Promise<Buffer> {
 
 /**
  * `png`'s pixels, row by row: whether each is drawn, and how far apart its
- * channels spread, 0 for grey.
+ * channels spread, 0 for gray.
  */
 export async function readPixels(
   page: Page,
@@ -132,15 +132,15 @@ export async function readPixels(
   };
 }
 
-/** How many of `png`'s pixels are drawn, and how many are coloured rather than grey. */
+/** How many of `png`'s pixels are drawn, and how many are colored rather than gray. */
 export async function pixelCounts(
   page: Page,
   png: Buffer,
-): Promise<{ drawn: number; coloured: number }> {
+): Promise<{ drawn: number; colored: number }> {
   const { drawn, spread } = await readPixels(page, png);
   return {
     drawn: drawn.filter((d) => d).length,
-    coloured: spread.filter((s) => s > COLOURED_SPREAD).length,
+    colored: spread.filter((s) => s > COLORED_SPREAD).length,
   };
 }
 

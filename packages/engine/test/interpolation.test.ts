@@ -39,7 +39,7 @@ describe('lerpCamera', () => {
     expect(lerpCamera(from, to, 1)).toEqual(to);
   });
 
-  it('moves the centre in a straight line', () => {
+  it('moves the center in a straight line', () => {
     const from = { x: 0, y: 0, zoom: 1 };
     const to = { x: 100, y: 50, zoom: 3 };
     const half = lerpCamera(from, to, 0.5);

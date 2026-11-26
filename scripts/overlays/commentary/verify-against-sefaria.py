@@ -18,7 +18,7 @@ live database. On the categories that mean the same thing on both sides, which
 since we started reading Sefaria's own index is nearly all of them, a few
 percent below the site is the export's age and nothing more.
 
-What is worth chasing is a verse that has come adrift from its neighbours: the
+What is worth chasing is a verse that has come adrift from its neighbors: the
 links export is split alphabetically by source text (see refresh.sh), so an
 incomplete download takes out a coherent slice of the library rather than a
 random sample, and shows up here as some verses far from the site while the
@@ -143,7 +143,7 @@ def main() -> int:
           f"median {sorted(shared_diffs)[len(shared_diffs) // 2]:+.0f}%")
 
     # Read the shape, not any single number — see the module docstring for
-    # what a verse adrift from its neighbours means.
+    # what a verse adrift from its neighbors means.
     adrift = [(label, d) for label, d in zip(labels, shared_diffs) if abs(d) > 20]
     if adrift:
         print("\nWell away from the site, worth a look:")

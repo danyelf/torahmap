@@ -1,6 +1,6 @@
 // The IEEE VIS 2026 program as a text for the app shell.
 
-import { cameraToFit, centreForFocus } from '@torahmap/engine';
+import { cameraToFit, centerForFocus } from '@torahmap/engine';
 import { TERM_SEARCH_PARAMS, type LinkKeys } from '@torahmap/link';
 import { addTerm, type SearchTerm, type TermSettings } from '@torahmap/search';
 import type { MapText } from '@torahmap/shell/app/text.ts';
@@ -48,7 +48,7 @@ const MAP_TITLE = 'IEEE VIS 2026';
 
 const swatch = (color: Color, outlined = false): string =>
   `<span class="story-swatch${outlined ? ' outlined' : ''}" style="background:${colorToCss(color)}"></span>`;
-// The story picks these in order, so each takes the palette's colour at its place.
+// The story picks these in order, so each takes the palette's color at its place.
 const STORY_KEYWORDS = ['Large Language Models', 'Uncertainty visualization'];
 // Mode w: a whole word.
 const STORY_SEARCH = [
@@ -56,7 +56,7 @@ const STORY_SEARCH = [
   { term: 'LLM', mode: 'w' },
   { term: 'parrot', mode: '' },
 ];
-// The searches are added as a link adds them, so each shows the colour the map gives it.
+// The searches are added as a link adds them, so each shows the color the map gives it.
 const STORY_TERMS = STORY_SEARCH.reduce(
   (terms, { term }) => addTerm(terms, term),
   [] as SearchTerm[],
@@ -255,7 +255,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
 
       stories: {
         list: [WHOLE_MAP],
-        // A stop that pins a piece centres on it; every other stop shows the whole program.
+        // A stop that pins a piece centers on it; every other stop shows the whole program.
         resolve: (stops, camera, _items, squares, focus, viewport) =>
           stops.map((stop) => {
             const pinned = stop.pin ? squares.find(stop.pin) : undefined;
@@ -263,7 +263,7 @@ export const ieeevisText: MapText<PieceItem, TermSettings> = {
             return {
               ...stop,
               camera: pinned
-                ? { ...centreForFocus(pinned, zoom, focus, viewport), zoom }
+                ? { ...centerForFocus(pinned, zoom, focus, viewport), zoom }
                 : { ...camera },
             };
           }),

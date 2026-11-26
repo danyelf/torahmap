@@ -34,7 +34,7 @@ describe('shareLink', () => {
       throw new DOMException('', 'AbortError');
     });
     expect(await shareLink(url, 't', { share, writeText: vi.fn(), coarsePointer: true })).toBe(
-      'cancelled',
+      'canceled',
     );
   });
 

@@ -7,17 +7,17 @@ describe('the palette', () => {
   const PALETTE = [...TERM_PALETTE, ...PICK_PALETTE];
   const colors = PALETTE.map((color) => rgbToOklch([...color]));
 
-  it('makes every colour equally light', () => {
+  it('makes every color equally light', () => {
     for (const color of colors) expect(Math.abs(color.l - colors[0].l)).toBeLessThan(0.01);
   });
 
-  it('keeps every colour inside what a screen shows', () => {
+  it('keeps every color inside what a screen shows', () => {
     for (const color of PALETTE) for (const channel of color) expect(channel).toBeGreaterThan(0);
     for (const color of PALETTE)
       for (const channel of color) expect(channel).toBeLessThanOrEqual(1);
   });
 
-  it('keeps every colour well apart from every other', () => {
+  it('keeps every color well apart from every other', () => {
     const apart = (a: (typeof colors)[number], b: (typeof colors)[number]) => {
       const [ax, ay] = [
         a.c * Math.cos((a.h * Math.PI) / 180),
@@ -34,19 +34,19 @@ describe('the palette', () => {
         expect(apart(colors[a], colors[b])).toBeGreaterThan(0.06);
   });
 
-  it('has a colour for every pick allowed', () => {
+  it('has a color for every pick allowed', () => {
     expect(PICK_PALETTE.length).toBeGreaterThanOrEqual(MAX_PICKS);
   });
 });
 
-describe('the first free colour', () => {
+describe('the first free color', () => {
   const SIZE = 5;
 
   it('is the first when nothing is taken', () => {
     expect(freeColor([], SIZE)).toBe(0);
   });
 
-  it('skips the colours taken, wherever they are', () => {
+  it('skips the colors taken, wherever they are', () => {
     expect(freeColor([0, 2, 1], SIZE)).toBe(3);
     expect(freeColor([1], SIZE)).toBe(0);
   });
@@ -56,7 +56,7 @@ describe('the first free colour', () => {
     expect(freeColor([2], SIZE, 2)).toBe(3);
   });
 
-  it('falls back to the place it started from when every colour is taken', () => {
+  it('falls back to the place it started from when every color is taken', () => {
     expect(freeColor([0, 1, 2, 3, 4], SIZE, 2)).toBe(2);
   });
 });

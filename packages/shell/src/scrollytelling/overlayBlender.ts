@@ -22,7 +22,7 @@ import {
   type ToolState,
 } from '../tools.ts';
 
-// Memoised per items array and loaded files by the stop's tools value. Colours that
+// Memoized per items array and loaded files by the stop's tools value. Colors that
 // depend on the hover are recomputed while a square is hovered: caching by
 // hover too would add an entry for every square the cursor crosses.
 const picturesCache = new WeakMap<
@@ -130,7 +130,7 @@ export function pictureForStop<I extends MapItem>(
   return picture;
 }
 
-// One stop's colours fading into the next's. At rest on a stop it is that
+// One stop's colors fading into the next's. At rest on a stop it is that
 // stop's alone, and so is t === 1, which controller.ts hands over with two
 // different stops when their rest zones touch.
 export function computeBlendedColors<I extends MapItem>(

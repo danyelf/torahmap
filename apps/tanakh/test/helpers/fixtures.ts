@@ -279,7 +279,7 @@ export const SAMPLE_TROP_MARKS = {
   ZAQEF_QATAN: '\u0594',
 };
 
-/** A test overlay; with no `colorsFor` of its own it leaves every item grey. */
+/** A test overlay; with no `colorsFor` of its own it leaves every item gray. */
 export function testOverlay<T = TanakhIdentity, S = unknown, D = unknown>(
   fields: Omit<Overlay<T, S, D>, 'colorsFor'> & Partial<Pick<Overlay<T, S, D>, 'colorsFor'>>,
 ): Overlay<T, S, D> {

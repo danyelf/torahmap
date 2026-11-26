@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the accordion panel with the frame from the design: a story is a mode with only a ☰, the menu drops into the story's column, and outside a story there is an icon rail on desktop and a bottom sheet on a phone, with anything on but not open folded to a labelled line.
+**Goal:** Replace the accordion panel with the frame from the design: a story is a mode with only a ☰, the menu drops into the story's column, and outside a story there is an icon rail on desktop and a bottom sheet on a phone, with anything on but not open folded to a labeled line.
 
 **Architecture:** A pure module, `src/frame.ts`, owns what the panel shows — the mode, which panel is open, whether the story's menu is down, whether a phone's sheet is dragged to full — as a state and one transition function, tested in vitest. `main.ts` keeps its story and driver logic and applies the frame to the page as `data-` attributes on `<body>`; the stylesheet does the rest. Menu, Stories and About panels are small functions that return HTML, each tested on its own.
 
@@ -616,7 +616,7 @@ export function aboutHtml(overlays: readonly { name: string; credits?: readonly 
 
 If the overview or controls text in `src/help.ts` differs from the above when you read it, copy what `src/help.ts` says; it is the source.
 
-`src/styles/about.css`: copy these rules from `src/styles/help.css`, renaming the `.help-body` prefix to `#about-panel` where a rule has it: `.controls-table` and its three descendants, every `.credit*` rule (`.credits-list`, `.credit-block`, `.credit-block-title`, `.credit-rows`, `.credit-row`, `.credit-source`, `.credit-license`, `.credit-meta`, `a.credit-license` and its hover), the `@media (max-width: 480px)` block, and `.help-body p`, `.help-body ul`, `.help-body li`, `.help-body h2` as `#about-panel p`, `ul`, `li`, `.panel-title`. Keep the link colours, with their comment on contrast: `.help-body a`, `.help-body a:hover` and `.help-body a:focus-visible` become `#about-panel a` and its `:hover` and `:focus-visible` — in `help.css` each is grouped with a `.link-button` selector, so take the `.link-button` half out of the group rather than dropping the rule. Drop every `.help-modal`, `.help-backdrop`, `.help-content`, `.help-header`, `.help-tab*`, `.help-close`, `.overlay-list*` rule and the rules for `.link-button` alone. Then add:
+`src/styles/about.css`: copy these rules from `src/styles/help.css`, renaming the `.help-body` prefix to `#about-panel` where a rule has it: `.controls-table` and its three descendants, every `.credit*` rule (`.credits-list`, `.credit-block`, `.credit-block-title`, `.credit-rows`, `.credit-row`, `.credit-source`, `.credit-license`, `.credit-meta`, `a.credit-license` and its hover), the `@media (max-width: 480px)` block, and `.help-body p`, `.help-body ul`, `.help-body li`, `.help-body h2` as `#about-panel p`, `ul`, `li`, `.panel-title`. Keep the link colors, with their comment on contrast: `.help-body a`, `.help-body a:hover` and `.help-body a:focus-visible` become `#about-panel a` and its `:hover` and `:focus-visible` — in `help.css` each is grouped with a `.link-button` selector, so take the `.link-button` half out of the group rather than dropping the rule. Drop every `.help-modal`, `.help-backdrop`, `.help-content`, `.help-header`, `.help-tab*`, `.help-close`, `.overlay-list*` rule and the rules for `.link-button` alone. Then add:
 
 ```css
 .about-section {
@@ -775,7 +775,7 @@ Import `mapPoint` from `./mapPoint.ts`. Just after `resizeCanvas();` (near line 
 Then replace each use of a pointer's `clientX`/`clientY` as a map position. Every site, from `grep -n "clientX\|clientY" src/main.ts` on the design branch:
 
 - the `wheel` handler (near line 575): `zoomAt(zoomFactor, e.clientX, e.clientY)` → compute `const p = onMap(e);` and call `zoomAt(zoomFactor, p.x, p.y)`.
-- `touchstart` and `touchmove` (near lines 598 and 611): `trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY)` → `const p = onMap(touch);` then `trackTouch(touchState, touch.identifier, p.x, p.y)`. The pinch centre is then in map coordinates, which is what `zoomAt` wants.
+- `touchstart` and `touchmove` (near lines 598 and 611): `trackTouch(touchState, touch.identifier, touch.clientX, touch.clientY)` → `const p = onMap(touch);` then `trackTouch(touchState, touch.identifier, p.x, p.y)`. The pinch center is then in map coordinates, which is what `zoomAt` wants.
 - `pointerdown` (near lines 645 and 648): `startDrag(mouseState, e.clientX, e.clientY)` and `pointerDownPos = { x: e.clientX, y: e.clientY, … }` → both from one `const p = onMap(e);`.
 - `pointermove` while dragging (near lines 653-658): the deltas and the new `dragStart` → from `const p = onMap(e);`. A delta is the same in either coordinate system, but mixing the two in one handler invites the next reader to wonder.
 - `pointerup` (near lines 671-676): the tap test's deltas and `findItemAtPoint(verses, camera, e.clientX, e.clientY)` → from `const p = onMap(e);`.
@@ -803,7 +803,7 @@ Expected: only the `onMap` definition and the sheet-drag lines.
 // map's rightmost verse.
 ```
 
-- [ ] **Step 7: Prove the offset is honoured**
+- [ ] **Step 7: Prove the offset is honored**
 
 Nothing on screen changes while `--map-left` is `0px`, so prove it by moving it. Temporarily set `--map-left: 200px;` in `src/styles/main.css`. Start your own dev server in the background (never reuse one that is running):
 
@@ -1180,7 +1180,7 @@ body[data-menu] #story-cue {
   display: none;
 }
 
-/* Paragraphs sit half a panel apart, so when one is centred the next starts
+/* Paragraphs sit half a panel apart, so when one is centered the next starts
    at the bottom edge. The first starts mid-panel and the last can scroll up
    to it. cqh is the story's height, not the window's. */
 .story-stop {
@@ -1308,7 +1308,7 @@ body[data-open='menu'] #menu-panel {
 }
 
 /* Reaches the overlay picker and any select an overlay renders into its
-   controls. color-scheme matters as much as the colours: without it the popup
+   controls. color-scheme matters as much as the colors: without it the popup
    list keeps the system's light theme. */
 #panel select {
   padding: 6px 8px;
@@ -1361,7 +1361,7 @@ body[data-open='menu'] #menu-panel {
   color: #ddd;
 }
 
-/* Anything on but not open: one labelled line each, at the bottom edge. */
+/* Anything on but not open: one labeled line each, at the bottom edge. */
 #folded {
   flex-shrink: 0;
   border-top: 1px solid var(--line);
@@ -2126,7 +2126,7 @@ Every entry in `layout/known.ts` describes the interface this branch removed. Em
 Run: `npm run test:layout`
 Expected: the list reporter shows each failing `state/screen/rule` with its violations, and `layout-report/index.html` is written.
 
-Fix what is plainly a defect of the frame — overlap, clipping, a small touch target — in `src/styles/frame.css`, and re-run. What remains, or anything whose fix is a judgement, goes to Danyel with the contact sheet before it enters `known.ts`.
+Fix what is plainly a defect of the frame — overlap, clipping, a small touch target — in `src/styles/frame.css`, and re-run. What remains, or anything whose fix is a judgment, goes to Danyel with the contact sheet before it enters `known.ts`.
 
 - [ ] **Step 5: Commit**
 

@@ -650,7 +650,7 @@ export function cameraOf(params: Record<string, string>): Camera | null {
 
 /**
  * The URL hash for `scene`, its camera `p` of the way from `from` to `to`. A
- * pinned verse centres the camera on itself, so the verse is held back until
+ * pinned verse centers the camera on itself, so the verse is held back until
  * the camera has arrived.
  */
 export function viewHash(scene: ViewScene, from: Camera | null, to: Camera, p: number): string {
@@ -757,8 +757,8 @@ export function restingScrollTops(doc: Document = document): Record<string, numb
   const max = content.scrollHeight - content.clientHeight;
   const tops: Record<string, number> = {};
   for (const el of content.querySelectorAll<HTMLElement>('.story-stop')) {
-    const centre = el.offsetTop + el.offsetHeight / 2 - content.clientHeight / 2;
-    tops[el.dataset.stopId ?? ''] = Math.max(0, Math.min(max, centre));
+    const center = el.offsetTop + el.offsetHeight / 2 - content.clientHeight / 2;
+    tops[el.dataset.stopId ?? ''] = Math.max(0, Math.min(max, center));
   }
   return tops;
 }
@@ -835,7 +835,7 @@ export async function openMap(
 
 /**
  * The camera each view scene ends on. A scene that pins a verse leaves x and y
- * to the app, which centres the verse; unpinning it with Escape makes the app
+ * to the app, which centers the verse; unpinning it with Escape makes the app
  * write the camera it chose into the URL.
  */
 export async function measureCameras(
@@ -853,7 +853,7 @@ export async function measureCameras(
       continue;
     }
     if (!scene.params.verse) {
-      throw new Error(`scene "${scene.id}" needs x and y, or a verse to centre on`);
+      throw new Error(`scene "${scene.id}" needs x and y, or a verse to center on`);
     }
     page ??= await openMap(browser, baseUrl, script.width, script.height, false);
     await page.evaluate((h) => (location.hash = h), `#${new URLSearchParams(scene.params)}`);
@@ -1047,7 +1047,7 @@ async function act(page: Page, sceneId: string, { action }: TimedAction): Promis
     case 'click': {
       // Playwright's own click waits for the element to hold still across
       // animation frames, which never come on a paused clock; clicking at the
-      // element's centre does not wait.
+      // element's center does not wait.
       const box = await page
         .getByText(action.text, { exact: true })
         .first()
@@ -1155,7 +1155,7 @@ for s in 0.5 3 6 8 9.8; do ffmpeg -loglevel error -y -ss $s -i video/out/sample.
 ```
 Read each PNG. Expect: 0.5 s the story's first stop; 3 s partway into the
 Torah; 6 s explore mode, Abram search panel, map wide; 8 s mid-glide, **no
-verse pinned**; 9.8 s Genesis 12:1 pinned and centred, sidebar showing it.
+verse pinned**; 9.8 s Genesis 12:1 pinned and centered, sidebar showing it.
 
 Then check a bad stop fails before any frame: copy the sample to
 `video/out/nostop.md` with `story: intro_fivebooks` changed to
@@ -1190,7 +1190,7 @@ Expected: `wrote video/out/isaac.mp4`.
 for s in 0.2 0.7 0.9 2.5; do ffmpeg -loglevel error -y -ss $s -i video/out/isaac.mp4 -frames:v 1 video/out/isaac-$s.png; done
 ```
 Read each PNG. Expect: 0.2 s a second search row appearing (if it animates in,
-partway); 0.7 s `י` typed; 0.9 s `יצח`; 2.5 s both names coloured on the map.
+partway); 0.7 s `י` typed; 0.9 s `יצח`; 2.5 s both names colored on the map.
 
 If the letters land nowhere, because clicking "+ add a word" does not focus
 the new row's input, stop and report it: there is no step yet that can aim at

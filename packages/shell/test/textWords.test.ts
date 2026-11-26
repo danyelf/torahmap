@@ -32,7 +32,7 @@ describe("the words of an item's text", () => {
     expect(words('הַ ] — אֶחָֽד')).toEqual(['אֶחָֽד']);
   });
 
-  it('keeps a parenthesised alternate as a word', () => {
+  it('keeps a parenthesized alternate as a word', () => {
     expect(words('(לא) אליו')).toEqual(['לא', 'אליו']);
   });
 

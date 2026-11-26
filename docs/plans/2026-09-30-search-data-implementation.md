@@ -17,11 +17,11 @@
 - Startup waits for every file, the per-word parse included (ruling 1).
 - `src/search/matching.ts` is untouched: `git diff --quiet worktree-overlay-data -- src/search/matching.ts` exits 0 at the end of every task.
 - `chosen` is compared only through `sameMeaning`, never by first keys. Terms keep their ids; hit counts stay per term.
-- AGENTS.md's search rules hold: a single letter is never a word; one colour per term; no way over to related words.
+- AGENTS.md's search rules hold: a single letter is never a word; one color per term; no way over to related words.
 - Data is always a member's last argument. `highlightVerseText` takes the verse first, like `getHoverInfo`.
-- In a test file converted to the new API only setup lines and call arguments change. An expected value that changes is a change in behaviour: log it (rule 1) and name it in the PR.
+- In a test file converted to the new API only setup lines and call arguments change. An expected value that changes is a change in behavior: log it (rule 1) and name it in the PR.
 - No module-level search state survives: no test depends on another having run first.
-- Tests check behaviour: no assertions on wording readers see, on counts taken from the shipped data, or on timings. No download mocks.
+- Tests check behavior: no assertions on wording readers see, on counts taken from the shipped data, or on timings. No download mocks.
 - Comments describe the code as it is now; no ticket numbers, dates, step numbers or "used to" in code, test names or comments (AGENTS.md). Shorter is better.
 - Use `npm`. Imports reachable from `scripts/print/` and `scripts/search/` use explicit `.ts` extensions, `import type` for types, and no CSS: both run under plain `node`. `src/overlays/search/index.ts` imports CSS, so nothing under `scripts/` may import it.
 - Run TypeScript scripts with `node <file>.ts`. `tsx` is not installed and `npx tsx` would download it, so `npm run report:click-resolution` is not used here.
@@ -29,7 +29,7 @@
 ## Review Focus
 
 1. **A panel drawn before search's data, then handed it.** The panel skips a redraw when its settings have not changed; if that check ignores the data, the meanings, counts and results never appear. Expected: drawn again with data, they fill in. Pinned in Task 3 (`search-without-data.test.ts`).
-2. **The same settings with another dictionary.** Results are memoised; keyed on settings alone, a new dictionary is handed the old answer. Expected: one settings value, two dictionaries, two answers. Pinned in Task 3 (`search-data.test.ts`).
+2. **The same settings with another dictionary.** Results are memoized; keyed on settings alone, a new dictionary is handed the old answer. Expected: one settings value, two dictionaries, two answers. Pinned in Task 3 (`search-data.test.ts`).
 3. **A reading picked in the word menu whose row the verse heads with another key.** Shechem in Genesis 34:4: the verse's row is `CKM==/@heb`, the term's own merged row `CKM=/@heb|CKM==/@heb`. `chosen` keeps the menu's keys and `m` copies them. Expected: the same checked row and the same verses as picking it in the panel, and a link that reopens to that row and those verses. Pinned in Task 2.
 4. **Highlighting without the per-word parse, or with another verse's.** The parse is optional; a verse drawn without it must fall back to the spelling, and a parse for one verse must never name the words of another verse's text. Pinned in Task 5 (marks without the parse) and by `word-by-position.test.ts`'s "ignores a position in text that is not the verse on screen".
 5. **A word typed before search's data, and a link opened before it.** Expected: the typed word is recorded when the data lands, with its count; the link's terms are never recorded. Pinned in Task 6.
@@ -694,7 +694,7 @@ export const namesAnOptionalFile: Overlay<unknown, void, WithParse> = {
   id: 'e',
   name: 'E',
   data: { texts: 'a.json', parse: optional('b.json') },
-  ...colour,
+  ...color,
 };
 
 export const waitsForAFileItCanDoWithout: Overlay<unknown, void, WithParse> = {
@@ -702,7 +702,7 @@ export const waitsForAFileItCanDoWithout: Overlay<unknown, void, WithParse> = {
   name: 'F',
   // @ts-expect-error A file the overlay takes as T | null is named with optional().
   data: { texts: 'a.json', parse: 'b.json' },
-  ...colour,
+  ...color,
 };
 
 export const doesWithoutAFileItNeeds: Overlay<unknown, void, WithParse> = {
@@ -710,7 +710,7 @@ export const doesWithoutAFileItNeeds: Overlay<unknown, void, WithParse> = {
   name: 'G',
   // @ts-expect-error A file the overlay cannot do without is named by its path.
   data: { texts: optional('a.json'), parse: optional('b.json') },
-  ...colour,
+  ...color,
 };
 ```
 
@@ -1933,7 +1933,7 @@ Expected: FAIL if the cache is keyed on the verses alone (the second call is han
 - [ ] **Step 3: Key the cache on `loaded`**
 
 ```ts
-// Memoised per loaded files and verses array, then by the stop's overlay, its
+// Memoized per loaded files and verses array, then by the stop's overlay, its
 // search and their validated link parameters. (keep the rest of the comment.)
 // Files arriving make a new loaded value, so a picture drawn without a file is
 // never handed out once it is in.
@@ -1954,7 +1954,7 @@ function cacheFor(loaded: Loaded, verses: TanakhLayout[]): Map<string, Picture> 
 }
 ```
 
-In `pictureForStop`, `const cache = cacheFor(loaded, verses);` replaces the per-verses lookup, and the store becomes `if (!byHover) cache.set(key, picture);` (the not-kept check and its comment go). In the test file, the memo tests that call twice and count calls ("memoises colours by settings", "only skips the memo for a hover-responsive overlay") pass one shared `const NOTHING_LOADED: Loaded = new Map();` instead of a fresh `new Map()` per call.
+In `pictureForStop`, `const cache = cacheFor(loaded, verses);` replaces the per-verses lookup, and the store becomes `if (!byHover) cache.set(key, picture);` (the not-kept check and its comment go). In the test file, the memo tests that call twice and count calls ("memoizes colors by settings", "only skips the memo for a hover-responsive overlay") pass one shared `const NOTHING_LOADED: Loaded = new Map();` instead of a fresh `new Map()` per call.
 
 - [ ] **Step 4: Run everything** — the file (PASS), prettier, typecheck, full suite.
 

@@ -1,5 +1,5 @@
 // Where a piece sits in its paper, for the popup: the paper's pieces as a bar in their sections'
-// colours, a pointer under this one.
+// colors, a pointer under this one.
 
 import { colorToCss } from '@torahmap/utils';
 import { PLACEHOLDER_RING, PLACEHOLDER_SECTION } from './baseColor.ts';
@@ -33,10 +33,10 @@ export function pieceStrip(pieces: string, here: number): HTMLElement {
   }
   const pointer = document.createElement('span');
   pointer.className = 'piece-pointer';
-  // The centre of piece `here`, each piece an equal share of the width left after the gaps.
-  const centre = `calc((100% - ${(pieces.length - 1) * gap}px) * ${(here + 0.5) / pieces.length} + ${here * gap}px)`;
+  // The center of piece `here`, each piece an equal share of the width left after the gaps.
+  const center = `calc((100% - ${(pieces.length - 1) * gap}px) * ${(here + 0.5) / pieces.length} + ${here * gap}px)`;
   pointer.style.cssText =
-    `position: absolute; top: ${BAR_PX + SPACE_PX}px; left: ${centre}; transform: translateX(-50%);` +
+    `position: absolute; top: ${BAR_PX + SPACE_PX}px; left: ${center}; transform: translateX(-50%);` +
     ` border: ${POINTER_HALF_WIDTH_PX}px solid transparent; border-top: 0;` +
     ` border-bottom: ${POINTER_HEIGHT_PX}px solid #fff;`;
   strip.append(pointer);

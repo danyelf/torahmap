@@ -61,7 +61,7 @@ version kept a cache here" describes code the reader cannot see, and goes stale
 again the next time the code moves. Write the rule in the present tense: not
 "the language used to come from the first term", but "the language belongs to
 the term". This holds for test names and file headers too — a regression test
-describes the behaviour it pins, not the bug that prompted it.
+describes the behavior it pins, not the bug that prompted it.
 
 Naming an approach that was tried and rejected earns its place only when a
 reader would otherwise walk the same path: a tempting simplification that does
@@ -78,7 +78,7 @@ and carry no authority; judge each comment on whether a reader needs it.
 version that works, and say what each addition beyond it buys. When a plan in
 `docs/plans/` is superseded, delete it; git history is the record.
 
-**Tests check behaviour.** A test fails when the code is wrong, not when the
+**Tests check behavior.** A test fails when the code is wrong, not when the
 wording, the data or the machine changes: no assertions on text readers see, on
 counts taken from the shipped data, or on how long something takes. A check
 that walks the whole Tanakh is a report, kept beside the script that generates
@@ -93,7 +93,7 @@ parameters or the data files outright; nothing old has to keep working.
 
 - A single letter is never a word: never searched, returned or clickable.
   Neither are the section markers `{פ}` and `{ס}`.
-- A word's meanings narrow its search. Each term gets one colour, never one per
+- A word's meanings narrow its search. Each term gets one color, never one per
   meaning.
 - Search finds the word typed, in every form it takes.
 

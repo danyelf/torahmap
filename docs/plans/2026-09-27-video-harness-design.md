@@ -41,7 +41,7 @@ clock (`page.clock`), which takes over `requestAnimationFrame`,
   errors.
 - **The story, through scrolling.** Setting the scroll position of
   `#story-content` a little further each frame took the story from its first
-  stop to the Abram stop, with its own camera glide and colour fade, and the
+  stop to the Abram stop, with its own camera glide and color fade, and the
   app updated the URL to `#story=abraham_zoom` itself.
 
 Each frame costs about 340 ms, almost all of it the screenshot; the URL write
@@ -134,7 +134,7 @@ until the next scene starts.
    browser lists every running CSS animation (`document.getAnimations()`), and
    each can be paused and set to an exact moment; the renderer does that
    before each screenshot. This only matters in `do:` scenes.
-2. **Gliding to a pinned verse.** With a verse pinned, the app centres the
+2. **Gliding to a pinned verse.** With a verse pinned, the app centers the
    camera on it and leaves `x` and `y` out of the URL
    (`cameraForView` in `src/viewState.ts`), so the harness does not know where
    the glide ends. Before rendering, the harness opens the scene in a second

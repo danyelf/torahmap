@@ -130,7 +130,7 @@ export function renderMeanings(
     if (!box) return;
     box.checked = chosen.includes(meaning);
     // Locked with a class rather than the disabled attribute: a disabled
-    // checkbox is drawn grey, so the one meaning still chosen would look like
+    // checkbox is drawn gray, so the one meaning still chosen would look like
     // the least chosen one.
     const locked = box.checked && chosen.length === 1;
     box.closest('.meaning-row')?.classList.toggle('locked', locked);

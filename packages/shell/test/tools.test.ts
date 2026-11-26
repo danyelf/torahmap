@@ -23,7 +23,7 @@ type Colors = readonly number[];
 const parseColors = (value: string | undefined): Colors =>
   value ? value.split(',').map(Number) : [];
 
-/** A tool whose settings are the colours it is set to. */
+/** A tool whose settings are the colors it is set to. */
 function paletteTool(id: string): Overlay<object, Colors> {
   return {
     id,

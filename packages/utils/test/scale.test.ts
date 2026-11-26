@@ -24,7 +24,7 @@ describe('scale', () => {
     expect(s.positionOf(1000)).toBeCloseTo(1, 3);
   });
 
-  it('reads the colour off the palette at the value position', () => {
+  it('reads the color off the palette at the value position', () => {
     const s = scale(0, 100, LOG, BLACK_TO_WHITE);
 
     // 9 sits halfway along a log scale that stops at 100, so halfway between

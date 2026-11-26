@@ -6,7 +6,7 @@
 ## The problem
 
 A verse that two or more search terms hit used to grow a halo three units wide
-past its square, about 30% filled with random specks of the terms' colours. It
+past its square, about 30% filled with random specks of the terms' colors. It
 was sparse, took a lot of space, and blurred into mud from a distance.
 
 ![Before, Genesis at zoom 4](images/2026-09-24-multi-hit-verses/before-close.png)
@@ -19,7 +19,7 @@ was sparse, took a lot of space, and blurred into mud from a distance.
 
 ## The decision
 
-A multi-colour verse is split corner to corner into one band per colour, and
+A multi-color verse is split corner to corner into one band per color, and
 grows by 0.75 units on every side: a 5.5-unit square among 4-unit ones. Single
 hits are unchanged. This is the shared shader and geometry, so Haftarah's
 multi-item verses get the same treatment.
@@ -28,12 +28,12 @@ multi-item verses get the same treatment.
 ![After, three-term verses in Exodus 3–6](images/2026-09-24-multi-hit-verses/after-exodus.png)
 
 A diagonal cut, not a vertical one: a square split down the middle reads as two
-neighbouring verses.
+neighboring verses.
 
 The growth is what marks a verse as multi-hit when zoomed out, where its bands
-blur into one colour. Without it, multi-hit verses were indistinguishable from
+blur into one color. Without it, multi-hit verses were indistinguishable from
 single hits at the whole-Torah zoom. The gap between squares is 2 units, so
-growth under 1 never touches a neighbour; 0.5 was too subtle zoomed out, and 1
+growth under 1 never touches a neighbor; 0.5 was too subtle zoomed out, and 1
 closed the gap.
 
 ![Growth compared: none, 0.5, 0.75, 1](images/2026-09-24-multi-hit-verses/growth-compared.jpg)
@@ -50,9 +50,9 @@ prototype is on branch `multi-hit-246-prototype`, every style behind
 
 ![First round](images/2026-09-24-multi-hit-verses/explored-first-round.jpg)
 
-- **Specks, coarser or denser.** Still static, and the colours still blur.
-- **Pie wedges, rings, checkerboard, a white-centred frame, an underline.**
-  Rings and the frame read well but emphasise multi-hit verses; the
+- **Specks, coarser or denser.** Still static, and the colors still blur.
+- **Pie wedges, rings, checkerboard, a white-centered frame, an underline.**
+  Rings and the frame read well but emphasize multi-hit verses; the
   checkerboard turns to texture; the underline disappears.
 - **Growing every hit, with a speckled halo, a solid edge or a translucent
   glow.** The gap between squares is two units, a couple of screen pixels at
@@ -63,11 +63,11 @@ prototype is on branch `multi-hit-246-prototype`, every style behind
 - **An edge a fixed number of screen pixels wide.** Holds up best of the
   growing kind, but still adds an outline nobody asked for.
 
-![Over a colourful background](images/2026-09-24-multi-hit-verses/explored-over-colour.jpg)
+![Over a colorful background](images/2026-09-24-multi-hit-verses/explored-over-color.jpg)
 
 ## For later: search over another overlay
 
-Search will soon draw over another overlay's colours rather than grey. Faded
-Verse Length colours at 40% were too bright behind the hits and 20% too dim;
-aim for 30%. The old speckled halo was lost entirely against colour, which the
+Search will soon draw over another overlay's colors rather than gray. Faded
+Verse Length colors at 40% were too bright behind the hits and 20% too dim;
+aim for 30%. The old speckled halo was lost entirely against color, which the
 diagonal split avoids by staying inside the square.

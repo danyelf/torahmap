@@ -1,4 +1,4 @@
-// How far apart two verses sit in the canon, and the colour of each distance.
+// How far apart two verses sit in the canon, and the color of each distance.
 
 import { type Color, oklchToRgb } from '@torahmap/utils';
 import { countedAs, getBookSection, type Place } from '../../books.ts';

@@ -33,7 +33,7 @@ A screenshot compared against a screenshot of the same code proves nothing. Thes
 | `map-clear-of-panel` | the panel covering the map it describes |
 | `text-not-clipped` | labels cut off or spilling out of their box |
 | `touch-targets`, on touch screens | controls too small to hit: under 24×24 CSS px, WCAG 2.2 AA (Danyel chose it over Apple's 44: this is a map to read, not a panel of buttons) |
-| the map rendered, in more than one colour | a blank canvas |
+| the map rendered, in more than one color | a blank canvas |
 
 There is no rule against horizontal scrolling. Everything in this interface is fixed-position, which never widens the document, and `body` hides its overflow, so an element too wide is cut off rather than scrollable; `chrome-in-viewport` catches it.
 
@@ -72,7 +72,7 @@ CLAUDE.md, AGENTS.md     how and when to run it
 - Modify: `package.json` (devDependency, scripts), `.gitignore`, `src/main.ts` (end of `main()`, after `scheduleStoryFrame();`, near line 1451)
 
 **Interfaces:**
-- Produces: `SCREENS: { name: string; use: Project['use'] }[]` in `screens.ts`; `openMap(page: Page, hash: string): Promise<void>`, `mapPixels(page: Page): Promise<{ drawn: number; colours: number }>` and `DRAWN_FLOOR = 1000` in `page.ts`; the attribute `data-map-ready` on `<html>`.
+- Produces: `SCREENS: { name: string; use: Project['use'] }[]` in `screens.ts`; `openMap(page: Page, hash: string): Promise<void>`, `mapPixels(page: Page): Promise<{ drawn: number; colors: number }>` and `DRAWN_FLOOR = 1000` in `page.ts`; the attribute `data-map-ready` on `<html>`.
 
 - [ ] **Step 1: Create the worktree**
 
@@ -202,7 +202,7 @@ Task 4 replaces `reporter: 'list'` with the contact sheet.
 ```ts
 import { expect, type Page } from '@playwright/test';
 
-/** The canvas's clear colour and the page's background: #1a1a1a. */
+/** The canvas's clear color and the page's background: #1a1a1a. */
 const BACKGROUND = 26;
 /** A channel this far from the background counts as drawn. */
 const DRAWN_DELTA = 12;
@@ -230,13 +230,13 @@ export async function openMap(page: Page, hash: string): Promise<void> {
 }
 
 /**
- * Counts the map's drawn pixels and its distinct colours, from a screenshot of
+ * Counts the map's drawn pixels and its distinct colors, from a screenshot of
  * the canvas with everything over it hidden: the labels, the title and the
  * controls carry enough text to pass for a map on their own. A screenshot is
  * what the reader sees; reading the WebGL buffer would depend on
  * preserveDrawingBuffer.
  */
-export async function mapPixels(page: Page): Promise<{ drawn: number; colours: number }> {
+export async function mapPixels(page: Page): Promise<{ drawn: number; colors: number }> {
   const hide = await page.addStyleTag({
     content: 'body *:not(#canvas) { visibility: hidden !important; }',
   });
@@ -258,14 +258,14 @@ export async function mapPixels(page: Page): Promise<{ drawn: number; colours: n
       ctx.drawImage(img, 0, 0);
       const { data } = ctx.getImageData(0, 0, c.width, c.height);
       let drawn = 0;
-      const colours = new Set<number>();
+      const colors = new Set<number>();
       for (let i = 0; i < data.length; i += 4) {
         const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
         if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) <= delta) continue;
         drawn++;
-        colours.add(((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4));
+        colors.add(((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4));
       }
-      return { drawn, colours: colours.size };
+      return { drawn, colors: colors.size };
     },
     { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA },
   );
@@ -280,11 +280,11 @@ export async function mapPixels(page: Page): Promise<{ drawn: number; colours: n
 import { expect, test } from '@playwright/test';
 import { DRAWN_FLOOR, mapPixels, openMap } from './page.ts';
 
-test('the map renders in more than one colour with an overlay on', async ({ page }) => {
+test('the map renders in more than one color with an overlay on', async ({ page }) => {
   await openMap(page, 'overlay=commentary');
-  const { drawn, colours } = await mapPixels(page);
+  const { drawn, colors } = await mapPixels(page);
   expect(drawn).toBeGreaterThan(DRAWN_FLOOR);
-  expect(colours).toBeGreaterThanOrEqual(8);
+  expect(colors).toBeGreaterThanOrEqual(8);
 });
 
 test('the render check sees a map that drew nothing', async ({ page }) => {
@@ -304,7 +304,7 @@ Run: `npm run test:layout -- --project=desktop`
 Expected: 2 passed.
 
 Then print the real numbers once, to see how far above the floors they sit: add `console.log(await mapPixels(page))` to the first test, run the same command, and remove it.
-Expected: `drawn` in the tens of thousands, `colours` well above 8. If the first test fails with `drawn` at 0, SwiftShader is not active: check the launch args before anything else. If the second test fails, the pixel count is seeing something other than the map: find what, and hide it too.
+Expected: `drawn` in the tens of thousands, `colors` well above 8. If the first test fails with `drawn` at 0, SwiftShader is not active: check the launch args before anything else. If the second test fails, the pixel count is seeing something other than the map: find what, and hide it too.
 
 - [ ] **Step 8: Run all four screens**
 
@@ -925,7 +925,7 @@ Run: `npm run test:layout`
 Expected: ends with `Contact sheet: <worktree>/layout-report/index.html` — inside the worktree, not beside it.
 
 Run: `open layout-report/index.html`
-Expected: seven rows of states, four columns of screen sizes, a screenshot in each cell, known defects in yellow under the cells they belong to. Read two or three screenshots at full size: the map has coloured squares in them, and the Hebrew title is in David Libre rather than a fallback serif.
+Expected: seven rows of states, four columns of screen sizes, a screenshot in each cell, known defects in yellow under the cells they belong to. Read two or three screenshots at full size: the map has colored squares in them, and the Hebrew title is in David Libre rather than a fallback serif.
 
 - [ ] **Step 4: Typecheck, format and commit**
 

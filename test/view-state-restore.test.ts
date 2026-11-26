@@ -170,7 +170,7 @@ describe('restoring a link as one complete view', () => {
     });
   });
 
-  it('centres the verse at the zoom the link asked for', () => {
+  it('centers the verse at the zoom the link asked for', () => {
     const view = viewFor('?verse=Genesis.1.1&zoom=8');
     const verse = SAMPLE_VERSES[0];
     const viewport = { width: 1000, height: 800 };

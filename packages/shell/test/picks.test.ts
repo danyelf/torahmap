@@ -11,8 +11,8 @@ import {
 } from '../src/overlays/picks.ts';
 import { PICK_PALETTE } from '../src/overlays/palette.ts';
 
-describe('colours for the picks', () => {
-  it('are the pick palette colours at those places', () => {
+describe('colors for the picks', () => {
+  it('are the pick palette colors at those places', () => {
     expect(pickColors([2, 0])).toEqual([PICK_PALETTE[2], PICK_PALETTE[0]]);
   });
 });
@@ -32,11 +32,11 @@ describe('the link', () => {
     expect(picksFromUrl(undefined)).toEqual([]);
   });
 
-  it('does not carry colours: free places are left out', () => {
+  it('does not carry colors: free places are left out', () => {
     expect(picksToUrl(['a', '', 'c'])).toBe('a,c');
   });
 
-  it('gives each pick in a link the first free colour', () => {
+  it('gives each pick in a link the first free color', () => {
     const picked = picksFromUrl('a,b');
 
     expect(pickSlots({ picked })).toEqual([
@@ -62,14 +62,14 @@ describe('picking', () => {
   });
 });
 
-describe('colours that stay put', () => {
+describe('colors that stay put', () => {
   it('keep a pick in its place when another is removed', () => {
     const picks = { picked: ['lane', 'petra'] };
     const after = removePick('lane')(picks);
     expect(pickSlots(after)).toEqual([{ id: 'petra', slot: 1 }]);
   });
 
-  it('give a new pick the first free colour', () => {
+  it('give a new pick the first free color', () => {
     const after = addPick('chaoli')(removePick('lane')({ picked: ['lane', 'petra'] }));
     expect(pickSlots(after)).toEqual([
       { id: 'chaoli', slot: 0 },

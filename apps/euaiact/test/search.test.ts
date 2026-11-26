@@ -22,7 +22,7 @@ const data: ActSearchData = {
   },
 };
 const ITEMS = [item('Recital.1', 'recital'), item('9(2)'), item('9(3)')];
-const colours = (params: Record<string, string>) =>
+const colors = (params: Record<string, string>) =>
   actSearch.colorsFor({
     items: ITEMS,
     settings: actSearch.settingsFromUrl!(params),
@@ -30,10 +30,10 @@ const colours = (params: Record<string, string>) =>
     focus: { hovered: null, pinned: null },
   });
 const found = (params: Record<string, string>) =>
-  colours(params).flatMap((c, i) => (c ? [ITEMS[i].id] : []));
+  colors(params).flatMap((c, i) => (c ? [ITEMS[i].id] : []));
 
 describe('searching the Act', () => {
-  it('colours every paragraph that has the word, in a recital or an article', () => {
+  it('colors every paragraph that has the word, in a recital or an article', () => {
     expect(found({ search: 'records' })).toEqual(['Recital.1', '9(2)']);
   });
 
@@ -44,8 +44,8 @@ describe('searching the Act', () => {
     expect(found({ search: 'deploy', mode: 'w' })).toEqual([]);
   });
 
-  it('colours each term apart, and a paragraph by the terms it has', () => {
-    const [recital, article, none] = colours({ search: 'deployers,provider' });
+  it('colors each term apart, and a paragraph by the terms it has', () => {
+    const [recital, article, none] = colors({ search: 'deployers,provider' });
     expect(recital).not.toBeNull();
     expect(article).not.toBeNull();
     expect(recital).not.toEqual(article);
@@ -58,12 +58,12 @@ describe('searching the Act', () => {
   });
 
   it('treats what a reader types as letters, not as a pattern', () => {
-    expect(() => colours({ search: '(a' })).not.toThrow();
+    expect(() => colors({ search: '(a' })).not.toThrow();
     expect(found({ search: 'point (a)' })).toEqual(['Recital.1']);
   });
 
-  it('colours a hit apart from every colour the Amendment overlay paints', () => {
-    const hit = colours({ search: 'records' })[1];
+  it('colors a hit apart from every color the Amendment overlay paints', () => {
+    const hit = colors({ search: 'records' })[1];
     for (const { plain, lead } of Object.values(AMENDED)) {
       expect(hit).not.toEqual(plain);
       expect(hit).not.toEqual(lead);

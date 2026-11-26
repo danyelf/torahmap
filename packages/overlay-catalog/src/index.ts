@@ -64,7 +64,7 @@ export const HAFTARAH = {
   name: 'Haftarah',
   description:
     'The weekly haftarah readings. Shows each Torah portion and its passage from the ' +
-    'Prophets in the same colour. Ashkenazi and Sephardi custom differ, and you can ' +
+    'Prophets in the same color. Ashkenazi and Sephardi custom differ, and you can ' +
     'switch between them.',
   urlParams: HAFTARAH_PARAMS,
 } as const satisfies OverlayEntry;

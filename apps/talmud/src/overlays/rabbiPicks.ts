@@ -1,4 +1,4 @@
-// Which passages name the picked rabbis, how to find a rabbi by any of his names, and the colour
+// Which passages name the picked rabbis, how to find a rabbi by any of his names, and the color
 // each pick gets. No page in here.
 
 import { memoByValue, type Color } from '@torahmap/utils';
@@ -88,7 +88,7 @@ function pickedRabbis(settings: PickSettings, data: RabbiData): { place: number;
 export const pickedPlaces = (settings: PickSettings, data: RabbiData): number[] =>
   pickedRabbis(settings, data).map(({ place }) => place);
 
-/** The picked rabbis' colours, in the order picked. */
+/** The picked rabbis' colors, in the order picked. */
 export const pickedColors = (settings: PickSettings, data: RabbiData): Color[] =>
   pickColors(pickedRabbis(settings, data).map(({ slot }) => slot));
 
@@ -139,7 +139,7 @@ export const passagesOf = (data: RabbiData, place: number) => {
   return { sure: sure[place], maybe: maybe[place] };
 };
 
-/** The generations in order, from the table Dating's colours come from. */
+/** The generations in order, from the table Dating's colors come from. */
 const GENERATION_ORDER = ERAS.flatMap((era) =>
   era.bands.flatMap((band) => band.codes as readonly string[]),
 );

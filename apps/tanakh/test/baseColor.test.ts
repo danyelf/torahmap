@@ -4,7 +4,7 @@ import { getDefaultColor } from '../src/baseColor.ts';
 describe('getDefaultColor', () => {
   const colors = Array.from({ length: 500 }, (_, i) => getDefaultColor(i));
 
-  it('is a grey', () => {
+  it('is a gray', () => {
     for (const [r, g, b] of colors) expect([g, b]).toEqual([r, r]);
   });
 

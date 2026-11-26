@@ -175,7 +175,7 @@ describe('hitDetection', () => {
       createItem({ id: '2', x: 100, y: 100, size: 10 }),
     ];
 
-    it('finds the nearest centre at any distance when given no limit', () => {
+    it('finds the nearest center at any distance when given no limit', () => {
       expect(findNearestItem(items, 500, 500)).toBe(items[1]);
       expect(findNearestItem(items, 40, 40)).toBe(items[0]);
     });

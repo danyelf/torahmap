@@ -47,8 +47,8 @@ verses — which is exactly what happens today for רבשקה, a name the dictio
 does not carry. Step 3 converts a correct fallback into a confident wrong
 answer.
 
-It is also the behaviour already ruled out on design grounds: offering עֶלְיֹון
-for עליו is a path to a neighbouring word that merely shares a spelling prefix.
+It is also the behavior already ruled out on design grounds: offering עֶלְיֹון
+for עליו is a path to a neighboring word that merely shares a spelling prefix.
 
 ## Why the table has a hole
 
@@ -152,7 +152,7 @@ The bound ones are conjunctions (51,141), prepositions (39,505), articles
 (30,386), interrogatives (749) and interrogative pronouns (2). Content words
 among them: **7 occurrences**, six nouns and one verb, 0.006%. So "bound" is a
 definition of *not a word* derived from the text, needing no part-of-speech
-list, no threshold, and no judgement about whether adverbs count.
+list, no threshold, and no judgment about whether adverbs count.
 
 ## What it does
 

@@ -73,7 +73,7 @@ export interface Seder extends SectionName {
 }
 
 // In shelf order, top to bottom. The tints are muted but distinct enough to read against the dark
-// canvas and the squares' colours; near-white ones (0.97 and up) are invisible there.
+// canvas and the squares' colors; near-white ones (0.97 and up) are invisible there.
 export const SEDARIM: readonly Seder[] = [
   { en: 'Zeraim', he: 'זרעים', tint: [0.45, 0.65, 0.4] }, // green
   { en: 'Moed', he: 'מועד', tint: [0.35, 0.55, 0.85] }, // blue
@@ -89,9 +89,9 @@ export const SEDARIM: readonly Seder[] = [
 export const SEDER_LABEL_SIZE: SectionLabelSize = { fontSize: 56, gapEm: 1.5 };
 
 // --- Base colors (muted, similar, "rainfall over both") ---
-// MISHNAH = violet, the one hue no search colour is near. GEMARA = a warm
-// parchment, so it reads as coloured rather than as the grey of a square
-// nothing colours.
+// MISHNAH = violet, the one hue no search color is near. GEMARA = a warm
+// parchment, so it reads as colored rather than as the gray of a square
+// nothing colors.
 
 export const MISHNAH_BASE_COLOR: readonly [number, number, number] = [0.64, 0.5, 0.84];
 export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.66, 0.57, 0.42];
@@ -100,7 +100,7 @@ export const GEMARA_BASE_COLOR: readonly [number, number, number] = [0.66, 0.57,
 // the map's background. A square too small for the hole is solid ivory.
 export const HADRAN_RING_COLOR: Color = [0.95, 0.93, 0.86];
 
-// What a segment a search does not find keeps of its base colour, so Mishnah
+// What a segment a search does not find keeps of its base color, so Mishnah
 // still shows from Gemara.
 export const SEARCH_KEEPS_BASE = 0.6;
 

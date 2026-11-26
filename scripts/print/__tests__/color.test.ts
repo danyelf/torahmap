@@ -5,9 +5,9 @@ import {
   oklabLightness,
   oklch,
   paleTaupe,
-  readingColours,
+  readingColors,
   walnut,
-} from '../colour.ts';
+} from '../color.ts';
 
 const HEX = /^#[0-9a-f]{6}$/;
 const rgb = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -24,23 +24,23 @@ describe('oklch', () => {
   });
 });
 
-describe('readingColours', () => {
-  const colours = readingColours(83);
+describe('readingColors', () => {
+  const colors = readingColors(83);
 
-  it('gives every reading its own colour, all equally light', () => {
-    expect(new Set(colours).size).toBe(83);
-    for (const c of colours) expect(oklabLightness(c)).toBeCloseTo(0.64, 2);
+  it('gives every reading its own color, all equally light', () => {
+    expect(new Set(colors).size).toBe(83);
+    for (const c of colors) expect(oklabLightness(c)).toBeCloseTo(0.64, 2);
   });
 
   it('starts from red, as the site does', () => {
-    const [r, g, b] = rgb(colours[0]);
+    const [r, g, b] = rgb(colors[0]);
     expect(r).toBeGreaterThan(g);
     expect(r).toBeGreaterThan(b);
   });
 });
 
 describe('unread verses', () => {
-  it('vary by verse, but the same verse always gets the same colour', () => {
+  it('vary by verse, but the same verse always gets the same color', () => {
     expect(walnut(7)).toBe(walnut(7));
     expect(new Set([0, 1, 2, 3, 4].map(walnut)).size).toBeGreaterThan(1);
   });

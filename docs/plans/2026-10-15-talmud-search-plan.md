@@ -46,7 +46,7 @@ Tanakh at it, so every commit builds and the Tanakh behaves as before.
    no error. Task 7 tests it.
 5. **A search before the file arrives.** A Talmud link with `search=` opens
    before `search.json` loads: the caption says it is loading and nothing is
-   coloured until it lands. Task 7 tests it.
+   colored until it lands. Task 7 tests it.
 
 ---
 
@@ -362,7 +362,7 @@ keeps `search`, `mode` and `m`: `TERM_SEARCH_PARAMS` plus its extra mode's
 
 - [ ] **Step 1:** Write `termSearch.test.ts` with a two-entry English text and
   no extra mode: settings from `search=gamma&mode=w` round-trip through
-  `settingsToUrl`; `colorsFor` colours only the matching item; the caption
+  `settingsToUrl`; `colorsFor` colors only the matching item; the caption
   reads with the spec's noun. Run: Expected: FAIL.
 - [ ] **Step 2:** Move the code. Before and after, take
   `npm run test:layout`'s search states for the Tanakh.
@@ -423,8 +423,8 @@ today, after Task 5.
 - [ ] **Step 1: Write the failing tests**, against a small `search.json` fixture:
   רבי as a whole word finds a segment with דרבי; קל וחומר finds the phrase; the
   link `?search=רבי&mode=w` round-trips; a segment whose popup text writes ר׳
-  is coloured on the map and its popup text comes back with no mark and no
-  error (review focus 4); with the file not yet loaded, nothing is coloured
+  is colored on the map and its popup text comes back with no mark and no
+  error (review focus 4); with the file not yet loaded, nothing is colored
   and the caption says it is loading (review focus 5). Run: Expected: FAIL.
 - [ ] **Step 2:** Implement.
 - [ ] **Step 3:** Add Talmud search states to `layout/app.ts`: a term typed, two

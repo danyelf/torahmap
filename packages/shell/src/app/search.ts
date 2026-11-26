@@ -11,7 +11,7 @@ export const SEARCH_BOX_ID = 'search-input';
 export type SearchTool<T, S = unknown, D = unknown> = Overlay<T, S, D> & SearchMembers<S, D>;
 
 interface SearchMembers<S, D> {
-  /** Whether `settings` search on anything. While not, search colours nothing. */
+  /** Whether `settings` search on anything. While not, search colors nothing. */
   isSearching(settings: S): boolean;
   /** The ids of the squares `settings` find, in the order of the map. */
   hits(settings: S, data: D): readonly string[];

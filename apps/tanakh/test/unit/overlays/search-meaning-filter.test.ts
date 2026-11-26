@@ -1,7 +1,7 @@
 // The meaning filter, as the reader meets it.
 //
 // A Hebrew word written without vowels is often several different words. עלה is
-// five of them. The search has always painted all of them and labelled the
+// five of them. The search has always painted all of them and labeled the
 // result with one; these tests are about the control that splits them.
 
 import { describe, it, expect, beforeEach } from 'vitest';

@@ -22,7 +22,7 @@ A throwaway prototype was built to validate the design and produce the screensho
 
 ![Bavli Berakhot — segment length overlay](images/2026-04-06-talmud-exploration/berakhot-full-2x.png)
 
-Nine perakim, labeled by their traditional Hebrew names. Each perek is a vertical block of amud-rows, right-aligned to a shared right edge. Mishnah segments are bright blue; Gemara segments are colored by character count (pale yellow = short, saturated red = long). The column of small grey labels on the right identifies each daf/amud.
+Nine perakim, labeled by their traditional Hebrew names. Each perek is a vertical block of amud-rows, right-aligned to a shared right edge. Mishnah segments are bright blue; Gemara segments are colored by character count (pale yellow = short, saturated red = long). The column of small gray labels on the right identifies each daf/amud.
 
 ---
 

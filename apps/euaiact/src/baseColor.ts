@@ -1,4 +1,4 @@
-// A square's colour while no tool colours it: its layer.
+// A square's color while no tool colors it: its layer.
 
 import { brightnessJitter, hex, idHash, type Color } from '@torahmap/utils';
 import { BRIGHTNESS_JITTER } from './constants.ts';

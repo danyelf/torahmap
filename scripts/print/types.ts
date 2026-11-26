@@ -6,7 +6,7 @@ export interface PrintVerse {
   y: number;
   /** Side of the drawn square, before any growth. */
   side: number;
-  /** One colour, or one per band. */
+  /** One color, or one per band. */
   fills: string[];
 }
 
@@ -92,8 +92,8 @@ export interface SheetInput {
 export interface ProofPatch {
   title: string;
   verses: PrintVerse[];
-  /** The map point at the patch's centre. */
-  centre: { x: number; y: number };
+  /** The map point at the patch's center. */
+  center: { x: number; y: number };
 }
 
 export interface ProofInput {

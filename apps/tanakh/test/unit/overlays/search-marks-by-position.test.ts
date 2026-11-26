@@ -1,8 +1,8 @@
-// Two terms, one spelling, two colours.
+// Two terms, one spelling, two colors.
 //
 // Genesis 8:20 holds both words spelled עלה: Noah offers burnt-offerings,
 // עֹלֹת, and sends them up, וַיַּעַל. A reader with one term narrowed to the verb
-// and another to the nouns should see one colour on each word. The spelling
+// and another to the nouns should see one color on each word. The spelling
 // cannot tell them apart — it could be either — so the marking has to ask where
 // the word sits in the verse.
 //
@@ -32,7 +32,7 @@ beforeEach(() => {
   configure({ verses: [createVerse({ book: 'Genesis', chapter: 8, verse: 20 })] });
 });
 
-/** Each mark in the highlighted verse, as [its colour's place in the palette, the letters marked]. */
+/** Each mark in the highlighted verse, as [its color's place in the palette, the letters marked]. */
 function marks(): Array<[number, string]> {
   const fragment = searchOverlay.highlightItemText(
     createVerse({ book: 'Genesis', chapter: 8, verse: 20 }),

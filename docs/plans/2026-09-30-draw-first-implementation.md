@@ -20,7 +20,7 @@
 - `npm run test:layout` passes with `layout/known.ts` untouched, and its shots match Task 0's baseline within the noise in `layout-check.md`.
 - No data file under `public/data/` changes. The link format does not change, and every link opens the view it opens today.
 - `staleAfterLanding`, `filesFirst`, `downloadStages` and `waitingOn` are plain functions with unit tests; `staleAfterLanding` treats search as any tool.
-- Tests check behaviour: no assertions on wording readers see, on counts taken from the shipped data, or on how long anything takes. The Playwright suite asserts whether things show: drawn pixels, a changed canvas, an element visible or not, an input's value and focus, the address's parameters, page errors.
+- Tests check behavior: no assertions on wording readers see, on counts taken from the shipped data, or on how long anything takes. The Playwright suite asserts whether things show: drawn pixels, a changed canvas, an element visible or not, an input's value and focus, the address's parameters, page errors.
 - Comments describe the code as it is now; no ticket numbers, dates, step numbers or "used to" in code, test names or comments (AGENTS.md). Shorter is better.
 - Use `npm`. Run TypeScript scripts with `node <file>.ts`; `tsx` is not installed. Imports reachable from `scripts/` keep explicit `.ts` extensions and import no CSS.
 
@@ -154,7 +154,7 @@ export async function firstFrame(page: Page, timeout?: number): Promise<void>;  
 export async function mapReady(page: Page): Promise<void>;                       // data-loaded from Task 7
 export function collectErrors(page: Page): string[];
 export async function canvasShot(page: Page): Promise<Buffer>;
-export async function pixelCounts(page: Page, png: Buffer): Promise<{ drawn: number; coloured: number }>;
+export async function pixelCounts(page: Page, png: Buffer): Promise<{ drawn: number; colored: number }>;
 
 // layout/screens.ts (Task 1)
 export const LAUNCH_ARGS: string[];
@@ -203,7 +203,7 @@ In `docs/plans/2026-09-30-draw-first-design.md`:
 - Change the `**Status:**` line to `**Status:** Design, decided 2026-10-01. Planned: docs/plans/2026-09-30-draw-first-implementation.md.`
 - In "What is decided", replace the sentence `The verse popup stays closed until the texts arrive.` with `The verse popup says "Loading…" until the texts arrive.`
 - In "Failure of a download", replace `a failed texts file keeps the popup closed.` with `a failed texts file leaves the popup with the warning in place of the text.`
-- In the table, replace the Pinned verse row's "Before release" cell `popup closed; map centred on the verse` with `popup says it is loading; map centred on the verse`.
+- In the table, replace the Pinned verse row's "Before release" cell `popup closed; map centered on the verse` with `popup says it is loading; map centered on the verse`.
 - Append:
 
 ```markdown
@@ -269,8 +269,8 @@ Decisions made while implementing step 3, newest last.
   250 ms; `FRONT_FADE` becomes `MAP_FADE`, and `cancelFrontFade` `cancelFade`.
 - **2026-10-01 (plan)** An ease is restarted only while it has time left; at
   its last frame the story paints the stop with the new data anyway.
-- **2026-10-01 (plan)** "Plain" in the suite means fewer coloured (non-grey)
-  canvas pixels than a small floor; the plain map is grey.
+- **2026-10-01 (plan)** "Plain" in the suite means fewer colored (non-gray)
+  canvas pixels than a small floor; the plain map is gray.
 - **2026-10-01 (plan)** `loadFiles` loses its per-file callback;
   `downloadFiles(paths, { landed, failed })` reports each file as it settles.
 - **2026-10-01 (plan)** The layout and loading suites share the software-WebGL
@@ -331,8 +331,8 @@ In `layout/app.ts`, export `viaMenu` (`export async function viaMenu`), unchange
 Replace `mapReady`, `openMap` and `drawnPixels` with the following, and add the new helpers. `boxes`, `shown` and `clippedText` stay as they are.
 
 ```ts
-/** A pixel whose channels spread this far apart is coloured rather than grey. */
-const COLOURED_SPREAD = 24;
+/** A pixel whose channels spread this far apart is colored rather than gray. */
+const COLORED_SPREAD = 24;
 
 /** Waits for the first frame: the map drawn before any file but the structure. */
 export async function firstFrame(page: Page, timeout = 30_000): Promise<void> {
@@ -396,11 +396,11 @@ export async function canvasShot(page: Page): Promise<Buffer> {
   }
 }
 
-/** How many of `png`'s pixels are drawn, and how many of those are coloured rather than grey. */
+/** How many of `png`'s pixels are drawn, and how many of those are colored rather than gray. */
 export async function pixelCounts(
   page: Page,
   png: Buffer,
-): Promise<{ drawn: number; coloured: number }> {
+): Promise<{ drawn: number; colored: number }> {
   return page.evaluate(
     async ({ b64, bg, delta, spread }) => {
       const img = new Image();
@@ -413,15 +413,15 @@ export async function pixelCounts(
       ctx.drawImage(img, 0, 0);
       const { data } = ctx.getImageData(0, 0, c.width, c.height);
       let drawn = 0;
-      let coloured = 0;
+      let colored = 0;
       for (let i = 0; i < data.length; i += 4) {
         const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
         if (Math.max(Math.abs(r - bg), Math.abs(g - bg), Math.abs(b - bg)) > delta) drawn++;
-        if (Math.max(r, g, b) - Math.min(r, g, b) > spread) coloured++;
+        if (Math.max(r, g, b) - Math.min(r, g, b) > spread) colored++;
       }
-      return { drawn, coloured };
+      return { drawn, colored };
     },
-    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA, spread: COLOURED_SPREAD },
+    { b64: png.toString('base64'), bg: BACKGROUND, delta: DRAWN_DELTA, spread: COLORED_SPREAD },
   );
 }
 
@@ -508,8 +508,8 @@ Before writing the next file, check those two paths against `data:` in `src/over
 import { expect, type Page } from '@playwright/test';
 import { canvasShot, collectErrors, DRAWN_FLOOR, firstFrame, pixelCounts } from '../layout/page.ts';
 
-/** The plain map is grey; a few coloured pixels still count as plain. */
-const COLOURED_FLOOR = 100;
+/** The plain map is gray; a few colored pixels still count as plain. */
+const COLORED_FLOOR = 100;
 
 /**
  * A slow phone, for the dev server: it sends files uncompressed, about four
@@ -564,12 +564,12 @@ export async function open(
   return { release, errors };
 }
 
-/** The map has drawn, and nothing on it is coloured. */
+/** The map has drawn, and nothing on it is colored. */
 export async function expectPlainMap(page: Page): Promise<void> {
   await expect
     .poll(async () => (await pixelCounts(page, await canvasShot(page))).drawn)
     .toBeGreaterThan(DRAWN_FLOOR);
-  expect((await pixelCounts(page, await canvasShot(page))).coloured).toBeLessThan(COLOURED_FLOOR);
+  expect((await pixelCounts(page, await canvasShot(page))).colored).toBeLessThan(COLORED_FLOOR);
 }
 
 /** The canvas once two shots in a row agree: an ease or a glide in progress has finished. */
@@ -664,7 +664,7 @@ test('the bare address draws the map and opens the story before any data', async
   expect(errors).toEqual([]);
 });
 
-test('an overlay link draws a plain map, says it is loading, and colours in when its file lands', async ({
+test('an overlay link draws a plain map, says it is loading, and colors in when its file lands', async ({
   page,
 }) => {
   const { release, errors } = await open(page, 'overlay=commentary', [COMMENTARY]);
@@ -722,7 +722,7 @@ test('a narrowed search link keeps its meaning while the dictionary is on its wa
   expect(errors).toEqual([]);
 });
 
-test('a pinned verse is centred at once, and its popup fills in when the texts land', async ({
+test('a pinned verse is centered at once, and its popup fills in when the texts land', async ({
   page,
 }) => {
   const link = 'verse=Genesis.12.1';
@@ -730,7 +730,7 @@ test('a pinned verse is centred at once, and its popup fills in when the texts l
   await expect(page.locator('#verse-popup.visible .load-notice[data-state="loading"]')).toBeVisible();
   await expect(page.locator('#verse-popup .verse-word')).toHaveCount(0);
 
-  // Centred where it is with every file in: the same plain map, the same pin.
+  // Centered where it is with every file in: the same plain map, the same pin.
   const settled = await page.context().newPage();
   await settled.goto(`/?${link}`);
   await mapReady(settled);
@@ -744,7 +744,7 @@ test('a pinned verse is centred at once, and its popup fills in when the texts l
   expect(errors).toEqual([]);
 });
 
-test('an overlay picked before its file lands colours in when it does', async ({ page }) => {
+test('an overlay picked before its file lands colors in when it does', async ({ page }) => {
   const { release, errors } = await open(page, 'story=tour&stop=intro', [COMMENTARY]);
   await page.keyboard.press('Escape');
   await viaMenu(page, 'overlay');
@@ -1535,7 +1535,7 @@ export function waitingOn(
 
 /** What the map, the panels and the popup are drawn from as a file lands. */
 export interface LandingView {
-  /** Where the map's colours come from: colorSource(driver). */
+  /** Where the map's colors come from: colorSource(driver). */
   source: 'overlay' | 'blend' | 'ease';
   /**
    * The tools the map shows once their data is in: the picked overlay and the
@@ -2122,8 +2122,8 @@ Replace `setFrontTool` with:
       fadeFrame = null;
       if (raw >= 1) {
         // The settled picture, not `to`: fillDefaultColors filled the holes a
-        // real overlay leaves for an uncoloured match, which would hover
-        // wrong (fillDefaultColors marks uncoloured only the holes it fills
+        // real overlay leaves for an uncolored match, which would hover
+        // wrong (fillDefaultColors marks uncolored only the holes it fills
         // itself) until the next repaint.
         settle();
       } else {
@@ -2398,11 +2398,11 @@ In `video/browser.ts`'s `openMap`, wait on `html[data-loaded]` instead of `html[
 - [ ] **Step 9: Run everything**
 
 Run: prettier on the changed files, `npm run typecheck` (fix every error in one pass), `npx vitest run`.
-Run: `npm run test:loading > <SDD>/loading-task7.txt` — Expected: every case passes on both projects, the three desktop-only cases skipped on the phone. If a case fails, read its error and trace: `<SDD>`'s output names the case and the line. The plain-map floor (`COLOURED_FLOOR`) is the one number measured here: if a plain map measures more coloured pixels than it, print the count, set the floor above the largest plain count and below the smallest coloured one, and log it.
+Run: `npm run test:loading > <SDD>/loading-task7.txt` — Expected: every case passes on both projects, the three desktop-only cases skipped on the phone. If a case fails, read its error and trace: `<SDD>`'s output names the case and the line. The plain-map floor (`COLORED_FLOOR`) is the one number measured here: if a plain map measures more colored pixels than it, print the count, set the floor above the largest plain count and below the smallest colored one, and log it.
 Run: `npm run test:layout` and `node <SDD>/pixel-diff.mjs` — Expected: PASS, every shot within `layout-check.md`'s noise.
 Run: `npm run build` — Expected: success.
 
-Check by hand: start your own dev server; with a scratch Playwright script in `<SDD>` (the throttle and hold from `loading/page.ts` may be copied), open `?overlay=commentary` with commentary held, screenshot the desktop page before and after release, and Read both PNGs: the legend says it is loading, then the map is coloured. Stop your dev server.
+Check by hand: start your own dev server; with a scratch Playwright script in `<SDD>` (the throttle and hold from `loading/page.ts` may be copied), open `?overlay=commentary` with commentary held, screenshot the desktop page before and after release, and Read both PNGs: the legend says it is loading, then the map is colored. Stop your dev server.
 
 - [ ] **Step 10: Commit**
 
@@ -2553,6 +2553,6 @@ Each is also an entry in the design doc's decision log (Task 0).
 15. The capture shortcut uses the picked overlay; the suite tests it with a stubbed clipboard.
 16. `fadeMap(to, settle)` serves the front tool, explore landings and story blends; `FRONT_FADE` is renamed `MAP_FADE` (250 ms for all).
 17. An ease restarts only while time is left; at its end the story paints the stop with the new data anyway.
-18. "Plain" in the suite = fewer coloured canvas pixels than a small floor, measured in Task 7.
+18. "Plain" in the suite = fewer colored canvas pixels than a small floor, measured in Task 7.
 19. `loadFiles` loses its callback; `downloadFiles(paths, { landed, failed })` replaces it.
 20. The layout and loading suites share their WebGL launch arguments from `layout/screens.ts`.

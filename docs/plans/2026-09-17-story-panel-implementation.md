@@ -9,7 +9,7 @@ the accordion the revised spec describes. What was built instead:
   `#story-content`, placed on the rows of a grid. `right-panel.css` swaps the
   two opening rows between `0fr` and `1fr`, so the accordion animates in CSS.
 - `src/panelSummary.ts`: the summary from the overlay's name, its URL
-  settings, search's `.term-swatch` colours and the backgrounds its legend
+  settings, search's `.term-swatch` colors and the backgrounds its legend
   drew. The `Overlay` interface is unchanged.
 - `main.ts`: `storyOpen` and `setStoryOpen` replace `storyShown`.
   `openControls` folds the story and hands the reader the map; `openStory`
@@ -30,8 +30,8 @@ their place a pure state machine, `src/scrollytelling/driver.ts`, says who is
 driving the map — the story, the reader, or the story easing back — and
 `main.ts` consults it from the scroll handler it already has. The ease-back
 reuses the story's own interpolation (`lerpCamera`, `blendColorArrays`); at
-rest the story still paints through the explore-mode colour path
-(`applyOverlay`), so there is still one colour pipeline.
+rest the story still paints through the explore-mode color path
+(`applyOverlay`), so there is still one color pipeline.
 
 **Tech Stack:** TypeScript, Vite, vitest with happy-dom, WebGL 2. No runtime
 dependencies.
@@ -48,7 +48,7 @@ it first; this plan argues from it and does not repeat its reasons.
   `npm run format` before committing.
 - **No runtime dependencies. No `@ts-ignore`.**
 - **No ticket or stage references in code, comments or test names.** Describe
-  behaviour. Issue numbers go in commit messages.
+  behavior. Issue numbers go in commit messages.
 - **Comments describe the code as it is now.** Not what it used to do.
 - **Panel width:** 380px, from one `--panel-width` custom property.
 - **Band heights:** desktop about 225px, phone about 90px, both unmeasured
@@ -147,7 +147,7 @@ git commit -m "Read the panel width from one place; hide zoom buttons on a phone
 `initHelp()` hangs a 24px `?` off the panel corner (`top: -8px; right: -8px`,
 clipped by the screen edge on a phone) and opens the modal on a first visit.
 The story is the front door now. The modal stays — its Credits tab is owed to
-Sefaria, ETCBC and hebcal — reached from a labelled control in a footer.
+Sefaria, ETCBC and hebcal — reached from a labeled control in a footer.
 
 Once nothing opens the modal automatically, `torahMap.helpSeen` has no reader.
 Remove it rather than keep writing a key nothing checks.
@@ -167,7 +167,7 @@ Remove it rather than keep writing a key nothing checks.
   "About & credits" with id `about-btn`, and does not open the modal.
   `#panel-footer` exists in `index.html` and is what Task 3 keeps.
 
-- [ ] **Step 1: Rewrite the first-visit test to the new behaviour**
+- [ ] **Step 1: Rewrite the first-visit test to the new behavior**
 
 In `help.test.ts`, `openHelp()` relies on the modal opening itself. Make it
 click the button instead, and replace the first test:
@@ -210,7 +210,7 @@ describe('help modal', () => {
     expect(modal === null || !modal.classList.contains('visible')).toBe(true);
   });
 
-  it('opens from a labelled control and offers a Credits tab', async () => {
+  it('opens from a labeled control and offers a Credits tab', async () => {
     const modal = await openHelp();
 
     expect(modal.classList.contains('visible')).toBe(true);
@@ -605,7 +605,7 @@ export const REJOIN_SCROLL_PX: number; // 60
 export const REJOIN_EASE_MS: number; // 700
 export type Driver =
   | { by: 'story' }
-  | { by: 'reader'; lastScrollTop: number; travelled: number }
+  | { by: 'reader'; lastScrollTop: number; traveled: number }
   | { by: 'rejoining'; since: number };
 export const STORY_DRIVING: Driver;
 export function readerTakesOver(scrollTop: number): Driver;
@@ -677,7 +677,7 @@ describe('the story drives until the reader takes over', () => {
   it('lets the reader take over again in the middle of an ease-back', () => {
     const driver = readerTakesOver(700);
 
-    expect(driver).toEqual({ by: 'reader', lastScrollTop: 700, travelled: 0 });
+    expect(driver).toEqual({ by: 'reader', lastScrollTop: 700, traveled: 0 });
   });
 });
 
@@ -744,13 +744,13 @@ export const REJOIN_EASE_MS = 700;
 
 export type Driver =
   | { by: 'story' }
-  | { by: 'reader'; lastScrollTop: number; travelled: number }
+  | { by: 'reader'; lastScrollTop: number; traveled: number }
   | { by: 'rejoining'; since: number };
 
 export const STORY_DRIVING: Driver = { by: 'story' };
 
 export function readerTakesOver(scrollTop: number): Driver {
-  return { by: 'reader', lastScrollTop: scrollTop, travelled: 0 };
+  return { by: 'reader', lastScrollTop: scrollTop, traveled: 0 };
 }
 
 export function rejoinNow(now: number): Driver {
@@ -764,9 +764,9 @@ export function rejoinNow(now: number): Driver {
 export function storyScrolled(driver: Driver, scrollTop: number, now: number): Driver {
   if (driver.by !== 'reader') return driver;
 
-  const travelled = driver.travelled + Math.abs(scrollTop - driver.lastScrollTop);
-  if (travelled >= REJOIN_SCROLL_PX) return rejoinNow(now);
-  return { by: 'reader', lastScrollTop: scrollTop, travelled };
+  const traveled = driver.traveled + Math.abs(scrollTop - driver.lastScrollTop);
+  if (traveled >= REJOIN_SCROLL_PX) return rejoinNow(now);
+  return { by: 'reader', lastScrollTop: scrollTop, traveled };
 }
 
 /** How far through the ease-back, 0 to 1. Only meaningful while rejoining. */
@@ -814,18 +814,18 @@ git commit -m "Say who is driving the map as a pure state machine"
 
 Wire Task 4 into `main.ts`. Touching a control, or dragging, zooming, pinching
 or clicking a verse on the map, makes the reader the driver. While the reader
-drives, story scrolls only count towards the threshold. Crossing it starts a
+drives, story scrolls only count toward the threshold. Crossing it starts a
 700ms ease from the reader's view to the story's, then the story drives again.
 
-**How the ease-back paints.** Both colour arrays are computed once when the
+**How the ease-back paints.** Both color arrays are computed once when the
 ease-back starts: the reader's (from `readerAsStop`) and the story's at the
 stop the scroll position is on. Each frame then blends them with
 `blendColorArrays`, and lerps the camera from the reader's view to the story's
-current camera. Computing them every frame would re-run the overlays' colouring
+current camera. Computing them every frame would re-run the overlays' coloring
 — for search, a search — sixty times a second. When the ease-back finishes,
 `lastSyncedStopId = null` makes the next frame re-sync overlay, params and pin
 through `syncStoryStopState`, and painting returns to `applyOverlay()`. There is
-still one colour pipeline: at rest the story paints through `applyOverlay()`, as
+still one color pipeline: at rest the story paints through `applyOverlay()`, as
 it does today.
 
 **Files:**
@@ -839,14 +839,14 @@ it does today.
   from `interpolation.ts`.
 - Produces: `function takeOver(): void` in `main.ts`. Task 6 calls it.
 
-- [ ] **Step 1: Export the per-stop colours, with a test**
+- [ ] **Step 1: Export the per-stop colors, with a test**
 
 Rename `getColorsForStop` to `colorsForStop` and export it. Add to
 `overlayBlender.test.ts`, inside the existing `describe`, whose `beforeEach`
 registers the `test-stipple` overlay:
 
 ```ts
-it('gives a stop the same colours whether asked directly or as a zero blend', () => {
+it('gives a stop the same colors whether asked directly or as a zero blend', () => {
   const stop: ResolvedStoryStop = {
     id: 's1',
     title: 'S',
@@ -993,7 +993,7 @@ function paintStoryFrame(now: number): void {
 Replace every `storyContent.dispatchEvent(new Event('scroll'))` whose purpose
 is to repaint (the resize handler, `reloadStory`, the end of
 `restoreFromUrlUnguarded`, the show-story handler) with `scheduleStoryFrame()`.
-A synthetic scroll event would now also count towards the threshold.
+A synthetic scroll event would now also count toward the threshold.
 
 - [ ] **Step 5: "Show the story" eases back at once**
 
@@ -1015,7 +1015,7 @@ The prototype this was designed from lives in `.superpowers/brainstorm/` in the
 primary checkout; open it alongside for comparison. In the app:
 - Scroll to "The Call". Drag the map: the story stops moving it; a scroll
   under 60px changes nothing; a longer scroll eases the map back to Genesis 12
-  and the search colours return, over about 0.7s, then the story carries on.
+  and the search colors return, over about 0.7s, then the story carries on.
 - Repeat taking the wheel by: the zoom buttons, the canvas wheel, clicking a
   verse, choosing Trop in the picker, typing in the search box.
 - Hovering the map during the story does not take the wheel.
@@ -1073,7 +1073,7 @@ any of it is built:
 | Trop | the selected mark's name, or `No mark selected` |
 | Commentary | the category's label: `All linked texts`, `Midrash`, … |
 | Haftarah | the custom: `Ashkenazi` or `Sephardi` |
-| Text Dating, Verse Length | none — they have no controls to summarise |
+| Text Dating, Verse Length | none — they have no controls to summarize |
 
 Write his answer into this table before continuing.
 
@@ -1135,7 +1135,7 @@ Expected: FAIL — `renderSummary` is undefined, every summary is empty.
 ```ts
 // types.ts, next to renderControls
 // One line saying what is selected, shown above the story in place of the full
-// controls. Absent when there is nothing to summarise.
+// controls. Absent when there is nothing to summarize.
 renderSummary?(container: HTMLElement): void;
 ```
 
@@ -1351,7 +1351,7 @@ Keep what he picks; the constants' comments stop calling them guesses.
 ```bash
 npm run typecheck && npx vitest run
 git add src
-git commit -m "Summarise the legend in one line on a phone; set measured band heights"
+git commit -m "Summarize the legend in one line on a phone; set measured band heights"
 ```
 
 ---

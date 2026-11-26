@@ -39,7 +39,7 @@ export interface Credit {
   url?: string;
   license?: string;    // "CC BY-NC 4.0"
   collected?: string;  // "September 2026"; omitted when not recorded
-  note?: string;       // only where a licence or a caveat demands it
+  note?: string;       // only where a license or a caveat demands it
 }
 ```
 
@@ -53,10 +53,10 @@ This follows the precedent `urlParams` already set in that interface: the
 overlay declares what it depends on, and a central module decides how to show
 it. No overlay writes markup.
 
-`note` is reserved for licence obligations and genuine caveats. It is not for
+`note` is reserved for license obligations and genuine caveats. It is not for
 describing what a source does — the block heading already says which feature
 the source feeds. In practice the whole tab carries two notes: the DOI that
-BHSA's licence asks us to cite, and the fact that commentary counts trail
+BHSA's license asks us to cite, and the fact that commentary counts trail
 Sefaria's live site.
 
 ## Keeping the dependency graph one-way
@@ -89,16 +89,16 @@ regardless.
 
 From `APP_CREDITS` in `src/credits.ts`, rendered above the overlay blocks.
 
-| Source | Licence | Collected | Note |
+| Source | License | Collected | Note |
 | --- | --- | --- | --- |
 | Miqra according to the Masorah, Hebrew Wikisource | CC BY-SA | September 2026 | The Hebrew text, downloaded via Sefaria. The Trop overlay reads its cantillation marks out of this edition, and Hebrew search matches it with vowels and cantillation ignored. |
 | THE JPS TANAKH: Gender-Sensitive Edition, Jewish Publication Society | CC BY-NC | September 2026 | The English text, downloaded via Sefaria. The English search index is built from it. |
 
 ### One block per overlay
 
-| Overlay | Source | Licence | Collected | Note |
+| Overlay | Source | License | Collected | Note |
 | --- | --- | --- | --- | --- |
-| Text Search | Eep Talstra Centre for Bible and Computer, Biblia Hebraica Stuttgartensia Amstelodamensis (2021) | CC BY-NC 4.0 | September 2026 | Cite 10.17026/dans-z6y-skyh |
+| Text Search | Eep Talstra Center for Bible and Computer, Biblia Hebraica Stuttgartensia Amstelodamensis (2021) | CC BY-NC 4.0 | September 2026 | Cite 10.17026/dans-z6y-skyh |
 | Commentary | Sefaria link exports | none stated | September 2026 | — |
 | Text Dating | Wikipedia, "Dating the Bible" | CC BY-SA 4.0 | January 2026 | — |
 
@@ -110,9 +110,9 @@ recorded in many places, so the readings are not any one source's work. The
 generator still parses a cached copy of Mechon Mamre's page, which is where
 they were taken from; #108 tracks establishing what that page permits.
 
-## Linking the licence
+## Linking the license
 
-Creative Commons 4.0 asks for a link to the licence alongside the attribution,
+Creative Commons 4.0 asks for a link to the license alongside the attribution,
 so `Credit` carries an optional `licenseUrl` and the pill renders as an anchor
 when it is set.
 
@@ -126,7 +126,7 @@ June 2023.
 
 All four therefore link their deeds. A version we are confident enough to print
 is a version we are confident enough to link, and a test enforces exactly that
-— it fails on any licence that prints a version without a deed link, so the
+— it fails on any license that prints a version without a deed link, so the
 unlinked case remains available for a source that genuinely names none.
 
 ## Where the collection dates come from
@@ -169,9 +169,9 @@ field is shaped so that change would swap where the string comes from without
 touching the type or the rendering. That is filed as a follow-up rather than
 built now.
 
-## Layout and colour
+## Layout and color
 
-Each row is a two-column grid: the source name on the left, the licence in a
+Each row is a two-column grid: the source name on the left, the license in a
 small muted pill on the right, and the collection date and note wrapping
 underneath across both columns. Block headings are small muted uppercase
 labels.
@@ -209,7 +209,7 @@ reading a `data-goto-tab` attribute, not a listener bound to the element.
 `src/__tests__/unit/credits.test.ts`, new:
 
 - The renderer, against a fabricated overlay list: a block is omitted when
-  `credits` is absent, the licence pill is omitted when `license` is absent, the
+  `credits` is absent, the license pill is omitted when `license` is absent, the
   collection line reads "not recorded" when `collected` is absent, anchors carry
   `target="_blank"` and `rel="noopener noreferrer"`, and values are HTML-escaped.
 - A drift guard over the real registry: after `registerAllOverlays()`, every

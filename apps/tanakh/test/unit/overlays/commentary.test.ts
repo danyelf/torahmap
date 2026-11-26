@@ -309,7 +309,7 @@ describe('Commentary Overlay', () => {
       // look at it.
       //
       // "Other" is the deliberate exception. It is the generator's catch-all
-      // for a shelf we do not recognise, so that such a shelf shows up in the
+      // for a shelf we do not recognize, so that such a shelf shows up in the
       // regeneration output instead of vanishing. Today it holds Sefaria's
       // "Guides" — introductions to the Talmud — and it is a diagnostic for
       // whoever refreshes the data, not a lens anyone would choose.
@@ -407,7 +407,7 @@ describe('Commentary Overlay', () => {
       expect(tickLabels(container)).toEqual(['1', '10', '150']);
     });
 
-    it('shows zero as its own swatch, in the colour of an unlinked verse', () => {
+    it('shows zero as its own swatch, in the color of an unlinked verse', () => {
       const container = document.createElement('div');
       commentaryOverlay.renderLegend(container);
       const unlinked = commentaryOverlay.getItemColor(
@@ -631,9 +631,9 @@ describe('Commentary Overlay', () => {
   });
 
   describe('Logarithmic Heatmap', () => {
-    // The colours themselves, not "whatever the colour function returns" — an
+    // The colors themselves, not "whatever the color function returns" — an
     // assertion of the latter shape holds however the scale is wired up.
-    it('colours a verse by where its count falls on the log scale', () => {
+    it('colors a verse by where its count falls on the log scale', () => {
       const atMax = commentaryOverlay.getItemColor(testVerses[0]); // 150 of 150
       const partWay = commentaryOverlay.getItemColor(testVerses[1]); // 45 of 150
 

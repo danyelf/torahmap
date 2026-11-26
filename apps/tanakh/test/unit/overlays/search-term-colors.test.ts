@@ -1,6 +1,6 @@
-// One term, one colour, everywhere it is drawn.
+// One term, one color, everywhere it is drawn.
 //
-// A term carries a colour of its own that survives its neighbours being edited.
+// A term carries a color of its own that survives its neighbors being edited.
 // The swatch and the map ask the term for it; results, snippets and highlights
 // name a term by its position in the searched list. Those are the same number
 // until a term is removed, and then they are not.
@@ -63,11 +63,11 @@ beforeEach(() => {
   searchOverlay.restore({ search: '', mode: undefined, m: undefined });
 });
 
-describe('a surviving term keeps one colour', () => {
-  it('draws the swatch, the result dot and the highlight in the same colour', () => {
+describe('a surviving term keeps one color', () => {
+  it('draws the swatch, the result dot and the highlight in the same color', () => {
     const container = render();
 
-    // Two terms, then remove the first. The survivor keeps the colour it was
+    // Two terms, then remove the first. The survivor keeps the color it was
     // given, while moving up into the first position.
     typeIntoInput(rowInput(container, 0), 'created');
     container.querySelector<HTMLButtonElement>('#add-term')!.click();
@@ -85,7 +85,7 @@ describe('a surviving term keeps one colour', () => {
     expect(placeOfMark(mark)).toBe(kept);
   });
 
-  it('marks the verse text in the same colour as the row', () => {
+  it('marks the verse text in the same color as the row', () => {
     const container = render();
 
     typeIntoInput(rowInput(container, 0), 'created');
@@ -107,7 +107,7 @@ describe('a surviving term keeps one colour', () => {
     expect(placeOfMark(mark)).toBe(kept);
   });
 
-  it('keeps the second colour on the map', () => {
+  it('keeps the second color on the map', () => {
     const container = render();
 
     typeIntoInput(rowInput(container, 0), 'created');
@@ -122,7 +122,7 @@ describe('a surviving term keeps one colour', () => {
 });
 
 describe('the panel summary', () => {
-  it('shows only the searched words, each in its own row’s colour', () => {
+  it('shows only the searched words, each in its own row’s color', () => {
     const container = render();
 
     typeIntoInput(rowInput(container, 0), 'c');

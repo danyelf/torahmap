@@ -1,6 +1,6 @@
 /*
  * The map's title. The artwork itself is mapTitle.svg, which carries the type,
- * the colours and the arrangement; this file only places it over the map.
+ * the colors and the arrangement; this file only places it over the map.
  *
  * The svg is sized by its width and height attributes and scales through its
  * viewBox, so the parts of the title hold their proportions at every zoom.

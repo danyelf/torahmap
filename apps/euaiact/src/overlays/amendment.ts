@@ -1,4 +1,4 @@
-// Colours each article square by whether the 2026 amendment inserted or replaced its text.
+// Colors each article square by whether the 2026 amendment inserted or replaced its text.
 
 import { swatchList } from '@torahmap/shell/overlays/swatchList.ts';
 import type { Overlay } from '@torahmap/shell/overlays/types.ts';

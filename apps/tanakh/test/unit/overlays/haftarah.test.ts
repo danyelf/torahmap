@@ -6,7 +6,7 @@ import { createVerse, SAMPLE_HAFTARAH_MAPPINGS, SAMPLE_STRUCTURE } from '../../h
 import { assertValidColor } from '../../helpers/assertions';
 import { overlayColorsFor } from '@torahmap/shell/itemColoring.ts';
 import type { HaftarahData } from '../../../src/overlays/haftarah/readings';
-import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
+import { DIMMED_GRAY } from '@torahmap/shell/constants.ts';
 
 const DATA: HaftarahData = { mappings: SAMPLE_HAFTARAH_MAPPINGS, structure: SAMPLE_STRUCTURE };
 const haftarahOverlay = hostOverlay(overlay, DATA);
@@ -71,7 +71,7 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.toUrl()).toEqual({});
     });
 
-    it('falls back to the default when the value is not recognised', () => {
+    it('falls back to the default when the value is not recognized', () => {
       haftarahOverlay.restore({ custom: 'sephardi' });
       haftarahOverlay.restore({ custom: 'yemenite' });
       expect(haftarahOverlay.toUrl()).toEqual({});
@@ -341,7 +341,7 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.toUrl()).toEqual({});
     });
 
-    it('lights a previewed reading, darkens the others, and greys the rest', () => {
+    it('lights a previewed reading, darkens the others, and grays the rest', () => {
       const cold = [genesis, bereshitHaftarah, noach].map(
         (v) => haftarahOverlay.getItemColor(v) as Color,
       );
@@ -353,7 +353,7 @@ describe('Haftarah Overlay', () => {
       expect(sum(hotTorah)).toBeGreaterThan(sum(cold[0]));
       expect(sum(hotHaftarah)).toBeGreaterThan(sum(cold[1]));
       expect(sum(darkNoach)).toBeLessThan(sum(cold[2]));
-      expect(haftarahOverlay.getItemColor(psalms)).toEqual(DIMMED_GREY);
+      expect(haftarahOverlay.getItemColor(psalms)).toEqual(DIMMED_GRAY);
     });
 
     describe('a verse shared by two readings', () => {
@@ -368,7 +368,7 @@ describe('Haftarah Overlay', () => {
         ]),
       );
 
-      const colour = (v: typeof genesis, hovered: typeof genesis | null, preview: string | null) =>
+      const color = (v: typeof genesis, hovered: typeof genesis | null, preview: string | null) =>
         haftarahOverlay.overlay.colorsFor({
           items: [v],
           settings: { ...haftarahOverlay.settings, preview },
@@ -379,7 +379,7 @@ describe('Haftarah Overlay', () => {
         target: typeof genesis,
         hovered: typeof genesis | null,
         preview: string | null = null,
-      ) => sum(colour(target, hovered, preview)) > sum(colour(target, null, null));
+      ) => sum(color(target, hovered, preview)) > sum(color(target, null, null));
 
       it('lights both readings when the verse is in both', () => {
         expect(lit(only, both)).toBe(true);
@@ -396,11 +396,11 @@ describe('Haftarah Overlay', () => {
       it('lights only the reading chosen in the key, and keeps the shared verse split', () => {
         expect(lit(otherOnly, null, ROSH_CHODESH)).toBe(true);
         expect(lit(only, null, ROSH_CHODESH)).toBe(false);
-        expect(Array.isArray(colour(both, null, ROSH_CHODESH))).toBe(true);
+        expect(Array.isArray(color(both, null, ROSH_CHODESH))).toBe(true);
       });
     });
 
-    it('leaves the map hover out of the colours while a reading is previewed', () => {
+    it('leaves the map hover out of the colors while a reading is previewed', () => {
       preview(BERESHIT);
       expect(haftarahOverlay.hoverChangesColors(null, noach)).toBe(false);
     });
@@ -692,7 +692,7 @@ describe('Haftarah Overlay', () => {
     });
   });
 
-  describe('which hover moves change the colours (hoverChangesColors)', () => {
+  describe('which hover moves change the colors (hoverChangesColors)', () => {
     const torahVerse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
     const psalmsVerse = createVerse({ book: 'Psalms', chapter: 1, verse: 1 });
     const ruthVerse = createVerse({ book: 'Ruth', chapter: 1, verse: 1 });
@@ -743,7 +743,7 @@ describe('Haftarah Overlay', () => {
       expect(haftarahOverlay.toUrl()).toEqual({ custom: 'sephardi' });
     });
 
-    it('brightens the hovered pairing, darkens other readings to a tint, and greys the rest', () => {
+    it('brightens the hovered pairing, darkens other readings to a tint, and grays the rest', () => {
       const torah = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const itsHaftarah = createVerse({ book: 'Isaiah', chapter: 42, verse: 5 });
       const otherParsha = createVerse({ book: 'Genesis', chapter: 7, verse: 1 });

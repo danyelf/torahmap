@@ -15,7 +15,7 @@
 ## Global Constraints
 
 - **No backward compatibility.** The `ww` and `hm` URL parameters are removed outright — not read, not translated, not warned about. Links carrying them lose those settings.
-- **No ticket or stage references in code or test comments.** Describe the behaviour. (`src/__tests__/integration/search-overlay-modes.test.ts:2` currently carries `tm-z8ru`; delete it while rewriting that file.)
+- **No ticket or stage references in code or test comments.** Describe the behavior. (`src/__tests__/integration/search-overlay-modes.test.ts:2` currently carries `tm-z8ru`; delete it while rewriting that file.)
 - **Prettier owns formatting.** `npm run format` before committing; the pre-commit hook checks staged files, typechecks, and runs all tests.
 - **No `@ts-ignore`.** Fix types properly.
 - **Mode letters in the URL are `s`, `w`, `r`** — never the full words. The `token` kind caps a value at 50 characters.
@@ -33,7 +33,7 @@
 | `src/overlays/search.ts` | The overlay: running the search, the panel, the URL | Read mode per term; replace footer controls with per-row controls; collapse rows |
 | `src/styles/overlays/search.css` | Panel styling | Add collapsed-row and mode-control rules; drop the footer rules |
 | `src/search.ts` | Corpus matching | **No signature change.** `verseSetsForTerms` is already called one term at a time |
-| `src/__tests__/unit/search-terms.test.ts` | Pure term behaviour | New cases for mode defaulting and the URL codec |
+| `src/__tests__/unit/search-terms.test.ts` | Pure term behavior | New cases for mode defaulting and the URL codec |
 | `src/__tests__/integration/search-overlay-modes.test.ts` | Mode switching through the DOM | Rewritten against per-row controls |
 | `src/__tests__/unit/overlays/search.test.ts`, `search-from-click.test.ts`, `search-term-colors.test.ts`, `search-meaning-filter.test.ts`, `unit/search-wholeword.test.ts`, `unit/urlState.test.ts` | Various | Rewritten where they drive the deleted controls |
 
@@ -92,7 +92,7 @@ describe('a term matched its own way', () => {
     expect(effectiveMode(terms[0])).toBe('root');
   });
 
-  it('changes one term without touching its neighbours', () => {
+  it('changes one term without touching its neighbors', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'אור');
     terms = setMode(terms, terms[1].id, 'word');
     expect(effectiveMode(terms[0])).toBe('root');
@@ -308,7 +308,7 @@ export function encodeModes(terms: SearchTerm[]): string {
 /**
  * Apply a `mode` parameter to a freshly built term list.
  *
- * An entry that is empty or unrecognised leaves that term on its default,
+ * An entry that is empty or unrecognized leaves that term on its default,
  * rather than discarding the term or the search.
  */
 export function applyModes(terms: SearchTerm[], encoded: string): SearchTerm[] {
@@ -569,7 +569,7 @@ function syncHebrewModeRadios(): void {
 
 Call it from `updateOptionVisibility` so it stays honest, and keep the `wholeWordCheckbox.checked` line in `renderControls` reading the first English term the same way. Every one of these lines is deleted in Task 5.
 
-**m. `searchForMeaning`** still writes `hebrewSearchMode`, which no longer exists. For this task only, make it set the new term's mode — Task 4 adds the test that pins the behaviour:
+**m. `searchForMeaning`** still writes `hebrewSearchMode`, which no longer exists. For this task only, make it set the new term's mode — Task 4 adds the test that pins the behavior:
 
 ```ts
   if (meaningKeys && meaningKeys.length > 0) {
@@ -585,7 +585,7 @@ Call it from `updateOptionVisibility` so it stays honest, and keep the `wholeWor
 
 Run: `npm test`
 
-Every failure will be a test asserting `hm` or `ww` in a URL record. In `src/__tests__/unit/urlState.test.ts` and the six overlay test files, translate each one: `{ hm: 'word' }` over a single Hebrew term becomes `{ mode: 'w' }`; `{ ww: '1' }` over a single English term becomes `{ mode: 'w' }`; `{ hm: 'root' }` becomes either `{ mode: 'r' }` or nothing, since root is the default. Tests that click the radios or the checkbox still work — the bridge keeps them driving the same behaviour.
+Every failure will be a test asserting `hm` or `ww` in a URL record. In `src/__tests__/unit/urlState.test.ts` and the six overlay test files, translate each one: `{ hm: 'word' }` over a single Hebrew term becomes `{ mode: 'w' }`; `{ ww: '1' }` over a single English term becomes `{ mode: 'w' }`; `{ hm: 'root' }` becomes either `{ mode: 'r' }` or nothing, since root is the default. Tests that click the radios or the checkbox still work — the bridge keeps them driving the same behavior.
 
 Re-run until green. Do not add new per-row assertions here; Task 5 owns those.
 
@@ -641,7 +641,7 @@ Use whatever the file already does to obtain a meaning's keys for עלה — it 
 - [ ] **Step 2: Run it and watch it fail or pass**
 
 Run: `npm test -- src/__tests__/unit/overlays/search-from-click.test.ts`
-Expected: PASS, because Task 3 already moved the assignment. If it fails, the bug is real and Step 3 is where you fix it; if it passes, Step 3 is only the comment rewrite. Either way the test stays — it is the regression guard for the behaviour the issue was filed about.
+Expected: PASS, because Task 3 already moved the assignment. If it fails, the bug is real and Step 3 is where you fix it; if it passes, Step 3 is only the comment rewrite. Either way the test stays — it is the regression guard for the behavior the issue was filed about.
 
 - [ ] **Step 3: Rewrite the comment that no longer describes the code**
 
@@ -653,7 +653,7 @@ Expected: PASS, because Task 3 already moved the assignment. If it fails, the bu
  * cannot be expressed as a substring. The written form is the opposite
  * request, for this spelling and no other, so it goes to whole word: substring
  * would match it inside longer words, and root would resolve a known spelling
- * back to the readings the reader just declined. Neighbouring terms keep
+ * back to the readings the reader just declined. Neighboring terms keep
  * whatever they were doing.
 ```
 

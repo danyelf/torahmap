@@ -63,7 +63,7 @@ function entryAt(data: CommentaryData, verse: TanakhIdentity): TanakhCommentary 
   return data.counts[verse.book]?.[String(verse.chapter)]?.[String(verse.verse)];
 }
 
-// Each category's highest count and colour scale, worked out once per data value. The scale
+// Each category's highest count and color scale, worked out once per data value. The scale
 // starts at 1: zero is drawn apart, as `NEVER_LINKED`.
 const scaleFor = memoByValueAndKey((data: CommentaryData, category: string) => {
   let max = 0;

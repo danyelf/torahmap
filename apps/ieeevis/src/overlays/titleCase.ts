@@ -8,7 +8,7 @@ const SMALL = new Set(
 /** A word keeps its own case if it has a capital past its first letter, or a digit: LLM, t-SNE, 3D. */
 const keepsCase = (word: string): boolean => /\d|\p{L}.*\p{Lu}/u.test(word);
 
-const capitalised = (word: string): string => word.replace(/\p{L}/u, (c) => c.toUpperCase());
+const capitalized = (word: string): string => word.replace(/\p{L}/u, (c) => c.toUpperCase());
 
 export function titleCase(text: string): string {
   return text
@@ -18,7 +18,7 @@ export function titleCase(text: string): string {
       return word
         .split('-')
         .map((part, j) =>
-          i + j > 0 && SMALL.has(part.toLowerCase()) ? part.toLowerCase() : capitalised(part),
+          i + j > 0 && SMALL.has(part.toLowerCase()) ? part.toLowerCase() : capitalized(part),
         )
         .join('-');
     })

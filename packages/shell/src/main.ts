@@ -4,7 +4,7 @@ import {
   mapPoint,
   clampZoom,
   zoomAtPoint,
-  centreForFocus,
+  centerForFocus,
   viewFocusedOn,
   animateCameraTo,
   planGlide,
@@ -239,10 +239,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const passages = ringsFrom && items.map((item, i) => ringsFrom.passageOf(item, i));
   // Whether the camera is too far out for the text's rings: the squares then look like their passages.
   let farOut = false;
-  // The state of `farOut` that each side of the colour layer was filled for.
+  // The state of `farOut` that each side of the color layer was filled for.
   let layerFar = { from: false, to: false };
   const bothFar = (far = farOut) => ({ from: far, to: far });
-  /** A picture with its holes filled with each square's base colour, and its base ring. */
+  /** A picture with its holes filled with each square's base color, and its base ring. */
   const fill = (picture: Picture<ItemColor | null>, far = farOut): Picture<ItemColor> => {
     const filled = fillDefaultColors(picture, base, baseRings && ((i) => baseRings[i]));
     return far && passages ? takePassageLook(filled, (i) => passages[i]) : filled;
@@ -288,9 +288,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   const overlayId = (state = tools): string => state.active ?? NO_OVERLAY;
   const searching = (): boolean => searchTool.isSearching(tools.search);
 
-  // The one colour layer on the map: either a settled overlay's colours or a
+  // The one color layer on the map: either a settled overlay's colors or a
   // story transition's blend. The shader draws the hover on top of it
-  // (render). A pin never recomputes it; a hover does only when the colours
+  // (render). A pin never recomputes it; a hover does only when the colors
   // depend on the hovered square, which a blend's may.
   let colorLayer: ColorLayer<ItemColor | null> = still({ colors: [] });
   // What the square buffer was last built from. A fade in progress changes only
@@ -412,8 +412,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       fadeFrame = null;
       if (raw >= 1) {
         // The settled picture, not `to`: fillDefaultColors filled the holes a
-        // real overlay leaves for an uncoloured match, which would hover
-        // wrong (fillDefaultColors marks uncoloured only the holes it fills
+        // real overlay leaves for an uncolored match, which would hover
+        // wrong (fillDefaultColors marks uncolored only the holes it fills
         // itself) until the next repaint.
         settle();
       } else {
@@ -471,7 +471,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   /**
    * Repaint after the hovered or pinned square changes. `focusBefore` is the
-   * focus the colour layer was drawn for.
+   * focus the color layer was drawn for.
    */
   function repaint(focusBefore: Focus<I>): void {
     const layer = layerToRecompute(
@@ -523,7 +523,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let pinnedItem: I | null = null;
 
   let hoveredItem: I | null = null;
-  // The hovered square the map's colours follow: it trails hoveredItem, which the highlight and
+  // The hovered square the map's colors follow: it trails hoveredItem, which the highlight and
   // the panels follow at once.
   let litHoverItem: I | null = null;
 
@@ -782,7 +782,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
   }
 
-  // A square is six pixels across, so centring it while scaled out
+  // A square is six pixels across, so centering it while scaled out
   // moves the map and shows the reader nothing. Close enough to pick it out.
   const RESULT_CLICK_ZOOM = 2.5;
 
@@ -817,7 +817,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     const focus = mapFocus();
     const range = { ...zoomRange, max: Math.min(zoomRange.max, RESULT_CLICK_ZOOM) };
     const { zoom, x, y } = cameraToFit(boxAround(list), view.width, 2 * focus.y, range);
-    glideTo({ zoom, ...centreForFocus({ x, y, size: 0 }, zoom, focus, view) });
+    glideTo({ zoom, ...centerForFocus({ x, y, size: 0 }, zoom, focus, view) });
   }
 
   /** Fly the camera to `target`. */
@@ -999,7 +999,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
           pinItem(next);
           glideTo({
             zoom: camera.zoom,
-            ...centreForFocus(next, camera.zoom, mapFocus(), mapViewport()),
+            ...centerForFocus(next, camera.zoom, mapFocus(), mapViewport()),
           });
         }
       },
@@ -1411,7 +1411,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
 
   window.addEventListener('resize', () => {
     // Crossing into or out of phone width turns the story from a column into a
-    // row, or back, and moves where it centres squares.
+    // row, or back, and moves where it centers squares.
     const relaid = isPhone() !== phone;
     if (relaid) {
       phone = !phone;
@@ -1651,7 +1651,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   });
 
   // Moving the story is the only thing that moves it on. While the reader
-  // drives it only counts towards handing the map back.
+  // drives it only counts toward handing the map back.
   function storyMoved(): void {
     if (frame.mode !== 'story') return;
 
@@ -1676,7 +1676,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     if (storyFrame === null) storyFrame = requestAnimationFrame(paintStoryFrame);
   }
 
-  /** `layer`, its null colours filled so a blend never mixes in mergePictures's placeholder. */
+  /** `layer`, its null colors filled so a blend never mixes in mergePictures's placeholder. */
   function withDefaults(layer: ColorLayer<ItemColor | null>): ColorLayer {
     return {
       from: fill(layer.from, layerFar.from),
@@ -1872,7 +1872,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   /**
    * Replace the whole view with `next`, in an order where each step can rely on
    * the one before: settings before the controls that draw them, the square
-   * before the camera that centres on it.
+   * before the camera that centers on it.
    */
   function applyViewState(next: ViewState): void {
     if (next.mode === 'explore') {

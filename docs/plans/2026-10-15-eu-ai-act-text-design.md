@@ -60,8 +60,8 @@ mapping from recitals to articles, and the 2026 amendment's own recitals.
 A recital is a 2×1 tile, so `MapItem` gains an optional `width`, defaulting to
 `size`. Six places turn `size` into a rectangle by assuming a square, and each
 reads `width ?? size` instead: `geometry.ts` (the rectangle), `hitDetection.ts`
-(the click test, and the centre used for nearest-square lookups), `camera.ts`
-(centring on a square, in two functions) and `outline.ts` (the pinned ring).
+(the click test, and the center used for nearest-square lookups), `camera.ts`
+(centering on a square, in two functions) and `outline.ts` (the pinned ring).
 
 The GPU takes a full rectangle per square, but the shader measured a search
 ring's hole, and whether a square has room for one, from its width alone, so a
@@ -69,7 +69,7 @@ recital's ring was thin along its top. It now carries both sides
 (`webgl.ts`).
 
 The Tanakh and the Talmud set no `width`, and a test pins that their rectangles,
-hits and centres are unchanged.
+hits and centers are unchanged.
 
 ## Where the machinery assumed something else
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { titleCase } from '../src/overlays/titleCase.ts';
 
 describe('keywords shown in Title Case', () => {
-  it('capitalises each word', () => {
+  it('capitalizes each word', () => {
     expect(titleCase('visual analytics')).toBe('Visual Analytics');
     expect(titleCase('cost-benefit analysis')).toBe('Cost-Benefit Analysis');
   });
