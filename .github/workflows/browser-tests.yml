@@ -16,6 +16,8 @@ jobs:
   browser:
     name: Browser tests
     runs-on: ubuntu-latest
+    # A full run takes about 11 minutes.
+    timeout-minutes: 30
     steps:
       # test:browser diffs against origin/main, so it needs the history.
       - uses: actions/checkout@v4
@@ -30,6 +32,7 @@ jobs:
       # system-ui is the page's text font; the runner would draw it in DejaVu Sans, much wider
       # than the Mac's. Inter is the nearest free face.
       - run: |
+          sudo apt-get update
           sudo apt-get install -y fonts-inter
           mkdir -p ~/.config/fontconfig && cp .github/fonts.conf ~/.config/fontconfig/fonts.conf
           fc-cache -f

@@ -55,10 +55,10 @@ drawing off to prove the real map's wait can't pass on a blank canvas.
 - `page.ts`: what reads the layout from the browser: measuring the visible part of each element
   and finding clipped text. What the loading suite shares (waiting for the map, counting drawn
   pixels, recording what the app sends) is in `test/browser/page.ts`.
-- `known.ts`: failures accepted for now. Each records why, and exactly what it measures, so a fix
-  or a new failure in the same place still fails the run. `known.test.ts` checks that every entry
-  names a real state, screen and rule. Both run with `npm test`, not in this suite. Its
-  `SMALL_CONTROLS` are the controls accepted under the touch minimum wherever they show.
+- `known.ts`: failures accepted for now. Each entry of `KNOWN` records why, and exactly what it
+  measures, so a fix or a new failure in the same place still fails the run; `SMALL_CONTROLS`
+  names the controls accepted under the touch minimum wherever they show. `known.test.ts` checks
+  that every entry names a real state, screen and rule. Both run with `npm test`, not in this suite.
 - `test/browser/screens.ts`: the four screen sizes, shared with the loading suite.
 - `contactSheet.ts`: the reporter that writes `layout-report/`.
 - `tanakh-analytics.spec.ts`: what the reader's actions record.
@@ -70,4 +70,5 @@ drawing off to prove the real map's wait can't pass on a blank canvas.
 
 A failure names the state, the screen and the rule, for example
 `explore-search/phone/touch-targets`, and lists what it measured. Either fix the layout, or, if
-the failure is accepted for now, copy the measurement into `known.ts` with the reason.
+the failure is accepted for now, copy the measurement into `known.ts` with the reason; a control
+too small to touch on every page goes in `SMALL_CONTROLS`.
