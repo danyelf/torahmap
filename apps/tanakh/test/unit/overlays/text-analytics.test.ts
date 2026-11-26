@@ -392,6 +392,17 @@ describe('Text Analytics overlay', () => {
         expect(opacity(2)).toBeGreaterThan(opacity(3));
       });
 
+      it('dims no pointer while the pinned verse is compared with an echo in its own chapter', () => {
+        const grown = (compared: (typeof places)[number] | null) =>
+          textAnalyticsOverlay.grownPointersFor!({
+            items: places,
+            settings: echoSettings,
+            data: { ...data, echoes: { 0: [1, 5, 2, 5, 3, 5] } },
+            focus: { hovered: null, pinned: places[0], compared },
+          });
+        expect(grown(places[1])).toEqual(grown(null));
+      });
+
       const pointers = (items: typeof places, echoes: TextAnalyticsData['echoes']) =>
         textAnalyticsOverlay.pointersFor!({
           items,
@@ -540,7 +551,26 @@ describe('Text Analytics overlay', () => {
           parallel(panel).click();
           draw(panel, verse(4));
           parallel(panel).click();
-          expect(did).toEqual([`hold ${verse(4).id}`, `travel ${verse(4).id}`]);
+          expect(did.filter((d) => !d.startsWith('hover'))).toEqual([
+            `hold ${verse(4).id}`,
+            `travel ${verse(4).id}`,
+          ]);
+        });
+
+        it('takes the pointer off a row it travels from, which is redrawn under it', () => {
+          const panel = document.createElement('div');
+          draw(panel, verse(4));
+          parallel(panel).dispatchEvent(new MouseEvent('mouseenter'));
+          parallel(panel).click();
+          expect(did).toEqual([`hover ${verse(4).id}`, 'hover null', `travel ${verse(4).id}`]);
+        });
+
+        it('draws its rows again in a panel emptied since', () => {
+          const panel = document.createElement('div');
+          draw(panel, null);
+          panel.replaceChildren();
+          draw(panel, null);
+          expect(parallel(panel)).toBeDefined();
         });
 
         it('says when the pointer is on a parallel, and when it leaves', () => {

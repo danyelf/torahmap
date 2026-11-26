@@ -34,7 +34,7 @@ import {
   type ScoresFile,
 } from './text-analytics/scores.ts';
 import { ECHOES_FILE, echoRun, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
-import { DISTANCE_STEPS, distanceStep } from './text-analytics/distance.ts';
+import { DISTANCE_STEPS, SAME_CHAPTER, distanceStep } from './text-analytics/distance.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
 import { wordsRead } from '../search/dictionary.ts';
@@ -222,8 +222,6 @@ function echoColors(
 // section of the Tanakh.
 const POINTER_LENGTH = 10;
 const POINTER_LENGTH_FAR = 14;
-// A pointer toward an echo in the same chapter never grows: grown, it lies along the chapter's row of verses.
-const SAME_CHAPTER = 0;
 // A verse with more pointers than this draws them shorter, by the fourth root of how many more, so a
 // formula's fan of seventy does not drown the verses with one or two.
 const FULL_LENGTH_POINTERS = 12;
@@ -253,6 +251,7 @@ const echoPointerList = memoByValue((items: TanakhLayout[]) =>
         .filter(({ to }) => to);
       const shorter = Math.min(1, (FULL_LENGTH_POINTERS / drawn.length) ** 0.25);
       for (const { other, to, step } of drawn) {
+        // Grown, a pointer within the chapter would lie along its row of verses, so it never grows.
         if (step !== SAME_CHAPTER) at.set(pairKey(position, other), pointers.length);
         pointers.push({
           from: centres.get(id)!,
@@ -280,12 +279,14 @@ function grownEchoPointers(
   if (!focused) return [];
   const { positions } = readingOrder();
   const focusedAt = positions.get(focused.id)!;
-  const comparedAt = focus.compared && positions.get(focus.compared.id);
   const { at } = echoPointerList(items)(data, settings.words);
+  const compared = focus.compared && positions.get(focus.compared.id);
+  // An echo with no pointer that grows, as one in the same chapter, dims none when compared.
+  const comparedAt = compared != null && at.has(pairKey(focusedAt, compared)) ? compared : null;
   return echoRun(data.echoes, focusedAt, settings.words).flatMap(([a, b]) => {
     const own = a === focusedAt || b === focusedAt;
     const opacity =
-      comparedAt == null
+      comparedAt === null
         ? own
           ? 1
           : RUN_OPACITY
@@ -407,12 +408,16 @@ export const textAnalyticsOverlay: Overlay<
       compares && compare.hold,
     ];
     const before = listDrawnFor.get(container);
-    if (!before?.every((part, i) => part === drawnFor[i])) {
+    // The app empties the container itself when another overlay takes the panel.
+    if (!container.firstChild || !before?.every((part, i) => part === drawnFor[i])) {
       listDrawnFor.set(container, drawnFor);
       container.replaceChildren(
-        parallelList(focus, settings, data, (id, held) =>
-          compares && id !== focus.id && !held ? compare.hold(id) : travelTo(id),
-        ),
+        parallelList(focus, settings, data, (id, held) => {
+          if (compares && id !== focus.id && !held) return compare.hold(id);
+          // Travelling redraws the list, and the row under the pointer never sees it leave.
+          if (compares) compare.hover(null);
+          travelTo(id);
+        }),
       );
       if (compares) {
         for (const row of parallelRows(container)) {
@@ -514,15 +519,13 @@ export const textAnalyticsOverlay: Overlay<
   // The phrase the two share is marked in both; what else the pinned verse repeats keeps a
   // fainter mark.
   compareTexts(pinned, _compared, [pinnedText, comparedText], settings, data) {
-    const [ours, theirs] = [wordsOf(pinnedText), wordsOf(comparedText)];
-    const run = phraseWords(settings, data);
     return [
       markStretches(
         pinnedText,
-        sharedStretches(ours, [theirs], run),
+        sharedWith(pinnedText, [comparedText], settings, data),
         repeatedIn(pinned, pinnedText, settings, data),
       ),
-      markStretches(comparedText, sharedStretches(theirs, [ours], run)),
+      markStretches(comparedText, sharedWith(comparedText, [pinnedText], settings, data)),
     ];
   },
 };
@@ -536,6 +539,15 @@ const FOCUS_CAPTIONS = [
 const phraseWords = (settings: TextAnalyticsSettings, data: TextAnalyticsData): number =>
   settings.analysis === 'echoes' ? settings.words : data.scores.parameters.runWords;
 
+/** The stretches of a verse's Hebrew that sit in a phrase it shares with one of `others`. */
+const sharedWith = (
+  text: string,
+  others: string[],
+  settings: TextAnalyticsSettings,
+  data: TextAnalyticsData,
+): number[] =>
+  sharedStretches(wordsOf(text), others.filter(Boolean).map(wordsOf), phraseWords(settings, data));
+
 /** The stretches of a verse's Hebrew that the analysis shown counts as repeated. */
 function repeatedIn(
   verse: TanakhLayout,
@@ -547,8 +559,12 @@ function repeatedIn(
     return data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? [];
   }
   const echoes = echoesOf(data, settings, verse)?.places ?? [];
-  const others = echoes.map((place) => textOf(data, place)).filter(Boolean);
-  return sharedStretches(wordsOf(text), others.map(wordsOf), settings.words);
+  return sharedWith(
+    text,
+    echoes.map((place) => textOf(data, place)),
+    settings,
+    data,
+  );
 }
 
 const COMPARED_ROW = 'parallel-compared';
@@ -593,18 +609,7 @@ function parallelList(
     const partners = (place.id === focus.id ? found.places : [focus]).map((other) =>
       textOf(data, other),
     );
-    quote.append(
-      markStretches(
-        he,
-        he
-          ? sharedStretches(
-              wordsOf(he),
-              partners.filter(Boolean).map(wordsOf),
-              phraseWords(settings, data),
-            )
-          : [],
-      ),
-    );
+    quote.append(markStretches(he, sharedWith(he, partners, settings, data)));
     row.append(ref, quote);
     row.classList.toggle('parallel-source', place.id === focus.id);
     row.addEventListener('click', () => click(place.id, row.classList.contains(HELD_ROW)));
