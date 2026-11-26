@@ -83,6 +83,25 @@ async function checkLayout(page: Page, state: State): Promise<void> {
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
+  if (state.name === 'vis-long-paper') {
+    const seen = await page.evaluate(() => {
+      const link = document.querySelector('#popup .sefaria-link') as HTMLElement;
+      return {
+        family: getComputedStyle(link).fontFamily,
+        firaReady: document.fonts.check('12px "Fira Sans"'),
+        faces: [...document.fonts].map((f) => `${f.family} ${f.weight} ${f.status}`),
+        sheets: [...document.styleSheets].map((s) => s.href),
+        width: link.getBoundingClientRect().width,
+        children: [...link.childNodes].map((n) =>
+          n instanceof HTMLElement
+            ? `${n.tagName} ${n.getBoundingClientRect().width}`
+            : `text "${n.textContent}"`,
+        ),
+        ratio: devicePixelRatio,
+      };
+    });
+    console.log(`FONT-DIAGNOSTIC ${info.project.name} ${JSON.stringify(seen)}`);
+  }
   const measured = await measureLayout(page, CHROME, state.shown);
   for (const rule of RULES) {
     const violations = measured[rule];
