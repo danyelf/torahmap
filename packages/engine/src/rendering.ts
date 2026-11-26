@@ -131,7 +131,8 @@ export function rebuildGeometry<T>(
 
 /**
  * Draws the map and returns the pan offset it drew at (see viewOffset), for
- * anything placed over the map to follow.
+ * anything placed over the map to follow. `over` draws over the squares and
+ * under the outlines, at that offset.
  */
 export function render<T>(
   context: RenderContext,
@@ -139,6 +140,7 @@ export function render<T>(
   camera: Camera,
   hoveredItem: SpatialItem<T> | null,
   pinnedItem: SpatialItem<T> | null,
+  over?: (offset: { x: number; y: number }) => void,
 ): { x: number; y: number } {
   const { gl, programs, canvas } = context;
   const { vertexArray, items, dpr } = state;
@@ -178,6 +180,7 @@ export function render<T>(
   gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, items.length);
   gl.disable(gl.BLEND);
   gl.bindVertexArray(null);
+  over?.(offset);
 
   if (hoveredItem && !sameItem(hoveredItem, pinnedItem)) {
     const hoverColor = pinnedItem

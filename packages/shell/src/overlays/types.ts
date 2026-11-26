@@ -1,4 +1,4 @@
-import type { SpatialItem } from '@torahmap/engine';
+import type { GrownPointer, Pointer, SpatialItem } from '@torahmap/engine';
 import type { Color } from '@torahmap/utils';
 import type { TextLanguage } from '../language.ts';
 import type { UrlParamSpec, UrlParamValues } from '@torahmap/link';
@@ -132,6 +132,11 @@ interface OverlayMembers<T, S, D> {
   // Which of the items stand out, as a search match does: drawn over the rest and
   // never too small to see. For an overlay that can light only a few squares.
   standoutsFor?(args: ColorArgs<T, S, D>): boolean[];
+
+  // Short tapered lines from squares toward other squares, drawn over the map, and which of them
+  // grow to halfway for the focus: pointersFor's list is the same for the same settings and data.
+  pointersFor?(args: Omit<ColorArgs<T, S, D>, 'focus'>): Pointer[];
+  grownPointersFor?(args: ColorArgs<T, S, D>): GrownPointer[];
 
   // Which of the standouts also keep a faint halo when zoomed in, where a
   // standout is otherwise a plain square.

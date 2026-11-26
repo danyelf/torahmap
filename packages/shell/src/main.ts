@@ -21,6 +21,7 @@ import {
   createRenderState,
   rebuildGeometry,
   render as renderFrame,
+  createPointerRenderer,
   type RenderContext,
   getWebGL2,
   type MapItem,
@@ -279,6 +280,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     mapPoint(e.clientX, e.clientY, canvasOrigin);
 
   const renderState = createRenderState(renderContext, items, dpr);
+  const pointers = createPointerRenderer(renderContext.gl);
 
   // The search and at most one overlay. Only setTools and leaveStory change it.
   let tools: ToolState<S> = emptyTools(searchTool);
@@ -729,10 +731,55 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     fadeMap(to, applyTools, { from: !out, to: out });
   }
 
+  // The overlay, settings and data the pointers were last made from, and the focus they were
+  // last grown for.
+  let pointersFrom: unknown[] = [];
+  let grownFor: unknown[] = [];
+
+  /** Brings the pointers in step with the settled overlay and the focus, while exploring. */
+  function syncPointers(): void {
+    const on = frame.mode === 'story' ? null : toolsNow().overlay;
+    const from = [on?.tool, on?.settings, on?.data];
+    if (from.some((part, i) => part !== pointersFrom[i])) {
+      pointersFrom = from;
+      grownFor = [];
+      const made = on?.tool.pointersFor?.({ items, settings: on.settings, data: on.data });
+      pointers.setPointers(made ?? []);
+    }
+    if (!on?.tool.grownPointersFor) return;
+    const focus = focusNow();
+    const key = [focus.hovered, focus.pinned];
+    if (key.some((part, i) => part !== grownFor[i])) {
+      grownFor = key;
+      const args = { items, settings: on.settings, data: on.data, focus };
+      pointers.grow(on.tool.grownPointersFor(args), reducedMotion.matches);
+    }
+  }
+
+  // The next frame of pointers growing or fading, while there is one.
+  let growFrame: number | null = null;
+
   function render(): void {
     syncRings();
-    const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
+    syncPointers();
+    let growing = false;
+    const offset = renderFrame(
+      renderContext,
+      renderState,
+      camera,
+      hoveredItem,
+      pinnedItem,
+      (at) => {
+        growing = pointers.draw(at, camera.zoom, dpr);
+      },
+    );
     moveLabels(offset, camera.zoom);
+    if (growing && growFrame === null) {
+      growFrame = requestAnimationFrame(() => {
+        growFrame = null;
+        render();
+      });
+    }
   }
 
   // A square is six pixels across, so centring it while scaled out

@@ -340,19 +340,27 @@ function compileShader(gl: WebGL2RenderingContext, type: number, source: string)
   return shader;
 }
 
-export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
-  const vs = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SHADER);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SHADER);
-
+/** Compiles and links a program from its two shaders' source. */
+export function compileProgram(
+  gl: WebGL2RenderingContext,
+  vertex: string,
+  fragment: string,
+): WebGLProgram {
+  const vs = compileShader(gl, gl.VERTEX_SHADER, vertex);
+  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fragment);
   const program = gl.createProgram();
   if (!program) throw new Error('Failed to create program');
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
-
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     throw new Error(gl.getProgramInfoLog(program) || 'Program linking failed');
   }
+  return program;
+}
+
+export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
+  const program = compileProgram(gl, VERTEX_SHADER, FRAGMENT_SHADER);
 
   return {
     program,
@@ -387,18 +395,7 @@ export interface OutlineProgram {
 }
 
 export function createOutlineProgram(gl: WebGL2RenderingContext): OutlineProgram {
-  const vs = compileShader(gl, gl.VERTEX_SHADER, OUTLINE_VERTEX_SHADER);
-  const fs = compileShader(gl, gl.FRAGMENT_SHADER, OUTLINE_FRAGMENT_SHADER);
-
-  const program = gl.createProgram();
-  if (!program) throw new Error('Failed to create program');
-  gl.attachShader(program, vs);
-  gl.attachShader(program, fs);
-  gl.linkProgram(program);
-
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    throw new Error(gl.getProgramInfoLog(program) || 'Program linking failed');
-  }
+  const program = compileProgram(gl, OUTLINE_VERTEX_SHADER, OUTLINE_FRAGMENT_SHADER);
 
   return {
     program,

@@ -10,6 +10,7 @@ import {
   ITEM_OFFSETS,
   SHAPE_FLAGS,
   hasRingRoom,
+  squareCentre,
   type ItemAttributeName,
 } from '../src/index.ts';
 import { createItem, createItems, RED, GREEN, BLUE, WHITE } from './fixtures.ts';
@@ -300,5 +301,12 @@ describe('createBuffer', () => {
 
     expect(buffer).toBe(mockBuffer);
     expect(mockGl.bufferData).toHaveBeenCalledWith(34962, data, 35044);
+  });
+});
+
+describe('squareCentre', () => {
+  it('is the middle of the square as drawn, moved by its jitter', () => {
+    expect(squareCentre(createItem())).toEqual({ x: 12, y: 22 });
+    expect(squareCentre(createItem({ jitter: { x: 0.5, y: -1 } }))).toEqual({ x: 12.5, y: 21 });
   });
 });

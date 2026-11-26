@@ -58,7 +58,9 @@ module, state kept at the level it belongs to, no circular dependencies.
 
 - Any animated change to what the map shows goes through the renderer's
   picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
-  story stops ease with. Don't add another animation path for it.
+  story stops ease with. Don't add another animation path for it. The one exception is the
+  pointers that grow from a hovered verse (`pointers.ts`): a cross-fade blends colours and cannot
+  grow a line, so they run their own frames while they move.
 - Much of how the squares are drawn exists to avoid moiré, the light and dark
   bands a grid of tiny squares makes against the screen's pixels; the comments
   that mention it mark each piece. Before changing one, look at the map at zoom

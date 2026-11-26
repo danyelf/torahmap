@@ -10,7 +10,9 @@ import {
   scale,
   LINEAR,
   memoByValue,
+  memoByValueAndKey,
 } from '@torahmap/utils';
+import { type GrownPointer, type Pointer, squareCentre } from '@torahmap/engine';
 import './text-analytics.css';
 import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
@@ -31,7 +33,7 @@ import {
   percentile,
   type ScoresFile,
 } from './text-analytics/scores.ts';
-import { ECHOES_FILE, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
+import { ECHOES_FILE, echoRun, echoesAt, type EchoesFile } from './text-analytics/echoes.ts';
 import { DISTANCE_STEPS, distanceStep } from './text-analytics/distance.ts';
 import { NO_DATA } from './colors.ts';
 import { TEXTS_FILE, type VerseTexts } from '../verseTexts.ts';
@@ -205,6 +207,61 @@ function echoColors(
   });
 }
 
+// How far a pointer reaches toward an echo, in map units (a cell is SQUARE_SIZE): farther toward another
+// section of the Tanakh.
+const POINTER_LENGTH = 10;
+const POINTER_LENGTH_FAR = 14;
+// The rest of the focused verse's run of parallels is drawn this much fainter than its own echoes.
+const RUN_OPACITY = 0.55;
+// The key of the pointer from one reading-order position toward another.
+const pairKey = (from: number, to: number) => `${from} ${to}`;
+
+/** Every echo's pointer, and where the one from each reading-order position to another sits in the list. */
+const echoPointerList = memoByValue((items: TanakhLayout[]) =>
+  memoByValueAndKey((data: TextAnalyticsData, words: number) => {
+    const { places, positions } = readingOrder();
+    const centres = new Map(items.map((item) => [item.id, squareCentre(item)]));
+    const far = DISTANCE_STEPS.length - 1;
+    const pointers: Pointer[] = [];
+    const at = new Map<string, number>();
+    for (const { id } of items) {
+      const position = positions.get(id)!;
+      for (const [other] of echoesAt(data.echoes, position, words)) {
+        const to = centres.get(places[other].id);
+        if (!to) continue;
+        const step = distanceStep(places[position], places[other]);
+        at.set(pairKey(position, other), pointers.length);
+        pointers.push({
+          from: centres.get(id)!,
+          to,
+          length: step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH,
+          color: DISTANCE_STEPS[step].color,
+        });
+      }
+    }
+    return { pointers, at };
+  }),
+);
+
+/** The focused verse's run of parallels, each pair grown to meet; its own echoes brightest. */
+function grownEchoPointers(
+  items: TanakhLayout[],
+  data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
+  focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
+): GrownPointer[] {
+  const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
+  if (!focused) return [];
+  const focusedAt = readingOrder().positions.get(focused.id)!;
+  const { at } = echoPointerList(items)(data, settings.words);
+  return echoRun(data.echoes, focusedAt, settings.words).flatMap(([a, b]) => {
+    const opacity = a === focusedAt || b === focusedAt ? 1 : RUN_OPACITY;
+    return [at.get(pairKey(a, b)), at.get(pairKey(b, a))]
+      .filter((index) => index !== undefined)
+      .map((index) => ({ index, opacity }));
+  });
+}
+
 /** Which of `items` are the focused verse or its echoes. */
 function matched(
   items: TanakhLayout[],
@@ -274,6 +331,16 @@ export const textAnalyticsOverlay: Overlay<
     if (settings.analysis === 'echoes') return echoColors(items, data, settings, focus);
     const lit = focusEchoes(data, settings, focus.hovered, focus.pinned)?.matches;
     return items.map((item) => repetitionColorAt(data, item, !!lit && !lit.has(item.id)));
+  },
+
+  pointersFor({ items, settings, data }) {
+    return settings.analysis === 'echoes'
+      ? echoPointerList(items)(data, settings.words).pointers
+      : [];
+  },
+
+  grownPointersFor({ items, settings, data, focus }) {
+    return settings.analysis === 'echoes' ? grownEchoPointers(items, data, settings, focus) : [];
   },
 
   // The matches stay visible zoomed out, as search matches do, and ring when zoomed in.
