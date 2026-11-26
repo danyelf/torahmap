@@ -1,7 +1,14 @@
 import { expect, type Page } from '@playwright/test';
 import { test } from '../browser/fakeMap.ts';
 import { CHROME, type State } from './app.ts';
-import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
+import {
+  apart,
+  asRecorded,
+  notShownInFull,
+  outsideOf,
+  overlapping,
+  tooSmallToTouch,
+} from './geometry.ts';
 import { KNOWN } from './known.ts';
 import { openMap, viaMenu } from '../browser/page.ts';
 import { PANELS } from '@torahmap/shell/frame.ts';
@@ -69,9 +76,13 @@ export async function measureLayout(
   return out;
 }
 
-/** Measures the page and fails on every violation that `KNOWN` does not record exactly. */
+/** Measures the page and fails on every violation that `KNOWN` does not record. */
 async function checkLayout(page: Page, state: State): Promise<void> {
   const info = test.info();
+  // Text measured in the fallback font, before a page's web font arrives, has another width.
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
   const measured = await measureLayout(page, CHROME, state.shown);
   for (const rule of RULES) {
     const violations = measured[rule];
@@ -80,7 +91,7 @@ async function checkLayout(page: Page, state: State): Promise<void> {
     const known = KNOWN[key];
     if (!known) {
       expect.soft(violations, key).toEqual([]);
-    } else if (JSON.stringify(violations) === JSON.stringify(known.violations)) {
+    } else if (asRecorded(violations, known.violations)) {
       info.annotations.push({
         type: 'known layout defect',
         description: `${key}: ${known.reason}`,
