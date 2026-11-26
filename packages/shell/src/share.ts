@@ -1,7 +1,7 @@
 // Sending a link: the system share sheet where one exists, otherwise the clipboard.
 
-/** What became of a share attempt. */
-export type ShareOutcome = 'copied' | 'share_sheet' | 'canceled' | 'failed';
+/** What became of a share attempt. Analytics records it, so the values never change spelling. */
+export type ShareOutcome = 'copied' | 'share_sheet' | 'cancelled' | 'failed';
 
 export interface ShareEnv {
   share?: (data: ShareData) => Promise<void>;
@@ -15,7 +15,7 @@ export async function shareLink(url: string, title: string, env: ShareEnv): Prom
       await env.share({ url, title });
       return 'share_sheet';
     } catch (e) {
-      if (e instanceof DOMException && e.name === 'AbortError') return 'canceled';
+      if (e instanceof DOMException && e.name === 'AbortError') return 'cancelled';
     }
   }
   try {

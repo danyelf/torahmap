@@ -110,7 +110,7 @@ Only these four. Splitting the rest of the codebase is not part of this.
 
 Columns go in `src/telemetry/schema.ts` as usual.
 
-- **`share`** — `how` (`copied`, `share_sheet`, `canceled`, `failed`),
+- **`share`** — `how` (`copied`, `share_sheet`, `cancelled`, `failed`),
   `what` (`nothing`, `view`, `stop`), `story`, `stop_id`, `overlay` (`none` when the link names none), and whether a search
   is on and a verse pinned.
 - **`page_view`** gains `arrived_with` (`nothing`, `view`, `stop`): what the
