@@ -7,12 +7,11 @@ import { MAX_WORDS, MIN_WORDS } from '@torahmap/tanakh/overlays/text-analytics/e
 import type { ParsedBook } from './measures.ts';
 
 /**
- * A run found in more verses than this is a formula that recurs wherever it appears ("and the
- * LORD spoke to Moses, saying"), and pairs no verses by it. Numbers 7's twelve princes repeat
- * their offering in twelve verses, so twelve is the least that keeps it; fifteen leaves a margin.
- * Letting the limit grow with the run's length changes nothing on the list of famous parallels.
+ * A run found in more verses than this pairs no verses. No limit: the ten formulas a limit of
+ * fifteen sets aside ("and the LORD spoke to Moses, saying", in 70 verses) more than double the
+ * pairs; formulas-report.ts lists them.
  */
-export const MAX_VERSES_PER_RUN = 15;
+export const MAX_VERSES_PER_RUN = Infinity;
 
 /**
  * For each verse, counted from the first verse of the first book, the other verses it shares a run
