@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   apart,
-  asRecorded,
   notShownInFull,
   outsideOf,
   overlapping,
@@ -57,22 +56,6 @@ describe('tooSmallToTouch', () => {
   });
   it('reports the measured size', () => {
     expect(tooSmallToTouch([box('a', 0, 0, 80, 20)], 44)).toEqual(['a is 80×20px, under 44']);
-  });
-});
-
-describe('asRecorded', () => {
-  const recorded = ['a.link is 103×15px, under 24'];
-  it('a size a pixel off is the recorded one', () => {
-    expect(asRecorded(['a.link is 104×15px, under 24'], recorded)).toBe(true);
-  });
-  it('a size well off is not', () => {
-    expect(asRecorded(['a.link is 116×15px, under 24'], recorded)).toBe(false);
-  });
-  it('another element is not', () => {
-    expect(asRecorded(['a.other is 103×15px, under 24'], recorded)).toBe(false);
-  });
-  it('one violation more is not', () => {
-    expect(asRecorded([...recorded, 'b is 20×20px, under 24'], recorded)).toBe(false);
   });
 });
 

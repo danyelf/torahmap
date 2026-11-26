@@ -1,15 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 import { test } from '../browser/fakeMap.ts';
 import { CHROME, type State } from './app.ts';
-import {
-  apart,
-  asRecorded,
-  notShownInFull,
-  outsideOf,
-  overlapping,
-  tooSmallToTouch,
-} from './geometry.ts';
-import { KNOWN } from './known.ts';
+import { apart, notShownInFull, outsideOf, overlapping, tooSmallToTouch } from './geometry.ts';
+import { KNOWN, SMALL_CONTROLS } from './known.ts';
 import { openMap, viaMenu } from '../browser/page.ts';
 import { PANELS } from '@torahmap/shell/frame.ts';
 import { asReturningReader, attachScreenshot, boxes, clippedText, shown } from './page.ts';
@@ -70,13 +63,15 @@ export async function measureLayout(
   // A control that shows at all is measured whole: one cut off by the edge of a
   // scrolling panel is as big as it is once scrolled to.
   if (interactive) {
-    const touchable = interactive.flatMap(({ full, visible }) => (visible ? [full] : []));
+    const touchable = interactive.flatMap(({ full, visible }) =>
+      visible && !SMALL_CONTROLS.includes(full.name) ? [full] : [],
+    );
     out['touch-targets'] = tooSmallToTouch(touchable, TOUCH_MIN);
   }
   return out;
 }
 
-/** Measures the page and fails on every violation that `KNOWN` does not record. */
+/** Measures the page and fails on every violation that `KNOWN` does not record exactly. */
 async function checkLayout(page: Page, state: State): Promise<void> {
   const info = test.info();
   const measured = await measureLayout(page, CHROME, state.shown);
@@ -87,7 +82,7 @@ async function checkLayout(page: Page, state: State): Promise<void> {
     const known = KNOWN[key];
     if (!known) {
       expect.soft(violations, key).toEqual([]);
-    } else if (asRecorded(violations, known.violations)) {
+    } else if (JSON.stringify(violations) === JSON.stringify(known.violations)) {
       info.annotations.push({
         type: 'known layout defect',
         description: `${key}: ${known.reason}`,

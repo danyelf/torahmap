@@ -55,9 +55,10 @@ drawing off to prove the real map's wait can't pass on a blank canvas.
 - `page.ts`: what reads the layout from the browser: measuring the visible part of each element
   and finding clipped text. What the loading suite shares (waiting for the map, counting drawn
   pixels, recording what the app sends) is in `test/browser/page.ts`.
-- `known.ts`: failures accepted for now. Each records why, and what it measures to within 2px, so a
-  fix or a new failure in the same place still fails the run. `known.test.ts` checks that every entry
-  names a real state, screen and rule. Both run with `npm test`, not in this suite.
+- `known.ts`: failures accepted for now. Each records why, and exactly what it measures, so a fix
+  or a new failure in the same place still fails the run. `known.test.ts` checks that every entry
+  names a real state, screen and rule. Both run with `npm test`, not in this suite. Its
+  `SMALL_CONTROLS` are the controls accepted under the touch minimum wherever they show.
 - `test/browser/screens.ts`: the four screen sizes, shared with the loading suite.
 - `contactSheet.ts`: the reporter that writes `layout-report/`.
 - `tanakh-analytics.spec.ts`: what the reader's actions record.

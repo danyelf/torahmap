@@ -76,26 +76,6 @@ export function tooSmallToTouch(boxes: Box[], min: number): string[] {
     .map((b) => `${b.name} is ${px(b.width)}×${px(b.height)}px, under ${min}`);
 }
 
-/** How far a size may sit from the one recorded: fonts draw a pixel or so wider on another platform. */
-const RECORDED_WITHIN = 2;
-
-const NUMBERS = /\d+/g;
-
-/** Whether `measured` says what `recorded` says, each number within RECORDED_WITHIN of its own. */
-export function asRecorded(measured: string[], recorded: string[]): boolean {
-  return (
-    measured.length === recorded.length &&
-    measured.every((m, i) => {
-      const r = recorded[i];
-      if (m.replace(NUMBERS, '') !== r.replace(NUMBERS, '')) return false;
-      const sizes = r.match(NUMBERS) ?? [];
-      return (m.match(NUMBERS) ?? []).every(
-        (n, j) => Math.abs(Number(n) - Number(sizes[j])) <= RECORDED_WITHIN,
-      );
-    })
-  );
-}
-
 /** An element's full box, and the part of it not hidden or clipped away (null: none). */
 export interface Shown {
   full: Box;
