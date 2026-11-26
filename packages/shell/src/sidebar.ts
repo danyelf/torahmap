@@ -177,14 +177,15 @@ function comparedBlock<I extends MapItem>(
 ): HTMLElement[] {
   const heading = document.createElement('div');
   heading.className = 'compared-ref';
-  const tag = document.createElement('span');
-  tag.className = 'compared-tag';
-  tag.textContent = comparison.held ? 'compared' : 'under the pointer';
-  heading.append(text.ref, tag);
+  heading.append(text.ref);
   const words = document.createElement('div');
   words.className = 'compared-hebrew';
   words.append(hebrew ?? text.hebrew);
   if (!comparison.held) return [heading, words];
+  const tag = document.createElement('span');
+  tag.className = 'compared-tag';
+  tag.textContent = 'compared';
+  heading.append(tag);
   const actions = document.createElement('div');
   actions.className = 'compared-actions';
   actions.append(
