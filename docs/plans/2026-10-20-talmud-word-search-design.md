@@ -480,6 +480,32 @@ How far to trust this:
   of dollars, not hundreds; a count through the API's token counter would
   settle it.
 
+### The mistakes, read one by one
+
+I read the 71 occurrences the version with the list got wrong, checking the
+passage where it was in doubt. This is my reading, not a scholar's:
+
+| What went wrong | occurrences | examples |
+|---|---|---|
+| The model's meaning is right; the test is wrong | 17 | חָמֵץ "leaven" ×6 filed under the verb; חוּץ "except" under "to squeeze in"; שָׁנָה "year" in מִדֵּי שָׁנָה בְּשָׁנָה under "to repeat" |
+| The same word under another heading: Hebrew or Aramaic form, a spelling variant, a duplicate entry, the noun or the verb of one root | 41 | אָמַר I for אֲמַר; לָא for לֹא; קְנָס for קָנַס; סְאָה for סְאָה ² |
+| A wrong meaning | 12 | כַּבְרִיתָא "sulphur" read as "like a Baraita"; לַסְּפָר "the border" read as "the barber"; כְּמִין חוֹמֶר as *kal va-ḥomer* |
+| No answer | 1 | |
+
+The test is wrong this often because of how it is made: when Jastrow quotes a
+passage under an entry, every word in it spelled like that entry counts as an
+instance of it. In Pesachim 28b:3 he quotes the verb חָמֵץ, so all four nouns
+count as the verb.
+
+So the model gives a wrong meaning for about 4% of these hard words. What a
+reader would notice depends on the middle row: the search can treat the
+headings of one word as one entry, Decision 7b, and then those 41 are right.
+
+The figure does not carry over to the whole Talmud. The test words lean to rare
+words; common words that the list gives several entries for are mostly pairs like אמר and
+לא, the middle row. A random draw from the whole Talmud, not from Jastrow's
+quotations, is what would measure it, and that is the reader's 100.
+
 ### Decision 11. What next?
 
 - **11a. Run the version with the word list over the whole Talmud.** The most
@@ -498,6 +524,9 @@ How far to trust this:
 
 My recommendation: 11d, then 11b. A reader's judgement is what the test set
 cannot give, and 11b both reaches more words and does not wait on Sefaria.
+
+**Decided: 11d, then 11b,** on 2026-11-25. The 100 are to be drawn from the
+whole Talmud, so that they measure it.
 
 ## The plan
 
