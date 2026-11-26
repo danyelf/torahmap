@@ -377,6 +377,12 @@ describe('Escape', () => {
     expect(escapeDoes({ menu: false, pinned: true, inField: false })).toBe('unpin');
   });
 
+  it('stops comparing before it unpins', () => {
+    expect(escapeDoes({ menu: false, pinned: true, inField: false, comparing: true })).toBe(
+      'release',
+    );
+  });
+
   it('never unpins from a field', () => {
     expect(escapeDoes({ menu: false, pinned: true, inField: true })).toBe('close');
   });
@@ -402,5 +408,14 @@ describe('what a tap does', () => {
 
   it('does nothing on empty map with nothing pinned', () => {
     expect(tapDoes(null, null)).toBeNull();
+  });
+
+  it('holds a square the pinned one compares with, and pins it on the second tap', () => {
+    expect(tapDoes(b, a, null, true)).toBe('hold');
+    expect(tapDoes(b, a, b, true)).toBe('pin');
+  });
+
+  it('lets go of the held square on empty map, keeping the pin', () => {
+    expect(tapDoes(null, a, b)).toBe('release');
   });
 });

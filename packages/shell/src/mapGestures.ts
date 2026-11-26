@@ -46,13 +46,18 @@ export interface MapIntents<I extends MapItem> {
   goTo(): boolean;
 }
 
-/** What Escape does: closes the menu, else unpins the square unless pressed in a field, else closes the panel or story. */
+/**
+ * What Escape does: closes the menu; else, unless pressed in a field, lets go of a held comparison
+ * or unpins the square; else closes the panel or story.
+ */
 export function escapeDoes(state: {
   menu: boolean;
   pinned: boolean;
   inField: boolean;
-}): 'menu' | 'unpin' | 'close' {
+  comparing?: boolean;
+}): 'menu' | 'release' | 'unpin' | 'close' {
   if (state.menu) return 'menu';
+  if (state.comparing && !state.inField) return 'release';
   if (state.pinned && !state.inField) return 'unpin';
   return 'close';
 }
@@ -75,8 +80,19 @@ export function arrowStep(key: string, direction: 'rtl' | 'ltr'): 1 | -1 | null 
   return key === forward ? 1 : key === back ? -1 : null;
 }
 
-/** What a tap does: pins a square other than the pinned one, and otherwise unpins. */
-export function tapDoes(tapped: MapItem | null, pinned: MapItem | null): 'pin' | 'unpin' | null {
+/**
+ * What a tap does: pins a square other than the pinned one, and otherwise unpins. A square the
+ * pinned one `compares` with is held for comparison first, and pinned by a second tap; a tap on
+ * empty map lets go of the one `held`.
+ */
+export function tapDoes(
+  tapped: MapItem | null,
+  pinned: MapItem | null,
+  held: MapItem | null = null,
+  compares = false,
+): 'pin' | 'unpin' | 'hold' | 'release' | null {
+  if (tapped && compares && !sameItem(tapped, held)) return 'hold';
+  if (!tapped && held) return 'release';
   if (tapped && !sameItem(tapped, pinned)) return 'pin';
   return pinned ? 'unpin' : null;
 }

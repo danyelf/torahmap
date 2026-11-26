@@ -56,11 +56,11 @@ export function aboutHtml(
         <tr><td>Scroll / Pinch</td><td>Zoom in/out</td></tr>
         <tr><td>Drag</td><td>Pan the map</td></tr>
         <tr><td>Hover</td><td>Preview ${square} details</td></tr>
-        <tr><td>Click / Tap</td><td>Pin ${square} details; repeat to unpin</td></tr>
+        <tr><td>Click / Tap</td><td>Pin ${square} details; repeat to unpin. Where an overlay compares the pinned ${square} with another, the first click compares the two and the second pins</td></tr>
         <tr><td>${next} / ${previous} arrow keys</td><td>Next / previous ${square}</td></tr>
         <tr><td>${mod}-${key.find}</td><td>Search; ${mod}-${key.next} and Shift-${mod}-${key.next} step to the next and previous hit</td></tr>
         ${goToExample ? `<tr><td>Go to</td><td>Type a reference, such as ${escapeHtml(goToExample)}, to go there; ${mod}-${key.goTo} opens the box</td></tr>` : ''}
-        <tr><td>Escape</td><td>Close the menu, unpin the ${square}, or close the panel or the story</td></tr>
+        <tr><td>Escape</td><td>Close the menu, stop comparing, unpin the ${square}, or close the panel or the story</td></tr>
         <tr><td>Legend</td><td>Shows colors for the map; tap a row to open its tool</td></tr>
         <tr><td>Grabber (phone)</td><td>Tap for full height and back; drag down to fold</td></tr>
       </table>

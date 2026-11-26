@@ -81,7 +81,8 @@
   display: block;
 }
 
-#popup .popup-hebrew {
+#popup .popup-hebrew,
+#popup .compared-hebrew {
   padding: 14px;
   font-family: 'SBL Hebrew', 'Ezra SIL', 'Times New Roman', serif;
   font-size: 18px;
@@ -137,6 +138,61 @@
 /* Under a search mark, the mark's own text colour. */
 #popup .popup-english mark :is(b, i) {
   color: inherit;
+}
+
+/* Two squares' text at once: taller, so the second is in view without scrolling. */
+#popup.comparing {
+  max-height: min(640px, 100vh - 40px);
+}
+
+/* The square the pinned one is compared with, under it. */
+#popup .compared-ref {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--heading-font);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#popup .compared-tag {
+  padding: 1px 7px;
+  border: 1px solid rgba(106, 176, 243, 0.4);
+  border-radius: 10px;
+  color: #9ab;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+#popup .compared-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+#popup .compared-actions button {
+  min-height: var(--tap);
+  padding: 5px 10px;
+  border: 1px solid rgba(106, 176, 243, 0.4);
+  border-radius: 5px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#popup .compared-actions button:hover {
+  background: rgba(106, 176, 243, 0.12);
+}
+
+#popup .compared-actions .compared-stop {
+  border-color: #444;
+  color: #aaa;
 }
 
 /* While a language's text is not in, a strip in its place says so. A phone

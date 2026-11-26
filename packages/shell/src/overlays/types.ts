@@ -15,6 +15,18 @@ export const NO_OVERLAY = 'none';
 export interface Focus<T> {
   hovered: SpatialItem<T> | null;
   pinned: SpatialItem<T> | null;
+  /** The square the pinned one is compared with, under an overlay that compares squares. */
+  compared?: SpatialItem<T> | null;
+}
+
+/** The comparison with the pinned square, for an overlay's panel. */
+export interface PanelComparison<T> {
+  compared: SpatialItem<T> | null;
+  /** The compared square a click holds, which stays compared when the pointer leaves. */
+  held: SpatialItem<T> | null;
+  /** The pointer is on what stands for square `id` in the panel, or has left it. */
+  hover(id: string | null): void;
+  hold(id: string): void;
 }
 
 /** What each of an overlay's colour hooks is given. */
@@ -170,8 +182,10 @@ interface OverlayMembers<T, S, D> {
     items?: SpatialItem<T>[],
   ): void;
 
-  // Says in the panel what the overlay finds about the hovered or pinned square.
-  // The container is emptied before each call; `travelTo` as for the controls.
+  // Says in the panel what the overlay finds about the hovered or pinned square. The app calls
+  // this again with the same container, so bring what is there up to date, and empty it when
+  // there is nothing to say: a list the pointer is on must keep its place. `travelTo` as for
+  // the controls; `compare` only under an overlay with comparesWith.
   renderFocus?(
     container: HTMLElement,
     hovered: SpatialItem<T> | null,
@@ -179,7 +193,21 @@ interface OverlayMembers<T, S, D> {
     settings: S,
     data: D,
     travelTo: (id: string) => void,
+    compare?: PanelComparison<T>,
   ): void;
+
+  // Whether `other` is compared with the pinned square rather than taking its place: the pointer
+  // on it shows the two side by side, a click holds that, and a second click pins it.
+  comparesWith?(pinned: SpatialItem<T>, other: SpatialItem<T>, settings: S, data: D): boolean;
+
+  // The Hebrew of the pinned square and of the one compared with it, each marked for the pair.
+  compareTexts?(
+    pinned: SpatialItem<T>,
+    compared: SpatialItem<T>,
+    hebrew: [pinned: string, compared: string],
+    settings: S,
+    data: D,
+  ): [pinned: DocumentFragment, compared: DocumentFragment];
 
   // What the panel's one-line summary shows after the overlay's name; colours
   // are CSS values. Absent, the line is the name alone.

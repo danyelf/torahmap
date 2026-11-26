@@ -359,7 +359,7 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
-    // The same view with the pointer on another verse that has echoes: they fade the same way.
+    // The same view with the pointer on another verse that has echoes: the pinned verse keeps the focus.
     name: 'explore-text-analytics-echoes-view-hover',
     link: 'overlay=text-analytics&analysis=echoes&zoom=0.86&verse=I.Samuel.31.1',
     then: async (page) => {
@@ -372,6 +372,29 @@ export const STATES: State[] = [
     // Kings: most echoes lie in the same book or the same section.
     name: 'explore-text-analytics-echoes-kings-pinned',
     link: 'overlay=text-analytics&analysis=echoes&zoom=0.6&verse=I.Kings.16.27',
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // I Kings 22:42 pinned, the pointer on II Kings 12:2 in the list: the popup shows the two.
+    name: 'explore-text-analytics-echoes-compare-hover',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=1.2&verse=I.Kings.22.42',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.parallel-list button', { hasText: 'II Kings 12:2' }).hover();
+      await expect(page.locator('#popup .compared-hebrew')).toBeVisible();
+    },
+    shown: ['#popup', '#map-legend'],
+  },
+  {
+    // The same pair held by a click, the pointer away: the popup offers to go there or let go.
+    name: 'explore-text-analytics-echoes-compare-held',
+    link: 'overlay=text-analytics&analysis=echoes&zoom=1.2&verse=I.Kings.22.42',
+    then: async (page) => {
+      await viaMenu(page, 'overlay');
+      await page.locator('.parallel-list button', { hasText: 'II Kings 12:2' }).click();
+      await page.locator('#overlay-select').hover();
+      await expect(page.locator('#popup .compared-actions')).toBeVisible();
+    },
     shown: ['#popup', '#map-legend'],
   },
   {

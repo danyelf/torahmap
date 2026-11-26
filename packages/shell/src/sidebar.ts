@@ -91,6 +91,8 @@ export interface SidebarElements {
   hebrewNotice: Element | null;
   englishNotice: Element | null;
   english: Element | null;
+  /** Where the square the pinned one is compared with is drawn. */
+  compared: Element | null;
   link: HTMLAnchorElement | null;
   closeBtn: Element | null;
 }
@@ -107,6 +109,7 @@ export function getSidebarElements(): SidebarElements {
     hebrewNotice: sidebar?.querySelector(`.popup-notice[data-language="${HEBREW}"]`) ?? null,
     englishNotice: sidebar?.querySelector(`.popup-notice[data-language="${ENGLISH}"]`) ?? null,
     english: sidebar?.querySelector('.popup-english') ?? null,
+    compared: sidebar?.querySelector('.popup-compared') ?? null,
     link: (sidebar?.querySelector('.sefaria-link') as HTMLAnchorElement) ?? null,
     closeBtn: sidebar?.querySelector('.close-btn') ?? null,
   };
@@ -145,6 +148,50 @@ export interface PopupView<I extends MapItem> {
   search: ToolOnMap<I> | null;
   pinned: boolean;
   actions?: PopupActions<unknown>;
+  comparison?: PopupComparison<I> | null;
+}
+
+/** The square the pinned one is compared with, shown under it. */
+export interface PopupComparison<I extends MapItem> {
+  item: I;
+  /** Held by a click: the popup then offers to go there, or to let go. */
+  held: boolean;
+  travel(): void;
+  release(): void;
+}
+
+function button(label: string, className: string, click: () => void): HTMLButtonElement {
+  const made = document.createElement('button');
+  made.type = 'button';
+  made.className = className;
+  made.textContent = label;
+  made.addEventListener('click', click);
+  return made;
+}
+
+/** The compared square's heading and Hebrew, and under a held one what to do next. */
+function comparedBlock<I extends MapItem>(
+  comparison: PopupComparison<I>,
+  text: PopupText,
+  hebrew: DocumentFragment | null,
+): HTMLElement[] {
+  const heading = document.createElement('div');
+  heading.className = 'compared-ref';
+  const tag = document.createElement('span');
+  tag.className = 'compared-tag';
+  tag.textContent = comparison.held ? 'compared' : 'under the pointer';
+  heading.append(text.ref, tag);
+  const words = document.createElement('div');
+  words.className = 'compared-hebrew';
+  words.append(hebrew ?? text.hebrew);
+  if (!comparison.held) return [heading, words];
+  const actions = document.createElement('div');
+  actions.className = 'compared-actions';
+  actions.append(
+    button(`Go to ${text.ref}`, 'compared-go', comparison.travel),
+    button('Stop comparing', 'compared-stop', comparison.release),
+  );
+  return [heading, words, actions];
 }
 
 /** Draw `item`'s popup, or hide it for null; `say` is the text's popupText. */
@@ -181,6 +228,22 @@ export function updateSidebar<I extends MapItem>(
   }
 
   const text = say(item);
+  const comparison = view.comparison ?? null;
+  const other = comparison && say(comparison.item);
+  const pair =
+    comparison && text.hebrew && other?.hebrew
+      ? currentOverlay?.compareTexts?.(
+          item,
+          comparison.item,
+          [text.hebrew, other.hebrew],
+          overlaySettings,
+          overlayData,
+        )
+      : undefined;
+  sidebar.classList.toggle('comparing', !!comparison);
+  elements.compared?.replaceChildren(
+    ...(comparison && other ? comparedBlock(comparison, other, pair?.[1] ?? null) : []),
+  );
 
   if (ref) {
     ref.textContent = text.ref;
@@ -206,13 +269,10 @@ export function updateSidebar<I extends MapItem>(
     language: TextLanguage,
     searched?: readonly TextRange[],
   ): DocumentFragment | null => {
-    const overlayMarks = currentOverlay?.highlightItemText?.(
-      item,
-      words,
-      language,
-      overlaySettings,
-      overlayData,
-    );
+    const overlayMarks =
+      pair && language === HEBREW
+        ? pair[0]
+        : currentOverlay?.highlightItemText?.(item, words, language, overlaySettings, overlayData);
     const searchMarks = search?.tool.highlightItemText?.(
       item,
       words,

@@ -159,6 +159,7 @@ export function layerToRecompute<T>(
   if (!overlay) return null;
   const { tool, settings, data } = overlay;
   const stale =
+    !sameItem(before.compared ?? null, after.compared ?? null) ||
     (hoverMoved && tool.hoverChangesColors?.(before.hovered, after.hovered, settings, data)) ||
     (pinMoved && tool.pinChangesColors?.(before.pinned, after.pinned, settings, data));
   return stale ? 'overlay' : null;

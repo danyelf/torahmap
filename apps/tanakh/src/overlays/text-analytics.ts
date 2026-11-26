@@ -14,7 +14,7 @@ import {
 } from '@torahmap/utils';
 import { type GrownPointer, type Pointer, squareCentre } from '@torahmap/engine';
 import './text-analytics.css';
-import type { Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
+import type { Focus, Overlay, UrlParamValues } from '@torahmap/shell/overlays/types.ts';
 import { HEBREW, type TextLanguage } from '@torahmap/shell/language.ts';
 import { optional } from '@torahmap/shell/dataFiles.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
@@ -134,16 +134,22 @@ const echoKey = (
   verse: TanakhLayout | null,
 ): string | null => (verse && echoesOf(data, settings, verse) ? verse.id : null);
 
-/** The verse whose echoes the map shows: the hovered one if it has any, else the pinned one. */
+/**
+ * The verse whose echoes the map shows, of the hovered and the pinned one. Among the echoes a
+ * pinned verse keeps the focus, and the pointer compares it with one of its echoes; in the other
+ * analysis the hovered verse takes it.
+ */
 function focusedVerse(
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
   hovered: TanakhLayout | null,
   pinned: TanakhLayout | null,
 ): TanakhLayout | null {
-  if (hovered && echoesOf(data, settings, hovered)) return hovered;
-  if (pinned && echoesOf(data, settings, pinned)) return pinned;
-  return null;
+  const withEchoes = (verse: TanakhLayout | null) =>
+    verse && echoesOf(data, settings, verse) ? verse : null;
+  return settings.analysis === 'echoes'
+    ? (withEchoes(pinned) ?? withEchoes(hovered))
+    : (withEchoes(hovered) ?? withEchoes(pinned));
 }
 
 function focusEchoes(
@@ -185,14 +191,14 @@ const lit = (color: Color): Color => color.map((c) => c + (1 - c) * LIT_SHARE) a
 
 /**
  * A verse with echoes wears the colour of its farthest one; one without keeps the plain grey. With
- * a verse focused (hovered, else pinned), it is pale grey, its echoes are lit and every other verse
- * goes out of focus.
+ * a verse focused, it is pale grey, its echoes are lit and every other verse goes out of focus;
+ * while it is compared with one echo, only that one is lit.
  */
 function echoColors(
   items: TanakhLayout[],
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
-  focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
+  focus: Focus<TanakhIdentity>,
 ): Color[] {
   const { places, positions } = readingOrder();
   const farthestEcho = (id: string): Color | null => {
@@ -210,7 +216,8 @@ function echoColors(
     const color = farthestEcho(id);
     if (!color) return brighten(getDefaultColor(i), PLAIN_BRIGHTNESS);
     if (!matches) return color;
-    return matches.has(id) ? lit(color) : outOfFocus(color);
+    if (!matches.has(id)) return outOfFocus(color);
+    return !focus.compared || id === focus.compared.id ? lit(color) : color;
   });
 }
 
@@ -225,6 +232,8 @@ const SAME_CHAPTER = 0;
 const FULL_LENGTH_POINTERS = 12;
 // The rest of the focused verse's run of parallels is drawn this much fainter than its own echoes.
 const RUN_OPACITY = 0.55;
+// While the focused verse is compared with one echo, every grown pointer but the pair's is this faint.
+const NOT_COMPARED_OPACITY = 0.25;
 // The key of the pointer from one reading-order position toward another.
 const pairKey = (from: number, to: number) => `${from} ${to}`;
 
@@ -260,19 +269,32 @@ const echoPointerList = memoByValue((items: TanakhLayout[]) =>
   }),
 );
 
-/** The focused verse's run of parallels, each pair grown to meet; its own echoes brightest. */
+/**
+ * The focused verse's run of parallels, each pair grown to meet; its own echoes brightest, or
+ * while it is compared with one echo, that pair alone.
+ */
 function grownEchoPointers(
   items: TanakhLayout[],
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
-  focus: { hovered: TanakhLayout | null; pinned: TanakhLayout | null },
+  focus: Focus<TanakhIdentity>,
 ): GrownPointer[] {
   const focused = focusedVerse(data, settings, focus.hovered, focus.pinned);
   if (!focused) return [];
-  const focusedAt = readingOrder().positions.get(focused.id)!;
+  const { positions } = readingOrder();
+  const focusedAt = positions.get(focused.id)!;
+  const comparedAt = focus.compared && positions.get(focus.compared.id);
   const { at } = echoPointerList(items)(data, settings.words);
   return echoRun(data.echoes, focusedAt, settings.words).flatMap(([a, b]) => {
-    const opacity = a === focusedAt || b === focusedAt ? 1 : RUN_OPACITY;
+    const own = a === focusedAt || b === focusedAt;
+    const opacity =
+      comparedAt == null
+        ? own
+          ? 1
+          : RUN_OPACITY
+        : own && (a === comparedAt || b === comparedAt)
+          ? 1
+          : NOT_COMPARED_OPACITY;
     return [at.get(pairKey(a, b)), at.get(pairKey(b, a))]
       .filter((index) => index !== undefined)
       .map((index) => ({ index, opacity }));
@@ -369,49 +391,46 @@ export const textAnalyticsOverlay: Overlay<
     return matched(items, data, settings, focus.hovered, focus.pinned);
   },
 
-  renderFocus(container, hovered, pinned, settings, data, travelTo) {
-    const found = focusEchoes(data, settings, hovered, pinned);
-    if (!found) return;
+  renderFocus(container, hovered, pinned, settings, data, travelTo, compare) {
     const focus = focusedVerse(data, settings, hovered, pinned);
-    const note = document.createElement('div');
-    note.className = 'parallel-verses';
-    const heading = document.createElement('p');
-    heading.textContent = `Parallel verses (${found.places.length})`;
-    const list = document.createElement('div');
-    list.className = 'parallel-list';
-    const { positions } = readingOrder();
-    const inOrder = [...found.places, ...(focus ? [focus] : [])].sort(
-      (a, b) => positions.get(a.id)! - positions.get(b.id)!,
-    );
-    for (const place of inOrder) {
-      const row = document.createElement('button');
-      row.type = 'button';
-      const ref = document.createElement('span');
-      ref.className = 'parallel-ref';
-      ref.textContent = verseRef(place);
-      const quote = document.createElement('span');
-      quote.className = 'parallel-quote';
-      quote.dir = 'auto';
-      const he = textOf(data, place);
-      // A parallel is marked against the focused verse, the focused verse against its parallels.
-      const partners = (place.id === focus?.id ? found.places : [focus!]).map((other) =>
-        textOf(data, other),
-      );
-      quote.append(
-        markStretches(
-          he,
-          he
-            ? sharedStretches(wordsOf(he), partners.filter(Boolean).map(wordsOf), settings.words)
-            : [],
+    if (!focus) {
+      container.replaceChildren();
+      listDrawnFor.delete(container);
+      return;
+    }
+    // A click on a parallel of the pinned verse holds the two for comparison before it travels.
+    const compares = compare && pinned?.id === focus.id && settings.analysis === 'echoes';
+    const drawnFor = [
+      focus.id,
+      settings.analysis,
+      settings.words,
+      data,
+      travelTo,
+      compares && compare.hover,
+      compares && compare.hold,
+    ];
+    const before = listDrawnFor.get(container);
+    if (!before?.every((part, i) => part === drawnFor[i])) {
+      listDrawnFor.set(container, drawnFor);
+      container.replaceChildren(
+        parallelList(focus, settings, data, (id, held) =>
+          compares && id !== focus.id && !held ? compare.hold(id) : travelTo(id),
         ),
       );
-      row.append(ref, quote);
-      row.classList.toggle('parallel-source', place.id === focus?.id);
-      row.addEventListener('click', () => travelTo(place.id));
-      list.appendChild(row);
+      if (compares) {
+        for (const row of parallelRows(container)) {
+          if (row.dataset.verse === focus.id) continue;
+          row.addEventListener('mouseenter', () => compare.hover(row.dataset.verse!));
+          row.addEventListener('mouseleave', () => compare.hover(null));
+        }
+      }
     }
-    note.append(heading, list);
-    container.appendChild(note);
+    for (const row of parallelRows(container)) {
+      const names = (verse: TanakhLayout | null | undefined) =>
+        !!compares && row.dataset.verse === verse?.id;
+      row.classList.toggle(COMPARED_ROW, names(compare?.compared));
+      row.classList.toggle(HELD_ROW, names(compare?.held));
+    }
   },
 
   // A hovered verse without echoes leaves the pinned verse's showing, so only echoes count.
@@ -436,6 +455,7 @@ export const textAnalyticsOverlay: Overlay<
           `Colour shows how far away a verse's farthest echo is`,
           `A verse with no echo is grey`,
           `Hover or select a verse to light its parallels`,
+          `With a verse selected, hover or click a parallel to compare the two`,
         ]
           .map(legendCaption)
           .join(''),
@@ -495,34 +515,143 @@ export const textAnalyticsOverlay: Overlay<
         data.scores.repeated[verse.book]?.[verse.chapter]?.[verse.verse] ?? [],
       );
     }
-    const partners = (echoesOf(data, settings, verse)?.places ?? [])
-      .filter(({ id }) => id !== verse.id)
-      .map((place) => textOf(data, place));
     return markStretches(
       text,
-      sharedStretches(wordsOf(text), partners.filter(Boolean).map(wordsOf), settings.words),
+      sharedStretches(wordsOf(text), echoWords(data, settings, verse), settings.words),
     );
   },
+
+  comparesWith(pinned, other, settings, data) {
+    return (
+      settings.analysis === 'echoes' &&
+      other.id !== pinned.id &&
+      !!echoesOf(data, settings, pinned)?.matches.has(other.id)
+    );
+  },
+
+  // The phrase the two share is marked in both; what the pinned verse shares with its other
+  // echoes keeps a fainter mark.
+  compareTexts(pinned, compared, [pinnedText, comparedText], settings, data) {
+    const [ours, theirs] = [wordsOf(pinnedText), wordsOf(comparedText)];
+    return [
+      markStretches(
+        pinnedText,
+        sharedStretches(ours, [theirs], settings.words),
+        sharedStretches(ours, echoWords(data, settings, pinned, compared), settings.words),
+      ),
+      markStretches(comparedText, sharedStretches(theirs, [ours], settings.words)),
+    ];
+  },
 };
+
+/** The words of each of a verse's echoes whose text is in, but for `except`. */
+function echoWords(
+  data: TextAnalyticsData,
+  settings: TextAnalyticsSettings,
+  verse: TanakhLayout,
+  except?: TanakhLayout,
+): string[][] {
+  return (echoesOf(data, settings, verse)?.places ?? [])
+    .filter(({ id }) => id !== verse.id && id !== except?.id)
+    .map((place) => textOf(data, place))
+    .filter(Boolean)
+    .map(wordsOf);
+}
+
+const COMPARED_ROW = 'parallel-compared';
+const HELD_ROW = 'parallel-held';
+
+// What each container's list was last drawn for, so a call that changes none of it keeps the list.
+const listDrawnFor = new WeakMap<HTMLElement, unknown[]>();
+
+const parallelRows = (container: HTMLElement) =>
+  container.querySelectorAll<HTMLButtonElement>('.parallel-list button');
+
+/** The focused verse among its parallels, in reading order; `click` is told whether the row is held. */
+function parallelList(
+  focus: TanakhLayout,
+  settings: TextAnalyticsSettings,
+  data: TextAnalyticsData,
+  click: (id: string, held: boolean) => void,
+): HTMLElement {
+  const found = echoesOf(data, settings, focus)!;
+  const note = document.createElement('div');
+  note.className = 'parallel-verses';
+  const heading = document.createElement('p');
+  heading.textContent = `Parallel verses (${found.places.length})`;
+  const list = document.createElement('div');
+  list.className = 'parallel-list';
+  const { positions } = readingOrder();
+  const inOrder = [...found.places, focus].sort(
+    (a, b) => positions.get(a.id)! - positions.get(b.id)!,
+  );
+  for (const place of inOrder) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.dataset.verse = place.id;
+    const ref = document.createElement('span');
+    ref.className = 'parallel-ref';
+    ref.textContent = verseRef(place);
+    const quote = document.createElement('span');
+    quote.className = 'parallel-quote';
+    quote.dir = 'auto';
+    const he = textOf(data, place);
+    // A parallel is marked against the focused verse, the focused verse against its parallels.
+    const partners = (place.id === focus.id ? found.places : [focus]).map((other) =>
+      textOf(data, other),
+    );
+    quote.append(
+      markStretches(
+        he,
+        he
+          ? sharedStretches(wordsOf(he), partners.filter(Boolean).map(wordsOf), settings.words)
+          : [],
+      ),
+    );
+    row.append(ref, quote);
+    row.classList.toggle('parallel-source', place.id === focus.id);
+    row.addEventListener('click', () => click(place.id, row.classList.contains(HELD_ROW)));
+    list.appendChild(row);
+  }
+  note.append(heading, list);
+  return note;
+}
 
 const textOf = (data: TextAnalyticsData, verse: TanakhIdentity): string =>
   data.texts?.[verse.book]?.[verse.chapter]?.[verse.verse]?.he ?? '';
 
-/** The text with each stretch, as start, end pairs of word numbers, marked whole. */
-function markStretches(text: string, stretches: readonly number[]): DocumentFragment {
+const MARK = 'repeated-words';
+const FAINTER_MARK = `${MARK} fainter`;
+
+/**
+ * The text with each stretch, as start, end pairs of word numbers, marked whole; the `fainter`
+ * stretches in a fainter mark where no other covers them.
+ */
+function markStretches(
+  text: string,
+  stretches: readonly number[],
+  fainter: readonly number[] = [],
+): DocumentFragment {
   const fragment = document.createDocumentFragment();
-  const read = stretches.length ? wordsRead(text) : [];
+  const read = stretches.length || fainter.length ? wordsRead(text) : [];
+  const marks: (string | null)[] = read.map(() => null);
+  for (const [list, mark] of [
+    [fainter, FAINTER_MARK],
+    [stretches, MARK],
+  ] as const) {
+    for (let i = 0; i < list.length; i += 2) marks.fill(mark, list[i], list[i + 1]);
+  }
   let at = 0;
-  for (let i = 0; i < stretches.length; i += 2) {
-    const first = read[stretches[i]];
-    const last = read[stretches[i + 1] - 1];
-    if (!first || !last) continue;
-    fragment.appendChild(document.createTextNode(text.slice(at, first.start)));
+  for (let first = 0, end; first < marks.length; first = end) {
+    end = first + 1;
+    while (marks[end] === marks[first]) end++;
+    if (!marks[first]) continue;
+    fragment.appendChild(document.createTextNode(text.slice(at, read[first].start)));
     const mark = document.createElement('mark');
-    mark.className = 'repeated-words';
-    mark.textContent = text.slice(first.start, last.end);
+    mark.className = marks[first]!;
+    mark.textContent = text.slice(read[first].start, read[end - 1].end);
     fragment.appendChild(mark);
-    at = last.end;
+    at = read[end - 1].end;
   }
   fragment.appendChild(document.createTextNode(text.slice(at)));
   return fragment;
