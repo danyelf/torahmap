@@ -32,6 +32,10 @@ const FLARE_MAX = 40;
 // How long a pointer takes to grow all the way, and a grown one to fade.
 const GROW_MS = 300;
 const FADE_MS = 150;
+// While some pointers are grown, those at rest draw at this opacity times the zoom, between these
+// bounds: zoomed out they crowd together and would hide the grown ones.
+const REST_OPACITY = 0.5;
+const REST_OPACITY_MIN = 0.08;
 
 const FLOATS_PER_POINTER = 8; // from, to, length, colour
 const FLOATS_PER_STATE = 4; // grown and opacity, then the same for the copy fading out
@@ -44,6 +48,7 @@ const VERTEX_SHADER = `#version 300 es
   uniform vec4 u_widths;
   // Which pass this is: 0 the pointers at rest, 1 the copies fading out over them, 2 the grown.
   uniform int u_pass;
+  uniform float u_restOpacity;
 
   in vec2 a_from;
   in vec2 a_to;
@@ -73,7 +78,7 @@ const VERTEX_SHADER = `#version 300 es
     float d = length(to - from);
     bool fading = u_pass == 1;
     float grown = fading ? a_fadeGrown : a_grown;
-    float opacity = fading ? a_fadeOpacity : a_opacity;
+    float opacity = fading ? a_fadeOpacity : u_pass == 0 ? u_restOpacity : a_opacity;
     bool drawn = fading ? a_fadeOpacity > 0.0 : (a_grown > 0.0) == (u_pass == 2);
     if (d == 0.0 || !drawn) {
       gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
@@ -147,6 +152,7 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
     zoom: uniform('u_zoom'),
     widths: uniform('u_widths'),
     pass: uniform('u_pass'),
+    restOpacity: uniform('u_restOpacity'),
   };
   const pointerBuffer = gl.createBuffer();
   const stateBuffer = gl.createBuffer();
@@ -181,6 +187,9 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
   let fadeGrown = new Float32Array(0);
   let fadeOpacity = new Float32Array(0);
   let fadeLeft = new Float32Array(0);
+  // How far the pointers at rest have dimmed, 0 to 1, and where that is heading.
+  let dimmed = 0;
+  let dimming = 0;
   const ease = easingFunctions['ease-out'];
   const opacityAt = (i: number) => 1 + (grownOpacity[i] - 1) * progress[i];
   const upload = () => {
@@ -214,11 +223,15 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
       fadeGrown = new Float32Array(count);
       fadeOpacity = new Float32Array(count);
       fadeLeft = new Float32Array(count);
+      dimmed = dimming = 0;
       upload();
       moving = false;
     },
 
-    /** Grows `grown` and puts every other pointer back at rest, fading; at once when `snap`. */
+    /**
+     * Grows `grown` and puts every other pointer back at rest, fading; at once when `snap`. While
+     * any is grown, those at rest are dimmed.
+     */
     grow(grown: readonly GrownPointer[], snap: boolean): void {
       const was = growing;
       growing = new Uint8Array(count);
@@ -233,9 +246,11 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
         fadeLeft[i] = 1;
         progress[i] = 0;
       }
+      dimming = grown.length > 0 ? 1 : 0;
       if (snap) {
         progress.set(growing);
         fadeLeft.fill(0);
+        dimmed = dimming;
         upload();
         moving = false;
         return;
@@ -262,14 +277,20 @@ export function createPointerRenderer(gl: WebGL2RenderingContext) {
             if (fadeLeft[i] > 0) moving = true;
           }
         }
+        const step = elapsed / FADE_MS;
+        dimmed =
+          dimming > dimmed ? Math.min(dimming, dimmed + step) : Math.max(dimming, dimmed - step);
+        if (dimmed !== dimming) moving = true;
         upload();
       }
+      const dimTo = Math.min(REST_OPACITY, Math.max(REST_OPACITY_MIN, REST_OPACITY * zoom));
 
       const canvas = gl.canvas as HTMLCanvasElement;
       gl.useProgram(program);
       gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
       gl.uniform2f(uniforms.pan, offset.x, offset.y);
       gl.uniform1f(uniforms.zoom, zoom * dpr);
+      gl.uniform1f(uniforms.restOpacity, 1 + (dimTo - 1) * dimmed);
       gl.uniform4f(
         uniforms.widths,
         HALF_WIDTH * dpr,
