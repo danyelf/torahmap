@@ -1,6 +1,6 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Plan. Danyel took decisions 1 to 8 on 2026-11-25; decision 9 is open again. Issue #382.
+**Status:** Plan. Danyel took decisions 1 to 9 on 2026-11-25; decision 10 is open. Issue #382.
 Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
@@ -332,8 +332,68 @@ the 0.4 MB of the first.
 - **9a. Not now.**
 - **9b. Use the map's vowels after Decisions 3 to 5.** As above.
 
-**I recommend 9b.** Accuracy is judged by eye on the commonest forms only; a
-reader of the Talmud checking a sample would say how often it is right.
+**Decided: 9b,** on 2026-11-25, with Decision 10 asked in the same answer.
+
+### Decision 10. Have a language model choose the entry at each occurrence?
+
+Decisions 3, 5 and 9 are three rules, each over noisy data, and each settles a
+slice. A model reading the passage can weigh all of it at once: the vowels, the
+words around it, the part of speech, what Sefaria picked. The rules then stop
+being rules and become what the model is shown.
+
+**How it would run.** A script sends the model a passage of a few segments,
+vowelled as the map shows it, with the segments either side for context. For
+each word in it that has more than one entry, it lists the entries from
+Sefaria's list with the first words of Jastrow's definition, and marks
+Sefaria's pick where there is one. The model answers, for each word, one entry
+or "none of these". The answers go in a file keyed by occurrence, not by
+spelling, so the same spelling can be different words in different places.
+
+**Size and cost.** These are estimates, not measurements: I have not counted
+tokens for vowelled Hebrew.
+
+- About 82,000 segments, sent five at a time: about 16,000 requests.
+- About 1 million occurrences have more than one entry. With their candidate
+  lists and the context, about 60 to 75 million tokens in and 10 to 15
+  million out.
+- Claude Haiku 5.5 ($0.10 per million in, $0.50 out): **about $15**, half that
+  through the Batch API, which returns within a day. Sonnet 5.5 is twenty
+  times the price (about $300), Opus 5.5 forty times (about $600).
+- The answers file: perhaps 2 MB compressed, beside the text's 4.1 MB, against
+  0.4 MB for a table keyed by spelling. This is a guess.
+
+The money is small. What it would take is mostly the checking:
+
+1. **A test set we already have.** Where Jastrow quotes a passage under one
+   entry, it says which entry is meant there (Decision 5): about 23,000
+   occurrences. The model's answers can be scored against those, by spelling,
+   before anyone reads anything.
+2. **A pilot.** 200 segments through Haiku and through Opus, scored against
+   Jastrow's quotations and against each other. Where the two models agree is
+   no proof (they can share a mistake), but where they disagree shows where
+   Haiku is weak.
+3. **A reader of the Talmud** judging about 100 occurrences drawn at random.
+   Neither the models nor I can stand in for that.
+
+What it does not change:
+
+- **The candidates still come from Sefaria's list,** so the result waits on
+  Sefaria's answer like everything else here.
+- **It cannot find an entry the list lacks.** For the 22% the list misses
+  (Decision 8), the model could choose among entries proposed by taking letters
+  off, which is Decision 8c with a reader in place of the rule. That is a
+  second step, scored the same way.
+
+Choices:
+
+- **10a. Keep the rules** (Decisions 3 to 5 and 9b) and stop there.
+- **10b. Run the pilot first,** then decide on the whole run from its scores.
+- **10c. Rules first, model for what they leave open.** The rules settle 73%
+  of occurrences cheaply; the model reads only the rest, about 400,000.
+
+**I recommend 10b.** The pilot costs well under a dollar; it needs an API key
+here (there is none on this machine) or can run through Claude Code's own
+Haiku agents, which suits 200 segments but not 16,000 requests.
 
 ## The plan
 
