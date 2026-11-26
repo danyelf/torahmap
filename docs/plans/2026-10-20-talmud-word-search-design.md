@@ -1,6 +1,6 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Plan, decisions open for Danyel. Issue #382.
+**Status:** Plan. Danyel took decisions 1 to 8 on 2026-11-25; decision 9 is open again. Issue #382.
 Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
@@ -17,9 +17,9 @@ what I recommend.
 
 ## Words used here
 
-- **Spelling.** A word as it is written in the text, without vowels: אמר, ליה.
-  The Talmud's search text has 92,015 different spellings of two letters or
-  more.
+- **Spelling.** A word's letters, without vowels: אמר, ליה. The Talmud's
+  search text has 92,015 different spellings of two letters or more. The text
+  the map shows is the same words with Koren's vowels: אֲמַר, לֵיהּ.
 - **Occurrence.** One place where a spelling appears. There are 1,849,397
   occurrences in all. (Single letters are left out, because search leaves them
   out.) Most of the percentages below count occurrences, because those are
@@ -112,9 +112,13 @@ The first two come only from the program that takes prefixes off.
 - **1c. Don't build a dictionary search for the Talmud.** Search keeps finding
   exact spellings, as it does now.
 
-**I recommend 1a.** The rest of this document assumes it.
+**Decided: 1a.** The rest of this document assumes it.
 
-### Decision 2. Look up only the spelling as written, or also take prefixes off?
+### Decision 2. Should our lookup take prefixes off?
+
+This decision and the next are about two different programs. This one is ours:
+the lookup that will run when we build the file. The next is Sefaria's, which
+made part of the list before we got it.
 
 Hebrew and Aramaic attach short words to the front of the next word: ו "and",
 ד "that/of", ב "in", ל "to", מ "from", ש "that", ה "the", כ "like". The
@@ -134,12 +138,14 @@ word it isn't.
 The list already holds most prefixed spellings as they appear (דאמר, ליה),
 which is why 2a reaches as far as it does.
 
-**I recommend 2a.**
+**Decided: 2a.** Our lookup never takes letters off.
 
-### Decision 3. Drop the entries that only the prefix program found?
+### Decision 3. Drop the entries that only Sefaria's prefix program found?
 
-The first kind of link above makes the same mistake that Decision 2 avoids. It
-gives מאי eight entries spelled אי, and ליה the entry "Yah".
+Sefaria made the first kind of link above with a program of its own that does
+take prefixes off, so the list arrives with the mistakes Decision 2 keeps out of
+our lookup. It gives מאי eight entries spelled אי, and ליה the entry "Yah". We
+can't stop that program; we can only throw away what it alone produced.
 
 - **3a. Keep every entry the list gives.** Typing מאי then offers nine
   meanings, eight of them wrong.
@@ -150,7 +156,7 @@ gives מאי eight entries spelled אי, and ליה the entry "Yah".
 The risk of 3b is dropping a right entry that only the program found. I have
 not measured how often that happens.
 
-**I recommend 3b.**
+**Decided: 3b.**
 
 ### Decision 4. Use Sefaria's hand-picked entries?
 
@@ -176,7 +182,7 @@ by me rather than by someone who reads the Talmud, I found:
 That is 1 to 5 wrong in 100. The sample is mostly the commonest words, so the
 rarer picks are barely tested.
 
-**I recommend 4a.**
+**Decided: 4a.**
 
 ### Decision 5. Use the passages to tell entries apart?
 
@@ -196,7 +202,7 @@ the passage for only 1.6% of occurrences, and the page for 2.6%.
   they settle up to 6.5% of the ambiguous occurrences.
 - **5b. Ignore the passages.**
 
-**I recommend 5a.** It costs little and is right when it applies.
+**Decided: 5a.** It costs little and is right when it applies.
 
 **Decisions 3, 4 and 5 together** leave 56.1% of occurrences found in the list
 with a single entry, against 30.6% with none of them. The other 44% are still
@@ -219,8 +225,7 @@ Take אמר, with six entries and no pick. The reader types אמר and then choo
   have yet, and the rule that each search term gets one colour constrains how
   it could look.
 
-**I recommend 6a for the first version,** and looking at it before deciding on
-6c.
+**Decided: 6a for the first version,** and look at it before deciding on 6c.
 
 ### Decision 7. How to show Jastrow's entries in the list of meanings?
 
@@ -236,7 +241,7 @@ Talmud.
 - **7c. Show the picked entry first and the others below it**, where Decision 4
   gives a pick.
 
-**I recommend 7a,** then look at real words in the built search before choosing
+**Decided: 7a,** then look at real words in the built search before choosing
 7b or 7c.
 
 ### Decision 8. What about the 22% the list doesn't reach?
@@ -268,29 +273,74 @@ spellings.
   Decision 2 shows how often taking letters off goes wrong, and it would
   read תניא ("it was taught") as תנא ("a teacher").
 
-**I recommend 8a for the first version and 8b after it,** in batches, each
+**Decided: 8a for the first version and 8b after it,** in batches, each
 measured with the report.
 
-### Decision 9. Use Dicta's vowels to tell entries apart?
+### Decision 9. Use the vowels to tell entries apart?
 
-Dicta has vowelled the whole Talmud (see #382). Vowels would separate many
-entries: אָמַר and אִמַּר look alike only without them. But in Sefaria's list,
-only the entries' own spellings carry vowels. The spellings found in the
-Talmud, Jastrow's quotations and Sefaria's picks have none. So a vowelled word
-from Dicta could only be compared to an entry's dictionary form, which works
-for words that aren't inflected and little else.
+The text the map shows already has vowels, Koren's, word for word the same
+text as the search's.
+
+The vowels can choose between a spelling's entries: an occurrence shown as
+אִמַּר is "a lamb", and one shown as אֲמַר is "to say". The rule is to take the
+entries whose own vowelled spellings (Jastrow's headword, its other headwords,
+and the vowelled forms in Sefaria's list) match the occurrence's vowels, first
+as shown, then with prefix letters and their vowels taken off (דְּאָמַר as
+אָמַר). It only chooses among the entries the spelling already has, so it
+cannot add a wrong one the way Decision 2b would.
+
+Of the occurrences with several entries, the vowels match exactly one entry for
+41% (30% as shown, 11% with prefixes off), several for 38% and none for 21%. For
+25% they settle an occurrence that nothing in Decisions 3 to 5 does. With them,
+**73.4% of occurrences found in the list come down to one entry**, against
+56.1% without.
+
+What they settle, among the commonest:
+
+| spelling | as shown → entry |
+|---|---|
+| רבי | רַבִּי "Rabbi", 27,756 times |
+| את | אֵת (object marker) 9,939, אַתְּ "you" 342 |
+| אחר | אַחֵר "other" 1,162, אַחַר "after" 961 |
+| דבר | דָּבָר "thing" 1,954, דְּבַר 355, דֶּבֶר "plague" 17 |
+| אם | אִם "if" 4,599, אֵם "mother" 148 |
+
+Where it goes wrong or does nothing:
+
+- **Two entries with the same vowels stay ambiguous.** אָמַר I "to say" and
+  אָמַר II "to be strong" are spelled alike, so אמר shown as אָמַר stays two
+  entries.
+- **An inflected form spelled and vowelled like another word's headword.**
+  תְּנַן "we learnt" has the letters and vowels of Jastrow's תְּנַן "to smoke",
+  and תֵּימָא "you might say" those of תֵּימָא, a bird. The vowels choose the
+  wrong word. Sefaria picked an entry for both, which catches them, but the same
+  can happen unseen in spellings with no pick.
+- **Spellings with no vowelled form in the list**, such as ליה, נמי, משום: the
+  vowels match nothing. Sefaria picked an entry for ליה and נמי.
+
+Where Sefaria also picked an entry, the vowels choose the same one 84% of the
+time. In the commonest cases where they differ, each is right in places: the
+vowels for כְּרַבִּי "like Rabbi" (the pick is כְּרַב "to plough") and for סָבַר
+"to think" (the pick is סְבַר "to show a bright face"), the pick for תנן and
+תימא. So the pick stays first, and the vowels decide only what the pick and
+Decisions 3 and 5 leave open.
+
+Costs: the search reads a text without vowels, so the file needs a second
+table, keyed by the vowelled form: 7,740 forms, about 46 KB compressed, beside
+the 0.4 MB of the first.
 
 - **9a. Not now.**
-- **9b. Try it on uninflected words.**
+- **9b. Use the map's vowels after Decisions 3 to 5.** As above.
 
-**I recommend 9a.** It belongs with the tagger in Decision 1b.
+**I recommend 9b.** Accuracy is judged by eye on the commonest forms only; a
+reader of the Talmud checking a sample would say how often it is right.
 
-## The plan, if every recommendation is taken
+## The plan
 
 1. When Sefaria answers: a script builds, from the download, one file that
    links each of the text's spellings to entry numbers (36,773 spellings, about
    0.4 MB compressed; the text itself is 4.1 MB compressed), and a list of
-   entries.
+   entries. With 9b, the file also links vowelled forms to entries.
 2. The Talmud gets its own dictionary search through the slot the Tanakh's
    uses (`ExtraMode` in `packages/search/src/extraMode.ts`), with no change to
    the shared search.
@@ -314,4 +364,5 @@ Both wanted, neither started:
 - How often Sefaria's picks are wrong in context. A sample drawn by spelling
   rather than by occurrence, judged by a reader of the Talmud, would say.
 - How often Decision 3b drops a right entry.
+- With 9b, how often the vowels choose wrong.
 - Whether an entry with no language note in Jastrow is Hebrew.

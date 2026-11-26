@@ -13,6 +13,8 @@
  * - `adjust_most_common_talmud_words`: no passages; Sefaria's own choice of
  *   headword for a few hundred common Talmud words.
  *
+ * The vowels come from the text the map shows, which lines up word for word with search.json.
+ *
  * Needs `word_form.bson` and `lexicon_entry.bson` from Sefaria's database dump
  * (DATA_REGENERATION.md, "Talmud word forms").
  *
@@ -70,6 +72,21 @@ function passagesOf(ref: string): string[] {
 
 const fold = (s: string) => normalizeHebrewForSearch(s).trim();
 
+const FINALS: Record<string, string> = { ך: 'כ', ם: 'מ', ן: 'נ', ף: 'פ', ץ: 'צ' };
+/**
+ * Letters and vowels, to compare the text's vowels with Jastrow's: no cantillation, meteg or
+ * dagesh (a prefix adds or takes away a dagesh), final letters folded, qamats qatan as qamats.
+ */
+const pointedFold = (s: string) =>
+  [...s.normalize('NFD')]
+    .map(
+      (c) =>
+        FINALS[c] ?? ({ '\u05C7': '\u05B8', '\u05BA': '\u05B9' } as Record<string, string>)[c] ?? c,
+    )
+    .filter((c) => /[\u05D0-\u05EA\u05B0-\u05BB\u05C1\u05C2]/.test(c))
+    .join('');
+const isPointed = (s: string) => /[\u05B0-\u05BB]/.test(s);
+
 interface Headword {
   /** How the records linking it to this form were made. */
   sources: Set<string>;
@@ -83,6 +100,8 @@ type FormEntry = Map<string, Headword>;
 function loadForms() {
   const forms = new Map<string, FormEntry>();
   const bySource = new Map<string, { records: number; pointed: number }>();
+  /** Each headword's spellings with vowels. */
+  const pointed = new Map<string, Set<string>>();
   for (const doc of documents(join(DUMP, 'word_form.bson'))) {
     const lookups = (doc.lookups ?? []) as { headword?: string; parent_lexicon?: string }[];
     const jastrow = lookups.filter((l) => l.parent_lexicon === JASTROW && l.headword);
@@ -92,6 +111,10 @@ function loadForms() {
     s.records++;
     if (/[ְ-ׇ]/.test(String(doc.form))) s.pointed++;
     bySource.set(source, s);
+
+    if (isPointed(String(doc.form))) {
+      for (const { headword } of jastrow) addTo(pointed, headword!, pointedFold(String(doc.form)));
+    }
 
     const refs = ((doc.refs ?? []) as string[]).flatMap(passagesOf);
     const keys = new Set([doc.form, doc.c_form].filter((f): f is string => !!f).map(fold));
@@ -108,7 +131,7 @@ function loadForms() {
       }
     }
   }
-  return { forms, bySource };
+  return { forms, bySource, pointed };
 }
 
 interface Entry {
@@ -125,10 +148,19 @@ function languageOf(note: unknown): Entry['language'] {
   return undefined;
 }
 
-function loadEntries(): Map<string, Entry> {
+function addTo(m: Map<string, Set<string>>, key: string, value: string) {
+  m.set(key, (m.get(key) ?? new Set()).add(value));
+}
+
+/** Adds each entry's headword and other headwords to `pointed`. */
+function loadEntries(pointed: Map<string, Set<string>>): Map<string, Entry> {
   const entries = new Map<string, Entry>();
   for (const doc of documents(join(DUMP, 'lexicon_entry.bson'))) {
     if (doc.parent_lexicon !== JASTROW) continue;
+    for (const w of [doc.headword, ...((doc.alt_headwords ?? []) as string[])]) {
+      if (typeof w === 'string' && isPointed(w))
+        addTo(pointed, doc.headword as string, pointedFold(w));
+    }
     entries.set(doc.headword as string, {
       cites: new Set(((doc.refs ?? []) as string[]).flatMap(passagesOf)),
       language: languageOf(doc.language_code),
@@ -148,7 +180,12 @@ interface Token {
   written: string;
   segment: string;
   amud: string;
+  /** The word with the vowels the map shows, when the segment's words line up with search's. */
+  pointed?: string;
 }
+
+/** A word with its points; the maqaf (U+05BE) and sof pasuq (U+05C3) end it. */
+const POINTED_WORD = /[א-ת][א-ת֑-ֽֿ-ׂׄ-ׇ]*(?:״[א-ת֑-ֽֿ-ׂׄ-ׇ]+)*׳?/g;
 
 function* tokens(): Generator<Token> {
   const structure: Structure = JSON.parse(
@@ -158,11 +195,24 @@ function* tokens(): Generator<Token> {
     readFileSync('public/data/talmud/search.json', 'utf8'),
   );
   for (const { name, amudim } of structure.tractates) {
+    const shown: string[][] = JSON.parse(
+      readFileSync(`public/data/talmud/texts/${name}.json`, 'utf8'),
+    ).amudim;
     for (const [i, a] of amudim.entries()) {
       const amud = amudName(name, a);
       for (const [s, segment] of text[name][i].entries()) {
-        for (const [word] of segment.matchAll(WORD)) {
-          yield { form: fold(word), written: word, segment: `${amud}:${s + 1}`, amud };
+        const words = [...segment.matchAll(WORD)].map(([w]) => w);
+        const pointed = [...(shown[i]?.[s] ?? '').matchAll(POINTED_WORD)].map(([w]) => w);
+        const aligned =
+          pointed.length === words.length && pointed.every((p, k) => fold(p) === fold(words[k]));
+        for (const [k, word] of words.entries()) {
+          yield {
+            form: fold(word),
+            written: word,
+            segment: `${amud}:${s + 1}`,
+            amud,
+            pointed: aligned ? pointed[k] : undefined,
+          };
         }
       }
     }
@@ -204,6 +254,25 @@ function direct(entry: FormEntry): string[] {
   return out.length ? out : [...entry.keys()];
 }
 
+/** Prefix letters as `pointedFold` leaves them: the letter and its vowel. */
+const POINTED_PREFIX = /^[דולבכשמה][\u05B0-\u05BB]?/;
+
+/**
+ * The headwords whose spellings carry the word's vowels: as shown, else with up to three
+ * prefix letters taken off, each with its vowel.
+ */
+function vowelMatches(heads: string[], word: string, pointed: Map<string, Set<string>>) {
+  let form = word;
+  for (let n = 0; n <= MAX_PREFIX; n++) {
+    const found = heads.filter((w) => pointed.get(w)?.has(form));
+    if (found.length) return Object.assign(found, { stripped: n > 0 });
+    const next = form.replace(POINTED_PREFIX, '');
+    if (next === form || normalizeHebrewForSearch(next).length < 2) break;
+    form = next;
+  }
+  return Object.assign([] as string[], { stripped: false });
+}
+
 const pct = (n: number, d: number) => (d ? `${((100 * n) / d).toFixed(1)}%` : '—');
 const count = (n: number) => n.toLocaleString('en-US');
 
@@ -218,8 +287,8 @@ interface Seen {
 }
 
 function main() {
-  const { forms, bySource } = loadForms();
-  const entries = loadEntries();
+  const { forms, bySource, pointed } = loadForms();
+  const entries = loadEntries(pointed);
   const records = [...bySource.values()].reduce((a, s) => a + s.records, 0);
   console.log(`Word-form records with a Jastrow headword: ${count(records)}`);
   console.log(
@@ -249,7 +318,24 @@ function main() {
     languageAny: 0,
     languageOne: 0,
     languageUnmarkedHebrew: 0,
+    vowelsShown: 0,
+    vowelsOne: 0,
+    vowelsOneStripped: 0,
+    vowelsSeveral: 0,
+    vowelsNone: 0,
+    vowelsOnlyWay: 0,
+    vowelsWithPick: 0,
+    vowelsAgreePick: 0,
   };
+  /** By form: tokens settled by vowels, under each headword, and tokens no headword's vowels match. */
+  /** "form: as shown → headword" where the vowels and Sefaria's pick part, with tokens. */
+  const disagree = new Map<string, number>();
+  /** Vowelled forms the vowels alone bring down to one headword, and that headword. */
+  const settledByVowels = new Map<string, string>();
+  const vowelExamples = new Map<
+    string,
+    { written: string; under: Map<string, number>; none: Map<string, number> }
+  >();
   const counts = { all: new Map<number, number>(), direct: new Map<number, number>() };
   const bump = (m: Map<number, number>, n: number) => m.set(n, (m.get(n) ?? 0) + 1);
 
@@ -306,9 +392,49 @@ function main() {
     if (bySegment) t.byQuoteSegment++;
     if (byAmud) t.byQuoteAmud++;
     if (byDirect) t.byDirect++;
-    if (chosen || byOccurrence || bySegment || byAmud || byDirect) {
+    const before = chosen || byOccurrence || bySegment || byAmud || byDirect;
+    if (before) {
       t.resolved++;
       s.resolved++;
+    }
+
+    if (!tok.pointed) continue;
+    t.vowelsShown++;
+    const ex = vowelExamples.get(tok.form) ?? {
+      written: tok.written,
+      under: new Map(),
+      none: new Map(),
+    };
+    vowelExamples.set(tok.form, ex);
+    const matching = vowelMatches(
+      heads.map(([w]) => w),
+      pointedFold(tok.pointed),
+      pointed,
+    );
+    if (matching.length === 0) {
+      t.vowelsNone++;
+      ex.none.set(tok.pointed, (ex.none.get(tok.pointed) ?? 0) + 1);
+      continue;
+    }
+    if (matching.length > 1) {
+      t.vowelsSeveral++;
+      continue;
+    }
+    if (matching.stripped) t.vowelsOneStripped++;
+    else t.vowelsOne++;
+    ex.under.set(matching[0], (ex.under.get(matching[0]) ?? 0) + 1);
+    if (!before) {
+      t.vowelsOnlyWay++;
+      settledByVowels.set(pointedFold(tok.pointed), matching[0]);
+    }
+    if (chosen) {
+      t.vowelsWithPick++;
+      if (heads.some(([w, h]) => w === matching[0] && h.sources.has(CHOSEN))) t.vowelsAgreePick++;
+      else {
+        const pick = heads.filter(([, h]) => h.sources.has(CHOSEN)).map(([w]) => w);
+        const key = `${tok.written}: ${tok.pointed} → ${matching[0]}, picked ${pick.join(' · ')}`;
+        disagree.set(key, (disagree.get(key) ?? 0) + 1);
+      }
     }
   }
 
@@ -368,6 +494,45 @@ function main() {
     `Covered tokens that come down to one headword, by any of these: ${pct(t.resolved, covered)}`,
   );
 
+  console.log('\n## Vowels (share of covered tokens with several headwords)');
+  console.log(
+    `- the map shows the word with vowels, lined up with search's: ${pct(t.vowelsShown, t.ambiguous)}`,
+  );
+  console.log(`- one headword's spellings have the same vowels: ${pct(t.vowelsOne, t.ambiguous)}`);
+  console.log(`- …after taking prefix letters off: ${pct(t.vowelsOneStripped, t.ambiguous)}`);
+  console.log(`- several do: ${pct(t.vowelsSeveral, t.ambiguous)}`);
+  console.log(`- none does: ${pct(t.vowelsNone, t.ambiguous)}`);
+  console.log(`- settled by vowels and by nothing above: ${pct(t.vowelsOnlyWay, t.ambiguous)}`);
+  console.log(
+    `- where Sefaria also picked, the vowels pick the same headword: ${pct(t.vowelsAgreePick, t.vowelsWithPick)} of ${count(t.vowelsWithPick)}`,
+  );
+  console.log(
+    `Covered tokens that come down to one headword, adding vowels: ${pct(t.resolved + t.vowelsOnlyWay, covered)}`,
+  );
+  const byTokens = [...vowelExamples].map(([, e]) => e);
+  const sum = (m: Map<string, number>) => [...m.values()].reduce((a, b) => a + b, 0);
+  const commonest = (m: Map<string, number>, n: number) =>
+    [...m]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(([w, c]) => `${w} ${count(c)}`)
+      .join(' · ');
+  console.log('\nThe forms vowels settle most often (form: headword tokens · …):');
+  for (const e of byTokens.sort((a, b) => sum(b.under) - sum(a.under)).slice(0, 30)) {
+    console.log(`- ${e.written}: ${commonest(e.under, 4)}`);
+  }
+  console.log(
+    "\nWhere the vowels and Sefaria's pick part, commonest first (form: as shown → vowels' headword, Sefaria's pick; tokens):",
+  );
+  for (const [k, n] of [...disagree].sort((a, b) => b[1] - a[1]).slice(0, 30))
+    console.log(`- ${k} ${count(n)}`);
+  console.log(
+    '\nThe forms whose vowels match none of their headwords most often (form: as shown tokens · …):',
+  );
+  for (const e of byTokens.sort((a, b) => sum(b.none) - sum(a.none)).slice(0, 30)) {
+    console.log(`- ${e.written} ${count(sum(e.none))}: ${commonest(e.none, 3)}`);
+  }
+
   console.log('\n## Hebrew or Aramaic (share of covered tokens)');
   console.log(`- every headword's entry says which: ${pct(t.languageAll, covered)}`);
   console.log(`- some headword's entry says: ${pct(t.languageAny, covered)}`);
@@ -398,6 +563,16 @@ function main() {
   );
   console.log(
     `Sefaria's choice, else the headwords not reached only through an occurrence list: ${fileSize(chosenOrDirect)}`,
+  );
+
+  const ids = new Map<string, number>();
+  const overrides = JSON.stringify(
+    Object.fromEntries(
+      [...settledByVowels].map(([f, w]) => [f, ids.get(w) ?? (ids.set(w, ids.size), ids.size - 1)]),
+    ),
+  );
+  console.log(
+    `Vowelled forms the vowels alone settle, each to a headword number: ${count(settledByVowels.size)} forms, ${count(gzipSync(overrides).length)} bytes gzipped`,
   );
 
   const misses = [...seen].filter(([, s]) => !s.entry).sort((a, b) => b[1].tokens - a[1].tokens);
