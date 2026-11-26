@@ -27,17 +27,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # system-ui is the page's text font; the runner would draw it in DejaVu Sans, much wider
+      # than the Mac's. Inter is the nearest free face.
       - run: |
           sudo apt-get install -y fonts-inter
           mkdir -p ~/.config/fontconfig && cp .github/fonts.conf ~/.config/fontconfig/fonts.conf
           fc-cache -f
-          fc-match system-ui
-          fc-match sans-serif
-          fc-list : family | sort -u
-      - run: |
-          npm run test:layout -- -g "explore-text-analytics$|act-recital-pinned" --project=phone --project=tablet || true
-          npm run test:layout -- talmud.spec.ts --project=desktop
-        continue-on-error: true
+      - run: npm run test:browser
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
