@@ -1,6 +1,6 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 is open. Issue #382.
+**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 was taken on 2026-11-25. Issue #382.
 Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
@@ -527,6 +527,56 @@ cannot give, and 11b both reaches more words and does not wait on Sefaria.
 
 **Decided: 11d, then 11b,** on 2026-11-25. The 100 are to be drawn from the
 whole Talmud, so that they measure it.
+
+### A random passage, word by word
+
+What a reader would meet, measured by drawing 40 segments at random from the
+whole Talmud (`model-pilot.ts prepare-whole`) and running the version without
+the word list on all 875 words of two letters or more. I read every word's
+heading and the start of its definition; one reader, so take a point or two
+either way.
+
+| | words | right meaning | wrong meaning | no heading |
+|---|---|---|---|---|
+| All | 875 | 92.6% | 1.6% | 5.8% |
+| Spellings found 1,000 times or more in the Talmud | 378 | 95.0% | 1.1% | 4.0% |
+| 100 to 999 times | 232 | 90.5% | 3.9% | 5.6% |
+| 10 to 99 times | 173 | 93.1% | 0 | 6.9% |
+| Under 10 times | 92 | 87.0% | 1.1% | 12.0% |
+
+Within one segment, the share right runs from 76% to 100%, 93% in the middle.
+
+- **Rare words are labelled about as well as common ones, but go unlabelled
+  more often.** Of the 92 rare words one was wrong (דִּלְעַבְדֵּיהּ "to do to
+  him" read as "slave"); eleven got no heading.
+- **The commonest small words are the easy part.** Spellings found 1,000 times
+  or more are 43% of the words on screen (לֵיהּ and לַהּ under לְ־ "to", לָא,
+  אֵין, קָא, אָמַר), and are right 95% of the time.
+- **Rabbis and other names were right every time:** רַבִּי, רַב, רַבָּנַן and
+  רָבָא 29 times, and the sages' names.
+- ***Kal va-ḥomer*** was tested apart, on 40 segments drawn from the 505 that
+  hold it: 41 occurrences. The version with the list chose קַל II "light" and
+  חוֹמֶר I "importance" every time. The version without it chose קַל II every
+  time, but filed חוֹמֶר under the verb חָמַר I "to be weighty, stringent"
+  40 times and found nothing once: it spelled the word חֹמֶר, without the ו, and the lookup by spelling found only
+  the verbs. Right meaning, wrong heading.
+- **The wrong meanings are few, but one is loud.** בָּרוּךְ "blessed", found
+  1,211 times, goes to Jastrow's entry for "the neck of an animal" (named
+  after the blessing before slaughter); "blessed" is under the verb בָּרַךְ.
+  The word list has only the wrong entry, so both versions make this mistake.
+  The others: רְאָיָה "proof" under the name Reaiah (×3; Jastrow spells proof
+  רַאֲיָה), לְשׁוּם "for the sake of" under "to place" (×2), prefixes taken for the
+  word (לְדָבָר as "to", כְּשֶׁהוּא as כַּשׁ), לְכִדְתַנְיָא "as it was taught" as
+  "falsehood", and לְאֵיתוֹיֵי "to include" as "there is".
+- **Most of what goes unlabelled is the lookup's fault, not the model's.**
+  The model names a form Jastrow files elsewhere: מִשּׁוּם "because" (8 here,
+  5,378 in the Talmud), אוֹתָן "them", causative verbs such as הֵבִיא and
+  הוֹלִיד that Jastrow files under the root, כּוּ׳ "etc.". Telling the model
+  how Jastrow files these, or trying the root and the full spelling when the
+  form finds nothing, would recover most of them.
+
+The reader's 100 are drawn at random from these 875 words (`model-pilot.ts
+read` writes them), for Danyel to judge.
 
 ## The plan
 

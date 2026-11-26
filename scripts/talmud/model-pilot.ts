@@ -15,6 +15,9 @@
  *   npx tsx scripts/talmud/model-pilot.ts prepare <folder>   segments and the first batches
  *   npx tsx scripts/talmud/model-pilot.ts lookup <folder>    the second batches, without the list
  *   npx tsx scripts/talmud/model-pilot.ts score <folder>
+ *
+ * `prepare-whole <folder> [phrase]` draws from every segment instead, for reading; `read` then lays out each
+ * word's answers and a sheet of words drawn at random to judge by hand.
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -36,6 +39,7 @@ import {
 } from './word-forms.ts';
 
 const SEGMENTS = 200;
+const WHOLE_SEGMENTS = 40;
 const PER_BATCH = 20;
 const SEED = 411;
 const GLOSS_WORDS = 14;
@@ -153,7 +157,12 @@ function headsOf(form: string, forms: Map<string, FormEntry>) {
   return undefined;
 }
 
-function prepare(folder: string) {
+/**
+ * Draws the segments: from those holding an occurrence Jastrow quotes (the test), or, with
+ * `whole`, from every segment of the Talmud alike, to show what a reader would meet. A
+ * `phrase`, written without vowels, keeps only the segments holding it.
+ */
+function prepare(folder: string, whole: boolean, phrase?: string) {
   const { forms } = loadForms(DEFAULT_DUMP);
   const entries = loadEntries(DEFAULT_DUMP, new Map());
   const order: { id: string; text: string[]; words: Word[] }[] = [];
@@ -177,13 +186,17 @@ function prepare(folder: string) {
   }
   const eligible = order
     .map((s, i) => ({ s, i }))
-    .filter(({ s }) => s.words.some((w) => w.truth && w.heads.length > 1));
+    .filter(({ s }) =>
+      whole
+        ? s.words.length > 0 && (!phrase || fold(s.text.join(' ')).includes(fold(phrase)))
+        : s.words.some((w) => w.truth && w.heads.length > 1),
+    );
   const random = mulberry32(SEED);
   for (let i = eligible.length - 1; i > 0; i--) {
     const k = Math.floor(random() * (i + 1));
     [eligible[i], eligible[k]] = [eligible[k], eligible[i]];
   }
-  const chosen = eligible.slice(0, SEGMENTS).sort((a, b) => a.i - b.i);
+  const chosen = eligible.slice(0, whole ? WHOLE_SEGMENTS : SEGMENTS).sort((a, b) => a.i - b.i);
   const segments: Segment[] = chosen.map(({ s, i }) => ({
     id: s.id,
     before: order[i - 1]?.text.join(' ') ?? '',
@@ -192,7 +205,7 @@ function prepare(folder: string) {
   }));
   mkdirSync(folder, { recursive: true });
   writeFileSync(join(folder, 'segments.json'), JSON.stringify(segments, null, 1));
-  console.log(`${eligible.length} segments hold a quoted occurrence; ${segments.length} taken.`);
+  console.log(`${eligible.length} segments to draw from; ${segments.length} taken.`);
 
   const { gloss } = loadJastrow(DEFAULT_DUMP);
   for (let b = 0; b * PER_BATCH < segments.length; b++) {
@@ -428,10 +441,101 @@ function score(folder: string) {
   }
 }
 
-const [command, folder] = process.argv.slice(2);
-if (!folder) throw new Error('Usage: model-pilot.ts prepare|lookup|score <folder>');
-if (command !== 'prepare' && !existsSync(join(folder, 'segments.json')))
+// ---------------------------------------------------------------------------
+
+const SHEET = 100;
+
+/**
+ * For reading by eye: every word of the segments with the entry each version reaches, how
+ * often the word's spelling occurs in the Talmud, and a sheet of words drawn at random.
+ */
+function read(folder: string) {
+  const j = loadJastrow(DEFAULT_DUMP);
+  const segments = segmentsOf(folder);
+  const chosen = readAnswers<number>(folder, 'with-list-');
+  const named = readAnswers<[string, string]>(folder, 'without-list-');
+  const second: Record<string, number> = {};
+  for (const f of readdirSync(folder).filter((f) => f.startsWith('choose-') && f.endsWith('.json')))
+    Object.assign(second, JSON.parse(readFileSync(join(folder, f), 'utf8')));
+  const count = new Map<string, number>();
+  for (const tok of tokens()) {
+    const k = pointedFold(tok.pointed ?? tok.written);
+    count.set(k, (count.get(k) ?? 0) + 1);
+  }
+  const entry = (h: string | undefined) => (h ? `${h}: ${j.gloss.get(h) ?? ''}` : '—');
+  const rows = segments.flatMap((s) =>
+    s.words.map((w) => {
+      const k = chosen[s.id]?.[w.n];
+      const withList =
+        w.heads.length === 0
+          ? 'not in the list'
+          : w.heads.length === 1
+            ? entry(w.heads[0])
+            : k
+              ? entry(w.heads[k - 1])
+              : 'none fits';
+      const answer = named[s.id]?.[w.n];
+      const found = answer ? lookUp(answer[0], j) : [];
+      const pick = found.length === 1 ? found[0] : found[(second[`${s.id}#${w.n}`] ?? 0) - 1];
+      const without = !answer
+        ? 'no answer'
+        : `${answer[0]} "${answer[1]}" → ${found.length === 0 ? 'no such headword' : entry(pick)}`;
+      const label = pick
+        ? `**${pick}**: ${(j.gloss.get(pick) ?? '').slice(0, 90)}`
+        : `none (the model named ${answer?.[0] ?? 'nothing'}, which finds no headword)`;
+      return { s, w, count: count.get(pointedFold(w.pointed)) ?? 0, withList, without, label };
+    }),
+  );
+  const cell = (t: string) => t.replace(/\|/g, '/');
+  const passages = segments.flatMap((s) => [
+    `## ${s.id}`,
+    '',
+    s.words.map((w) => w.pointed).join(' '),
+    '',
+    '| # | word | times in the Talmud | with the list | without the list |',
+    '|---|---|---|---|---|',
+    ...rows
+      .filter((r) => r.s === s)
+      .map(
+        (r) =>
+          `| ${r.w.n} | ${r.w.pointed} | ${r.count} | ${cell(r.withList)} | ${cell(r.without)} |`,
+      ),
+    '',
+  ]);
+  writeFileSync(join(folder, 'passages.md'), passages.join('\n'));
+
+  const random = mulberry32(SEED + 1);
+  const drawn = [...rows];
+  for (let i = drawn.length - 1; i > 0; i--) {
+    const k = Math.floor(random() * (i + 1));
+    [drawn[i], drawn[k]] = [drawn[k], drawn[i]];
+  }
+  const sheet = drawn
+    .slice(0, SHEET)
+    .flatMap((r, i) => [
+      `### ${i + 1}. ${r.w.pointed} (${r.s.id}, word ${r.w.n})`,
+      '',
+      r.s.words.map((w) => (w === r.w ? `**[${w.pointed}]**` : w.pointed)).join(' '),
+      '',
+      `- Filed under: ${r.label}`,
+      '- Right meaning? yes / no / unsure',
+      '',
+    ]);
+  writeFileSync(join(folder, 'sheet.md'), sheet.join('\n'));
+  console.log(`${rows.length} words in ${segments.length} segments; sheet of ${SHEET}.`);
+}
+
+const [command, folder, phrase] = process.argv.slice(2);
+if (!folder)
+  throw new Error('Usage: model-pilot.ts prepare|prepare-whole|lookup|score|read <folder>');
+if (!command.startsWith('prepare') && !existsSync(join(folder, 'segments.json')))
   throw new Error(`No segments.json in ${folder}; run prepare first.`);
-const commands: Record<string, (folder: string) => void> = { prepare, lookup, score };
+const commands: Record<string, (folder: string) => void> = {
+  prepare: (f) => prepare(f, false),
+  'prepare-whole': (f) => prepare(f, true, phrase),
+  lookup,
+  score,
+  read,
+};
 if (!commands[command]) throw new Error(`Unknown command ${command}`);
 commands[command](folder);
