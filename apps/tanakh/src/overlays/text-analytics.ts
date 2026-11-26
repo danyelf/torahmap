@@ -418,7 +418,6 @@ export const textAnalyticsOverlay: Overlay<
         [
           `Colour shows how far away a verse's farthest echo is`,
           `A verse with no echo is grey`,
-          `Phrases that recur in many verses wherever they appear don't count`,
           `Hover or select a verse to light its parallels`,
         ]
           .map(legendCaption)
