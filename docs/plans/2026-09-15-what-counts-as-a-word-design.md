@@ -386,7 +386,7 @@ there and the existing "cannot settle" branch is the right home for them.
 **Open, and filed rather than built:**
 
 - **Whether `root` is still the right name** for a mode that resolves a written
-  form to dictionary words and never analyses a root. It has done no
+  form to dictionary words and never analyzes a root. It has done no
   derivational walking since `getRelatedRoots()` was removed in #71, and the
   name misleads: it reads as "and everything from this root" when it means "and
   every inflected form of this word". `lexeme.root` is loaded at

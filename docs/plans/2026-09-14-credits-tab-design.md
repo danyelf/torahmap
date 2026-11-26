@@ -98,7 +98,7 @@ From `APP_CREDITS` in `src/credits.ts`, rendered above the overlay blocks.
 
 | Overlay | Source | License | Collected | Note |
 | --- | --- | --- | --- | --- |
-| Text Search | Eep Talstra Center for Bible and Computer, Biblia Hebraica Stuttgartensia Amstelodamensis (2021) | CC BY-NC 4.0 | September 2026 | Cite 10.17026/dans-z6y-skyh |
+| Text Search | Eep Talstra Centre for Bible and Computer, Biblia Hebraica Stuttgartensia Amstelodamensis (2021) | CC BY-NC 4.0 | September 2026 | Cite 10.17026/dans-z6y-skyh |
 | Commentary | Sefaria link exports | none stated | September 2026 | — |
 | Text Dating | Wikipedia, "Dating the Bible" | CC BY-SA 4.0 | January 2026 | — |
 

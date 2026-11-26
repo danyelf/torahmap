@@ -80,7 +80,7 @@ export const tanakhSearch = createTermSearch<TanakhLayout, SearchData, MeaningsD
   credits: [
     {
       source:
-        'Eep Talstra Center for Bible and Computer, ' +
+        'Eep Talstra Centre for Bible and Computer, ' +
         'Biblia Hebraica Stuttgartensia Amstelodamensis (2021)',
       url: 'https://doi.org/10.17026/dans-z6y-skyh',
       license: 'CC BY-NC 4.0',
