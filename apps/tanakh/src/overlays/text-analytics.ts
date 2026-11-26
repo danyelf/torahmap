@@ -185,7 +185,7 @@ const lit = (color: Color): Color => color.map((c) => c + (1 - c) * LIT_SHARE) a
 
 /**
  * A verse with echoes wears the colour of its farthest one; one without keeps the plain grey. With
- * a verse focused (hovered, else pinned), it is white, its echoes are lit and every other verse
+ * a verse focused (hovered, else pinned), it is pale grey, its echoes are lit and every other verse
  * goes out of focus.
  */
 function echoColors(

@@ -1,7 +1,7 @@
 // Pointers: thin wedges from a square toward another square, drawn over the squares. A pointer
 // can grow from its resting length to halfway, flaring in to a hairline as it goes, so that two
 // pointing at each other meet as an hourglass, solid at both ends. Let go, it is back at rest at
-// once, while a copy of it as grown fades out over it.
+// once, while a copy of it as grown fades out over it. While any is grown, those at rest are dimmed.
 
 import type { Color } from '@torahmap/utils';
 import { easingFunctions } from './interpolation.ts';

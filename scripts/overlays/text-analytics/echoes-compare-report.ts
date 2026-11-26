@@ -131,7 +131,9 @@ console.log('\nMatching by dictionary word in place of spelling');
 console.log(`  pairs by spelling: ${exact.size} (${kinds([...exact])})`);
 console.log(`  pairs by dictionary word: ${looser.size} (${kinds([...looser])})`);
 console.log(`  gained: ${gained.length} (${kinds(gained)})`);
-console.log(`  lost (their run now recurs in too many verses): ${lost.length} (${kinds(lost)})`);
+console.log(
+  `  lost (the same spelling, but different dictionary words): ${lost.length} (${kinds(lost)})`,
+);
 const looseHasEcho = loose.map((others) => others.length > 0);
 console.log(
   `  verses with an echo: ${nEcho} by spelling, ${count(looseHasEcho)} by dictionary word`,
