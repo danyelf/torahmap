@@ -1,15 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CodeFile, CodeStructure } from '../src/data.ts';
 import type { WorldBox } from '@torahmap/engine';
-import {
-  CHAR,
-  MAX_CHARS,
-  MAX_ROWS,
-  NAME_STRIP,
-  ROW,
-  SHADE_REACH,
-  tabHeight,
-} from '../src/constants.ts';
+import { CHAR, COLUMN_CHARS, PROSE_WEIGHT, ROW } from '../src/constants.ts';
 import { lineId, parseLineId } from '../src/ids.ts';
 import { computeCodeLayout } from '../src/layout.ts';
 import { fixtureStructure } from './helpers/fixture.ts';
@@ -43,37 +35,54 @@ describe('line ids', () => {
 
 describe('computeCodeLayout', () => {
   it('starts a bar at its indent and ends it at its length', () => {
-    const { items } = computeCodeLayout(structureOf(fileOf('a.ts', [4], [20])));
+    const { items, files } = computeCodeLayout(structureOf(fileOf('a.ts', [4], [20])));
     const [bar] = items;
     expect(bar.id).toBe(lineId('a.ts', 1));
     expect(bar.width).toBe(16 * CHAR);
     expect(bar.size).toBe(ROW);
-    expect(bar.x).toBe(4 * CHAR);
+    expect(bar.x - files[0].minX).toBe(4 * CHAR);
   });
 
   it('stacks a file one row apart in one column', () => {
-    const { items } = computeCodeLayout(structureOf(fileOf('a.ts', plain(2), [5, 5])));
+    const { items } = computeCodeLayout(structureOf(fileOf('a.ts', plain(20), Array(20).fill(5))));
     expect(items[1].y - items[0].y).toBe(ROW);
     expect(items[1].x).toBe(items[0].x);
   });
 
-  it('continues a long file in further columns', () => {
-    const n = 2 * MAX_ROWS + 100;
-    const { items } = computeCodeLayout(structureOf(fileOf('a.ts', plain(n), Array(n).fill(5))));
-    const columns = [...new Set(items.map((i) => i.x))];
-    expect(columns).toHaveLength(3);
-    const inColumn = columns.map((x) => items.filter((i) => i.x === x).length);
-    expect(inColumn).toEqual([MAX_ROWS, MAX_ROWS, 100]);
+  it('gives prose lines a third of the height', () => {
+    const { items } = computeCodeLayout(structureOf(fileOf('a.md', [0], [5])));
+    expect(items[0].size).toBe(ROW * PROSE_WEIGHT);
   });
 
+  it("fills a file's columns top to bottom, each a whole column apart and every column full but the last", () => {
+    const n = 5000;
+    const { items } = computeCodeLayout(
+      structureOf(
+        fileOf('a.ts', plain(n), Array(n).fill(5)),
+        fileOf('b.ts', plain(n), Array(n).fill(5)),
+      ),
+    );
+    const bars = items.filter((i) => i.file === 0);
+    const columns = [...new Set(bars.map((i) => i.x))];
+    expect(columns.length).toBeGreaterThan(1);
+    const gaps = columns.slice(1).map((x, k) => x - columns[k]);
+    for (const gap of gaps) expect(gap).toBe(gaps[0]);
+    expect(gaps[0]).toBeGreaterThan(COLUMN_CHARS * CHAR);
+    const inColumn = columns.map((x) => bars.filter((i) => i.x === x).length);
+    for (const count of inColumn.slice(0, -1)) expect(count).toBe(inColumn[0]);
+    expect(inColumn.at(-1)).toBeLessThanOrEqual(inColumn[0]);
+    for (let i = 1; i < bars.length; i++) {
+      if (bars[i].x === bars[i - 1].x) expect(bars[i].y).toBeGreaterThan(bars[i - 1].y);
+    }
+  });
   it('clips a long line at the column width', () => {
     const { items } = computeCodeLayout(structureOf(fileOf('a.ts', [0], [3000])));
-    expect(items[0].width).toBe(MAX_CHARS * CHAR);
+    expect(items[0].width).toBe(COLUMN_CHARS * CHAR);
   });
 
   it('clips an indented long line at the column edge', () => {
-    const { items } = computeCodeLayout(structureOf(fileOf('a.ts', [10], [3000])));
-    expect(items[0].x + (items[0].width ?? 0)).toBe(MAX_CHARS * CHAR);
+    const { items, files } = computeCodeLayout(structureOf(fileOf('a.ts', [10], [3000])));
+    expect(items[0].x + (items[0].width ?? 0) - files[0].minX).toBe(COLUMN_CHARS * CHAR);
   });
 
   it('draws a deleted file as one marked bar', () => {
@@ -126,22 +135,16 @@ describe('computeCodeLayout', () => {
       ['q', 'docs'],
     ]) {
       expect(inside(box(inner), box(outer))).toBe(true);
-      expect(box(inner).minY).toBeGreaterThanOrEqual(box(outer).minY + tabHeight(box(outer).depth));
+      expect(box(inner).minY).toBeGreaterThanOrEqual(box(outer).minY + box(outer).strip);
     }
   });
 
-  it('puts each file’s bars, name strip and shade inside its folder, apart from every other file', () => {
+  it('puts each file’s bars inside its box, and its box inside its folder, apart from every other file', () => {
     const { folders, files, items } = computeCodeLayout(tree);
-    const shaded = (f: WorldBox) => ({
-      minX: f.minX - SHADE_REACH,
-      minY: f.minY - NAME_STRIP - SHADE_REACH,
-      maxX: f.maxX + SHADE_REACH,
-      maxY: f.maxY + SHADE_REACH,
-    });
     for (const file of files) {
       const path = tree.files[file.file].path;
       const folder = folders.find((f) => f.name === path.split('/').at(-2));
-      if (folder) expect(inside(shaded(file), folder)).toBe(true);
+      if (folder) expect(inside(file, folder)).toBe(true);
       for (const bar of items.filter((i) => i.file === file.file)) {
         expect(
           inside(
@@ -151,8 +154,25 @@ describe('computeCodeLayout', () => {
         ).toBe(true);
       }
       for (const other of files.filter((f) => f !== file)) {
-        expect(meet(shaded(file), shaded(other))).toBe(false);
+        expect(meet(file, other)).toBe(false);
       }
+    }
+  });
+
+  it('keeps every file apart and inside its folder, whatever the sizes', () => {
+    const sizes = [3000, 2, 1, 1, 400, 5, 1, 900, 1, 1, 1, 60, 2500, 1, 7, 1, 1, 120];
+    const many = structureOf(
+      ...sizes.map((n, i) =>
+        fileOf(`${['a', 'a/b', 'c', 'c/d/e'][i % 4]}/f${i}.ts`, plain(n), Array(n).fill(5)),
+      ),
+    );
+    const { files, folders } = computeCodeLayout(many);
+    for (const file of files) {
+      const path = many.files[file.file].path;
+      for (const folder of folders.filter((f) => path.split('/').includes(f.name))) {
+        expect(inside(file, folder)).toBe(true);
+      }
+      for (const other of files.filter((f) => f !== file)) expect(meet(file, other)).toBe(false);
     }
   });
 

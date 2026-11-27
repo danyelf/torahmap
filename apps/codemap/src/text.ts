@@ -39,9 +39,9 @@ const CODE_LINK_KEYS: LinkKeys = {
   square: 'at',
   search: TERM_SEARCH_PARAMS,
   overlayParams: codeOverlayParams,
-  // Low enough for the whole repository to fit across a phone; a link without a camera opens on
-  // all of it on a desktop.
-  zoom: { min: 0.02, max: 12, start: 0.05 },
+  // min: the whole repository fits across a phone. start: a link without a camera opens on all of
+  // it on a desktop.
+  zoom: { min: 0.02, max: 12, start: 0.15 },
 };
 
 export const codemapText: MapText<CodeItem, TermSettings> = {

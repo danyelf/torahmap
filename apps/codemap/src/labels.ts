@@ -2,7 +2,6 @@
 // them, held to a size on screen.
 
 import type { ScreenPoint, WorldBox } from '@torahmap/engine';
-import { NAME_STRIP, SHADE_REACH, FILE_GAP, tabHeight } from './constants.ts';
 import type { CodeLayout } from './layout.ts';
 import { placeNames, type Name } from './names.ts';
 
@@ -58,15 +57,7 @@ export function createCodeLabels(
     el.append(tab);
     return { el, tab, folder };
   });
-  const shades = files.map((file) => ({
-    el: boxElement(`background:${FILE_SHADE}`),
-    box: {
-      minX: file.minX - SHADE_REACH,
-      minY: file.minY - NAME_STRIP - SHADE_REACH,
-      maxX: file.maxX + SHADE_REACH,
-      maxY: file.maxY + SHADE_REACH,
-    },
-  }));
+  const shades = files.map((file) => ({ el: boxElement(`background:${FILE_SHADE}`), box: file }));
 
   const named = [
     ...folders.map((folder) => {
@@ -90,17 +81,17 @@ export function createCodeLabels(
       return { el, fontSize, weight: 600, name };
     }),
     ...files.map((file) => {
-      const el = nameElement(file.name, FILE_FONT, 'color:#aeb5bf');
+      const el = nameElement(file.name, FILE_FONT, `color:#aeb5bf;background:${NAME_BACKGROUND}`);
       el.className = 'file-name';
       const height = nameHeight(FILE_FONT);
       const name: Omit<Name, 'width'> = {
         x: file.minX,
         y: file.minY,
-        dy: -height,
+        dy: 0,
         height,
-        minY: file.minY - NAME_STRIP,
-        maxX: file.maxX + FILE_GAP,
-        maxY: file.minY,
+        minY: file.minY,
+        maxX: file.maxX,
+        maxY: file.maxY,
         moves: false,
       };
       return { el, fontSize: FILE_FONT, weight: 400, name };
@@ -136,7 +127,7 @@ export function createCodeLabels(
     placedAt = zoom;
     for (const { el, tab, folder } of folderBoxes) {
       place(el, folder, zoom);
-      tab.style.height = `${tabHeight(folder.depth) * zoom}px`;
+      tab.style.height = `${folder.strip * zoom}px`;
     }
     for (const { el, box } of shades) place(el, box, zoom);
     const tops = placeNames(names, zoom);

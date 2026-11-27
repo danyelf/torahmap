@@ -1,6 +1,6 @@
 # The code map
 
-**Status:** Built, awaiting Danyel's review (PR #564). Preview only.
+**Status:** Built as a treemap, awaiting Danyel's review (PR #564). Preview only.
 
 A map of a codebase in the manner of SeeSoft (Eick, Steffen and Sumner, 1992): every line of code
 drawn as a thin bar in a fixed place, coloured by what a pull request did to it and by how much it
@@ -115,11 +115,24 @@ nothing about torahmap, and the map reads only its data files.
   whole-repo view. Outer folders claim their place first; a name in the way of one already shown
   moves down below it while it fits its box, otherwise it is left out, so deeper names appear as
   you zoom in.
-- **Each file's name sits above it**, shown when its strip and width have room for it.
-- **Files wrap at 200 rows**, so a long file is a block rather than a tall stripe.
-- **Each file sits on a faint shade, without an outline.** The shade sets files apart, so the gaps
-  are tight: 10 map units between files, 14 between rows of files, 4 between a file's own columns.
-  Folders pack their contents in shelves.
+- **Each file's name sits in its top left corner**, shown when the file's box has room for it.
 - **A file type overlay**: code, prose, scripts, styles and pages, and data and settings, by the
   file's ending. The five colours were checked as a set on the dark map, also for colour-blind
   readers. The kind comes from the path, so the data needs nothing new.
+
+## The layout, decided 2026-11-27 after sketches
+
+Shelves left most of the map empty: a row of files is as tall as its tallest, so one long file
+beside short ones left a tall empty block, and files covered 17% of the map. The layout is now a
+treemap.
+
+- **Every folder and file is a box whose area is its line count**, folders inside the folder that
+  holds them. Squarified, in path order: a folder's files by name, then its folders by name, so a
+  file keeps its neighbours as it grows.
+- **Prose counts a third**, in a line's height and so in area: Markdown and text were most of the
+  map.
+- **Boxes are whole columns wide.** A column is 80 characters and a margin; no column is ever
+  narrower. Heights are free. Folder edges are drawn in the margins, each depth one step further in.
+- **A file's lines fill its columns top to bottom** at one line height, the leftover space at the
+  foot of its last column. When rounding to whole columns leaves a box too short for its lines,
+  the line height shrinks instead (about 40% of files, nearly all slightly).

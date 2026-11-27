@@ -1,21 +1,23 @@
-// Where every line stands: each folder a box, at every depth, holding its files and then its
-// folders, packed in shelves; each file a column of bars, continued in further columns when long.
+// Where every line stands: a treemap, each folder a box inside the one that holds it and each
+// file a box inside its folder, its area its line count. Every box is a whole number of columns
+// wide, so a column is never narrower than COLUMN_CHARS; heights are free. A file's lines fill its
+// columns top to bottom, at one line height unless the box is too short for them.
 
 import type { Bounds, MapItem, WorldBox } from '@torahmap/engine';
 import type { CodeFile, CodeStructure, LineKind } from './data.ts';
 import {
   CHAR,
-  COLUMN_GAP,
-  FILE_GAP,
-  FOLDER_ASPECT,
+  COLUMN_CHARS,
+  COLUMN_MARGIN,
+  FILE_PAD,
   FOLDER_PAD,
-  MAX_CHARS,
-  MAX_ROWS,
-  NAME_STRIP,
+  FOLDER_STRIP,
+  MAP_ASPECT,
+  PROSE_WEIGHT,
   ROW,
-  SHELF_GAP,
+  SLACK,
   STUB_CHARS,
-  tabHeight,
+  isProse,
 } from './constants.ts';
 import { lineId } from './ids.ts';
 
@@ -30,9 +32,10 @@ export interface CodeItem extends MapItem {
 export interface FolderBox extends WorldBox {
   name: string;
   depth: number; // the repository's own folders are 1
+  strip: number; // the name strip's height
 }
 
-/** A file's columns of bars, below its name strip. */
+/** A file's box. */
 export interface FileBox extends WorldBox {
   name: string;
   file: number;
@@ -46,152 +49,243 @@ export interface CodeLayout {
   bounds: Bounds;
 }
 
-const COLUMN_WIDTH = MAX_CHARS * CHAR;
+const COLUMN_WIDTH = COLUMN_CHARS * CHAR;
+const UNIT = COLUMN_WIDTH + COLUMN_MARGIN; // one column and its margin
 
 /** The folder a file is in, '' at the top of the repository. */
 export const folderOf = (path: string): string => path.slice(0, Math.max(path.lastIndexOf('/'), 0));
 
-interface Folder {
+interface Node {
   name: string;
-  depth: number;
-  files: number[];
-  folders: Map<string, Folder>;
+  depth: number; // the repository's own folders and files are 1
+  file?: number;
+  weight: number;
+  inside: Node[];
 }
 
-function folderTree(files: readonly CodeFile[]): Folder {
-  const root: Folder = { name: '', depth: 0, files: [], folders: new Map() };
+const lineCount = (file: CodeFile) => (file.deleted ? 1 : Math.max(file.length.length, 1));
+
+/** Each folder's files by name, then its folders by name. */
+function tree(files: readonly CodeFile[]): Node {
+  const root: Node = { name: '', depth: 0, weight: 0, inside: [] };
+  const folders = new Map<string, Node>([['', root]]);
   files.forEach((file, index) => {
+    const parts = file.path.split('/');
     let folder = root;
-    for (const name of file.path.split('/').slice(0, -1)) {
-      let inner = folder.folders.get(name);
+    for (let k = 0; k < parts.length - 1; k++) {
+      const path = parts.slice(0, k + 1).join('/');
+      let inner = folders.get(path);
       if (!inner) {
-        inner = { name, depth: folder.depth + 1, files: [], folders: new Map() };
-        folder.folders.set(name, inner);
+        inner = { name: parts[k], depth: k + 1, weight: 0, inside: [] };
+        folders.set(path, inner);
+        folder.inside.push(inner);
       }
       folder = inner;
     }
-    folder.files.push(index);
+    const weight = lineCount(file) * (isProse(file.path) ? PROSE_WEIGHT : 1);
+    folder.inside.push({
+      name: parts.at(-1)!,
+      depth: parts.length,
+      file: index,
+      weight,
+      inside: [],
+    });
   });
+  const total = (n: Node): number =>
+    n.file !== undefined ? n.weight : (n.weight = n.inside.reduce((sum, k) => sum + total(k), 0));
+  total(root);
+  const order = (n: Node) => {
+    n.inside.sort(
+      (a, b) =>
+        Number(a.file === undefined) - Number(b.file === undefined) || a.name.localeCompare(b.name),
+    );
+    n.inside.forEach(order);
+  };
+  order(root);
   return root;
 }
 
-/** Something packed, its size and how to place it once its top-left corner is known. */
-interface Packed {
-  width: number;
+/** A box: its left edge and width in whole columns, its top and height in map units. */
+interface Cell {
+  column: number;
+  columns: number;
+  y: number;
   height: number;
-  place(x: number, y: number, out: CodeLayout): void;
 }
 
-/** A file's bars, with its name strip above them. */
-function packFile(file: CodeFile, index: number): Packed {
-  const rows = file.deleted ? 1 : file.length.length;
-  const columns = Math.max(1, Math.ceil(rows / MAX_ROWS));
-  const width = columns * COLUMN_WIDTH + (columns - 1) * COLUMN_GAP;
-  return {
-    width,
-    height: NAME_STRIP + Math.max(1, Math.min(rows, MAX_ROWS)) * ROW,
-    place(x, y, out) {
-      const top = y + NAME_STRIP;
-      out.files.push({
-        name: file.path.slice(file.path.lastIndexOf('/') + 1),
-        file: index,
-        minX: x,
-        minY: top,
-        maxX: x + width,
-        maxY: top + Math.max(1, Math.min(rows, MAX_ROWS)) * ROW,
-      });
-      if (file.deleted) {
-        out.items.push({
-          id: lineId(file.path, 1),
-          x,
-          y: top,
-          size: ROW,
-          width: STUB_CHARS * CHAR,
-          file: index,
-          line: 1,
-          kind: 'x',
-          deletedFile: true,
-        });
-        return;
-      }
-      file.length.forEach((length, i) => {
-        const indent = Math.min(file.indent[i], MAX_CHARS - 1);
-        out.items.push({
-          id: lineId(file.path, i + 1),
-          x: x + Math.floor(i / MAX_ROWS) * (COLUMN_WIDTH + COLUMN_GAP) + indent * CHAR,
-          y: top + (i % MAX_ROWS) * ROW,
-          size: ROW,
-          width: Math.min(Math.max(length - indent, 1), MAX_CHARS - indent) * CHAR,
-          file: index,
-          line: i + 1,
-          kind: file.kind[i] as LineKind,
-          deletedFile: false,
-        });
-      });
-    },
-  };
+/** A whole number of columns split by weight, each at least one, by largest remainder. */
+function apportion(weights: number[], columns: number): number[] {
+  const total = weights.reduce((a, b) => a + b, 0);
+  const exact = weights.map((w) => (w / total) * columns);
+  const out = exact.map((x) => Math.max(1, Math.floor(x)));
+  const byRemainder = exact
+    .map((x, i) => [x - Math.floor(x), i])
+    .sort((a, b) => b[0] - a[0])
+    .map(([, i]) => i);
+  for (let left = columns - out.reduce((a, b) => a + b, 0), k = 0; left > 0; left--, k++) {
+    out[byRemainder[k % byRemainder.length]]++;
+  }
+  // Raising the small ones to one column can overshoot; the widest give it back.
+  for (let over = out.reduce((a, b) => a + b, 0) - columns; over > 0; over--) {
+    out[out.indexOf(Math.max(...out))]--;
+  }
+  return out;
 }
 
 /**
- * A folder's files, then its folders, each set by name, left to right in shelves as wide as
- * the widest of them or as makes the whole about FOLDER_ASPECT wide to tall.
+ * Squarified treemap in the order given: items fill a strip down the left of the cell, or a row
+ * across its top when it is taller than wide, as long as that keeps their boxes squarer.
  */
-function packFolder(folder: Folder, files: readonly CodeFile[]): Packed {
-  const byName = (a: string, b: string) => a.localeCompare(b);
-  const inside = [
-    ...folder.files.map((i) => packFile(files[i], i)),
-    ...[...folder.folders.values()]
-      .sort((a, b) => byName(a.name, b.name))
-      .map((f) => packFolder(f, files)),
-  ];
-  const area = inside.reduce((sum, p) => sum + (p.width + FILE_GAP) * (p.height + SHELF_GAP), 0);
-  const shelfWidth = Math.max(...inside.map((p) => p.width), Math.sqrt(area * FOLDER_ASPECT));
-
-  const at: { x: number; y: number }[] = [];
-  let x = 0;
-  let y = 0;
-  let shelfHeight = 0;
-  let innerWidth = 0;
-  for (const p of inside) {
-    if (x > 0 && x + p.width > shelfWidth) {
-      x = 0;
-      y += shelfHeight + SHELF_GAP;
-      shelfHeight = 0;
-    }
-    at.push({ x, y });
-    innerWidth = Math.max(innerWidth, x + p.width);
-    shelfHeight = Math.max(shelfHeight, p.height);
-    x += p.width + FILE_GAP;
-  }
-
-  const top = folder.depth === 0 ? 0 : tabHeight(folder.depth);
-  const pad = folder.depth === 0 ? 0 : FOLDER_PAD;
-  const width = innerWidth + 2 * pad;
-  const height = top + y + shelfHeight + pad;
-  return {
-    width,
-    height,
-    place(left, upper, out) {
-      if (folder.depth > 0) {
-        out.folders.push({
-          name: folder.name,
-          depth: folder.depth,
-          minX: left,
-          minY: upper,
-          maxX: left + width,
-          maxY: upper + height,
-        });
-      }
-      inside.forEach((p, i) => p.place(left + pad + at[i].x, upper + top + at[i].y, out));
-    },
+function squarify(items: readonly Node[], cell: Cell): Cell[] {
+  const out: Cell[] = [];
+  let { column, columns, y, height } = cell;
+  let i = 0;
+  const worst = (row: number[], side: number, scale: number) => {
+    const sum = row.reduce((a, k) => a + items[k].weight * scale, 0);
+    return Math.max(
+      ...row.map((k) => {
+        const area = items[k].weight * scale;
+        return Math.max((side * side * area) / (sum * sum), (sum * sum) / (side * side * area));
+      }),
+    );
   };
+  while (i < items.length) {
+    const rest = items.slice(i).reduce((a, n) => a + n.weight, 0);
+    const width = columns * UNIT;
+    const scale = (width * height) / rest;
+    const side = Math.min(width, height);
+    const across = width < height;
+    const row = [i++];
+    while (
+      i < items.length &&
+      (!across || row.length < columns) &&
+      // With one column left and a strip down it, everything left goes in that strip.
+      ((columns === 1 && !across) || worst([...row, i], side, scale) <= worst(row, side, scale))
+    ) {
+      row.push(i++);
+    }
+    const weight = row.reduce((a, k) => a + items[k].weight, 0);
+    if (across) {
+      const rowHeight = i === items.length ? height : (weight * scale) / width;
+      const widths = apportion(
+        row.map((k) => items[k].weight),
+        columns,
+      );
+      let at = column;
+      row.forEach((k, j) => {
+        out[k] = { column: at, columns: widths[j], y, height: rowHeight };
+        at += widths[j];
+      });
+      y += rowHeight;
+      height -= rowHeight;
+    } else {
+      // Leave a column for what comes after.
+      const most = i === items.length ? columns : columns - 1;
+      const stripColumns =
+        i === items.length
+          ? columns
+          : Math.min(most, Math.max(1, Math.round((weight * scale) / height / UNIT)));
+      let at = y;
+      for (const k of row) {
+        const h = (items[k].weight / weight) * height;
+        out[k] = { column, columns: stripColumns, y: at, height: h };
+        at += h;
+      }
+      column += stripColumns;
+      columns -= stripColumns;
+    }
+  }
+  return out;
+}
+
+function placeFile(file: CodeFile, index: number, name: string, cell: Cell, out: CodeLayout) {
+  const lines = lineCount(file);
+  const nominal = isProse(file.path) ? ROW * PROSE_WEIGHT : ROW;
+  const pad = Math.min(FILE_PAD, cell.height / 4);
+  const top = cell.y + pad;
+  const height = cell.height - 2 * pad;
+  let perColumn = Math.max(1, Math.floor(height / nominal));
+  let row = nominal;
+  if (perColumn * cell.columns < lines) {
+    perColumn = Math.ceil(lines / cell.columns);
+    row = height / perColumn;
+  }
+  const left = cell.column * UNIT + COLUMN_MARGIN / 2;
+  out.files.push({
+    name,
+    file: index,
+    minX: left,
+    minY: top,
+    maxX: (cell.column + cell.columns) * UNIT - COLUMN_MARGIN / 2,
+    maxY: top + height,
+  });
+  if (file.deleted) {
+    out.items.push({
+      id: lineId(file.path, 1),
+      x: left,
+      y: top,
+      size: row,
+      width: STUB_CHARS * CHAR,
+      file: index,
+      line: 1,
+      kind: 'x',
+      deletedFile: true,
+    });
+    return;
+  }
+  for (let i = 0; i < lines; i++) {
+    const x = left + Math.floor(i / perColumn) * UNIT;
+    const y = top + (i % perColumn) * row;
+    const indent = Math.min(file.indent[i], COLUMN_CHARS - 1);
+    out.items.push({
+      id: lineId(file.path, i + 1),
+      x: x + indent * CHAR,
+      y,
+      size: row,
+      width: Math.min(Math.max(file.length[i] - indent, 1), COLUMN_CHARS - indent) * CHAR,
+      file: index,
+      line: i + 1,
+      kind: file.kind[i] as LineKind,
+      deletedFile: false,
+    });
+  }
+}
+
+/** A folder's edges sit in the column margins, each depth further in, short of the lines. */
+const edgeInset = (depth: number) => Math.min(depth, COLUMN_MARGIN / 2 - 1);
+
+function place(node: Node, cell: Cell, files: readonly CodeFile[], out: CodeLayout) {
+  if (node.file !== undefined) {
+    placeFile(files[node.file], node.file, node.name, cell, out);
+    return;
+  }
+  let inner = cell;
+  if (node.depth > 0) {
+    const strip = Math.min(FOLDER_STRIP, cell.height / 4);
+    const pad = Math.min(FOLDER_PAD, cell.height / 4);
+    out.folders.push({
+      name: node.name,
+      depth: node.depth,
+      strip,
+      minX: cell.column * UNIT + edgeInset(node.depth),
+      minY: cell.y,
+      maxX: (cell.column + cell.columns) * UNIT - edgeInset(node.depth),
+      maxY: cell.y + cell.height,
+    });
+    inner = { ...cell, y: cell.y + strip, height: cell.height - strip - pad };
+  }
+  const cells = squarify(node.inside, inner);
+  node.inside.forEach((k, i) => place(k, cells[i], files, out));
 }
 
 export function computeCodeLayout(structure: CodeStructure): CodeLayout {
   const out: CodeLayout = { items: [], folders: [], files: [], bounds: { width: 0, height: 0 } };
-  const root = packFolder(folderTree(structure.files), structure.files);
-  root.place(0, 0, out);
+  const root = tree(structure.files);
+  const area = root.weight * UNIT * ROW * SLACK;
+  const columns = Math.max(1, Math.round(Math.sqrt(area * MAP_ASPECT) / UNIT));
+  const height = area / (columns * UNIT);
+  place(root, { column: 0, columns, y: 0, height }, structure.files, out);
   out.folders.sort((a, b) => a.depth - b.depth);
-  out.bounds = { width: root.width, height: root.height };
+  out.bounds = { width: columns * UNIT, height };
   return out;
 }
