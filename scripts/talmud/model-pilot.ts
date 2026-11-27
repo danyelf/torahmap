@@ -34,6 +34,7 @@ import {
   loadForms,
   pointedFold,
   readings,
+  spellingVariants,
   tokens,
   vowelMatches,
 } from './word-forms.ts';
@@ -43,6 +44,23 @@ const WHOLE_SEGMENTS = 40;
 const PER_BATCH = 20;
 const SEED = 411;
 const GLOSS_WORDS = 14;
+
+/**
+ * The commonest small words, which the search leaves out: pronouns, prepositions, negations,
+ * conjunctions and other particles found 1,000 times or more, as written, prefixes and all.
+ * The model is not asked about them; they stay in the passage it reads.
+ */
+const SMALL_WORDS = new Set(
+  (
+    'לא ליה אלא על את מאי הוא אין ולא לו כל לה של נמי הא אי אבל כי זה מה עד הכי או היא ' +
+    'שלא לי מן דלא להו קא בין לאו לך בו בה מי אינו שאין והא הכא הרי ואין עליו לן התם זו ' +
+    'ואי האי כאן יש ביה כך וכי אשר אתה אני להם למה אותו בהן הן הני ההוא שהוא וכל אלו מאן ' +
+    'מינה מיניה דאי היינו הכל וכן שיש להן בכל ועל במאי ומה אינה שאינו'
+  )
+    .split(' ')
+    .map(fold),
+);
+const asked = (w: Word) => !SMALL_WORDS.has(fold(w.pointed));
 
 interface Word {
   n: number;
@@ -131,12 +149,71 @@ function loadJastrow(dump: string) {
   return { gloss, byPointed, byLetters };
 }
 
-/** The headwords a named dictionary form can be: by its vowels, else by its letters. */
-function lookUp(form: string, j: ReturnType<typeof loadJastrow>): string[] {
-  const byVowels = j.byPointed.get(pointedFold(form));
-  if (byVowels?.size) return [...byVowels];
-  return [...(j.byLetters.get(fold(form)) ?? [])];
+/**
+ * Forms Jastrow files where neither the lookup nor the short gloss would lead: בָּרוּךְ "blessed"
+ * under the verb, the headword בָּרוּךְ being the neck of an animal; מִשּׁוּם "because of" deep
+ * inside שׁוּם II.
+ */
+const FILED_UNDER = new Map(
+  [
+    ['בָּרוּךְ', 'בָּרַךְ'],
+    ['מִשּׁוּם', 'שׁוּם II'],
+  ].map(([form, h]) => [pointedFold(form), h]),
+);
+
+/** A folded vowelled form spelled with ו for its holam and qubuts, as Jastrow spells חוֹמֶר. */
+const fullSpelling = (folded: string) =>
+  folded.replace(/([א-ת][ׁׂ]?)ֹ/g, (m, l: string) => (l === 'ו' ? m : `${l}וֹ`)).replace(/ֻ/g, 'ו');
+
+/**
+ * Roots a form may be filed under: a causative verb without its ה and י (הֵבִיא → בוא,
+ * הוֹלִיד → ילד) and a passive participle without its ו (בְּעוּלָה → בעל).
+ */
+function roots(letters: string): string[] {
+  const out: string[] = [];
+  if (letters.length >= 4 && letters[0] === 'ה') {
+    let r = letters.slice(1);
+    if (r.at(-2) === 'י') r = r.slice(0, -2) + r.at(-1);
+    if (r.length === 2) out.push(`${r[0]}ו${r[1]}`);
+    if (r[0] === 'ו') out.push(`י${r.slice(1)}`);
+    out.push(r);
+  }
+  const stem = letters.length >= 5 && letters.endsWith('ה') ? letters.slice(0, -1) : letters;
+  if (stem.length >= 4 && stem.at(-2) === 'ו') out.push(stem.slice(0, -2) + stem.at(-1));
+  return out;
 }
+
+/**
+ * The headwords a named dictionary form can be: by its vowels, as written or in full spelling,
+ * else by its letters; when none finds one, by the form one ו or י away, by its root, and
+ * last with its prefix letters off, the first that finds any. What those find is a guess, for
+ * the model to confirm or turn down.
+ */
+function lookUp(
+  form: string,
+  j: ReturnType<typeof loadJastrow>,
+): { entries: string[]; guessed: boolean } {
+  const filed = FILED_UNDER.get(pointedFold(form));
+  if (filed) return { entries: [filed], guessed: false };
+  const letters = fold(form);
+  const tries: [Map<string, Set<string>>, string][] = [
+    [j.byPointed, pointedFold(form)],
+    [j.byPointed, fullSpelling(pointedFold(form))],
+    [j.byLetters, letters],
+    ...[...spellingVariants(letters), ...roots(letters), ...readings(letters).slice(1)].map(
+      (l) => [j.byLetters, l] as [Map<string, Set<string>>, string],
+    ),
+  ];
+  for (const [i, [map, key]] of tries.entries()) {
+    const found = map.get(key);
+    if (found?.size) return { entries: [...found], guessed: i > 2 };
+  }
+  return { entries: [], guessed: false };
+}
+
+/** Whether the model is asked to choose among, or confirm, what the lookup found. */
+const toChoose = (found: ReturnType<typeof lookUp>) =>
+  found.entries.length > 1 || (found.guessed && found.entries.length > 0);
 
 // ---------------------------------------------------------------------------
 
@@ -240,7 +317,7 @@ function withListBatch(batch: Segment[], gloss: Map<string, string>) {
   ];
   for (const s of batch) {
     out.push(context(s), '');
-    for (const w of s.words.filter((w) => w.heads.length > 1)) {
+    for (const w of s.words.filter((w) => w.heads.length > 1 && asked(w))) {
       out.push(`Word ${w.n}: ${w.pointed}`);
       w.heads.forEach((h, k) =>
         out.push(
@@ -260,16 +337,22 @@ function withoutListBatch(batch: Segment[]) {
     'dictionary, with vowels, and a short English gloss of its sense here. Leave off prefixed',
     'letters (ו ד ה ב כ ל מ ש) that are not part of the word, and suffixed pronouns. Verbs go',
     'under their root form as Jastrow lists them (אוֹמֵר → אָמַר, תְּנַן → תְּנֵי); names under the name.',
-    'Words are numbered from 1 in the order of the Text line, counting only words of two',
-    'letters or more.',
+    'Answer for the words listed after Words, by their numbers.',
     '',
     'Answer as one JSON object: segment name → word number → [dictionary form, gloss], for',
     'example {"Berakhot 2a:1": {"1": ["מֵאֵימָתַי", "from when"], "2": ["קָרָא", "to read"]}}.',
-    'Answer every word.',
+    'Answer every word listed.',
     '',
   ];
   for (const s of batch) {
-    out.push(context(s), `Words: ${s.words.map((w) => `${w.n} ${w.pointed}`).join(' · ')}`, '');
+    out.push(
+      context(s),
+      `Words: ${s.words
+        .filter(asked)
+        .map((w) => `${w.n} ${w.pointed}`)
+        .join(' · ')}`,
+      '',
+    );
   }
   return out.join('\n');
 }
@@ -289,9 +372,53 @@ function readAnswers<T>(folder: string, prefix: string): Answers<T> {
 const segmentsOf = (folder: string): Segment[] =>
   JSON.parse(readFileSync(join(folder, 'segments.json'), 'utf8'));
 
+/**
+ * The second round's answers, each as the entry chosen (null for none) among the entries it was
+ * asked about, read back from the batch it was asked in.
+ */
+function choices(folder: string): Map<string, { among: string[]; entry: string | null }> {
+  const out = new Map<string, { among: string[]; entry: string | null }>();
+  for (const f of readdirSync(folder).filter((f) => /^choose-\d+\.json$/.test(f))) {
+    const answers: Record<string, number> = JSON.parse(readFileSync(join(folder, f), 'utf8'));
+    const asked = readFileSync(join(folder, f.replace('.json', '.md')), 'utf8');
+    for (const item of asked.split(/^Item /m).slice(1)) {
+      const name = item.slice(0, item.indexOf(': '));
+      const among = [...item.matchAll(/^ {2}\d+\. (.+?): /gm)].map(([, h]) => h);
+      const k = answers[name];
+      if (k !== undefined) out.set(name, { among, entry: k ? (among[k - 1] ?? null) : null });
+    }
+  }
+  return out;
+}
+
+const same = (a: string[], b: string[]) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+/** The second round's answer for an item, if it was asked about the entries now found. */
+function choice(chosen: ReturnType<typeof choices>, item: string, found: string[]) {
+  const c = chosen.get(item);
+  return c && same(c.among, found) ? c : undefined;
+}
+
+/** The entry the version without the list reaches for a word, or why it reaches none. */
+function reach(
+  item: string,
+  form: string | undefined,
+  j: ReturnType<typeof loadJastrow>,
+  second: ReturnType<typeof choices>,
+): string {
+  if (!form) return 'no answer';
+  const found = lookUp(form, j);
+  if (found.entries.length === 0) return 'not a headword';
+  if (!toChoose(found)) return found.entries[0];
+  const c = choice(second, item, found.entries);
+  return c ? (c.entry ?? 'none fits') : 'no answer';
+}
+
+/** The second batches: the named forms with several entries not yet answered among them. */
 function lookup(folder: string) {
   const j = loadJastrow(DEFAULT_DUMP);
   const named = readAnswers<[string, string]>(folder, 'without-list-');
+  const chosen = choices(folder);
   const items: string[] = [];
   const segments = segmentsOf(folder);
   for (const s of segments) {
@@ -299,12 +426,12 @@ function lookup(folder: string) {
       const answer = named[s.id]?.[w.n];
       if (!answer) continue;
       const found = lookUp(answer[0], j);
-      if (found.length < 2) continue;
+      if (!toChoose(found) || choice(chosen, `${s.id}#${w.n}`, found.entries)) continue;
       items.push(
         [
           `Item ${s.id}#${w.n}: ${w.pointed}, named ${answer[0]} "${answer[1]}"`,
           `  In: ${s.words.map((x) => (x.n === w.n ? `[${x.pointed}]` : x.pointed)).join(' ')}`,
-          ...found.map((h, k) => `  ${k + 1}. ${h}: ${j.gloss.get(h) ?? ''}`),
+          ...found.entries.map((h, k) => `  ${k + 1}. ${h}: ${j.gloss.get(h) ?? ''}`),
         ].join('\n'),
       );
     }
@@ -319,16 +446,18 @@ function lookup(folder: string) {
     '{"Berakhot 2a:1#3": 2}. Answer every item.',
     '',
   ];
-  const per = Math.ceil(items.length / Math.ceil(items.length / 250));
-  for (let b = 0; b * per < items.length; b++) {
-    const name = String(b + 1).padStart(2, '0');
+  const first = readdirSync(folder).filter((f) => /^choose-\d+\.md$/.test(f)).length + 1;
+  const batches = Math.ceil(items.length / 250);
+  const per = Math.ceil(items.length / Math.max(batches, 1));
+  for (let b = 0; b < batches; b++) {
+    const name = String(first + b).padStart(2, '0');
     writeFileSync(
       join(folder, `choose-${name}.md`),
       [head.join('\n'), ...items.slice(b * per, (b + 1) * per)].join('\n\n'),
     );
   }
   console.log(
-    `${items.length} named forms with several entries, in ${Math.ceil(items.length / per)} batches.`,
+    `${items.length} named forms with several entries to choose among, in ${batches} batches.`,
   );
 }
 
@@ -343,20 +472,10 @@ function score(folder: string) {
   const segments = segmentsOf(folder);
   const chosen = readAnswers<number>(folder, 'with-list-');
   const named = readAnswers<[string, string]>(folder, 'without-list-');
-  const second: Record<string, number> = {};
-  for (const f of readdirSync(folder).filter((f) => f.startsWith('choose-') && f.endsWith('.json')))
-    Object.assign(second, JSON.parse(readFileSync(join(folder, f), 'utf8')));
+  const second = choices(folder);
 
-  /** The entry the version without the list reaches, or why it reaches none. */
-  const withoutList = (s: Segment, w: Word): string => {
-    const answer = named[s.id]?.[w.n];
-    if (!answer) return 'no answer';
-    const found = lookUp(answer[0], j);
-    if (found.length === 0) return 'not a headword';
-    if (found.length === 1) return found[0];
-    const k = second[`${s.id}#${w.n}`];
-    return k ? (found[k - 1] ?? 'no answer') : k === 0 ? 'none fits' : 'no answer';
-  };
+  const withoutList = (s: Segment, w: Word) =>
+    reach(`${s.id}#${w.n}`, named[s.id]?.[w.n]?.[0], j, second);
   const withList = (s: Segment, w: Word): string => {
     if (w.heads.length === 1) return w.heads[0];
     const k = chosen[s.id]?.[w.n];
@@ -421,7 +540,7 @@ function score(folder: string) {
   const missed = new Map<string, number>();
   for (const { s, w } of all) {
     const a = named[s.id]?.[w.n];
-    if (a && lookUp(a[0], j).length === 0) missed.set(a[0], (missed.get(a[0]) ?? 0) + 1);
+    if (a && withoutList(s, w) === 'not a headword') missed.set(a[0], (missed.get(a[0]) ?? 0) + 1);
   }
   console.log(
     `Named forms that are no headword, commonest: ${[...missed]
@@ -454,9 +573,7 @@ function read(folder: string) {
   const segments = segmentsOf(folder);
   const chosen = readAnswers<number>(folder, 'with-list-');
   const named = readAnswers<[string, string]>(folder, 'without-list-');
-  const second: Record<string, number> = {};
-  for (const f of readdirSync(folder).filter((f) => f.startsWith('choose-') && f.endsWith('.json')))
-    Object.assign(second, JSON.parse(readFileSync(join(folder, f), 'utf8')));
+  const second = choices(folder);
   const count = new Map<string, number>();
   for (const tok of tokens()) {
     const k = pointedFold(tok.pointed ?? tok.written);
@@ -475,14 +592,14 @@ function read(folder: string) {
               ? entry(w.heads[k - 1])
               : 'none fits';
       const answer = named[s.id]?.[w.n];
-      const found = answer ? lookUp(answer[0], j) : [];
-      const pick = found.length === 1 ? found[0] : found[(second[`${s.id}#${w.n}`] ?? 0) - 1];
+      const reached = reach(`${s.id}#${w.n}`, answer?.[0], j, second);
+      const pick = j.gloss.has(reached) ? reached : undefined;
       const without = !answer
         ? 'no answer'
-        : `${answer[0]} "${answer[1]}" → ${found.length === 0 ? 'no such headword' : entry(pick)}`;
+        : `${answer[0]} "${answer[1]}" → ${pick ? entry(pick) : reached}`;
       const label = pick
         ? `**${pick}**: ${(j.gloss.get(pick) ?? '').slice(0, 90)}`
-        : `none (the model named ${answer?.[0] ?? 'nothing'}, which finds no headword)`;
+        : `none (the model named ${answer?.[0] ?? 'nothing'}: ${reached})`;
       return { s, w, count: count.get(pointedFold(w.pointed)) ?? 0, withList, without, label };
     }),
   );

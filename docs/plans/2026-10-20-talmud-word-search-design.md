@@ -1,6 +1,6 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 was taken on 2026-11-25. Issue #382.
+**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 was taken on 2026-11-25. The lookup was fixed on 2026-11-27, ahead of the full run. Issue #382.
 Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
@@ -577,6 +577,61 @@ Within one segment, the share right runs from 76% to 100%, 93% in the middle.
 
 The reader's 100 are drawn at random from these 875 words (`model-pilot.ts
 read` writes them), for Danyel to judge.
+
+### Before the full run: small words, and the lookup
+
+**Decided on 2026-11-27:** leave the commonest small words out, and fix the
+lookup before the full run.
+
+**The small words** are `SMALL_WORDS` in `model-pilot.ts`: 81 spellings of
+pronouns, prepositions, negations, conjunctions and other particles found 1,000
+times or more, each as written with its prefixes (לא, ולא, דלא, ליה, אין, ואין,
+מאי, במאי…). They are 19.0% of the Talmud's words. They are neither clickable
+nor searchable, and the model is not asked about them, though they stay in the
+passage it reads. The list goes by letters, so a spelling that is also a common
+word of substance stays off it: עם "with" and "people", אם "if" and "mother",
+אף "also" and "nose", אל "to" and "God".
+
+**The lookup.** When the form the model names is not one of Jastrow's
+headwords, it now tries, in order, the spelling with ו for the *ḥolam* and
+*qubbuṣ* (חֹמֶר → חוֹמֶר), then the letters as before, then the letters one ו
+or י away, then a root (a causative verb without its ה and י, so הֵבִיא → בוא
+and הוֹלִיד → ילד; a passive participle without its ו, so מָהוּל → מהל), and
+last the letters with a prefix off. Whatever these steps find goes back to the
+model to confirm, so it can still answer "none fits". Two forms are sent by
+hand: בָּרוּךְ "blessed" to the verb בָּרַךְ, and מִשּׁוּם "because of" to
+שׁוּם II, where Jastrow has it far down the entry, past the start of the
+definition the model is shown.
+
+On the 40 random segments, by my reading:
+
+| | right meaning | wrong meaning | no heading |
+|---|---|---|---|
+| Before | 92.6% | 1.6% | 5.8% |
+| After | 96.0% | 1.5% | 2.5% |
+
+- Of the 37 words whose named form found nothing, 27 now get a heading. 24 of
+  them are right: every מִשּׁוּם, הֵבִיא, הוֹלִיד, הַאֲכִיל, קִידֵּשׁ, לְמַאי,
+  בְּהֶדְיָא. Three are wrong: כּוּלָּן under an entry with no definition,
+  בְּעוּלָה "married woman" under "mistress, owner", and the obscure כְּרָבֵי.
+- בָּרוּךְ is right in all four places, and אוּמּוֹת "nations" twice, which the
+  model had turned down, now finds אוּמָּה by its full spelling.
+- What is still without a heading: the model turned down 21 words, among them
+  אוֹתָן "them" and the abbreviation כּוּ׳, and one form found nothing.
+- *Kal va-ḥomer*: *ḥomer* goes to the noun חוֹמֶר I in all 44 places, against
+  the verb before.
+- On the 324 hard words of the first pilot, the version without the word list
+  is right 71.3% of the time, as before: the fix helps the words that found
+  nothing, and hard words found something already. Among the words the list
+  lacks, the share it reaches an entry for rises from 88.0% to 91.6%.
+
+The new candidates were answered by Haiku agents, as in the pilot.
+`model-pilot.ts lookup` now writes only the items not yet answered, and an
+answer counts only while the entries it chose among are still the ones found.
+
+**The full run waits on a way to reach the model.** About 16,000 requests is
+more than Claude Code's agents suit, and there is no Anthropic API key on
+this machine for the Batch API.
 
 ## The plan
 
