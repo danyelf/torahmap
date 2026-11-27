@@ -5,7 +5,7 @@
 An interactive spatial visualization of the entire Tanakh (Hebrew Bible) where every verse has a fixed position, enabling analytical overlays to reveal patterns across the 39 books and 23,000+ verses.
 
 The core design principle is **position stability**: each verse keeps its place whatever analysis
-is shown, so patterns read through colour and density, analyses compare on the same ground, and
+is shown, so patterns read through color and density, analyses compare on the same ground, and
 the ragged edge of each chapter shows its length.
 
 Detail most tasks don't need — the packages one by one, the browser test suites, formatting
@@ -59,7 +59,7 @@ module, state kept at the level it belongs to, no circular dependencies.
 - Any animated change to what the map shows goes through the renderer's
   picture cross-fade (`ColorLayer`, `rendering.ts`'s `fade` uniform) — the one
   story stops ease with. Don't add another animation path for it. The one exception is the
-  pointers that grow from a hovered verse (`pointers.ts`): a cross-fade blends colours and cannot
+  pointers that grow from a hovered verse (`pointers.ts`): a cross-fade blends colors and cannot
   grow a line, so they run their own frames while they move.
 - Much of how the squares are drawn exists to avoid moiré, the light and dark
   bands a grid of tiny squares makes against the screen's pixels; the comments

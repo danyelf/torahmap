@@ -11,12 +11,12 @@ Four issues arrived separately and turned out to be one. The interface grew a
 control at a time, and every control ended up in the same container: the 380px
 right panel on desktop, the bottom sheet on a phone. That container now holds
 the story, the overlay picker, the chosen overlay's options, its legend, a line
-summarising all of it, and a footer of links. Two of those things are modes and
+summarizing all of it, and a footer of links. Two of those things are modes and
 the rest are tools, but nothing on screen says so.
 
 The visible symptoms:
 
-- A reader on a phone sees a strip of colour above the story and cannot tell
+- A reader on a phone sees a strip of color above the story and cannot tell
   what it is (#236). It is the overlay summary and legend, and nothing labels
   it.
 - Picking a search replaces the overlay and picking an overlay clears the
@@ -48,9 +48,9 @@ visible below it, dimmed. It is the same menu, from the same corner, in both
 modes and on both sizes; it is never a panel of its own. The first item is "Continue the story · 7/21"; then Search, Overlays,
 Stories, Share this view, and Settings & About. Closing it returns to the
 story; choosing a tool ends the story and leaves the reader standing on the
-view it had reached, with its colours still on.
+view it had reached, with its colors still on.
 
-**The legend lives on the map.** Whatever colours the map is named on the map
+**The legend lives on the map.** Whatever colors the map is named on the map
 itself, in a card with one row per thing that is on: "Search · ■ אברם",
 "Commentary · ▬▬". It is in the same place in every mode, whatever panel is
 open, because it describes the picture, not a tool. Each row is a button that
@@ -58,7 +58,7 @@ opens its tool; inside a story that leaves the story, as choosing the tool from
 the menu does. With nothing on, there is no card. When search becomes a tool of
 its own the card simply gains a second row.
 
-This replaced an earlier rule, that anything on but not open folds to a labelled
+This replaced an earlier rule, that anything on but not open folds to a labeled
 line at the bottom edge of the panel. In use that line read as out of place,
 and as a status that could not be pressed; and outside a story it mostly
 repeated what the open panel's own picker already said. Two placements were
@@ -78,18 +78,18 @@ picker directly above itself and pushed every panel down; the card won.
 
 Search stops being an overlay and becomes its own tool: its own item in the ☰
 menu, and its own row in the legend while it is on. The overlay picker then
-only chooses how the map is coloured.
+only chooses how the map is colored.
 
-When both are on, the search hits take the fill in their term colours and the
+When both are on, the search hits take the fill in their term colors and the
 overlay stays behind them, dimmed. This reads at every zoom and keeps the five
-term colours working. The alternative of ringing each hit was rejected: ring
+term colors working. The alternative of ringing each hit was rejected: ring
 thickness is measured in map units, so at the zoom where you want to see a
 word's distribution across the Tanakh the rings are thinner than the squares.
 
 The overlay becomes context rather than a value you can read off a hit. For
 "which of these verses is in the prayerbook", the shape of the dimmed
 background answers roughly and the pinned verse answers exactly. A stricter
-answer — dim every non-matching verse, and let the overlay colour only the
+answer — dim every non-matching verse, and let the overlay color only the
 matches — is worth offering later as a switch beside the search box, but it is
 not the default, because it throws away the map of everything.
 
@@ -187,7 +187,7 @@ and the footer all go; the ☰ column header, the legend card and the menu are n
 **The story.** `src/scrollytelling/storyPanel.ts` fetches and renders
 `public/data/story.md`; `storyParser.ts` reads the stop directives;
 `driver.ts` decides when the reader has taken the camera and when the story
-gets it back; `overlayBlender.ts` and `colorBlending.ts` carry the colours
+gets it back; `overlayBlender.ts` and `colorBlending.ts` carry the colors
 between stops. The mode rule — which links open the story — is
 `resolveViewState` in `src/viewState.ts`, and it already has a `story` /
 `explore` distinction to build on.
@@ -199,8 +199,8 @@ work, which does not care how it is presented. Pulling search out of the
 registry is the change with the widest blast radius, because the registry is
 what the URL, the story stops, the help tab and the summary line all read.
 
-**Colouring.** `src/itemColoring.ts` computes each verse's state and then
-applies colours in two passes, which is where hits-in-front-of-a-dimmed-overlay
+**Coloring.** `src/itemColoring.ts` computes each verse's state and then
+applies colors in two passes, which is where hits-in-front-of-a-dimmed-overlay
 belongs. `src/overlays/legend.ts` builds the legend axes the legend card will
 show in miniature.
 
@@ -266,7 +266,7 @@ reader sees, so each wants your eyes before the next.
    phone's floating ☰. Story mode is still the existing single story; the overlay
    list still contains Text Search. Nothing about the map changes.
 2. **Search leaves the overlay list** and becomes a tool, with hits drawn over
-   a dimmed overlay. This is the only step that touches colouring.
+   a dimmed overlay. This is the only step that touches coloring.
 3. **Descriptions and share.** Each overlay's sentence in its panel, "Share
    this view" in the menu.
 4. **More than one story.** The stories directory, the menu list, the URL, and

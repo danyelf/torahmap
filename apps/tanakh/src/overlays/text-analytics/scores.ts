@@ -35,7 +35,7 @@ export interface ScoresFile {
   echoes: Echoes;
 }
 
-// The colours span the middle of the scores, so a handful of extreme passages
+// The colors span the middle of the scores, so a handful of extreme passages
 // do not push every other verse into one end of the scale.
 export const LOW_PERCENTILE = 0.02;
 export const HIGH_PERCENTILE = 0.98;

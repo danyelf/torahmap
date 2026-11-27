@@ -23,7 +23,7 @@ export interface ResultsView {
 
 const RESULTS_BATCH_SIZE = 50;
 
-/** One row of a results list: a dot per colour it is found under, its name, and a line below. */
+/** One row of a results list: a dot per color it is found under, its name, and a line below. */
 export interface ResultRow {
   colors: readonly Color[];
   /** Places in `colors` drawn as an outline, not filled. */

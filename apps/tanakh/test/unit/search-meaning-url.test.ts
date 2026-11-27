@@ -4,7 +4,7 @@
 // an HTML tag: `<LH/@heb,>MR[@heb` is burnt-offering followed by "say". The URL
 // layer strips tags out of free text, and `m` was declared free text, so the
 // first key, the separator and half the second were deleted in transit —
-// leaving applyMeanings nothing it recognised, and falling back to every
+// leaving applyMeanings nothing it recognized, and falling back to every
 // meaning. The reader opened the link and saw a different search, with nothing
 // saying so, which is the failure the meaning filter exists to prevent.
 //

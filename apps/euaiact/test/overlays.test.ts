@@ -17,28 +17,28 @@ const item = (id: string, over: Partial<ActItem> = {}): ActItem => ({
 });
 
 describe('the amendment overlay', () => {
-  it('colours text inserted and replaced in 2026 differently from the rest', () => {
-    const colour = (origin: ActItem['origin']) =>
+  it('colors text inserted and replaced in 2026 differently from the rest', () => {
+    const color = (origin: ActItem['origin']) =>
       amendmentOverlay.colorsFor({
         items: [item('1', { origin })],
         settings: undefined as never,
         data: undefined as never,
         focus: { hovered: null, pinned: null },
       })[0];
-    expect(colour('M1 inserted')).not.toEqual(colour('B'));
-    expect(colour('M1 replaced')).not.toEqual(colour('B'));
-    expect(colour('M1 replaced')).not.toEqual(colour('M1 inserted'));
+    expect(color('M1 inserted')).not.toEqual(color('B'));
+    expect(color('M1 replaced')).not.toEqual(color('B'));
+    expect(color('M1 replaced')).not.toEqual(color('M1 inserted'));
   });
 
   it('draws a list’s lead-in darker than its points', () => {
-    const colour = (lead: boolean) =>
+    const color = (lead: boolean) =>
       amendmentOverlay.colorsFor({
         items: [item('1', { lead })],
         settings: undefined as never,
         data: undefined as never,
         focus: { hovered: null, pinned: null },
       })[0];
-    expect(colour(true)).not.toEqual(colour(false));
+    expect(color(true)).not.toEqual(color(false));
   });
 });
 
@@ -51,7 +51,7 @@ describe('the what-points-here overlay', () => {
     ['40', '6'],
     ['6(1)', '6(2)'],
   ];
-  const colours = (squares: ActItem[], article = '6') =>
+  const colors = (squares: ActItem[], article = '6') =>
     referencesOverlay.colorsFor({
       items: squares,
       settings: { article },
@@ -60,25 +60,25 @@ describe('the what-points-here overlay', () => {
     });
 
   it('marks the article itself', () => {
-    expect(colours([item('6(2)')])[0]).toEqual(FOCUS);
+    expect(colors([item('6(2)')])[0]).toEqual(FOCUS);
   });
 
   it('marks what the article cites, down to the paragraph and point', () => {
-    expect(colours([item('5(1)'), item('5(1)(a)'), item('5(2)')])).toEqual([CITES, CITES, QUIET]);
+    expect(colors([item('5(1)'), item('5(1)(a)'), item('5(2)')])).toEqual([CITES, CITES, QUIET]);
   });
 
   it('marks a whole annex the article cites, and no other', () => {
     const annex = (n: string) => item(`Annex.${n}.1.1`, { layer: 'annex' });
-    expect(colours([annex('III'), annex('IV')])).toEqual([CITES, QUIET]);
+    expect(colors([annex('III'), annex('IV')])).toEqual([CITES, QUIET]);
   });
 
   it('marks what cites the article', () => {
-    expect(colours([item('9(2)'), item('9(3)')])).toEqual([CITED_BY, QUIET]);
-    expect(colours([item('40')])[0]).toEqual(CITED_BY);
+    expect(colors([item('9(2)'), item('9(3)')])).toEqual([CITED_BY, QUIET]);
+    expect(colors([item('40')])[0]).toEqual(CITED_BY);
   });
 
-  it('colours no recital', () => {
-    expect(colours([item('Recital.3', { layer: 'recital' })])[0]).toEqual(QUIET);
+  it('colors no recital', () => {
+    expect(colors([item('Recital.3', { layer: 'recital' })])[0]).toEqual(QUIET);
   });
 
   it('reads its article from a link and writes it back, leaving the default out', () => {
@@ -114,7 +114,7 @@ describe('the what-points-here overlay', () => {
     it('leaves the map as it was on a recital', () => {
       const squares = [item('6(1)'), item('40')];
       const recital = item('Recital.3', { layer: 'recital' });
-      expect(hover(squares, recital, '6')).toEqual(colours(squares, '6'));
+      expect(hover(squares, recital, '6')).toEqual(colors(squares, '6'));
     });
 
     it('changes the map only when the pointer moves to another article', () => {
@@ -130,6 +130,6 @@ describe('the what-points-here overlay', () => {
 
   it('marks nothing with the box empty and nothing under the pointer', () => {
     const squares = [item('6(1)'), item('5(1)'), item('Annex.III.2', { layer: 'annex' })];
-    expect(colours(squares, '')).toEqual([QUIET, QUIET, QUIET]);
+    expect(colors(squares, '')).toEqual([QUIET, QUIET, QUIET]);
   });
 });

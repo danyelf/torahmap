@@ -10,7 +10,7 @@ import {
   ITEM_OFFSETS,
   SHAPE_FLAGS,
   hasRingRoom,
-  squareCentre,
+  squareCenter,
   type ItemAttributeName,
 } from '../src/index.ts';
 import { createItem, createItems, RED, GREEN, BLUE, WHITE } from './fixtures.ts';
@@ -84,36 +84,36 @@ describe('buildItemGeometry', () => {
   });
 
   describe('growth', () => {
-    it('grows by less than half the gap, so neighbours never touch', () => {
+    it('grows by less than half the gap, so neighbors never touch', () => {
       expect(MULTICOLOR_GROWTH).toBeGreaterThan(0);
       expect(MULTICOLOR_GROWTH).toBeLessThan(1); // the gap between squares is 2
     });
 
-    it('grows a square with several colours fully, and one with one colour not at all', () => {
+    it('grows a square with several colors fully, and one with one color not at all', () => {
       const buffer = buildItemGeometry(createItems(2), { colors: [[RED, BLUE], RED] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(1);
       expect(field(buffer, 1, 'a_shape')[1]).toBe(0);
     });
 
-    it('grows a square whose ring has several colours', () => {
+    it('grows a square whose ring has several colors', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [RED], rings: [[GREEN, BLUE]] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(1);
     });
 
-    it('grows a square by the fraction it is given, whatever its colours', () => {
+    it('grows a square by the fraction it is given, whatever its colors', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [[RED, BLUE]], growth: [0.5] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(0.5);
     });
   });
 
-  describe('colours', () => {
-    it('packs the square colour, zero after it, and a count of 1', () => {
+  describe('colors', () => {
+    it('packs the square color, zero after it, and a count of 1', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [RED] });
       expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(1);
     });
 
-    it('falls back to the base colour, then to the default fill', () => {
+    it('falls back to the base color, then to the default fill', () => {
       const base: Color = [0.2, 0.3, 0.4];
       const given = buildItemGeometry([createItem()], undefined, undefined, base);
       expect(field(given, 0, 'a_fill')[0]).toBe(packColor(base));
@@ -122,13 +122,13 @@ describe('buildItemGeometry', () => {
       expect(field(fallback, 0, 'a_fill')[0]).toBe(packColor([0.6, 0.6, 0.6]));
     });
 
-    it('keeps several colours in order with their count', () => {
+    it('keeps several colors in order with their count', () => {
       const buffer = buildItemGeometry([createItem()], { colors: [[RED, GREEN, BLUE]] });
       expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED, GREEN, BLUE));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(3);
     });
 
-    it('keeps at most four colours', () => {
+    it('keeps at most four colors', () => {
       const buffer = buildItemGeometry([createItem()], {
         colors: [[RED, GREEN, BLUE, WHITE, RED]],
       });
@@ -136,7 +136,7 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_shape')[0]).toBe(4);
     });
 
-    it('colours each square independently', () => {
+    it('colors each square independently', () => {
       const buffer = buildItemGeometry(createItems(3), {
         colors: [RED, [BLUE, GREEN], undefined as never],
       });
@@ -195,24 +195,24 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_nextShape')).toEqual([3, 0.25, 1, 0]);
     });
 
-    it('marks each picture uncoloured on its own, for the shader to hover', () => {
+    it('marks each picture uncolored on its own, for the shader to hover', () => {
       const buffer = buildItemGeometry(
         [createItem()],
-        { colors: [WHITE], uncoloured: [true] },
+        { colors: [WHITE], uncolored: [true] },
         { colors: [RED] },
       );
       expect(field(buffer, 0, 'a_shape')[3]).toBe(1);
       expect(field(buffer, 0, 'a_nextShape')[3]).toBe(0);
     });
 
-    it('marks each picture standing out on its own, beside uncoloured', () => {
+    it('marks each picture standing out on its own, beside uncolored', () => {
       const buffer = buildItemGeometry(
         createItems(2),
-        { colors: [WHITE, WHITE], uncoloured: [true, false], standout: [true, false] },
+        { colors: [WHITE, WHITE], uncolored: [true, false], standout: [true, false] },
         { colors: [RED, RED], standout: [false, true] },
       );
       const flags = (i: number, name: ItemAttributeName) => field(buffer, i, name)[3];
-      expect(flags(0, 'a_shape')).toBe(SHAPE_FLAGS.UNCOLOURED | SHAPE_FLAGS.STANDOUT);
+      expect(flags(0, 'a_shape')).toBe(SHAPE_FLAGS.UNCOLORED | SHAPE_FLAGS.STANDOUT);
       expect(flags(0, 'a_nextShape')).toBe(0);
       expect(flags(1, 'a_shape')).toBe(0);
       expect(flags(1, 'a_nextShape')).toBe(SHAPE_FLAGS.STANDOUT);
@@ -304,9 +304,9 @@ describe('createBuffer', () => {
   });
 });
 
-describe('squareCentre', () => {
+describe('squareCenter', () => {
   it('is the middle of the square as drawn, moved by its jitter', () => {
-    expect(squareCentre(createItem())).toEqual({ x: 12, y: 22 });
-    expect(squareCentre(createItem({ jitter: { x: 0.5, y: -1 } }))).toEqual({ x: 12.5, y: 21 });
+    expect(squareCenter(createItem())).toEqual({ x: 12, y: 22 });
+    expect(squareCenter(createItem({ jitter: { x: 0.5, y: -1 } }))).toEqual({ x: 12.5, y: 21 });
   });
 });

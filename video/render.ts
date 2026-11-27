@@ -267,7 +267,7 @@ async function act(page: Page, sceneId: string, { action }: TimedAction): Promis
     case 'click': {
       // Playwright's own click waits for the element to hold still across
       // animation frames, which never come on a paused clock; clicking at the
-      // element's centre does not wait.
+      // element's center does not wait.
       const box = await page
         .getByText(action.text, { exact: true })
         .first()

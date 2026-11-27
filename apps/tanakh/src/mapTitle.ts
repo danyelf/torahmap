@@ -31,7 +31,7 @@ const RISE_ABOVE_TORAH = 28;
 export interface MapTitle {
   svg: SVGSVGElement;
   /** Midway across the empty corner, in map units. */
-  centreX: number;
+  centerX: number;
   /** The artwork's own top edge, in map units. */
   topY: number;
   /** Its height as a fraction of its width, so only the width needs deciding. */
@@ -39,7 +39,7 @@ export interface MapTitle {
 }
 
 /**
- * Builds the title and gives it a place in map coordinates: centred across the
+ * Builds the title and gives it a place in map coordinates: centered across the
  * gap between the map's left edge and the Torah's, above the Torah's first row.
  *
  * It gets a container of its own: the book labels' belongs to the shell, which
@@ -74,7 +74,7 @@ export function createMapTitle(
   const box = svg.viewBox.baseVal;
   return {
     svg,
-    centreX: haveTorah ? (mapMinX + torahMinX) / 2 : 0,
+    centerX: haveTorah ? (mapMinX + torahMinX) / 2 : 0,
     topY: (haveTorah ? torahTopY : 0) - RISE_ABOVE_TORAH,
     aspect: box.height / box.width,
   };
@@ -85,7 +85,7 @@ export function updateMapTitlePosition(
   offset: { x: number; y: number },
   zoom: number,
 ): void {
-  const { svg, centreX, topY, aspect } = title;
+  const { svg, centerX, topY, aspect } = title;
   // The viewBox does the scaling, so the parts of the artwork keep their
   // proportions exactly. Sizing each line separately instead does not: every
   // line box takes its metrics from the font rounded at whatever size it is
@@ -94,6 +94,6 @@ export function updateMapTitlePosition(
 
   svg.setAttribute('width', String(width));
   svg.setAttribute('height', String(width * aspect));
-  svg.style.left = (centreX + offset.x) * zoom + 'px';
+  svg.style.left = (centerX + offset.x) * zoom + 'px';
   svg.style.top = (topY + offset.y) * zoom + 'px';
 }

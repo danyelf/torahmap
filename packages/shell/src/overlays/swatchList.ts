@@ -1,4 +1,4 @@
-// The rows of an overlay's legend that pair a colour with what it stands for.
+// The rows of an overlay's legend that pair a color with what it stands for.
 
 import type { Color } from '@torahmap/utils';
 import { pickSwatch } from './pickFinder.ts';
@@ -19,14 +19,14 @@ export function legendHeading(name: string): HTMLElement {
   return heading;
 }
 
-/** A row of a colour and what it stands for, set apart from the row above if `apart`. */
+/** A row of a color and what it stands for, set apart from the row above if `apart`. */
 export function swatchRow(color: Color, label: Node | string, apart = false): HTMLElement {
   const row = legendRow(pickSwatch(color), label);
   row.classList.toggle('apart', apart);
   return row;
 }
 
-/** Swatch rows of colours and names, set apart from one another the same way in every legend. */
+/** Swatch rows of colors and names, set apart from one another the same way in every legend. */
 export function swatchList(entries: readonly { color: Color; name: string }[]): HTMLElement[] {
   return entries.map(({ color, name }, i) => swatchRow(color, name, i > 0));
 }

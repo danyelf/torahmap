@@ -25,7 +25,7 @@ describe('debounce', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it('never calls a cancelled call, and calls a later one', () => {
+  it('never calls a canceled call, and calls a later one', () => {
     const fn = vi.fn();
     const debounced = debounce(fn, 100);
 

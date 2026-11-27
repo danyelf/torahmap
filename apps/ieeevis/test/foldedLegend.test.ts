@@ -4,7 +4,7 @@ import type { PieceItem } from '../src/layout.ts';
 import { kindsOverlay } from '../src/overlays/kinds.ts';
 import { sectionsOverlay } from '../src/overlays/sections.ts';
 
-/** A CSS colour as the browser writes it back, so two spellings of one colour compare equal. */
+/** A CSS color as the browser writes it back, so two spellings of one color compare equal. */
 function asDrawn(color: string): string {
   const element = document.createElement('span');
   element.style.background = color;
@@ -13,7 +13,7 @@ function asDrawn(color: string): string {
 
 describe('the folded legend line', () => {
   it.each([kindsOverlay, sectionsOverlay] as Overlay<PieceItem>[])(
-    "shows every colour $name's legend lists",
+    "shows every color $name's legend lists",
     (overlay) => {
       const legend = document.createElement('div');
       overlay.renderLegend!(legend, undefined, undefined);

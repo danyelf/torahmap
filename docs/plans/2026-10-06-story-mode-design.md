@@ -74,7 +74,7 @@ The map's side, unchanged apart from where its story values come from:
   (`takeOver`); scrolling the column far enough hands it back, by the rules in
   `driver.ts`, reading `position()`.
 - **The frame loop.** On a move, the shell asks `view()` and paints it: the
-  camera, the colours between two stops, or the explore picture at rest. On a
+  camera, the colors between two stops, or the explore picture at rest. On a
   phone a new stop eases in, as a swipe does today.
 - **Applying a stop** when the nearer stop changes, and the telemetry for
   reaching one.

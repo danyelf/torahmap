@@ -15,21 +15,21 @@
 import { escapeHtml } from '@torahmap/utils';
 
 export interface Credit {
-  /** How the source should be named. Some licences require a specific wording. */
+  /** How the source should be named. Some licenses require a specific wording. */
   source: string;
   url?: string;
-  /** Licence as it should be shown, e.g. "CC BY-SA 4.0". Omit if there is none to state. */
+  /** License as it should be shown, e.g. "CC BY-SA 4.0". Omit if there is none to state. */
   license?: string;
   /**
-   * The licence deed itself. Creative Commons 4.0 licences require a link to
-   * the licence alongside the attribution, so this is an obligation rather
+   * The license deed itself. Creative Commons 4.0 licenses require a link to
+   * the license alongside the attribution, so this is an obligation rather
    * than a convenience.
    *
    * Set it only where the version is actually established. Sefaria's export
    * metadata and its API record "CC-BY-SA" and "CC-BY-NC" with no version, so
    * the version comes from the source itself: its page on Sefaria, the
    * upstream repository, or the project's own terms. Where none of those name
-   * a version, the licence shows as plain text rather than guessing one.
+   * a version, the license shows as plain text rather than guessing one.
    */
   licenseUrl?: string;
   /**
@@ -43,7 +43,7 @@ export interface Credit {
    * regenerates a file to update the date here.
    */
   collected?: string;
-  /** Reserved for licence obligations and caveats, not for describing the source. */
+  /** Reserved for license obligations and caveats, not for describing the source. */
   note?: string;
 }
 
@@ -62,7 +62,7 @@ function renderLinked(className: string, text: string, url?: string): string {
 }
 
 function renderRow(credit: Credit): string {
-  const licence = credit.license
+  const license = credit.license
     ? renderLinked('credit-license', credit.license, credit.licenseUrl)
     : '';
 
@@ -72,7 +72,7 @@ function renderRow(credit: Credit): string {
   const note = credit.note ? ` · ${escapeHtml(credit.note)}` : '';
 
   return (
-    `<li class="credit-row">${renderLinked('credit-source', credit.source, credit.url)}${licence}` +
+    `<li class="credit-row">${renderLinked('credit-source', credit.source, credit.url)}${license}` +
     `<p class="credit-meta">${collected}${note}</p></li>`
   );
 }

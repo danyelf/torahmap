@@ -33,7 +33,7 @@ interface WordCounts {
 }
 
 /**
- * Every verse's word count, the range of the non-empty ones and their colour
+ * Every verse's word count, the range of the non-empty ones and their color
  * scale, once per data value. The scale is square root, so that a few very long
  * verses don't compress everything else toward one end of the palette.
  */

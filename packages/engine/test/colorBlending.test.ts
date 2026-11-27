@@ -38,7 +38,7 @@ describe('mergePictures', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('fades a one-colour square into its stripes from its own colour', () => {
+  it('fades a one-color square into its stripes from its own color', () => {
     // [cyan] becoming [cyan, orange, red]: every stripe starts cyan, so
     // nothing flashes dark at the start of the transition.
     const cyan: Color = [0, 1, 1];

@@ -57,7 +57,7 @@ describe('adding a term', () => {
     );
   });
 
-  it('gives each term a colour no other term is using', () => {
+  it('gives each term a color no other term is using', () => {
     const terms = ['עלה', 'מלך', 'דבר'].reduce(
       (list, text) => addTerm(list, text),
       [] as SearchTerm[],
@@ -78,15 +78,15 @@ describe('adding a term', () => {
   });
 });
 
-describe('colours from the word', () => {
-  it('gives the same word the same colour whatever its case or vowel points', () => {
+describe('colors from the word', () => {
+  it('gives the same word the same color whatever its case or vowel points', () => {
     const [plain] = addTerm([], 'abraham');
 
     expect(addTerm([], 'Abraham')[0].colorIndex).toBe(plain.colorIndex);
     expect(addTerm([], 'שָׁלוֹם')[0].colorIndex).toBe(addTerm([], 'שלום')[0].colorIndex);
   });
 
-  it('gives every term a colour of its own even when all start with one letter', () => {
+  it('gives every term a color of its own even when all start with one letter', () => {
     const terms = ['abel', 'abraham', 'adam', 'aaron', 'amos'].reduce(
       (list, text) => addTerm(list, text),
       [] as SearchTerm[],
@@ -95,7 +95,7 @@ describe('colours from the word', () => {
     expect(new Set(heldColors(terms)).size).toBe(MAX_TERMS);
   });
 
-  it('steps to the next free colour when its own is taken', () => {
+  it('steps to the next free color when its own is taken', () => {
     const [first] = addTerm([], 'abraham');
 
     const second = addTerm([first], 'abraham')[1];
@@ -103,7 +103,7 @@ describe('colours from the word', () => {
     expect(second.colorIndex).toBe((first.colorIndex + 1) % TERM_PALETTE.length);
   });
 
-  it('gives an empty term a colour no term is using', () => {
+  it('gives an empty term a color no term is using', () => {
     const three = addTerm(addTerm(addTerm([], 'עלה'), 'מלך'), 'דבר');
 
     expect(new Set(heldColors(addTerm(three, ''))).size).toBe(4);
@@ -142,7 +142,7 @@ describe('editing one term', () => {
 });
 
 describe('removing a term', () => {
-  it('does not recolour the terms that remain', () => {
+  it('does not recolor the terms that remain', () => {
     const terms = ['עלה', 'מלך', 'דבר'].reduce(
       (list, text) => addTerm(list, text),
       [] as SearchTerm[],
@@ -154,7 +154,7 @@ describe('removing a term', () => {
     expect(after.map((t) => t.colorIndex)).toEqual([before.get('מלך'), before.get('דבר')]);
   });
 
-  it('frees its colour for a word that hashes to it', () => {
+  it('frees its color for a word that hashes to it', () => {
     const three = ['עלה', 'מלך', 'דבר'].reduce(
       (list, text) => addTerm(list, text),
       [] as SearchTerm[],
@@ -264,7 +264,7 @@ describe('a comma still means another word', () => {
     expect(typed.map((t) => t.text)).toEqual(['עלה', 'מלך']);
   });
 
-  it("keeps the edited term's own id and colour on the first part", () => {
+  it("keeps the edited term's own id and color on the first part", () => {
     const one = addTerm([], 'עלה');
     const typed = setTermText(one, one[0].id, 'עלה, מלך');
 
@@ -272,7 +272,7 @@ describe('a comma still means another word', () => {
     expect(typed[0].colorIndex).toBe(one[0].colorIndex);
   });
 
-  it('keeps the colour while the first letter stays, and takes the new letter on a change', () => {
+  it('keeps the color while the first letter stays, and takes the new letter on a change', () => {
     const [one] = addTerm([], 'abraham');
     const longer = setTermText([one], one.id, 'abram');
     const other = setTermText(longer, one.id, 'isaac');
@@ -281,14 +281,14 @@ describe('a comma still means another word', () => {
     expect(other[0].colorIndex).toBe(addTerm([], 'isaac')[0].colorIndex);
   });
 
-  it('gives a typed first letter the colour of that letter, whichever box it is typed in', () => {
+  it('gives a typed first letter the color of that letter, whichever box it is typed in', () => {
     const blank = addTerm([], '');
     const typed = setTermText(blank, blank[0].id, 'Isaac');
 
     expect(typed[0].colorIndex).toBe(addTerm([], 'isaac')[0].colorIndex);
   });
 
-  it('steps past a colour another term holds when the first letter changes', () => {
+  it('steps past a color another term holds when the first letter changes', () => {
     const [first] = addTerm([], 'abraham');
     const two = addTerm([first], 'isaac');
     const retyped = setTermText(two, two[1].id, 'abel');
@@ -303,14 +303,14 @@ describe('a comma still means another word', () => {
     expect(terms.map((t) => t.text)).toEqual(['ארץ', 'עלה', 'מלך']);
   });
 
-  it('gives each new term its own colour', () => {
+  it('gives each new term its own color', () => {
     let terms = addTerm([], 'x');
     terms = setTermText(terms, terms[0].id, 'עלה, מלך, דבר');
 
     expect(new Set(terms.map((t) => t.colorIndex)).size).toBe(3);
   });
 
-  it('refuses to split past the colour limit', () => {
+  it('refuses to split past the color limit', () => {
     let terms = addTerm([], 'x');
     terms = setTermText(terms, terms[0].id, 'a, b, c, d, e, f, g');
 
@@ -434,7 +434,7 @@ describe('a term matched its own way', () => {
     expect(modeOf(terms[0])).toBe('meanings');
   });
 
-  it('changes one term without touching its neighbours', () => {
+  it('changes one term without touching its neighbors', () => {
     let terms = addTerm(addTerm([], 'עלה'), 'אור');
     terms = setMode(terms, terms[1].id, 'word');
     expect(modeOf(terms[0])).toBe('meanings');

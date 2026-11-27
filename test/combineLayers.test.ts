@@ -7,7 +7,7 @@ import {
   toolsPicture,
 } from '../packages/shell/src/itemColoring.ts';
 import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
-import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
+import { DIMMED_GRAY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 import { createVerse, testOverlay } from '../apps/tanakh/test/helpers/fixtures.ts';
 
 const CYAN: Color = [0.1, 0.7, 0.8];
@@ -17,7 +17,7 @@ const BLUE: Color = [0, 0, 1];
 const DIM = SEARCH_NON_MATCH_DIM;
 const scaled = (c: Color, f: number): Color => [c[0] * f, c[1] * f, c[2] * f];
 // What search alone has always drawn a verse it does not match as.
-const ALONE = DIMMED_GREY[0];
+const ALONE = DIMMED_GRAY[0];
 
 describe('combineLayers', () => {
   describe('with no search', () => {
@@ -26,17 +26,17 @@ describe('combineLayers', () => {
       expect(combineLayers(3, null, overlay, getDefaultColor)).toEqual({ colors: overlay });
     });
 
-    it('leaves every verse grey with no overlay either', () => {
+    it('leaves every verse gray with no overlay either', () => {
       expect(combineLayers(2, null, null, getDefaultColor)).toEqual({ colors: [null, null] });
     });
   });
 
   describe('search alone', () => {
-    it('fills a match with its search colour', () => {
+    it('fills a match with its search color', () => {
       expect(combineLayers(1, [CYAN], null, getDefaultColor).colors[0]).toEqual(CYAN);
     });
 
-    it('dims a verse it does not match to the grey search alone has always used', () => {
+    it('dims a verse it does not match to the gray search alone has always used', () => {
       expect(combineLayers(1, [null], null, getDefaultColor).colors[0]).toEqual([
         ALONE,
         ALONE,
@@ -44,7 +44,7 @@ describe('combineLayers', () => {
       ]);
     });
 
-    it('keeps as much of a square’s base colour as the text asks', () => {
+    it('keeps as much of a square’s base color as the text asks', () => {
       const base = (i: number): Color => (i === 0 ? RED : BLUE);
       expect(combineLayers(2, [null, CYAN], null, base, DIM, 0.6).colors).toEqual([
         scaled(RED, 0.6),
@@ -58,13 +58,13 @@ describe('combineLayers', () => {
   });
 
   describe('search over an overlay', () => {
-    it('rings a match in its search colour around the overlay colour', () => {
+    it('rings a match in its search color around the overlay color', () => {
       const { colors, rings } = combineLayers(1, [CYAN], [RED], getDefaultColor);
       expect(colors[0]).toEqual(RED);
       expect(rings![0]).toEqual(CYAN);
     });
 
-    it('leaves the hole grey where the overlay has no colour for the match', () => {
+    it('leaves the hole gray where the overlay has no color for the match', () => {
       const { colors, rings } = combineLayers(1, [CYAN], [null], getDefaultColor);
       expect(colors[0]).toBeNull();
       expect(rings![0]).toEqual(CYAN);
@@ -90,13 +90,13 @@ describe('combineLayers', () => {
       ]);
     });
 
-    it('dims the grey of a verse the overlay leaves uncoloured', () => {
+    it('dims the gray of a verse the overlay leaves uncolored', () => {
       expect(combineLayers(1, [null], [null], getDefaultColor).colors[0]).toEqual(
         scaled(getDefaultColor(0), DIM),
       );
     });
 
-    it("dims the text's base colour of a square the overlay leaves uncoloured", () => {
+    it("dims the text's base color of a square the overlay leaves uncolored", () => {
       expect(combineLayers(1, [null], [null], () => BLUE, DIM).colors[0]).toEqual(
         scaled(BLUE, DIM),
       );
@@ -110,7 +110,7 @@ describe('combineLayers', () => {
   });
 
   describe('with the overlay in front', () => {
-    it('leaves a non-match at the overlay colour, full strength', () => {
+    it('leaves a non-match at the overlay color, full strength', () => {
       const { colors, rings } = combineLayers(1, [null], [RED], getDefaultColor, 1);
       expect(colors[0]).toEqual(RED);
       expect(rings![0]).toBeNull();
@@ -122,7 +122,7 @@ describe('combineLayers', () => {
       expect(rings![0]).toEqual(CYAN);
     });
 
-    it('leaves the default grey undimmed where the overlay has no colour', () => {
+    it('leaves the default gray undimmed where the overlay has no color', () => {
       expect(combineLayers(1, [null], [null], getDefaultColor, 1).colors[0]).toEqual(
         getDefaultColor(0),
       );
@@ -187,19 +187,19 @@ describe('combineLayers', () => {
 });
 
 describe('fillDefaultColors', () => {
-  it('replaces a null colour with the verse default, leaving others untouched', () => {
+  it('replaces a null color with the verse default, leaving others untouched', () => {
     const picture = fillDefaultColors({ colors: [RED, null, BLUE] }, getDefaultColor);
     expect(picture.colors).toEqual([RED, getDefaultColor(1), BLUE]);
   });
 
-  it("fills a null colour with the text's base colour when it gives one", () => {
+  it("fills a null color with the text's base color when it gives one", () => {
     const picture = fillDefaultColors({ colors: [RED, null] }, () => BLUE);
     expect(picture.colors).toEqual([RED, BLUE]);
-    expect(picture.uncoloured).toEqual([false, true]);
+    expect(picture.uncolored).toEqual([false, true]);
   });
 
-  it('marks the verses it filled as uncoloured', () => {
-    expect(fillDefaultColors({ colors: [RED, null] }, getDefaultColor).uncoloured).toEqual([
+  it('marks the verses it filled as uncolored', () => {
+    expect(fillDefaultColors({ colors: [RED, null] }, getDefaultColor).uncolored).toEqual([
       false,
       true,
     ]);
@@ -223,7 +223,7 @@ describe('fillDefaultColors', () => {
     expect(picture.rings).toEqual([ORANGE, null, CYAN]);
   });
 
-  it('gives a square that stands out no base ring, so its colour shows', () => {
+  it('gives a square that stands out no base ring, so its color shows', () => {
     const picture = fillDefaultColors(
       { colors: [RED, RED], standout: [true, false] },
       getDefaultColor,
@@ -239,7 +239,7 @@ describe('fillDefaultColors', () => {
 });
 
 describe('toolsPicture', () => {
-  it('hands each colour hook the hovered and the pinned square', () => {
+  it('hands each color hook the hovered and the pinned square', () => {
     const items = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
     const focus = { hovered: items[0], pinned: items[1] };
     const colorsFor = vi.fn(() => [RED, RED]);
@@ -260,7 +260,7 @@ describe('toolsPicture', () => {
     expect(halosFor).toHaveBeenCalledWith(args);
   });
 
-  it('asks each tool for its colours and combines them, search over overlay', () => {
+  it('asks each tool for its colors and combines them, search over overlay', () => {
     const overlay = testOverlay({
       id: 'o',
       name: 'O',

@@ -16,7 +16,7 @@ import type {
 } from '@torahmap/shell/overlays/types.ts';
 import type { TanakhIdentity, TanakhLayout } from '../types.ts';
 import { passageRef, verseId } from '@torahmap/link/tanakh';
-import { DIMMED_GREY } from '@torahmap/shell/constants.ts';
+import { DIMMED_GRAY } from '@torahmap/shell/constants.ts';
 import {
   deriveHaftarah,
   forEachVerseInRange,
@@ -74,7 +74,7 @@ function isRelevantVerse(verse: TanakhLayout, derived: HaftarahDerivation): bool
   return derived.torahVerseToParsha.has(key) || derived.haftarahVerseToItem.has(key);
 }
 
-/** The verse's id if it is in any reading, else null: a verse outside every reading colours the map as no verse does. */
+/** The verse's id if it is in any reading, else null: a verse outside every reading colors the map as no verse does. */
 function relevantId(
   verse: TanakhLayout | null,
   settings: HaftarahSettings,
@@ -137,9 +137,9 @@ function litFor(
 }
 
 /**
- * A verse's colour, one band per reading it belongs to. While readings are
+ * A verse's color, one band per reading it belongs to. While readings are
  * lit, a verse in one is brightened, a verse in another reading keeps a dark
- * tint of its colour, and a verse in none is grey.
+ * tint of its color, and a verse in none is gray.
  */
 function colorAt(
   verse: TanakhLayout,
@@ -147,7 +147,7 @@ function colorAt(
   lit: Set<HaftarahItem> | null,
 ): Color | Color[] | null {
   const items = readingsOf(derived, verse.id);
-  if (items.length === 0) return lit ? DIMMED_GREY : null;
+  if (items.length === 0) return lit ? DIMMED_GRAY : null;
 
   const colors = items
     .map((item) => derived.itemToColor.get(item))
@@ -257,7 +257,7 @@ function groupBy<T, K>(items: T[], keyOf: (item: T) => K): Map<K, T[]> {
 
 /**
  * The key: each book by its portions, then each category of occasion by its
- * readings. Hovering one previews it; clicking one picks it. Its colours and
+ * readings. Hovering one previews it; clicking one picks it. Its colors and
  * names are the same for both customs, so it is built once.
  */
 function renderKey(
@@ -411,7 +411,7 @@ export const haftarahOverlay: Overlay<TanakhIdentity, HaftarahSettings, Haftarah
         <span>${parshaCount} Torah portions and ${occasionCount} special occasions</span>
       </div>
       <div class="haftarah-legend-notes">
-        ${legendCaption(`A portion and its haftarah (${customLabel(settings.custom)}) share a colour`)}
+        ${legendCaption(`A portion and its haftarah (${customLabel(settings.custom)}) share a color`)}
         ${legendCaption('A verse in more than one reading is split corner to corner, one band each')}
       </div>
       ${legendCaption('Hover a reading to light it and its haftarah; click one to pin it')}

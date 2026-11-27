@@ -29,7 +29,7 @@ export interface PanelComparison<T> {
   hold(id: string): void;
 }
 
-/** What each of an overlay's colour hooks is given. */
+/** What each of an overlay's color hooks is given. */
 export interface ColorArgs<T, S = unknown, D = unknown> {
   items: SpatialItem<T>[];
   settings: S;
@@ -135,9 +135,9 @@ interface OverlayMembers<T, S, D> {
 
   destroy?(): void;
 
-  // One colour per item, as the map and the story's blend ask for them: null
+  // One color per item, as the map and the story's blend ask for them: null
   // renders default gray; Color[] splits the square corner to corner, one band
-  // per color. Only some overlays' colours depend on the focus, and each decides
+  // per color. Only some overlays' colors depend on the focus, and each decides
   // whether the hovered or the pinned square wins.
   colorsFor(args: ColorArgs<T, S, D>): (Color | Color[] | null)[];
 
@@ -209,15 +209,15 @@ interface OverlayMembers<T, S, D> {
     data: D,
   ): [pinned: DocumentFragment, compared: DocumentFragment];
 
-  // What the panel's one-line summary shows after the overlay's name; colours
+  // What the panel's one-line summary shows after the overlay's name; colors
   // are CSS values. Absent, the line is the name alone.
   summary?(settings: S, data: D): OverlaySummary;
 
   getHoverInfo?(item: SpatialItem<T>, settings: S, data: D): string | null;
 
-  // Declaring this marks an overlay's colours as depending on the hovered square:
+  // Declaring this marks an overlay's colors as depending on the hovered square:
   // the map recomputes them when it says so, and the story's blend does not
-  // memoise them. True when moving the hover from `before` to `after` changes them.
+  // memoize them. True when moving the hover from `before` to `after` changes them.
   hoverChangesColors?(
     before: SpatialItem<T> | null,
     after: SpatialItem<T> | null,
@@ -276,14 +276,14 @@ interface OverlayMembers<T, S, D> {
 }
 
 export interface OverlaySummary {
-  /** Words, each in its own colour, as search shows its terms. */
+  /** Words, each in its own color, as search shows its terms. */
   terms?: { text: string; color: string }[];
   detail?: string;
-  /** Colours shown as squares. */
+  /** Colors shown as squares. */
   colors?: string[];
-  /** Colours shown as squares in groups, a small gap between the groups and none within. */
+  /** Colors shown as squares in groups, a small gap between the groups and none within. */
   groups?: string[][];
-  /** Colours shown as squares, each labeled. */
+  /** Colors shown as squares, each labeled. */
   steps?: { color: string; label: string; glows?: boolean }[];
   /** A continuous scale: its CSS gradient, between words for its low and high ends. */
   strip?: { gradient: string; ends: [low: string, high: string] };
@@ -296,7 +296,7 @@ export interface ToolOnMap<T> {
   data: unknown;
 }
 
-/** What colours the map: the overlay and the search, each null while off. */
+/** What colors the map: the overlay and the search, each null while off. */
 export interface Tools<T> {
   overlay: ToolOnMap<T> | null;
   search: ToolOnMap<T> | null;

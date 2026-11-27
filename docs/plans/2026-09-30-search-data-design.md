@@ -61,7 +61,7 @@ sharing an index they do not need. `prebuild(data)` builds the text index and
 the dictionary at idle; a member asked first builds them on demand, with the
 same result.
 
-The 23,000-verse search results are memoised per text index and dictionary, then
+The 23,000-verse search results are memoized per text index and dictionary, then
 per settings, so the same settings with a different dictionary are never handed
 the old answer.
 
@@ -70,12 +70,12 @@ the old answer.
 **Search is all or nothing.** Its data is `null` until the texts and
 all three dictionary files are in.
 
-Meanings mode could colour the map from the dictionary alone: the verse sets
+Meanings mode could color the map from the dictionary alone: the verse sets
 come from lexeme → verses, and only the results list's snippets need the texts.
 But a search mixing a Hebrew word with an English one, or a Hebrew word the
-dictionary does not know, needs the texts, so some terms would colour and
+dictionary does not know, needs the texts, so some terms would color and
 others follow a second or two later, each with its own fade. What this buys is
-that a Hebrew-only search link colours about one texts download sooner (2.7 MB
+that a Hebrew-only search link colors about one texts download sooner (2.7 MB
 compressed, the largest file). Not worth a second way for search to be half
 there. Revisit if step 3's throttled tests show Hebrew search links waiting
 noticeably on the texts.
@@ -102,7 +102,7 @@ interface SearchTerm {
 ```
 
 `meanings` and `selected` go. A term's meanings are `meaningsFor(dictionary,
-text)`, memoised per dictionary and text, so the rows a panel draws are the same
+text)`, memoized per dictionary and text, so the rows a panel draws are the same
 objects from one draw to the next.
 
 **"Every meaning checked" is `null`**, so it needs no list of meanings to say it.
@@ -134,7 +134,7 @@ Main hands each reader of search what it reads; none reaches for it.
 
 | Reader | Gets | Today reads |
 |---|---|---|
-| Map colours, hover text, legend summary | `data` via `toolsShown` | module state |
+| Map colors, hover text, legend summary | `data` via `toolsShown` | module state |
 | Search panel: term rows, caption, results list, snippets | `data \| null` via `renderControls` | module state |
 | Verse highlighting in the popup | `data`, and the verse | module state, and `setVerseOnScreen` |
 | Word menu (main's word-click handler) | the dictionary and parse from `dataFor(searchTool, loaded)` | module state |
@@ -213,7 +213,7 @@ The search overlay loses `recorded`, `lastChanged`, `readerChanged`,
 | `formMatches(keys, form)` | `(dictionary, keys, form)` |
 | `wordMatches(keys, form, text, start)` | `(dictionary, words, keys, form, text, start)` |
 | `prefetchMorphology()` | removed; main loads the file |
-| `setVerseOnScreen(verseKey, hebrew)` | removed; `wordsOfVerse(parse, verseKey, hebrew): VerseWords \| null`, plain, memoised per parse and verse |
+| `setVerseOnScreen(verseKey, hebrew)` | removed; `wordsOfVerse(parse, verseKey, hebrew): VerseWords \| null`, plain, memoized per parse and verse |
 | `verseOnScreen()` | removed |
 | `wordsAreNamed()` | removed; tests ask `wordsOfVerse(...) !== null` |
 
@@ -245,7 +245,7 @@ Twenty-four test files fill search's module state today: 18 call
 - No test depends on another having run first.
 
 In these files only setup lines and call arguments change. An expected value
-that changes is a change in behaviour, and the pull request says which and why.
+that changes is a change in behavior, and the pull request says which and why.
 
 `test-harness/main.ts`, `scripts/print/views.ts` and
 `scripts/search/click-resolution-report.ts` load the files with step 1's loader
@@ -256,7 +256,7 @@ and build the same way.
 Search has had a run of subtle matching bugs: a term found by its position in a
 re-split string, a row compared by its first key across two lists, the search
 and the highlighter matching by two rules, a row's hit count taken from its
-neighbour, and Hebrew and Aramaic words sharing an ETCBC id. This design moves
+neighbor, and Hebrew and Aramaic words sharing an ETCBC id. This design moves
 data, not rules. In particular:
 
 - `src/search/matching.ts` is untouched, and the search and the highlighter are
@@ -266,7 +266,7 @@ data, not rules. In particular:
   in the word menu from a verse whose list heads it with another key (one of the
   merged same-name rows) gives the same verses, the same checked row and the same
   `m` round trip as picking it in the panel.
-- A test that the memoised results follow the dictionary: one settings value,
+- A test that the memoized results follow the dictionary: one settings value,
   two dictionaries, two answers.
 - **Before and after, `scripts/search/click-resolution-report.ts` over the whole
   text gives identical output**, and the print script's search sheet the same
@@ -327,7 +327,7 @@ Decisions made while implementing step 2, newest last.
   resolves" and "writes back a link naming no meaning the word has").
 - **2026-10-01 (Task 2)** `search-terms.test.ts`'s "writes only the narrowed
   term" looks the rows up once: it compares rows by identity, and until Task 3
-  memoises `meaningsFor`, two calls return different objects. A setup line; the
+  memoizes `meaningsFor`, two calls return different objects. A setup line; the
   expected value is unchanged.
 - **2026-10-01 (Task 3)** `EMPTY_DICTIONARY_FILES` is defined in
   `src/__tests__/helpers/fixtures.ts` and re-exported by `searchData.ts`.

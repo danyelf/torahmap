@@ -225,7 +225,7 @@ index to keep them apart.
 ### What the generator does
 
 Two functions in `scripts/overlays/commentary/process_sefaria_links.py` carry
-all the judgement, and their docstrings are the full account: `resolve_shelf()`
+all the judgment, and their docstrings are the full account: `resolve_shelf()`
 decides what a work actually is — a commentary is filed under the shelf of
 whatever it comments on, not under "Commentary" — and `link_bucket()` decides
 whether a link is commentary on the verse or a citation of it in passing. Read

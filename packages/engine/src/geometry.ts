@@ -17,13 +17,13 @@ const DEFAULT_FILL_COLOR: Color = HIGHLIGHT_CONSTANTS.OUTLINE_COLOR;
 
 /**
  * World units left empty at the right and bottom of every item's cell, so
- * neighbouring squares stand apart. Hit detection takes the whole cell, gap
+ * neighboring squares stand apart. Hit detection takes the whole cell, gap
  * included.
  */
 export const SQUARE_GAP = 2;
 
 /** The middle of the square as drawn: nudged by its jitter, the gap left on its right and below it. */
-export function squareCentre(item: SpatialItem<unknown>): { x: number; y: number } {
+export function squareCenter(item: SpatialItem<unknown>): { x: number; y: number } {
   return {
     x: item.x + (item.jitter?.x ?? 0) + ((item.width ?? item.size) - SQUARE_GAP) / 2,
     y: item.y + (item.jitter?.y ?? 0) + (item.size - SQUARE_GAP) / 2,
@@ -32,27 +32,27 @@ export function squareCentre(item: SpatialItem<unknown>): { x: number; y: number
 
 // World units a square with several colors grows on every side, so it stands
 // out from single-color squares when zoomed out. Up to half of SQUARE_GAP keeps
-// a gap between neighbours. The shader applies it.
+// a gap between neighbors. The shader applies it.
 export const MULTICOLOR_GROWTH = 0.75;
 
-// How far neighbouring color bands slide apart along their shared cut, as a
+// How far neighboring color bands slide apart along their shared cut, as a
 // fraction of the square's side. The shader applies it.
 export const BAND_OFFSET = 0.08;
 
 /**
- * One colouring of the map: a colour, or stripes, per square, and how far each
- * square has grown towards the size a multi-colour square is drawn at, 0 to 1.
+ * One coloring of the map: a color, or stripes, per square, and how far each
+ * square has grown toward the size a multi-color square is drawn at, 0 to 1.
  * Without `growth`, a square is fully grown exactly when its fill or its ring
- * has several colours. A square's ring, where `rings` gives one, surrounds its
- * fill in colours of its own. `uncoloured` marks the squares whose fill is
- * their default grey, which a hover paints in the highlight colour instead of
+ * has several colors. A square's ring, where `rings` gives one, surrounds its
+ * fill in colors of its own. `uncolored` marks the squares whose fill is
+ * their default gray, which a hover paints in the highlight color instead of
  * brightening. `standout` marks the squares drawn over all the others and never smaller than STANDOUT_MIN_PX.
  */
 export interface Picture<C = ItemColor> {
   colors: C[];
   growth?: number[];
   rings?: (C | null)[];
-  uncoloured?: boolean[];
+  uncolored?: boolean[];
   standout?: boolean[];
   /** The standouts that keep a faint halo at every zoom, not only as a dot when small. */
   halo?: boolean[];
@@ -68,7 +68,7 @@ const NO_COLORS: Picture = { colors: [] };
  * whole map, so moving between them redraws without rebuilding this buffer.
  * At rest the two are the same.
  *
- * A fill and a ring are four stripes each, one colour to a float (packColor):
+ * A fill and a ring are four stripes each, one color to a float (packColor):
  * unpacked, two pictures would need 19 attributes and 20 varyings, and WebGL 2
  * promises only 16 and 15.
  */
@@ -94,21 +94,21 @@ for (const { name, size } of ITEM_ATTRIBUTES) {
 }
 export const FLOATS_PER_ITEM = floats;
 
-/** A colour as one float, 8 bits a channel; exact, as a float holds every integer below 2^24. */
+/** A color as one float, 8 bits a channel; exact, as a float holds every integer below 2^24. */
 export function packColor([r, g, b]: Color): number {
   const byte = (c: number): number => Math.round(Math.min(1, Math.max(0, c)) * 255);
   return byte(r) * 0x10000 + byte(g) * 0x100 + byte(b);
 }
 
 /** The bits of a shape's last float. */
-export const SHAPE_FLAGS = { UNCOLOURED: 1, STANDOUT: 2, HALO: 4, ROUND: 8 } as const;
+export const SHAPE_FLAGS = { UNCOLORED: 1, STANDOUT: 2, HALO: 4, ROUND: 8 } as const;
 
 const SLOTS = {
   from: { fill: 'a_fill', ring: 'a_ring', shape: 'a_shape' },
   to: { fill: 'a_nextFill', ring: 'a_nextRing', shape: 'a_nextShape' },
 } as const;
 
-/** A square's stripes: at most four, and the base colour for none. */
+/** A square's stripes: at most four, and the base color for none. */
 function stripesOf(color: ItemColor | null | undefined, baseColor: Color): Color[] {
   if (isColorArray(color)) return color.slice(0, 4);
   if (Array.isArray(color) && (color as unknown[]).length === 0) return [baseColor];
@@ -137,7 +137,7 @@ export function buildItemGeometry<T>(
     data[shape + 1] = picture.growth?.[i] ?? (Math.max(fill.length, ring.length) > 1 ? 1 : 0);
     data[shape + 2] = ring.length;
     data[shape + 3] =
-      (picture.uncoloured?.[i] ? SHAPE_FLAGS.UNCOLOURED : 0) |
+      (picture.uncolored?.[i] ? SHAPE_FLAGS.UNCOLORED : 0) |
       (picture.standout?.[i] ? SHAPE_FLAGS.STANDOUT : 0) |
       (picture.halo?.[i] ? SHAPE_FLAGS.HALO : 0) |
       (items[i].round ? SHAPE_FLAGS.ROUND : 0);

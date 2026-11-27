@@ -64,4 +64,4 @@ Its settings:
 | `map: hidden` | Only the map's title shows, for a title card. |
 | `card-at: x,y`, `card-size: 1.5` | Where the pinned verse's card sits and how large. Without them it waits above a bottom caption. |
 
-A pinned verse always centres itself; only `pan` moves it.
+A pinned verse always centers itself; only `pan` moves it.

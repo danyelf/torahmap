@@ -500,7 +500,7 @@ const TRACTATE_LABEL_HEIGHT = 24;        // space above each tractate block for 
 // Muted, similar to each other — "you notice they're different if you look,
 // but neither one shouts." Overlays paint over both equally.
 export const MISHNAH_BASE_COLOR: [number, number, number] = [0.42, 0.47, 0.58]; // slate blue, tune during visual review
-export const GEMARA_BASE_COLOR:  [number, number, number] = [0.55, 0.55, 0.55]; // neutral grey
+export const GEMARA_BASE_COLOR:  [number, number, number] = [0.55, 0.55, 0.55]; // neutral gray
 
 // Per-seder background tints. Very subtle — ranging toward invisible.
 // Applied as a color wash behind the segments for each shelf.
@@ -879,7 +879,7 @@ Corrections during integration:
 - `tm-f28x`:
   - `talmud.html` loads in the dev server and the production build.
   - All verified tractates render as a bookshelf of option-C perek blocks.
-  - Mishnah and Gemara are visually distinct via muted base colors (slate blue / grey).
+  - Mishnah and Gemara are visually distinct via muted base colors (slate blue / gray).
   - Clicking a segment opens the sidebar with reference, M/G tag, Hebrew text, and Sefaria link.
   - URL hash state works: `talmud.html#segment=Berakhot:2a:1` pins the right segment on reload.
   - Segment-length overlay is selectable (registered but off by default).

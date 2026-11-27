@@ -1,6 +1,6 @@
 // Sending a link: the system share sheet where one exists, otherwise the clipboard.
 
-/** What became of a share attempt. */
+/** What became of a share attempt. Analytics records it, so the values never change spelling. */
 export type ShareOutcome = 'copied' | 'share_sheet' | 'cancelled' | 'failed';
 
 export interface ShareEnv {

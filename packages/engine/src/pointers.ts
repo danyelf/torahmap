@@ -37,7 +37,7 @@ const FADE_MS = 150;
 const REST_OPACITY = 0.5;
 const REST_OPACITY_MIN = 0.08;
 
-const FLOATS_PER_POINTER = 8; // from, to, length, colour
+const FLOATS_PER_POINTER = 8; // from, to, length, color
 const FLOATS_PER_STATE = 4; // grown and opacity, then the same for the copy fading out
 
 const VERTEX_SHADER = `#version 300 es
@@ -109,7 +109,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in vec4 v_color;
   out vec4 fragColor;
 
-  // How much of the span from a to b a pixel centred on p covers.
+  // How much of the span from a to b a pixel centered on p covers.
   float covered(float p, float a, float b) {
     return max(0.0, min(b, p + 0.5) - max(a, p - 0.5));
   }

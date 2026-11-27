@@ -29,7 +29,7 @@ export function findExactHit<T>(
 }
 
 /**
- * Find the item whose centre is nearest a world point, closer than
+ * Find the item whose center is nearest a world point, closer than
  * `maxDistance` if one is given.
  */
 export function findNearestItem<T>(
@@ -69,7 +69,7 @@ export function findFuzzyHit<T>(
 
 /**
  * The standout under a world point, by the square it is drawn as: at least
- * STANDOUT_MIN_PX a side around its cell's centre. The last one drawn is on top.
+ * STANDOUT_MIN_PX a side around its cell's center. The last one drawn is on top.
  */
 function findStandoutHit<T>(
   items: SpatialItem<T>[],

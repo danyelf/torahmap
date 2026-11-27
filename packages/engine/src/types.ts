@@ -1,6 +1,6 @@
 import type { Color } from '@torahmap/utils';
 
-/** A square's colour, or its stripes. */
+/** A square's color, or its stripes. */
 export type ItemColor = Color | Color[];
 
 /**
@@ -31,7 +31,7 @@ export interface Bounds {
   height: number;
 }
 
-/** Where the camera is: the map point at the canvas's centre, and the zoom. */
+/** Where the camera is: the map point at the canvas's center, and the zoom. */
 export interface CameraPosition {
   x: number;
   y: number;

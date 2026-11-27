@@ -1,4 +1,4 @@
-// A square's colour while no tool colours it: paper text in grey, a placeholder dark with a dim ring.
+// A square's color while no tool colors it: paper text in gray, a placeholder dark with a dim ring.
 
 import { brightnessJitter, hex, idHash, type Color } from '@torahmap/utils';
 import type { Section } from './data.ts';

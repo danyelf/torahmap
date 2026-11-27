@@ -28,7 +28,7 @@ describe('the story drives until the reader takes over', () => {
     expect(storyScrolled(driver, 1045)).toEqual({
       by: 'reader',
       lastScrollTop: 1045,
-      travelled: 45,
+      traveled: 45,
     });
   });
 
@@ -93,11 +93,11 @@ describe('easing back', () => {
 describe('a file landing', () => {
   it('re-aims an ease at the picture with the data, keeping its camera and its clock', () => {
     const driver = easeBack(1000, SWIPE_EASE_MS);
-    const coloured = { colors: [] };
-    const next = driverAfterLanding(driver, 'ease', () => coloured);
+    const colored = { colors: [] };
+    const next = driverAfterLanding(driver, 'ease', () => colored);
     if (driver.by !== 'rejoining' || next.by !== 'rejoining') throw new Error('not easing');
 
-    expect(next.toPicture).toBe(coloured);
+    expect(next.toPicture).toBe(colored);
     expect(next.fromPicture).toBe(driver.fromPicture);
     expect(next.fromCamera).toEqual(driver.fromCamera);
     expect([next.since, next.duration]).toEqual([driver.since, driver.duration]);
@@ -119,7 +119,7 @@ describe('a file landing', () => {
   });
 });
 
-describe('what the colours on the map are drawn from', () => {
+describe('what the colors on the map are drawn from', () => {
   const stop = { id: 'a' } as ResolvedStoryStop;
 
   it('is the overlay when the reader drives or the story rests on a stop', () => {

@@ -6,7 +6,7 @@ import {
   type ZoomRange,
   boxAround,
   cameraToFit,
-  centreForFocus,
+  centerForFocus,
   type ScreenPoint,
   type Viewport,
   type WorldBox,
@@ -30,7 +30,7 @@ function cameraForVerse(
   focus: ScreenPoint,
   mapSize: Viewport,
 ): CameraPosition {
-  return { ...centreForFocus(verse, zoom, focus, mapSize), zoom };
+  return { ...centerForFocus(verse, zoom, focus, mapSize), zoom };
 }
 
 const SECTIONS: Record<string, Book['section']> = {

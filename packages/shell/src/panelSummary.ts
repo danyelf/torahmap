@@ -9,7 +9,7 @@ function swatch(color: string, shape = ''): string {
   return `<i class="summary-swatch${shape}" style="background: ${escapeHtml(color)}"></i>`;
 }
 
-/** A gradient gets a strip: squeezed into a square it reads as one colour. */
+/** A gradient gets a strip: squeezed into a square it reads as one color. */
 function strip({ gradient, ends }: NonNullable<OverlaySummary['strip']>): string {
   const [low, high] = ends.map((end) => `<span class="summary-end">${escapeHtml(end)}</span>`);
   return low + swatch(gradient, ' strip') + high;

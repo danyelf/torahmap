@@ -21,7 +21,7 @@ function render(): HTMLDivElement {
   return renderSearchControls(searchOverlay);
 }
 
-/** The colours the search's terms hold, in order. */
+/** The colors the search's terms hold, in order. */
 const held = () => colorsHeld(searchOverlay.settings.terms);
 
 function type(container: HTMLElement, text: string): void {
@@ -188,7 +188,7 @@ describe('Search Overlay', () => {
       expect(color3).toEqual(held()[0]);
     });
 
-    it('gives no colour to a verse it does not match', () => {
+    it('gives no color to a verse it does not match', () => {
       // Genesis 1:2 does not contain "God"
       expect(searchOverlay.getItemColor(testVerses[1])).toBeNull();
     });
@@ -244,7 +244,7 @@ describe('Search Overlay', () => {
       expect(color).toEqual(held()[0]);
     });
 
-    it('gives no colour to a verse without a Hebrew match', () => {
+    it('gives no color to a verse without a Hebrew match', () => {
       // Genesis 2:1 does not contain אלהים
       expect(searchOverlay.getItemColor(testVerses[3])).toBeNull();
     });
@@ -1154,7 +1154,7 @@ describe('Search Overlay', () => {
       expect(html).not.toContain('<script>alert');
     });
 
-    it('colours the marks of each term in its own colour', () => {
+    it('colors the marks of each term in its own color', () => {
       const result = searchOverlay.highlightItemText(
         createVerse(),
         'And God said let there be light',
@@ -1409,8 +1409,8 @@ describe('Search Overlay', () => {
     });
   });
 
-  describe('Colours for settings it is handed', () => {
-    /** The colours for the search a link with this query describes. */
+  describe('Colors for settings it is handed', () => {
+    /** The colors for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
       return searchOverlay.overlay.colorsFor!({
         items,
@@ -1455,7 +1455,7 @@ describe('Search Overlay', () => {
       expect(changed).not.toHaveBeenCalled();
     });
 
-    it('gives a verse the same colour alone as in a batch for the same query', () => {
+    it('gives a verse the same color alone as in a batch for the same query', () => {
       searchOverlay.restore({ search: 'God, heavens' });
       const expected = testVerses.map((v) => searchOverlay.getItemColor(v));
 
@@ -1463,7 +1463,7 @@ describe('Search Overlay', () => {
       expect(colorsFor(testVerses, 'God, heavens')).toEqual(expected);
     });
 
-    it('gives a word the same colour whatever comes before it', () => {
+    it('gives a word the same color whatever comes before it', () => {
       const heavens = testVerses[3];
       const [alone] = colorsFor([heavens], 'heavens');
       const [second] = colorsFor([heavens], 'light, heavens');
@@ -1537,7 +1537,7 @@ describe('Search Overlay', () => {
       expect(held.terms.map((t) => [t.text, t.mode])).toEqual([['God', 'word']]);
     });
 
-    /** The colours for the search a link with this query describes. */
+    /** The colors for the search a link with this query describes. */
     function colorsFor(items: TanakhLayout[], q: string) {
       return searchOverlay.overlay.colorsFor!({
         items,
@@ -1549,7 +1549,7 @@ describe('Search Overlay', () => {
   });
 
   describe('Integration with Search Module', () => {
-    it('colours a verse the search finds', () => {
+    it('colors a verse the search finds', () => {
       const container = render();
       type(container, 'God');
 

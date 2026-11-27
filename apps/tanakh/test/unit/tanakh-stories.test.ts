@@ -1,4 +1,4 @@
-import { cameraToFit, centreForFocus, indexItems } from '@torahmap/engine';
+import { cameraToFit, centerForFocus, indexItems } from '@torahmap/engine';
 import { describe, it, expect } from 'vitest';
 import { resolveStops } from '../../src/stories';
 import { initBookData } from '../../src/books';
@@ -23,9 +23,9 @@ describe('resolveStops with a pinned verse', () => {
       LINK_KEYS.zoom,
     )[0].camera;
 
-  it('centres a verse the map holds, at the initial zoom', () => {
+  it('centers a verse the map holds, at the initial zoom', () => {
     expect(resolve({ pin: verses[1].id })).toEqual({
-      ...centreForFocus(verses[1], initial.zoom, { x: 0, y: 0 }, { width: 400, height: 300 }),
+      ...centerForFocus(verses[1], initial.zoom, { x: 0, y: 0 }, { width: 400, height: 300 }),
       zoom: initial.zoom,
     });
   });
@@ -88,9 +88,9 @@ describe('resolveStops with a camera naming places', () => {
     );
   });
 
-  it('centres a camera naming only a verse, at the stop’s zoom', () => {
+  it('centers a camera naming only a verse, at the stop’s zoom', () => {
     expect(resolve({ camera: { kind: 'places', names: [verses[1].id] }, zoom: 2 })).toEqual({
-      ...centreForFocus(verses[1], 2, { x: 0, y: 0 }, map),
+      ...centerForFocus(verses[1], 2, { x: 0, y: 0 }, map),
       zoom: 2,
     });
   });

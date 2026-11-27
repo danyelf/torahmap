@@ -9,8 +9,8 @@ Sefaria's index of the library in sefaria-index.json.
 - resolve_shelf() asks the index what a work actually is, because the export's
   own category column files a commentary under whatever it comments on
 - link_bucket() turns a shelf and a connection type into a category; that is
-  where the judgement calls about what counts as commentary live
-- Counts a citation towards every verse it covers, up to MAX_RANGE_VERSES;
+  where the judgment calls about what counts as commentary live
+- Counts a citation toward every verse it covers, up to MAX_RANGE_VERSES;
   longer ranges name a whole portion rather than a passage and are ignored
 """
 
@@ -74,7 +74,7 @@ QUOTING_COMMENTARY = "Quoting Commentary"
 seen_link_pairs: set[frozenset[str]] = set()
 
 # A citation may name one verse, a short passage, or a sweep of text so large
-# that it is really a catalogue entry. Up to this many verses we treat the
+# that it is really a catalog entry. Up to this many verses we treat the
 # citation as a claim about each verse it covers; beyond it we ignore the
 # citation entirely.
 #
@@ -116,7 +116,7 @@ def parse_verse_refs(citation: str) -> list[tuple[str, int, int]]:
     Every verse a citation refers to, as (book, chapter, verse).
 
     A single verse gives one entry. A range gives one entry per verse it
-    covers, so a comment on "Deuteronomy 6:4-9" counts towards all six verses
+    covers, so a comment on "Deuteronomy 6:4-9" counts toward all six verses
     of the Shema rather than piling onto the first. A range longer than
     MAX_RANGE_VERSES gives nothing: "Genesis 1:1-6:8" is a pointer to the whole
     of Bereshit, and crediting it anywhere invents commentary that is not there.
@@ -260,7 +260,7 @@ def resolve_shelf(work: str, fallback: str, index: dict[str, str]) -> str:
 
 def link_bucket(shelf: str, connection: str) -> str | None:
     """
-    Which category a link to a verse counts towards, or None if it does not
+    Which category a link to a verse counts toward, or None if it does not
     count at all.
 
     Takes what kind of text sits at the far end of the link, as resolve_shelf()

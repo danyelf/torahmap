@@ -3,7 +3,7 @@ import { SCREENSHOTS } from '../browser/fakeMap.ts';
 import type { Box, Shown } from './geometry.ts';
 import { DESKTOP_AND_PHONE, DESKTOP_TABLET_AND_PHONE } from '../browser/screens.ts';
 import { VISITED_KEY } from '../../packages/shell/src/visits.ts';
-import { COLOURED_SPREAD, onlyOn, readPixels } from '../browser/page.ts';
+import { COLORED_SPREAD, onlyOn, readPixels } from '../browser/page.ts';
 
 export const desktopAndPhoneOnly = () =>
   onlyOn(DESKTOP_AND_PHONE, 'one screen of each layout is enough');
@@ -16,12 +16,12 @@ export async function asReturningReader(page: Page): Promise<void> {
   await page.addInitScript((key) => localStorage.setItem(key, 'true'), VISITED_KEY);
 }
 
-/** Of `png`'s coloured pixels, the share that are faint: a colour under half strength. */
+/** Of `png`'s colored pixels, the share that are faint: a color under half strength. */
 export async function faintShare(page: Page, png: Buffer): Promise<number> {
   const { spread } = await readPixels(page, png);
-  const coloured = spread.filter((s) => s > COLOURED_SPREAD);
-  const strongest = Math.max(0, ...coloured);
-  return coloured.length ? coloured.filter((s) => s < strongest / 2).length / coloured.length : 0;
+  const colored = spread.filter((s) => s > COLORED_SPREAD);
+  const strongest = Math.max(0, ...colored);
+  return colored.length ? colored.filter((s) => s < strongest / 2).length / colored.length : 0;
 }
 
 /**
@@ -118,7 +118,7 @@ export async function clippedText(page: Page, selector: string): Promise<string[
 
 /**
  * How often a drawn line steps up or down a pixel: the share of drawn pixels
- * whose right-hand neighbour is empty while the one above or below it is drawn.
+ * whose right-hand neighbor is empty while the one above or below it is drawn.
  */
 export async function stepShare(page: Page, png: Buffer): Promise<number> {
   const { width, height, drawn: mask } = await readPixels(page, png);

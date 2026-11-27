@@ -83,7 +83,7 @@ describe('what each paper cites', () => {
 });
 
 describe('the cited people overlay', () => {
-  const colours = (picked: string[], ...squares: PieceItem[]) =>
+  const colors = (picked: string[], ...squares: PieceItem[]) =>
     citedPeopleOverlay.colorsFor({
       items: squares as never,
       settings: { picked },
@@ -92,7 +92,7 @@ describe('the cited people overlay', () => {
     });
 
   it('lights the squares that hold a person’s works and dims the rest of the paper', () => {
-    const [holds, otherPiece, otherPaper] = colours(
+    const [holds, otherPiece, otherPaper] = colors(
       ['Tamara Munzner'],
       square(0, 1),
       square(0, 2),
@@ -214,7 +214,7 @@ describe('the entries of cited works in a text', () => {
     expect(marked(['Not cited here'])).toEqual([]);
   });
 
-  it('marks the entry in the popup text, in the pick’s colour', () => {
+  it('marks the entry in the popup text, in the pick’s color', () => {
     const fragment = citedWorksOverlay.highlightItemText!(
       square(1, 1),
       'x\n[2] A. B. (2020) Vega-Lite. Venue.\ny',
@@ -247,17 +247,17 @@ describe('the citations overlay', () => {
     });
   });
 
-  it('colours the papers by the list the toggle shows', () => {
+  it('colors the papers by the list the toggle shows', () => {
     const settings = link({ people: 'Tamara Munzner', works: workId(0) });
-    const colour = (view: 'people' | 'works') =>
+    const color = (view: 'people' | 'works') =>
       citationsOverlay.colorsFor({
         items: [square(2)] as never,
         settings: { ...settings, view },
         data,
         focus: { hovered: null, pinned: null },
       })[0];
-    expect(colour('works')).toEqual(pickColors([0])[0]);
-    expect(colour('people')).not.toEqual(colour('works'));
+    expect(color('works')).toEqual(pickColors([0])[0]);
+    expect(color('people')).not.toEqual(color('works'));
   });
 
   it('switches list when its toggle is clicked, leaving both lists’ picks', () => {

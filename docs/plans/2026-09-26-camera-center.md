@@ -1,4 +1,4 @@
-# The Camera Names the Centre of the Screen
+# The Camera Names the Center of the Screen
 
 **Date:** 2026-09-26
 **Status:** Design agreed; not yet built.
@@ -21,14 +21,14 @@ size. Two things follow.
 ## The decision
 
 `Camera` stays `{ x, y, zoom }`, and `x`, `y` become **the map point at the
-centre of the canvas**. The canvas already ends at the panel's edge, so this is
+center of the canvas**. The canvas already ends at the panel's edge, so this is
 the middle of the visible map on every device, phone included.
 
 The URL keeps its `x` and `y` keys with the new meaning. Links shared before
 this change will open somewhere else; that was accepted.
 
 Two alternatives were set aside. Converting only at the URL fixes links but
-leaves glides drifting. Converting to centres only inside the glide fixes both
+leaves glides drifting. Converting to centers only inside the glide fixes both
 but leaves two meanings of "camera position" side by side.
 
 ## The conversion lives in one place
@@ -42,19 +42,19 @@ and the same for y with the height. Everything that computes
 `(mapX + camera.x) × zoom` today goes through them.
 
 - **Rendering** (`src/rendering.ts`). The shaders keep their offset uniform;
-  the renderer derives the top-left offset from the centre and canvas size once
+  the renderer derives the top-left offset from the center and canvas size once
   a frame and hands it to the shaders, the book labels (`src/labels.ts`) and
   the map title (`src/mapTitle.ts`).
 - **Hit detection** (`src/hitDetection.ts`) takes the canvas size.
-- **Drag** moves the centre against the pointer: `camera.x −= dx / zoom`.
+- **Drag** moves the center against the pointer: `camera.x −= dx / zoom`.
 - **Zoom at a point** (`panForZoom`) keeps the map point under the cursor or
-  pinch fixed, with the formula rewritten for centres.
-- **`panToFocus`, `cameraToFit`, `viewFocusedOn`** return centres.
-  `panToFocus` still puts a verse at the phone's raised focus point; the centre
+  pinch fixed, with the formula rewritten for centers.
+- **`panToFocus`, `cameraToFit`, `viewFocusedOn`** return centers.
+  `panToFocus` still puts a verse at the phone's raised focus point; the center
   then sits below the verse.
 - **`createCamera`** still opens with Genesis 1:1 320 px in from the right
-  edge, expressed as a centre.
-- **Telemetry** (`src/main.ts`, the settled-view report) reads the centre from
+  edge, expressed as a center.
+- **Telemetry** (`src/main.ts`, the settled-view report) reads the center from
   the camera instead of computing it.
 
 The Talmud page (`src/main-talmud.ts`) keeps its own pan code; it is due a
@@ -62,23 +62,23 @@ larger rework of its own.
 
 ## Glides
 
-`lerpCamera` blends centres in a straight line, so the middle of the screen
+`lerpCamera` blends centers in a straight line, so the middle of the screen
 travels straight from one stop to the next.
 
 It also blends zoom by its logarithm, `from^(1−t) × to^t`, so each doubling
 takes the same time. A straight-line blend of 1× to 10× covers most of the
 change in the first half and creeps through the second.
 
-## A behaviour that changes on purpose
+## A behavior that changes on purpose
 
-A window resize holds the centre fixed instead of the top-left corner. Rotating
+A window resize holds the center fixed instead of the top-left corner. Rotating
 a phone or resizing the panel keeps what you were looking at in the middle.
 
 ## Testing
 
 - A map point survives a round trip through the two conversion functions.
 - Zooming at a point leaves the map point under it fixed.
-- A glide between two cameras with the same centre keeps that centre at every
+- A glide between two cameras with the same center keeps that center at every
   step. This fails on main.
 - A log-zoom glide from 1× to 4× is at 2× halfway.
 - The existing camera, hit-detection, URL-state and view-restore tests are

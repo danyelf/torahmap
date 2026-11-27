@@ -23,7 +23,7 @@ These are Danyel's, from #25 and from conversation.
   Mishnah/Gemara coloring (`apps/talmud/src/baseColor.ts`), so the shape of the page still shows.
   This covers the Mishnah, quoted early teachings ("our rabbis taught") and the anonymous voice of
   the Gemara alike. The anonymous voice may get a color of its own later.
-- **No borrowing from neighbours.** An unnamed passage does not take the date of the passages
+- **No borrowing from neighbors.** An unnamed passage does not take the date of the passages
   around it, which would carry a late date into a Mishnah or early quotation beside a late rabbi.
 - **Names in both Hebrew and English** in the pinned passage's panel.
 
@@ -122,7 +122,7 @@ A reader checked whether this could be built without asking. Its questions, and 
 - **Does a Sefaria line equal one of our passages?** Yes: both total 81,793. The script still checks
   the count per tractate against `public/data/talmud/texts/` and stops if one is off, and stops on
   a range ref rather than dropping it.
-- **Is the overlay list per text?** If the catalogue has no notion of which text an overlay belongs
+- **Is the overlay list per text?** If the catalog has no notion of which text an overlay belongs
   to, add it, so this overlay never appears on the Tanakh's or the AI Act's menu.
 - **Can the pinned panel take an overlay's own lines?** If not, add the smallest hook that allows
   it, in the shared shell, usable by any text.

@@ -6,7 +6,7 @@ draft: true
 
 <!-- stop: book | camera: Job | overlay: verse-length -->
 
-The Book of Job, coloured by the length of each verse.
+The Book of Job, colored by the length of each verse.
 
 <!-- stop: close | camera: Job.42.7 | zoom: 2 | pin: Job.42.7 | overlay: verse-length -->
 

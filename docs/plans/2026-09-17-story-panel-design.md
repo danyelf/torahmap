@@ -22,7 +22,7 @@ time.
 Two smaller faults follow from the same swap. The legend lives inside
 `#explore-panel`, so the story hides it while narrating it: the commentary stop
 recites "The Hasidic masters wrote a hundred commentaries on it. The Midrash,
-ninety-two" next to a map coloured by exactly that, with the key switched off.
+ninety-two" next to a map colored by exactly that, with the key switched off.
 And the haftarah stop tells the reader to "switch the overlay" — an instruction
 to do something the story is already doing for them.
 
@@ -34,7 +34,7 @@ modal. Exactly one section is open at a time.
 
 **Controls closed** is a single summary line styled as a form field, with a
 chevron: the overlay's name, what is selected (the search terms in their
-colours, the chosen trop mark), and the legend's colours as swatches. The story
+colors, the chosen trop mark), and the legend's colors as swatches. The story
 fills the rest of the column.
 
 **Controls open** is the full panel — picker, the overlay's controls, the
@@ -73,7 +73,7 @@ is bound to the canvas for zoom while the story scroll is bound to
 `#story-content`, so "scroll the story" is unambiguous and cannot be confused
 with driving the map. And returning the reader to the story's state is the
 transition the story already performs between stops — `lerpCamera` for the
-view, the overlay blender for the colours — with its start replaced by wherever
+view, the overlay blender for the colors — with its start replaced by wherever
 the reader left things. It reuses that path rather than adding a second one.
 
 ## Why a summary line
@@ -97,14 +97,14 @@ happen. Their offset comes from a `--panel-width` custom property shared with
 hand-maintained copies of the same number.
 
 On mobile they are not rendered. Pinch is already implemented — two-finger
-distance and centre tracking feeding the same `zoomAt` the buttons call — and
+distance and center tracking feeding the same `zoomAt` the buttons call — and
 it is the gesture people reach for on a phone. Today the mobile rule moves them
 to `bottom: 60px`, which puts them on top of the panel sheet, 286px below the
 map they control.
 
 **Help (#84)** loses its first-visit auto-open. The story is the front door;
 two competing ones was the actual fault. The modal itself stays, reached from a
-labelled **About & credits** control in the footer rather than a 24px dot hung
+labeled **About & credits** control in the footer rather than a 24px dot hung
 off the panel corner at `top: -8px; right: -8px`, where on a phone it is
 clipped by the screen edge. Credits to Sefaria, ETCBC and hebcal are an
 obligation, so the modal cannot simply go.
@@ -133,9 +133,9 @@ Written down because they were not settled, not because they are unimportant.
 
 - **The 60px threshold and the 700ms ease-back are unmeasured.** Both came out
   of building the prototype rather than out of evidence. Danyel drove all four
-  rejoin behaviours and picked this one, but the trigger is what he was judging;
+  rejoin behaviors and picked this one, but the trigger is what he was judging;
   neither number has been tuned.
-- **How the summary line gets each overlay's selection and legend colours.**
+- **How the summary line gets each overlay's selection and legend colors.**
   The prototype built it from the overlay's name and the story stop's params,
   without changing the `Overlay` interface. An overlay refactor is coming;
   whether the summary becomes part of that interface is decided there.
@@ -146,7 +146,7 @@ Written down because they were not settled, not because they are unimportant.
 
 ## Prototypes
 
-Throwaway, not app code. Four rejoin behaviours over a stand-in 2D map live in
+Throwaway, not app code. Four rejoin behaviors over a stand-in 2D map live in
 `.superpowers/brainstorm/` (gitignored). The summary-line and floating-card
 layouts were built against the real app on an unpushed branch,
 `worktree-agent-ab2445c74545a8a84`; Danyel chose the summary line. The floating

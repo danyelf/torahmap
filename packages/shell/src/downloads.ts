@@ -63,7 +63,7 @@ export function waitingOn(paths: readonly string[], downloads: Downloads): LoadS
 
 /** What the map, the panels and the popup are drawn from as a file lands. */
 export interface LandingView<T> {
-  /** Where the map's colours come from: colorSource(driver). */
+  /** Where the map's colors come from: colorSource(driver). */
   source: ColorSource;
   /**
    * The tools the map shows once their data is in: the picked overlay and the

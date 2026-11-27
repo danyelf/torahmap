@@ -1,7 +1,7 @@
 /**
  * The Text Analytics overlay's measure, Repetitive wording: the share of a
  * verse's words that sit in a run of words its own book repeats nearby. A verse
- * is scored alone: averaged over its neighbours, a chapter such as Genesis 5
+ * is scored alone: averaged over its neighbors, a chapter such as Genesis 5
  * reads as one even block, and the verses that leave its formula (5:24, 5:29)
  * disappear.
  */

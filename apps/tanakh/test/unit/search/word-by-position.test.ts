@@ -62,7 +62,7 @@ describe('marking the words of a verse', () => {
     // Noah offers burnt-offerings, עֹלֹת, on an altar he has built, and the
     // verse ends by saying he sent them up: וַיַּעַל. Both are spelled עלה once
     // the vowels come off, so a reader searching for the verb and for the noun
-    // at once used to see one colour over both words.
+    // at once used to see one color over both words.
     expect(markedWords('Genesis.8.20', ASCEND)).toEqual(['ויעל']);
     expect(markedWords('Genesis.8.20', OFFERINGS)).toEqual(['עלת']);
   });
@@ -79,7 +79,7 @@ describe('marking the words of a verse', () => {
     const words = wordsOfVerse(parse, 'Nowhere.1.1', hebrew);
 
     // The spelling alone cannot tell the two apart, so both words answer to
-    // both terms. That is the behaviour this replaces, kept for where the
+    // both terms. That is the behavior this replaces, kept for where the
     // parse cannot speak.
     const offsets = splitIntoWords(stripNikkud(hebrew));
     const ascend = offsets.filter(({ word, start }) =>

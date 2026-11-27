@@ -33,7 +33,7 @@ describe('a term search with no extra mode', () => {
     expect(search.tool.settingsToUrl!(settings)).toEqual({ search: 'gamma', mode: 'w' });
   });
 
-  it('colours the items a whole word finds, and only those', () => {
+  it('colors the items a whole word finds, and only those', () => {
     const settings = fromLink({ search: 'gamma', mode: 'w' });
     const colors = search.tool.colorsFor({
       items,

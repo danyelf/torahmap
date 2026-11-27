@@ -126,7 +126,7 @@ describe('a tap', () => {
     expect(heard).toEqual(['grab', 'hover 4,2']);
   });
 
-  it('is not a press the browser cancelled', () => {
+  it('is not a press the browser canceled', () => {
     pointer('pointerdown', 15, 25);
     pointer('pointercancel', 15, 25);
     pointer('pointerup', 15, 25);

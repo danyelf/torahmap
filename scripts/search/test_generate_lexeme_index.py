@@ -93,7 +93,7 @@ def test_a_word_is_its_stem_not_its_prefix():
     )
 
 
-def test_a_stray_letter_does_not_carry_a_word_into_its_neighbour():
+def test_a_stray_letter_does_not_carry_a_word_into_its_neighbor():
     # Deuteronomy 22:27: הנער is read הנערה, and the reading's extra ה lines up
     # with the first letter of the next word unless it is ignored.
     shown = ["כי", "בשדה", "מצאה", "צעקה", "הנער", "המארשה", "ואינ", "מושיע", "לה"]

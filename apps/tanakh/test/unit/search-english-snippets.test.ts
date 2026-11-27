@@ -53,7 +53,7 @@ describe('snippets for an English term', () => {
     const snippet = excerptOf(genesis99(), 'Covenant', 'substring', data)!;
     const marked = snippet.snippet.slice(snippet.matchStart, snippet.matchEnd);
 
-    // The verse prints it lowercase; the reader typed it capitalised.
+    // The verse prints it lowercase; the reader typed it capitalized.
     expect(marked).toBe('covenant');
   });
 

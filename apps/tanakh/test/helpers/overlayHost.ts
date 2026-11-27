@@ -34,7 +34,7 @@ export interface OverlayHost<S, D> {
   /** Called after every change the controls or `change` make. Restoring is not a change. */
   onChange(listener: () => void): void;
   toUrl(): Record<string, string>;
-  /** The colour of one verse, as `colorsFor` gives it with nothing hovered. */
+  /** The color of one verse, as `colorsFor` gives it with nothing hovered. */
   getItemColor(verse: TanakhLayout): ReturnType<TanakhOverlay['colorsFor']>[number];
   /** Returns false when the overlay declares no hoverChangesColors of its own. */
   hoverChangesColors(before: TanakhLayout | null, after: TanakhLayout | null): boolean;

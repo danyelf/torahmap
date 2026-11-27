@@ -72,7 +72,7 @@
  * On the about panel (#020202 once composited), #8ec5f7 reaches 11.3:1, above the
  * body text's 10.8:1 (#bbb), so a link reads brighter than the prose around
  * it; the frame's accent, #6ab0f3, reaches only 9.0:1 and would read dimmer.
- * The underline carries the distinction without depending on colour at all.
+ * The underline carries the distinction without depending on color at all.
  */
 :root {
   --link: #8ec5f7;
@@ -105,7 +105,7 @@
 }
 
 /* Credits. Blue means clickable here and nothing else, so block headings are
-   quiet grey labels. */
+   quiet gray labels. */
 .credits-list {
   margin-top: 20px;
 }
@@ -179,7 +179,7 @@ span.credit-source {
   color: #8a8a8a;
 }
 
-/* Narrow screens: let the licence drop below the name rather than squeezing it. */
+/* Narrow screens: let the license drop below the name rather than squeezing it. */
 @media (max-width: 480px) {
   #about-panel .credit-row {
     grid-template-columns: 1fr;
@@ -190,7 +190,7 @@ span.credit-source {
   }
 }
 
-/* A licence pill that links to its deed, as Creative Commons 4.0 asks. Blue
+/* A license pill that links to its deed, as Creative Commons 4.0 asks. Blue
    marks it as a link; the pill's border stands in for the underline. */
 #about-panel a.credit-license {
   border-color: #3f5a73;

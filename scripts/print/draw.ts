@@ -112,7 +112,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       page,
       'text',
       { x: 36, y: 30, 'font-family': LATIN, 'font-size': 10, fill: ink },
-      'Torahmap wall print · proof at full scale · colours as sent to the printer',
+      'Torahmap wall print · proof at full scale · colors as sent to the printer',
     );
     const defs = el(page, 'defs');
     input.patches.forEach((patch, i) => {
@@ -120,8 +120,8 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       const y = 44;
       const g = el(page, 'g', { class: 'patch' });
       el(el(defs, 'clipPath', { id: `patch-${i}` }), 'rect', { x, y, width: P, height: P });
-      const tx = x + P / 2 - patch.centre.x * input.scale;
-      const ty = y + P / 2 - patch.centre.y * input.scale;
+      const tx = x + P / 2 - patch.center.x * input.scale;
+      const ty = y + P / 2 - patch.center.y * input.scale;
       drawVerses(
         el(el(g, 'g', { 'clip-path': `url(#patch-${i})` }), 'g', {
           class: 'verses',
@@ -157,9 +157,9 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       square: boolean;
       word: (v: SheetInput['verses'][0]) => string;
     }[] = [
-      { name: 'Letters in ink, on the colour', square: true, word: () => ink },
-      { name: 'Letters in the colour, no square', square: false, word: (v) => v.fills[0] },
-      { name: 'Letters in paper, out of the colour', square: true, word: () => paper },
+      { name: 'Letters in ink, on the color', square: true, word: () => ink },
+      { name: 'Letters in the color, no square', square: false, word: (v) => v.fills[0] },
+      { name: 'Letters in paper, out of the color', square: true, word: () => paper },
     ];
     // Letters are drawn closer than the face sets them, and rows a letter's
     // height apart, so ascenders and descenders reach into the next row.
@@ -196,8 +196,8 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       .map((v, i) => ({ v, word: mt.words[i] }))
       .filter(
         ({ v }) =>
-          Math.abs(v.x - mt.centre.x) < halfW + v.side &&
-          Math.abs(v.y - mt.centre.y) < halfH + v.side,
+          Math.abs(v.x - mt.center.x) < halfW + v.side &&
+          Math.abs(v.y - mt.center.y) < halfH + v.side,
       );
     VARIANTS.forEach((variant, k) => {
       const y = 44 + k * (MH + 18);
@@ -210,8 +210,8 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
       });
       const map = el(el(g, 'g', { 'clip-path': `url(#microtext-${k})` }), 'g', {
         transform:
-          `translate(${MX + MW / 2 - mt.centre.x * input.scale},` +
-          `${y + MH / 2 - mt.centre.y * input.scale}) scale(${input.scale})`,
+          `translate(${MX + MW / 2 - mt.center.x * input.scale},` +
+          `${y + MH / 2 - mt.center.y * input.scale}) scale(${input.scale})`,
       });
       if (variant.square) {
         drawVerses(
@@ -449,7 +449,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
   const mapW = Math.max(...input.verses.map((v) => v.x + v.side + 2)) - minX;
   const mapH = Math.max(...input.verses.map((v) => v.y + v.side + 2)) - minY;
   // A key placed under a book lives in the map's empty ground, so the map needs
-  // no band below it and is centred on the sheet instead.
+  // no band below it and is centered on the sheet instead.
   const under = input.keyUnder ? input.books.find((b) => b.en === input.keyUnder) : undefined;
   if (input.keyUnder && !under)
     throw new Error(`No book named ${input.keyUnder} to set the key under.`);
@@ -505,7 +505,7 @@ export function draw(input: SheetInput | ProofInput): DrawResult {
     el(t, 'tspan', { 'font-family': LATIN, 'font-weight': 700, 'font-size': 22, dx: 8 }, s.en);
   }
 
-  // The site's title artwork, recoloured for paper and without its shadow.
+  // The site's title artwork, recolored for paper and without its shadow.
   const art = new DOMParser().parseFromString(input.logoSvg, 'image/svg+xml').documentElement;
   const box = art.getAttribute('viewBox')!.split(/\s+/).map(Number);
   const logoW = 929 * scale;

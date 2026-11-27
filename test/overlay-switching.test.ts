@@ -398,7 +398,7 @@ describe('Overlay Switching Integration', () => {
     });
   });
 
-  it('only Haftarah and Text Analytics say their colours depend on the hovered verse', () => {
+  it('only Haftarah and Text Analytics say their colors depend on the hovered verse', () => {
     const hoverSensitive = getAllOverlays().filter((o) => o.hoverChangesColors);
     expect(hoverSensitive.map((o) => o.id)).toEqual(['haftarah', 'text-analytics']);
   });

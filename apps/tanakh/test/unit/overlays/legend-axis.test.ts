@@ -25,7 +25,7 @@ describe('renderAxis', () => {
     expect(ticks[1].style.left).toMatch(/^33\.3/);
   });
 
-  it('draws the strip from the palette the scale colours verses with', () => {
+  it('draws the strip from the palette the scale colors verses with', () => {
     const container = draw(renderAxis(scale(0, 100, LOG, BLACK_TO_WHITE), [0, 100]));
 
     const strip = container.querySelector<HTMLElement>('.legend-gradient');

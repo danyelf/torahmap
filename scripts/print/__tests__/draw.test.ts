@@ -62,11 +62,11 @@ describe('draw', () => {
     expect(svgOf(marked).querySelectorAll('.crop-mark')).toHaveLength(8);
   });
 
-  it('draws one band per colour of a split verse, each slid along the cut', () => {
+  it('draws one band per color of a split verse, each slid along the cut', () => {
     const svg = svgOf(draw(input()));
     const bands = [...svg.querySelectorAll('.verses polygon')];
     expect(bands).toHaveLength(5);
-    // The two-colour verse grows 0.75 on every side, to a side of 5.5 from
+    // The two-color verse grows 0.75 on every side, to a side of 5.5 from
     // (5.25, -0.75). Its first band is the triangle above the cut, slid by
     // -0.5 * 0.08 * 5.5 = -0.22 along (+1, -1).
     const first = bands[0]
@@ -198,12 +198,12 @@ describe('draw, proof', () => {
       {
         title: 'A',
         verses: [{ x: 100, y: 100, side: 4, fills: ['#aa0000'] }],
-        centre: { x: 100, y: 100 },
+        center: { x: 100, y: 100 },
       },
       {
         title: 'B',
         verses: [{ x: 100, y: 100, side: 4, fills: ['#00aa00'] }],
-        centre: { x: 100, y: 100 },
+        center: { x: 100, y: 100 },
       },
     ],
     microtext: {
@@ -213,7 +213,7 @@ describe('draw, proof', () => {
         { x: 3000, y: 3000, side: 4, fills: ['#0000aa'] },
       ],
       words: ['בראשית', 'ויאמר'],
-      centre: { x: 100, y: 100 },
+      center: { x: 100, y: 100 },
     },
     swatches: [
       { fill: '#aa0000', name: 'red', value: '#aa0000' },

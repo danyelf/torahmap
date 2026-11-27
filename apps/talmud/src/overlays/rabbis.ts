@@ -1,4 +1,4 @@
-// Lights every passage that names the rabbis a reader picks, each rabbi in a colour of his own.
+// Lights every passage that names the rabbis a reader picks, each rabbi in a color of his own.
 
 import './rabbis.css';
 import type { Overlay, SettingsUpdate, UrlParamSpec } from '@torahmap/shell/overlays/types.ts';
@@ -55,7 +55,7 @@ export const RABBIS_URL_PARAMS = [
   { key: 'rabbis', kind: 'text' },
 ] as const satisfies readonly UrlParamSpec[];
 
-/** How much of a rabbi's colour a passage keeps when a name there only might be him. */
+/** How much of a rabbi's color a passage keeps when a name there only might be him. */
 const MAYBE_KEEPS = 0.8;
 
 const faded = (color: Color): Color => fadeTo(color, MAYBE_KEEPS);
@@ -79,14 +79,14 @@ interface Finder extends PickFinder {
   travelTo(id: string): void;
 }
 
-/** The overlay for a Talmud whose passages `base` colours when no tool does. */
+/** The overlay for a Talmud whose passages `base` colors when no tool does. */
 export function rabbisOverlay(
   base: (item: TalmudLayoutItem) => Color,
   link: RabbiLink,
 ): Overlay<TalmudLayoutItem, PickSettings, RabbiData> {
   const unlit = (item: TalmudLayoutItem): Color => fadeTo(base(item), RABBIS_UNLIT_KEEPS);
 
-  /** The colours to draw a passage in: one when one picked rabbi is named there, else a split. */
+  /** The colors to draw a passage in: one when one picked rabbi is named there, else a split. */
   function colorsOf(
     items: readonly TalmudLayoutItem[],
     settings: PickSettings,

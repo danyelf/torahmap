@@ -187,7 +187,7 @@ interface Word {
   start: number;
   end: number;
   word: string;
-  /** Whether it counts towards a quote's words: not a single letter, or וגו׳. */
+  /** Whether it counts toward a quote's words: not a single letter, or וגו׳. */
   counts: boolean;
   /** Whether it counts when lining the editions up: neither (deleted) nor [added] by an editor. */
   aligns: boolean;
@@ -306,7 +306,7 @@ export function quoteFinder(tanakh: Tanakh): (text: string, cited: readonly Cite
         }
       });
 
-      // Words common to many verses, בני ישראל, cannot tell the one quoted from its neighbours.
+      // Words common to many verses, בני ישראל, cannot tell the one quoted from its neighbors.
       const uncommon = (word: string) => inVerse(word) && (versesWith.get(word) ?? 0) < COMMON;
       const pointedAt = (k: Candidate) =>
         aligned >= 0 &&
@@ -577,7 +577,7 @@ function wordsIn(text: string, quotes: readonly { start: number; end: number }[]
   return words;
 }
 
-/** Whether a word counts towards matching: the name, or any word but a single letter or וגו׳. */
+/** Whether a word counts toward matching: the name, or any word but a single letter or וגו׳. */
 function counts(written: string): boolean {
   const plain = letters(written);
   return isName(written) || (plain.length > 1 && plain !== 'וגו');

@@ -39,7 +39,7 @@ describe('resultsForItemSets', () => {
     expect(results).toHaveLength(2);
   });
 
-  it('keeps a gap where a term has no hits, so colours stay put', () => {
+  it('keeps a gap where a term has no hits, so colors stay put', () => {
     const results = resultsForItemSets(index, [new Set(), new Set(['Genesis.3.7'])]);
 
     expect(results).toHaveLength(1);

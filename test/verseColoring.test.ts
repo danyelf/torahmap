@@ -27,7 +27,7 @@ describe('itemColoring', () => {
       expect(colorsFor).toHaveBeenCalledWith(args);
     });
 
-    it('gives no colour to any item when there is no overlay', () => {
+    it('gives no color to any item when there is no overlay', () => {
       const verses = [createVerse({ verse: 1 }), createVerse({ verse: 2 })];
 
       expect(
@@ -69,7 +69,7 @@ describe('itemColoring', () => {
       ).toBe('blend');
     });
 
-    it('recomputes nothing during a timed ease, whose colours were captured when it began', () => {
+    it('recomputes nothing during a timed ease, whose colors were captured when it began', () => {
       expect(
         recompute('ease', { tool: hoverSensitive, settings: undefined, data: undefined }, a, b),
       ).toBe(null);
@@ -114,7 +114,7 @@ describe('itemColoring', () => {
       ).toBe(null);
     });
 
-    it('recomputes a settled overlay only when its colours depend on the hover', () => {
+    it('recomputes a settled overlay only when its colors depend on the hover', () => {
       expect(
         recompute('overlay', { tool: hoverSensitive, settings: undefined, data: undefined }, a, b),
       ).toBe('overlay');

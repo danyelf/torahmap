@@ -9,7 +9,7 @@ import {
 const SEARCH: StartOverlay = { id: 'search', name: 'Find', description: 'Finds a word.' };
 
 const OVERLAYS: StartOverlay[] = [
-  { id: 'colours', name: 'Colours', description: 'Paints the squares. Brighter is more.' },
+  { id: 'colors', name: 'Colors', description: 'Paints the squares. Brighter is more.' },
   { id: 'shades', name: 'Shades', description: 'Shades the squares.' },
 ];
 
@@ -32,7 +32,7 @@ describe('the starting points', () => {
   it('offers search, then every overlay and every story, in order, under a heading each', () => {
     expect(buttons(div).map((b) => startChosen(b))).toEqual([
       { kind: 'search' },
-      { kind: 'overlay', id: 'colours' },
+      { kind: 'overlay', id: 'colors' },
       { kind: 'overlay', id: 'shades' },
       { kind: 'story', id: 'tour' },
       { kind: 'story', id: 'job' },
@@ -41,11 +41,11 @@ describe('the starting points', () => {
   });
 
   it('names each button, with the first sentence of a tool’s description or a story’s description', () => {
-    const [search, colours, , tour] = buttons(div);
+    const [search, colors, , tour] = buttons(div);
     expect(search.textContent).toContain('Find');
     expect(search.textContent).toContain('Finds a word.');
-    expect(colours.textContent).toContain('Paints the squares.');
-    expect(colours.textContent).not.toContain('Brighter is more.');
+    expect(colors.textContent).toContain('Paints the squares.');
+    expect(colors.textContent).not.toContain('Brighter is more.');
     expect(tour.textContent).toContain('The Guided Tour');
     expect(tour.textContent).toContain('Follows Abraham.');
   });

@@ -1,5 +1,5 @@
 // A text's search over its own items: the term list a reader types, what it
-// finds, and the panel, colours, marks and link that show it.
+// finds, and the panel, colors, marks and link that show it.
 //
 // The term list is the search's settings, and the app holds it: every member
 // here is handed the list and none keeps one. Which row the reader is working
@@ -46,11 +46,11 @@ import { matchingTermsOf, type SearchResult, type Snippet, type TextIndex } from
 import type { MatchMode } from './matching.ts';
 
 /**
- * A list of terms, each with its own text, its own colour and its own way of
+ * A list of terms, each with its own text, its own color and its own way of
  * being matched. There is always at least one, possibly empty, so the panel
  * always has somewhere to type.
  *
- * A term's colour is not in the URL: it survives a neighbour being removed, so
+ * A term's color is not in the URL: it survives a neighbor being removed, so
  * the list itself is the setting rather than the URL values it is written as.
  */
 export interface TermSettings {
@@ -114,7 +114,7 @@ function typedTerms(settings: TermSettings): SearchTerm[] {
 }
 
 /**
- * Is there a colour left for another word?
+ * Is there a color left for another word?
  *
  * Asked before a click is offered, so the panel can say the palette is full
  * rather than showing a button that would quietly do nothing.
@@ -136,7 +136,7 @@ export interface TermSearch<I extends { id: string }, D, X> extends SearchCounts
   tool: SearchTool<I, TermSettings, D>;
   /** Hand the search its items and what a result click does with one. */
   configure(items: readonly I[], onSelect: (item: I) => void): void;
-  /** The items these settings find, as the map colours them. */
+  /** The items these settings find, as the map colors them. */
   resultsFor(data: D, settings: TermSettings): SearchResult[];
   /** A result row's quotation of its item for `term`, as the panel quotes it. */
   excerptFor(data: D, result: SearchResult, term: SearchTerm): Snippet | null;
@@ -369,8 +369,8 @@ export function createTermSearch<I extends { id: string }, D, X = never>(
   }
 
   /**
-   * An item's colour given what a term list found: each matching term's own
-   * colour, split corner to corner when there are several.
+   * An item's color given what a term list found: each matching term's own
+   * color, split corner to corner when there are several.
    */
   function searchColorAt(item: { id: string }, search: Search): Color | Color[] | null {
     const termIndices = search.matchingTerms.get(item.id);

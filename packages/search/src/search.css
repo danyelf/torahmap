@@ -1,6 +1,6 @@
 /* The term search: its rows, its results and its marks. */
 
-/* A search is a list of terms. Each gets a row: its colour, its box, how many
+/* A search is a list of terms. Each gets a row: its color, its box, how many
    items it accounts for, and a way to remove it. */
 
 #search-terms {

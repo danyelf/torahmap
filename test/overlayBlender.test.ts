@@ -22,14 +22,14 @@ import {
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
 import { getDefaultColor } from '../apps/tanakh/src/baseColor.ts';
-import { DIMMED_GREY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
+import { DIMMED_GRAY, SEARCH_NON_MATCH_DIM } from '../packages/shell/src/constants.ts';
 
 // The tools a stop can name, as a text hands them over: the overlays these
 // tests register, and search. Fresh for each test, which registers its own.
 let textTools: StoryTools<TanakhLayout>;
 
-// The blender memoises per verses array, so a fresh one keeps each test's
-// colours its own.
+// The blender memoizes per verses array, so a fresh one keeps each test's
+// colors its own.
 let verses: TanakhLayout[];
 beforeEach(() => {
   textTools = createStoryTools({ search: searchTool, overlay: getOverlay });
@@ -134,7 +134,7 @@ describe('computeBlendedColors multi-color preservation', () => {
     ]);
   });
 
-  it('hands both stops their own colours to fade between mid-transition (0 < t < 1)', () => {
+  it('hands both stops their own colors to fade between mid-transition (0 < t < 1)', () => {
     const fromStop: ResolvedStoryStop = {
       id: 's1',
       title: 'S1',
@@ -245,7 +245,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
     registerOverlay(commentaryOverlay);
   });
 
-  it("a blend leaves Commentary's colours for the held settings unchanged", () => {
+  it("a blend leaves Commentary's colors for the held settings unchanged", () => {
     // The overlay holds no settings of its own; the app does, and the blend
     // reads only each stop's own settings, never the app's — so what the app
     // holds cannot be touched, by construction. What this guards is the
@@ -302,7 +302,7 @@ describe('the blender evaluates without disturbing the overlay', () => {
   });
 });
 
-describe('the blender memoises colours by settings', () => {
+describe('the blender memoizes colors by settings', () => {
   it('calls colorsFor once per distinct settings across repeated blends, not once per call', () => {
     const colorsForSpy = vi.fn(({ items }: { items: TanakhLayout[] }) =>
       items.map(() => [0.2, 0.2, 0.2] as [number, number, number]),
@@ -345,7 +345,7 @@ describe('the blender memoises colours by settings', () => {
 });
 
 describe('the blender only skips the memo for a hover-responsive overlay', () => {
-  it('recomputes a hover-responsive overlay every call, but memoises one that never reads hover', () => {
+  it('recomputes a hover-responsive overlay every call, but memoizes one that never reads hover', () => {
     const hoverColorsFor = vi.fn(({ items }: { items: TanakhLayout[] }) =>
       items.map(() => [0.3, 0.3, 0.3] as [number, number, number]),
     );
@@ -426,7 +426,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
       textTools,
     );
 
-    // Declares hoverChangesColors: its colours could depend on which verse is
+    // Declares hoverChangesColors: its colors could depend on which verse is
     // hovered, so every call with a hovered verse is evaluated fresh.
     expect(hoverColorsFor).toHaveBeenCalledTimes(2);
     // Doesn't declare hoverChangesColors: hover isn't part of its cache key, so
@@ -436,7 +436,7 @@ describe('the blender only skips the memo for a hover-responsive overlay', () =>
 });
 
 describe('pictureForStop', () => {
-  it('gives a stop the same colours whether asked directly or as a zero blend', () => {
+  it('gives a stop the same colors whether asked directly or as a zero blend', () => {
     registerOverlay(multiColorOverlay);
     const stop: ResolvedStoryStop = {
       id: 's1',
@@ -496,7 +496,7 @@ describe('a stop whose overlay data is missing', () => {
 });
 
 describe('a stop that searches', () => {
-  const grey = DIMMED_GREY[0];
+  const gray = DIMMED_GRAY[0];
   const DIM = SEARCH_NON_MATCH_DIM;
 
   beforeEach(() => {
@@ -519,7 +519,7 @@ describe('a stop that searches', () => {
     );
 
     expect(picture.colors[0]).toEqual(colorsOf('God')[0]);
-    expect(picture.colors[1]).toEqual([grey, grey, grey]);
+    expect(picture.colors[1]).toEqual([gray, gray, gray]);
     expect(picture.rings).toBeUndefined();
   });
 

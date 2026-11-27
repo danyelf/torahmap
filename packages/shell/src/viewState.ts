@@ -1,5 +1,5 @@
 import {
-  centreForFocus,
+  centerForFocus,
   type Camera,
   type ItemBox,
   type ScreenPoint,
@@ -74,5 +74,5 @@ export function cameraForView(
   viewport: Viewport,
 ): Camera {
   if (!item) return { ...camera };
-  return { ...centreForFocus(item, camera.zoom, focus, viewport), zoom: camera.zoom };
+  return { ...centerForFocus(item, camera.zoom, focus, viewport), zoom: camera.zoom };
 }

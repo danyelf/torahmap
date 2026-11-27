@@ -1,4 +1,4 @@
-// Picking a few things from a long list to light on the map: how many, the colour each gets, how
+// Picking a few things from a long list to light on the map: how many, the color each gets, how
 // they travel in a link, and how a typed name is compared.
 
 import type { Color } from '@torahmap/utils';
@@ -7,7 +7,7 @@ import type { SettingsUpdate } from './types.ts';
 
 export interface PickSettings {
   /**
-   * Ids by place in PICK_PALETTE. A pick keeps its place, and so its colour, until it is removed; a link
+   * Ids by place in PICK_PALETTE. A pick keeps its place, and so its color, until it is removed; a link
    * carries only the order, so opening it places the picks again. An empty place is unused.
    */
   picked: string[];
@@ -25,7 +25,7 @@ export const plainName = (text: string): string =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
-/** The colours of the given places in PICK_PALETTE. */
+/** The colors of the given places in PICK_PALETTE. */
 export const pickColors = (slots: readonly number[]): Color[] =>
   slots.map((slot) => PICK_PALETTE[slot]);
 
@@ -37,8 +37,8 @@ export const pickSlots = (
   picked.flatMap((id, slot) => (id && known(id) ? [{ id, slot }] : []));
 
 /**
- * The link's value for the picks, in order, and the picks it names. A link does not carry colours:
- * each pick in it takes the first colour no earlier pick uses.
+ * The link's value for the picks, in order, and the picks it names. A link does not carry colors:
+ * each pick in it takes the first color no earlier pick uses.
  */
 export const picksToUrl = (picked: readonly string[]): string => picked.filter(Boolean).join(',');
 export function picksFromUrl(value: string | undefined): string[] {
@@ -66,7 +66,7 @@ const placeAt = (picked: string[], id: string): string[] => {
   return next;
 };
 
-/** A new pick takes the first colour no pick uses. */
+/** A new pick takes the first color no pick uses. */
 export const addPick = (id: string): SettingsUpdate<PickSettings> =>
   function (current) {
     if (current.picked.includes(id) || pickSlots(current).length >= MAX_PICKS) return current;

@@ -38,13 +38,13 @@ const both = (a: boolean[], b: boolean[]) => count(a.map((x, i) => x && b[i]));
 
 const nRepeats = count(repeats);
 console.log('Repetitive wording against echoes');
-console.log(`  verses repetitive wording colours (score above 0): ${nRepeats}`);
+console.log(`  verses repetitive wording colors (score above 0): ${nRepeats}`);
 console.log(`    of those, with an echo anywhere: ${share(both(repeats, hasEcho), nRepeats)}`);
 console.log(
   `    of those, with an echo in the same book within ${PARAMETERS.reachVerses} verses: ${share(both(repeats, hasNearEcho), nRepeats)}`,
 );
 const onlyRepeats = where.map((_, p) => repeats[p] && !hasEcho[p]);
-console.log(`  coloured by repetitive wording, no echo at all: ${count(onlyRepeats)}`);
+console.log(`  colored by repetitive wording, no echo at all: ${count(onlyRepeats)}`);
 const byChapter = (flags: boolean[]) => {
   const chapters = new Map<string, number>();
   flags.forEach((f, p) => {
@@ -66,7 +66,7 @@ console.log(`  verses with an echo anywhere: ${nEcho}`);
 console.log(`    with every echo outside repetitive wording's reach: ${nEcho - nNear}`);
 const nearNotRepeats = where.map((_, p) => hasNearEcho[p] && !repeats[p]);
 console.log(
-  `  verses with a near echo that repetitive wording leaves uncoloured: ${count(nearNotRepeats)}`,
+  `  verses with a near echo that repetitive wording leaves uncolored: ${count(nearNotRepeats)}`,
 );
 console.log(
   `    of those, shorter than ${PARAMETERS.minWords} words: ${count(nearNotRepeats.map((f, p) => f && lengths[p] < PARAMETERS.minWords))}`,

@@ -1,4 +1,4 @@
-// What the map's colours follow of the pointer: a square once the pointer has rested on it, and
+// What the map's colors follow of the pointer: a square once the pointer has rested on it, and
 // nothing as soon as it leaves the map.
 
 // Long enough that sweeping across the map does not flash it, short enough that a pause shows.

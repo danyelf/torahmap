@@ -7,7 +7,7 @@ import { isPlaceholder } from '@torahmap/ieeevis/baseColor.ts';
 import { pack } from '../../scripts/ieeevis/pack.ts';
 
 const STRUCTURE = new URL('../../public/data/ieeevis/structure.json', import.meta.url);
-const WORDS = ['chart', 'colour', 'axis', 'glyph', 'mark', 'scale', 'layout', 'filter', 'trend'];
+const WORDS = ['chart', 'color', 'axis', 'glyph', 'mark', 'scale', 'layout', 'filter', 'trend'];
 const REFERENCE_COUNT = 12;
 const WORDS_PER_PIECE = 160;
 /** Every seventh piece carries it, for the states that search. */

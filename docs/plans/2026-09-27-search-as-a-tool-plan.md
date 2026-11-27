@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Take Text Search out of the overlay list and make it a tool of its own, so a search and an overlay can be on the map together, with a match over an overlay drawn as a ring around the overlay's colour.
+**Goal:** Take Text Search out of the overlay list and make it a tool of its own, so a search and an overlay can be on the map together, with a match over an overlay drawn as a ring around the overlay's color.
 
-**Architecture:** A pure function in `src/itemColoring.ts` combines the search's colours and the overlay's into a fill and a ring for each verse. The renderer draws the ring in screen pixels, and fills a square that is too small for a hole whole in its search colour. The app holds the overlay and the search in two slots (`src/tools.ts`), each with its own URL keys, story-stop keys, panel and legend row. Tasks 2 and 3 run with search both in the overlay list and in its own slot; Task 4 takes it out of the list.
+**Architecture:** A pure function in `src/itemColoring.ts` combines the search's colors and the overlay's into a fill and a ring for each verse. The renderer draws the ring in screen pixels, and fills a square that is too small for a hole whole in its search color. The app holds the overlay and the search in two slots (`src/tools.ts`), each with its own URL keys, story-stop keys, panel and legend row. Tasks 2 and 3 run with search both in the overlay list and in its own slot; Task 4 takes it out of the list.
 
 **Tech Stack:** TypeScript, Vite, WebGL 2 (instanced drawing), Vitest with jsdom, and the Playwright layout suite (`npm run test:layout`).
 
@@ -19,15 +19,15 @@ The spec leaves these open; each is a choice made here.
 1. Search keeps the shape of an `Overlay` (so the settings store, the test helper `hostOverlay` and the legend summary serve it unchanged) but is never registered; its export is renamed `searchOverlay` → `searchTool`, and its name becomes "Search".
 2. Search's settings live in the same settings store as the overlays', under its id `search`.
 3. The search counts as on when it has a term it searches on, by the rule it already has: `MIN_SEARCH_TERM_LENGTH` (2, `src/constants/app.ts`: "Terms shorter than this are dropped"), applied by `parseSearchTerms` in `src/search.ts` and by `searchFor`'s `active` list in `src/overlays/search/index.ts`, and pinned by "handles single-character query in all modes" (`search-hebrew-modes.test.ts`), "resolves a single letter to nothing" (`search-mixed-language.test.ts`) and "shows minimum character warning for short terms" (`overlays/search.test.ts`). `isSearching` reads that same `active` filter, extracted as `activeTerms`, so a lone letter leaves the search off: nothing dims, no legend row, no history entry.
-4. With an overlay on, a verse the search does not match is drawn at `NON_MATCH_DIM` = 0.85 of its overlay colour (or of its grey): a smidge, to be tuned by eye at the Task 2 stop. With no overlay, it keeps search's present dark grey (0.18) exactly, so search alone looks as it does today. The one tunable number applies only with an overlay on.
-5. A match over an overlay that gives that verse no colour has a grey hole (the ordinary undimmed grey). Agreed by Danyel.
+4. With an overlay on, a verse the search does not match is drawn at `NON_MATCH_DIM` = 0.85 of its overlay color (or of its gray): a smidge, to be tuned by eye at the Task 2 stop. With no overlay, it keeps search's present dark gray (0.18) exactly, so search alone looks as it does today. The one tunable number applies only with an overlay on.
+5. A match over an overlay that gives that verse no color has a gray hole (the ordinary undimmed gray). Agreed by Danyel.
 6. The ring starts at 1.5px outside and 1px inside, and falls back to a whole square below 8 CSS pixels a side (zoom 2 on the map's 4-unit squares). All four numbers live in `SEARCH_WITH_OVERLAY` in `src/constants.ts`.
-7. A verse with several colours (a multi-word match, or Haftarah's stripes) reaches out by the larger of the multi-colour growth and the ring's outside width, not their sum, and its ring is measured in from that outer edge, so every ring is 2.5px thick (1.5 + 1) whatever the verse's growth.
-7a. The spec's "under half the 2-unit gap, so rings never touch" cannot hold: `layout.ts` jitters each square by up to 1 unit (`JITTER_RANGE` 2), so neighbours sit 0 to 4 units apart. Rings can touch where jitter brings squares close, as the multi-colour growth already can; the plan keeps no test that claims otherwise.
-8. Each colour in the verse buffer is packed into one float at 8 bits a channel. A fill and a ring of four stripes each, for two pictures, would need 19 attributes and 20 varyings; WebGL 2 promises only 16 and 15.
-9. Story blending: since #260 the shader fades between whole pictures, and each picture now carries its rings, so a donut fades in as one picture fading into the next, its outside growing from nothing as the multi-colour growth does. Only `mergePictures`, which collapses a fade in progress when a new one must start from it, mixes rings stripe by stripe. The spec says this (3dd05a7).
-10. `layerToRecompute` stays as it is: search's colours never depend on the hovered verse, so asking the overlay is already asking both.
-11. Hovering a donut brightens its hole (the fill); the ring keeps its colour.
+7. A verse with several colors (a multi-word match, or Haftarah's stripes) reaches out by the larger of the multi-color growth and the ring's outside width, not their sum, and its ring is measured in from that outer edge, so every ring is 2.5px thick (1.5 + 1) whatever the verse's growth.
+7a. The spec's "under half the 2-unit gap, so rings never touch" cannot hold: `layout.ts` jitters each square by up to 1 unit (`JITTER_RANGE` 2), so neighbors sit 0 to 4 units apart. Rings can touch where jitter brings squares close, as the multi-color growth already can; the plan keeps no test that claims otherwise.
+8. Each color in the verse buffer is packed into one float at 8 bits a channel. A fill and a ring of four stripes each, for two pictures, would need 19 attributes and 20 varyings; WebGL 2 promises only 16 and 15.
+9. Story blending: since #260 the shader fades between whole pictures, and each picture now carries its rings, so a donut fades in as one picture fading into the next, its outside growing from nothing as the multi-color growth does. Only `mergePictures`, which collapses a fade in progress when a new one must start from it, mixes rings stripe by stripe. The spec says this (3dd05a7).
+10. `layerToRecompute` stays as it is: search's colors never depend on the hovered verse, so asking the overlay is already asking both.
+11. Hovering a donut brightens its hole (the fill); the ring keeps its color.
 12. The verse text shows both tools' marks: the overlay's (Trop's) and the search's words (Danyel's answer). `combineMarks` in `src/verseMarks.ts` reads each tool's marked fragment as stretches of the text and lays them into one; where a mark of the overlay's shares any character with one of the search's, the search's is kept and the overlay's dropped. If either fragment's text differs from the verse's, the search's fragment is used alone.
 13. The new Clear button has the id `search-clear-all`; `#search-clear` stays on the first word's ×, which many tests use.
 14. Clear sits beside "+ add a word" and is disabled while no word is typed.
@@ -45,11 +45,11 @@ The spec leaves these open; each is a choice made here.
 
 ## Global Constraints
 
-- Colouring, top to bottom: "search, the overlay, grey. Each gives a colour for a verse or passes it down."
+- Coloring, top to bottom: "search, the overlay, gray. Each gives a color for a verse or passes it down."
 - Ring: "The ring is 1.5px outside the square and 1px inside it, in screen pixels, so it does not thin as the map zooms out."
 - "The outside width must stay under half the 2-unit gap between squares at the zooms where donuts show, so rings never touch." Layout jitter makes the gap 0 to 4 units, so this cannot hold everywhere; see Decision 7a.
-- "When the square is too small on screen to leave a hole, the match is filled whole in its search colour."
-- "A match with no overlay is filled in its search colour, and non-matches are dimmed grey: search on its own looks as it does today." "With no search on, the overlay's colours pass through unchanged."
+- "When the square is too small on screen to leave a hole, the match is filled whole in its search color."
+- "A match with no overlay is filled in its search color, and non-matches are dimmed gray: search on its own looks as it does today." "With no search on, the overlay's colors pass through unchanged."
 - URL: "`search=אברם,אברהם`, with today's `mode=` and `m=` for how each word matches." "`search`, `mode` and `m` are reserved, so no overlay can claim them." "`overlay=search` is an unknown overlay and is ignored. Old search links open with no search; they are not translated."
 - Story stops: "A story stop can say `search: …` and, separately, `overlay: …`; each is optional." "The parser sends `search`, `mode` and `m` to the search and every other key to the overlay."
 - History: "Turning a tool on or off adds a browser history entry; editing it replaces the current one." "Switching overlays and pinning a verse add entries, as today."
@@ -82,12 +82,12 @@ The spec leaves these open; each is a choice made here.
 | --- | --- |
 | `src/constants.ts` | `SEARCH_WITH_OVERLAY`: the dimming and the ring's three numbers |
 | `src/itemColoring.ts` | `combineLayers` (search over overlay into fills and rings), `toolsPicture` |
-| `src/geometry.ts` | `Picture.rings`; colours packed one to a float; ring stripes per picture |
+| `src/geometry.ts` | `Picture.rings`; colors packed one to a float; ring stripes per picture |
 | `src/webgl.ts`, `src/rendering.ts` | The donut in the shader; the `u_ring` uniform |
 | `src/scrollytelling/colorBlending.ts` | `mergePictures` merges rings |
 | `src/overlays/types.ts` | `ToolOnMap`, `Tools` |
 | `src/tools.ts` (new) | `toolsShown`, `togglesSearch`: the two slots |
-| `src/overlays/search/index.ts` | Renamed `searchTool`; colours a match or nothing; `isSearching`, `searchFromLink`; Clear |
+| `src/overlays/search/index.ts` | Renamed `searchTool`; colors a match or nothing; `isSearching`, `searchFromLink`; Clear |
 | `src/urlState.ts`, `src/viewState.ts` | `SEARCH_URL_PARAMS`, `SEARCH_KEYS`, `searchParams` in link and view |
 | `src/scrollytelling/{types,storyParser,overlayBlender}.ts` | `searchParams` on a stop; pictures for a stop from both tools |
 | `src/overlays/{index,registry}.ts` | Search leaves the list; the registry refuses search's keys |
@@ -145,17 +145,17 @@ describe('combineLayers', () => {
       expect(combineLayers(3, null, overlay)).toEqual({ colors: overlay });
     });
 
-    it('leaves every verse grey with no overlay either', () => {
+    it('leaves every verse gray with no overlay either', () => {
       expect(combineLayers(2, null, null)).toEqual({ colors: [null, null] });
     });
   });
 
   describe('search alone', () => {
-    it('fills a match with its search colour', () => {
+    it('fills a match with its search color', () => {
       expect(combineLayers(1, [CYAN], null).colors[0]).toEqual(CYAN);
     });
 
-    it('dims a verse it does not match to the grey search alone has always used', () => {
+    it('dims a verse it does not match to the gray search alone has always used', () => {
       expect(combineLayers(1, [null], null).colors[0]).toEqual([ALONE, ALONE, ALONE]);
     });
 
@@ -165,13 +165,13 @@ describe('combineLayers', () => {
   });
 
   describe('search over an overlay', () => {
-    it('rings a match in its search colour around the overlay colour', () => {
+    it('rings a match in its search color around the overlay color', () => {
       const { colors, rings } = combineLayers(1, [CYAN], [RED]);
       expect(colors[0]).toEqual(RED);
       expect(rings![0]).toEqual(CYAN);
     });
 
-    it('leaves the hole grey where the overlay has no colour for the match', () => {
+    it('leaves the hole gray where the overlay has no color for the match', () => {
       const { colors, rings } = combineLayers(1, [CYAN], [null]);
       expect(colors[0]).toBeNull();
       expect(rings![0]).toEqual(CYAN);
@@ -194,7 +194,7 @@ describe('combineLayers', () => {
       ]);
     });
 
-    it('dims the grey of a verse the overlay leaves uncoloured', () => {
+    it('dims the gray of a verse the overlay leaves uncolored', () => {
       expect(combineLayers(1, [null], [null]).colors[0]).toEqual(scaled(getDefaultColor(0), DIM));
     });
 
@@ -219,7 +219,7 @@ In `src/constants.ts`, append:
 ```ts
 /** How a search shows over an overlay. Starting values, to be settled by eye on the map. */
 export const SEARCH_WITH_OVERLAY = {
-  // What a verse the search does not match keeps of its overlay colour
+  // What a verse the search does not match keeps of its overlay color
   NON_MATCH_DIM: 0.85,
 } as const;
 ```
@@ -228,11 +228,11 @@ In `src/geometry.ts`, replace the `Picture` interface and its comment with:
 
 ```ts
 /**
- * One colouring of the map: a colour, or stripes, per verse, and how far each
- * verse has grown towards the size a multi-colour verse is drawn at, 0 to 1.
+ * One coloring of the map: a color, or stripes, per verse, and how far each
+ * verse has grown toward the size a multi-color verse is drawn at, 0 to 1.
  * Without `growth`, a verse is fully grown exactly when its fill or its ring
- * has several colours. A verse's ring, where `rings` gives one, surrounds its
- * fill in colours of its own.
+ * has several colors. A verse's ring, where `rings` gives one, surrounds its
+ * fill in colors of its own.
  */
 export interface Picture<C = Color | Color[]> {
   colors: C[];
@@ -254,7 +254,7 @@ import { HIGHLIGHT_CONSTANTS, SEARCH_WITH_OVERLAY } from './constants';
 and add, after `getDefaultColor`:
 
 ```ts
-/** A verse's colour, or its stripes. */
+/** A verse's color, or its stripes. */
 export type VerseColor = Color | Color[];
 
 const ALONE_SHADE = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
@@ -266,9 +266,9 @@ function dim(color: VerseColor, factor: number): VerseColor {
 }
 
 /**
- * The map's colours from its two layers, search over overlay. `search` is null
- * with no search on and `overlay` null with no overlay; a null colour is
- * painted grey by computeItemStates.
+ * The map's colors from its two layers, search over overlay. `search` is null
+ * with no search on and `overlay` null with no overlay; a null color is
+ * painted gray by computeItemStates.
  */
 export function combineLayers(
   count: number,
@@ -309,8 +309,8 @@ git add src/constants.ts src/geometry.ts src/itemColoring.ts src/__tests__/unit/
 git commit -m "$(cat <<'EOF'
 Combine the search and the overlay into fills and rings
 
-A match over an overlay keeps the overlay's colour and gains a ring of
-its search colour; a verse the search misses dims a little. Search on
+A match over an overlay keeps the overlay's color and gains a ring of
+its search color; a verse the search misses dims a little. Search on
 its own draws as it always has.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
@@ -337,7 +337,7 @@ Two parts, each committed: A draws rings; B gives the search a slot of its own, 
   - `ShaderProgram.uniforms.ring` in `src/webgl.ts`.
   - `ToolOnMap<T>`, `Tools<T>` in `src/overlays/types.ts`.
   - `SEARCH_URL_PARAMS` in `src/urlState.ts` (keys `q`, `mode`, `m` here; Task 3 renames `q` to `search`); `UrlState.searchParams?: UrlParamValues`; `ViewState.searchParams: UrlParamValues`.
-  - From `src/overlays/search/index.ts`: `searchTool` (was `searchOverlay`), `isSearching(settings: SearchSettings): boolean`, `searchFromLink(raw: LinkParams): SearchSettings`. Search's colour functions give a match's colour or null.
+  - From `src/overlays/search/index.ts`: `searchTool` (was `searchOverlay`), `isSearching(settings: SearchSettings): boolean`, `searchFromLink(raw: LinkParams): SearchSettings`. Search's color functions give a match's color or null.
   - `toolsShown(overlay: Overlay | null, overlaySettings: unknown, search: SearchSettings): Tools` in `src/tools.ts`.
   - `toolsPicture<T>(tools: Tools<T>, items: SpatialItem<T>[], hovered: SpatialItem<T> | null): Picture<VerseColor | null>` in `src/itemColoring.ts`.
   - `pictureForStop(stop, verses, hovered): Picture` (was `colorsForStop`) and `stopSearchParams(stop)` in `src/scrollytelling/overlayBlender.ts`.
@@ -424,36 +424,36 @@ describe('buildItemGeometry', () => {
   });
 
   describe('growth', () => {
-    it('grows by less than half the gap, so neighbours never touch', () => {
+    it('grows by less than half the gap, so neighbors never touch', () => {
       expect(MULTICOLOR_GROWTH).toBeGreaterThan(0);
       expect(MULTICOLOR_GROWTH).toBeLessThan(1); // the gap between squares is 2
     });
 
-    it('grows a verse with several colours fully, and one with one colour not at all', () => {
+    it('grows a verse with several colors fully, and one with one color not at all', () => {
       const buffer = buildItemGeometry(createVerses(2), { colors: [[RED, BLUE], RED] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(1);
       expect(field(buffer, 1, 'a_shape')[1]).toBe(0);
     });
 
-    it('grows a verse whose ring has several colours', () => {
+    it('grows a verse whose ring has several colors', () => {
       const buffer = buildItemGeometry([createVerse()], { colors: [RED], rings: [[GREEN, BLUE]] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(1);
     });
 
-    it('grows a verse by the fraction it is given, whatever its colours', () => {
+    it('grows a verse by the fraction it is given, whatever its colors', () => {
       const buffer = buildItemGeometry([createVerse()], { colors: [[RED, BLUE]], growth: [0.5] });
       expect(field(buffer, 0, 'a_shape')[1]).toBe(0.5);
     });
   });
 
-  describe('colours', () => {
-    it('packs the verse colour, zero after it, and a count of 1', () => {
+  describe('colors', () => {
+    it('packs the verse color, zero after it, and a count of 1', () => {
       const buffer = buildItemGeometry([createVerse()], { colors: [RED] });
       expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(1);
     });
 
-    it('falls back to the base colour, then to the default fill', () => {
+    it('falls back to the base color, then to the default fill', () => {
       const base: Color = [0.2, 0.3, 0.4];
       const given = buildItemGeometry([createVerse()], undefined, undefined, base);
       expect(field(given, 0, 'a_fill')[0]).toBe(packColor(base));
@@ -462,13 +462,13 @@ describe('buildItemGeometry', () => {
       expect(field(fallback, 0, 'a_fill')[0]).toBe(packColor([0.6, 0.6, 0.6]));
     });
 
-    it('keeps several colours in order with their count', () => {
+    it('keeps several colors in order with their count', () => {
       const buffer = buildItemGeometry([createVerse()], { colors: [[RED, GREEN, BLUE]] });
       expect(field(buffer, 0, 'a_fill')).toEqual(packed(RED, GREEN, BLUE));
       expect(field(buffer, 0, 'a_shape')[0]).toBe(3);
     });
 
-    it('keeps at most four colours', () => {
+    it('keeps at most four colors', () => {
       const buffer = buildItemGeometry([createVerse()], {
         colors: [[RED, GREEN, BLUE, WHITE, RED]],
       });
@@ -476,7 +476,7 @@ describe('buildItemGeometry', () => {
       expect(field(buffer, 0, 'a_shape')[0]).toBe(4);
     });
 
-    it('colours each verse independently', () => {
+    it('colors each verse independently', () => {
       const buffer = buildItemGeometry(createVerses(3), {
         colors: [RED, [BLUE, GREEN], undefined as never],
       });
@@ -660,14 +660,14 @@ In `src/constants.ts`, replace `SEARCH_WITH_OVERLAY` with:
 ```ts
 /** How a search shows over an overlay. Starting values, to be settled by eye on the map. */
 export const SEARCH_WITH_OVERLAY = {
-  // What a verse the search does not match keeps of its overlay colour
+  // What a verse the search does not match keeps of its overlay color
   NON_MATCH_DIM: 0.85,
   // The ring around a match, in CSS pixels, outside the square and inside it
   RING_OUTSIDE_PX: 1.5,
   RING_INSIDE_PX: 1,
   // A square smaller than this on screen has no room for a hole and is filled
-  // with its search colour. Rings can touch where layout jitter brings squares
-  // close, as the multi-colour growth already can.
+  // with its search color. Rings can touch where layout jitter brings squares
+  // close, as the multi-color growth already can.
   RING_MIN_SQUARE_PX: 8,
 } as const;
 ```
@@ -683,7 +683,7 @@ In `src/geometry.ts`, replace everything after `const NO_COLORS: Picture = { col
  * whole map, so moving between them redraws without rebuilding this buffer.
  * At rest the two are the same.
  *
- * A fill and a ring are four stripes each, one colour to a float (packColor):
+ * A fill and a ring are four stripes each, one color to a float (packColor):
  * unpacked, two pictures would need 19 attributes and 20 varyings, and WebGL 2
  * promises only 16 and 15.
  */
@@ -708,7 +708,7 @@ for (const { name, size } of VERSE_ATTRIBUTES) {
 }
 export const FLOATS_PER_VERSE = floats;
 
-/** A colour as one float, 8 bits a channel; exact, as a float holds every integer below 2^24. */
+/** A color as one float, 8 bits a channel; exact, as a float holds every integer below 2^24. */
 export function packColor([r, g, b]: Color): number {
   const byte = (c: number): number => Math.round(Math.min(1, Math.max(0, c)) * 255);
   return byte(r) * 0x10000 + byte(g) * 0x100 + byte(b);
@@ -719,7 +719,7 @@ const SLOTS = {
   to: { fill: 'a_nextFill', ring: 'a_nextRing', shape: 'a_nextShape' },
 } as const;
 
-/** A verse's stripes: at most four, and the base colour for none. */
+/** A verse's stripes: at most four, and the base color for none. */
 function stripesOf(color: Color | Color[] | null | undefined, baseColor: Color): Color[] {
   if (isColorArray(color)) return color.slice(0, 4);
   if (Array.isArray(color) && (color as unknown[]).length === 0) return [baseColor];
@@ -863,7 +863,7 @@ const FRAGMENT_SHADER = `#version 300 es
 
   // Several colors split the square into bands running corner to corner, one
   // per color. A diagonal cut keeps a two-color verse from reading as two
-  // neighbouring verses, as a vertical split does.
+  // neighboring verses, as a vertical split does.
   vec3 stripes(highp vec4 colors, int count) {
     if (count <= 1) return unpack(colors.x);
     float d = min((v_uv.x + v_uv.y) * 0.5, 0.999);
@@ -931,7 +931,7 @@ function growthAt(picture: Picture, i: number, stripes: number): number {
 /**
  * One picture `t` of the way between two, blended stripe by stripe.
  *
- * The side with fewer stripes is stretched to match, each of its colours
+ * The side with fewer stripes is stretched to match, each of its colors
  * covering the stripes nearest where its band lay. A verse whose stripe count
  * differs between the two therefore changes its stripe widths, which the
  * shader's fade between whole pictures avoids; this is only for collapsing a
@@ -982,7 +982,7 @@ function mergeStripes(from: Color[], to: Color[], t: number): Color | Color[] {
 
 const EMPTY_SLOT: Color = [0.15, 0.15, 0.15];
 
-// The colour at slot `j` of `slots` spread over `count` equal bands.
+// The color at slot `j` of `slots` spread over `count` equal bands.
 function stretched(slots: Color[], j: number, count: number): Color {
   if (slots.length === 0) return EMPTY_SLOT;
   return slots[Math.floor((j * slots.length) / count)];
@@ -1029,7 +1029,7 @@ Draw a ring around a verse that has one
 
 The ring's widths are screen pixels, so it does not thin as the map
 zooms out, and a square too small for a hole is filled with the ring's
-colour. Colours are packed one to a float to fit a ring beside the fill
+color. Colors are packed one to a float to fit a ring beside the fill
 for both pictures within WebGL 2's attribute limits.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
@@ -1080,7 +1080,7 @@ and append:
 
 ```ts
 describe('toolsPicture', () => {
-  it('asks each tool for its colours and combines them, search over overlay', () => {
+  it('asks each tool for its colors and combines them, search over overlay', () => {
     const overlay: Overlay = { id: 'o', name: 'O', getVerseColor: () => RED };
     const search: Overlay = {
       id: 's',
@@ -1185,26 +1185,26 @@ describe('a stop that searches', () => {
       overlayParams: { q: 'God' },
     };
     const picture = pictureForStop(stop, verses, null);
-    const grey = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+    const gray = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
 
     expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
-    expect(picture.colors[1]).toEqual([grey, grey, grey]);
+    expect(picture.colors[1]).toEqual([gray, gray, gray]);
     expect(picture.rings).toBeUndefined();
   });
 });
 ```
 
-In `src/__tests__/unit/overlays/search.test.ts`, the search now colours only its matches:
+In `src/__tests__/unit/overlays/search.test.ts`, the search now colors only its matches:
 
-- "returns dimmed color for non-matching verses": rename to `'gives no colour to a verse it does not match'` and replace its body with `expect(searchOverlay.getVerseColor(testVerses[1])).toBeNull();`.
-- "dims verses without Hebrew matches": rename to `'gives no colour to a verse without a Hebrew match'`, body `expect(searchOverlay.getVerseColor(testVerses[3])).toBeNull();`.
+- "returns dimmed color for non-matching verses": rename to `'gives no color to a verse it does not match'` and replace its body with `expect(searchOverlay.getVerseColor(testVerses[1])).toBeNull();`.
+- "dims verses without Hebrew matches": rename to `'gives no color to a verse without a Hebrew match'`, body `expect(searchOverlay.getVerseColor(testVerses[3])).toBeNull();`.
 - "handles query with no matches": replace the loop body with `expect(searchOverlay.getVerseColor(verse)).toBeNull();`.
 - "handles verse not in search results": replace the last two lines with `expect(searchOverlay.getVerseColor(verse)).toBeNull();`.
 - Delete `const DIM_FACTOR = HIGHLIGHT_CONSTANTS.DIM_FACTOR;` and the `HIGHLIGHT_CONSTANTS` import.
 
 In `src/__tests__/unit/overlays/search-meaning-filter.test.ts`, replace `toEqual(dimmed())` with `toBeNull()` and delete the `dimmed` function.
 
-In `src/__tests__/integration/search-overlay-modes.test.ts`, in the test that switches `אלה` to word mode (around line 137), a verse word mode does not match now has no colour: replace the lines from the comment `// Should be dimmed (not matched as whole word)` through `expect(wc[1]).toBe(wc[2]);` with:
+In `src/__tests__/integration/search-overlay-modes.test.ts`, in the test that switches `אלה` to word mode (around line 137), a verse word mode does not match now has no color: replace the lines from the comment `// Should be dimmed (not matched as whole word)` through `expect(wc[1]).toBe(wc[2]);` with:
 
 ```ts
       // Word mode does not match "אלה" inside "ואלה"
@@ -1216,7 +1216,7 @@ In `src/__tests__/unit/search-matching.test.ts`, line 5: `import { searchOverlay
 - [ ] **Step 8: Run the tests to see them fail**
 
 Run: `npx vitest run src/__tests__/unit/tools.test.ts src/__tests__/unit/combineLayers.test.ts src/__tests__/unit/urlState.test.ts src/__tests__/integration/view-state-restore.test.ts src/scrollytelling/__tests__/overlayBlender.test.ts src/__tests__/unit/overlays/search.test.ts`
-Expected: FAIL: `src/tools.ts`, `toolsPicture`, `searchTool`, `searchFromLink` and `pictureForStop` do not exist; links carry no `searchParams`; search still colours non-matches grey.
+Expected: FAIL: `src/tools.ts`, `toolsPicture`, `searchTool`, `searchFromLink` and `pictureForStop` do not exist; links carry no `searchParams`; search still colors non-matches gray.
 
 - [ ] **Step 9: Implement**
 
@@ -1229,7 +1229,7 @@ export interface ToolOnMap<T = TanakhIdentity> {
   settings: unknown;
 }
 
-/** What colours the map: the overlay and the search, each null while off. */
+/** What colors the map: the overlay and the search, each null while off. */
 export interface Tools<T = TanakhIdentity> {
   overlay: ToolOnMap<T> | null;
   search: ToolOnMap<T> | null;
@@ -1282,7 +1282,7 @@ In `src/viewState.ts`:
 
 In `src/overlays/search/index.ts`:
 
-- Replace the header comment's first two lines with `// The full-text search: the search a term list describes, and the members the` / `// app draws, colours and links it through.`
+- Replace the header comment's first two lines with `// The full-text search: the search a term list describes, and the members the` / `// app draws, colors and links it through.`
 - Imports: change the `../types.ts` import to `import type { Overlay, Color, UrlParamValues } from '../types.ts';`, delete `import { HIGHLIGHT_CONSTANTS } from '../../constants.ts';`, and add:
 
 ```ts
@@ -1294,7 +1294,7 @@ import type { LinkParams } from '../settings.ts';
 - Replace `searchColorAt` with:
 
 ```ts
-/** A verse's colour given what a term list found: each matching term's own colour, split corner to corner when there are several. */
+/** A verse's color given what a term list found: each matching term's own color, split corner to corner when there are several. */
 function searchColorAt(verse: TanakhIdentity, search: Search): Color | Color[] | null {
   const termIndices = search.matchingTerms.get(tanakhKey(verse.book, verse.chapter, verse.verse));
   if (!termIndices || termIndices.length === 0) return null;
@@ -1364,7 +1364,7 @@ export function toolsShown(
 In `src/itemColoring.ts`, change the overlays import to `import type { Overlay, Color, ToolOnMap, Tools } from './overlays/types';` and add after `overlayColorsFor`:
 
 ```ts
-/** The map's colours for the tools a view shows. */
+/** The map's colors for the tools a view shows. */
 export function toolsPicture<T>(
   tools: Tools<T>,
   items: SpatialItem<T>[],
@@ -1391,10 +1391,10 @@ import { settingsFromLink } from '../overlays/settings.ts';
 import { searchFromLink } from '../overlays/search/index.ts';
 import { toolsShown } from '../tools.ts';
 
-// Memoised per verses array by the stop's overlay, its search and their
+// Memoized per verses array by the stop's overlay, its search and their
 // validated link parameters. The key is canonical because validateOverlayParams
 // writes keys in the order urlParams declares them, so stops that ask for the
-// same thing share an entry. Colours that depend on the hover are recomputed
+// same thing share an entry. Colors that depend on the hover are recomputed
 // while a verse is hovered: caching by hover too would add an entry for every
 // verse the cursor crosses.
 const picturesCache = new WeakMap<TanakhLayout[], Map<string, Picture>>();
@@ -1530,7 +1530,7 @@ In `src/main.ts`:
 - [ ] **Step 10: Run the tests and the type checker**
 
 Run: `npm run typecheck && npx vitest run`
-Expected: all pass. If a test outside those edited above fails because it expected search's grey for a verse it does not match, change it to expect `null`, as in Step 7.
+Expected: all pass. If a test outside those edited above fails because it expected search's gray for a verse it does not match, change it to expect `null`, as in Step 7.
 
 - [ ] **Step 11: Commit**
 
@@ -1541,7 +1541,7 @@ Give the search a slot of its own beside the overlay
 
 A link's search keys are read whatever overlay it names, and the map
 draws both: a match over an overlay as a ring around the overlay's
-colour. The search stays in the overlay list for now.
+color. The search stays in the overlay list for now.
 
 Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01B2P2TWqMk5BbibTBXgLc37
@@ -1569,7 +1569,7 @@ EOF
 ```
 
    Wait for the `cloudflare-workers-and-pages` comment (`gh pr view --json comments`) and take the preview link from it.
-3. Send Danyel these views, on the preview link and on `http://localhost:PORT/`. Each pins Genesis 17:5 to centre it; press Escape to unpin before judging, since the pin's outline sits where the ring does. Genesis 17:5 holds both אברם and אברהם, so its ring is split. It is also a multi-colour verse, drawn grown: check that its ring is as thick as a single-word match's beside it (1.5px out, 1px in, measured from the drawn edge).
+3. Send Danyel these views, on the preview link and on `http://localhost:PORT/`. Each pins Genesis 17:5 to center it; press Escape to unpin before judging, since the pin's outline sits where the ring does. Genesis 17:5 holds both אברם and אברהם, so its ring is split. It is also a multi-color verse, drawn grown: check that its ring is as thick as a single-word match's beside it (1.5px out, 1px in, measured from the drawn edge).
    - `#overlay=haftarah&q=אברם,אברהם&verse=Genesis.17.5&zoom=6`: close, over strong stripes.
    - `#overlay=commentary&q=אברם,אברהם&verse=Genesis.17.5&zoom=6`: close, over a smooth scale.
    - the same at `zoom=3` and at `zoom=2`, the smallest square that keeps a hole.
@@ -1707,7 +1707,7 @@ In `src/scrollytelling/__tests__/overlayBlender.test.ts`, add `import { SEARCH_W
 
 ```ts
 describe('a stop that searches', () => {
-  const grey = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
+  const gray = 0.6 * HIGHLIGHT_CONSTANTS.DIM_FACTOR;
   const DIM = SEARCH_WITH_OVERLAY.NON_MATCH_DIM;
 
   beforeEach(() => {
@@ -1724,7 +1724,7 @@ describe('a stop that searches', () => {
     const picture = pictureForStop(stopWith({ searchParams: { search: 'God' } }), verses, null);
 
     expect(picture.colors[0]).toEqual(SEARCH_COLORS[0]);
-    expect(picture.colors[1]).toEqual([grey, grey, grey]);
+    expect(picture.colors[1]).toEqual([gray, gray, gray]);
     expect(picture.rings).toBeUndefined();
   });
 
@@ -2027,7 +2027,7 @@ Create `src/styles/controls.css`:
   cursor: pointer;
 }
 
-/* The overlay picker. color-scheme matters as much as the colours: without it
+/* The overlay picker. color-scheme matters as much as the colors: without it
    the popup list keeps the system's light theme. */
 .control-select {
   padding: 6px 8px;
@@ -2678,11 +2678,11 @@ and in `main()` delete `const legendContainer = …` and the two legend lines in
 
 `CLAUDE.md`:
 
-- The "Pluggable overlays" bullet begins: `**Pluggable overlays**, in the order the menu offers them: Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length.` Add a bullet after it: `- **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search colour around the overlay's colour.`
+- The "Pluggable overlays" bullet begins: `**Pluggable overlays**, in the order the menu offers them: Commentary (by source category or a combined total), Trop (cantillation marks), Haftarah (Ashkenazi and Sephardi), Verse Length.` Add a bullet after it: `- **Search beside the overlays**: a tool of its own, so a search and an overlay can be on together. A match over an overlay is a ring of its search color around the overlay's color.`
 - Interactions, the ☰ line: `The menu: continue the story, search, overlays, stories, About & settings;`.
 - "The URL carries the overlay, its settings, the pinned verse…" → "The URL carries the search, the overlay and its settings, the pinned verse…".
 
-`README.md`: move the **Text Search** bullet out of the overlay list, rename it **Search**, and put it above "Overlays, in the order the map offers them:" with this sentence added: "It sits beside the overlays: search with one on, and each match rings the overlay's colour."
+`README.md`: move the **Text Search** bullet out of the overlay list, rename it **Search**, and put it above "Overlays, in the order the map offers them:" with this sentence added: "It sits beside the overlays: search with one on, and each match rings the overlay's color."
 
 - [ ] **Step 8: Run the tests, the type checker and the layout suite**
 

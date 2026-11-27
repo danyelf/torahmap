@@ -17,7 +17,7 @@ import type { TextFiles } from './app/text.ts';
 export interface ViewFiles<I> {
   /** What the first view shows, with `tools` on and `item`'s popup open. */
   opening(tools: readonly Overlay<I>[], item: I | null): OpeningView<I>;
-  /** What is drawn as a file lands, with `map` coloured and `shown`'s popup open. */
+  /** What is drawn as a file lands, with `map` colored and `shown`'s popup open. */
   landing(
     source: ColorSource,
     map: readonly Overlay<I>[],

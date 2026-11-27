@@ -6,8 +6,8 @@ by Jastrow entry), #389 (show the Davidson text in the popup).
 ## What it does
 
 The Talmud's search panel works like the Tanakh's: several terms, each in its
-own colour; each term matched anywhere in a word or as a whole word; a list of
-results with excerpts; matches coloured on the map and in the popup; the search
+own color; each term matched anywhere in a word or as a whole word; a list of
+results with excerpts; matches colored on the map and in the popup; the search
 kept in the link. There is no meanings mode yet; that is #382.
 
 What it is for, in Danyel's examples: every mention of a rabbi, an animal or a
@@ -35,7 +35,7 @@ every segment's Davidson text, its vowels and tags removed, laid out as `texts/`
 
 The popup keeps the Wikisource text and its citation links, and its marks are
 found by matching the terms again in that text. So a segment found through an
-abbreviation is coloured on the map and listed, but that mention is not marked
+abbreviation is colored on the map and listed, but that mention is not marked
 in the popup. Showing Davidson in the popup instead is #389: Davidson has no
 bracketed citations, so it needs the links moved across.
 
@@ -60,7 +60,7 @@ Talmud, or an English-only text such as the EU AI Act (#372). Two new packages
 share the work.
 
 **`@torahmap/search`** holds the parts of `apps/tanakh/src/search/` that do not
-depend on the Bible dictionary: the term list and its colours and link letters,
+depend on the Bible dictionary: the term list and its colors and link letters,
 the two match modes and phrases, the text index and excerpts, popup marks, the
 results list, the term rows, and the telemetry debounce. They become one
 function, `createTermSearch(spec)`, which returns the `SearchTool` the shell

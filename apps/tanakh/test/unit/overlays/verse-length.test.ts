@@ -779,7 +779,7 @@ describe('Verse Length Overlay', () => {
   });
 
   describe('data', () => {
-    it('colours by the texts it is handed now', () => {
+    it('colors by the texts it is handed now', () => {
       const verse = createVerse({ book: 'Genesis', chapter: 1, verse: 1 });
       const before = verseLengthOverlay.getItemColor(verse);
       const shorter = structuredClone(testVerseTexts);
@@ -788,7 +788,7 @@ describe('Verse Length Overlay', () => {
       expect(verseLengthOverlay.getItemColor(verse)).not.toEqual(before);
     });
 
-    it('colours the same whether or not prebuild ran first', () => {
+    it('colors the same whether or not prebuild ran first', () => {
       const fresh = { texts: structuredClone(testVerseTexts) };
       const verses = [
         createVerse({ book: 'Genesis', chapter: 1, verse: 1 }),

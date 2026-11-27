@@ -11,13 +11,13 @@ next refresh silently throws your changes away.
 | --- | --- |
 | `aliyot.json` | The 54 weekly Torah portions and their combinations: which book, how the reading divides into aliyot, and the haftarah for each of the two customs. |
 | `holiday-readings.json` | The same for festivals, fast days, Rosh Chodesh and the four special Shabbatot — 112 occasions, 54 of which have a haftarah. |
-| `LICENSE` | Hebcal's BSD 2-Clause licence, which requires that this notice travel with the data. |
+| `LICENSE` | Hebcal's BSD 2-Clause license, which requires that this notice travel with the data. |
 
 Taken from https://github.com/hebcal/hebcal-leyning at commit
 `e6768f6cdd3d8d738315e88baf05b5c23adb3fc9` (30 July 2026), files `src/aliyot.json`,
 `src/holiday-readings.json` and `LICENSE`.
 
-Hebcal grants the licence but does not document where its own reading table
+Hebcal grants the license but does not document where its own reading table
 came from, so this records who gave us permission, not an unbroken chain back
 to a first source. The same data is also published as CSV downloads at
 https://www.hebcal.com/sedrot/ under CC BY 4.0; the repository was preferred

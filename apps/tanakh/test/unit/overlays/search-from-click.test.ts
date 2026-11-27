@@ -1,7 +1,7 @@
 // Turning a clicked word into a search term.
 //
 // Clicking adds to the search rather than replacing it: the map is for
-// comparing, and two words in two colours is the comparison.
+// comparing, and two words in two colors is the comparison.
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { searchTool } from '../../../src/search/index';

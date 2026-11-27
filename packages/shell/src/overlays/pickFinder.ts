@@ -1,5 +1,5 @@
 // The parts of a box for finding things to pick: a field to type in, suggestions, and the picks
-// so far, each in its colour with a button to unpick it. The overlay decides what a row says.
+// so far, each in its color with a button to unpick it. The overlay decides what a row says.
 
 import './pickFinder.css';
 import { colorToCss, type Color } from '@torahmap/utils';
@@ -71,7 +71,7 @@ export const pickSwatch = (color: Color): HTMLSpanElement => {
   return element;
 };
 
-/** A small grey line under a row's name. */
+/** A small gray line under a row's name. */
 export const pickMeta = (text: string): HTMLSpanElement => span('pick-meta', text);
 
 /** A line of explanation among the lists. */

@@ -16,7 +16,7 @@ const linked = (marked: string) =>
 const englishOf = (marked: string) => marked.replace(/[*_]/g, '');
 
 describe('the references in the English', () => {
-  it('links the parenthesised words to the verse they name', () => {
+  it('links the parenthesized words to the verse they name', () => {
     expect(linked('as it says *“Be fruitful”* (Genesis 1:28) and so')).toEqual([
       ['Genesis.1.28', '(Genesis 1:28)'],
     ]);
