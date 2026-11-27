@@ -63,6 +63,8 @@ export interface RenderState<T> {
   fade: number;
   /** The squares that stand out in either picture, as drawn, for hit detection. */
   standout: boolean[];
+  /** How bright the squares drawn in their base colour are, 1 for as given. */
+  uncolouredBrightness: number;
 }
 
 export function createRenderContext(canvas: HTMLCanvasElement): RenderContext {
@@ -108,6 +110,7 @@ export function createRenderState<T>(
     dpr,
     fade: 0,
     standout: [],
+    uncolouredBrightness: 1,
   };
 }
 
@@ -166,6 +169,7 @@ export function render<T>(
   gl.uniform1i(programs.main.uniforms.hovered, hoveredItem ? items.indexOf(hoveredItem) : -1);
 
   gl.uniform1f(programs.main.uniforms.standoutSide, STANDOUT_MIN_PX * dpr);
+  gl.uniform1f(programs.main.uniforms.uncolouredBrightness, state.uncolouredBrightness);
 
   gl.bindVertexArray(vertexArray);
   // Six corners (two triangles) for each square: the rest, then the standouts over them.

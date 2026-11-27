@@ -28,6 +28,7 @@ export interface ShaderProgram {
     hovered: WebGLUniformLocation | null;
     standoutSide: WebGLUniformLocation | null;
     drawingStandouts: WebGLUniformLocation | null;
+    uncolouredBrightness: WebGLUniformLocation | null;
   };
 }
 
@@ -54,6 +55,8 @@ const VERTEX_SHADER = `#version 300 es
   // Which pass this is: the squares that stand out in either picture, drawn
   // second so they lie over the rest, or the rest.
   uniform bool u_drawingStandouts;
+  // How bright a square drawn in its base colour is, 1 for as given: a text dims them when zoomed out.
+  uniform float u_uncolouredBrightness;
 
   ${ITEM_INPUTS}
 
@@ -73,6 +76,8 @@ const VERTEX_SHADER = `#version 300 es
   flat out ivec4 v_counts;
   // How the hover changes each picture's fill (see lit).
   flat out ivec2 v_hover;
+  // How bright each picture's fill is drawn (see u_uncolouredBrightness).
+  flat out vec2 v_brightness;
   // The drawn square's width and height in device pixels, growth included, or
   // 0 when the square is too small for a hole.
   flat out vec2 v_side;
@@ -162,6 +167,8 @@ const VERTEX_SHADER = `#version 300 es
     v_hover = gl_InstanceID == u_hovered
       ? 1 + (ivec2(a_shape.w, a_nextShape.w) & ${SHAPE_FLAGS.UNCOLOURED})
       : ivec2(0);
+    v_brightness = mix(vec2(1.0), vec2(u_uncolouredBrightness),
+      vec2(ivec2(a_shape.w, a_nextShape.w) & ${SHAPE_FLAGS.UNCOLOURED}));
     v_side = holes ? (rect.zw - rect.xy) * u_zoom : vec2(0.0);
     v_round = holes ? isRound(a_shape) : 0.0;
     v_uv = uv;
@@ -180,6 +187,7 @@ const FRAGMENT_SHADER = `#version 300 es
   flat in highp vec4 v_nextRing;
   flat in ivec4 v_counts;
   flat in ivec2 v_hover;
+  flat in vec2 v_brightness;
   flat in vec2 v_side;
   flat in float v_glow;
   flat in float v_halo;
@@ -241,26 +249,27 @@ const FRAGMENT_SHADER = `#version 300 es
   }
 
   // A fill under the hover: 1 brightens it, 2 (an uncoloured square) paints it
-  // the highlight colour, 0 leaves it.
-  vec4 lit(vec4 fill, int hover) {
-    if (hover == 0 || fill.a == 0.0) return fill;
+  // the highlight colour, 0 leaves it at brightness.
+  vec4 lit(vec4 fill, int hover, float brightness) {
+    if (fill.a == 0.0) return fill;
+    if (hover == 0) return vec4(fill.rgb * brightness, 1.0);
     if (hover == 2) return vec4(${glslVec3(HIGHLIGHT_CONSTANTS.HIGHLIGHT_COLOR)}, 1.0);
     return vec4(min(fill.rgb * ${HIGHLIGHT_CONSTANTS.BRIGHTNESS_FACTOR.toFixed(4)}, 1.0), 1.0);
   }
 
   // One picture here: its ring, if it has one, and its fill inside the hole.
-  vec4 picture(highp vec4 fill, highp vec4 ring, int fillCount, int ringCount, int hover) {
-    if (ringCount == 0) return lit(stripes(fill, fillCount, v_uv, 0), hover);
+  vec4 picture(highp vec4 fill, highp vec4 ring, int fillCount, int ringCount, int hover, float brightness) {
+    if (ringCount == 0) return lit(stripes(fill, fillCount, v_uv, 0), hover, brightness);
     vec4 r = stripes(ring, ringCount, v_uv, 1);
-    return r.a > 0.0 ? r : lit(stripes(fill, fillCount, v_uv, 2), hover);
+    return r.a > 0.0 ? r : lit(stripes(fill, fillCount, v_uv, 2), hover, brightness);
   }
 
   void main() {
     // Each picture is drawn whole and the two are faded, so neither's stripes
     // have to move to meet the other's. A band that has slid past the square
     // shows in one picture only, and the map does not blend, so it shows whole.
-    vec4 a = picture(v_fill, v_ring, v_counts.x, v_counts.y, v_hover.x);
-    vec4 b = picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w, v_hover.y);
+    vec4 a = picture(v_fill, v_ring, v_counts.x, v_counts.y, v_hover.x, v_brightness.x);
+    vec4 b = picture(v_nextFill, v_nextRing, v_counts.z, v_counts.w, v_hover.y, v_brightness.y);
     if (a.a == 0.0 && b.a == 0.0) {
       if (v_halo <= 0.0) discard;
       // Outside the square of a standout with a halo: its fill, fading out.
@@ -368,6 +377,7 @@ export function createProgram(gl: WebGL2RenderingContext): ShaderProgram {
       hovered: gl.getUniformLocation(program, 'u_hovered'),
       standoutSide: gl.getUniformLocation(program, 'u_standoutSide'),
       drawingStandouts: gl.getUniformLocation(program, 'u_drawingStandouts'),
+      uncolouredBrightness: gl.getUniformLocation(program, 'u_uncolouredBrightness'),
     },
   };
 }

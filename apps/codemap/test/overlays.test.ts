@@ -89,20 +89,32 @@ describe('the pull request overlay', () => {
     expect(settingsToUrl!({ commit: 2 })).toEqual({ commit: '2' });
     expect(settingsToUrl!({ commit: null })).toEqual({});
   });
+
+  it('makes the lines it colours stand out, and no others', () => {
+    const args = {
+      items: computeCodeLayout(fixtureStructure).items,
+      settings: { commit: null },
+      data: { structure: fixtureStructure },
+      focus: NO_FOCUS,
+    };
+    const colours = pullRequestOverlay.colorsFor(args);
+    expect(pullRequestOverlay.standoutsFor!(args)).toEqual(colours.map((c) => c !== null));
+  });
 });
 
 const brightness = (c: Color | Color[] | null) => (c as Color).reduce((a, b) => a + b, 0);
 
 describe('the churn overlay', () => {
   const items = computeCodeLayout(fixtureStructure).items;
-  const colours = (measure: ChurnSettings['measure']) => {
+  const colours = (measure: ChurnSettings['measure'], by: ChurnSettings['by'] = 'day') => {
     const c = churnOverlay.colorsFor({
       items,
-      settings: { measure },
+      settings: { measure, by },
       data: { structure: fixtureStructure },
       focus: NO_FOCUS,
     });
-    return (line: number) => c[items.findIndex((i) => i.id === lineId('src/main.ts', line))];
+    return (line: number, path = 'src/main.ts') =>
+      c[items.findIndex((i) => i.id === lineId(path, line))];
   };
 
   it('draws a line changed once darker than one changed five times', () => {
@@ -115,9 +127,38 @@ describe('the churn overlay', () => {
     expect(brightness(recent(1))).toBeLessThan(brightness(recent(3)));
   });
 
+  it('spaces lines by commit or by pull request as well as by day', () => {
+    // main.ts line 6 and util.ts line 1 last changed in one pull request, in different commits.
+    expect(colours('recent', 'pr')(6)).toEqual(colours('recent', 'pr')(1, 'src/util.ts'));
+    expect(colours('recent', 'commit')(6)).not.toEqual(
+      colours('recent', 'commit')(1, 'src/util.ts'),
+    );
+    // The second of four commits, a third of the way along by commit and half by day.
+    expect(brightness(colours('recent', 'commit')(6))).toBeLessThan(
+      brightness(colours('recent', 'day')(6)),
+    );
+  });
+
   it('reads its measure from a link', () => {
-    expect(churnOverlay.settingsFromUrl!({ measure: 'often' }, [])).toEqual({ measure: 'often' });
-    expect(churnOverlay.settingsToUrl!({ measure: 'often' })).toEqual({ measure: 'often' });
+    expect(churnOverlay.settingsFromUrl!({ measure: 'often', by: 'day' }, [])).toEqual({
+      measure: 'often',
+      by: 'day',
+    });
+    expect(churnOverlay.settingsToUrl!({ measure: 'often', by: 'pr' })).toEqual({
+      measure: 'often',
+    });
+    expect(churnOverlay.settingsToUrl!({ measure: 'recent', by: 'pr' })).toEqual({
+      measure: 'recent',
+      by: 'pr',
+    });
+  });
+
+  it('shows how often as one step for each count from the fewest to the most', () => {
+    const container = document.createElement('div');
+    const settings = { measure: 'often', by: 'day' } as const;
+    churnOverlay.renderLegend!(container, settings, { structure: fixtureStructure });
+    // The fixture's lines changed from 1 to 5 times.
+    expect(container.querySelectorAll('[title]')).toHaveLength(5);
   });
 });
 

@@ -25,13 +25,20 @@ export interface Marks {
   deletedBefore: number[];
 }
 
+/** A commit, and where it stands in the head's history. */
+export interface Change {
+  time: number; // unix seconds
+  commit: number; // among all the head's commits, oldest first
+  pr: number; // among the steps of its mainline, oldest first: a merged pull request is one step
+}
+
 export interface CodeFile {
   path: string;
   /** Per head line, parallel arrays. */
   indent: number[];
   length: number[]; // columns to the end of the text, indent included, a tab counting 4
   kind: string; // LineKind per line
-  lastChanged: number[]; // unix seconds, from git blame
+  lastChange: number[]; // into the structure's changes
   timesChanged: number[]; // over the file's whole history
   /** The pull request as a whole, then each of its commits in order. */
   pr: Marks;
@@ -45,6 +52,8 @@ export interface CodeStructure {
   base: string; // merge-base sha
   head: string;
   commits: { sha: string; subject: string }[];
+  /** The commits that last changed a line at head. */
+  changes: Change[];
   files: CodeFile[]; // sorted by path
 }
 

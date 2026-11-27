@@ -57,6 +57,10 @@ export const pullRequestOverlay: Overlay<CodeItem, PullRequestSettings, Structur
   colorsFor: ({ items, settings, data }) =>
     items.map((item) => colorOf(item, data.structure, settings.commit)),
 
+  // Only the lines the pull request touched are coloured, so each stays in sight from afar.
+  standoutsFor: ({ items, settings, data }) =>
+    items.map((item) => colorOf(item, data.structure, settings.commit) !== null),
+
   renderControls(container, { commit }, onChange, data) {
     const commits = data?.structure.commits ?? [];
     if (commits.length === 0) {

@@ -1,5 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import type { CodeFile, CodeStructure, CodeTexts, Marks } from '../../apps/codemap/src/data.ts';
+import type {
+  Change,
+  CodeFile,
+  CodeStructure,
+  CodeTexts,
+  Marks,
+} from '../../apps/codemap/src/data.ts';
 import { carryForward, type FileDiff, type Hunk, marksOf, parseDiff } from './diff.ts';
 import { isExcluded } from './exclude.ts';
 import { lineKinds } from './lineKind.ts';
@@ -56,11 +62,48 @@ function shape(line: string): { indent: number; length: number } {
   return { indent, length: indent + line.slice(lead.length).trimEnd().length };
 }
 
-function lastChanged(repo: string, head: string, path: string): number[] {
-  return git(repo, ['blame', '--line-porcelain', '-M', '-C', head, '--', path])
+/** The commit that last changed each line, from git blame. */
+function lastCommits(repo: string, head: string, path: string): string[] {
+  return git(repo, ['blame', '--porcelain', '-M', '-C', head, '--', path])
     .split('\n')
-    .filter((line) => line.startsWith('committer-time '))
-    .map((line) => Number(line.slice('committer-time '.length)));
+    .flatMap((line) => /^([0-9a-f]{40}) \d+ \d+/.exec(line)?.[1] ?? []);
+}
+
+/**
+ * Where each of the head's commits stands in its history: by date, and by the step of the
+ * mainline that brought it in. The mainline is the base's first-parent history, a merged pull
+ * request one step, then each of the pull request's own commits.
+ */
+function history(
+  repo: string,
+  base: string,
+  head: string,
+  own: readonly string[],
+): Map<string, Change> {
+  const log = git(repo, ['log', '--date-order', '--reverse', '--format=%H %ct %P', head])
+    .split('\n')
+    .filter((line) => line !== '')
+    .map((line) => line.split(' '));
+  const parents = new Map(log.map(([sha, , ...up]) => [sha, up]));
+  const mainline = [
+    ...git(repo, ['log', '--first-parent', '--reverse', '--format=%H', base])
+      .split('\n')
+      .filter((sha) => sha !== ''),
+    ...own,
+  ];
+  const step = new Map<string, number>();
+  mainline.forEach((top, pr) => {
+    const todo = [top];
+    while (todo.length > 0) {
+      const sha = todo.pop()!;
+      if (step.has(sha)) continue;
+      step.set(sha, pr);
+      todo.push(...(parents.get(sha) ?? []));
+    }
+  });
+  return new Map(
+    log.map(([sha, time], commit) => [sha, { time: Number(time), commit, pr: step.get(sha) ?? 0 }]),
+  );
 }
 
 /**
@@ -217,6 +260,25 @@ export function collect(
   const perCommit = commits.map((_, i) => commitMarks(commitDiffs, i));
   const prByPath = new Map(prDiff.flatMap((f) => (f.newPath === null ? [] : [[f.newPath, f]])));
 
+  const when = history(
+    repo,
+    baseSha,
+    headSha,
+    commits.map((c) => c.sha),
+  );
+  const changes: Change[] = [];
+  const changeOf = new Map<string, number>();
+  const changeIndex = (sha: string): number => {
+    let at = changeOf.get(sha);
+    if (at === undefined) {
+      const found = when.get(sha);
+      if (!found) throw new Error(`blame names ${sha}, which is not in the head's history`);
+      at = changes.push(found) - 1;
+      changeOf.set(sha, at);
+    }
+    return at;
+  };
+
   const entries: { file: CodeFile; lines: string[] }[] = headPaths(repo, headSha).map((path) => {
     const lines = readLines(repo, headSha, path);
     const shapes = lines.map(shape);
@@ -228,7 +290,7 @@ export function collect(
         indent: shapes.map((s) => s.indent),
         length: shapes.map((s) => s.length),
         kind: lineKinds(path, lines),
-        lastChanged: lastChanged(repo, headSha, path),
+        lastChange: lastCommits(repo, headSha, path).map(changeIndex),
         timesChanged: timesChanged(repo, headSha, path, lines.length),
         pr: pr ? marksOf(pr.hunks, lines.length) : onHead(undefined, lines.length),
         commits: perCommit.map((byPath) => onHead(byPath.get(path), lines.length)),
@@ -245,7 +307,7 @@ export function collect(
         indent: [],
         length: [],
         kind: '',
-        lastChanged: [],
+        lastChange: [],
         timesChanged: [],
         pr: FILE_REMOVED,
         commits: commits.map((_, i) => (i === deletedBy ? FILE_REMOVED : NO_MARKS)),
@@ -261,6 +323,7 @@ export function collect(
       base: baseSha,
       head: headSha,
       commits,
+      changes,
       files: entries.map((e) => e.file),
     },
     texts: entries.map((e) => e.lines),

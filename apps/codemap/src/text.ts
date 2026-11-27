@@ -16,6 +16,7 @@ import { CODE_OVERLAYS, codeOverlayParams } from './overlays/index.ts';
 import { lineReader } from './references.ts';
 import { codeSearch, configureSearch } from './search.ts';
 import { codemapSite } from './site.ts';
+import { greyBrightness } from './zoomedOut.ts';
 
 // Shortcut: the one story is a single stop showing the whole map, until a real story is written.
 const WHOLE_MAP: Story = {
@@ -68,6 +69,7 @@ export const codemapText: MapText<CodeItem, TermSettings> = {
         ),
 
       baseColor,
+      uncolouredBrightness: greyBrightness,
 
       labels: (container) => createCodeLabels(laid, container),
 
@@ -75,7 +77,8 @@ export const codemapText: MapText<CodeItem, TermSettings> = {
         const texts = loadedFiles.get(TEXTS_FILE) as CodeTexts | undefined;
         const path = pathOf(item);
         // A deleted file is not in the head, so its link is to the base.
-        const changed = structure.files[item.file].lastChanged[item.line - 1];
+        const change = structure.files[item.file].lastChange[item.line - 1];
+        const changed = change === undefined ? undefined : structure.changes[change].time;
         return {
           ref: item.deletedFile ? path : lineId(path, item.line),
           refDetail:

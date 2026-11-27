@@ -675,9 +675,10 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   let lastSyncedStopId: string | null = null;
 
   function render(): void {
+    renderState.uncolouredBrightness = text.uncolouredBrightness?.(camera.zoom) ?? 1;
     const offset = renderFrame(renderContext, renderState, camera, hoveredItem, pinnedItem);
     backdrop.place(offset, camera.zoom);
-    moveLabels(offset, camera.zoom);
+    moveLabels(offset, camera.zoom, { hovered: hoveredItem, pinned: pinnedItem });
   }
 
   function centerOnItem(item: I): void {

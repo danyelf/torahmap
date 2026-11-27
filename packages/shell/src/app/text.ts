@@ -14,7 +14,7 @@ import type { Story, StoryStop } from '@torahmap/stories';
 import type { Credit } from '../credits.ts';
 import type { PageCopy } from './page.ts';
 import type { Loaded } from '../dataFiles.ts';
-import type { Overlay, SettingsUpdate, ToolOnMap } from '../overlays/types.ts';
+import type { Focus, Overlay, SettingsUpdate, ToolOnMap } from '../overlays/types.ts';
 import type { SearchTool } from './search.ts';
 import type { ResolvedStoryStop } from '../scrollytelling/types.ts';
 import type { PopupText } from '../sidebar.ts';
@@ -71,8 +71,10 @@ interface OpenText<I extends MapItem, S = unknown> {
   baseRing?(item: I, index: number): ItemColor | null;
   /** While search alone is on, how much of its base colour a square it does not find keeps; without it, the square goes grey. */
   searchKeepsBase?: number;
+  /** How bright the squares left in their base colour are drawn at a zoom, 1 for as given; without it, always 1. */
+  uncolouredBrightness?(zoom: number): number;
   /** Draws the labels into `container`; the function returned moves them with the map. */
-  labels(container: HTMLElement): (offset: ScreenPoint, zoom: number) => void;
+  labels(container: HTMLElement): (offset: ScreenPoint, zoom: number, focus: Focus<I>) => void;
   /** What a square's popup says; the shell marks it and makes its words clickable. `search` is what is searched, for a text whose popup shows only the words around a hit. */
   popupText(
     item: I,
