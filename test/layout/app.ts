@@ -641,6 +641,8 @@ export const CODEMAP_STATES: State[] = [
   { name: 'codemap-pr', link: 'overlay=pr', shown: ['#map-legend'] },
   { name: 'codemap-pr-commit', link: 'overlay=pr&commit=1', shown: ['#map-legend'] },
   { name: 'codemap-churn', link: 'overlay=churn', shown: ['#map-legend'] },
+  { name: 'codemap-churn-commit', link: 'overlay=churn&by=commit', shown: ['#map-legend'] },
+  { name: 'codemap-churn-often', link: 'overlay=churn&measure=often', shown: ['#map-legend'] },
   { name: 'codemap-kind', link: 'overlay=kind', shown: ['#map-legend'] },
   { name: 'codemap-file', link: 'overlay=file', shown: ['#map-legend'] },
   { name: 'codemap-popup', link: 'at=README.md:1&zoom=2', shown: ['#popup.visible'] },

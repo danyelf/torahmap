@@ -81,10 +81,10 @@ const scaleOf = memoByValueAndKey((structure: CodeStructure, key: Key): Scale =>
   return scale(low, high, key.startsWith('often') ? LOG : LINEAR, STOPS);
 });
 
-/** The oldest and newest a line last changed, as dates. */
-function dateEnds(structure: CodeStructure): [string, string] {
+/** The oldest and newest a line last changed, as dates, or as months for the panel's one line. */
+function dateEnds(structure: CodeStructure, chars = 10): [string, string] {
   const [low, high] = rangeOf(valuesOf(structure, 'recent-day'));
-  const date = (t: number) => new Date(t * 1000).toISOString().slice(0, 10);
+  const date = (t: number) => new Date(t * 1000).toISOString().slice(0, chars);
   return [date(low), date(high)];
 }
 
@@ -207,11 +207,10 @@ export const churnOverlay: Overlay<CodeItem, ChurnSettings, StructureData> = {
     container.replaceChildren(legendRow(low, strip, high));
   },
 
-  summary: ({ measure, by }, { structure }) =>
-    measure === 'often'
-      ? { strip: stepStrip(countSteps(structure)) }
-      : {
-          detail: BY[by].replace('By', 'by'),
-          strip: { gradient: GRADIENT, ends: dateEnds(structure) },
-        },
+  summary: ({ measure }, { structure }) => ({
+    strip:
+      measure === 'often'
+        ? stepStrip(countSteps(structure))
+        : { gradient: GRADIENT, ends: dateEnds(structure, 7) },
+  }),
 };
