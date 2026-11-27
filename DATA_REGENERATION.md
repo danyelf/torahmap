@@ -308,7 +308,8 @@ cd - && npx tsx scripts/talmud/word-forms-report.ts
 ```
 
 `scripts/talmud/model-pilot.ts` reads the same two files for the model pilot in
-the word search plan; its header gives the steps.
+the word search plan; its header gives the steps. `scripts/talmud/model-answer.ts` sends
+its batches to the model through `claude -p`.
 
 ## AI Act
 

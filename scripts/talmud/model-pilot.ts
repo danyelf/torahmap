@@ -18,6 +18,9 @@
  *
  * `prepare-whole <folder> [phrase]` draws from every segment instead, for reading; `read` then lays out each
  * word's answers and a sheet of words drawn at random to judge by hand.
+ *
+ * `prepare-all <folder>` takes every segment, in batches for the version without the list
+ * only: the full run. `model-answer.ts` sends the batches of any of these to the model.
  */
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -235,11 +238,12 @@ function headsOf(form: string, forms: Map<string, FormEntry>) {
 }
 
 /**
- * Draws the segments: from those holding an occurrence Jastrow quotes (the test), or, with
- * `whole`, from every segment of the Talmud alike, to show what a reader would meet. A
- * `phrase`, written without vowels, keeps only the segments holding it.
+ * Draws the segments: from those holding an occurrence Jastrow quotes (`test`), from every
+ * segment of the Talmud alike, to show what a reader would meet (`whole`), or takes them all
+ * (`all`). A `phrase`, written without vowels, keeps only the segments holding it.
  */
-function prepare(folder: string, whole: boolean, phrase?: string) {
+function prepare(folder: string, draw: 'test' | 'whole' | 'all', phrase?: string) {
+  const whole = draw !== 'test';
   const { forms } = loadForms(DEFAULT_DUMP);
   const entries = loadEntries(DEFAULT_DUMP, new Map());
   const order: { id: string; text: string[]; words: Word[] }[] = [];
@@ -265,7 +269,8 @@ function prepare(folder: string, whole: boolean, phrase?: string) {
     .map((s, i) => ({ s, i }))
     .filter(({ s }) =>
       whole
-        ? s.words.length > 0 && (!phrase || fold(s.text.join(' ')).includes(fold(phrase)))
+        ? (draw === 'all' ? s.words.some(asked) : s.words.length > 0) &&
+          (!phrase || fold(s.text.join(' ')).includes(fold(phrase)))
         : s.words.some((w) => w.truth && w.heads.length > 1),
     );
   const random = mulberry32(SEED);
@@ -273,7 +278,8 @@ function prepare(folder: string, whole: boolean, phrase?: string) {
     const k = Math.floor(random() * (i + 1));
     [eligible[i], eligible[k]] = [eligible[k], eligible[i]];
   }
-  const chosen = eligible.slice(0, whole ? WHOLE_SEGMENTS : SEGMENTS).sort((a, b) => a.i - b.i);
+  const taken = { test: SEGMENTS, whole: WHOLE_SEGMENTS, all: eligible.length }[draw];
+  const chosen = eligible.slice(0, taken).sort((a, b) => a.i - b.i);
   const segments: Segment[] = chosen.map(({ s, i }) => ({
     id: s.id,
     before: order[i - 1]?.text.join(' ') ?? '',
@@ -285,10 +291,12 @@ function prepare(folder: string, whole: boolean, phrase?: string) {
   console.log(`${eligible.length} segments to draw from; ${segments.length} taken.`);
 
   const { gloss } = loadJastrow(DEFAULT_DUMP);
+  const digits = String(Math.ceil(segments.length / PER_BATCH)).length;
   for (let b = 0; b * PER_BATCH < segments.length; b++) {
     const batch = segments.slice(b * PER_BATCH, (b + 1) * PER_BATCH);
-    const name = String(b + 1).padStart(2, '0');
-    writeFileSync(join(folder, `with-list-${name}.md`), withListBatch(batch, gloss));
+    const name = String(b + 1).padStart(Math.max(2, digits), '0');
+    if (draw !== 'all')
+      writeFileSync(join(folder, `with-list-${name}.md`), withListBatch(batch, gloss));
     writeFileSync(join(folder, `without-list-${name}.md`), withoutListBatch(batch));
   }
 }
@@ -644,12 +652,15 @@ function read(folder: string) {
 
 const [command, folder, phrase] = process.argv.slice(2);
 if (!folder)
-  throw new Error('Usage: model-pilot.ts prepare|prepare-whole|lookup|score|read <folder>');
+  throw new Error(
+    'Usage: model-pilot.ts prepare|prepare-whole|prepare-all|lookup|score|read <folder>',
+  );
 if (!command.startsWith('prepare') && !existsSync(join(folder, 'segments.json')))
   throw new Error(`No segments.json in ${folder}; run prepare first.`);
 const commands: Record<string, (folder: string) => void> = {
-  prepare: (f) => prepare(f, false),
-  'prepare-whole': (f) => prepare(f, true, phrase),
+  prepare: (f) => prepare(f, 'test'),
+  'prepare-whole': (f) => prepare(f, 'whole', phrase),
+  'prepare-all': (f) => prepare(f, 'all'),
   lookup,
   score,
   read,

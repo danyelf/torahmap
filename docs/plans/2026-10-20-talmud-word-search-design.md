@@ -1,6 +1,6 @@
 # Searching the Talmud by dictionary word
 
-**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 was taken on 2026-11-25. The lookup was fixed on 2026-11-27, ahead of the full run. Issue #382.
+**Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 was taken on 2026-11-25. The lookup was fixed on 2026-11-27, and the full run is ready to start. Issue #382.
 Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
@@ -629,9 +629,21 @@ The new candidates were answered by Haiku agents, as in the pilot.
 `model-pilot.ts lookup` now writes only the items not yet answered, and an
 answer counts only while the entries it chose among are still the ones found.
 
-**The full run waits on a way to reach the model.** About 16,000 requests is
-more than Claude Code's agents suit, and there is no Anthropic API key on
-this machine for the Batch API.
+### The full run
+
+**Decided on 2026-11-27:** through `claude -p` on Danyel's subscription, Haiku,
+with the small words left out as above.
+
+`model-pilot.ts prepare-all` writes every segment holding a word the model is
+asked about, 81,768 of them, in batches of 20 as in the pilot: 4,090 requests
+in the first round. By the pilot's share of words that need a second round,
+that round adds about 2,400 more. `scripts/talmud/model-answer.ts` sends each
+batch not yet answered as one request, a few at a time, and stops at the first
+failure; run again, it carries on.
+
+**Not yet tried against the model:** the `claude -p` this machine runs is not
+signed in (`claude auth status`), so the runner was checked only against a
+stand-in that returns a fixed answer.
 
 ## The plan
 
