@@ -175,7 +175,8 @@ export const churnOverlay: Overlay<CodeItem, ChurnSettings, StructureData> = {
   renderControls(container, { measure, by }, onChange) {
     if (!container.querySelector('[data-measure]')) {
       container.innerHTML =
-        segments('Measure', 'measure', MEASURES) + segments('Counted', 'by', BY);
+        `<div>${segments('Measure', 'measure', MEASURES)}</div>` +
+        `<div style="margin-top:6px">${segments('Counted', 'by', BY)}</div>`;
       for (const button of container.querySelectorAll<HTMLButtonElement>('[data-measure]')) {
         const m = button.dataset.measure as Measure;
         button.addEventListener('click', () => onChange((s) => ({ ...s, measure: m })));
@@ -187,7 +188,7 @@ export const churnOverlay: Overlay<CodeItem, ChurnSettings, StructureData> = {
     }
     press(container, 'measure', measure);
     press(container, 'by', by);
-    const counted = container.querySelector<HTMLElement>('[aria-label="Counted"]')!;
+    const counted = container.querySelector<HTMLElement>('[aria-label="Counted"]')!.parentElement!;
     counted.style.display = measure === 'recent' ? '' : 'none';
   },
 
@@ -209,5 +210,8 @@ export const churnOverlay: Overlay<CodeItem, ChurnSettings, StructureData> = {
   summary: ({ measure, by }, { structure }) =>
     measure === 'often'
       ? { strip: stepStrip(countSteps(structure)) }
-      : { detail: BY[by].toLowerCase(), strip: { gradient: GRADIENT, ends: dateEnds(structure) } },
+      : {
+          detail: BY[by].replace('By', 'by'),
+          strip: { gradient: GRADIENT, ends: dateEnds(structure) },
+        },
 };
