@@ -524,7 +524,7 @@ body[data-open='about'] #about-panel {
 /* A story is a line in a reading list, not a boxed tool like the rows above it. */
 .start-story {
   display: grid;
-  grid-template-columns: 16px 1fr auto;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
   column-gap: 10px;
   align-items: baseline;
   width: 100%;
@@ -549,7 +549,7 @@ body[data-open='about'] #about-panel {
   background: #1c1c1c;
 }
 
-.start-story-mark {
+.start-story svg {
   align-self: start;
   margin-top: 2px;
   fill: none;

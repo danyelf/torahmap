@@ -3,7 +3,7 @@
 import { escapeHtml } from '@torahmap/utils';
 import { firstSentence, type Story, type StoryData } from '@torahmap/stories';
 import type { Overlay } from './overlays/types.ts';
-import { CONTROL } from './panel.ts';
+import { CONTROL, icon } from './panel.ts';
 
 export type StartChoice =
   { kind: 'search' } | { kind: 'overlay'; id: string } | { kind: 'story'; id: string };
@@ -16,24 +16,25 @@ export type StartStory = Pick<Story, 'id'> & { data: Pick<StoryData, 'title' | '
 
 const heading = (text: string): string => `<h3 class="panel-section-heading">${text}</h3>`;
 
+const choiceAttrs = (choice: StartChoice): string =>
+  `data-start="${choice.kind}"${'id' in choice ? ` data-id="${escapeHtml(choice.id)}"` : ''}`;
+
 function row(choice: StartChoice, label: string, detail = ''): string {
-  const id = 'id' in choice ? ` data-id="${escapeHtml(choice.id)}"` : '';
-  return `<button type="button" class="${CONTROL.button} start-row" data-start="${choice.kind}"${id}>
+  return `<button type="button" class="${CONTROL.button} start-row" ${choiceAttrs(choice)}>
     <span class="start-label">${escapeHtml(label)}</span>
     <span class="start-detail">${escapeHtml(detail)}</span>
   </button>`;
 }
 
-// An open book, so a story reads as something to read, unlike the overlays and search, which are tools.
-const BOOK =
-  '<svg class="start-story-mark" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' +
-  '<path d="M8 3.5C6.5 2.5 4 2 1.5 2.5v10C4 12 6.5 12.5 8 13.5c1.5-1 4-1.5 6.5-1v-10C12 2 9.5 2.5 8 3.5ZM8 3.5v10"/></svg>';
+const BOOK = icon(
+  'M8 3.5C6.5 2.5 4 2 1.5 2.5v10C4 12 6.5 12.5 8 13.5c1.5-1 4-1.5 6.5-1v-10C12 2 9.5 2.5 8 3.5ZM8 3.5v10',
+);
 
 const storyRow = ({ id, data }: StartStory): string =>
-  `<button type="button" class="start-story" data-start="story" data-id="${escapeHtml(id)}">
+  `<button type="button" class="start-story" ${choiceAttrs({ kind: 'story', id })}>
     ${BOOK}
     <span class="start-label">${escapeHtml(data.title)}</span>
-    <span class="start-read">Read →</span>
+    <span class="start-read" aria-hidden="true">Read →</span>
     <span class="start-detail">${escapeHtml(data.description)}</span>
   </button>`;
 
