@@ -4,12 +4,12 @@
  * Run with: npx tsx scripts/overlays/echoes/formulas-report.ts
  */
 
+import { ECHOES } from '@torahmap/overlay-catalog';
 import { readBooks } from './generate.ts';
 
 // A run in more verses than this is listed as a formula.
 const FORMULA_VERSES = 15;
-// The length of run the map opens on.
-const WORDS = 5;
+const WORDS = Number(ECHOES.urlParams[0].default);
 
 const { books, refs } = readBooks();
 const verses = books.flatMap(({ verses }) => verses);

@@ -142,8 +142,7 @@ npm run report:echoes     # pairs at each length of phrase, and the famous paral
 ```
 
 The echoes are computed from the bundled verse texts, so rerun the generator
-whenever `all-texts.json` changes; it fetches nothing and has no `collected`
-date. How verses are paired is in `scripts/overlays/echoes/echoes.ts`;
+whenever `all-texts.json` changes. How verses are paired is in `scripts/overlays/echoes/echoes.ts`;
 `formulas-report.ts` there lists the phrases found in many verses.
 
 ## Text Dating Data

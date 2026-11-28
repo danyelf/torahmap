@@ -4,22 +4,11 @@
  */
 
 import { MAX_WORDS, MIN_WORDS } from '@torahmap/tanakh/overlays/echoes/data.ts';
-import { words } from '@torahmap/tanakh/overlays/echoes/words.ts';
 
-/** A book's verses in reading order, each its Hebrew text. */
+/** A book's verses in reading order, each as its words without points or accents. */
 export interface Book {
   name: string;
-  verses: string[];
-}
-
-/** A book's verses, each as its words without points or accents. */
-export interface ParsedBook {
-  name: string;
   verses: string[][];
-}
-
-export function parse(book: Book): ParsedBook {
-  return { name: book.name, verses: book.verses.map(words) };
 }
 
 /**
@@ -28,7 +17,7 @@ export function parse(book: Book): ParsedBook {
  * A run pairs every verse it is in, however many: the formulas ("and the LORD spoke to Moses,
  * saying", in 70 verses) more than double the pairs, and formulas-report.ts lists them.
  */
-export function echoesAnywhere(books: ParsedBook[]): [other: number, words: number][][] {
+export function echoesAnywhere(books: Book[]): [other: number, words: number][][] {
   const verses = books.flatMap(({ verses }) => verses);
   const longest = verses.map(() => new Map<number, number>());
   for (let n = MIN_WORDS; n <= MAX_WORDS; n++) {

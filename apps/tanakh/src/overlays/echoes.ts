@@ -1,5 +1,4 @@
-// Echoes: each verse colored by where in the Tanakh the verses that share a phrase with it are;
-// computed ahead of time by scripts/overlays/echoes/generate.ts.
+// Echoes: each verse colored by how far away the verses that share a phrase with it are.
 
 import { type Color, brighten, colorToCss, memoByValue, memoByValueAndKey } from '@torahmap/utils';
 import { type GrownPointer, type Pointer, squareCenter } from '@torahmap/engine';
@@ -462,7 +461,7 @@ function parallelList(
 const textOf = (data: EchoesData, verse: TanakhIdentity): string =>
   data.texts?.[verse.book]?.[verse.chapter]?.[verse.verse]?.he ?? '';
 
-const MARK = 'repeated-words';
+const MARK = 'shared-run';
 const FAINTER_MARK = `${MARK} fainter`;
 
 /**

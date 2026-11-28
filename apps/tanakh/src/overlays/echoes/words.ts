@@ -1,5 +1,4 @@
 // How the Echoes overlay sees a verse: its words, and the stretches of them that are marked.
-// Free of the page, so the script that finds the echoes and the page that marks the text agree.
 
 import { stripNikkud } from '@torahmap/hebrew';
 import { wordsRead } from '../../search/dictionary.ts';
@@ -10,7 +9,7 @@ export function words(he: string): string[] {
 }
 
 /** The flagged stretches of a verse's words, as start, end pairs (end excluded) in one list. */
-export function repeatedStretches(marks: boolean[]): number[] {
+function repeatedStretches(marks: boolean[]): number[] {
   const stretches: number[] = [];
   marks.forEach((marked, i) => {
     if (marked && !marks[i - 1]) stretches.push(i);

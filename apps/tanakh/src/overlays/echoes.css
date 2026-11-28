@@ -1,4 +1,4 @@
-.repeated-words {
+.shared-run {
   background: #ffea46;
   color: #1a1a1a;
   border-radius: 2px;
@@ -6,7 +6,7 @@
 }
 
 /* What a pinned verse shares with echoes other than the one it is compared with. */
-.repeated-words.fainter {
+.shared-run.fainter {
   background: #5a5320;
   color: inherit;
 }

@@ -6,9 +6,8 @@
  */
 
 import { gzipSync } from 'node:zlib';
-import { readBooks } from './generate.ts';
+import { buildEchoesFile, readBooks } from './generate.ts';
 import { echoesAnywhere } from './echoes.ts';
-import type { EchoesFile } from '@torahmap/tanakh/overlays/echoes/data.ts';
 
 const { books, refs } = readBooks();
 
@@ -66,12 +65,7 @@ for (const minWords of [5, 6, 8]) {
   console.log(`    ${found.join(' | ')}`);
 }
 
-const file: EchoesFile = {};
-echoes.forEach((others, v) => {
-  const later = others.filter(([o]) => o > v).flat();
-  if (later.length) file[v] = later;
-});
-const json = JSON.stringify(file);
+const json = JSON.stringify(buildEchoesFile(echoes));
 console.log(
   `\nFile: ${(json.length / 1024).toFixed(0)} KB, ${(gzipSync(json).length / 1024).toFixed(0)} KB gzipped`,
 );
