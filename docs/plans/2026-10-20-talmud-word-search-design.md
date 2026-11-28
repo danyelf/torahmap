@@ -1,7 +1,6 @@
 # Searching the Talmud by dictionary word
 
 **Status:** Plan. Danyel took decisions 1 to 10 on 2026-11-25; the pilot in decision 10 has run, and decision 11 was taken on 2026-11-25. The lookup was fixed on 2026-11-27, and the full run is ready to start. Issue #382.
-Nothing built from Sefaria's word list ships until Sefaria says how it may be used.
 
 ## What we want
 
@@ -26,7 +25,7 @@ what I recommend.
   what a reader sees on the map.
 - **Jastrow.** Marcus Jastrow's *Dictionary of the Targumim, the Talmud Bavli
   and Yerushalmi* (1903), the standard dictionary of Talmudic Hebrew and
-  Aramaic. It is out of copyright.
+  Aramaic.
 - **Entry.** One headword in Jastrow, with its definition, such as אֲמַר "to
   say" (Aramaic). Jastrow often has several entries with the same letters.
 - **Segment.** One of Sefaria's numbered passages within a page, usually a
@@ -102,9 +101,8 @@ The first two come only from the program that takes prefixes off.
 
 ### Decision 1. Build on Sefaria's word list at all?
 
-- **1a. Yes, once Sefaria says we may.** It is the only existing data that
-  links Talmud spellings to Jastrow. The list states no license; Danyel has
-  asked Sefaria.
+- **1a. Yes.** It is the only existing data that links Talmud spellings to
+  Jastrow.
 - **1b. Build our own tagger.** Train a model, for example on Dicta's
   vowelled text (see #382), to pick the entry for each occurrence from its
   context. This is the only way to do much better than the figures below, but
@@ -375,11 +373,7 @@ The money is small. What it would take is mostly the checking:
 3. **A reader of the Talmud** judging about 100 occurrences drawn at random.
    Neither the models nor I can stand in for that.
 
-What it does not change:
-
-- **The candidates still come from Sefaria's list,** so the result waits on
-  Sefaria's answer like everything else here.
-- **It cannot find an entry the list lacks.** For the 22% the list misses
+What it does not change: **it cannot find an entry the list lacks.** For the 22% the list misses
   (Decision 8), the model could choose among entries proposed by taking letters
   off, which is Decision 8c with a reader in place of the rule. That is a
   second step, scored the same way.
@@ -509,12 +503,9 @@ quotations, is what would measure it, and that is the reader's 100.
 ### Decision 11. What next?
 
 - **11a. Run the version with the word list over the whole Talmud.** The most
-  accurate. Like everything built on the list, it waits on Sefaria's answer.
+  accurate.
 - **11b. Run the version without the word list.** Seven points less accurate
-  on the hard words, but it reaches the 17% the list lacks, and it uses only
-  Jastrow, which is out of copyright, so it need not wait on Sefaria's answer
-  about the list. (Whether Sefaria's digital copy of Jastrow carries terms of
-  its own is not checked.)
+  on the hard words, but it reaches the 17% the list lacks.
 - **11c. Settle which twins are one word first** (Decision 7b), then run
   whichever version. Most of the model's mistakes are between twins, so this
   decides how much of what is left matters to a reader.
@@ -523,7 +514,7 @@ quotations, is what would measure it, and that is the reader's 100.
   words Jastrow quotes.
 
 My recommendation: 11d, then 11b. A reader's judgement is what the test set
-cannot give, and 11b both reaches more words and does not wait on Sefaria.
+cannot give, and 11b reaches more words.
 
 **Decided: 11d, then 11b,** on 2026-11-25. The 100 are to be drawn from the
 whole Talmud, so that they measure it.
@@ -647,7 +638,7 @@ stand-in that returns a fixed answer.
 
 ## The plan
 
-1. When Sefaria answers: a script builds, from the download, one file that
+1. A script builds, from the download, one file that
    links each of the text's spellings to entry numbers (36,773 spellings, about
    0.4 MB compressed; the text itself is 4.1 MB compressed), and a list of
    entries. With 9b, the file also links vowelled forms to entries.
@@ -670,7 +661,6 @@ Both wanted, neither started:
 
 ## Open questions
 
-- The license. Danyel is asking Sefaria.
 - How often Sefaria's picks are wrong in context. A sample drawn by spelling
   rather than by occurrence, judged by a reader of the Talmud, would say.
 - How often Decision 3b drops a right entry.
