@@ -124,14 +124,15 @@ describe('the churn overlay', () => {
     expect(worked(1, 'src/util.ts')).toBeNull();
   });
 
-  it('colours the oldest code brightest and stands it out, the newest grey', () => {
+  it('colours the oldest code brightest and the newest grey', () => {
     const oldest = at(churnOverlay.colorsFor(args('oldest')));
-    const standout = at(churnOverlay.standoutsFor!(args('oldest')));
-    expect(brightness(oldest(1))).toBeGreaterThan(brightness(oldest(3)));
-    expect(standout(1)).toBe(true);
-    expect(standout(6)).toBe(true);
-    expect(standout(3)).toBe(false);
-    expect(standout(1, 'src/util.ts')).toBe(false);
+    expect(brightness(oldest(1))).toBeGreaterThan(brightness(oldest(6)));
+    expect(brightness(oldest(6))).toBeGreaterThan(brightness(oldest(3)));
+    // The newest two eras are grey.
+    for (const line of [oldest(3), oldest(1, 'src/util.ts')]) {
+      const [r, g, b] = line as Color;
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeLessThan(20);
+    }
   });
 
   it('divides the history into at most six eras', () => {

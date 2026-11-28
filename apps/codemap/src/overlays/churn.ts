@@ -57,7 +57,7 @@ const tiersOf = memoByValue((structure: CodeStructure): Tier[] => {
   for (const { share, color } of TIERS) {
     const min = counts[Math.floor(counts.length * share)];
     if (tiers.at(-1)?.min === min) continue;
-    const of = tiers.length === 0 ? 'of files' : '';
+    const of = tiers.length === 0 ? 'of files ' : '';
     tiers.push({ min, color, label: `top ${share * 100}% ${of}(${min}+ commits)` });
   }
   return tiers;
@@ -91,7 +91,7 @@ const monthName = (month: number, year: boolean): string =>
 interface Eras {
   length: number; // months
   first: number; // the oldest era's index, in eras since year 0
-  bands: (Band & { old: boolean })[];
+  bands: Band[];
   ends: [string, string];
 }
 
@@ -118,7 +118,7 @@ const erasOf = memoByValue((structure: CodeStructure): Eras => {
     const color = old
       ? interpolateGradient(count - grey === 1 ? 0 : i / (count - grey - 1), OLD)
       : NEW[i - (count - grey)];
-    return { color, label, old };
+    return { color, label };
   });
   return { length, first, bands, ends: [monthName(low, true), monthName(high, true)] };
 });
@@ -158,12 +158,6 @@ export const churnOverlay: Overlay<CodeItem, ChurnSettings, StructureData> = {
 
   colorsFor: ({ items, settings, data: { structure } }) =>
     items.map((item) => colorOf(item, settings.measure, structure)),
-
-  // The old code is drawn so that one old line in a newer file shows from afar.
-  standoutsFor: ({ items, settings, data: { structure } }) =>
-    items.map(
-      (item) => settings.measure === 'oldest' && !item.deletedFile && !!eraOf(structure, item)?.old,
-    ),
 
   renderControls(container, { measure }, onChange) {
     if (!container.querySelector('[data-measure]')) {
