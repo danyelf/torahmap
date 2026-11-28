@@ -24,6 +24,19 @@ function row(choice: StartChoice, label: string, detail = ''): string {
   </button>`;
 }
 
+// An open book, so a story reads as something to read, unlike the overlays and search, which are tools.
+const BOOK =
+  '<svg class="start-story-mark" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">' +
+  '<path d="M8 3.5C6.5 2.5 4 2 1.5 2.5v10C4 12 6.5 12.5 8 13.5c1.5-1 4-1.5 6.5-1v-10C12 2 9.5 2.5 8 3.5ZM8 3.5v10"/></svg>';
+
+const storyRow = ({ id, data }: StartStory): string =>
+  `<button type="button" class="start-story" data-start="story" data-id="${escapeHtml(id)}">
+    ${BOOK}
+    <span class="start-label">${escapeHtml(data.title)}</span>
+    <span class="start-read">Read →</span>
+    <span class="start-detail">${escapeHtml(data.description)}</span>
+  </button>`;
+
 export function startingPointsHtml(
   search: StartOverlay,
   overlays: readonly StartOverlay[],
@@ -34,7 +47,7 @@ export function startingPointsHtml(
     heading('Overlays'),
     ...overlays.map((o) => row({ kind: 'overlay', id: o.id }, o.name, summary(o))),
     heading('Stories'),
-    ...stories.map((s) => row({ kind: 'story', id: s.id }, s.data.title, s.data.description)),
+    ...stories.map(storyRow),
   ].join('');
 }
 
