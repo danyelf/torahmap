@@ -15,6 +15,10 @@ export const CONTROL = {
   input: 'control-input',
 } as const;
 
+/** A 16-pixel icon from one SVG path, hidden from screen readers. */
+export const icon = (path: string): string =>
+  `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="${path}"/></svg>`;
+
 export function panelHtml(panel: Panel, body: string): string {
   return `<h2 class="panel-title">${escapeHtml(PANEL_TITLES[panel])}</h2>${body}`;
 }
