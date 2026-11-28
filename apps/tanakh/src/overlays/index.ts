@@ -4,7 +4,7 @@ import { commentaryOverlay } from './commentary.ts';
 import { tropOverlay } from './trop.ts';
 import { haftarahOverlay } from './haftarah.ts';
 import { verseLengthOverlay } from './verse-length.ts';
-import { textAnalyticsOverlay } from './text-analytics.ts';
+import { echoesOverlay } from './echoes.ts';
 import { OVERLAYS, type OverlayId } from '@torahmap/overlay-catalog';
 
 export type { TanakhOverlay, TanakhTool } from './tanakhTypes.ts';
@@ -17,7 +17,7 @@ const IMPLEMENTATIONS: Record<OverlayId, TanakhOverlay> = {
   trop: tropOverlay,
   haftarah: haftarahOverlay,
   'verse-length': verseLengthOverlay,
-  'text-analytics': textAnalyticsOverlay,
+  echoes: echoesOverlay,
 };
 
 // Lives here rather than in the Tanakh's text so a test can put the app's real

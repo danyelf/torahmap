@@ -134,20 +134,16 @@ several readings by name, so if hebcal has changed its mind about one of them
 the test fails and tells you which. That is the intended way to find out;
 decide whether to follow the change before editing the test to match.
 
-## Text Analytics Scores
+## Echoes
 
 ```bash
-npm run generate:text-analytics   # writes scores.json and echoes.json in public/data/overlays/text-analytics/
-npm run report:text-analytics     # what the scores show across the whole Tanakh
+npm run generate:echoes   # writes public/data/overlays/echoes/echoes.json
+npm run report:echoes     # pairs at each length of phrase, and the famous parallels
 ```
 
-The scores are computed from the bundled verse texts, so rerun the generator
-whenever `all-texts.json` changes; it fetches nothing and has no `collected`
-date. How the measure works, and every value it depends on, is in
-`scripts/overlays/text-analytics/measures.ts`. Read the report after changing
-the measure. The echoes between verses anywhere are in
-`scripts/overlays/text-analytics/echoes.ts`; `echoes-report.ts` there compares
-cut-offs for a phrase that recurs too often and checks the famous parallels.
+The echoes are computed from the bundled verse texts, so rerun the generator
+whenever `all-texts.json` changes. How verses are paired is in `scripts/overlays/echoes/echoes.ts`;
+`formulas-report.ts` there lists the phrases found in many verses.
 
 ## Text Dating Data
 

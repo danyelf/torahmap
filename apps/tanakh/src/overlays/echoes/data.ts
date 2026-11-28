@@ -4,7 +4,7 @@
 import { ECHO_WORDS } from '@torahmap/overlay-catalog';
 import { memoByValue } from '@torahmap/utils';
 
-export const ECHOES_FILE = 'overlays/text-analytics/echoes.json';
+export const ECHOES_FILE = 'overlays/echoes/echoes.json';
 
 /** The shortest run of words that makes two verses echoes, and the longest the file tells apart. */
 export const MIN_WORDS = Number(ECHO_WORDS[0]);

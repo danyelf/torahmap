@@ -10,8 +10,10 @@ import {
   createVerses,
   SAMPLE_VERSES,
   SAMPLE_LOADED,
+  SAMPLE_STRUCTURE,
   testOverlay,
 } from '../apps/tanakh/test/helpers/fixtures.ts';
+import { initBookData } from '@torahmap/tanakh/books.ts';
 import { dataFor } from '../packages/shell/src/dataFiles.ts';
 import { configure as configureSearch, searchTool } from '@torahmap/tanakh/search/index.ts';
 import { commentaryOverlay, type CommentaryCounts } from '@torahmap/tanakh/overlays/commentary.ts';
@@ -42,7 +44,8 @@ describe('Overlay Switching Integration', () => {
     mockControlsContainer = document.createElement('div');
     mockLegendContainer = document.createElement('div');
 
-    // Register overlays fresh
+    // Echoes places each verse in reading order.
+    initBookData(SAMPLE_STRUCTURE);
     registerAllOverlays();
 
     // Configure overlays with sample data
@@ -398,9 +401,9 @@ describe('Overlay Switching Integration', () => {
     });
   });
 
-  it('only Haftarah and Text Analytics say their colors depend on the hovered verse', () => {
+  it('only Haftarah and Echoes say their colors depend on the hovered verse', () => {
     const hoverSensitive = getAllOverlays().filter((o) => o.hoverChangesColors);
-    expect(hoverSensitive.map((o) => o.id)).toEqual(['haftarah', 'text-analytics']);
+    expect(hoverSensitive.map((o) => o.id)).toEqual(['haftarah', 'echoes']);
   });
 
   describe('URL State Persistence', () => {

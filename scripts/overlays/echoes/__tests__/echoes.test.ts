@@ -6,16 +6,14 @@ import {
   MAX_WORDS,
   MIN_WORDS,
   type EchoesFile,
-} from '@torahmap/tanakh/overlays/text-analytics/echoes.ts';
+} from '@torahmap/tanakh/overlays/echoes/data.ts';
 import { TEXTS_FILE, type VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
-import { echoesAnywhere } from '../echoes.ts';
-import { parse, type ParsedBook } from '../measures.ts';
+import { echoesAnywhere, type Book } from '../echoes.ts';
 
 const unique = (tag: string, count: number) =>
   Array.from({ length: count }, (_, i) => `${tag}${'א'.repeat(i + 1)}`);
 const run = (count: number) => unique('ר', count);
-const book = (name: string, verses: string[][]): ParsedBook =>
-  parse({ name, verses: verses.map((v) => v.join(' ')) });
+const book = (name: string, verses: string[][]): Book => ({ name, verses });
 
 describe('echoesAnywhere', () => {
   it('pairs verses of different books, whatever the distance, with the length of their longest run', () => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { echoRun, type EchoesFile } from '../../../src/overlays/text-analytics/echoes';
+import { echoRun, type EchoesFile } from '../../../src/overlays/echoes/data';
 
 /** An echoes file from pairs of positions, each sharing `words` words. */
 const fileOf = (pairs: [number, number][], words = 5): EchoesFile => {
