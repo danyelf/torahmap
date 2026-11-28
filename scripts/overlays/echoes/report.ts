@@ -2,13 +2,13 @@
  * How many echo pairs the Tanakh holds for each length of run, what the file weighs, and which
  * famous parallels they find.
  *
- * Run with: npx tsx scripts/overlays/text-analytics/echoes-report.ts
+ * Run with: npx tsx scripts/overlays/echoes/report.ts
  */
 
 import { gzipSync } from 'node:zlib';
 import { readBooks } from './generate.ts';
 import { echoesAnywhere } from './echoes.ts';
-import type { EchoesFile } from '@torahmap/tanakh/overlays/text-analytics/echoes.ts';
+import type { EchoesFile } from '@torahmap/tanakh/overlays/echoes/data.ts';
 
 const { books, refs } = readBooks();
 

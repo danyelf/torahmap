@@ -271,20 +271,15 @@ export const STATES: State[] = [
     shown: ['#overlay-select'],
   },
   {
-    name: 'explore-text-analytics',
-    link: 'overlay=text-analytics&analysis=repetitive-wording',
+    name: 'explore-echoes',
+    link: 'overlay=echoes',
     then: (page) => viaMenu(page, 'overlay'),
     shown: ['#overlay-select'],
   },
   {
-    name: 'explore-text-analytics-pinned',
-    link: 'overlay=text-analytics&analysis=repetitive-wording&verse=Genesis.5.25',
-    shown: ['#popup', '#map-legend'],
-  },
-  {
     // Numbers 7 repeats one offering every six verses; the pointer is on verse 37.
-    name: 'explore-text-analytics-hover',
-    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67',
+    name: 'explore-echoes-hover',
+    link: 'overlay=echoes&zoom=1.4&x=2283&y=67',
     then: async (page) => {
       const canvas = (await page.locator('#canvas').boundingBox())!;
       await page.mouse.move(canvas.x + canvas.width / 2 - 134, canvas.y + canvas.height / 2);
@@ -292,25 +287,9 @@ export const STATES: State[] = [
     shown: ['#map-legend'],
   },
   {
-    // Numbers 1:29 echoes only 2:6; the pointer is on 1:29.
-    name: 'explore-text-analytics-hover-one-echo',
-    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2304&y=11',
-    then: async (page) => {
-      const canvas = (await page.locator('#canvas').boundingBox())!;
-      await page.mouse.move(canvas.x + canvas.width / 2 - 97, canvas.y + canvas.height / 2 - 11);
-    },
-    shown: ['#map-legend'],
-  },
-  {
-    // Zoomed out, a pinned verse and its echoes still show.
-    name: 'explore-text-analytics-echoes-zoomed-out',
-    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=0.3&x=2304&y=11&verse=Numbers.1.29',
-    shown: ['#popup', '#map-legend'],
-  },
-  {
     // A parallel verse in the panel travels to it and pins it, its own parallels next.
-    name: 'explore-text-analytics-parallel-link',
-    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=0.8&x=2304&y=11&verse=Numbers.1.29',
+    name: 'explore-echoes-parallel-link',
+    link: 'overlay=echoes&zoom=0.8&x=2304&y=11&verse=Numbers.1.29',
     then: async (page) => {
       await viaMenu(page, 'overlay');
       await page.locator('.parallel-verses button:not(.parallel-source)').first().click();
@@ -319,50 +298,44 @@ export const STATES: State[] = [
     shown: ['#popup', '#map-legend'],
   },
   {
-    // Pinned, a verse keeps its echoes lit with the pointer elsewhere.
-    name: 'explore-text-analytics-echoes-pinned',
-    link: 'overlay=text-analytics&analysis=repetitive-wording&zoom=1.4&x=2283&y=67&verse=Numbers.7.37',
-    shown: ['#popup', '#map-legend'],
-  },
-  {
-    name: 'explore-text-analytics-echoes-view',
-    link: 'overlay=text-analytics&analysis=echoes',
+    name: 'explore-echoes-legend',
+    link: 'overlay=echoes',
     shown: ['#map-legend'],
   },
   {
     // The whole Tanakh at once: each verse in the color of its farthest echo.
-    name: 'explore-text-analytics-echoes-view-zoomed-out',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.1',
+    name: 'explore-echoes-zoomed-out',
+    link: 'overlay=echoes&zoom=0.1',
     shown: ['#map-legend'],
   },
   {
     // The slider at eight words: only the long shared passages remain.
-    name: 'explore-text-analytics-echoes-view-long-phrase',
-    link: 'overlay=text-analytics&analysis=echoes&words=8&zoom=0.1',
+    name: 'explore-echoes-long-phrase',
+    link: 'overlay=echoes&words=8&zoom=0.1',
     shown: ['#map-legend'],
   },
   {
     // 2 Kings 22:1 is retold in 1 Kings 15:10 and 2 Chronicles 34:1.
-    name: 'explore-text-analytics-echoes-view-pinned',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.1&verse=II.Kings.22.1',
+    name: 'explore-echoes-pinned',
+    link: 'overlay=echoes&zoom=0.1&verse=II.Kings.22.1',
     shown: ['#popup', '#map-legend'],
   },
   {
     // I Kings 8:17 with the parallels list showing it in its place among them.
-    name: 'explore-text-analytics-echoes-view-source-listed',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.3&verse=I.Kings.8.17',
+    name: 'explore-echoes-source-listed',
+    link: 'overlay=echoes&zoom=0.3&verse=I.Kings.8.17',
     shown: ['#popup', '#map-legend'],
   },
   {
     // I Samuel 31:1 pinned, the pointer away: other verses with echoes fade rather than go gray.
-    name: 'explore-text-analytics-echoes-view-pinned-close',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.86&verse=I.Samuel.31.1',
+    name: 'explore-echoes-pinned-close',
+    link: 'overlay=echoes&zoom=0.86&verse=I.Samuel.31.1',
     shown: ['#popup', '#map-legend'],
   },
   {
     // The same view with the pointer on another verse that has echoes: the pinned verse keeps the focus.
-    name: 'explore-text-analytics-echoes-view-hover',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.86&verse=I.Samuel.31.1',
+    name: 'explore-echoes-pinned-hover',
+    link: 'overlay=echoes&zoom=0.86&verse=I.Samuel.31.1',
     then: async (page) => {
       const canvas = (await page.locator('#canvas').boundingBox())!;
       await page.mouse.move(canvas.x + canvas.width / 2 - 136, canvas.y + canvas.height / 2 - 210);
@@ -371,14 +344,14 @@ export const STATES: State[] = [
   },
   {
     // Kings: most echoes lie in the same book or the same section.
-    name: 'explore-text-analytics-echoes-kings-pinned',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=0.6&verse=I.Kings.16.27',
+    name: 'explore-echoes-kings-pinned',
+    link: 'overlay=echoes&zoom=0.6&verse=I.Kings.16.27',
     shown: ['#popup', '#map-legend'],
   },
   {
     // I Kings 22:42 pinned, the pointer on II Kings 12:2 in the list: the popup shows the two.
-    name: 'explore-text-analytics-echoes-compare-hover',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=1.2&verse=I.Kings.22.42',
+    name: 'explore-echoes-compare-hover',
+    link: 'overlay=echoes&zoom=1.2&verse=I.Kings.22.42',
     then: async (page) => {
       await viaMenu(page, 'overlay');
       await page.locator('.parallel-list button', { hasText: 'II Kings 12:2' }).hover();
@@ -388,8 +361,8 @@ export const STATES: State[] = [
   },
   {
     // The same pair held by a click, the pointer away: the popup offers to go there or let go.
-    name: 'explore-text-analytics-echoes-compare-held',
-    link: 'overlay=text-analytics&analysis=echoes&zoom=1.2&verse=I.Kings.22.42',
+    name: 'explore-echoes-compare-held',
+    link: 'overlay=echoes&zoom=1.2&verse=I.Kings.22.42',
     then: async (page) => {
       await viaMenu(page, 'overlay');
       await page.locator('.parallel-list button', { hasText: 'II Kings 12:2' }).click();

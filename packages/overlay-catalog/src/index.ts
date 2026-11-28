@@ -75,28 +75,24 @@ export const VERSE_LENGTH = {
   description: "Each verse's length in Hebrew words. The brighter the verse, the longer it is.",
 } as const satisfies OverlayEntry;
 
-/** The analyses the Text Analytics overlay offers; the first is the one it starts with. */
-export const TEXT_ANALYSES = ['repetitive-wording', 'echoes'] as const;
-
 /** The shortest runs of words, as the words in a row two verses must share to be echoes. */
 export const ECHO_WORDS = ['4', '5', '6', '7', '8', '9', '10'] as const;
 
-// No default for the analysis, so the link always names it.
-const TEXT_ANALYTICS_PARAMS = [
-  { key: 'analysis', kind: 'token', allowed: TEXT_ANALYSES },
+const ECHOES_PARAMS = [
   { key: 'words', kind: 'token', allowed: ECHO_WORDS, default: '5' },
 ] as const satisfies readonly UrlParamSpec[];
 
-export const TEXT_ANALYTICS = {
-  id: 'text-analytics',
-  name: 'Text Analytics',
+export const ECHOES = {
+  id: 'echoes',
+  name: 'Echoes',
   description:
-    'How much of each verse repeats wording from nearby, or which verses anywhere in the Tanakh share a phrase.',
-  urlParams: TEXT_ANALYTICS_PARAMS,
+    'Verses that share a phrase, however far apart in the Tanakh. Colors each verse by how far ' +
+    'away its farthest echo is.',
+  urlParams: ECHOES_PARAMS,
 } as const satisfies OverlayEntry;
 
 /** Every overlay the menu offers, in the order it offers them. */
-export const OVERLAYS = [COMMENTARY, TROP, HAFTARAH, VERSE_LENGTH, TEXT_ANALYTICS] as const;
+export const OVERLAYS = [COMMENTARY, TROP, HAFTARAH, VERSE_LENGTH, ECHOES] as const;
 
 export type OverlayId = (typeof OVERLAYS)[number]['id'];
 

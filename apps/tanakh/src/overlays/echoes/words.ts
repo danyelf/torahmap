@@ -1,5 +1,5 @@
-// How the Text Analytics measures see a verse: its words, and the stretches of them that are marked.
-// Free of the page, so the script that writes the scores and the page that marks the text agree.
+// How the Echoes overlay sees a verse: its words, and the stretches of them that are marked.
+// Free of the page, so the script that finds the echoes and the page that marks the text agree.
 
 import { stripNikkud } from '@torahmap/hebrew';
 import { wordsRead } from '../../search/dictionary.ts';

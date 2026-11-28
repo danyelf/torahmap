@@ -1,10 +1,26 @@
 /**
  * The verses that share a run of words, anywhere in the Tanakh, and how long the longest run they
- * share is. Words are counted as the repetitive-wording measure counts them.
+ * share is.
  */
 
-import { MAX_WORDS, MIN_WORDS } from '@torahmap/tanakh/overlays/text-analytics/echoes.ts';
-import type { ParsedBook } from './measures.ts';
+import { MAX_WORDS, MIN_WORDS } from '@torahmap/tanakh/overlays/echoes/data.ts';
+import { words } from '@torahmap/tanakh/overlays/echoes/words.ts';
+
+/** A book's verses in reading order, each its Hebrew text. */
+export interface Book {
+  name: string;
+  verses: string[];
+}
+
+/** A book's verses, each as its words without points or accents. */
+export interface ParsedBook {
+  name: string;
+  verses: string[][];
+}
+
+export function parse(book: Book): ParsedBook {
+  return { name: book.name, verses: book.verses.map(words) };
+}
 
 /**
  * For each verse, counted from the first verse of the first book, the other verses it shares a run

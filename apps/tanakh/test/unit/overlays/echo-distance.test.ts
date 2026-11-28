@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { initBookData } from '../../../src/books';
 import type { Book } from '../../../src/types';
-import { distanceStep } from '../../../src/overlays/text-analytics/distance';
+import { distanceStep } from '../../../src/overlays/echoes/distance';
 
 const at = (book: string, chapter = 1) => ({ id: `${book} ${chapter}`, book, chapter, verse: 1 });
 

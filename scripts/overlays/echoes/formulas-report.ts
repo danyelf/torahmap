@@ -1,7 +1,7 @@
 /**
  * The runs that recur in many verses: how many there are, where, and what they say.
  *
- * Run with: npx tsx scripts/overlays/text-analytics/formulas-report.ts
+ * Run with: npx tsx scripts/overlays/echoes/formulas-report.ts
  */
 
 import { readBooks } from './generate.ts';

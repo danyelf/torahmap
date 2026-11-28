@@ -23,6 +23,6 @@
     "pages.ts",
     "scripts/__tests__",
     "scripts/talmud/__tests__",
-    "scripts/overlays/text-analytics/__tests__"
+    "scripts/overlays/echoes/__tests__"
   ]
 }

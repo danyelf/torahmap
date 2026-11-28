@@ -6,10 +6,9 @@ import {
   MAX_WORDS,
   MIN_WORDS,
   type EchoesFile,
-} from '@torahmap/tanakh/overlays/text-analytics/echoes.ts';
+} from '@torahmap/tanakh/overlays/echoes/data.ts';
 import { TEXTS_FILE, type VerseTexts } from '@torahmap/tanakh/verseTexts.ts';
-import { echoesAnywhere } from '../echoes.ts';
-import { parse, type ParsedBook } from '../measures.ts';
+import { echoesAnywhere, parse, type ParsedBook } from '../echoes.ts';
 
 const unique = (tag: string, count: number) =>
   Array.from({ length: count }, (_, i) => `${tag}${'א'.repeat(i + 1)}`);

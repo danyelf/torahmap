@@ -78,10 +78,6 @@
   font-size: 12px;
 }
 
-.echo-words[hidden] {
-  display: none;
-}
-
 .echo-words input {
   display: block;
   width: 100%;

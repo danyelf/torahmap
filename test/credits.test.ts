@@ -18,7 +18,7 @@ registerAllOverlays();
  * from text that is already credited. Anything else in the registry owes a
  * credit.
  */
-const OVERLAYS_WITHOUT_OWN_SOURCE = ['trop', 'verse-length', 'text-analytics'];
+const OVERLAYS_WITHOUT_OWN_SOURCE = ['trop', 'verse-length', 'echoes'];
 
 const block = (credits: readonly Credit[]) => renderCreditBlock('A Heading', credits);
 
