@@ -1,13 +1,13 @@
 /**
- * How many echo pairs the Tanakh holds for each length of run and cut-off for a run that recurs
- * too often, what the file weighs, and which famous parallels they find.
+ * How many echo pairs the Tanakh holds for each length of run, what the file weighs, and which
+ * famous parallels they find.
  *
  * Run with: npx tsx scripts/overlays/text-analytics/echoes-report.ts
  */
 
 import { gzipSync } from 'node:zlib';
 import { readBooks } from './generate.ts';
-import { MAX_VERSES_PER_RUN, echoesAnywhere } from './echoes.ts';
+import { echoesAnywhere } from './echoes.ts';
 import type { EchoesFile } from '@torahmap/tanakh/overlays/text-analytics/echoes.ts';
 
 const { books, refs } = readBooks();
@@ -45,34 +45,27 @@ const parallels: [label: string, from: Range[], to: Range[]][] = [
   ['Sam/Ki>Chr', samuelKings, chronicles],
 ];
 
-console.log(`Cut-off shipped: runs in more than ${MAX_VERSES_PER_RUN} verses are set aside\n`);
-
-const cutoffs = [Infinity, 30, 20, MAX_VERSES_PER_RUN, 12, 10];
-for (const cutoff of cutoffs) {
-  const echoes = echoesAnywhere(books, cutoff);
-  console.log(`Cut-off ${cutoff}`);
-  for (const minWords of [5, 6, 8]) {
-    const pairs = echoes.reduce(
-      (n, others, a) => n + others.filter(([b, words]) => a < b && words >= minWords).length,
-      0,
-    );
-    const most = Math.max(...echoes.map((o) => o.filter(([, w]) => w >= minWords).length));
-    const found = parallels.map(([label, from, to]) => {
-      let total = 0;
-      let hit = 0;
-      echoes.forEach((others, p) => {
-        if (!from.some((r) => inside(p, r))) return;
-        total++;
-        if (others.some(([o, w]) => w >= minWords && to.some((r) => inside(o, r)))) hit++;
-      });
-      return `${label} ${hit}/${total}`;
+const echoes = echoesAnywhere(books);
+for (const minWords of [5, 6, 8]) {
+  const pairs = echoes.reduce(
+    (n, others, a) => n + others.filter(([b, words]) => a < b && words >= minWords).length,
+    0,
+  );
+  const most = Math.max(...echoes.map((o) => o.filter(([, w]) => w >= minWords).length));
+  const found = parallels.map(([label, from, to]) => {
+    let total = 0;
+    let hit = 0;
+    echoes.forEach((others, p) => {
+      if (!from.some((r) => inside(p, r))) return;
+      total++;
+      if (others.some(([o, w]) => w >= minWords && to.some((r) => inside(o, r)))) hit++;
     });
-    console.log(`  ${minWords}+ words: ${pairs} pairs, most echoes on one verse ${most}`);
-    console.log(`    ${found.join(' | ')}`);
-  }
+    return `${label} ${hit}/${total}`;
+  });
+  console.log(`  ${minWords}+ words: ${pairs} pairs, most echoes on one verse ${most}`);
+  console.log(`    ${found.join(' | ')}`);
 }
 
-const echoes = echoesAnywhere(books);
 const file: EchoesFile = {};
 echoes.forEach((others, v) => {
   const later = others.filter(([o]) => o > v).flat();

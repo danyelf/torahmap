@@ -94,6 +94,15 @@ describe('itemColoring', () => {
       ).toBe(null);
     });
 
+    it('recomputes the overlay when the square the pin is compared with changes', () => {
+      const tool = { tool: hoverBlind, settings: undefined, data: undefined };
+      const pinned = { hovered: null, pinned: a };
+      expect(layerToRecompute('overlay', tool, pinned, { ...pinned, compared: b })).toBe('overlay');
+      expect(
+        layerToRecompute('overlay', tool, { ...pinned, compared: b }, { ...pinned, compared: b }),
+      ).toBe(null);
+    });
+
     it('recomputes nothing when the hover moves to another copy of the same square', () => {
       expect(
         recompute(

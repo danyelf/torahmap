@@ -45,10 +45,9 @@ describe('echoesAnywhere', () => {
     expect(echoesAnywhere(books)[0]).toEqual([[1, MAX_WORDS]]);
   });
 
-  it('sets aside a run found in more verses than the limit, and keeps one at the limit', () => {
+  it('pairs every verse a run is found in, however many', () => {
     const verses = [0, 1, 2, 3].map((i) => [...run(5), ...unique(`ו${i}`, 3)]);
-    expect(echoesAnywhere([book('A', verses)], 3)).toEqual([[], [], [], []]);
-    expect(echoesAnywhere([book('A', verses)], 4)[0]).toHaveLength(3);
+    expect(echoesAnywhere([book('A', verses)])[0]).toHaveLength(3);
   });
 
   it('does not pair a verse with itself', () => {

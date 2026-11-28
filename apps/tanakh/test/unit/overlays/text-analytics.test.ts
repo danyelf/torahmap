@@ -144,7 +144,17 @@ describe('Text Analytics overlay', () => {
     expect(colors).toEqual(items.map((item) => host().getItemColor(item)));
   });
 
-  it("shows a pinned verse's echoes until a hovered verse with echoes of its own takes over", () => {
+  it('keeps a pinned verse in focus under the pointer, and compares it with its echo alone', () => {
+    const panel = document.createElement('div');
+    textAnalyticsOverlay.renderFocus!(panel, verse(4), verse(1), wording, data, () => {});
+    expect(panel.querySelector('.parallel-source .parallel-ref')!.textContent).toBe('Genesis 1:1');
+    const { comparesWith } = textAnalyticsOverlay;
+    expect(comparesWith!(verse(1), verse(4), wording, data)).toBe(true);
+    expect(comparesWith!(verse(1), verse(2), wording, data)).toBe(false);
+    expect(comparesWith!(verse(1), verse(1), wording, data)).toBe(false);
+  });
+
+  it("shows a pinned verse's echoes while the pointer is on a verse with none", () => {
     const items = [1, 2, 3, 4].map(verse);
     const settings = wording;
     const plain = items.map((item) => host().getItemColor(item));
@@ -309,11 +319,14 @@ describe('Text Analytics overlay', () => {
         expect(paint({ 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5] })[0]).toEqual(other);
       });
 
-      it("leaves a focused verse's echoes the color they have at rest, and the verse white", () => {
+      it("lights a focused verse's echoes, and sets the verse apart", () => {
         const echoes = { 0: [1, 5, 2, 5, 3, 5, 4, 5, 5, 5], 1: [5, 5] };
+        const resting = paint(echoes);
         const colors = paint(echoes, places[0]);
-        expect(colors[0]).toEqual([1, 1, 1]);
-        expect(colors.slice(1)).toEqual(paint(echoes).slice(1));
+        expect(colors[0]).not.toEqual(resting[0]);
+        colors.slice(1).forEach((color, i) => {
+          expect(light(color as Color)).toBeGreaterThan(light(resting[i + 1] as Color));
+        });
       });
 
       it('darkens other verses with echoes, and leaves the rest plain', () => {
@@ -333,6 +346,104 @@ describe('Text Analytics overlay', () => {
       it('shows the pinned verse again when the pointer is on a verse without echoes', () => {
         const echoes = { 0: [1, 5], 2: [3, 5] };
         expect(paint(echoes, places[5], places[0])).toEqual(paint(echoes, null, places[0]));
+      });
+
+      it('keeps a pinned verse in focus when the pointer is on another verse with echoes', () => {
+        const echoes = { 0: [1, 5], 2: [3, 5] };
+        expect(paint(echoes, places[2], places[0])).toEqual(paint(echoes, null, places[0]));
+      });
+
+      it('compares a pinned verse with its echoes, and with no other verse', () => {
+        const compares = (other: (typeof places)[number]) =>
+          textAnalyticsOverlay.comparesWith!(places[0], other, echoSettings, {
+            ...data,
+            echoes: { 0: [1, 5], 2: [3, 5] },
+          });
+        expect(compares(places[1])).toBe(true);
+        expect(compares(places[2])).toBe(false);
+        expect(compares(places[0])).toBe(false);
+      });
+
+      const comparing = { hovered: null, pinned: places[0], compared: places[2] };
+
+      it('lights only the echo a pinned verse is compared with', () => {
+        const echoes = { 0: [2, 5, 3, 5] };
+        const colors = textAnalyticsOverlay.colorsFor!({
+          items: places,
+          settings: echoSettings,
+          data: { ...data, echoes },
+          focus: comparing,
+        });
+        expect(colors[2]).toEqual(paint(echoes, null, places[0])[2]);
+        expect(colors[3]).toEqual(paint(echoes)[3]);
+      });
+
+      it('grows the pointers between a pinned verse and the echo it is compared with brightest', () => {
+        const echoes = { 0: [2, 5, 3, 5] };
+        const grown = textAnalyticsOverlay.grownPointersFor!({
+          items: places,
+          settings: echoSettings,
+          data: { ...data, echoes },
+          focus: comparing,
+        });
+        // The pointers come verse by verse: the first verse's two, then one back from each echo.
+        const opacity = (index: number) => grown.find((g) => g.index === index)!.opacity;
+        expect(opacity(0)).toBeGreaterThan(opacity(1));
+        expect(opacity(2)).toBeGreaterThan(opacity(3));
+      });
+
+      it('dims no pointer while the pinned verse is compared with an echo in its own chapter', () => {
+        const grown = (compared: (typeof places)[number] | null) =>
+          textAnalyticsOverlay.grownPointersFor!({
+            items: places,
+            settings: echoSettings,
+            data: { ...data, echoes: { 0: [1, 5, 2, 5, 3, 5] } },
+            focus: { hovered: null, pinned: places[0], compared },
+          });
+        expect(grown(places[1])).toEqual(grown(null));
+      });
+
+      const pointers = (items: typeof places, echoes: TextAnalyticsData['echoes']) =>
+        textAnalyticsOverlay.pointersFor!({
+          items,
+          settings: echoSettings,
+          data: { ...data, echoes },
+        });
+
+      it('grows the pointers toward echoes in other chapters, and not the one within the chapter', () => {
+        const echoes = { 0: [1, 5, 2, 5] };
+        const drawn = pointers(places, echoes);
+        const grown = textAnalyticsOverlay.grownPointersFor!({
+          items: places,
+          settings: echoSettings,
+          data: { ...data, echoes },
+          focus: { hovered: places[0], pinned: null },
+        });
+        expect(drawn.map((p) => p.color)).toContainEqual(chapter);
+        expect(grown.length).toBeGreaterThan(0);
+        expect(grown.map(({ index }) => drawn[index].color)).not.toContainEqual(chapter);
+      });
+
+      it('draws the pointers of a verse with many echoes shorter', () => {
+        const chapters = 15;
+        initBookData({
+          books: [
+            {
+              name: 'Genesis',
+              hebrewName: '',
+              section: 'torah',
+              chapters: new Array(chapters).fill(1),
+              countedAs: 'Genesis',
+            },
+          ],
+          layout: { minorProphetStacks: [], ketuvimStacks: [], multiColumnBooks: {} },
+        });
+        const verses = Array.from({ length: chapters }, (_, c) =>
+          createVerse({ book: 'Genesis', chapter: c + 1, verse: 1 }),
+        );
+        const toEveryOther = verses.slice(1).flatMap((_, i) => [i + 1, 5]);
+        const [fromTheMany, ...rest] = pointers(verses, { 0: toEveryOther });
+        expect(fromTheMany.length).toBeLessThan(rest.at(-1)!.length);
       });
     });
 
@@ -386,6 +497,103 @@ describe('Text Analytics overlay', () => {
           'זחט יכל מנס עפצ קרש',
           'זחט יכל מנס עפצ קרש',
         ]);
+      });
+
+      it('marks what a pinned verse and a compared echo share, and what its other echoes share more faintly', () => {
+        const first = ['אבג', 'דהו', 'זחט', 'יכל', 'מנס'];
+        const second = ['עפצ', 'קרש', 'שין', 'תאב', 'גדה'];
+        const three: TextAnalyticsData = {
+          ...data,
+          echoes: { 0: [1, 5, 3, 5] },
+          texts: {
+            Genesis: {
+              '1': { 1: he([...first, 'וזח', ...second]), 2: he(first), 4: he(['טיכ', ...second]) },
+            },
+          },
+        };
+        const [ours, theirs] = textAnalyticsOverlay.compareTexts!(
+          verse(1),
+          [three.texts!.Genesis['1'][1].he, three.texts!.Genesis['1'][4].he],
+          echoSettings,
+          three,
+        );
+        const fainter = [...ours.querySelectorAll('mark.fainter')].map((m) => m.textContent);
+        expect(fainter).toEqual([first.join(' ')]);
+        expect(marked(ours).filter((text) => !fainter.includes(text))).toEqual([second.join(' ')]);
+        expect(marked(theirs)).toEqual([second.join(' ')]);
+      });
+
+      describe('the list beside a pinned verse', () => {
+        const did: string[] = [];
+        const travel = (id: string) => void did.push(`travel ${id}`);
+        const hover = (id: string | null) => void did.push(`hover ${id}`);
+        const hold = (id: string) => void did.push(`hold ${id}`);
+        const draw = (panel: HTMLElement, held: ReturnType<typeof verse> | null) =>
+          textAnalyticsOverlay.renderFocus!(panel, null, verse(1), echoSettings, marking, travel, {
+            compared: held,
+            held,
+            hover,
+            hold,
+          });
+        const parallel = (panel: HTMLElement) =>
+          [...panel.querySelectorAll('button')].find((b) =>
+            b.textContent!.includes('Genesis 1:4'),
+          )!;
+
+        beforeEach(() => {
+          did.length = 0;
+        });
+
+        it('holds a parallel for comparison on its first click, and travels to it on the second', () => {
+          const panel = document.createElement('div');
+          draw(panel, null);
+          parallel(panel).click();
+          draw(panel, verse(4));
+          parallel(panel).click();
+          expect(did.filter((d) => !d.startsWith('hover'))).toEqual([
+            `hold ${verse(4).id}`,
+            `travel ${verse(4).id}`,
+          ]);
+        });
+
+        it('takes the pointer off a row it travels from, which is redrawn under it', () => {
+          const panel = document.createElement('div');
+          draw(panel, verse(4));
+          parallel(panel).dispatchEvent(new MouseEvent('mouseenter'));
+          parallel(panel).click();
+          expect(did).toEqual([`hover ${verse(4).id}`, 'hover null', `travel ${verse(4).id}`]);
+        });
+
+        it('draws its rows again in a panel emptied since', () => {
+          const panel = document.createElement('div');
+          draw(panel, null);
+          panel.replaceChildren();
+          draw(panel, null);
+          expect(parallel(panel)).toBeDefined();
+        });
+
+        it('says when the pointer is on a parallel, and when it leaves', () => {
+          const panel = document.createElement('div');
+          draw(panel, null);
+          parallel(panel).dispatchEvent(new MouseEvent('mouseenter'));
+          parallel(panel).dispatchEvent(new MouseEvent('mouseleave'));
+          expect(did).toEqual([`hover ${verse(4).id}`, 'hover null']);
+        });
+
+        it('keeps its rows when only the comparison changes, so a scrolled list stays put', () => {
+          const panel = document.createElement('div');
+          draw(panel, null);
+          const row = parallel(panel);
+          draw(panel, verse(4));
+          expect(parallel(panel)).toBe(row);
+        });
+
+        it('empties when the focus goes', () => {
+          const panel = document.createElement('div');
+          draw(panel, null);
+          textAnalyticsOverlay.renderFocus!(panel, null, null, echoSettings, marking, travel);
+          expect(panel.childNodes).toHaveLength(0);
+        });
       });
     });
 

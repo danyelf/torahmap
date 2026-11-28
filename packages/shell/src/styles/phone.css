@@ -182,6 +182,15 @@
     display: none;
   }
 
+  /* Room for the two Hebrew texts, one under the other, as far as the sheet below leaves any. */
+  #popup.comparing {
+    max-height: min(300px, 100dvh - var(--sheet-shown) - var(--legend-shown) - 20px);
+  }
+
+  #popup.comparing .popup-english {
+    display: none;
+  }
+
   /* A full-height sheet covers the map the popup belongs to, and the menu,
      dropping from the top, reaches down over it; it is back when either goes. */
   body[data-full] #popup,

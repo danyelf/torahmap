@@ -15,9 +15,11 @@ export const DISTANCE_STEPS: readonly { name: string; color: Color }[] = [
   { name: 'Another section', color: onScreen(0.96, 0.1, 95) },
 ];
 
+export const SAME_CHAPTER = 0;
+
 /** The index in DISTANCE_STEPS of how far verse `b` is from verse `a`. */
 export function distanceStep(a: Place, b: Place): number {
-  if (a.book === b.book && a.chapter === b.chapter) return 0;
+  if (a.book === b.book && a.chapter === b.chapter) return SAME_CHAPTER;
   if (countedAs(a.book) === countedAs(b.book)) return 1;
   return getBookSection(a.book) === getBookSection(b.book) ? 2 : 3;
 }

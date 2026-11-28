@@ -466,7 +466,27 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   }
 
   function focusNow(): Focus<I> {
-    return { hovered: litHoverItem, pinned: pinnedItem };
+    return { hovered: litHoverItem, pinned: pinnedItem, compared: comparedWith(litHoverItem) };
+  }
+
+  /** Whether the overlay compares `other` with the pinned square rather than pinning it. */
+  function compares(other: I | null): boolean {
+    const on = frame.mode === 'story' ? null : toolsNow().overlay;
+    return !!(
+      pinnedItem &&
+      other &&
+      on?.tool.comparesWith?.(pinnedItem, other, on.settings, on.data)
+    );
+  }
+
+  /** The held square, while the overlay still compares the pinned one with it. */
+  function heldNow(): I | null {
+    return compares(heldItem) ? heldItem : null;
+  }
+
+  /** The square compared with the pinned one: the one under the pointer, else the held one. */
+  function comparedWith(hovered: I | null): I | null {
+    return compares(hovered) ? hovered : heldNow();
   }
 
   /**
@@ -505,8 +525,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function syncStoryStopStateUnguarded(stop: ResolvedStoryStop): void {
     // The pin is set before the panels are drawn, which draw what the pin has.
     const unpinned = pinnedItem !== null && !stop.pin;
-    if (stop.pin) pinnedItem = squares.find(stop.pin) ?? pinnedItem;
-    else pinnedItem = null;
+    setPin(stop.pin ? (squares.find(stop.pin) ?? pinnedItem) : null);
     setTools(fromLink(stop, tools, textTools), 'outside');
 
     // A stop with a search puts search in front for it, whether or not the
@@ -521,6 +540,23 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   if (ringsFrom) farOut = camera.zoom < ringsFrom.zoom;
 
   let pinnedItem: I | null = null;
+  // The square a click holds beside the pinned one, to compare the two.
+  let heldItem: I | null = null;
+  /** Every change of the pin goes through here: a new pin lets go of the square held beside the old one. */
+  function setPin(item: I | null): void {
+    pinnedItem = item;
+    heldItem = null;
+  }
+  // The square the popup shows the pinned one compared with.
+  let popupCompares: I | null = null;
+  const panelCompares = {
+    // The pointer on a panel row is the pointer on its square.
+    hover: (id: string | null) => setHover(id ? (squares.find(id) ?? null) : null),
+    hold(id: string) {
+      const item = squares.find(id);
+      if (item && compares(item)) holdCompared(item);
+    },
+  };
 
   let hoveredItem: I | null = null;
   // The hovered square the map's colors follow: it trails hoveredItem, which the highlight and
@@ -748,7 +784,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
     if (!on?.tool.grownPointersFor) return;
     const focus = focusNow();
-    const key = [focus.hovered, focus.pinned];
+    const key = [focus.hovered, focus.pinned, focus.compared];
     if (key.some((part, i) => part !== grownFor[i])) {
       grownFor = key;
       const args = { items, settings: on.settings, data: on.data, focus };
@@ -903,7 +939,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     takeOver('takeover');
     trackSquareClick(item.id, text.area(item).area);
     const focusBefore = focusNow();
-    pinnedItem = item;
+    setPin(item);
     followPin(item);
     showPin();
     repaint(focusBefore);
@@ -921,10 +957,18 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function unpinItem(): void {
     takeOver('takeover');
     const focusBefore = focusNow();
-    pinnedItem = null;
+    setPin(null);
     showPin();
     repaint(focusBefore);
     syncUrl(true);
+  }
+
+  /** Holds `item` beside the pinned square to compare the two, or lets go of the one held. */
+  function holdCompared(item: I | null): void {
+    const focusBefore = focusNow();
+    heldItem = item;
+    showPin();
+    repaint(focusBefore);
   }
 
   /** Zoom by `factor`, holding whatever is under `at` still. */
@@ -956,6 +1000,8 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     restHover.move(square);
     renderOverlayFocus();
     render();
+    // A pinned square's popup shows beside it the square it is compared with.
+    if (pinnedItem && !sameItem(popupCompares, comparedWith(square))) refreshPopup();
   }
 
   const gestures = createMapGestures<I>({
@@ -989,9 +1035,11 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       },
       leave: () => setHover(null),
       tap(square) {
-        const does = tapDoes(square, pinnedItem);
+        const does = tapDoes(square, pinnedItem, heldNow(), compares(square));
         if (does === 'pin' && square) pinItem(square);
         else if (does === 'unpin') unpinItem();
+        else if (does === 'hold') holdCompared(square);
+        else if (does === 'release') holdCompared(null);
       },
       step(by) {
         const next = pinnedItem && squares.step(pinnedItem, by);
@@ -1004,8 +1052,14 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         }
       },
       escape(inField) {
-        const does = escapeDoes({ menu: frame.menu, pinned: pinnedItem !== null, inField });
+        const does = escapeDoes({
+          menu: frame.menu,
+          pinned: pinnedItem !== null,
+          inField,
+          comparing: heldNow() !== null,
+        });
         if (does === 'unpin') unpinItem();
+        else if (does === 'release') holdCompared(null);
         else dispatch({ type: does });
       },
       find() {
@@ -1092,6 +1146,9 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   function updateSidebarWrapper(item: I | null, isPinned: boolean = false): void {
     viewFiles.fetchPopup(item);
     const on = toolsNow();
+    const compared = isPinned ? comparedWith(hoveredItem) : null;
+    popupCompares = compared;
+    viewFiles.fetchPopup(compared);
     updateSidebar(
       sidebarElements,
       item,
@@ -1101,6 +1158,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
         wordsClickable: dataFor(searchTool, loader.loaded()) !== null,
         ...on,
         pinned: isPinned,
+        comparison: compared && {
+          item: compared,
+          held: sameItem(compared, heldNow()),
+          travel: () => pinAndGlide(compared),
+          release: () => holdCompared(null),
+        },
         actions: {
           fitTo,
           change: (update) => {
@@ -1233,11 +1296,12 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
   /** Draw what the active overlay says about the square in focus. */
   function renderOverlayFocus(): void {
     if (!overlayFocusContainer) return;
-    overlayFocusContainer.innerHTML = '';
     const overlay = overlayOn();
-    if (!overlay?.renderFocus) return;
-    const data = dataFor(overlay, loader.loaded());
-    if (!data) return;
+    const data = overlay?.renderFocus && dataFor(overlay, loader.loaded());
+    if (!overlay?.renderFocus || !data) {
+      overlayFocusContainer.replaceChildren();
+      return;
+    }
     overlay.renderFocus(
       overlayFocusContainer,
       hoveredItem,
@@ -1245,6 +1309,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
       settingsIn(tools, overlay),
       data,
       travelTo,
+      { compared: comparedWith(hoveredItem), held: heldNow(), ...panelCompares },
     );
   }
 
@@ -1887,7 +1952,7 @@ export async function createApp<I extends MapItem, S>(source: MapText<I, S>): Pr
     }
 
     const item = next.square ? squares.find(next.square) : null;
-    pinnedItem = item;
+    setPin(item);
     cancelCameraGlide();
     Object.assign(camera, cameraForView(next.camera, item, mapFocus(), mapViewport()));
 
