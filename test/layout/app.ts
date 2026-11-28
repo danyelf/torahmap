@@ -181,7 +181,8 @@ export const STATES: State[] = [
       await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
       // Freezes the menu's 1500ms auto-close so it can never fire mid-screenshot.
       await page.clock.install();
-      await page.clock.pauseAt(Date.now());
+      // Ahead of now: the page's clock may already be past the time read here, and it cannot go back.
+      await page.clock.pauseAt(Date.now() + 10_000);
       await page.locator('#menu-toggle').click();
       await page.locator('.menu-item[data-action="share"]:visible').click();
       await page
