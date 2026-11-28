@@ -203,7 +203,6 @@ interface OverlayMembers<T, S, D> {
   // The Hebrew of the pinned square and of the one compared with it, each marked for the pair.
   compareTexts?(
     pinned: SpatialItem<T>,
-    compared: SpatialItem<T>,
     hebrew: [pinned: string, compared: string],
     settings: S,
     data: D,

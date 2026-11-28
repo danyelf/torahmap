@@ -127,12 +127,20 @@ function echoesOf(
   return found;
 }
 
-/** The verse's id if it has echoes. */
-const echoKey = (
+/** The verse, if it has echoes. */
+const withEchoes = (
   data: TextAnalyticsData,
   settings: TextAnalyticsSettings,
   verse: TanakhLayout | null,
-): string | null => (verse && echoesOf(data, settings, verse) ? verse.id : null);
+): TanakhLayout | null => (verse && echoesOf(data, settings, verse) ? verse : null);
+
+/** Whether moving the pointer or the pin from one verse to the other changes the colors: only echoes show. */
+const echoesDiffer = (
+  before: TanakhLayout | null,
+  after: TanakhLayout | null,
+  settings: TextAnalyticsSettings,
+  data: TextAnalyticsData,
+): boolean => withEchoes(data, settings, before)?.id !== withEchoes(data, settings, after)?.id;
 
 /**
  * The verse whose echoes the map shows, of the hovered and the pinned one. A pinned verse keeps
@@ -144,9 +152,7 @@ function focusedVerse(
   hovered: TanakhLayout | null,
   pinned: TanakhLayout | null,
 ): TanakhLayout | null {
-  const withEchoes = (verse: TanakhLayout | null) =>
-    verse && echoesOf(data, settings, verse) ? verse : null;
-  return withEchoes(pinned) ?? withEchoes(hovered);
+  return withEchoes(data, settings, pinned) ?? withEchoes(data, settings, hovered);
 }
 
 function focusEchoes(
@@ -248,14 +254,14 @@ const echoPointerList = memoByValue((items: TanakhLayout[]) =>
           to: centers.get(places[other].id),
           step: distanceStep(places[position], places[other]),
         }))
-        .filter(({ to }) => to);
+        .flatMap((echo) => (echo.to ? [{ ...echo, to: echo.to }] : []));
       const shorter = Math.min(1, (FULL_LENGTH_POINTERS / drawn.length) ** 0.25);
       for (const { other, to, step } of drawn) {
         // Grown, a pointer within the chapter would lie along its row of verses, so it never grows.
         if (step !== SAME_CHAPTER) at.set(pairKey(position, other), pointers.length);
         pointers.push({
           from: centers.get(id)!,
-          to: to!,
+          to,
           length: (step === far ? POINTER_LENGTH_FAR : POINTER_LENGTH) * shorter,
           color: DISTANCE_STEPS[step].color,
         });
@@ -435,14 +441,8 @@ export const textAnalyticsOverlay: Overlay<
     }
   },
 
-  // A hovered verse without echoes leaves the pinned verse's showing, so only echoes count.
-  hoverChangesColors(before, after, settings, data) {
-    return echoKey(data, settings, before) !== echoKey(data, settings, after);
-  },
-
-  pinChangesColors(before, after, settings, data) {
-    return echoKey(data, settings, before) !== echoKey(data, settings, after);
-  },
+  hoverChangesColors: echoesDiffer,
+  pinChangesColors: echoesDiffer,
 
   renderLegend(container, settings, data) {
     if (!data) {
@@ -518,7 +518,7 @@ export const textAnalyticsOverlay: Overlay<
 
   // The phrase the two share is marked in both; what else the pinned verse repeats keeps a
   // fainter mark.
-  compareTexts(pinned, _compared, [pinnedText, comparedText], settings, data) {
+  compareTexts(pinned, [pinnedText, comparedText], settings, data) {
     return [
       markStretches(
         pinnedText,

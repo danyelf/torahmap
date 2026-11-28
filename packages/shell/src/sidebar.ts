@@ -160,7 +160,7 @@ export interface PopupComparison<I extends MapItem> {
   release(): void;
 }
 
-function button(label: string, className: string, click: () => void): HTMLButtonElement {
+function button(label: string, click: () => void, className = ''): HTMLButtonElement {
   const made = document.createElement('button');
   made.type = 'button';
   made.className = className;
@@ -185,8 +185,8 @@ function comparedBlock<I extends MapItem>(
   const actions = document.createElement('div');
   actions.className = 'compared-actions';
   actions.append(
-    button(`Go to ${text.ref}`, 'compared-go', comparison.travel),
-    button('Stop comparing', 'compared-stop', comparison.release),
+    button(`Go to ${text.ref}`, comparison.travel),
+    button('Stop comparing', comparison.release, 'compared-stop'),
   );
   return [heading, words, actions];
 }
@@ -231,7 +231,6 @@ export function updateSidebar<I extends MapItem>(
     comparison && text.hebrew && other?.hebrew
       ? currentOverlay?.compareTexts?.(
           item,
-          comparison.item,
           [text.hebrew, other.hebrew],
           overlaySettings,
           overlayData,

@@ -14,7 +14,7 @@ const comparing = {
   id: 'comparing',
   name: 'Comparing',
   colorsFor: () => [],
-  compareTexts: (_pinned: MapItem, _compared: MapItem, hebrew: [string, string]) =>
+  compareTexts: (_pinned: MapItem, hebrew: [string, string]) =>
     hebrew.map((text) => {
       const fragment = document.createDocumentFragment();
       const mark = document.createElement('mark');

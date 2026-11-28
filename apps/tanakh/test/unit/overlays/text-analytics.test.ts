@@ -513,7 +513,6 @@ describe('Text Analytics overlay', () => {
         };
         const [ours, theirs] = textAnalyticsOverlay.compareTexts!(
           verse(1),
-          verse(4),
           [three.texts!.Genesis['1'][1].he, three.texts!.Genesis['1'][4].he],
           echoSettings,
           three,

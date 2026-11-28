@@ -11,6 +11,7 @@ import { readBooks } from './generate.ts';
 import { echoesAnywhere } from './echoes.ts';
 import { PARAMETERS, repetitionScores, type ParsedBook } from './measures.ts';
 
+// The length of run the map opens on.
 const WORDS = 5;
 const DATA = join(import.meta.dirname, '../../../public/data');
 
