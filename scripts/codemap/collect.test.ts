@@ -75,13 +75,6 @@ beforeAll(() => {
   git(['mv', 'old.ts', 'new.ts'], COMMIT_2_TIME);
   unlinkSync(join(repo, 'gone.ts'));
   commit('second', COMMIT_2_TIME);
-  git(['checkout', '-q', '-b', 'side', 'main']);
-  write('side.ts', ['s']);
-  commit('side one', COMMIT_1_TIME);
-  write('side.ts', ['s', 't']);
-  commit('side two', COMMIT_2_TIME);
-  git(['checkout', '-q', '-b', 'merged', 'main']);
-  git(['merge', '-q', '--no-ff', '-m', 'merge side', 'side'], COMMIT_2_TIME + 100);
   git(['checkout', '-q', 'main']);
 });
 
@@ -112,10 +105,9 @@ describe('collect', () => {
     expect(gone.commits.map((c) => c.deletedBefore)).toEqual([[], [1]]);
   });
 
-  it('counts and dates each line over the whole history', () => {
+  it('dates each line and counts the commits that changed each file, following renames', () => {
     const { structure } = collect(repo, 'main', 'branch', URL);
     const a = fileAt(structure, 'a.ts');
-    expect(a.timesChanged).toEqual([1, 2, 1, 1, 1]);
     const timeOf = (change: number) => structure.changes[change].time;
     expect(a.lastChange.map(timeOf)).toEqual([
       MAIN_TIME,
@@ -124,27 +116,11 @@ describe('collect', () => {
       MAIN_TIME,
       COMMIT_1_TIME,
     ]);
+    expect(a.commitCount).toBe(3);
     const renamed = fileAt(structure, 'new.ts');
-    expect(renamed.timesChanged).toEqual([1, 1, 1, 1, 1, 2]);
     expect(timeOf(renamed.lastChange[5])).toBe(MAIN_EDIT_TIME);
-  });
-
-  it('places each change among all the commits and among the mainline steps', () => {
-    const { structure } = collect(repo, 'main', 'branch', URL);
-    const change = (path: string, line: number) =>
-      structure.changes[fileAt(structure, path).lastChange[line - 1]];
-    // main, main edit, first, second: one commit each, and each its own mainline step.
-    expect(change('a.ts', 1)).toMatchObject({ commit: 0, pr: 0 });
-    expect(change('new.ts', 6)).toMatchObject({ commit: 1, pr: 1 });
-    expect(change('a.ts', 2)).toMatchObject({ commit: 2, pr: 2 });
-  });
-
-  it('counts a merged branch as one mainline step', () => {
-    const { structure } = collect(repo, 'merged', 'merged', URL);
-    const [one, two] = fileAt(structure, 'side.ts').lastChange.map((c) => structure.changes[c]);
-    expect(one.commit).toBeLessThan(two.commit);
-    expect(one.pr).toBe(two.pr);
-    expect(one.pr).toBeGreaterThan(structure.changes[fileAt(structure, 'old.ts').lastChange[5]].pr);
+    // main and main edit as old.ts, then the rename.
+    expect(renamed.commitCount).toBe(3);
   });
 
   it('gives each head line its text, shape and kind', () => {

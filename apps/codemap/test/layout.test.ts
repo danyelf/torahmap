@@ -14,7 +14,7 @@ function fileOf(path: string, indent: number[], length: number[]): CodeFile {
     length,
     kind: 'x'.repeat(indent.length),
     lastChange: indent.map(() => 0),
-    timesChanged: indent.map(() => 1),
+    commitCount: 1,
     pr: marks,
     commits: [marks],
   };

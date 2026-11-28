@@ -11,7 +11,7 @@ const main: CodeFile = {
   length: [24, 0, 14, 9, 0, 7],
   kind: 'ibxxbc',
   lastChange: [0, 0, 3, 3, 0, 1],
-  timesChanged: [1, 1, 5, 5, 1, 2],
+  commitCount: 12,
   pr: { marks: '..ac..', deletedBefore: [2, 4] },
   commits: [
     { marks: '..a...', deletedBefore: [2] },
@@ -25,7 +25,7 @@ const util: CodeFile = {
   length: [10, 14, 0],
   kind: 'cxb',
   lastChange: [2, 2, 2],
-  timesChanged: [3, 3, 3],
+  commitCount: 3,
   pr: { marks: '.a.', deletedBefore: [3] },
   commits: [
     { marks: '...', deletedBefore: [] },
@@ -39,7 +39,7 @@ const old: CodeFile = {
   length: [],
   kind: '',
   lastChange: [],
-  timesChanged: [],
+  commitCount: 0,
   pr: removed,
   commits: [noMarks, removed],
   deleted: true,
@@ -54,10 +54,10 @@ export const fixtureStructure: CodeStructure = {
     { sha: '2'.repeat(40), subject: 'Change a line' },
   ],
   changes: [
-    { time: 1_700_000_000, commit: 0, pr: 0 },
-    { time: 1_730_000_000, commit: 1, pr: 1 },
-    { time: 1_750_000_000, commit: 2, pr: 1 },
-    { time: 1_760_000_000, commit: 3, pr: 2 },
+    { time: 1_700_000_000 },
+    { time: 1_730_000_000 },
+    { time: 1_750_000_000 },
+    { time: 1_760_000_000 },
   ],
   files: [main, old, util],
 };

@@ -106,59 +106,44 @@ const brightness = (c: Color | Color[] | null) => (c as Color).reduce((a, b) => 
 
 describe('the churn overlay', () => {
   const items = computeCodeLayout(fixtureStructure).items;
-  const colours = (measure: ChurnSettings['measure'], by: ChurnSettings['by'] = 'day') => {
-    const c = churnOverlay.colorsFor({
-      items,
-      settings: { measure, by },
-      data: { structure: fixtureStructure },
-      focus: NO_FOCUS,
-    });
-    return (line: number, path = 'src/main.ts') =>
-      c[items.findIndex((i) => i.id === lineId(path, line))];
-  };
+  const args = (measure: ChurnSettings['measure']) => ({
+    items,
+    settings: { measure },
+    data: { structure: fixtureStructure },
+    focus: NO_FOCUS,
+  });
+  const at =
+    <T>(values: T[]) =>
+    (line: number, path = 'src/main.ts') =>
+      values[items.findIndex((i) => i.id === lineId(path, line))];
 
-  it('draws a line changed once darker than one changed five times', () => {
-    const often = colours('often');
-    expect(brightness(often(1))).toBeLessThan(brightness(often(3)));
+  it('fills the files most commits changed and leaves the rest uncoloured', () => {
+    const worked = at(churnOverlay.colorsFor(args('worked')));
+    expect(worked(1)).not.toBeNull();
+    expect(worked(3)).toEqual(worked(1));
+    expect(worked(1, 'src/util.ts')).toBeNull();
   });
 
-  it('draws an older line darker than a newer one', () => {
-    const recent = colours('recent');
-    expect(brightness(recent(1))).toBeLessThan(brightness(recent(3)));
+  it('colours the oldest code brightest and stands it out, the newest grey', () => {
+    const oldest = at(churnOverlay.colorsFor(args('oldest')));
+    const standout = at(churnOverlay.standoutsFor!(args('oldest')));
+    expect(brightness(oldest(1))).toBeGreaterThan(brightness(oldest(3)));
+    expect(standout(1)).toBe(true);
+    expect(standout(6)).toBe(true);
+    expect(standout(3)).toBe(false);
+    expect(standout(1, 'src/util.ts')).toBe(false);
   });
 
-  it('spaces lines by commit or by pull request as well as by day', () => {
-    // main.ts line 6 and util.ts line 1 last changed in one pull request, in different commits.
-    expect(colours('recent', 'pr')(6)).toEqual(colours('recent', 'pr')(1, 'src/util.ts'));
-    expect(colours('recent', 'commit')(6)).not.toEqual(
-      colours('recent', 'commit')(1, 'src/util.ts'),
-    );
-    // The second of four commits, a third of the way along by commit and half by day.
-    expect(brightness(colours('recent', 'commit')(6))).toBeLessThan(
-      brightness(colours('recent', 'day')(6)),
-    );
+  it('divides the history into at most six eras', () => {
+    const container = document.createElement('div');
+    churnOverlay.renderLegend!(container, { measure: 'oldest' }, { structure: fixtureStructure });
+    // The fixture's two years, in half-years.
+    expect(container.querySelectorAll('.legend-row')).toHaveLength(5);
   });
 
   it('reads its measure from a link', () => {
-    expect(churnOverlay.settingsFromUrl!({ measure: 'often', by: 'day' }, [])).toEqual({
-      measure: 'often',
-      by: 'day',
-    });
-    expect(churnOverlay.settingsToUrl!({ measure: 'often', by: 'pr' })).toEqual({
-      measure: 'often',
-    });
-    expect(churnOverlay.settingsToUrl!({ measure: 'recent', by: 'pr' })).toEqual({
-      measure: 'recent',
-      by: 'pr',
-    });
-  });
-
-  it('shows how often as one step for each count from the fewest to the most', () => {
-    const container = document.createElement('div');
-    const settings = { measure: 'often', by: 'day' } as const;
-    churnOverlay.renderLegend!(container, settings, { structure: fixtureStructure });
-    // The fixture's lines changed from 1 to 5 times.
-    expect(container.querySelectorAll('[title]')).toHaveLength(5);
+    expect(churnOverlay.settingsFromUrl!({ measure: 'oldest' }, [])).toEqual({ measure: 'oldest' });
+    expect(churnOverlay.settingsToUrl!({ measure: 'oldest' })).toEqual({ measure: 'oldest' });
   });
 });
 

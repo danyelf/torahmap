@@ -24,7 +24,9 @@ colour on the same ground. The Talmud map already draws 81,793 squares; the map 
   - *All commits:* the branch against main, each line marked added, changed or deleted.
   - *Step by step:* one commit at a time, in order, with the same three marks for that commit alone.
     Commits do not get a colour each.
-- **Churn:** how recently each line last changed, and how many times it has changed.
+- **Churn:** the files most worked on, by how many commits changed each; and the oldest code, each
+  line by the era it last changed in. A count per line does not show where the work went: a
+  rewritten line is a new line to git, so the most rewritten files look new.
 - **Line type:** import, comment, function header, blank, and other kinds a builder finds useful.
 - **Line shape:** each bar starts at the line's indent and is as long as the line, so a file is a
   tiny picture of its code and can be recognised by its shape.
@@ -56,8 +58,7 @@ colour on the same ground. The Talmud map already draws 81,793 squares; the map 
   removed are added. This is a reading of the diff, usually right, and the design says so rather than
   presenting it as git's word.
 - **Churn covers each file's whole history** and is computed once, when the data is built. When a
-  line last changed comes from `git blame`; how many times it changed, from walking the file's
-  `git log`. This pull request's marks are separate: they come from its own commits only.
+  line last changed comes from `git blame`; how many commits changed a file, from `git log --follow`. This pull request's marks are separate: they come from its own commits only.
 - **The map is a live link**, not a picture in the PR description, because step-by-step mode needs
   clicking. A still picture can come later.
 - **The data comes from a script in `scripts/codemap/`**, run locally against a repo and two refs.

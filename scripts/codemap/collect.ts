@@ -69,83 +69,24 @@ function lastCommits(repo: string, head: string, path: string): string[] {
     .flatMap((line) => /^([0-9a-f]{40}) \d+ \d+/.exec(line)?.[1] ?? []);
 }
 
-/**
- * Where each of the head's commits stands in its history: by date, and by the step of the
- * mainline that brought it in. The mainline is the base's first-parent history, a merged pull
- * request one step, then each of the pull request's own commits.
- */
-function history(
-  repo: string,
-  base: string,
-  head: string,
-  own: readonly string[],
-): Map<string, Change> {
-  const log = git(repo, ['log', '--date-order', '--reverse', '--format=%H %ct %P', head])
-    .split('\n')
-    .filter((line) => line !== '')
-    .map((line) => line.split(' '));
-  const parents = new Map(log.map(([sha, , ...up]) => [sha, up]));
-  const mainline = [
-    ...git(repo, ['log', '--first-parent', '--reverse', '--format=%H', base])
-      .split('\n')
-      .filter((sha) => sha !== ''),
-    ...own,
-  ];
-  const step = new Map<string, number>();
-  mainline.forEach((top, pr) => {
-    const todo = [top];
-    while (todo.length > 0) {
-      const sha = todo.pop()!;
-      if (step.has(sha)) continue;
-      step.set(sha, pr);
-      todo.push(...(parents.get(sha) ?? []));
-    }
-  });
+/** When each of the head's commits was made. */
+function commitTimes(repo: string, head: string): Map<string, Change> {
   return new Map(
-    log.map(([sha, time], commit) => [sha, { time: Number(time), commit, pr: step.get(sha) ?? 0 }]),
+    git(repo, ['log', '--format=%H %ct', head])
+      .split('\n')
+      .filter((line) => line !== '')
+      .map((line) => {
+        const [sha, time] = line.split(' ');
+        return [sha, { time: Number(time) }];
+      }),
   );
 }
 
-/**
- * How many commits made or changed each line, walking the file's first-parent history: a
- * merged pull request counts once, and the walk stays linear so lines carry forward.
- */
-function timesChanged(repo: string, head: string, path: string, lineCount: number): number[] {
-  const log = git(repo, [
-    'log',
-    ...DIFF_FLAGS,
-    '--follow',
-    '--first-parent',
-    '--diff-merges=first-parent',
-    '--format=',
-    '-p',
-    '-U0',
-    '-M',
-    head,
-    '--',
-    path,
-  ]);
-  let counts: number[] = [];
-  for (const { hunks } of parseDiff(log).reverse()) {
-    const grown = hunks.reduce((n, h) => n + h.newCount - h.oldCount, 0);
-    const next = new Array<number>(counts.length + grown).fill(0);
-    counts.forEach((count, i) => {
-      const to = carryForward(i + 1, hunks);
-      if (typeof to === 'number') next[to - 1] = count;
-    });
-    for (const h of hunks) {
-      const changed = Math.min(h.oldCount, h.newCount);
-      for (let i = 0; i < h.newCount; i++) {
-        next[h.newStart - 1 + i] = i < changed ? counts[h.oldStart - 1 + i] + 1 : 1;
-      }
-    }
-    counts = next;
-  }
-  if (counts.length !== lineCount) {
-    console.warn(`${path}: history gives ${counts.length} lines, head has ${lineCount}`);
-    return new Array<number>(lineCount).fill(1);
-  }
-  return counts;
+/** How many commits changed the file, following its renames. */
+function commitCount(repo: string, head: string, path: string): number {
+  return git(repo, ['log', '--follow', '--format=%H', head, '--', path])
+    .split('\n')
+    .filter((sha) => sha !== '').length;
 }
 
 interface HeadMarks {
@@ -260,12 +201,7 @@ export function collect(
   const perCommit = commits.map((_, i) => commitMarks(commitDiffs, i));
   const prByPath = new Map(prDiff.flatMap((f) => (f.newPath === null ? [] : [[f.newPath, f]])));
 
-  const when = history(
-    repo,
-    baseSha,
-    headSha,
-    commits.map((c) => c.sha),
-  );
+  const when = commitTimes(repo, headSha);
   const changes: Change[] = [];
   const changeOf = new Map<string, number>();
   const changeIndex = (sha: string): number => {
@@ -291,7 +227,7 @@ export function collect(
         length: shapes.map((s) => s.length),
         kind: lineKinds(path, lines),
         lastChange: lastCommits(repo, headSha, path).map(changeIndex),
-        timesChanged: timesChanged(repo, headSha, path, lines.length),
+        commitCount: commitCount(repo, headSha, path),
         pr: pr ? marksOf(pr.hunks, lines.length) : onHead(undefined, lines.length),
         commits: perCommit.map((byPath) => onHead(byPath.get(path), lines.length)),
       },
@@ -308,7 +244,7 @@ export function collect(
         length: [],
         kind: '',
         lastChange: [],
-        timesChanged: [],
+        commitCount: 0,
         pr: FILE_REMOVED,
         commits: commits.map((_, i) => (i === deletedBy ? FILE_REMOVED : NO_MARKS)),
         deleted: true,
